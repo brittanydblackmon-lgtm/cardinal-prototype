@@ -195,16 +195,17 @@ opacity: 1; transition: opacity .15s;
 position: absolute; top: 50%; right: -11px; transform: translateY(-50%);
 width: 22px; height: 22px; border-radius: 50%;
 background: rgba(166,218,255,0.12);
-border: 1px solid rgba(166,218,255,0.3);
+border: 1px solid rgba(166,218,255,0.35);
 display: flex; align-items: center; justify-content: center;
 color: var(--accent); cursor: pointer; z-index: 30;
 transition: all .2s;
 font-family: var(--sans); font-size: 11px;
-box-shadow: 0 2px 8px rgba(0,0,0,.4);
+box-shadow: 0 2px 8px rgba(0,0,0,.4), 0 0 8px rgba(166,218,255,0.15);
 }
 .sidebar-collapse-toggle:hover {
-border-color: rgba(166,218,255,0.5); color: var(--accent);
+border-color: rgba(166,218,255,0.6); color: var(--accent);
 background: rgba(166,218,255,0.22);
+box-shadow: 0 2px 8px rgba(0,0,0,.4), 0 0 14px rgba(166,218,255,0.28);
 }
 .sidebar-collapse-toggle svg { transition: transform .25s; }
 .sidebar.collapsed .sidebar-collapse-toggle svg { transform: rotate(180deg); }
@@ -425,6 +426,24 @@ font-size: 11px; color: var(--red); cursor: pointer;
 transition: background 0.15s;
 }
 .topbar-alert:hover { background: rgba(239,68,68,0.14); }
+.topbar-pill {
+display: inline-flex; align-items: center; gap: 6px;
+background: rgba(30,30,45,0.9);
+border: 1px solid rgba(166,218,255,0.3);
+color: var(--accent);
+border-radius: 20px;
+padding: 6px 14px;
+font-size: 12px; font-family: var(--sans); font-weight: 500;
+cursor: pointer;
+transition: background .18s, border-color .18s, box-shadow .18s;
+margin-right: 6px;
+}
+.topbar-pill:hover {
+background: rgba(40,42,60,0.95);
+border-color: rgba(166,218,255,0.55);
+box-shadow: 0 0 12px rgba(166,218,255,0.18);
+}
+.topbar-pill svg { display: block; }
 /* ── CONTENT ── */
 .content {
   flex: 1;
@@ -487,6 +506,432 @@ line-height: 1; margin-bottom: 5px;
 .hm-cell.flash {
   transform: scale(1.08);
   box-shadow: 0 0 0 1px rgba(255,255,255,.15), 0 0 8px rgba(255,255,255,.2);
+}
+
+/* ════════════════════════════════════════
+   DASHBOARD REDESIGN (dr-*)
+   ════════════════════════════════════════ */
+#screen-dashboard.active {
+  border: 1px solid rgba(147, 51, 234, 0.25);
+  border-radius: 12px;
+  padding: 20px;
+  margin: -4px;
+}
+
+/* Card primitives */
+.dr-card {
+  background: #0d0e14;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 16px;
+}
+.dr-card:hover { border-color: rgba(255,255,255,0.14); }
+
+/* 4-stat grid */
+.dr-grid-4 {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  margin: 14px 0;
+}
+.dr-stat-card {
+  padding: 20px;
+  min-height: 380px;
+  display: flex; flex-direction: column;
+  position: relative;
+}
+.dr-card-head {
+  display: flex; justify-content: space-between; align-items: center;
+}
+.dr-card-title {
+  font-size: 14px; font-weight: 600; color: #e2e8f0;
+}
+.dr-card-icon {
+  width: 28px; height: 28px; border-radius: 50%;
+  background: rgba(255,255,255,0.06);
+  display: flex; align-items: center; justify-content: center;
+  color: #94a3b8;
+}
+.dr-stat-num {
+  font-size: 48px; font-weight: 700; line-height: 1;
+  margin-top: 14px; letter-spacing: -1px;
+}
+.dr-trend-pill {
+  display: inline-flex; align-items: center; gap: 4px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 20px; padding: 4px 12px;
+  font-size: 11px; color: #94a3b8;
+  margin-top: 10px; align-self: flex-start;
+}
+.dr-trend-up { color: #22c55e; }
+.dr-trend-down { color: #ef4444; }
+.dr-vis {
+  flex: 1; margin-top: 14px;
+  position: relative; min-height: 160px;
+}
+.dr-vis canvas { width: 100% !important; height: 180px !important; }
+.dr-card-foot {
+  display: flex; justify-content: flex-end;
+  margin-top: 8px;
+}
+.dr-card-min {
+  width: 24px; height: 24px; border-radius: 50%;
+  background: rgba(255,255,255,0.06);
+  border: none; color: #64748b; cursor: pointer;
+  font-size: 14px; line-height: 1;
+  display: flex; align-items: center; justify-content: center;
+  transition: background .18s;
+}
+.dr-card-min:hover { background: rgba(255,255,255,0.12); color: #94a3b8; }
+
+/* Card 4 — heatmap visualization */
+.dr-vis-heat { display: flex; flex-direction: column; gap: 8px; }
+.dr-heat-grid {
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  gap: 2px;
+  height: 130px;
+}
+.dr-heat-grid > div { border-radius: 2px; }
+.dr-heat-legend {
+  height: 8px; border-radius: 4px;
+  background: linear-gradient(to right, #3b82f6, #22c55e, #eab308, #f97316, #ef4444);
+}
+.dr-heat-scale {
+  display: flex; justify-content: space-between;
+  font-size: 9px; color: #64748b;
+}
+
+/* Trust panel */
+.dr-trust-panel {
+  padding: 24px;
+  margin-bottom: 16px;
+}
+.dr-panel-head {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  gap: 12px;
+}
+.dr-panel-head-left {
+  display: flex; gap: 12px; align-items: flex-start;
+}
+.dr-panel-icon {
+  width: 32px; height: 32px; border-radius: 8px;
+  background: rgba(166,218,255,0.06);
+  border: 1px solid rgba(166,218,255,0.12);
+  display: flex; align-items: center; justify-content: center;
+  color: #94a3b8;
+  flex-shrink: 0;
+}
+.dr-panel-title {
+  font-size: 16px; font-weight: 600; color: #e2e8f0;
+}
+.dr-panel-sub {
+  font-size: 12px; color: #64748b;
+  margin-top: 2px;
+}
+.dr-panel-divider {
+  border-top: 1px solid rgba(255,255,255,0.06);
+  margin: 16px 0;
+}
+.dr-trust-center {
+  text-align: center;
+  padding: 8px 0 4px;
+}
+.dr-trust-score {
+  font-size: 64px; font-weight: 700;
+  color: #22c55e; line-height: 1;
+  letter-spacing: -2px;
+}
+.dr-trust-label {
+  font-size: 14px; color: #64748b;
+  margin-top: 8px;
+}
+.dr-trust-progress {
+  height: 6px; background: rgba(255,255,255,0.08);
+  border-radius: 3px; margin: 16px 0;
+  overflow: hidden;
+}
+.dr-trust-progress-fill {
+  height: 100%; background: #22c55e;
+  border-radius: 3px;
+  transition: width .4s;
+}
+.dr-trust-cols {
+  display: grid; grid-template-columns: 1fr 1fr 1fr;
+  gap: 0;
+}
+.dr-trust-col {
+  text-align: center; padding: 20px;
+  border-right: 1px solid rgba(255,255,255,0.06);
+}
+.dr-trust-col:last-child { border-right: none; }
+.dr-trust-col-label {
+  font-size: 12px; color: #64748b;
+  font-weight: 600; text-transform: uppercase;
+  letter-spacing: 0.5px; margin-bottom: 8px;
+}
+.dr-trust-col-num {
+  font-size: 32px; font-weight: 700;
+  line-height: 1; margin-bottom: 10px;
+}
+.dr-mini-bar {
+  height: 4px; background: rgba(255,255,255,0.06);
+  border-radius: 2px; overflow: hidden;
+  margin-top: 6px;
+}
+.dr-mini-bar-fill {
+  height: 100%; border-radius: 2px;
+  transition: width .4s;
+}
+.dr-cert-box {
+  margin-top: 20px;
+  border: 1px dashed rgba(255,255,255,0.15);
+  border-radius: 10px; padding: 20px;
+  text-align: center;
+}
+.dr-cert-title {
+  font-size: 14px; color: #94a3b8; font-weight: 500;
+  margin-top: 8px;
+}
+.dr-cert-sub {
+  font-size: 12px; color: #4b5563; margin-top: 4px;
+}
+.dr-panel-actions {
+  display: flex; gap: 8px;
+  margin-top: 16px; justify-content: flex-end;
+}
+.dr-btn-ghost {
+  border: 1px solid rgba(255,255,255,0.15);
+  background: transparent; color: #94a3b8;
+  border-radius: 8px; padding: 8px 14px;
+  font-size: 12px; cursor: pointer;
+  font-family: var(--sans);
+  display: inline-flex; align-items: center; gap: 6px;
+  transition: all .18s;
+}
+.dr-btn-ghost:hover {
+  background: rgba(255,255,255,0.05);
+  border-color: rgba(255,255,255,0.25);
+  color: #cbd5e1;
+}
+.dr-btn-tiny {
+  padding: 5px 10px; font-size: 10px;
+  border: 1px solid rgba(255,255,255,0.12);
+}
+
+/* 2-column row */
+.dr-2col {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 16px; margin-bottom: 16px;
+}
+.dr-section-panel {
+  padding: 20px;
+}
+.dr-section-head {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  gap: 12px;
+}
+.dr-section-head-left { display: flex; gap: 10px; align-items: flex-start; }
+.dr-section-icon {
+  width: 28px; height: 28px; border-radius: 7px;
+  background: rgba(166,218,255,0.06);
+  border: 1px solid rgba(166,218,255,0.10);
+  display: flex; align-items: center; justify-content: center;
+  color: #94a3b8;
+  flex-shrink: 0;
+}
+.dr-section-title {
+  font-size: 15px; font-weight: 600; color: #e2e8f0;
+}
+.dr-section-sub {
+  font-size: 11px; color: #64748b;
+  margin-top: 2px;
+}
+.dr-section-head-right {
+  display: flex; gap: 8px; align-items: center;
+}
+.dr-section-time { font-size: 10px; color: #4b5563; }
+.dr-dots {
+  background: transparent; border: none;
+  color: #64748b; cursor: pointer;
+  font-size: 16px; padding: 0 4px;
+  line-height: 1;
+}
+.dr-dots:hover { color: #94a3b8; }
+.dr-section-filter {
+  font-size: 11px; color: #64748b;
+  margin-top: 8px;
+}
+
+/* Metric / Remediation rows */
+.dr-metric, .dr-rem, .dr-bias {
+  border-top: 1px solid rgba(255,255,255,0.05);
+  padding: 14px 0;
+}
+.dr-metric:first-of-type, .dr-rem:first-of-type, .dr-bias:first-of-type {
+  border-top: none; padding-top: 6px;
+}
+.dr-metric-row {
+  display: flex; justify-content: space-between; align-items: center;
+  gap: 12px; margin-bottom: 6px;
+}
+.dr-metric-label {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-size: 13px; font-weight: 600; color: #e2e8f0;
+}
+.dr-metric-thresh {
+  margin: 4px 0 6px;
+  font-size: 12px; color: #64748b;
+}
+.dr-metric-thresh > span:first-child { color: #94a3b8; }
+.dr-metric-thresh strong { color: #cbd5e1; font-weight: 600; }
+.dr-metric-ctx {
+  font-size: 10px; color: #64748b;
+  margin-top: 6px; line-height: 1.5;
+}
+.dr-metric-rule {
+  font-size: 10px; color: #4b5563;
+  margin-top: 2px; line-height: 1.5;
+}
+
+/* Badges */
+.dr-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  border-radius: 6px;
+  padding: 3px 9px;
+  font-size: 10px; font-weight: 600;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+.dr-badge-red    { background: rgba(239,68,68,0.15); color: #ef4444; border-color: rgba(239,68,68,0.3); }
+.dr-badge-amber  { background: rgba(245,158,11,0.15); color: #f59e0b; border-color: rgba(245,158,11,0.3); }
+.dr-badge-green  { background: rgba(34,197,94,0.15); color: #22c55e; border-color: rgba(34,197,94,0.3); }
+.dr-badge-yellow { background: rgba(234,179,8,0.12); color: #eab308; border-color: rgba(234,179,8,0.3); }
+.dr-pill-red    { background: rgba(239,68,68,0.15); color: #ef4444; border:1px solid rgba(239,68,68,0.3); border-radius:20px; padding:3px 10px; }
+.dr-pill-amber  { background: rgba(245,158,11,0.15); color: #f59e0b; border:1px solid rgba(245,158,11,0.3); border-radius:20px; padding:3px 10px; }
+.dr-pill-green  { background: rgba(34,197,94,0.15); color: #22c55e; border:1px solid rgba(34,197,94,0.3); border-radius:20px; padding:3px 10px; }
+
+/* Remediation list */
+.dr-rem-action {
+  font-size: 12px; font-weight: 600; color: #cbd5e1;
+  margin-top: 8px; line-height: 1.5;
+}
+.dr-rem-list {
+  list-style: none; padding-left: 0;
+  margin: 8px 0 0;
+  font-size: 11px; color: #94a3b8;
+  line-height: 1.7;
+}
+.dr-rem-list li { position: relative; padding-left: 14px; }
+.dr-rem-list li::before {
+  content: '•'; position: absolute; left: 2px;
+  color: #475569;
+}
+.dr-rem-list li.dim { color: #64748b; }
+
+/* Section actions */
+.dr-section-actions {
+  display: flex; gap: 8px;
+  margin-top: 16px; padding-top: 16px;
+  border-top: 1px solid rgba(255,255,255,0.06);
+}
+
+/* Demographic Breakdown */
+.dr-sub { margin-top: 16px; }
+.dr-sub:first-of-type { margin-top: 6px; }
+.dr-sub-title {
+  display: inline-flex; align-items: center; gap: 7px;
+  font-size: 12px; font-weight: 600; color: #94a3b8;
+  text-transform: uppercase; letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+.dr-sub-box {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 10px;
+  padding: 16px;
+}
+.dr-sub-gender {
+  display: flex; align-items: center; gap: 20px;
+}
+.dr-sub-gender canvas { flex-shrink: 0; }
+.dr-gender-rows {
+  flex: 1; display: flex; flex-direction: column; gap: 10px;
+}
+.dr-gender-row {
+  display: grid;
+  grid-template-columns: 12px 1fr auto auto;
+  gap: 10px; align-items: center;
+}
+.dr-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  display: inline-block;
+}
+.dr-gender-name { font-size: 11px; color: #e2e8f0; }
+.dr-gender-pct  { font-size: 11px; color: #22c55e; font-weight: 600; }
+.dr-gender-share { font-size: 10px; color: #64748b; }
+
+.dr-eth-list { padding: 4px 12px; }
+.dr-eth-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 8px 0; gap: 12px;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+.dr-eth-row:last-child { border-bottom: none; }
+.dr-eth-label { font-size: 12px; color: #94a3b8; }
+.dr-eth-right { text-align: right; }
+.dr-eth-pct  { font-size: 12px; font-weight: 700; color: #e2e8f0; }
+.dr-eth-apps { font-size: 10px; color: #64748b; }
+
+/* Bias Analysis Results */
+.dr-bias-row {
+  display: flex; justify-content: space-between; align-items: flex-end;
+  margin-top: 10px; gap: 12px;
+}
+.dr-bias-fair-label {
+  font-size: 10px; color: #64748b;
+  text-transform: uppercase; letter-spacing: 0.5px;
+}
+.dr-bias-fair-num {
+  font-size: 28px; font-weight: 700; line-height: 1;
+}
+.dr-bias-rec {
+  font-size: 11px; font-weight: 600; color: #94a3b8;
+  margin-top: 6px;
+}
+
+/* Regulatory */
+.dr-regulatory {
+  margin-top: 16px; padding-top: 16px;
+  border-top: 1px solid rgba(255,255,255,0.06);
+}
+.dr-reg-box {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 8px; padding: 8px 12px;
+  margin-top: 10px;
+}
+.dr-reg-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 8px 0; gap: 10px;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+.dr-reg-row:last-child { border-bottom: none; }
+.dr-reg-label { font-size: 12px; color: #94a3b8; }
+.dr-reg-right {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 13px; font-weight: 700;
+}
+
+/* Responsive — collapse to 2-col on narrower viewports */
+@media (max-width: 1280px) {
+  .dr-grid-4 { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 920px) {
+  .dr-grid-4 { grid-template-columns: 1fr; }
+  .dr-2col { grid-template-columns: 1fr; }
+  .dr-trust-cols { grid-template-columns: 1fr; }
+  .dr-trust-col { border-right: none; border-bottom: 1px solid rgba(255,255,255,0.06); }
+  .dr-trust-col:last-child { border-bottom: none; }
 }
 
 /* ── DASHBOARD POLISH ── */
@@ -967,37 +1412,40 @@ animation:none;transform-origin:center;
 @keyframes eveOrbit{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
 #eve-urgency-dot{position:absolute;top:0;right:0;width:14px;height:14px;border-radius:50%;background:var(--amber);border:2px solid var(--bg);animation:pulse-dot 2s infinite}
 #eve-urgency-dot.critical{background:var(--red)}
-#eve-panel{width:340px;background:var(--card);border:1px solid rgba(166,218,255,.15);border-radius:16px;overflow:hidden;box-shadow:0 8px 40px rgba(0,0,0,.6);display:none;flex-direction:column;max-height:520px}
+#eve-panel{width:380px;background:linear-gradient(135deg,#080c14 0%,#0d1220 50%,#080c14 100%);border:1px solid rgba(166,218,255,.2);border-radius:20px;overflow:hidden;box-shadow:0 0 0 1px rgba(166,218,255,.08),0 20px 60px rgba(0,0,0,.8),0 0 40px rgba(166,218,255,.06);display:none;flex-direction:column;max-height:600px;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)}
 #eve-panel.open{display:flex}
-.eve-header{background:linear-gradient(135deg,#0d1117,#13161f);padding:14px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid rgba(166,218,255,.08)}
-.eve-avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#1e3a5f,#0d2137);border:1px solid rgba(166,218,255,.3);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.eve-header{background:linear-gradient(135deg,#0a1020,#0f1828);padding:16px 18px;display:flex;align-items:center;gap:12px;border-bottom:1px solid rgba(166,218,255,.1);box-shadow:inset 0 1px 0 rgba(166,218,255,.15)}
+.eve-avatar{width:40px;height:40px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#1a3a5c,#0a1628);border:1px solid rgba(166,218,255,.4);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;box-shadow:0 0 16px rgba(166,218,255,.3),inset 0 0 8px rgba(166,218,255,.1)}
 .eve-header-info{flex:1}
-.eve-name{font-size:13px;font-weight:600;color:var(--chrome2)}
-.eve-status{font-size:10px;color:var(--accent);display:flex;align-items:center;gap:5px}
+.eve-name{font-size:14px;font-weight:700;background:linear-gradient(135deg,#a6daff,#7eb8f0);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;color:#a6daff;letter-spacing:.3px}
+.eve-status{font-size:10px;color:#22c55e;display:flex;align-items:center;gap:5px;letter-spacing:.3px}
 .eve-status-dot{width:5px;height:5px;border-radius:50%;background:var(--green);animation:pulse-dot 2s infinite}
 .eve-ctrl-btn{background:transparent;border:none;color:var(--muted);cursor:pointer;font-size:13px;padding:4px 6px;border-radius:5px;transition:color .2s}
 .eve-ctrl-btn:hover{color:var(--chrome2)}
-#eve-messages{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px;scrollbar-width:thin}
+#eve-messages{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px;scrollbar-width:thin;background:transparent}
 .msg-row{display:flex;gap:8px;align-items:flex-end}
 .msg-row.user{flex-direction:row-reverse}
 .msg-avatar{width:26px;height:26px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:11px;border:1px solid rgba(180,190,220,.1)}
 .msg-avatar.eve{background:linear-gradient(135deg,#1e3a5f,#0d2137);color:var(--accent)}
 .msg-avatar.adam{background:linear-gradient(135deg,#1a1f2e,#0d1117);color:var(--muted2)}
 .msg-avatar.user-av{background:rgba(166,218,255,.1);color:var(--chrome2)}
-.msg-bubble{max-width:240px;padding:9px 12px;border-radius:12px;font-size:11.5px;line-height:1.55;color:var(--text)}
-.msg-bubble.eve{background:rgba(166,218,255,.07);border:1px solid rgba(166,218,255,.12);border-bottom-left-radius:3px}
-.msg-bubble.adam{background:rgba(100,100,130,.12);border:1px solid rgba(180,190,220,.08);border-bottom-left-radius:3px}
-.msg-bubble.user{background:rgba(96,165,250,.12);border:1px solid rgba(96,165,250,.2);border-bottom-right-radius:3px}
+.msg-bubble{max-width:260px;padding:10px 14px;border-radius:14px;font-size:12px;line-height:1.6;color:var(--text);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
+.msg-bubble.eve{background:linear-gradient(135deg,rgba(166,218,255,.08),rgba(166,218,255,.04));border:1px solid rgba(166,218,255,.15);border-radius:14px 14px 14px 4px}
+.msg-bubble.adam{background:linear-gradient(135deg,rgba(100,100,130,.14),rgba(100,100,130,.06));border:1px solid rgba(180,190,220,.12);border-radius:14px 14px 14px 4px}
+.msg-bubble.user{background:linear-gradient(135deg,rgba(96,165,250,.15),rgba(96,165,250,.08));border:1px solid rgba(96,165,250,.25);border-radius:14px 14px 4px 14px}
 .msg-meta{font-size:9px;color:var(--muted);margin-top:3px;padding:0 4px}
 .msg-row.user .msg-meta{text-align:right}
 .eve-alert-badge{font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;padding:2px 6px;border-radius:4px;margin-bottom:5px;display:inline-block}
-.eve-alert-badge.l1{background:rgba(96,165,250,.12);color:var(--blue)}
+.eve-alert-badge.l1{background:linear-gradient(135deg,rgba(96,165,250,.2),rgba(96,165,250,.1));border:1px solid rgba(96,165,250,.3);color:#93c5fd;border-radius:6px;padding:3px 8px;font-size:9px;font-weight:700;letter-spacing:.5px;text-transform:uppercase}
 .eve-alert-badge.l2{background:rgba(245,158,11,.12);color:var(--amber)}
 .eve-alert-badge.l3{background:rgba(239,68,68,.12);color:var(--red)}
-.eve-input-row{padding:10px 12px;border-top:1px solid rgba(166,218,255,.07);display:flex;gap:8px;align-items:center}
-#eve-input{flex:1;background:rgba(255,255,255,.04);border:1px solid rgba(166,218,255,.1);border-radius:20px;padding:7px 14px;color:var(--text);font-size:11.5px;font-family:var(--sans);outline:none}
+.eve-input-row{padding:12px 14px;border-top:1px solid rgba(166,218,255,.08);background:rgba(255,255,255,.03);display:flex;gap:10px;align-items:center}
+#eve-input{flex:1;background:rgba(166,218,255,.05);border:1px solid rgba(166,218,255,.15);border-radius:24px;padding:9px 16px;color:#e2e8f0;font-size:12px;font-family:var(--sans);outline:none;transition:border-color .2s,box-shadow .2s}
 #eve-input::placeholder{color:var(--muted)}
-.eve-send-btn,.eve-mic-btn{width:30px;height:30px;border-radius:50%;background:rgba(166,218,255,.1);border:1px solid rgba(166,218,255,.2);color:var(--accent);cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;transition:all .2s}
+#eve-input:focus{border-color:rgba(166,218,255,.4);box-shadow:0 0 0 3px rgba(166,218,255,.06)}
+.eve-send-btn{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,rgba(166,218,255,.2),rgba(166,218,255,.1));border:1px solid rgba(166,218,255,.3);color:var(--accent);cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;transition:all .2s;box-shadow:0 0 12px rgba(166,218,255,.15)}
+.eve-send-btn:hover{background:linear-gradient(135deg,rgba(166,218,255,.28),rgba(166,218,255,.14));box-shadow:0 0 20px rgba(166,218,255,.3)}
+.eve-mic-btn{width:34px;height:34px;border-radius:50%;background:transparent;border:1px solid rgba(166,218,255,.18);color:var(--muted2);cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;transition:all .2s}
 .eve-mic-btn{background:transparent;border-color:rgba(166,218,255,.15);color:var(--muted2)}
 .eve-mic-btn.listening{background:rgba(239,68,68,.15);border-color:var(--red);color:var(--red);animation:pulse-dot 1s infinite}
 #voice-settings{display:none;position:absolute;bottom:70px;right:0;background:var(--card);border:1px solid rgba(166,218,255,.12);border-radius:12px;padding:14px;width:280px;box-shadow:0 8px 24px rgba(0,0,0,.5);z-index:1001}
@@ -1243,7 +1691,15 @@ Settings
 <button class="ind-btn" onclick="switchIndustry('fin',this)">Finance</button>
 <button class="ind-btn" onclick="switchIndustry('health',this)">Healthcare</button>
 </div>
-<div class="topbar-alert" onclick="showScreen('compliance',document.querySelectorAll('.nav-item')[6])">
+<button class="topbar-pill" onclick="showScreen('trustloop', null)" title="Open Eve / Trust Loop">
+<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+<span>Eve</span>
+</button>
+<button class="topbar-pill" onclick="showScreen('trustloop', null)" title="Open Adam / Trust Loop">
+<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+<span>Adam</span>
+</button>
+<div class="topbar-alert" onclick="showScreen('compliance',document.querySelectorAll('.nav-item')[9])">
 <span class="alert-dot"></span>
 <span id="topbar-alert-count">2 Critical Cases</span>
 </div>
@@ -1262,330 +1718,516 @@ Settings
 <button class="btn-primary" onclick="showScreen('eden',document.querySelectorAll('.nav-item')[2])">View Details →</button>
 </div>
 
-<!-- AT A GLANCE STATS -->
-<div class="stat-card stat-hero stat-hero-warn" onclick="showScreen('trustscore',document.querySelectorAll('.nav-item')[1])" style="cursor:pointer;text-align:center;padding:22px 26px 18px;margin-bottom:12px;position:relative;overflow:hidden">
-<div class="stat-label" style="text-transform:uppercase;letter-spacing:1.6px;font-size:11px;margin-bottom:8px;color:var(--muted2)">Global Trust Score</div>
-<div style="display:flex;align-items:center;justify-content:center;gap:24px;flex-wrap:wrap">
-<div style="display:flex;align-items:baseline;gap:12px">
-<div class="stat-value" id="dash-trust" style="color:#F59E0B;font-size:64px;font-weight:700;line-height:1">74</div>
-<div style="font-size:14px;color:var(--red);font-weight:600;display:flex;align-items:center;gap:4px">▼ 2 pts</div>
-</div>
-<svg class="ts-hero-sparkline" viewBox="0 0 140 44" style="width:140px;height:44px" aria-hidden="true">
-<defs>
-<linearGradient id="tsSparkFill" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stop-color="#F59E0B" stop-opacity="0.35"/><stop offset="100%" stop-color="#F59E0B" stop-opacity="0"/></linearGradient>
-</defs>
-<path d="M2 14 L25 11 L48 18 L71 22 L94 20 L117 28 L138 32 L138 44 L2 44 Z" fill="url(#tsSparkFill)"/>
-<path d="M2 14 L25 11 L48 18 L71 22 L94 20 L117 28 L138 32" stroke="#F59E0B" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-<circle cx="138" cy="32" r="2.4" fill="#F59E0B"/>
-<circle cx="138" cy="32" r="4.5" fill="#F59E0B" fill-opacity="0.25"/>
-</svg>
-</div>
-<div class="stat-change warn" id="dash-trust-sub" style="margin-top:8px;font-size:11px;justify-content:center">Below 80 — Not Certified</div>
-<div class="ts-hero-progress" aria-hidden="true"><div class="ts-hero-progress-fill" style="width:74%"></div></div>
-<div class="ts-hero-timestamp" id="dash-trust-updated">Last updated: just now</div>
-</div>
-<div class="dash-row-stats" style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px">
-<div class="stat-card stat-card-clickable" onclick="showScreen('eden',document.querySelectorAll('.nav-item')[2])">
-<div class="stat-label">Bias Score</div>
-<div class="stat-value" id="dash-bias" style="color:#EF4444;font-size:22px">67</div>
-<div class="stat-change down">Below 0.80 threshold</div>
-<span class="stat-arrow">→</span>
-</div>
-<div class="stat-card stat-card-clickable" onclick="showScreen('obsidian',document.querySelectorAll('.nav-item')[3])">
-<div class="stat-label">Fraud Integrity</div>
-<div class="stat-value" id="dash-fraud" style="color:#22C55E;font-size:22px">91</div>
-<div class="stat-change up">Strong — No active flags</div>
-<span class="stat-arrow">→</span>
-</div>
-<div class="stat-card stat-card-clickable" onclick="showScreen('compliance',document.querySelectorAll('.nav-item')[9])">
-<div class="stat-label">Compliance Rate</div>
-<div class="stat-value" id="dash-compliance" style="font-size:22px">82%</div>
-<div class="stat-change warn">3 deadlines in 30 days</div>
-<span class="stat-arrow">→</span>
-</div>
-<div class="stat-card stat-card-clickable" onclick="showScreen('sentinel',document.querySelectorAll('.nav-item')[12])">
-<div class="stat-label">Sentinel Coverage</div>
-<div class="stat-value" style="color:var(--accent);font-size:22px">96%</div>
-<div class="stat-change up">All critical models monitored</div>
-<span class="stat-arrow">→</span>
-</div>
-</div>
+<!-- ░░░ DASHBOARD REDESIGN ░░░ -->
 
-<!-- SECOND ROW STATS -->
-<div class="grid-4 dash-row-stats-quiet" style="margin-bottom:16px">
-<div class="stat-card stat-card-clickable stat-card-alert-pulse" onclick="showScreen('warroom',document.querySelectorAll('.nav-item')[11])">
-<div class="stat-label">Active Incidents</div>
-<div class="stat-value" style="color:#EF4444;font-size:20px">1</div>
-<div class="stat-change down">Case #2847 — Critical</div>
-<span class="stat-arrow">→</span>
-</div>
-<div class="stat-card stat-card-clickable" onclick="showScreen('modellibrary',document.querySelectorAll('.nav-item')[14])">
-<div class="stat-label">Models Monitored</div>
-<div class="stat-value" style="color:var(--accent);font-size:20px">5</div>
-<div class="stat-change">2 at risk · 3 stable</div>
-<span class="stat-arrow">→</span>
-</div>
-<div class="stat-card stat-card-clickable stat-card-amber-border" onclick="showScreen('compliance',document.querySelectorAll('.nav-item')[9])">
-<div class="stat-label">Cert. Due for Renewal</div>
-<div class="stat-value" style="color:#F59E0B;font-size:20px">2</div>
-<div class="stat-change warn">ECOA due in 8 days</div>
-<span class="stat-arrow">→</span>
-</div>
-<div class="stat-card stat-card-clickable" onclick="showScreen('compliance',document.querySelectorAll('.nav-item')[9])">
-<div class="stat-label">New Regulations</div>
-<div class="stat-value" style="color:var(--accent);font-size:20px">3</div>
-<div class="stat-change">This month — review needed</div>
-<span class="stat-arrow">→</span>
-</div>
-</div>
+<!-- 4 STAT CARDS -->
+<div class="dr-grid-4">
 
-<!-- MAIN CONTENT GRID -->
-<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+  <!-- CARD 1 — Bias Score -->
+  <div class="dr-card dr-stat-card">
+    <div class="dr-card-head">
+      <div class="dr-card-title">Bias Score</div>
+      <div class="dr-card-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+    </div>
+    <div class="dr-stat-num" style="color:#ef4444">67</div>
+    <div class="dr-trend-pill dr-trend-down">▼ below 0.80 threshold</div>
+    <div class="dr-vis"><canvas id="dash-bias-sparkline" height="180"></canvas></div>
+    <div class="dr-card-foot"><button class="dr-card-min" title="Minimize">−</button></div>
+  </div>
 
-<!-- WORLD MAP - Geo Fraud & Bias -->
-<div class="card" style="padding:16px;grid-column:1/-1">
-<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-<div>
-<div style="font-size:12px;font-weight:600;color:var(--chrome2)">Global Bias & Fraud Activity Map</div>
-<div style="font-size:10px;color:var(--muted)">Click a region to see regulations and incident data</div>
-</div>
-<div style="display:flex;gap:8px;align-items:center">
-<span style="font-size:10px;color:var(--muted);display:flex;align-items:center;gap:4px"><span style="width:8px;height:8px;border-radius:50%;background:#EF4444;display:inline-block"></span>High Risk</span>
-<span style="font-size:10px;color:var(--muted);display:flex;align-items:center;gap:4px"><span style="width:8px;height:8px;border-radius:50%;background:#F59E0B;display:inline-block"></span>Medium</span>
-<span style="font-size:10px;color:var(--muted);display:flex;align-items:center;gap:4px"><span style="width:8px;height:8px;border-radius:50%;background:#22C55E;display:inline-block"></span>Low</span>
-<button id="world-map-toggle-btn" class="btn-ghost btn-ghost-bordered" style="font-size:10px;padding:3px 10px" onclick="toggleWorldMap()">Full Map</button>
-</div>
-</div>
-<div id="world-map-container" style="height:180px;background:var(--bg3);border-radius:10px;overflow:hidden;position:relative;transition:height .35s ease">
-<svg viewBox="0 0 800 400" style="width:100%;height:100%" id="world-map-svg">
-<!-- Simplified world map regions -->
-<rect width="800" height="400" fill="#1a1b24"/>
-<!-- North America -->
-<ellipse cx="160" cy="160" rx="90" ry="70" fill="rgba(239,68,68,0.3)" stroke="rgba(239,68,68,0.85)" stroke-width="1.5" style="cursor:pointer" onclick="showMapRegion('North America')" class="map-region"/>
-<text x="160" y="155" text-anchor="middle" fill="#EF4444" font-size="11" font-weight="600" font-family="Inter">North America</text>
-<text x="160" y="170" text-anchor="middle" fill="rgba(239,68,68,0.85)" font-size="11" font-family="Inter">847 incidents</text>
-<!-- Europe -->
-<ellipse cx="390" cy="130" rx="70" ry="55" fill="rgba(245,158,11,0.2)" stroke="rgba(245,158,11,0.75)" stroke-width="1.5" style="cursor:pointer" onclick="showMapRegion('Europe')" class="map-region"/>
-<text x="390" y="125" text-anchor="middle" fill="#F59E0B" font-size="11" font-weight="600" font-family="Inter">Europe</text>
-<text x="390" y="140" text-anchor="middle" fill="rgba(245,158,11,0.85)" font-size="11" font-family="Inter">312 incidents</text>
-<!-- Asia -->
-<ellipse cx="580" cy="160" rx="100" ry="70" fill="rgba(245,158,11,0.2)" stroke="rgba(245,158,11,0.7)" stroke-width="1.5" style="cursor:pointer" onclick="showMapRegion('Asia Pacific')" class="map-region"/>
-<text x="580" y="155" text-anchor="middle" fill="#F59E0B" font-size="11" font-weight="600" font-family="Inter">Asia Pacific</text>
-<text x="580" y="170" text-anchor="middle" fill="rgba(245,158,11,0.85)" font-size="11" font-family="Inter">198 incidents</text>
-<!-- South America -->
-<ellipse cx="220" cy="290" rx="55" ry="65" fill="rgba(34,197,94,0.2)" stroke="rgba(34,197,94,0.65)" stroke-width="1.5" style="cursor:pointer" onclick="showMapRegion('South America')" class="map-region"/>
-<text x="220" y="285" text-anchor="middle" fill="#22C55E" font-size="11" font-weight="600" font-family="Inter">S. America</text>
-<text x="220" y="300" text-anchor="middle" fill="rgba(34,197,94,0.85)" font-size="11" font-family="Inter">47 incidents</text>
-<!-- Africa -->
-<ellipse cx="400" cy="270" rx="60" ry="65" fill="rgba(34,197,94,0.15)" stroke="rgba(34,197,94,0.55)" stroke-width="1.5" style="cursor:pointer" onclick="showMapRegion('Africa')" class="map-region"/>
-<text x="400" y="265" text-anchor="middle" fill="#22C55E" font-size="11" font-weight="600" font-family="Inter">Africa</text>
-<text x="400" y="280" text-anchor="middle" fill="rgba(34,197,94,0.85)" font-size="11" font-family="Inter">23 incidents</text>
-<!-- Pulse animation for high risk area -->
-<circle cx="160" cy="160" r="20" fill="none" stroke="rgba(239,68,68,0.85)" stroke-width="1.5">
-<animate attributeName="r" from="20" to="55" dur="2s" repeatCount="indefinite"/>
-<animate attributeName="opacity" from="0.95" to="0" dur="2s" repeatCount="indefinite"/>
-<animate attributeName="stroke-width" from="2" to="0.4" dur="2s" repeatCount="indefinite"/>
-</circle>
-<circle cx="160" cy="160" r="14" fill="none" stroke="rgba(239,68,68,0.7)" stroke-width="1.2">
-<animate attributeName="r" from="14" to="36" dur="2s" begin="0.6s" repeatCount="indefinite"/>
-<animate attributeName="opacity" from="0.85" to="0" dur="2s" begin="0.6s" repeatCount="indefinite"/>
-</circle>
-<!-- Region popup -->
-<g id="map-popup" style="display:none">
-<rect x="10" y="10" width="180" height="80" rx="6" fill="var(--card)" stroke="var(--border2)"/>
-<text x="20" y="30" fill="var(--chrome2)" font-size="11" font-family="Inter" font-weight="600" id="map-popup-region">North America</text>
-<text x="20" y="46" fill="var(--muted2)" font-size="9" font-family="Inter" id="map-popup-incidents">847 bias incidents · 23 fraud flags</text>
-<text x="20" y="62" fill="var(--muted)" font-size="9" font-family="Inter" id="map-popup-regs">12 active regulations</text>
-<text x="20" y="78" fill="var(--accent)" font-size="9" font-family="Inter" style="cursor:pointer" onclick="showScreen('compliance',document.querySelectorAll('.nav-item')[9])">View regulations →</text>
-</g>
-</svg>
-</div>
-</div>
+  <!-- CARD 2 — Protected Groups -->
+  <div class="dr-card dr-stat-card">
+    <div class="dr-card-head">
+      <div class="dr-card-title">Protected Groups</div>
+      <div class="dr-card-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+    </div>
+    <div class="dr-stat-num" style="color:#22c55e">8</div>
+    <div class="dr-trend-pill dr-trend-up">↗ +2.3% this month</div>
+    <div class="dr-vis"><svg id="dash-protected-field" width="100%" height="180" viewBox="0 0 200 180" preserveAspectRatio="xMidYMid meet"></svg></div>
+    <div class="dr-card-foot"><button class="dr-card-min" title="Minimize">−</button></div>
+  </div>
 
-<!-- ACTIVE CASES -->
-<div class="card" style="padding:16px">
-<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-<div style="font-size:12px;font-weight:600;color:var(--chrome2)" id="dash-cases">Active Compliance Cases</div>
-<button class="btn-ghost" style="font-size:10px;padding:3px 8px" onclick="showScreen('compliance',document.querySelectorAll('.nav-item')[3])">View all</button>
-</div>
-<div style="display:flex;flex-direction:column;gap:8px">
-<div class="case-row case-row-critical" onclick="showScreen('warroom',document.querySelectorAll('.nav-item')[4])">
-<div style="display:flex;justify-content:space-between;margin-bottom:4px">
-<span style="font-size:11px;font-weight:600;color:var(--text)">Case #2847 — Bias Critical</span>
-<span class="badge badge-red" style="font-size:9px">Active</span>
-</div>
-<div style="font-size:10px;color:var(--muted)">Personnel Assignment — Hispanic technicians 2.3x disparity</div>
-<div style="font-size:11px;color:#EF4444;font-weight:700;margin-top:5px">7 days remaining</div>
-<span class="case-arrow">→</span>
-</div>
-<div class="case-row case-row-amber" onclick="showScreen('compliance',document.querySelectorAll('.nav-item')[3])">
-<div style="display:flex;justify-content:space-between;margin-bottom:4px">
-<span style="font-size:11px;font-weight:600;color:var(--text)">ECOA Compliance Review</span>
-<span class="badge badge-amber" style="font-size:9px">Due Soon</span>
-</div>
-<div style="font-size:10px;color:var(--muted)">Annual bias audit — lending decisions review</div>
-<div style="font-size:9px;color:var(--amber);margin-top:4px">8 days remaining</div>
-<span class="case-arrow">→</span>
-</div>
-<div class="case-row case-row-green">
-<div style="display:flex;justify-content:space-between;margin-bottom:4px">
-<span style="font-size:11px;font-weight:600;color:var(--text)">DoD RAI Certification</span>
-<span class="badge badge-green" style="font-size:9px">Compliant</span>
-</div>
-<div style="font-size:10px;color:var(--muted)">Responsible AI principles — all 5 validated</div>
-<div style="font-size:9px;color:var(--muted);margin-top:4px">Renewed Q1 2026</div>
-</div>
-</div>
-</div>
+  <!-- CARD 3 — Parity Index -->
+  <div class="dr-card dr-stat-card">
+    <div class="dr-card-head">
+      <div class="dr-card-title">Parity Index</div>
+      <div class="dr-card-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
+    </div>
+    <div class="dr-stat-num" style="color:#22c55e">0.95</div>
+    <div class="dr-trend-pill dr-trend-up">↗ +2.3% this month</div>
+    <div class="dr-vis"><canvas id="dash-parity-chart" height="180"></canvas></div>
+    <div class="dr-card-foot"><button class="dr-card-min" title="Minimize">−</button></div>
+  </div>
 
-<!-- TRUST LOOP MINI -->
-<div class="card trustloop-card" style="padding:16px;position:relative">
-<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-<div style="font-size:12px;font-weight:600;color:var(--chrome2)">Trust Loop — Quick Chat</div>
-<div style="display:flex;gap:6px">
-<button class="btn-ghost btn-ghost-bordered" style="font-size:10px;padding:3px 10px" onclick="showScreen('trustloop',document.querySelectorAll('.nav-item')[14])">Expand</button>
-<button class="trustloop-close-btn" onclick="showScreen('dashboard',document.querySelectorAll('.nav-item')[1])" title="Close">✕</button>
-</div>
-</div>
-<div class="trustloop-msgs" id="dash-tl-msgs">
-<div class="trustloop-msg-eve">
-<div class="trustloop-msg-author"><span class="trustloop-msg-dot"></span>Eve</div>
-<div style="display:flex;gap:8px;align-items:flex-start">
-<div style="width:22px;height:22px;background:linear-gradient(135deg,#A6DAFF,#7C9EFF);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:10px;font-weight:700;color:#000">E</div>
-<div class="trustloop-msg-bubble" id="dash-tl-greeting">Good morning. Trust Score is 74 — below certification threshold. The fix for Case #2847 is ready in Atonement Core. Recommend deploying today.</div>
-</div>
-</div>
-</div>
-<div style="display:flex;gap:8px">
-<input type="text" id="dash-tl-input" placeholder="Ask Eve or Adam..." style="flex:1;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:8px 10px;font-size:11px;color:var(--text);font-family:var(--sans);outline:none" onkeydown="if(event.key==='Enter')dashTLSend()"/>
-<button class="btn-primary" style="padding:8px 12px;font-size:11px" onclick="dashTLSend()">Send</button>
-</div>
-</div>
+  <!-- CARD 4 — Active Alerts -->
+  <div class="dr-card dr-stat-card">
+    <div class="dr-card-head">
+      <div class="dr-card-title">Active Alerts</div>
+      <div class="dr-card-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
+    </div>
+    <div class="dr-stat-num" style="color:#f59e0b">2</div>
+    <div class="dr-trend-pill dr-trend-up">↗ +2.3% this month</div>
+    <div class="dr-vis dr-vis-heat">
+      <div class="dr-heat-grid" id="dash-alert-heat"></div>
+      <div class="dr-heat-legend"></div>
+      <div class="dr-heat-scale"><span>0</span><span>40</span></div>
+    </div>
+    <div class="dr-card-foot"><button class="dr-card-min" title="Minimize">−</button></div>
+  </div>
 
 </div>
 
-<!-- BOTTOM ROW -->
-<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px">
+<!-- ░░ GLOBAL TRUST SCORE PANEL ░░ -->
+<div class="dr-card dr-trust-panel">
+  <div class="dr-panel-head">
+    <div class="dr-panel-head-left">
+      <div class="dr-panel-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+      <div>
+        <div class="dr-panel-title">Global Trust Score</div>
+        <div class="dr-panel-sub">Comprehensive overview of AI Model Integrity</div>
+      </div>
+    </div>
+    <div class="dr-trend-pill dr-trend-up">↗ +2.3% this month</div>
+  </div>
+  <div class="dr-panel-divider"></div>
 
-<!-- MODELS NEEDING ATTENTION -->
-<div class="card" style="padding:16px">
-<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-<div style="font-size:12px;font-weight:600;color:var(--chrome2)">Models Needing Attention</div>
-<button class="btn-ghost view-all-link" onclick="showScreen('modellibrary',document.querySelectorAll('.nav-item')[14])">View all →</button>
-</div>
-<div style="display:flex;flex-direction:column;gap:8px">
-<div class="model-row model-row-red mna-row">
-<div class="mna-row-info">
-<div class="mna-row-title">Personnel Assignment v2.4</div>
-<div class="mna-row-issue">Disparate Impact 0.67 — below threshold</div>
-<div class="mna-row-meta">Flagged 7 days ago</div>
-</div>
-<button class="mna-fix-btn" onclick="event.stopPropagation();showScreen('atonement',document.querySelectorAll('.nav-item')[5])">Fix →</button>
-</div>
-<div class="model-row model-row-amber mna-row">
-<div class="mna-row-info">
-<div class="mna-row-title">Mission Readiness v1.1</div>
-<div class="mna-row-issue">Forecast drift 12% — Halo watch active</div>
-<div class="mna-row-meta">Flagged 3 days ago</div>
-</div>
-<button class="mna-fix-btn" onclick="event.stopPropagation();showScreen('atonement',document.querySelectorAll('.nav-item')[5])">Fix →</button>
-</div>
-<div class="model-row model-row-amber mna-row">
-<div class="mna-row-info">
-<div class="mna-row-title">Maintenance Routing v1.2</div>
-<div class="mna-row-issue">Region skew detected — 2 zones over-served</div>
-<div class="mna-row-meta">Flagged 1 day ago</div>
-</div>
-<button class="mna-fix-btn" onclick="event.stopPropagation();showScreen('atonement',document.querySelectorAll('.nav-item')[5])">Fix →</button>
-</div>
-</div>
+  <div class="dr-trust-center">
+    <div class="dr-trust-score" id="dr-trust-score">0.87</div>
+    <div class="dr-trust-label">Within Compliance</div>
+    <div class="dr-trust-progress"><div class="dr-trust-progress-fill" style="width:87%"></div></div>
+  </div>
 
-</div>
+  <div class="dr-trust-cols">
+    <div class="dr-trust-col">
+      <div class="dr-trust-col-label">Bias Detection</div>
+      <div class="dr-trust-col-num" style="color:#22c55e">92%</div>
+      <div class="dr-mini-bar"><div class="dr-mini-bar-fill" style="width:92%;background:#22c55e"></div></div>
+    </div>
+    <div class="dr-trust-col">
+      <div class="dr-trust-col-label">Fraud Prevention</div>
+      <div class="dr-trust-col-num" style="color:#22c55e">83%</div>
+      <div class="dr-mini-bar"><div class="dr-mini-bar-fill" style="width:83%;background:#22c55e"></div></div>
+    </div>
+    <div class="dr-trust-col">
+      <div class="dr-trust-col-label">Compliance</div>
+      <div class="dr-trust-col-num" style="color:#22c55e">85%</div>
+      <div class="dr-mini-bar"><div class="dr-mini-bar-fill" style="width:85%;background:#22c55e"></div></div>
+    </div>
+  </div>
 
-<!-- MODEL HEALTH OVERVIEW -->
-<div class="card" style="padding:16px">
-<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-<div style="font-size:12px;font-weight:600;color:var(--chrome2)">Model Health Overview</div>
-<button class="btn-ghost view-all-link" onclick="showScreen('modellibrary',document.querySelectorAll('.nav-item')[14])">View all models →</button>
-</div>
-<div class="mh-table">
-<div class="mh-row mh-head">
-<div class="mh-col mh-col-name">Model</div>
-<div class="mh-col mh-col-score">Trust</div>
-<div class="mh-col mh-col-status">Status</div>
-<div class="mh-col mh-col-time">Last checked</div>
-</div>
-<div class="mh-row" onclick="showScreen('eden',document.querySelectorAll('.nav-item')[2])">
-<div class="mh-col mh-col-name">Personnel Assignment v2.4</div>
-<div class="mh-col mh-col-score" style="color:#EF4444">67</div>
-<div class="mh-col mh-col-status"><span class="badge badge-red badge-pulse" style="font-size:9px">At Risk</span></div>
-<div class="mh-col mh-col-time">2 hours ago</div>
-</div>
-<div class="mh-row" onclick="showScreen('modellibrary',document.querySelectorAll('.nav-item')[14])">
-<div class="mh-col mh-col-name">Mission Readiness v1.1</div>
-<div class="mh-col mh-col-score" style="color:#F59E0B">82</div>
-<div class="mh-col mh-col-status"><span class="badge badge-amber" style="font-size:9px">Watch</span></div>
-<div class="mh-col mh-col-time">4 hours ago</div>
-</div>
-<div class="mh-row" onclick="showScreen('modellibrary',document.querySelectorAll('.nav-item')[14])">
-<div class="mh-col mh-col-name">Fraud Detection v3.2</div>
-<div class="mh-col mh-col-score" style="color:#22C55E">91</div>
-<div class="mh-col mh-col-status"><span class="badge badge-green" style="font-size:9px">Stable</span></div>
-<div class="mh-col mh-col-time">1 hour ago</div>
-</div>
-<div class="mh-row" onclick="showScreen('modellibrary',document.querySelectorAll('.nav-item')[14])">
-<div class="mh-col mh-col-name">Maintenance Routing v1.2</div>
-<div class="mh-col mh-col-score" style="color:#F59E0B">78</div>
-<div class="mh-col mh-col-status"><span class="badge badge-amber" style="font-size:9px">Watch</span></div>
-<div class="mh-col mh-col-time">3 hours ago</div>
-</div>
-</div>
+  <div class="dr-cert-box">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+    <div class="dr-cert-title">Certified by Obsidian</div>
+    <div class="dr-cert-sub">Public Trust Badge Preview</div>
+  </div>
+
+  <div class="dr-panel-actions">
+    <button class="dr-btn-ghost"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>Refresh Analysis</button>
+  </div>
 </div>
 
-<!-- CERT RENEWALS -->
-<div class="card" style="padding:16px">
-<div style="font-size:12px;font-weight:600;color:var(--chrome2);margin-bottom:12px">Certification Renewals</div>
-<div style="display:flex;flex-direction:column;gap:8px">
-<div style="padding:8px;background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.2);border-radius:8px">
-<div style="display:flex;justify-content:space-between;margin-bottom:3px">
-<span style="font-size:11px;font-weight:600;color:var(--text)">ECOA Annual Review</span>
-<span style="font-size:10px;color:var(--red);font-weight:600">8 days</span>
-</div>
-<div style="font-size:9px;color:var(--muted)">Due Nov 11, 2026</div>
-</div>
-<div style="padding:8px;background:rgba(245,158,11,.06);border:1px solid rgba(245,158,11,.2);border-radius:8px">
-<div style="display:flex;justify-content:space-between;margin-bottom:3px">
-<span style="font-size:11px;font-weight:600;color:var(--text)">ISO 42001 Cert</span>
-<span style="font-size:10px;color:var(--amber);font-weight:600">23 days</span>
-</div>
-<div style="font-size:9px;color:var(--muted)">Due Nov 26, 2026</div>
-</div>
-<div style="padding:8px;background:rgba(34,197,94,.06);border:1px solid rgba(34,197,94,.2);border-radius:8px">
-<div style="display:flex;justify-content:space-between;margin-bottom:3px">
-<span style="font-size:11px;font-weight:600;color:var(--text)">DoD RAI Compliance</span>
-<span style="font-size:10px;color:var(--green);font-weight:600">Renewed</span>
-</div>
-<div style="font-size:9px;color:var(--muted)">Q1 2026 — Next Q1 2027</div>
-</div>
+<!-- ░░ ROW: FAIRNESS REPORT  +  REMEDIATION SUGGESTIONS ░░ -->
+<div class="dr-2col">
+
+  <!-- LEFT: FAIRNESS REPORT -->
+  <div class="dr-card dr-section-panel">
+    <div class="dr-section-head">
+      <div class="dr-section-head-left">
+        <div class="dr-section-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></div>
+        <div>
+          <div class="dr-section-title">Fairness Report</div>
+          <div class="dr-section-sub">Latest statistical measures of algorithmic fairness</div>
+        </div>
+      </div>
+      <div class="dr-section-head-right">
+        <span class="dr-section-time">Last run 10/10/2025</span>
+        <button class="dr-dots" title="More">⋯</button>
+      </div>
+    </div>
+    <div class="dr-panel-divider"></div>
+
+    <!-- Metric 1 -->
+    <div class="dr-metric">
+      <div class="dr-metric-row">
+        <div class="dr-metric-label">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+          Disparate Impact Ratio
+        </div>
+        <span class="dr-badge dr-badge-red"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/></svg>Violation</span>
+      </div>
+      <div class="dr-metric-row dr-metric-thresh">
+        <span>Current: <strong>0.73</strong></span>
+        <span>Threshold: 0.8</span>
+      </div>
+      <div class="dr-mini-bar"><div class="dr-mini-bar-fill" style="width:73%;background:#ef4444"></div></div>
+      <div class="dr-metric-ctx">Context: Female approval rate / Male approval rate</div>
+      <div class="dr-metric-rule">Must be &gt; 0.80 for fairness compliance</div>
+    </div>
+
+    <!-- Metric 2 -->
+    <div class="dr-metric">
+      <div class="dr-metric-row">
+        <div class="dr-metric-label">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><polyline points="17 11 19 13 23 9"/></svg>
+          Equalized Odds Difference
+        </div>
+        <span class="dr-badge dr-badge-amber"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/></svg>Warning</span>
+      </div>
+      <div class="dr-metric-row dr-metric-thresh">
+        <span>Current: <strong>0.12</strong></span>
+        <span>Threshold: 0.1</span>
+      </div>
+      <div class="dr-mini-bar"><div class="dr-mini-bar-fill" style="width:85%;background:#f59e0b"></div></div>
+      <div class="dr-metric-ctx">Context: Difference in true positive rates across protected groups</div>
+      <div class="dr-metric-rule">Should be &lt; 0.10 for fairness compliance</div>
+    </div>
+
+    <!-- Metric 3 -->
+    <div class="dr-metric">
+      <div class="dr-metric-row">
+        <div class="dr-metric-label">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+          Demographic Parity
+        </div>
+        <span class="dr-badge dr-badge-green"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>Pass</span>
+      </div>
+      <div class="dr-metric-row dr-metric-thresh">
+        <span>Current: <strong>0.89</strong></span>
+        <span>Threshold: 0.8</span>
+      </div>
+      <div class="dr-mini-bar"><div class="dr-mini-bar-fill" style="width:89%;background:#22c55e"></div></div>
+      <div class="dr-metric-ctx">Context: Ratio of positive outcomes across demographics</div>
+      <div class="dr-metric-rule">Should be &gt; 0.80 for fairness compliance</div>
+    </div>
+
+    <!-- Metric 4 -->
+    <div class="dr-metric">
+      <div class="dr-metric-row">
+        <div class="dr-metric-label">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+          Demographic Parity
+        </div>
+        <span class="dr-badge dr-badge-green"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>Pass</span>
+      </div>
+      <div class="dr-metric-row dr-metric-thresh">
+        <span>Current: <strong>0.89</strong></span>
+        <span>Threshold: 0.8</span>
+      </div>
+      <div class="dr-mini-bar"><div class="dr-mini-bar-fill" style="width:89%;background:#22c55e"></div></div>
+      <div class="dr-metric-ctx">Context: Ratio of positive outcomes across demographics</div>
+      <div class="dr-metric-rule">Should be &gt; 0.80 for fairness compliance</div>
+    </div>
+
+    <!-- Metric 5 -->
+    <div class="dr-metric">
+      <div class="dr-metric-row">
+        <div class="dr-metric-label">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c.36.15.71.34 1 .58.36.29.59.7.59 1.42v.09a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          Calibration Score
+        </div>
+        <span class="dr-badge dr-badge-green"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>Pass</span>
+      </div>
+      <div class="dr-metric-row dr-metric-thresh">
+        <span>Current: <strong>0.94</strong></span>
+        <span>Threshold: 0.9</span>
+      </div>
+      <div class="dr-mini-bar"><div class="dr-mini-bar-fill" style="width:94%;background:#22c55e"></div></div>
+      <div class="dr-metric-ctx">Context: Prediction accuracy consistency across protected groups</div>
+      <div class="dr-metric-rule">Must be &gt; 0.9 for fairness compliance</div>
+    </div>
+
+    <div class="dr-section-actions">
+      <button class="dr-btn-ghost"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>Refresh Analysis</button>
+      <button class="dr-btn-ghost"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Export Analysis</button>
+    </div>
+  </div>
+
+  <!-- RIGHT: REMEDIATION SUGGESTIONS -->
+  <div class="dr-card dr-section-panel">
+    <div class="dr-section-head">
+      <div class="dr-section-head-left">
+        <div class="dr-section-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></div>
+        <div>
+          <div class="dr-section-title">Remediation Suggestions</div>
+          <div class="dr-section-sub">AI Bias Remediation and Model Improvement Recommendations</div>
+        </div>
+      </div>
+      <div class="dr-section-head-right">
+        <span class="dr-section-time">Last run 10/10/2025</span>
+        <button class="dr-dots" title="More">⋯</button>
+      </div>
+    </div>
+    <div class="dr-section-filter">Filter By Use Case</div>
+    <div class="dr-panel-divider"></div>
+
+    <!-- Item 1 -->
+    <div class="dr-rem">
+      <div class="dr-metric-row">
+        <div class="dr-metric-label">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M6 21v-2a6 6 0 0 1 12 0v2"/></svg>
+          Gender Bias in Auto Loans
+        </div>
+        <span class="dr-badge dr-badge-red"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>High Priority</span>
+      </div>
+      <div class="dr-rem-action">Action: Re-weight Feature Importance in Loan Approval Calculation</div>
+      <ul class="dr-rem-list">
+        <li>Reduce weight of gender-correlated features (income, employment type) by 15%</li>
+        <li class="dim">Expected Impact: Estimated disparate impact ratio improvement from 0.73 to 0.82</li>
+        <li class="dim">Timeline: ~ 4 - 5 days</li>
+      </ul>
+    </div>
+
+    <!-- Item 2 -->
+    <div class="dr-rem">
+      <div class="dr-metric-row">
+        <div class="dr-metric-label">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          Age Group Disparities
+        </div>
+        <span class="dr-badge dr-badge-amber"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>Medium Priority</span>
+      </div>
+      <div class="dr-rem-action">Action: Retrain Model with Balanced Data</div>
+      <ul class="dr-rem-list">
+        <li>Include additional training data for underrepresented age groups</li>
+        <li class="dim">Expected Impact: Improve fairness across all age demographics by 8-12%</li>
+        <li class="dim">Timeline: ~ 2 - 3 weeks</li>
+      </ul>
+    </div>
+
+    <!-- Item 3 -->
+    <div class="dr-rem">
+      <div class="dr-metric-row">
+        <div class="dr-metric-label">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M6 21v-2a6 6 0 0 1 12 0v2"/></svg>
+          Zip Code Proxy Discrimination
+        </div>
+        <span class="dr-badge dr-badge-amber"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>Medium Priority</span>
+      </div>
+      <div class="dr-rem-action">Action: Remove Proxy Geographic Features</div>
+      <ul class="dr-rem-list">
+        <li>Replace ZIP code with alternative risk indicators</li>
+        <li class="dim">Expected Impact: Reduce racial bias while maintaining 94% model accuracy</li>
+        <li class="dim">Timeline: ~ 1 week</li>
+      </ul>
+    </div>
+
+    <!-- Item 4 -->
+    <div class="dr-rem">
+      <div class="dr-metric-row">
+        <div class="dr-metric-label">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M6 21v-2a6 6 0 0 1 12 0v2"/></svg>
+          Income Threshold Optimization
+        </div>
+        <span class="dr-badge dr-badge-yellow"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>Low Priority</span>
+      </div>
+      <div class="dr-rem-action">Action: Adjust Decision Boundaries</div>
+      <ul class="dr-rem-list">
+        <li>Fine-tune income thresholds based on regional cost of living</li>
+        <li class="dim">Expected Impact: Minor improvement in income-based fairness metrics</li>
+        <li class="dim">Timeline: ~ 1 - 4 days</li>
+      </ul>
+    </div>
+
+    <div class="dr-section-actions">
+      <button class="dr-btn-ghost"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>Refresh Analysis</button>
+      <button class="dr-btn-ghost"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Export Analysis</button>
+    </div>
+  </div>
+
 </div>
 
-<div class="data-commons-block">
-<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-<div style="font-size:11px;font-weight:600;color:var(--accent)">Cardinal Data Commons</div>
-<span class="dc-badge">Post-Series A</span>
-</div>
-<div style="font-size:10px;color:var(--muted);margin-bottom:10px;line-height:1.5">Industry-wide anonymized bias and fraud benchmarks. See how your Trust Score compares to peers. Opt-in data sharing for better insights.</div>
-<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:10px">
-<div class="dc-stat"><div class="dc-stat-label">Industry Avg</div><div class="dc-stat-num" style="color:var(--accent)">79</div></div>
-<div class="dc-stat"><div class="dc-stat-label">Your Score</div><div class="dc-stat-num" style="color:var(--amber)">74</div></div>
-<div class="dc-stat"><div class="dc-stat-label">Percentile</div><div class="dc-stat-num" style="color:var(--amber)">38th</div></div>
-</div>
-<button class="btn-ghost dc-explore-btn">Explore Data Commons</button>
-</div></div>
+<!-- ░░ ROW: DEMOGRAPHIC BREAKDOWN  +  BIAS ANALYSIS RESULTS ░░ -->
+<div class="dr-2col">
 
-</div><!-- close grid row -->
+  <!-- LEFT: DEMOGRAPHIC BREAKDOWN -->
+  <div class="dr-card dr-section-panel">
+    <div class="dr-section-head">
+      <div class="dr-section-head-left">
+        <div class="dr-section-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+        <div>
+          <div class="dr-section-title">Demographic Breakdown</div>
+          <div class="dr-section-sub">Application and approval patterns by protected groups</div>
+        </div>
+      </div>
+      <div class="dr-section-head-right">
+        <span class="dr-section-time">Last run 10/10/2025</span>
+        <button class="dr-dots" title="More">⋯</button>
+      </div>
+    </div>
+    <div class="dr-panel-divider"></div>
 
-<div class="dash-last-refreshed"><span class="lr-dot"></span>Last refreshed <span id="dash-last-refreshed-time">just now</span></div>
+    <!-- Section 1 -->
+    <div class="dr-sub">
+      <div class="dr-sub-title">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M6 21v-2a6 6 0 0 1 12 0v2"/></svg>
+        Gender Distribution &amp; Approval Rates
+      </div>
+      <div class="dr-sub-box dr-sub-gender">
+        <canvas id="dash-gender-donut" width="100" height="100"></canvas>
+        <div class="dr-gender-rows">
+          <div class="dr-gender-row"><span class="dr-dot" style="background:#60a5fa"></span><span class="dr-gender-name">Male</span><span class="dr-gender-pct">78% approved</span><span class="dr-gender-share">52% of applications</span></div>
+          <div class="dr-gender-row"><span class="dr-dot" style="background:#a78bfa"></span><span class="dr-gender-name">Female</span><span class="dr-gender-pct">78% approved</span><span class="dr-gender-share">52% of applications</span></div>
+          <div class="dr-gender-row"><span class="dr-dot" style="background:#84cc16"></span><span class="dr-gender-name">Other</span><span class="dr-gender-pct">78% approved</span><span class="dr-gender-share">22% of applications</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 2 -->
+    <div class="dr-sub">
+      <div class="dr-sub-title">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        Age Group Approval Rates
+      </div>
+      <div class="dr-sub-box"><canvas id="dash-age-chart" height="150"></canvas></div>
+    </div>
+
+    <!-- Section 3 -->
+    <div class="dr-sub">
+      <div class="dr-sub-title">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+        Racial/Ethnic Demographic Analysis
+      </div>
+      <div class="dr-sub-box dr-eth-list">
+        <div class="dr-eth-row"><span class="dr-eth-label">White</span><div class="dr-eth-right"><div class="dr-eth-pct">74.3%</div><div class="dr-eth-apps">415 applications</div></div></div>
+        <div class="dr-eth-row"><span class="dr-eth-label">Black or African American</span><div class="dr-eth-right"><div class="dr-eth-pct">67.3%</div><div class="dr-eth-apps">213 applications</div></div></div>
+        <div class="dr-eth-row"><span class="dr-eth-label">Hispanic</span><div class="dr-eth-right"><div class="dr-eth-pct">56.2%</div><div class="dr-eth-apps">174 applications</div></div></div>
+        <div class="dr-eth-row"><span class="dr-eth-label">Asian or Pacific Islander</span><div class="dr-eth-right"><div class="dr-eth-pct">71.5%</div><div class="dr-eth-apps">136 applications</div></div></div>
+        <div class="dr-eth-row"><span class="dr-eth-label">Other/Unknown</span><div class="dr-eth-right"><div class="dr-eth-pct">15.3%</div><div class="dr-eth-apps">74 applications</div></div></div>
+      </div>
+    </div>
+
+    <div class="dr-section-actions">
+      <button class="dr-btn-ghost"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>Refresh Analysis</button>
+      <button class="dr-btn-ghost"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Export Analysis</button>
+    </div>
+  </div>
+
+  <!-- RIGHT: BIAS ANALYSIS RESULTS -->
+  <div class="dr-card dr-section-panel">
+    <div class="dr-section-head">
+      <div class="dr-section-head-left">
+        <div class="dr-section-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></div>
+        <div>
+          <div class="dr-section-title">Bias Analysis Results</div>
+          <div class="dr-section-sub">Fairness assessment across protected categories</div>
+        </div>
+      </div>
+      <div class="dr-section-head-right">
+        <span class="dr-section-time">Last run 10/10/2025</span>
+        <button class="dr-dots" title="More">⋯</button>
+      </div>
+    </div>
+    <div class="dr-panel-divider"></div>
+
+    <!-- A — Gender Bias -->
+    <div class="dr-bias">
+      <div class="dr-metric-row">
+        <div class="dr-metric-label">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M6 21v-2a6 6 0 0 1 12 0v2"/></svg>
+          Gender Bias
+        </div>
+        <span class="dr-badge dr-pill-red"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>High Impact</span>
+      </div>
+      <div class="dr-bias-row">
+        <div class="dr-bias-fair-label">Fairness Score</div>
+        <div class="dr-bias-fair-num" style="color:#ef4444">52/100</div>
+      </div>
+      <div class="dr-mini-bar"><div class="dr-mini-bar-fill" style="width:52%;background:#ef4444"></div></div>
+      <div class="dr-metric-ctx">Male loan applicants approved at 0.75x rate of female loan applicants</div>
+      <div class="dr-bias-rec">Recommendation: Reweight gender-correlated features</div>
+    </div>
+
+    <!-- B — Age Discrimination -->
+    <div class="dr-bias">
+      <div class="dr-metric-row">
+        <div class="dr-metric-label">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          Age Discrimination
+        </div>
+        <span class="dr-badge dr-pill-green"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>Low Impact</span>
+      </div>
+      <div class="dr-bias-row">
+        <div class="dr-bias-fair-label">Fairness Score</div>
+        <div class="dr-bias-fair-num" style="color:#22c55e">86/100</div>
+      </div>
+      <div class="dr-mini-bar"><div class="dr-mini-bar-fill" style="width:86%;background:#22c55e"></div></div>
+      <div class="dr-metric-ctx">Age groups show balanced loan approval rates</div>
+      <div class="dr-bias-rec">Recommendation: Continue monitoring fairness score</div>
+    </div>
+
+    <!-- C — Racial Equity -->
+    <div class="dr-bias">
+      <div class="dr-metric-row">
+        <div class="dr-metric-label">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+          Racial Equity
+        </div>
+        <span class="dr-badge dr-pill-amber"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>Medium Impact</span>
+      </div>
+      <div class="dr-bias-row">
+        <div class="dr-bias-fair-label">Fairness Score</div>
+        <div class="dr-bias-fair-num" style="color:#f59e0b">75/100</div>
+      </div>
+      <div class="dr-mini-bar"><div class="dr-mini-bar-fill" style="width:75%;background:#f59e0b"></div></div>
+      <div class="dr-metric-ctx">Marginal disparities detected in racial minority group loan outcomes</div>
+      <div class="dr-bias-rec">Recommendation: Review ZIP code and income correlations</div>
+    </div>
+
+    <!-- D — Income Bias -->
+    <div class="dr-bias">
+      <div class="dr-metric-row">
+        <div class="dr-metric-label">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+          Income Bias
+        </div>
+        <span class="dr-badge dr-pill-green"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>Low Impact</span>
+      </div>
+      <div class="dr-bias-row">
+        <div class="dr-bias-fair-label">Fairness Score</div>
+        <div class="dr-bias-fair-num" style="color:#22c55e">87/100</div>
+      </div>
+      <div class="dr-mini-bar"><div class="dr-mini-bar-fill" style="width:87%;background:#22c55e"></div></div>
+      <div class="dr-metric-ctx">Income-based decisions within acceptable parameters</div>
+      <div class="dr-bias-rec">Recommendation: No action currently required</div>
+    </div>
+
+    <!-- Regulatory Compliance -->
+    <div class="dr-regulatory">
+      <div class="dr-metric-row" style="margin-bottom:0">
+        <div class="dr-metric-label">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><path d="M12 3v18M5 7l14 0M5 7l-3 7a4 4 0 0 0 8 0l-3-7M19 7l-3 7a4 4 0 0 0 8 0l-3-7"/></svg>
+          Regulatory Compliance
+        </div>
+        <button class="dr-btn-ghost dr-btn-tiny" onclick="showScreen('compliance', null)">Go to Compliance Exchange +</button>
+      </div>
+      <div class="dr-reg-box">
+        <div class="dr-reg-row">
+          <span class="dr-reg-label">ECOA Compliance</span>
+          <span class="dr-reg-right"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg><span style="color:#f59e0b">68.3%</span></span>
+        </div>
+        <div class="dr-reg-row">
+          <span class="dr-reg-label">FCRA Standards</span>
+          <span class="dr-reg-right"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11 14 15 10"/></svg><span style="color:#22c55e">85.1%</span></span>
+        </div>
+        <div class="dr-reg-row">
+          <span class="dr-reg-label">NYC Bias Audit</span>
+          <span class="dr-reg-right"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg><span style="color:#f59e0b">72.4%</span></span>
+        </div>
+        <div class="dr-reg-row">
+          <span class="dr-reg-label">EU AI Act</span>
+          <span class="dr-reg-right"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11 14 15 10"/></svg><span style="color:#22c55e">78.2%</span></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="dr-section-actions">
+      <button class="dr-btn-ghost"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>Refresh Analysis</button>
+      <button class="dr-btn-ghost"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Export Analysis</button>
+    </div>
+  </div>
+
+</div>
+
 </div><!-- /screen-dashboard -->
 
 <div id="screen-eden" class="screen">
@@ -5295,6 +5937,259 @@ function startDashHeatmaps() {
   buildLiveHeatmap('dash-heatmap-fraud', 6, 7, 2200);
 }
 
+/* ── DASHBOARD REDESIGN — chart and visualization init ── */
+function initDashboardCharts() {
+  try { drawDashBiasSparkline(); } catch(e) { console.log('bias sparkline:', e.message); }
+  try { drawDashParityChart(); } catch(e) { console.log('parity chart:', e.message); }
+  try { drawDashGenderDonut(); } catch(e) { console.log('gender donut:', e.message); }
+  try { drawDashAgeChart(); } catch(e) { console.log('age chart:', e.message); }
+  try { drawDashProtectedField(); } catch(e) { console.log('protected field:', e.message); }
+  try { drawDashAlertHeat(); } catch(e) { console.log('alert heat:', e.message); }
+}
+
+function _hidpiCanvas(c, cssW, cssH) {
+  if (!c || c.tagName !== 'CANVAS') return null;
+  var dpr = window.devicePixelRatio || 1;
+  c.style.width = cssW + 'px';
+  c.style.height = cssH + 'px';
+  c.width = Math.round(cssW * dpr);
+  c.height = Math.round(cssH * dpr);
+  var ctx = c.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  return ctx;
+}
+
+function drawDashBiasSparkline() {
+  var c = document.getElementById('dash-bias-sparkline');
+  if (!c || c.tagName !== 'CANVAS') return;
+  var W = c.parentNode.clientWidth || 240; var H = 180;
+  var ctx = _hidpiCanvas(c, W, H);
+  ctx.clearRect(0, 0, W, H);
+  var labels = ['22 May','23','24','25','26','27','28 May'];
+  var datasets = [
+    { color: '#60a5fa', data: [22,35,28,40,25,38,32] },
+    { color: '#f59e0b', data: [30,25,38,22,42,28,35] },
+    { color: '#ef4444', data: [18,28,22,35,30,25,40] }
+  ];
+  var pad = { l: 22, r: 10, t: 8, b: 28 };
+  var min = 0, max = 60;
+  var plotW = W - pad.l - pad.r;
+  var plotH = H - pad.t - pad.b;
+  ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+  ctx.lineWidth = 1;
+  for (var g = 0; g <= 4; g++) {
+    var y = pad.t + (plotH * g / 4);
+    ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(W - pad.r, y); ctx.stroke();
+  }
+  ctx.fillStyle = '#4b5563';
+  ctx.font = '9px Inter, system-ui, sans-serif';
+  ctx.textAlign = 'right';
+  for (var t = 0; t <= 4; t++) {
+    var v = max - (t * (max - min) / 4);
+    var yy = pad.t + (plotH * t / 4);
+    ctx.fillText(Math.round(v), pad.l - 4, yy + 3);
+  }
+  ctx.textAlign = 'center';
+  for (var i = 0; i < labels.length; i++) {
+    var xl = pad.l + (plotW * i / (labels.length - 1));
+    ctx.fillText(labels[i], xl, H - pad.b + 12);
+  }
+  datasets.forEach(function (ds) {
+    ctx.strokeStyle = ds.color;
+    ctx.lineWidth = 1.6;
+    ctx.beginPath();
+    ds.data.forEach(function (v, i) {
+      var x = pad.l + (plotW * i / (ds.data.length - 1));
+      var y = pad.t + plotH - ((v - min) / (max - min)) * plotH;
+      if (i === 0) ctx.moveTo(x, y); else {
+        var px = pad.l + (plotW * (i - 1) / (ds.data.length - 1));
+        var py = pad.t + plotH - ((ds.data[i - 1] - min) / (max - min)) * plotH;
+        var cx1 = px + (x - px) * 0.5;
+        var cx2 = px + (x - px) * 0.5;
+        ctx.bezierCurveTo(cx1, py, cx2, y, x, y);
+      }
+    });
+    ctx.stroke();
+    ctx.fillStyle = ds.color;
+    ds.data.forEach(function (v, i) {
+      var x = pad.l + (plotW * i / (ds.data.length - 1));
+      var y = pad.t + plotH - ((v - min) / (max - min)) * plotH;
+      ctx.beginPath(); ctx.arc(x, y, 2.4, 0, Math.PI * 2); ctx.fill();
+    });
+  });
+  // Mini legend along bottom
+  var legend = ['#60a5fa', '#f59e0b', '#ef4444'];
+  legend.forEach(function (col, i) {
+    ctx.fillStyle = col;
+    var lx = pad.l + 12 + i * 28;
+    ctx.beginPath(); ctx.arc(lx, H - 4, 3, 0, Math.PI * 2); ctx.fill();
+  });
+}
+
+function drawDashParityChart() {
+  var c = document.getElementById('dash-parity-chart');
+  if (!c || c.tagName !== 'CANVAS') return;
+  var W = c.parentNode.clientWidth || 240; var H = 180;
+  var ctx = _hidpiCanvas(c, W, H);
+  ctx.clearRect(0, 0, W, H);
+  var pad = { l: 24, r: 8, t: 8, b: 22 };
+  var plotW = W - pad.l - pad.r;
+  var plotH = H - pad.t - pad.b;
+  var bars = 20;
+  var heights = [];
+  // Deterministic-ish "random" heights
+  var seed = 1337;
+  function rnd() { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; }
+  for (var i = 0; i < bars; i++) heights.push(0.25 + rnd() * 0.75);
+  var dotColors = ['#f59e0b', '#10b981', '#ef4444', '#ec4899', '#3b82f6'];
+  var ticks = [0, 35, 75, 100, 125];
+  ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+  ctx.lineWidth = 1;
+  ctx.fillStyle = '#4b5563';
+  ctx.font = '8px Inter, system-ui, sans-serif';
+  ctx.textAlign = 'right';
+  ticks.forEach(function (t) {
+    var y = pad.t + plotH - (t / 125) * plotH;
+    ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(W - pad.r, y); ctx.stroke();
+    ctx.fillText(t, pad.l - 3, y + 3);
+  });
+  var bw = 6, gap = (plotW - bars * bw) / (bars - 1);
+  ctx.textAlign = 'center';
+  for (var j = 0; j < bars; j++) {
+    var bx = pad.l + j * (bw + gap);
+    var bh = heights[j] * plotH;
+    ctx.fillStyle = '#374151';
+    ctx.fillRect(bx, pad.t + plotH - bh, bw, bh);
+    ctx.fillStyle = dotColors[j % dotColors.length];
+    ctx.beginPath();
+    ctx.arc(bx + bw / 2, pad.t + plotH - bh - 4, 4, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.fillStyle = '#4b5563';
+  ctx.font = '8px Inter, system-ui, sans-serif';
+  for (var k = 0; k < bars; k += 4) {
+    var lx = pad.l + k * (bw + gap) + bw / 2;
+    ctx.fillText('18-25', lx, H - pad.b + 12);
+  }
+}
+
+function drawDashGenderDonut() {
+  var c = document.getElementById('dash-gender-donut');
+  if (!c || c.tagName !== 'CANVAS') return;
+  var ctx = _hidpiCanvas(c, 100, 100);
+  ctx.clearRect(0, 0, 100, 100);
+  var data = [52, 26, 22];
+  var colors = ['#60a5fa', '#a78bfa', '#84cc16'];
+  var total = data.reduce(function (a, b) { return a + b; }, 0);
+  var cx = 50, cy = 50, r = 42, cutout = 28;
+  var start = -Math.PI / 2;
+  data.forEach(function (v, i) {
+    var ang = (v / total) * Math.PI * 2;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.arc(cx, cy, r, start, start + ang);
+    ctx.closePath();
+    ctx.fillStyle = colors[i];
+    ctx.fill();
+    start += ang;
+  });
+  ctx.fillStyle = '#0d0e14';
+  ctx.beginPath(); ctx.arc(cx, cy, cutout, 0, Math.PI * 2); ctx.fill();
+}
+
+function drawDashAgeChart() {
+  var c = document.getElementById('dash-age-chart');
+  if (!c || c.tagName !== 'CANVAS') return;
+  var W = c.parentNode.clientWidth || 320; var H = 150;
+  var ctx = _hidpiCanvas(c, W, H);
+  ctx.clearRect(0, 0, W, H);
+  var values = [50, 80, 100, 70, 100, 100];
+  var pad = { l: 26, r: 10, t: 8, b: 22 };
+  var plotW = W - pad.l - pad.r;
+  var plotH = H - pad.t - pad.b;
+  var ticks = [0, 50, 100, 150];
+  ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+  ctx.lineWidth = 1;
+  ctx.fillStyle = '#4b5563';
+  ctx.font = '9px Inter, system-ui, sans-serif';
+  ctx.textAlign = 'right';
+  ticks.forEach(function (t) {
+    var y = pad.t + plotH - (t / 150) * plotH;
+    ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(W - pad.r, y); ctx.stroke();
+    ctx.fillText(t, pad.l - 3, y + 3);
+  });
+  var n = values.length;
+  var bw = Math.min(28, plotW / n - 8);
+  var step = plotW / n;
+  ctx.textAlign = 'center';
+  values.forEach(function (v, i) {
+    var bx = pad.l + i * step + (step - bw) / 2;
+    var bh = (v / 150) * plotH;
+    ctx.fillStyle = '#818cf8';
+    var bx2 = bx, by = pad.t + plotH - bh;
+    var rad = 3;
+    ctx.beginPath();
+    ctx.moveTo(bx2 + rad, by);
+    ctx.lineTo(bx2 + bw - rad, by);
+    ctx.quadraticCurveTo(bx2 + bw, by, bx2 + bw, by + rad);
+    ctx.lineTo(bx2 + bw, by + bh);
+    ctx.lineTo(bx2, by + bh);
+    ctx.lineTo(bx2, by + rad);
+    ctx.quadraticCurveTo(bx2, by, bx2 + rad, by);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = '#4b5563';
+    ctx.fillText('18-25', bx + bw / 2, H - pad.b + 12);
+  });
+}
+
+function drawDashProtectedField() {
+  var svg = document.getElementById('dash-protected-field');
+  if (!svg) return;
+  while (svg.firstChild) svg.removeChild(svg.firstChild);
+  var rows = 10, cols = 10;
+  var W = 200, H = 180;
+  var cellW = W / cols, cellH = H / rows;
+  var palette = ['#3b82f6', '#06b6d4', '#10b981', '#84cc16', '#eab308', '#f97316', '#ef4444', '#8b5cf6'];
+  var seed = 7;
+  function rnd() { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; }
+  for (var r = 0; r < rows; r++) {
+    for (var col = 0; col < cols; col++) {
+      var cx = col * cellW + cellW / 2;
+      var cy = r * cellH + cellH / 2;
+      var rot = -60 + rnd() * 120;
+      var color = palette[(r + col) % palette.length];
+      var t = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      t.setAttribute('x', cx);
+      t.setAttribute('y', cy + 4);
+      t.setAttribute('text-anchor', 'middle');
+      t.setAttribute('fill', color);
+      t.setAttribute('font-size', '11');
+      t.setAttribute('font-family', 'Inter, system-ui, sans-serif');
+      t.setAttribute('transform', 'rotate(' + rot.toFixed(1) + ' ' + cx + ' ' + cy + ')');
+      t.style.opacity = '0.85';
+      t.textContent = '➤';
+      svg.appendChild(t);
+    }
+  }
+}
+
+function drawDashAlertHeat() {
+  var grid = document.getElementById('dash-alert-heat');
+  if (!grid) return;
+  grid.innerHTML = '';
+  var rows = 8, cols = 10;
+  for (var r = 0; r < rows; r++) {
+    for (var col = 0; col < cols; col++) {
+      var hue = (r * 10 + col * 4) % 360;
+      var d = document.createElement('div');
+      d.style.background = 'hsl(' + hue + ', 80%, 50%)';
+      d.style.opacity = '0.85';
+      grid.appendChild(d);
+    }
+  }
+}
+
 function startDashLastRefreshed() {
   if (window.__dashRefreshTimer) return;
   function fmt() {
@@ -5376,6 +6271,7 @@ function doLogin() {
     var eveBubble = document.getElementById('eve-bubble');
     if(eveBubble) eveBubble.style.display = 'flex';
     setTimeout(startDashHeatmaps, 300);
+    setTimeout(initDashboardCharts, 350);
     try { startDashLastRefreshed(); } catch(eLR) {}
     try { dimScores = Object.assign({}, INDUSTRY_SCORES[currentOrg]); } catch(e2) { console.log('dimScores:', e2.message); }
     try { DIMENSIONS = getDimensions(currentOrg); } catch(e3) { console.log('dims:', e3.message); }
@@ -5706,7 +6602,7 @@ function showScreen(name, navEl) {
  if(name==='echo') buildEcho(currentOrg);
  if(name==='modellibrary') buildModelLibrary(currentOrg);
  if(name==='lucid') buildLucid(currentOrg);
- if(name==='dashboard') { try{ refreshDashboardGreeting(); }catch(e){} }
+ if(name==='dashboard') { try{ refreshDashboardGreeting(); }catch(e){} setTimeout(function(){ try{ initDashboardCharts(); }catch(e){} }, 80); }
  if(name==='compliance') buildCompliance(currentOrg);
  if(name==='genesis') { setTimeout(()=>initGenesisLog(currentOrg),100); setTimeout(()=>buildPMProfiles(currentOrg),150); }
  if(name==='trustscore') { buildTrustScore(currentOrg); buildScoreDims(); buildTrustScoreNew(currentOrg); }
@@ -12074,6 +12970,81 @@ function closeModelDetail() {
       window.toggleSidebar();
     }
   });
+})();
+
+/* ── DRAGGABLE EVE FLOATING BUTTON ── */
+(function () {
+  function initDraggableEve() {
+    var bubble = document.getElementById('eve-bubble');
+    var btn = document.getElementById('eve-toggle-btn');
+    if (!bubble || !btn) { setTimeout(initDraggableEve, 500); return; }
+    if (bubble.__draggableInit) return;
+    bubble.__draggableInit = true;
+
+    bubble.style.position = 'fixed';
+    bubble.style.bottom = '28px';
+    bubble.style.right = '28px';
+    bubble.style.left = 'auto';
+    bubble.style.top = 'auto';
+    bubble.style.zIndex = '999';
+
+    var isDragging = false;
+    var hasDragged = false;
+    var startX, startY, origX, origY;
+    var dragThreshold = 5;
+
+    function onDown(e) {
+      var touch = (e.touches && e.touches[0]) ? e.touches[0] : e;
+      isDragging = true;
+      hasDragged = false;
+      startX = touch.clientX;
+      startY = touch.clientY;
+      var rect = bubble.getBoundingClientRect();
+      origX = rect.left;
+      origY = rect.top;
+      e.preventDefault();
+    }
+
+    function onMove(e) {
+      if (!isDragging) return;
+      var touch = (e.touches && e.touches[0]) ? e.touches[0] : e;
+      var dx = touch.clientX - startX;
+      var dy = touch.clientY - startY;
+      if (Math.abs(dx) > dragThreshold || Math.abs(dy) > dragThreshold) hasDragged = true;
+      if (hasDragged) {
+        var nx = Math.max(8, Math.min(window.innerWidth - bubble.offsetWidth - 8, origX + dx));
+        var ny = Math.max(8, Math.min(window.innerHeight - bubble.offsetHeight - 8, origY + dy));
+        bubble.style.left = nx + 'px';
+        bubble.style.top = ny + 'px';
+        bubble.style.right = 'auto';
+        bubble.style.bottom = 'auto';
+        btn.style.cursor = 'grabbing';
+      }
+    }
+
+    function onUp(e) {
+      if (!isDragging) return;
+      isDragging = false;
+      btn.style.cursor = 'pointer';
+      if (hasDragged) {
+        // Suppress the click that would otherwise toggle the panel
+        var stopOnce = function (ev) {
+          ev.stopPropagation();
+          ev.preventDefault();
+          btn.removeEventListener('click', stopOnce, true);
+        };
+        btn.addEventListener('click', stopOnce, true);
+      }
+    }
+
+    btn.addEventListener('mousedown', onDown);
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+    btn.addEventListener('touchstart', onDown, { passive: false });
+    document.addEventListener('touchmove', onMove, { passive: false });
+    document.addEventListener('touchend', onUp);
+  }
+  initDraggableEve();
 })();
 </script>
 </body>
