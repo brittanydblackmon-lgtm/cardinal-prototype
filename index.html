@@ -6268,17 +6268,7 @@ function doLogin() {
       appEl.style.height = '100vh';
       appEl.style.flex = '1';
     }
-    // Set current user name based on org
-    var userMap = {ad:'Anthony Broadnax', fin:'Riley Whitmore', health:'Dr. Maya Osei'};
-    var initialsMap = {ad:'AB', fin:'RW', health:'MO'};
-    var orgMap = {ad:'Atlas Defense Systems', fin:'Blackmoor Wealth', health:'Sterling Health'};
-    window.currentUserName = userMap[currentOrg] || 'You';
-    var _av = document.getElementById('sidebar-avatar');
-    var _un = document.getElementById('sidebar-user-name');
-    var _uo = document.getElementById('sidebar-user-org');
-    if(_av) _av.textContent = initialsMap[currentOrg] || 'U';
-    if(_un) _un.textContent = userMap[currentOrg] || 'User';
-    if(_uo) _uo.textContent = orgMap[currentOrg] || '';
+    // Sidebar user card, sidebar trust mini, topbar subtitle — set via syncIndustrySidebarChrome() at end of loadIndustry()
     var eveBubble = document.getElementById('eve-bubble');
     if(eveBubble) eveBubble.style.display = 'flex';
     setTimeout(startDashHeatmaps, 300);
@@ -6310,6 +6300,7 @@ function switchIndustry(org, btn) {
  try { destroyCharts(); } catch(e) {}
  try { initCharts(); } catch(e) {}
  try { updateDashboardIndustry(org); } catch(e) { console.warn('updateDashboardIndustry:', e.message); }
+ try { syncIndustrySidebarChrome(org); } catch(e) { console.warn('syncIndustrySidebarChrome:', e.message); }
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -6601,6 +6592,39 @@ function safeHTML(id, html) {
   if(el) el.innerHTML = html;
 }
 
+function syncIndustrySidebarChrome(org) {
+ var userMap = {ad:'Anthony Broadnax', fin:'Riley Whitmore', health:'Dr. Maya Osei'};
+ var orgMap = {ad:'Atlas Defense Systems', fin:'Blackmoor Wealth Group', health:'Sterling Health'};
+ var initialsMap = {ad:'AB', fin:'RW', health:'MO'};
+
+ var nameEl = document.getElementById('sidebar-user-name');
+ var orgEl = document.getElementById('sidebar-user-org');
+ var avatarEl = document.getElementById('sidebar-avatar');
+
+ if(nameEl) nameEl.textContent = userMap[org] || 'User';
+ if(orgEl) orgEl.textContent = orgMap[org] || '';
+ if(avatarEl) avatarEl.textContent = initialsMap[org] || 'U';
+ window.currentUserName = userMap[org] || '';
+
+ var scoreMap = {ad:74, fin:81, health:83};
+ var scoreColorMap = {ad:'#F59E0B', fin:'#22C55E', health:'#22C55E'};
+ var statusMap = {ad:'Below 80 threshold', fin:'✓ Certified', health:'✓ Certified'};
+
+ var scoreEl = document.getElementById('sidebar-score');
+ var statusEl = document.getElementById('sidebar-status');
+
+ if(scoreEl) { scoreEl.textContent = scoreMap[org]; scoreEl.style.color = scoreColorMap[org]; }
+ if(statusEl) statusEl.textContent = statusMap[org];
+
+ var subMap = {
+  ad: 'Atlas Defense Systems · Tier 1 Pilot',
+  fin: 'Blackmoor Wealth Group · Tier 1 Pilot',
+  health: 'Sterling Health · Tier 1 Pilot'
+ };
+ var subEl = document.getElementById('topbar-sub');
+ if(subEl) subEl.textContent = subMap[org] || '';
+}
+
 
 function loadIndustry(org) {
  const d = DATA[org];
@@ -6608,10 +6632,7 @@ function loadIndustry(org) {
  const sc = scoreColor(score);
 
  safeSet('sidebar-org-name', d.orgName);
- safeSet('topbar-sub', d.orgName + ' · Tier 1 Pilot');
- safeSet('sidebar-score', score);
- safeStyle('sidebar-score', 'color', sc);
- safeSet('sidebar-status', score >= 80 ? '✓ Certified' : '⚠ Below 80 threshold');
+
  safeSet('big-score', score);
  safeStyle('big-score', 'color', sc);
  safeSet('dash-trust', score);
@@ -6689,6 +6710,7 @@ function loadIndustry(org) {
  try { buildModelLibrary(org); } catch(e) {}
  try { buildLucid(org); } catch(e) {}
  try { buildEcho(org); } catch(e) {}
+ try { syncIndustrySidebarChrome(org); } catch(e) {}
 }
 
 function scoreColor(s) { return s>=80?'#22C55E':s>=70?'#F59E0B':'#EF4444'; }
