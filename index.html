@@ -3250,6 +3250,14 @@ Halo Core
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;font-size:11px;color:#94a3b8;"><span style="width:10px;height:10px;background:#22c55e;border-radius:2px;display:inline-block;"></span>Compliant</div>
     <div style="display:flex;align-items:center;gap:8px;font-size:11px;color:#94a3b8;"><span style="width:8px;height:8px;background:#60a5fa;border-radius:50%;display:inline-block;box-shadow:0 0 6px #60a5fa;"></span>Your Operations</div>
   </div>
+  <div style="position:absolute;bottom:12px;left:12px;display:flex;flex-direction:column;gap:4px;z-index:5;">
+    <button type="button" id="halo-zoom-in" style="width:28px;height:28px;background:rgba(13,14,20,0.9);border:1px solid rgba(166,218,255,0.2);border-radius:6px;color:#94a3b8;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;">+</button>
+    <button type="button" id="halo-zoom-out" style="width:28px;height:28px;background:rgba(13,14,20,0.9);border:1px solid rgba(166,218,255,0.2);border-radius:6px;color:#94a3b8;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;">−</button>
+    <button type="button" id="halo-zoom-reset" style="width:28px;height:28px;background:rgba(13,14,20,0.9);border:1px solid rgba(166,218,255,0.2);border-radius:6px;color:#94a3b8;font-size:11px;cursor:pointer;display:flex;align-items:center;justify-content:center;">⊙</button>
+  </div>
+  <div style="position:absolute;bottom:12px;left:50%;transform:translateX(-50%);font-size:10px;color:rgba(148,163,184,0.5);pointer-events:none;">
+    Scroll to zoom · Click country to focus · ⊙ to reset
+  </div>
 </div>
 </div>
 
@@ -8150,6 +8158,8 @@ function initHaloMap() {
   svgSel.attr('width', width).attr('height', height);
   svgSel.selectAll('*').remove();
 
+  var mapGroup = svgSel.append('g').attr('class', 'map-group');
+
   var projection = d3.geoNaturalEarth1()
     .scale(width / 6.5)
     .translate([width / 2, height / 2]);
@@ -8215,14 +8225,14 @@ function initHaloMap() {
       };
 
       var graticule = d3.geoGraticule()();
-      svgSel.append('path')
+      mapGroup.append('path')
         .datum(graticule)
         .attr('d', path)
         .attr('fill', 'none')
         .attr('stroke', 'rgba(255,255,255,0.04)')
         .attr('stroke-width', 0.5);
 
-      svgSel.append('g')
+      mapGroup.append('g')
         .selectAll('path')
         .data(countries.features)
         .enter()
@@ -8252,6 +8262,10 @@ function initHaloMap() {
             '<div style="font-size:10px;color:#f59e0b;margin-bottom:8px;">⏱ ' + info.deadline + '</div>' +
             info.regs.map(function(r){ return '<div style="font-size:11px;color:#94a3b8;margin-bottom:3px;">• ' + r + '</div>'; }).join('');
           tooltip.style.display = 'block';
+          tooltip.style.pointerEvents = 'none';
+          tooltip.style.transform = '';
+          tooltip.style.left = '';
+          tooltip.style.top = '';
           var bbox = container.getBoundingClientRect();
           var lx = Math.min(event.clientX - bbox.left + 12, width - 220);
           var ly = Math.min(event.clientY - bbox.top - 10, height - 160);
@@ -8260,7 +8274,46 @@ function initHaloMap() {
         })
         .on('mouseout', function() {
           var t = document.getElementById('halo-map-tooltip');
-          if (t) t.style.display = 'none';
+          if (!t) return;
+          if (String(t.dataset.haloPinned) === '1') return;
+          t.style.display = 'none';
+          t.style.pointerEvents = 'none';
+          t.style.transform = '';
+        })
+        .on('click', function(event, d) {
+          event.stopPropagation();
+          var name = countryNames[String(d.id)] || '';
+          if (!countryInfo[name]) return;
+          var bounds = path.bounds(d);
+          var dx = bounds[1][0] - bounds[0][0];
+          var dy = bounds[1][1] - bounds[0][1];
+          var x = (bounds[0][0] + bounds[1][0]) / 2;
+          var y = (bounds[0][1] + bounds[1][1]) / 2;
+          var scale = Math.max(1, Math.min(6, 0.9 / Math.max(dx / width, dy / height)));
+          var translate = [width / 2 - scale * x, height / 2 - scale * y];
+
+          svgSel.transition().duration(600).call(
+            zoom.transform,
+            d3.zoomIdentity.translate(translate[0], translate[1]).scale(scale)
+          );
+
+          setTimeout(function() {
+            var info = countryInfo[name];
+            if (!info) return;
+            var tooltip = document.getElementById('halo-map-tooltip');
+            if (!tooltip) return;
+            var riskColor = info.risk === 'CRITICAL' ? '#ef4444' : info.risk === 'WATCH' ? '#f59e0b' : '#22c55e';
+            tooltip.innerHTML = '<div style="font-size:13px;font-weight:700;color:#e2e8f0;margin-bottom:8px;">' + name + ' <span style="font-size:10px;background:' + riskColor + '22;color:' + riskColor + ';border:1px solid ' + riskColor + '44;border-radius:4px;padding:2px 8px;">' + info.risk + '</span></div>' +
+              '<div style="font-size:10px;color:#f59e0b;margin-bottom:10px;">⏱ ' + info.deadline + '</div>' +
+              info.regs.map(function(r){ return '<div style="font-size:11px;color:#94a3b8;margin-bottom:4px;">• ' + r + '</div>'; }).join('') +
+              '<div style="margin-top:10px;font-size:10px;color:#60a5fa;cursor:pointer;" onclick="document.getElementById(\'halo-map-tooltip\').style.display=\'none\';document.getElementById(\'halo-map-tooltip\').dataset.haloPinned=\'\';document.getElementById(\'halo-map-tooltip\').style.pointerEvents=\'none\';document.getElementById(\'halo-map-tooltip\').style.transform=\'\';">✕ Close</div>';
+            tooltip.style.display = 'block';
+            tooltip.style.pointerEvents = 'auto';
+            tooltip.dataset.haloPinned = '1';
+            tooltip.style.left = '50%';
+            tooltip.style.top = '20px';
+            tooltip.style.transform = 'translateX(-50%)';
+          }, 650);
         });
 
       var dots = {
@@ -8276,7 +8329,7 @@ function initHaloMap() {
         var projected = projection(coords);
         if (!projected) return;
 
-        svgSel.append('circle')
+        mapGroup.append('circle')
           .attr('cx', projected[0])
           .attr('cy', projected[1])
           .attr('r', 10)
@@ -8284,7 +8337,7 @@ function initHaloMap() {
           .attr('stroke', 'rgba(96,165,250,0.3)')
           .attr('stroke-width', 1);
 
-        svgSel.append('circle')
+        mapGroup.append('circle')
           .attr('cx', projected[0])
           .attr('cy', projected[1])
           .attr('r', 4)
@@ -8292,6 +8345,44 @@ function initHaloMap() {
           .attr('stroke', '#93c5fd')
           .attr('stroke-width', 1)
           .style('filter', 'drop-shadow(0 0 4px #60a5fa)');
+      });
+
+      var zoom = d3.zoom()
+        .scaleExtent([1, 8])
+        .on('zoom', function(event) {
+          mapGroup.attr('transform', event.transform);
+          var tt = document.getElementById('halo-map-tooltip');
+          if (!tt) return;
+          tt.style.display = 'none';
+          tt.style.pointerEvents = 'none';
+          tt.dataset.haloPinned = '';
+          tt.style.transform = '';
+        });
+
+      svgSel.call(zoom);
+
+      function wireZoomBtn(id, fn) {
+        var el = document.getElementById(id);
+        if (el) el.onclick = function(e) {
+          if (e) { e.preventDefault(); e.stopPropagation(); }
+          fn();
+        };
+      }
+      wireZoomBtn('halo-zoom-in', function() {
+        svgSel.transition().duration(300).call(zoom.scaleBy, 1.8);
+      });
+      wireZoomBtn('halo-zoom-out', function() {
+        svgSel.transition().duration(300).call(zoom.scaleBy, 0.6);
+      });
+      wireZoomBtn('halo-zoom-reset', function() {
+        var tt = document.getElementById('halo-map-tooltip');
+        if (tt) {
+          tt.style.display = 'none';
+          tt.style.pointerEvents = 'none';
+          tt.dataset.haloPinned = '';
+          tt.style.transform = '';
+        }
+        svgSel.transition().duration(400).call(zoom.transform, d3.zoomIdentity);
       });
     })
     .catch(function() {
@@ -8311,8 +8402,24 @@ window.addEventListener('resize', function() {
   }
 });
 
-function haloBackdropClick(ev){ if(ev.target.closest&&ev.target.closest('#halo-map-tooltip'))return; haloHideMapTip(false); }
-function haloHideMapTip(){ var p=document.getElementById('halo-map-pop'); if(p){ p.classList.remove('show'); p.innerHTML=''; } var tt=document.getElementById('halo-map-tooltip'); if(tt) tt.style.display='none'; }
+function haloBackdropClick(ev){
+  if (ev.target.closest && (ev.target.closest('#halo-map-tooltip') ||
+      ev.target.closest('#halo-zoom-in') ||
+      ev.target.closest('#halo-zoom-out') ||
+      ev.target.closest('#halo-zoom-reset'))) return;
+  haloHideMapTip(false);
+}
+function haloHideMapTip(){
+  var p=document.getElementById('halo-map-pop');
+  if(p){ p.classList.remove('show'); p.innerHTML=''; }
+  var tt=document.getElementById('halo-map-tooltip');
+  if(tt){
+    tt.style.display='none';
+    tt.style.pointerEvents='none';
+    tt.style.transform='';
+    tt.dataset.haloPinned='';
+  }
+}
 window.haloMapDismiss=function(ev){ if(ev){ ev.stopPropagation(); } haloHideMapTip(); };
 function haloTooltipMeta(code,o){
  var regs=[];
