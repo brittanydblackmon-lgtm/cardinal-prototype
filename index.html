@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Project Cardinal — Platform</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/topojson/3.0.2/topojson.min.js"></script>
 <template id="__bundler_thumbnail" data-bg-color="#04070d">
   <svg viewBox="0 0 120 80" xmlns="http://www.w3.org/2000/svg">
     <rect width="120" height="80" fill="#04070d"/>
@@ -3238,58 +3240,17 @@ Halo Core
 </div>
 
 <div class="halo-map-shell" style="position:relative" onclick="haloBackdropClick(event)">
-<div id="halo-map-pop" class="halo-map-tip" onclick="event.stopPropagation()" tabindex="-1"></div>
-<div class="halo-cc-us-hint" id="halo-us-hint"><span aria-hidden="true">↘</span> Click US to see state-level laws</div>
-<div class="halo-map-legend">
-<div class="halo-leg-row"><span class="halo-leg-sq" style="background:rgba(239,68,68,0.45);border-color:#ef4444"></span> Active Violation</div>
-<div class="halo-leg-row"><span class="halo-leg-sq" style="background:rgba(245,158,11,0.35);border-color:#f59e0b"></span> Deadline Approaching</div>
-<div class="halo-leg-row"><span class="halo-leg-sq" style="background:rgba(34,197,94,0.25);border-color:#22c55e"></span> Compliant</div>
-<div class="halo-leg-row"><span class="halo-leg-sq" style="border-radius:50%;width:11px;height:11px;background:#60a5fa;border-color:rgba(147,197,253,0.6)"></span> Your Operations</div>
+<div id="halo-map-container" style="width:100%;height:380px;background:#080c14;border-radius:12px;border:1px solid rgba(166,218,255,0.1);position:relative;overflow:hidden;">
+  <svg id="halo-world-svg" width="100%" height="380"></svg>
+  <div id="halo-map-tooltip" style="display:none;position:absolute;background:rgba(13,14,20,0.95);border:1px solid rgba(166,218,255,0.2);border-radius:8px;padding:12px 16px;pointer-events:none;min-width:200px;z-index:10;"></div>
+  <!-- Legend top right -->
+  <div style="position:absolute;top:12px;right:12px;background:rgba(8,12,20,0.85);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:10px 14px;">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;font-size:11px;color:#94a3b8;"><span style="width:10px;height:10px;background:#ef4444;border-radius:2px;display:inline-block;"></span>Active Violation</div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;font-size:11px;color:#94a3b8;"><span style="width:10px;height:10px;background:#f59e0b;border-radius:2px;display:inline-block;"></span>Deadline Approaching</div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;font-size:11px;color:#94a3b8;"><span style="width:10px;height:10px;background:#22c55e;border-radius:2px;display:inline-block;"></span>Compliant</div>
+    <div style="display:flex;align-items:center;gap:8px;font-size:11px;color:#94a3b8;"><span style="width:8px;height:8px;background:#60a5fa;border-radius:50%;display:inline-block;box-shadow:0 0 6px #60a5fa;"></span>Your Operations</div>
+  </div>
 </div>
-<svg id="halo-world-svg" viewBox="0 0 1000 448" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" width="100%" height="380" style="display:block;background:#080c14"><title>Halo geography</title>
-<g stroke-linejoin="round" id="halo-map-lands">
-<!-- Canada compliant -->
-<g class="halo-cc" tabindex="0" onclick="haloCountryClick(evt,'Canada')" role="button" aria-label="Canada"><polygon fill="rgba(34,197,94,0.2)" stroke="#22c55e" stroke-width="1.08" points="138,154 596,286 596,478 128,478 128,196"/></g>
-<!-- USA active violation -->
-<g class="halo-cc" tabindex="0" onclick="haloCountryClick(evt,'USA')" role="button" aria-label="United States"><polygon fill="rgba(239,68,68,0.35)" stroke="#ef4444" stroke-width="1.14" points="274,292 596,314 596,478 274,478"/></g>
-<!-- UK amber -->
-<g class="halo-cc" tabindex="0" onclick="haloCountryClick(evt,'UK')" role="button" aria-label="United Kingdom"><ellipse cx="456" cy="258" rx="38" ry="56" transform="rotate(-14 456 258)" fill="rgba(245,158,11,0.3)" stroke="#f59e0b" stroke-width="1"/></g>
-<!-- Germany amber -->
-<g class="halo-cc" tabindex="0" onclick="haloCountryClick(evt,'Germany')" role="button" aria-label="Germany"><ellipse cx="526" cy="286" rx="56" ry="54" transform="rotate(8 526 286)" fill="rgba(245,158,11,0.3)" stroke="#f59e0b" stroke-width="1"/></g>
-<!-- France amber -->
-<g class="halo-cc" tabindex="0" onclick="haloCountryClick(evt,'France')" role="button" aria-label="France"><ellipse cx="472" cy="316" rx="44" ry="74" transform="rotate(-18 472 316)" fill="rgba(245,158,11,0.3)" stroke="#f59e0b" stroke-width="1"/></g>
-<!-- Brazil gray -->
-<g class="halo-cc" tabindex="0" onclick="haloCountryClick(evt,'Brazil')" role="button" aria-label="Brazil"><ellipse cx="394" cy="398" rx="104" ry="118" transform="rotate(6 394 398)" fill="rgba(255,255,255,0.04)" stroke="rgba(148,163,184,0.38)" stroke-width="1"/></g>
-<!-- India gray -->
-<g class="halo-cc" tabindex="0" onclick="haloCountryClick(evt,'India')" role="button" aria-label="India"><ellipse cx="646" cy="348" rx="72" ry="108" transform="rotate(4 646 348)" fill="rgba(255,255,255,0.04)" stroke="rgba(148,163,184,0.38)" stroke-width="1"/></g>
-<!-- China gray -->
-<g class="halo-cc" tabindex="0" onclick="haloCountryClick(evt,'China')" role="button" aria-label="China"><ellipse cx="756" cy="322" rx="114" ry="138" transform="rotate(2 756 322)" fill="rgba(255,255,255,0.04)" stroke="rgba(148,163,184,0.38)" stroke-width="1"/></g>
-<!-- Japan amber -->
-<g class="halo-cc" tabindex="0" onclick="haloCountryClick(evt,'Japan')" role="button" aria-label="Japan"><ellipse cx="812" cy="318" rx="68" ry="112" transform="rotate(16 812 318)" fill="rgba(245,158,11,0.3)" stroke="#f59e0b" stroke-width="1"/></g>
-<!-- Australia green -->
-<g class="halo-cc" tabindex="0" onclick="haloCountryClick(evt,'Australia')" role="button" aria-label="Australia"><ellipse cx="798" cy="388" rx="114" ry="94" transform="rotate(-4 798 388)" fill="rgba(34,197,94,0.2)" stroke="#22c55e" stroke-width="1"/></g>
-</g>
-<g pointer-events="none">
-<g id="halo-deploy-ad" style="display:none">
-  <circle class="halo-deploy-dot" cx="358" cy="358" r="3" fill="#60a5fa" stroke="#93c5fd" stroke-width="1.2"/>
-  <circle class="halo-deploy-dot" cx="412" cy="374" r="3" fill="#60a5fa" stroke="#93c5fd" stroke-width="1.2"/>
-  <circle class="halo-deploy-dot" cx="526" cy="286" r="3" fill="#60a5fa" stroke="#93c5fd" stroke-width="1.2"/>
-  <circle class="halo-deploy-dot" cx="812" cy="318" r="3" fill="#60a5fa" stroke="#93c5fd" stroke-width="1.2"/>
-</g>
-<g id="halo-deploy-fin" style="display:none">
-  <circle class="halo-deploy-dot" cx="364" cy="322" r="3" fill="#60a5fa" stroke="#93c5fd" stroke-width="1.2"/>
-  <circle class="halo-deploy-dot" cx="312" cy="336" r="3" fill="#60a5fa" stroke="#93c5fd" stroke-width="1.2"/>
-  <circle class="halo-deploy-dot" cx="456" cy="258" r="3" fill="#60a5fa" stroke="#93c5fd" stroke-width="1.2"/>
-  <circle class="halo-deploy-dot" cx="314" cy="294" r="3" fill="#60a5fa" stroke="#93c5fd" stroke-width="1.2"/>
-</g>
-<g id="halo-deploy-health" style="display:none">
-  <circle class="halo-deploy-dot" cx="358" cy="374" r="3" fill="#60a5fa" stroke="#93c5fd" stroke-width="1.2"/>
-  <circle class="halo-deploy-dot" cx="302" cy="374" r="3" fill="#60a5fa" stroke="#93c5fd" stroke-width="1.2"/>
-  <circle class="halo-deploy-dot" cx="274" cy="366" r="3" fill="#60a5fa" stroke="#93c5fd" stroke-width="1.2"/>
-  <circle class="halo-deploy-dot" cx="312" cy="336" r="3" fill="#60a5fa" stroke="#93c5fd" stroke-width="1.2"/>
-</g>
-</g>
-</svg>
 </div>
 
 <div class="halo-panels-grid">
@@ -7627,7 +7588,7 @@ function showScreen(name, navEl) {
  compliance:'Compliance Exchange — Case Management & Regulatory Tracking'
  };
  document.getElementById('topbar-title').textContent = titles[name]||name;
- if(name==='halo') { try { stopHaloLive(); } catch(_h){} setTimeout(function(){ try { updateHaloIndustry(currentOrg||'ad'); } catch(_hh){} }, 110); }
+ if(name==='halo') { try { stopHaloLive(); } catch(_h){} setTimeout(initHaloMap, 100); setTimeout(function(){ try { updateHaloIndustry(currentOrg||'ad'); } catch(_hh){} }, 110); }
  if(name==='trustloop') setTimeout(initTLChat,100);
  const _extraTitles={pipeline:'Data Pipeline — How Cardinal Works',trustloop:'Trust Loop — Adam, Eve & You',modellibrary:'Model Library — Validated Data & Prevention Models',lucid:'✦ Lucid Layer — Adam & Eve Intelligence',echo:'◈ Echo Core — Audit Memory & Integrity'};
  if(name==='echo') buildEcho(currentOrg);
@@ -8171,16 +8132,187 @@ function updateHaloIndustry(org){
  var elSub=document.getElementById('halo-screen-subtitle'); if(elSub) elSub.textContent=cfg.subtitle;
  var pill=document.getElementById('halo-peer-pill'); if(pill) pill.textContent=cfg.peerPct;
  var sent=document.getElementById('halo-sentinel-pill'); if(sent) sent.textContent=cfg.sentinelLbl;
- [['halo-deploy-ad','ad'],['halo-deploy-fin','fin'],['halo-deploy-health','health']].forEach(function(pair){
- var g=document.getElementById(pair[0]); if(g) g.style.display=pair[1]===org?'':'none';
- });
  var dds=haloDeadlineHtml(org); var dd30=document.getElementById('halo-dd-30'); if(dd30) dd30.innerHTML=dds.dd30; var dd60=document.getElementById('halo-dd-60'); if(dd60) dd60.innerHTML=dds.dd60; var dd90=document.getElementById('halo-dd-90'); if(dd90) dd90.innerHTML=dds.dd90;
  var ex=document.getElementById('halo-exposure-q4'); if(ex) ex.textContent=cfg.exposureQ4;
  var rl=document.getElementById('halo-roi-line'); if(rl) rl.textContent=cfg.roiText;
  initHaloCoreCharts(org);
+ try { initHaloMap(); } catch(_hm) {}
 }
-function haloBackdropClick(ev){ if(ev.target.closest&&ev.target.closest('.halo-map-tip'))return; haloHideMapTip(false); }
-function haloHideMapTip(){ var p=document.getElementById('halo-map-pop'); if(p){ p.classList.remove('show'); p.innerHTML=''; } }
+function initHaloMap() {
+  if (typeof d3 === 'undefined' || typeof topojson === 'undefined') return;
+  var svgSel = d3.select('#halo-world-svg');
+  var container = document.getElementById('halo-map-container');
+  if (!svgSel.node() || !container) return;
+
+  var width = container.offsetWidth || 900;
+  var height = 380;
+
+  svgSel.attr('width', width).attr('height', height);
+  svgSel.selectAll('*').remove();
+
+  var projection = d3.geoNaturalEarth1()
+    .scale(width / 6.5)
+    .translate([width / 2, height / 2]);
+
+  var path = d3.geoPath().projection(projection);
+
+  var countryRisk = {
+    'United States of America': {risk:'violation', color:'rgba(239,68,68,0.5)', stroke:'#ef4444'},
+    'United Kingdom': {risk:'deadline', color:'rgba(245,158,11,0.4)', stroke:'#f59e0b'},
+    'Germany': {risk:'deadline', color:'rgba(245,158,11,0.4)', stroke:'#f59e0b'},
+    'France': {risk:'deadline', color:'rgba(245,158,11,0.4)', stroke:'#f59e0b'},
+    'Canada': {risk:'compliant', color:'rgba(34,197,94,0.3)', stroke:'#22c55e'},
+    'Japan': {risk:'deadline', color:'rgba(245,158,11,0.4)', stroke:'#f59e0b'},
+    'Australia': {risk:'compliant', color:'rgba(34,197,94,0.3)', stroke:'#22c55e'},
+    'Brazil': {risk:'none', color:'rgba(255,255,255,0.04)', stroke:'rgba(255,255,255,0.1)'},
+    'India': {risk:'none', color:'rgba(255,255,255,0.04)', stroke:'rgba(255,255,255,0.1)'},
+    'China': {risk:'none', color:'rgba(255,255,255,0.04)', stroke:'rgba(255,255,255,0.1)'}
+  };
+
+  var countryInfo = {
+    'United States of America': {
+      regs: ['DoD AI Ethics: 71.2% ⚠', 'EO 13960: Review Needed', 'NYC Law 144: Audit in 13 days'],
+      deadline: 'DoD Audit: Apr 30, 2026',
+      risk: 'CRITICAL'
+    },
+    'United Kingdom': {
+      regs: ['UK AI White Paper: In Review', 'GDPR: Compliant', 'FCA AI Rules: Monitoring'],
+      deadline: 'White Paper Final: Q4 2026',
+      risk: 'WATCH'
+    },
+    'Germany': {
+      regs: ['EU AI Act: Filing Jun 15', 'GDPR: Compliant', 'BaFin AI Rules: Active'],
+      deadline: 'EU AI Act Filing: Jun 15, 2026',
+      risk: 'WATCH'
+    },
+    'Canada': {
+      regs: ['AIDA: Monitoring', 'PIPEDA: Compliant', 'OSFI AI Guidelines: Compliant'],
+      deadline: 'AIDA: 2027',
+      risk: 'MONITOR'
+    },
+    'Japan': {
+      regs: ['PDPA AI Guidelines: Gap found', 'FSA AI Rules: Review needed'],
+      deadline: 'PDPA Review: Q3 2026',
+      risk: 'WATCH'
+    },
+    'Australia': {
+      regs: ['AI Ethics Framework: Compliant', 'Privacy Act: Compliant'],
+      deadline: 'Annual Review: Q4 2026',
+      risk: 'COMPLIANT'
+    }
+  };
+
+  fetch('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json')
+    .then(function(r){ return r.json(); })
+    .then(function(world) {
+      var countries = topojson.feature(world, world.objects.countries);
+
+      var countryNames = {
+        '840':'United States of America','826':'United Kingdom','276':'Germany',
+        '250':'France','124':'Canada','392':'Japan','036':'Australia','36':'Australia',
+        '076':'Brazil','356':'India','156':'China','724':'Spain',
+        '380':'Italy','643':'Russia','710':'South Africa','484':'Mexico'
+      };
+
+      var graticule = d3.geoGraticule()();
+      svgSel.append('path')
+        .datum(graticule)
+        .attr('d', path)
+        .attr('fill', 'none')
+        .attr('stroke', 'rgba(255,255,255,0.04)')
+        .attr('stroke-width', 0.5);
+
+      svgSel.append('g')
+        .selectAll('path')
+        .data(countries.features)
+        .enter()
+        .append('path')
+        .attr('d', path)
+        .attr('fill', function(d) {
+          var name = countryNames[String(d.id)] || '';
+          return countryRisk[name] ? countryRisk[name].color : 'rgba(255,255,255,0.03)';
+        })
+        .attr('stroke', function(d) {
+          var name = countryNames[String(d.id)] || '';
+          return countryRisk[name] ? countryRisk[name].stroke : 'rgba(255,255,255,0.08)';
+        })
+        .attr('stroke-width', function(d) {
+          var name = countryNames[String(d.id)] || '';
+          return countryRisk[name] && countryRisk[name].risk !== 'none' ? 1.5 : 0.5;
+        })
+        .style('cursor', 'pointer')
+        .on('mouseover', function(event, d) {
+          var name = countryNames[String(d.id)] || '';
+          var info = countryInfo[name];
+          if (!info) return;
+          var tooltip = document.getElementById('halo-map-tooltip');
+          if (!tooltip) return;
+          var riskColor = info.risk === 'CRITICAL' ? '#ef4444' : info.risk === 'WATCH' ? '#f59e0b' : '#22c55e';
+          tooltip.innerHTML = '<div style="font-size:13px;font-weight:700;color:#e2e8f0;margin-bottom:6px;">' + name + ' <span style="font-size:10px;background:' + riskColor + '22;color:' + riskColor + ';border:1px solid ' + riskColor + '44;border-radius:4px;padding:1px 6px;">' + info.risk + '</span></div>' +
+            '<div style="font-size:10px;color:#f59e0b;margin-bottom:8px;">⏱ ' + info.deadline + '</div>' +
+            info.regs.map(function(r){ return '<div style="font-size:11px;color:#94a3b8;margin-bottom:3px;">• ' + r + '</div>'; }).join('');
+          tooltip.style.display = 'block';
+          var bbox = container.getBoundingClientRect();
+          var lx = Math.min(event.clientX - bbox.left + 12, width - 220);
+          var ly = Math.min(event.clientY - bbox.top - 10, height - 160);
+          tooltip.style.left = Math.max(0, lx) + 'px';
+          tooltip.style.top = Math.max(0, ly) + 'px';
+        })
+        .on('mouseout', function() {
+          var t = document.getElementById('halo-map-tooltip');
+          if (t) t.style.display = 'none';
+        });
+
+      var dots = {
+        ad: [[-77.0, 38.9], [-79.0, 35.1], [7.6, 49.4], [139.3, 35.7]],
+        fin: [[-74.0, 40.7], [-87.6, 41.8], [-0.1, 51.5], [-79.4, 43.7]],
+        health: [[-84.4, 33.7], [-95.4, 29.8], [-118.2, 34.1], [-87.6, 41.8]]
+      };
+
+      var org = (typeof currentOrg !== 'undefined' && currentOrg) ? currentOrg : 'ad';
+      var orgDots = dots[org] || dots.ad;
+
+      orgDots.forEach(function(coords) {
+        var projected = projection(coords);
+        if (!projected) return;
+
+        svgSel.append('circle')
+          .attr('cx', projected[0])
+          .attr('cy', projected[1])
+          .attr('r', 10)
+          .attr('fill', 'rgba(96,165,250,0.1)')
+          .attr('stroke', 'rgba(96,165,250,0.3)')
+          .attr('stroke-width', 1);
+
+        svgSel.append('circle')
+          .attr('cx', projected[0])
+          .attr('cy', projected[1])
+          .attr('r', 4)
+          .attr('fill', '#60a5fa')
+          .attr('stroke', '#93c5fd')
+          .attr('stroke-width', 1)
+          .style('filter', 'drop-shadow(0 0 4px #60a5fa)');
+      });
+    })
+    .catch(function() {
+      svgSel.append('text')
+        .attr('x', width/2).attr('y', height/2)
+        .attr('text-anchor', 'middle')
+        .attr('fill', '#64748b')
+        .attr('font-size', '14px')
+        .text('Map loading... ensure network access to cdn.jsdelivr.net');
+    });
+}
+
+window.addEventListener('resize', function() {
+  var sh = document.getElementById('screen-halo');
+  if (sh && sh.classList.contains('active')) {
+    try { initHaloMap(); } catch (e) {}
+  }
+});
+
+function haloBackdropClick(ev){ if(ev.target.closest&&ev.target.closest('#halo-map-tooltip'))return; haloHideMapTip(false); }
+function haloHideMapTip(){ var p=document.getElementById('halo-map-pop'); if(p){ p.classList.remove('show'); p.innerHTML=''; } var tt=document.getElementById('halo-map-tooltip'); if(tt) tt.style.display='none'; }
 window.haloMapDismiss=function(ev){ if(ev){ ev.stopPropagation(); } haloHideMapTip(); };
 function haloTooltipMeta(code,o){
  var regs=[];
@@ -8205,18 +8337,9 @@ function haloRiskBadgeText(code,o){
  if(gray.indexOf(code)!==-1) return 'No Operations';
  return 'Deadline Risk';
 }
-window.haloCountryClick=function(evt,code){ evt.preventDefault&&evt.preventDefault(); evt.stopPropagation&&evt.stopPropagation();
- var shell=document.querySelector('#screen-halo .halo-map-shell'); var pop=document.getElementById('halo-map-pop'); if(!shell||!pop) return;
- var o=(typeof currentOrg!=='undefined')?currentOrg:'ad'; var regs=haloTooltipMeta(code,o||'ad');
- var nice={Canada:'Canada',USA:'United States',UK:'United Kingdom',Germany:'Germany',France:'France',Japan:'Japan',Australia:'Australia',Brazil:'Brazil',India:'India',China:'China'};
- var ttl=nice[code]||code;
- var rows=regs.length?regs.map(function(r){return '<div style="display:flex;justify-content:space-between;gap:8px;margin:4px 0;font-size:11px;"><span style="color:var(--muted2)">'+r[0]+'</span><span style="font-weight:700;color:var(--chrome2)">'+r[1]+'</span></div>'; }).join(''):'<div style="font-size:11px;color:var(--muted2);line-height:1.45">No regulated footprint — monitoring only.</div>';
- var gray=['Brazil','India','China']; var gb=gray.indexOf(code)!==-1;
- var bn=haloRiskBadgeText(code,o);
- pop.innerHTML='<div class="halo-tip-title">'+ttl+'</div>'+
- '<div style="margin-bottom:8px;"><span class="'+(gb?'badge badge-amber':haloRiskBadgeCls(code,o))+'" style="font-size:9px;text-transform:none">'+bn+'</span></div>'+rows+
- '<div style="margin-top:10px;"><a href="#" style="font-size:11px;color:var(--accent);font-weight:600" onclick="event.preventDefault();alert(\'Regulatory detail opened in Halo drawer.\');haloHideMapTip();return false;">View Details →</a></div>';
- var r=shell.getBoundingClientRect(); var x=evt.clientX-r.left;var y=evt.clientY-r.top; pop.style.left=Math.min(Math.max(14,x-120),shell.clientWidth-244)+'px'; pop.style.top=Math.min(Math.max(10,y-20),shell.clientHeight-160)+'px'; pop.classList.add('show');
+window.haloCountryClick=function(evt,code){
+ if(evt&&evt.preventDefault) evt.preventDefault();
+ if(evt&&evt.stopPropagation) evt.stopPropagation();
 };
 function initHaloCoreCharts(specOrg){
  var org=(specOrg||(typeof currentOrg!=='undefined'?currentOrg:'ad'))||'ad';
