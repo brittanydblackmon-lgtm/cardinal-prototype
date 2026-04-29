@@ -587,7 +587,76 @@ line-height: 1; margin-bottom: 5px;
 }
 .dr-card-min:hover { background: rgba(255,255,255,0.12); color: #94a3b8; }
 
-/* Card 4 — heatmap visualization */
+/* ── Dashboard stat cards — clarified content ── */
+.dr-dash-stat-trend-risk {
+  background: rgba(239,68,68,0.12);
+  color: #ef4444 !important;
+}
+.dr-stat-prot-inline {
+  display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap;
+  margin-top: 14px;
+}
+.dr-stat-num-inline { margin-top: 0 !important; }
+.dr-stat-slash { font-size: 22px; font-weight: 500; color: rgba(226,232,240,0.45); line-height: 1; }
+.dr-prot-unit { font-size: 13px; font-weight: 500; color: #64748b; line-height: 1.25; align-self: center; }
+.dr-stat-pill-gap { min-height: 24px; margin-top: 8px; }
+.dr-vis.dr-vis-prot { min-height: 140px; }
+.dash-protected-dots {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px 8px;
+  padding: 4px 0 8px;
+  width: 100%;
+}
+.dash-prot-item { display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center; }
+.dash-prot-dot {
+  width: 32px; height: 32px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 700;
+}
+.dash-prot-dot.good { background: rgba(34,197,94,0.22); border: 1px solid rgba(34,197,94,0.5); color: #bbf7d0; }
+.dash-prot-dot.warn { background: rgba(245,158,11,0.2); border: 1px solid rgba(245,158,11,0.45); color: #fcd34d; }
+.dash-prot-dot.bad  { background: rgba(239,68,68,0.22); border: 1px solid rgba(239,68,68,0.45); color: #fca5a5; }
+.dash-prot-cap { font-size: 9px; color: #64748b; line-height: 1.25; width: 100%; }
+
+.dr-alerts-muted {
+  margin-top: 6px;
+  font-size: 11px; color: #64748b; line-height: 1.35;
+}
+.dr-dash-incidents-card {
+  cursor: pointer;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.dr-dash-incidents-card:hover {
+  border-color: rgba(166,218,255,0.14);
+}
+.dr-dash-inc-vis { min-height: 120px; margin-top: 10px !important; padding-top: 0 !important; }
+
+.dash-incidents-list {
+  display: flex; flex-direction: column;
+  gap: 10px;
+  padding: 2px 0 4px;
+}
+.dash-inc-row {
+  display: flex;
+  gap: 10px; align-items: flex-start;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+.dash-inc-row:last-child { border-bottom: none; padding-bottom: 0; }
+.dash-inc-dot {
+  width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+  margin-top: 4px;
+}
+.dash-inc-dot.dash-inc-dot--critical { background: #ef4444; box-shadow: 0 0 8px rgba(239,68,68,0.45); }
+.dash-inc-dot.dash-inc-dot--warn { background: #f59e0b; box-shadow: 0 0 8px rgba(245,158,11,0.35); }
+.dash-inc-title { font-size: 11px; font-weight: 700; color: #e2e8f0; letter-spacing: 0.02em; margin-bottom: 2px; }
+.dash-inc-desc { font-size: 10px; color: #94a3b8; line-height: 1.35; }
+.dash-inc-urgency { margin-top: 4px; font-size: 10px; font-weight: 600; }
+.dash-inc-urgency--red { color: #fca5a5; }
+.dash-inc-urgency--amber { color: #fcd34d; }
+
+/* Card 4 — heatmap visualization — replaced by incidents list above */
 .dr-vis-heat { display: flex; flex-direction: column; gap: 8px; }
 .dr-heat-grid {
   display: grid;
@@ -1741,9 +1810,9 @@ Settings
       <div class="dr-card-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
     </div>
     <div class="dr-stat-num" id="dr-bias-num" style="color:#ef4444">67</div>
-    <div class="dr-trend-pill dr-trend-down" id="dr-bias-trend">▼ below 0.80 threshold</div>
+    <div class="dr-trend-pill dr-trend-down dr-dash-stat-trend-risk" id="dr-bias-trend">▼ 2.3% this month</div>
     <div class="dr-vis"><canvas id="dash-bias-sparkline" height="180"></canvas></div>
-    <div class="dr-card-foot"><button class="dr-card-min" title="Minimize">−</button></div>
+    <div class="dr-card-foot"><button type="button" class="dr-card-min" onclick="event.stopPropagation()" title="Minimize">−</button></div>
   </div>
 
   <!-- CARD 2 — Protected Groups -->
@@ -1752,10 +1821,10 @@ Settings
       <div class="dr-card-title" id="dr-stat-title-2">Credential Integrity</div>
       <div class="dr-card-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
     </div>
-    <div class="dr-stat-num" style="color:#22c55e">8</div>
-    <div class="dr-trend-pill dr-trend-up">↗ +2.3% this month</div>
-    <div class="dr-vis"><svg id="dash-protected-field" width="100%" height="180" viewBox="0 0 200 180" preserveAspectRatio="xMidYMid meet"></svg></div>
-    <div class="dr-card-foot"><button class="dr-card-min" title="Minimize">−</button></div>
+    <div class="dr-stat-prot-inline"><span id="dr-prot-num" class="dr-stat-num dr-stat-num-inline" style="color:#22c55e">8</span><span class="dr-stat-slash">/</span><span class="dr-prot-unit" id="dr-prot-unit">models monitored</span></div>
+    <div class="dr-stat-pill-gap" aria-hidden="true"></div>
+    <div class="dr-vis dr-vis-prot"><div id="dash-protected-dots" class="dash-protected-dots"></div></div>
+    <div class="dr-card-foot"><button type="button" class="dr-card-min" onclick="event.stopPropagation()" title="Minimize">−</button></div>
   </div>
 
   <!-- CARD 3 — Parity Index -->
@@ -1764,26 +1833,22 @@ Settings
       <div class="dr-card-title" id="dr-stat-title-3">Regulatory Adherence</div>
       <div class="dr-card-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
     </div>
-    <div class="dr-stat-num" style="color:#22c55e">0.95</div>
-    <div class="dr-trend-pill dr-trend-up">↗ +2.3% this month</div>
+    <div class="dr-stat-num" id="dr-parity-num" style="color:#f59e0b">81%</div>
+    <div class="dr-stat-pill-gap" aria-hidden="true"></div>
     <div class="dr-vis"><canvas id="dash-parity-chart" height="180"></canvas></div>
-    <div class="dr-card-foot"><button class="dr-card-min" title="Minimize">−</button></div>
+    <div class="dr-card-foot"><button type="button" class="dr-card-min" onclick="event.stopPropagation()" title="Minimize">−</button></div>
   </div>
 
   <!-- CARD 4 — Active Alerts -->
-  <div class="dr-card dr-stat-card">
+  <div class="dr-card dr-stat-card dr-dash-incidents-card" onclick="dashIncidentsStatCardClick(event)" title="Open War Room">
     <div class="dr-card-head">
       <div class="dr-card-title" id="dr-stat-title-4">Active Incidents</div>
       <div class="dr-card-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
     </div>
     <div class="dr-stat-num" id="dr-alerts-num" style="color:#f59e0b">2</div>
-    <div class="dr-trend-pill dr-trend-up">↗ +2.3% this month</div>
-    <div class="dr-vis dr-vis-heat">
-      <div class="dr-heat-grid" id="dash-alert-heat"></div>
-      <div class="dr-heat-legend"></div>
-      <div class="dr-heat-scale"><span>0</span><span>40</span></div>
-    </div>
-    <div class="dr-card-foot"><button class="dr-card-min" title="Minimize">−</button></div>
+    <div class="dr-alerts-muted" id="dr-alerts-muted">requiring immediate action</div>
+    <div class="dr-vis dr-dash-inc-vis"><div id="dash-incidents-list" class="dash-incidents-list"></div></div>
+    <div class="dr-card-foot"><button type="button" class="dr-card-min" onclick="event.stopPropagation()" title="Minimize">−</button></div>
   </div>
 
 </div>
@@ -5930,14 +5995,36 @@ function startDashHeatmaps() {
   buildLiveHeatmap('dash-heatmap-fraud', 6, 7, 2200);
 }
 
+function dashIncidentsStatCardClick(ev) {
+  if (ev && ev.target && ev.target.closest && ev.target.closest('.dr-card-foot')) return;
+  try { showScreen('warroom', null); } catch(e) {}
+}
+
+function dashComplianceBarHue(v) {
+  var n = Number(v);
+  if (n < 75) return '#ef4444';
+  if (n >= 85) return '#22c55e';
+  return '#f59e0b';
+}
+
+function dashFormatIncidentRows(rows) {
+  if (!rows || !rows.length) return '';
+  return rows.map(function(inc) {
+    var dotCls = inc.lvl === 'critical' ? 'dash-inc-dot dash-inc-dot--critical' : 'dash-inc-dot dash-inc-dot--warn';
+    var urgBase = inc.urgClass === 'red' ? 'dash-inc-urgency dash-inc-urgency--red' : 'dash-inc-urgency dash-inc-urgency--amber';
+    var desc = inc.desc ? '<div class="dash-inc-desc">' + inc.desc + '</div>' : '';
+    var urg = inc.urgent ? '<div class="' + urgBase + '">' + inc.urgent + '</div>' : '';
+    return '<div class="dash-inc-row"><span class="' + dotCls + '"></span><div><div class="dash-inc-title">' + inc.headline + '</div>' + desc + urg + '</div></div>';
+  }).join('');
+}
+
 /* ── DASHBOARD REDESIGN — chart and visualization init ── */
 function initDashboardCharts() {
   try { drawDashBiasSparkline(); } catch(e) { console.log('bias sparkline:', e.message); }
   try { drawDashParityChart(); } catch(e) { console.log('parity chart:', e.message); }
   try { drawDashGenderDonut(); } catch(e) { console.log('gender donut:', e.message); }
   try { drawDashAgeChart(); } catch(e) { console.log('age chart:', e.message); }
-  try { drawDashProtectedField(); } catch(e) { console.log('protected field:', e.message); }
-  try { drawDashAlertHeat(); } catch(e) { console.log('alert heat:', e.message); }
+  try { drawDashProtectedDots(); } catch(e) { console.log('protected dots:', e.message); }
 }
 
 function _hidpiCanvas(c, cssW, cssH) {
@@ -5955,115 +6042,145 @@ function _hidpiCanvas(c, cssW, cssH) {
 function drawDashBiasSparkline() {
   var c = document.getElementById('dash-bias-sparkline');
   if (!c || c.tagName !== 'CANVAS') return;
-  var W = c.parentNode.clientWidth || 240; var H = 180;
+  var W = (c.parentNode && c.parentNode.clientWidth) ? c.parentNode.clientWidth : 240;
+  var H = 180;
   var ctx = _hidpiCanvas(c, W, H);
   ctx.clearRect(0, 0, W, H);
-  var labels = ['22 May','23','24','25','26','27','28 May'];
-  var datasets = [
-    { color: '#60a5fa', data: [22,35,28,40,25,38,32] },
-    { color: '#f59e0b', data: [30,25,38,22,42,28,35] },
-    { color: '#ef4444', data: [18,28,22,35,30,25,40] }
-  ];
-  var pad = { l: 22, r: 10, t: 8, b: 28 };
-  var min = 0, max = 60;
+  var data = [72, 71, 70, 69, 68, 67, 67];
+  var xlabels = ['D1', 'D2', 'D3', 'D4', 'D5', 'D6', 'D7'];
+  var pad = { l: 36, r: 10, t: 14, b: 38 };
   var plotW = W - pad.l - pad.r;
   var plotH = H - pad.t - pad.b;
-  ctx.strokeStyle = 'rgba(255,255,255,0.04)';
-  ctx.lineWidth = 1;
-  for (var g = 0; g <= 4; g++) {
-    var y = pad.t + (plotH * g / 4);
-    ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(W - pad.r, y); ctx.stroke();
+  var ymin = 58, ymax = 105;
+  function yPx(val) {
+    return pad.t + plotH - ((val - ymin) / (ymax - ymin)) * plotH;
   }
-  ctx.fillStyle = '#4b5563';
+  ctx.strokeStyle = 'rgba(255,255,255,0.07)';
+  ctx.lineWidth = 1;
+  for (var gg = 0; gg <= 4; gg++) {
+    var gv = ymin + (ymax - ymin) * (1 - gg / 4);
+    var gy = yPx(gv);
+    ctx.beginPath(); ctx.moveTo(pad.l, gy); ctx.lineTo(W - pad.r, gy); ctx.stroke();
+  }
+  ctx.fillStyle = '#64748b';
   ctx.font = '9px Inter, system-ui, sans-serif';
   ctx.textAlign = 'right';
-  for (var t = 0; t <= 4; t++) {
-    var v = max - (t * (max - min) / 4);
-    var yy = pad.t + (plotH * t / 4);
-    ctx.fillText(Math.round(v), pad.l - 4, yy + 3);
+  for (gg = 0; gg <= 4; gg++) {
+    var gv2 = ymin + (ymax - ymin) * (1 - gg / 4);
+    var gy2 = yPx(gv2);
+    ctx.fillText(String(Math.round(gv2)), pad.l - 6, gy2 + 3);
   }
+  var yThr = yPx(80);
+  ctx.save();
+  ctx.setLineDash([5, 5]);
+  ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(pad.l, yThr);
+  ctx.lineTo(W - pad.r, yThr);
+  ctx.stroke();
+  ctx.restore();
+  ctx.fillStyle = '#64748b';
+  ctx.textAlign = 'left';
+  ctx.font = '9px Inter, system-ui, sans-serif';
+  ctx.fillText('Certification threshold', pad.l + 4, yThr - 5);
+
+  ctx.strokeStyle = '#ef4444';
+  ctx.lineWidth = 2.2;
+  ctx.lineJoin = 'round';
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  for (var i = 0; i < data.length; i++) {
+    var xv = pad.l + (plotW * i / (data.length - 1));
+    var yy = yPx(data[i]);
+    if (i === 0) ctx.moveTo(xv, yy);
+    else ctx.lineTo(xv, yy);
+  }
+  ctx.stroke();
+
+  ctx.fillStyle = '#64748b';
   ctx.textAlign = 'center';
-  for (var i = 0; i < labels.length; i++) {
-    var xl = pad.l + (plotW * i / (labels.length - 1));
-    ctx.fillText(labels[i], xl, H - pad.b + 12);
+  ctx.font = '9px Inter, system-ui, sans-serif';
+  for (var xi = 0; xi < xlabels.length; xi++) {
+    var xd = pad.l + (plotW * xi / (xlabels.length - 1));
+    ctx.fillText(xlabels[xi], xd, H - 14);
   }
-  datasets.forEach(function (ds) {
-    ctx.strokeStyle = ds.color;
-    ctx.lineWidth = 1.6;
-    ctx.beginPath();
-    ds.data.forEach(function (v, i) {
-      var x = pad.l + (plotW * i / (ds.data.length - 1));
-      var y = pad.t + plotH - ((v - min) / (max - min)) * plotH;
-      if (i === 0) ctx.moveTo(x, y); else {
-        var px = pad.l + (plotW * (i - 1) / (ds.data.length - 1));
-        var py = pad.t + plotH - ((ds.data[i - 1] - min) / (max - min)) * plotH;
-        var cx1 = px + (x - px) * 0.5;
-        var cx2 = px + (x - px) * 0.5;
-        ctx.bezierCurveTo(cx1, py, cx2, y, x, y);
-      }
-    });
-    ctx.stroke();
-    ctx.fillStyle = ds.color;
-    ds.data.forEach(function (v, i) {
-      var x = pad.l + (plotW * i / (ds.data.length - 1));
-      var y = pad.t + plotH - ((v - min) / (max - min)) * plotH;
-      ctx.beginPath(); ctx.arc(x, y, 2.4, 0, Math.PI * 2); ctx.fill();
-    });
-  });
-  // Mini legend along bottom
-  var legend = ['#60a5fa', '#f59e0b', '#ef4444'];
-  legend.forEach(function (col, i) {
-    ctx.fillStyle = col;
-    var lx = pad.l + 12 + i * 28;
-    ctx.beginPath(); ctx.arc(lx, H - 4, 3, 0, Math.PI * 2); ctx.fill();
-  });
 }
 
 function drawDashParityChart() {
   var c = document.getElementById('dash-parity-chart');
   if (!c || c.tagName !== 'CANVAS') return;
-  var W = c.parentNode.clientWidth || 240; var H = 180;
+  var org = (typeof currentOrg !== 'undefined' && currentOrg) ? currentOrg : 'ad';
+  var dc = (typeof DASH_INDUSTRY !== 'undefined' && DASH_INDUSTRY[org] && DASH_INDUSTRY[org].dashCharts) ? DASH_INDUSTRY[org].dashCharts : {};
+  var barLabels = dc.parityLabels || ['DoD', 'EO', 'FAA', 'ITAR', 'ISO'];
+  var vals = dc.parityValues || [71, 82, 84, 88, 79];
+  var n = vals.length || 5;
+  var W = (c.parentNode && c.parentNode.clientWidth) ? c.parentNode.clientWidth : 240;
+  var H = 180;
   var ctx = _hidpiCanvas(c, W, H);
   ctx.clearRect(0, 0, W, H);
-  var pad = { l: 24, r: 8, t: 8, b: 22 };
+  var pad = { l: 32, r: 8, t: 10, b: 36 };
   var plotW = W - pad.l - pad.r;
   var plotH = H - pad.t - pad.b;
-  var bars = 20;
-  var heights = [];
-  // Deterministic-ish "random" heights
-  var seed = 1337;
-  function rnd() { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; }
-  for (var i = 0; i < bars; i++) heights.push(0.25 + rnd() * 0.75);
-  var dotColors = ['#f59e0b', '#10b981', '#ef4444', '#ec4899', '#3b82f6'];
-  var ticks = [0, 35, 75, 100, 125];
-  ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+  var vmin = 0, vmax = 100;
+  function yPct(p) {
+    return pad.t + plotH - (p / vmax) * plotH;
+  }
+  ctx.strokeStyle = 'rgba(255,255,255,0.06)';
   ctx.lineWidth = 1;
-  ctx.fillStyle = '#4b5563';
-  ctx.font = '8px Inter, system-ui, sans-serif';
+  ctx.fillStyle = '#64748b';
+  ctx.font = '9px Inter, system-ui, sans-serif';
   ctx.textAlign = 'right';
-  ticks.forEach(function (t) {
-    var y = pad.t + plotH - (t / 125) * plotH;
-    ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(W - pad.r, y); ctx.stroke();
-    ctx.fillText(t, pad.l - 3, y + 3);
-  });
-  var bw = 6, gap = (plotW - bars * bw) / (bars - 1);
+  for (var ti = 0; ti <= 4; ti++) {
+    var tv = ti * 25;
+    var ty = yPct(tv);
+    ctx.beginPath(); ctx.moveTo(pad.l, ty); ctx.lineTo(W - pad.r, ty); ctx.stroke();
+    ctx.fillText(String(tv), pad.l - 5, ty + 3);
+  }
+  var y80 = yPct(80);
+  ctx.save();
+  ctx.setLineDash([5, 4]);
+  ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+  ctx.beginPath(); ctx.moveTo(pad.l, y80); ctx.lineTo(W - pad.r, y80); ctx.stroke();
+  ctx.restore();
+
+  var gap = 8;
+  var bw = (plotW - (n - 1) * gap) / n;
+  if (bw < 14) bw = 14;
   ctx.textAlign = 'center';
-  for (var j = 0; j < bars; j++) {
-    var bx = pad.l + j * (bw + gap);
-    var bh = heights[j] * plotH;
-    ctx.fillStyle = '#374151';
-    ctx.fillRect(bx, pad.t + plotH - bh, bw, bh);
-    ctx.fillStyle = dotColors[j % dotColors.length];
-    ctx.beginPath();
-    ctx.arc(bx + bw / 2, pad.t + plotH - bh - 4, 4, 0, Math.PI * 2);
-    ctx.fill();
+  for (var b = 0; b < n; b++) {
+    var vv = vals[b];
+    var bx = pad.l + b * (bw + gap);
+    var bh = (vv / vmax) * plotH;
+    var hue = dashComplianceBarHue(vv);
+    ctx.fillStyle = hue;
+    var bx2 = bx, byTop = pad.t + plotH - bh;
+    ctx.fillRect(bx2, byTop, bw, bh);
+    ctx.fillStyle = '#94a3b8';
+    ctx.font = '8px Inter, system-ui, sans-serif';
+    var lab = barLabels[b] || '';
+    ctx.fillText(lab, bx2 + bw / 2, H - pad.b + 14);
   }
-  ctx.fillStyle = '#4b5563';
-  ctx.font = '8px Inter, system-ui, sans-serif';
-  for (var k = 0; k < bars; k += 4) {
-    var lx = pad.l + k * (bw + gap) + bw / 2;
-    ctx.fillText('18-25', lx, H - pad.b + 12);
-  }
+}
+
+function drawDashProtectedDots() {
+  var wrap = document.getElementById('dash-protected-dots');
+  if (!wrap) return;
+  var items = [
+    { cap: 'Race', st: 'good' },
+    { cap: 'Gender', st: 'good' },
+    { cap: 'Age', st: 'warn' },
+    { cap: 'Disability', st: 'bad' },
+    { cap: 'Religion', st: 'good' },
+    { cap: 'National Origin', st: 'good' },
+    { cap: 'Veteran Status', st: 'warn' },
+    { cap: 'Income Level', st: 'good' }
+  ];
+  var glyph = { good: '\u2713', warn: '\u26a0', bad: '\u2717' };
+  wrap.innerHTML = items.map(function(it) {
+    return '<div class="dash-prot-item"><div class="dash-prot-dot ' + it.st + '">' + glyph[it.st] + '</div>' +
+           '<span class="dash-prot-cap">' + it.cap + '</span></div>';
+  }).join('');
 }
 
 function drawDashGenderDonut() {
@@ -6134,53 +6251,6 @@ function drawDashAgeChart() {
     ctx.fillStyle = '#4b5563';
     ctx.fillText('18-25', bx + bw / 2, H - pad.b + 12);
   });
-}
-
-function drawDashProtectedField() {
-  var svg = document.getElementById('dash-protected-field');
-  if (!svg) return;
-  while (svg.firstChild) svg.removeChild(svg.firstChild);
-  var rows = 10, cols = 10;
-  var W = 200, H = 180;
-  var cellW = W / cols, cellH = H / rows;
-  var palette = ['#3b82f6', '#06b6d4', '#10b981', '#84cc16', '#eab308', '#f97316', '#ef4444', '#8b5cf6'];
-  var seed = 7;
-  function rnd() { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; }
-  for (var r = 0; r < rows; r++) {
-    for (var col = 0; col < cols; col++) {
-      var cx = col * cellW + cellW / 2;
-      var cy = r * cellH + cellH / 2;
-      var rot = -60 + rnd() * 120;
-      var color = palette[(r + col) % palette.length];
-      var t = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-      t.setAttribute('x', cx);
-      t.setAttribute('y', cy + 4);
-      t.setAttribute('text-anchor', 'middle');
-      t.setAttribute('fill', color);
-      t.setAttribute('font-size', '11');
-      t.setAttribute('font-family', 'Inter, system-ui, sans-serif');
-      t.setAttribute('transform', 'rotate(' + rot.toFixed(1) + ' ' + cx + ' ' + cy + ')');
-      t.style.opacity = '0.85';
-      t.textContent = '➤';
-      svg.appendChild(t);
-    }
-  }
-}
-
-function drawDashAlertHeat() {
-  var grid = document.getElementById('dash-alert-heat');
-  if (!grid) return;
-  grid.innerHTML = '';
-  var rows = 8, cols = 10;
-  for (var r = 0; r < rows; r++) {
-    for (var col = 0; col < cols; col++) {
-      var hue = (r * 10 + col * 4) % 360;
-      var d = document.createElement('div');
-      d.style.background = 'hsl(' + hue + ', 80%, 50%)';
-      d.style.opacity = '0.85';
-      grid.appendChild(d);
-    }
-  }
 }
 
 function startDashLastRefreshed() {
@@ -6374,7 +6444,19 @@ const DASH_INDUSTRY = {
       { label: 'ISO 42001',     val: '78.9%', color: '#f59e0b' },
       { label: 'EO 13960',      val: '82.3%', color: '#22c55e' }
     ],
-    alerts: 2, alertsColor: '#f59e0b'
+    alerts: 2, alertsColor: '#f59e0b',
+    dashCharts: {
+      biasTrend: '▼ 2.3% this month',
+      protUnitSuffix: 'models monitored',
+      parityAvgPct: '81%',
+      parityAvgColor: '#f59e0b',
+      parityLabels: ['DoD', 'EO', 'FAA', 'ITAR', 'ISO'],
+      parityValues: [71, 82, 84, 88, 79],
+      incidents: [
+        { lvl: 'critical', headline: 'Case #2847', desc: 'Personnel bias — 847 affected', urgent: '7 days left', urgClass: 'red' },
+        { lvl: 'warn', headline: 'ECOA Review', desc: '', urgent: 'Renewal due in 8 days', urgClass: 'amber' }
+      ]
+    }
   },
   fin: {
     statTitles: ['Fair Lending Score', 'Fraud Integrity', 'Compliance Rate', 'Open Cases'],
@@ -6421,7 +6503,19 @@ const DASH_INDUSTRY = {
       { label: 'NYC Bias Audit',  val: '72.4%', color: '#f59e0b' },
       { label: 'EU AI Act',       val: '78.2%', color: '#f59e0b' }
     ],
-    alerts: 3, alertsColor: '#ef4444'
+    alerts: 3, alertsColor: '#ef4444',
+    dashCharts: {
+      biasTrend: '▼ 2.3% this month',
+      protUnitSuffix: 'protected groups tracked',
+      parityAvgPct: '76%',
+      parityAvgColor: '#f59e0b',
+      parityLabels: ['ECOA', 'FCRA', 'NYC', 'CA', 'EU'],
+      parityValues: [68, 85, 72, 79, 78],
+      incidents: [
+        { lvl: 'critical', headline: 'Case #FIN-1203', desc: 'ZIP code proxy — 1,203 affected', urgent: '14 days left', urgClass: 'red' },
+        { lvl: 'warn', headline: 'NYC Law 144', desc: '', urgent: 'Audit due in 14 days', urgClass: 'amber' }
+      ]
+    }
   },
   health: {
     statTitles: ['Clinical Equity Score', 'Claims Integrity', 'CMS Adherence', 'Active Violations'],
@@ -6468,7 +6562,19 @@ const DASH_INDUSTRY = {
       { label: 'HIPAA Compliance', val: '91.2%', color: '#22c55e' },
       { label: 'CA SB 53',         val: '78.4%', color: '#f59e0b' }
     ],
-    alerts: 4, alertsColor: '#ef4444'
+    alerts: 4, alertsColor: '#ef4444',
+    dashCharts: {
+      biasTrend: '▼ 2.3% this month',
+      protUnitSuffix: 'patient cohorts monitored',
+      parityAvgPct: '77%',
+      parityAvgColor: '#f59e0b',
+      parityLabels: ['ACA', 'CMS', 'HIPAA', 'SB53', 'ISO'],
+      parityValues: [65, 71, 91, 78, 80],
+      incidents: [
+        { lvl: 'critical', headline: 'Case #HS-2847', desc: 'Age bias — 2,847 claims', urgent: 'CMS audit 30 days', urgClass: 'red' },
+        { lvl: 'warn', headline: 'ACA 1557', desc: 'Violation — immediate action', urgent: '', urgClass: 'amber' }
+      ]
+    }
   }
 };
 
@@ -6495,9 +6601,23 @@ function updateDashboardIndustry(org) {
 
   safeSet('dr-bias-num', cfg.biasNum);
   safeStyle('dr-bias-num', 'color', cfg.biasColor);
-
-  safeSet('dr-alerts-num', cfg.alerts);
-  safeStyle('dr-alerts-num', 'color', cfg.alertsColor);
+  if (cfg.dashCharts) {
+    var dc = cfg.dashCharts;
+    safeSet('dr-bias-trend', dc.biasTrend);
+    safeSet('dr-prot-unit', dc.protUnitSuffix);
+    safeSet('dr-parity-num', dc.parityAvgPct);
+    safeStyle('dr-parity-num', 'color', dc.parityAvgColor);
+    safeHTML('dash-incidents-list', dashFormatIncidentRows(dc.incidents || []));
+    if (dc.incidents && dc.incidents.length > 0) {
+      safeSet('dr-alerts-num', String(dc.incidents.length));
+    } else {
+      safeSet('dr-alerts-num', cfg.alerts);
+    }
+    safeStyle('dr-alerts-num', 'color', cfg.alertsColor);
+  } else {
+    safeSet('dr-alerts-num', cfg.alerts);
+    safeStyle('dr-alerts-num', 'color', cfg.alertsColor);
+  }
 
   safeSet('dr-trust-score', cfg.trustNum);
   safeSet('dr-trust-label', cfg.trustLabel);
@@ -6600,6 +6720,8 @@ function updateDashboardIndustry(org) {
       icon.innerHTML = _drRegIconSVG(r.color);
     }
   }
+
+  try { initDashboardCharts(); } catch(eIC) {}
 }
 
 function safeSet(id, val) {
