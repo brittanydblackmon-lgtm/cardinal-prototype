@@ -8399,6 +8399,191 @@ function initHaloMap() {
           }, 650);
         });
 
+      var incidentData = {
+        ad: [
+          {
+            coords: [-79.0, 35.1],
+            city: 'Fayetteville, NC (Fort Bragg)',
+            state: 'North Carolina',
+            type: 'BIAS',
+            case: '#AD-2847',
+            model: 'Personnel Assignment v2.4',
+            issue: 'Hispanic technicians denied assignments at 2.3x rate. ZIP/demographic proxy detected.',
+            affected: '847 service members',
+            severity: 'CRITICAL',
+            stage: 'IN_REMEDIATION',
+            stageLabel: 'In Remediation — Atonement Core',
+            stageColor: '#f59e0b',
+            stageIcon: '⚙',
+            daysOpen: 5,
+            regulation: 'DoD AI Ethics violation — DI 0.67',
+            nextStep: 'Shadow deployment v2.5 at 5% traffic — approve to expand',
+            linkScreen: 'atonement',
+            linkLabel: 'View Remediation Progress →'
+          },
+          {
+            coords: [-77.0, 38.9],
+            city: 'Washington, DC',
+            state: 'DC Metro',
+            type: 'FRAUD',
+            case: '#AD-FRAUD-041',
+            model: 'Credential Verification v3.1',
+            issue: '23 synthetic credential applications sharing device fingerprints. Active fraud ring.',
+            affected: '23 flagged applications',
+            severity: 'HIGH',
+            stage: 'IDENTIFIED',
+            stageLabel: 'Identified — Under Investigation',
+            stageColor: '#ef4444',
+            stageIcon: '🔴',
+            daysOpen: 2,
+            regulation: 'ITAR data integrity requirement',
+            nextStep: 'Review flagged applications in Obsidian Core. Recommend model retrain.',
+            linkScreen: 'obsidian',
+            linkLabel: 'View in Obsidian Core →'
+          }
+        ],
+        fin: [
+          {
+            coords: [-74.0, 40.7],
+            city: 'New York City, NY',
+            state: 'New York',
+            type: 'BIAS',
+            case: '#FIN-1203',
+            model: 'Credit Scoring v3.4',
+            issue: 'ZIP code proxy correlates 0.82 with race. Hispanic applicants denied at 2.1x rate. ECOA violation.',
+            affected: '1,203 applicants',
+            severity: 'CRITICAL',
+            stage: 'IN_REMEDIATION',
+            stageLabel: 'In Remediation — Atonement Core',
+            stageColor: '#f59e0b',
+            stageIcon: '⚙',
+            daysOpen: 14,
+            regulation: 'ECOA violation — NYC Law 144 audit in 13 days',
+            nextStep: 'v3.5 shadow deployment passing (DI 0.91). Ready for CMO approval to full deploy.',
+            linkScreen: 'atonement',
+            linkLabel: 'View Remediation Progress →'
+          },
+          {
+            coords: [-87.6, 41.8],
+            city: 'Chicago, IL',
+            state: 'Illinois',
+            type: 'FRAUD',
+            case: '#FIN-FRAUD-089',
+            model: 'Auto Loan v2.1',
+            issue: 'Synthetic identity ring — 47 applications from 1 device. Upscale ZIP exploitation.',
+            affected: '47 blocked applications — $890K protected',
+            severity: 'HIGH',
+            stage: 'IN_MODEL_LIBRARY',
+            stageLabel: 'Fix Staged — Model Library',
+            stageColor: '#60a5fa',
+            stageIcon: '📦',
+            daysOpen: 8,
+            regulation: 'FCRA fraud prevention requirement',
+            nextStep: 'Fraud Detection v3.3 staged in Model Library. Awaiting deployment approval.',
+            linkScreen: 'modellibrary',
+            linkLabel: 'View in Model Library →'
+          }
+        ],
+        health: [
+          {
+            coords: [-84.4, 33.7],
+            city: 'Atlanta, GA',
+            state: 'Georgia',
+            type: 'BIAS',
+            case: '#HS-2847',
+            model: 'Claims Adjudication v1.9',
+            issue: 'Age-cost proxy (0.81 correlation). Patients 65+ denied at 2.3x rate. ACA 1557 violation.',
+            affected: '2,847 patient claims',
+            severity: 'CRITICAL',
+            stage: 'IDENTIFIED',
+            stageLabel: 'Identified — Awaiting Fix Approval',
+            stageColor: '#ef4444',
+            stageIcon: '🔴',
+            daysOpen: 5,
+            regulation: 'ACA Section 1557 — CMS audit in 30 days',
+            nextStep: 'Root cause confirmed in Eden. Fix modeled in Genesis. CMO sign-off needed to begin remediation.',
+            linkScreen: 'eden',
+            linkLabel: 'View Detection in Eden Core →'
+          },
+          {
+            coords: [-95.4, 29.8],
+            city: 'Houston, TX',
+            state: 'Texas',
+            type: 'FRAUD',
+            case: '#HS-FRAUD-031',
+            model: 'Claims Adjudication v1.9',
+            issue: 'Prescription fraud ring — 31 providers submitting claims with younger patient profiles.',
+            affected: '31 providers flagged — $1.1M blocked',
+            severity: 'HIGH',
+            stage: 'FIXED',
+            stageLabel: 'Fixed — Deployed & Certified',
+            stageColor: '#22c55e',
+            stageIcon: '✓',
+            daysOpen: 0,
+            regulation: 'HIPAA fraud prevention — resolved',
+            nextStep: 'Claims v2.0 fully deployed. All providers flagged to compliance team. Trust Ledger updated.',
+            linkScreen: 'trustledger',
+            linkLabel: 'View in Trust Ledger →'
+          }
+        ]
+      };
+
+      function coordsNear(cDot, cInc, eps) {
+        eps = typeof eps === 'number' ? eps : 0.02;
+        return Math.abs(cDot[0] - cInc[0]) <= eps && Math.abs(cDot[1] - cInc[1]) <= eps;
+      }
+
+      function haloIncidentPinPopupHtml(inc) {
+        var stageSteps = [
+          { label: 'Identified', done: true },
+          { label: 'In Genesis', done: inc.stage === 'IN_REMEDIATION' || inc.stage === 'IN_MODEL_LIBRARY' || inc.stage === 'FIXED' },
+          { label: 'In Atonement', done: inc.stage === 'IN_REMEDIATION' || inc.stage === 'IN_MODEL_LIBRARY' || inc.stage === 'FIXED' },
+          { label: 'Model Library', done: inc.stage === 'IN_MODEL_LIBRARY' || inc.stage === 'FIXED' },
+          { label: 'Fixed', done: inc.stage === 'FIXED' }
+        ];
+        var dotsRow = '';
+        for (var i = 0; i < stageSteps.length; i++) {
+          var s = stageSteps[i];
+          var fill = s.done ? inc.stageColor : 'rgba(255,255,255,0.1)';
+          var border = s.done ? inc.stageColor : 'rgba(255,255,255,0.2)';
+          var lc = s.done ? '#e2e8f0' : '#4b5563';
+          dotsRow += '<div style="flex:1;text-align:center;min-width:0;">' +
+            '<div style="width:10px;height:10px;border-radius:50%;background:' + fill + ';border:1px solid ' + border + ';margin:0 auto 3px;"></div>' +
+            '<div style="font-size:8px;color:' + lc + ';line-height:1.2;">' + s.label + '</div>' +
+            '</div>';
+          if (i < stageSteps.length - 1) {
+            var nextDone = stageSteps[i + 1].done;
+            var lineBg = nextDone ? inc.stageColor : 'rgba(255,255,255,0.1)';
+            dotsRow += '<div style="height:1px;width:10px;background:' + lineBg + ';margin:0 -2px 14px -2px;flex-shrink:0;align-self:flex-start;margin-top:5px;"></div>';
+          }
+        }
+        var typeColor = inc.type === 'BIAS' ? '#ef4444' : '#f59e0b';
+        var dayTxt = inc.daysOpen === 0 ? ' (Resolved)' : '';
+        return '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">' +
+          '<div style="font-size:10px;font-weight:700;color:' + typeColor + ';letter-spacing:0.8px;">' + inc.type + ' INCIDENT</div>' +
+          '<div style="font-size:10px;background:' + inc.stageColor + '22;color:' + inc.stageColor + ';border:1px solid ' + inc.stageColor + '44;border-radius:4px;padding:2px 7px;font-weight:600;">' + inc.severity + '</div>' +
+          '</div>' +
+          '<div style="font-size:13px;font-weight:700;color:#e2e8f0;margin-bottom:2px;">' + inc.city + '</div>' +
+          '<div style="font-size:10px;color:#64748b;margin-bottom:10px;">Case ' + inc.case + ' · Day ' + inc.daysOpen + dayTxt + '</div>' +
+          '<div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);border-radius:6px;padding:8px 10px;margin-bottom:10px;">' +
+          '<div style="font-size:10px;color:#64748b;margin-bottom:3px;">MODEL</div>' +
+          '<div style="font-size:12px;font-weight:600;color:#e2e8f0;">' + inc.model + '</div>' +
+          '<div style="font-size:11px;color:#94a3b8;margin-top:3px;line-height:1.45">' + inc.issue + '</div>' +
+          '</div>' +
+          '<div style="margin-bottom:10px;">' +
+          '<div style="font-size:10px;color:#64748b;margin-bottom:6px;">MODEL LIFECYCLE STAGE</div>' +
+          '<div style="display:flex;align-items:flex-start;justify-content:center;gap:0;margin-bottom:6px;width:100%">' + dotsRow + '</div>' +
+          '<div style="font-size:10px;font-weight:600;color:' + inc.stageColor + ';line-height:1.35">' + inc.stageIcon + ' ' + inc.stageLabel + '</div>' +
+          '</div>' +
+          '<div style="font-size:11px;color:#94a3b8;margin-bottom:6px;line-height:1.45"><span style="color:#64748b;font-weight:600;">Next step:</span> ' + inc.nextStep + '</div>' +
+          '<div style="font-size:10px;color:#f59e0b;margin-bottom:12px;line-height:1.45">⚖ ' + inc.regulation + '</div>' +
+          '<button type="button" onclick="showScreen(\'' + inc.linkScreen + '\',null);document.getElementById(\'halo-map-tooltip\').style.display=\'none\'" ' +
+          'style="width:100%;background:' + inc.stageColor + '18;border:1px solid ' + inc.stageColor + '44;color:' + inc.stageColor + ';border-radius:6px;padding:8px;font-size:11px;font-weight:600;cursor:pointer;margin-bottom:6px;">' +
+          inc.linkLabel +
+          '</button>' +
+          '<div style="font-size:10px;color:#60a5fa;cursor:pointer;text-align:center;" onclick="document.getElementById(\'halo-map-tooltip\').style.display=\'none\'">✕ Close</div>';
+      }
+
       var dots = {
         ad: [[-77.0, 38.9], [-79.0, 35.1], [7.6, 49.4], [139.3, 35.7]],
         fin: [[-74.0, 40.7], [-87.6, 41.8], [-0.1, 51.5], [-79.4, 43.7]],
@@ -8433,6 +8618,8 @@ function initHaloMap() {
         var projected = projection(coords);
         if (!projected) return;
         var site = dotSiteData[mapOrgKey] && dotSiteData[mapOrgKey][dotIdx];
+        var orgIncListForDot = incidentData[mapOrgKey] || incidentData.ad;
+        var localIncidents = orgIncListForDot.filter(function(ic) { return coordsNear(coords, ic.coords); });
 
         mapGroup.append('circle')
           .attr('cx', projected[0])
@@ -8457,91 +8644,88 @@ function initHaloMap() {
             if (!site) return;
             var tooltip = document.getElementById('halo-map-tooltip');
             if (!tooltip) return;
-            tooltip.innerHTML =
-              '<div style="font-size:10px;font-weight:700;color:#60a5fa;letter-spacing:0.5px;margin-bottom:6px;">YOUR OPERATIONS</div>' +
-              '<div style="font-size:13px;font-weight:700;color:#e2e8f0;margin-bottom:10px;">' + site.label + '</div>' +
-              '<div style="font-size:11px;color:#94a3b8;margin-bottom:4px;"><span style="color:#64748b;">Models:</span> ' + site.models.join(', ') + '</div>' +
-              '<div style="font-size:11px;color:#ef4444;margin-bottom:4px;"><span style="color:#64748b;">Bias:</span> ' + site.bias + '</div>' +
-              '<div style="font-size:11px;color:#f59e0b;margin-bottom:4px;"><span style="color:#64748b;">Fraud:</span> ' + site.fraud + '</div>' +
-              '<div style="font-size:11px;color:#94a3b8;margin-bottom:12px;"><span style="color:#64748b;">Reg:</span> ' + site.reg + '</div>' +
-              '<div style="display:flex;flex-direction:column;gap:6px;">' +
-              '<button type="button" onclick="showScreen(\'eden\',null);document.getElementById(\'halo-map-tooltip\').style.display=\'none\'" style="background:rgba(166,218,255,0.1);border:1px solid rgba(166,218,255,0.3);color:#a6daff;border-radius:6px;padding:6px 10px;font-size:11px;cursor:pointer;">→ View Bias in Eden Core</button>' +
-              '<button type="button" onclick="showScreen(\'obsidian\',null);document.getElementById(\'halo-map-tooltip\').style.display=\'none\'" style="background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3);color:#f59e0b;border-radius:6px;padding:6px 10px;font-size:11px;cursor:pointer;">→ View Fraud in Obsidian</button>' +
-              '<button type="button" onclick="showScreen(\'warroom\',null);document.getElementById(\'halo-map-tooltip\').style.display=\'none\'" style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:#ef4444;border-radius:6px;padding:6px 10px;font-size:11px;cursor:pointer;">→ Open War Room</button>' +
-              '</div>' +
-              '<div style="margin-top:10px;font-size:10px;color:#60a5fa;cursor:pointer;" onclick="document.getElementById(\'halo-map-tooltip\').style.display=\'none\'">✕ Close</div>';
+            var hasActive = localIncidents.some(function(ic) { return ic.stage !== 'FIXED'; });
+            var n = localIncidents.length;
+            var rows = '';
+            localIncidents.forEach(function(inc) {
+              rows += '<div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:8px;padding:8px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:6px;">' +
+                '<div style="flex:1;min-width:120px;font-size:12px;font-weight:600;color:#e2e8f0;">' + inc.model + '</div>' +
+                '<span style="font-size:9px;background:' + inc.stageColor + '22;color:' + inc.stageColor + ';border:1px solid ' + inc.stageColor + '44;border-radius:4px;padding:2px 6px;font-weight:600;max-width:46%;text-align:right;line-height:1.2">' + inc.stageLabel + '</span>' +
+                '<button type="button" onclick="showScreen(\'' + inc.linkScreen + '\',null);document.getElementById(\'halo-map-tooltip\').style.display=\'none\'" style="flex-basis:100%;font-size:10px;background:' + inc.stageColor + '15;border:1px solid ' + inc.stageColor + '40;color:' + inc.stageColor + ';border-radius:6px;padding:6px 8px;cursor:pointer;text-align:left">' + inc.linkLabel + '</button>' +
+                '</div>';
+            });
+            var body = '';
+            body += '<div style="font-size:10px;font-weight:700;color:#60a5fa;letter-spacing:0.5px;margin-bottom:6px;">YOUR OPERATIONS</div>';
+            body += '<div style="font-size:13px;font-weight:700;color:#e2e8f0;margin-bottom:6px;">' + site.label + '</div>';
+            body += '<div style="font-size:11px;color:#94a3b8;margin-bottom:10px;line-height:1.45;"><strong>' + site.models.length + '</strong> models active at this location</div>';
+            if (n === 0) {
+              body += '<div style="font-size:11px;color:#64748b;margin-bottom:8px;line-height:1.5;">Deployed: ' + site.models.join(', ') + '</div>';
+              body += '<div style="font-size:12px;font-weight:600;color:#22c55e;margin-bottom:4px;">No active incidents — all models compliant ✓</div>';
+            } else {
+              body += rows;
+              if (hasActive) {
+                body += '<div style="font-size:10px;color:#64748b;margin:10px 0 6px;text-transform:uppercase;letter-spacing:0.5px;">Quick navigation (open incidents)</div>';
+                body += '<div style="display:flex;flex-direction:column;gap:6px;">' +
+                  '<button type="button" onclick="showScreen(\'eden\',null);document.getElementById(\'halo-map-tooltip\').style.display=\'none\'" style="background:rgba(166,218,255,0.1);border:1px solid rgba(166,218,255,0.3);color:#a6daff;border-radius:6px;padding:6px 10px;font-size:11px;cursor:pointer;text-align:left;">→ View Bias in Eden Core</button>' +
+                  '<button type="button" onclick="showScreen(\'obsidian\',null);document.getElementById(\'halo-map-tooltip\').style.display=\'none\'" style="background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3);color:#f59e0b;border-radius:6px;padding:6px 10px;font-size:11px;cursor:pointer;text-align:left;">→ View Fraud in Obsidian</button>' +
+                  '<button type="button" onclick="showScreen(\'warroom\',null);document.getElementById(\'halo-map-tooltip\').style.display=\'none\'" style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:#ef4444;border-radius:6px;padding:6px 10px;font-size:11px;cursor:pointer;text-align:left;">→ Open War Room</button>' +
+                  '</div>';
+              } else {
+                body += '<div style="font-size:12px;font-weight:600;color:#22c55e;margin-top:8px;">No active incidents — all models compliant ✓</div>';
+              }
+            }
+            body += '<div style="margin-top:10px;font-size:10px;color:#60a5fa;cursor:pointer;text-align:center;" onclick="document.getElementById(\'halo-map-tooltip\').style.display=\'none\'">✕ Close</div>';
+            tooltip.style.minWidth = '280px';
+            tooltip.innerHTML = body;
             tooltip.style.display = 'block';
             tooltip.style.pointerEvents = 'auto';
             tooltip.dataset.haloPinned = '1';
             tooltip.style.transform = 'none';
             var bbox = container.getBoundingClientRect();
-            tooltip.style.left = Math.min(event.clientX - bbox.left + 15, width - 220) + 'px';
-            tooltip.style.top = Math.min(event.clientY - bbox.top - 10, height - 120) + 'px';
+            tooltip.style.left = Math.min(event.clientX - bbox.left + 15, width - 300) + 'px';
+            tooltip.style.top = Math.min(event.clientY - bbox.top - 20, height - 200) + 'px';
           });
       });
 
-      var incidents = {
-        ad: [
-          {coords:[-79.0, 35.1], label:'Fort Bragg, NC', case:'#AD-2847', type:'BIAS', desc:'Personnel Assignment — 847 service members', screen:'eden'},
-          {coords:[-77.0, 38.9], label:'Washington DC', case:'#AD-1203', type:'FRAUD', desc:'23 synthetic credential attempts', screen:'obsidian'}
-        ],
-        fin: [
-          {coords:[-74.0, 40.7], label:'New York Metro', case:'#FIN-1203', type:'BIAS', desc:'ZIP code proxy — 1,203 applicants', screen:'eden'},
-          {coords:[-87.6, 41.8], label:'Chicago', case:'#FIN-FRAUD', type:'FRAUD', desc:'Synthetic identity ring — 47 apps', screen:'obsidian'}
-        ],
-        health: [
-          {coords:[-84.4, 33.7], label:'Atlanta Metro', case:'#HS-2847', type:'BIAS', desc:'Age bias — 2,847 patient claims', screen:'eden'},
-          {coords:[-95.4, 29.8], label:'Houston', case:'#HS-FRAUD', type:'FRAUD', desc:'Prescription fraud ring — 31 providers', screen:'obsidian'}
-        ]
-      };
+      var orgIncidentsList = incidentData[mapOrgKey] || incidentData.ad;
+      for (var hi = 0; hi < orgIncidentsList.length; hi++) {
+        (function(inc) {
+          var projected = projection(inc.coords);
+          if (!projected) return;
+          var color = inc.type === 'BIAS' ? '#ef4444' : '#f59e0b';
+          var ringFill = inc.type === 'BIAS' ? 'rgba(239,68,68,0.15)' : 'rgba(245,158,11,0.15)';
 
-      var orgIncidents = incidents[mapOrgKey] || incidents.ad;
+          mapGroup.append('circle')
+            .attr('cx', projected[0]).attr('cy', projected[1])
+            .attr('r', 12)
+            .attr('fill', ringFill)
+            .attr('stroke', color)
+            .attr('stroke-width', 1)
+            .style('animation', 'pulse 2s infinite')
+            .style('pointer-events', 'none');
 
-      orgIncidents.forEach(function(inc) {
-        var projected = projection(inc.coords);
-        if (!projected) return;
-        var color = inc.type === 'BIAS' ? '#ef4444' : '#f59e0b';
-        var ringFill = inc.type === 'BIAS' ? 'rgba(239,68,68,0.15)' : 'rgba(245,158,11,0.15)';
-
-        mapGroup.append('circle')
-          .attr('cx', projected[0]).attr('cy', projected[1])
-          .attr('r', 12)
-          .attr('fill', ringFill)
-          .attr('stroke', color)
-          .attr('stroke-width', 1)
-          .style('animation', 'pulse 2s infinite')
-          .style('pointer-events', 'none');
-
-        mapGroup.append('circle')
-          .attr('cx', projected[0]).attr('cy', projected[1])
-          .attr('r', 6)
-          .attr('fill', color)
-          .style('cursor', 'pointer')
-          .style('filter', 'drop-shadow(0 0 6px ' + color + ')')
-          .on('click', function(event) {
-            event.stopPropagation();
-            var tooltip = document.getElementById('halo-map-tooltip');
-            if (!tooltip) return;
-            var dest = inc.screen === 'eden' ? 'Eden Core' : 'Obsidian Core';
-            tooltip.innerHTML =
-              '<div style="font-size:11px;font-weight:700;color:#94a3b8;letter-spacing:0.5px;margin-bottom:6px;">' + inc.type + ' INCIDENT</div>' +
-              '<div style="font-size:13px;font-weight:700;color:#e2e8f0;margin-bottom:4px;">' + inc.label + '</div>' +
-              '<div style="font-size:11px;color:#64748b;margin-bottom:8px;">Case ' + inc.case + '</div>' +
-              '<div style="font-size:12px;color:#94a3b8;margin-bottom:12px;">' + inc.desc + '</div>' +
-              '<div style="display:flex;flex-direction:column;gap:6px;">' +
-              '<button type="button" onclick="showScreen(\'' + inc.screen + '\',null);document.getElementById(\'halo-map-tooltip\').style.display=\'none\'" style="background:rgba(166,218,255,0.1);border:1px solid rgba(166,218,255,0.3);color:#a6daff;border-radius:6px;padding:6px 10px;font-size:11px;cursor:pointer;text-align:left;">→ View in ' + dest + '</button>' +
-              '<button type="button" onclick="showScreen(\'warroom\',null);document.getElementById(\'halo-map-tooltip\').style.display=\'none\'" style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:#ef4444;border-radius:6px;padding:6px 10px;font-size:11px;cursor:pointer;text-align:left;">→ View in War Room</button>' +
-              '</div>' +
-              '<div style="margin-top:10px;font-size:10px;color:#60a5fa;cursor:pointer;" onclick="document.getElementById(\'halo-map-tooltip\').style.display=\'none\'">✕ Close</div>';
-            tooltip.style.display = 'block';
-            tooltip.style.pointerEvents = 'auto';
-            tooltip.dataset.haloPinned = '1';
-            tooltip.style.transform = 'none';
-            var bbox = container.getBoundingClientRect();
-            tooltip.style.left = Math.min(event.clientX - bbox.left + 15, width - 240) + 'px';
-            tooltip.style.top = Math.min(event.clientY - bbox.top - 10, height - 200) + 'px';
-          });
-      });
+          mapGroup.append('circle')
+            .attr('cx', projected[0]).attr('cy', projected[1])
+            .attr('r', 6)
+            .attr('fill', color)
+            .style('cursor', 'pointer')
+            .style('filter', 'drop-shadow(0 0 6px ' + color + ')')
+            .on('click', function(event) {
+              event.stopPropagation();
+              var tooltip = document.getElementById('halo-map-tooltip');
+              if (!tooltip) return;
+              tooltip.style.minWidth = '280px';
+              tooltip.innerHTML = haloIncidentPinPopupHtml(inc);
+              tooltip.style.display = 'block';
+              tooltip.style.pointerEvents = 'auto';
+              tooltip.dataset.haloPinned = '1';
+              tooltip.style.transform = 'none';
+              var bbox = container.getBoundingClientRect();
+              tooltip.style.left = Math.min(event.clientX - bbox.left + 15, width - 300) + 'px';
+              tooltip.style.top = Math.min(event.clientY - bbox.top - 20, height - 200) + 'px';
+            });
+        })(orgIncidentsList[hi]);
+      }
 
       var zoom = d3.zoom()
         .scaleExtent([1, 8])
