@@ -542,8 +542,38 @@ line-height: 1; margin-bottom: 5px;
   margin: -4px;
 }
 
+.dr-card[onclick] {
+  cursor: pointer;
+  transition: border-color 0.2s ease;
+}
+.dr-card[onclick]:hover {
+  border-color: rgba(200,210,240,0.18) !important;
+}
+.card[onclick], [onclick].card {
+  cursor: pointer;
+  transition: border-color 0.2s ease;
+}
+.card[onclick]:hover, [onclick].card:hover {
+  border-color: rgba(200,210,240,0.18) !important;
+}
+
+#dash-global-score-panel {
+  cursor: pointer;
+}
+#dash-global-score-panel:hover {
+  border-color: rgba(166,218,255,0.2) !important;
+  box-shadow: 0 0 20px rgba(166,218,255,0.06);
+  transition: all 0.2s ease;
+}
+
+@keyframes dash-refresh-spin {
+  to { transform: rotate(360deg); }
+}
+.refresh-analysis-btn.refreshing svg {
+  animation: dash-refresh-spin 0.7s linear infinite;
+}
+
 /* Card primitives */
-.dr-card {
   background: #0d0e14;
   border: 1px solid rgba(255,255,255,0.08);
   border-radius: 16px;
@@ -898,6 +928,10 @@ line-height: 1; margin-bottom: 5px;
 }
 .dr-card.dr-trust-panel.dr-trust-panel-click:hover {
   border-color: rgba(166, 218, 255, 0.2);
+}
+#dash-global-score-panel.dr-card.dr-trust-panel.dr-trust-panel-click:hover {
+  border-color: rgba(166,218,255,0.2) !important;
+  box-shadow: 0 0 20px rgba(166,218,255,0.06);
 }
 .dr-trust-panel {
   padding: 24px;
@@ -2005,14 +2039,26 @@ Settings
 <!-- ══ DASHBOARD ══ -->
 <div id="screen-dashboard" class="screen active"><span id="commons-avg-score" style="display:none"></span>
 
-<!-- ALERT BANNER -->
-<div class="alert-banner">
-<div class="alert-dot"></div>
-<div style="flex:1">
-<div class="alert-title" id="alert-title">Bias Detected — Personnel Assignment Model v2.4</div>
-<div class="alert-body" id="alert-body">Technician assignment shows 2.3x disparity. 847 affected records. Certification at risk.</div>
-</div>
-<button class="btn-primary" onclick="showScreen('eden',document.querySelectorAll('.nav-item')[2])">View Details →</button>
+<!-- MULTI-ALERT BANNER (dashboard) -->
+<div id="dash-alert-banner" style="background:linear-gradient(135deg,rgba(239,68,68,0.12),rgba(239,68,68,0.06));border:1px solid rgba(239,68,68,0.3);border-radius:10px;padding:12px 16px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;gap:12px;">
+  <div style="display:flex;align-items:flex-start;gap:12px;flex:1;">
+    <div id="dash-alert-dot" style="width:8px;height:8px;border-radius:50%;background:#ef4444;margin-top:4px;flex-shrink:0;animation:pulse 1.5s infinite;"></div>
+    <div style="flex:1;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px;flex-wrap:wrap;">
+        <span id="dash-alert-type" style="font-size:9px;font-weight:700;letter-spacing:0.8px;color:#ef4444;background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.3);border-radius:4px;padding:1px 6px;">BIAS</span>
+        <span id="dash-alert-title" style="font-size:13px;font-weight:700;color:#ef4444;"></span>
+      </div>
+      <div id="dash-alert-desc" style="font-size:11px;color:#94a3b8;line-height:1.5;"></div>
+    </div>
+  </div>
+  <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
+    <div style="display:flex;align-items:center;gap:4px;">
+      <button type="button" onclick="cycleAlert(-1)" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:#64748b;border-radius:4px;width:22px;height:22px;cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center;">‹</button>
+      <span id="dash-alert-counter" style="font-size:10px;color:#64748b;min-width:32px;text-align:center;">1 / 3</span>
+      <button type="button" onclick="cycleAlert(1)" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:#64748b;border-radius:4px;width:22px;height:22px;cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center;">›</button>
+    </div>
+    <button type="button" id="dash-alert-btn" style="background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.4);color:#ef4444;border-radius:7px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;">View Details →</button>
+  </div>
 </div>
 
 <!-- ░░░ DASHBOARD REDESIGN ░░░ -->
@@ -2021,7 +2067,7 @@ Settings
 <div class="dr-grid-4">
 
   <!-- CARD 1 — Bias Score -->
-  <div class="dr-card dr-stat-card">
+  <div class="dr-card dr-stat-card" onclick="dashNavCardClick(event,'eden')" title="Open Eden Core" style="cursor:pointer;">
     <div class="dr-card-head">
       <div class="dr-card-title" id="dr-stat-title-1">Personnel Fairness Score</div>
       <div class="dr-card-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
@@ -2033,7 +2079,7 @@ Settings
   </div>
 
   <!-- CARD 2 — Protected Groups -->
-  <div class="dr-card dr-stat-card">
+  <div class="dr-card dr-stat-card" onclick="dashNavCardClick(event,'obsidian')" title="Open Obsidian Core" style="cursor:pointer;">
     <div class="dr-card-head">
       <div class="dr-card-title" id="dr-stat-title-2">Credential Integrity</div>
       <div class="dr-card-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
@@ -2045,7 +2091,7 @@ Settings
   </div>
 
   <!-- CARD 3 — Parity Index -->
-  <div class="dr-card dr-stat-card">
+  <div class="dr-card dr-stat-card" onclick="dashNavCardClick(event,'compliance')" title="Open Compliance Exchange" style="cursor:pointer;">
     <div class="dr-card-head">
       <div class="dr-card-title" id="dr-stat-title-3">Regulatory Adherence</div>
       <div class="dr-card-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
@@ -2057,7 +2103,7 @@ Settings
   </div>
 
   <!-- CARD 4 — Active Alerts -->
-  <div class="dr-card dr-stat-card dr-dash-incidents-card" onclick="dashIncidentsStatCardClick(event)" title="Open War Room">
+  <div class="dr-card dr-stat-card dr-dash-incidents-card" onclick="dashNavCardClick(event,'warroom')" title="Open War Room" style="cursor:pointer;">
     <div class="dr-card-head">
       <div class="dr-card-title" id="dr-stat-title-4">Active Incidents</div>
       <div class="dr-card-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
@@ -2071,7 +2117,7 @@ Settings
 </div>
 
 <!-- ░░ GLOBAL TRUST SCORE PANEL ░░ -->
-<div class="dr-card dr-trust-panel dr-trust-panel-click" id="dr-trust-panel-root" onclick="dashGlobalTrustPanelClick(event)" title="Open Trust Score screen">
+<div class="dr-card dr-trust-panel dr-trust-panel-click" id="dash-global-score-panel" onclick="dashGlobalTrustPanelClick(event)" title="Open Trust Score screen" style="cursor:pointer;">
   <div class="dr-panel-head">
     <div class="dr-panel-head-left">
       <div class="dr-panel-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
@@ -2085,9 +2131,9 @@ Settings
   <div class="dr-panel-divider"></div>
 
   <div class="dr-trust-center">
-    <div class="dr-trust-score" id="dr-trust-score">0.87</div>
+    <div class="dr-trust-score" id="dash-global-score-number">0.87</div>
     <div class="dr-trust-label" id="dr-trust-label">Within Compliance</div>
-    <div class="dr-trust-progress"><div class="dr-trust-progress-fill" id="dr-trust-progress-fill" style="width:87%"></div></div>
+    <div class="dr-trust-progress"><div class="dr-trust-progress-fill" id="dash-global-score-bar" style="width:87%"></div></div>
   </div>
 
   <div class="dr-trust-cols">
@@ -2114,8 +2160,13 @@ Settings
     <div class="dr-cert-sub">Public Trust Badge Preview</div>
   </div>
 
+  <div style="text-align:right;margin-top:8px;">
+    <span style="font-size:10px;color:#64748b;cursor:pointer;text-decoration:underline;" onclick="event.stopPropagation(); showScreen('trustscore',null);">View full Trust Score report →</span>
+  </div>
+  <p id="dash-last-updated" style="font-size:10px;color:#64748b;text-align:right;margin-top:6px;min-height:14px;opacity:0;transition:opacity 0.4s ease;"></p>
+
   <div class="dr-panel-actions" onclick="event.stopPropagation()">
-    <button class="dr-btn-ghost"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>Refresh Analysis</button>
+    <button type="button" class="dr-btn-ghost refresh-analysis-btn" onclick="refreshDashboard(event); event.stopPropagation();"><svg class="refresh-analysis-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg><span class="refresh-analysis-label"> Refresh Analysis</span></button>
   </div>
 </div>
 
@@ -2123,7 +2174,7 @@ Settings
 <div class="dr-2col">
 
   <!-- LEFT: FAIRNESS REPORT -->
-  <div class="dr-card dr-section-panel">
+  <div class="dr-card dr-section-panel" onclick="dashDashboardSectionClick(event,'eden')" title="Open Eden Core" style="cursor:pointer;">
     <div class="dr-section-head">
       <div class="dr-section-head-left">
         <div class="dr-section-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></div>
@@ -2133,8 +2184,9 @@ Settings
         </div>
       </div>
       <div class="dr-section-head-right">
+        <span style="font-size:10px;color:#60a5fa;cursor:pointer;white-space:nowrap;" onclick="event.stopPropagation(); showScreen('eden',null);">View full report →</span>
         <span class="dr-section-time">Last run 10/10/2025</span>
-        <button class="dr-dots" title="More">⋯</button>
+        <button type="button" class="dr-dots" title="More" onclick="event.stopPropagation();">⋯</button>
       </div>
     </div>
     <div class="dr-panel-divider"></div>
@@ -2212,13 +2264,13 @@ Settings
     </div>
 
     <div class="dr-section-actions">
-      <button class="dr-btn-ghost"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>Refresh Analysis</button>
-      <button class="dr-btn-ghost"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Export Analysis</button>
+      <button type="button" class="dr-btn-ghost" onclick="event.stopPropagation();"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>Refresh Analysis</button>
+      <button type="button" class="dr-btn-ghost" onclick="event.stopPropagation();"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Export Analysis</button>
     </div>
   </div>
 
   <!-- RIGHT: REMEDIATION SUGGESTIONS -->
-  <div class="dr-card dr-section-panel">
+  <div class="dr-card dr-section-panel" onclick="dashDashboardSectionClick(event,'atonement')" title="Open Atonement Core" style="cursor:pointer;">
     <div class="dr-section-head">
       <div class="dr-section-head-left">
         <div class="dr-section-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></div>
@@ -2228,8 +2280,9 @@ Settings
         </div>
       </div>
       <div class="dr-section-head-right">
+        <span style="font-size:10px;color:#60a5fa;cursor:pointer;white-space:nowrap;" onclick="event.stopPropagation(); showScreen('atonement',null);">View all →</span>
         <span class="dr-section-time">Last run 10/10/2025</span>
-        <button class="dr-dots" title="More">⋯</button>
+        <button type="button" class="dr-dots" title="More" onclick="event.stopPropagation();">⋯</button>
       </div>
     </div>
     <div class="dr-section-filter">Filter By Use Case</div>
@@ -2304,8 +2357,8 @@ Settings
     </div>
 
     <div class="dr-section-actions">
-      <button class="dr-btn-ghost"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>Refresh Analysis</button>
-      <button class="dr-btn-ghost"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Export Analysis</button>
+      <button type="button" class="dr-btn-ghost" onclick="event.stopPropagation();"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>Refresh Analysis</button>
+      <button type="button" class="dr-btn-ghost" onclick="event.stopPropagation();"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Export Analysis</button>
     </div>
   </div>
 
@@ -2315,7 +2368,7 @@ Settings
 <div class="dr-2col">
 
   <!-- LEFT: DEMOGRAPHIC BREAKDOWN -->
-  <div class="dr-card dr-section-panel">
+  <div class="dr-card dr-section-panel" onclick="dashDashboardSectionClick(event,'eden')" title="Open Eden Core" style="cursor:pointer;">
     <div class="dr-section-head">
       <div class="dr-section-head-left">
         <div class="dr-section-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
@@ -2325,8 +2378,9 @@ Settings
         </div>
       </div>
       <div class="dr-section-head-right">
+        <span style="font-size:10px;color:#60a5fa;cursor:pointer;white-space:nowrap;" onclick="event.stopPropagation(); showScreen('eden',null);">View full breakdown →</span>
         <span class="dr-section-time">Last run 10/10/2025</span>
-        <button class="dr-dots" title="More">⋯</button>
+        <button type="button" class="dr-dots" title="More" onclick="event.stopPropagation();">⋯</button>
       </div>
     </div>
     <div class="dr-panel-divider"></div>
@@ -2372,13 +2426,13 @@ Settings
     </div>
 
     <div class="dr-section-actions">
-      <button class="dr-btn-ghost"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>Refresh Analysis</button>
-      <button class="dr-btn-ghost"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Export Analysis</button>
+      <button type="button" class="dr-btn-ghost" onclick="event.stopPropagation();"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>Refresh Analysis</button>
+      <button type="button" class="dr-btn-ghost" onclick="event.stopPropagation();"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Export Analysis</button>
     </div>
   </div>
 
   <!-- RIGHT: BIAS ANALYSIS RESULTS -->
-  <div class="dr-card dr-section-panel">
+  <div class="dr-card dr-section-panel" onclick="dashDashboardSectionClick(event,'eden')" title="Open Eden Core" style="cursor:pointer;">
     <div class="dr-section-head">
       <div class="dr-section-head-left">
         <div class="dr-section-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></div>
@@ -2388,8 +2442,9 @@ Settings
         </div>
       </div>
       <div class="dr-section-head-right">
+        <span style="font-size:10px;color:#60a5fa;cursor:pointer;white-space:nowrap;" onclick="event.stopPropagation(); showScreen('eden',null);">View full analysis →</span>
         <span class="dr-section-time">Last run 10/10/2025</span>
-        <button class="dr-dots" title="More">⋯</button>
+        <button type="button" class="dr-dots" title="More" onclick="event.stopPropagation();">⋯</button>
       </div>
     </div>
     <div class="dr-panel-divider"></div>
@@ -2473,7 +2528,7 @@ Settings
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><path d="M12 3v18M5 7l14 0M5 7l-3 7a4 4 0 0 0 8 0l-3-7M19 7l-3 7a4 4 0 0 0 8 0l-3-7"/></svg>
           Regulatory Compliance
         </div>
-        <button class="dr-btn-ghost dr-btn-tiny" onclick="showScreen('compliance', null)">Go to Compliance Exchange +</button>
+        <button type="button" class="dr-btn-ghost dr-btn-tiny" onclick="event.stopPropagation(); showScreen('compliance', null);">Go to Compliance Exchange +</button>
       </div>
       <div class="dr-reg-box" id="dr-reg-box">
         <div class="dr-reg-row">
@@ -2496,8 +2551,8 @@ Settings
     </div>
 
     <div class="dr-section-actions">
-      <button class="dr-btn-ghost"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>Refresh Analysis</button>
-      <button class="dr-btn-ghost"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Export Analysis</button>
+      <button type="button" class="dr-btn-ghost" onclick="event.stopPropagation();"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>Refresh Analysis</button>
+      <button type="button" class="dr-btn-ghost" onclick="event.stopPropagation();"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Export Analysis</button>
     </div>
   </div>
 
@@ -6505,6 +6560,7 @@ window.saveDashboardLayout=function(){
  try { localStorage.setItem('cardinal-dashboard-layout', JSON.stringify({ preset: window._dashPreset || '', widgets: prefs, saved: new Date().toISOString() })); } catch(_e) {}
 };
 let currentOrg = 'ad';
+window.currentOrg = currentOrg;
 let selectedOrg = 'ad';
 let dimScores = { ...INDUSTRY_SCORES.ad };
 let scoreChart, demoChart, haloChart, haloPenaltyChart, haloForecastChart;
@@ -6919,6 +6975,7 @@ function otpMove(el, idx) {
 function doLogin() {
   try {
     currentOrg = selectedOrg || 'ad';
+    window.currentOrg = currentOrg;
     var loginEl = document.getElementById('login-screen');
     var appEl = document.getElementById('app');
     if(loginEl) { loginEl.style.display = 'none'; loginEl.style.opacity = '0'; loginEl.style.pointerEvents = 'none'; }
@@ -6939,6 +6996,7 @@ function doLogin() {
     try { DIMENSIONS = getDimensions(currentOrg); } catch(e3) { console.log('dims:', e3.message); }
     try { loadIndustry(currentOrg); } catch(e4) { console.log('loadIndustry:', e4.message); }
     try { updateDashboardIndustry(currentOrg); } catch(eUDI) { console.log('updateDashboardIndustry:', eUDI.message); }
+    try { window.currentAlertIndex = 0; renderAlert(0); } catch (_eAlerts) {}
     try { refreshDashboardGreeting(); } catch(e5) {}
     // Charts now lazy-load via showScreen — no initCharts here
   } catch(e) {
@@ -6955,6 +7013,7 @@ function switchIndustry(org, btn) {
  try { document.querySelectorAll('.ind-btn').forEach(b => b.classList.remove('active')); } catch(e) {}
  if(btn) btn.classList.add('active');
  currentOrg = org;
+ window.currentOrg = org;
  try { dimScores = Object.assign({}, INDUSTRY_SCORES[org]); } catch(e) {}
  try { DIMENSIONS = getDimensions(org); } catch(e) {}
  try { loadIndustry(org); } catch(e) { console.warn('loadIndustry:', e.message); }
@@ -6980,6 +7039,137 @@ function dashGlobalTrustPanelClick(ev) {
       ev.target.closest('.dr-panel-actions'))
     return;
   showScreen('trustscore', null);
+}
+
+window.currentAlertIndex = 0;
+
+var alertsData = {
+  ad: [
+    {type:'BIAS', color:'#ef4444', title:'Bias Detected — Personnel Assignment Model v2.4', desc:'Hispanic technicians denied at 2.3x rate. 847 affected records. DoD certification at risk.', screen:'eden', btnLabel:'View in Eden →'},
+    {type:'REGULATION', color:'#f59e0b', title:'DoD AI Ethics Audit — 2 Days Remaining', desc:'Annual DoD AI Ethics review deadline April 30. Trust Score 0.74 below required 0.80.', screen:'compliance', btnLabel:'View Compliance →'},
+    {type:'MODEL', color:'#f59e0b', title:'Mission Readiness v1.1 — Watch Status', desc:'Equalized odds difference at 0.18 — above 0.10 threshold. Monitoring active.', screen:'modellibrary', btnLabel:'View Model →'}
+  ],
+  fin: [
+    {type:'BIAS', color:'#ef4444', title:'ECOA Violation Risk — Credit Scoring v3.4', desc:'ZIP code proxy detected (correlation 0.82). 1,203 applicants affected. NYC Law 144 audit in 13 days.', screen:'eden', btnLabel:'View in Eden →'},
+    {type:'FRAUD', color:'#f59e0b', title:'Synthetic Identity Ring Detected — Chicago', desc:'47 loan applications from single device fingerprint. $890K exposure flagged.', screen:'obsidian', btnLabel:'View in Obsidian →'},
+    {type:'REGULATION', color:'#f59e0b', title:'NYC Local Law 144 Audit — 13 Days', desc:'Mandatory bias audit report due May 11, 2026. Credit Scoring v3.4 currently failing threshold.', screen:'compliance', btnLabel:'View Compliance →'}
+  ],
+  health: [
+    {type:'BIAS', color:'#ef4444', title:'ACA 1557 Violation — Claims Adjudication v1.9', desc:'Patients 65+ denied at 2.3x rate. 2,847 claims affected. CMS audit in 30 days.', screen:'eden', btnLabel:'View in Eden →'},
+    {type:'FRAUD', color:'#f59e0b', title:'Prescription Fraud Ring — 31 Providers', desc:'Shared patient profiles and medications detected across 31 providers. $1.1M blocked.', screen:'obsidian', btnLabel:'View in Obsidian →'},
+    {type:'REGULATION', color:'#ef4444', title:'ACA 1557 Remediation Deadline — 4 Days', desc:'CMS requires remediation plan by May 2, 2026. Claims v2.0 shadow deployment must be approved.', screen:'compliance', btnLabel:'View Compliance →'}
+  ]
+};
+
+function dashHexToRgba(hex, alpha) {
+  if (!hex || typeof hex !== 'string') return 'rgba(239,68,68,' + alpha + ')';
+  var h = hex.replace('#', '').trim();
+  if (h.length === 3) {
+    h = h.split('').map(function(c) { return c + c; }).join('');
+  }
+  if (h.length !== 6) return 'rgba(239,68,68,' + alpha + ')';
+  var n = parseInt(h, 16);
+  if (isNaN(n)) return 'rgba(239,68,68,' + alpha + ')';
+  var r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
+  return 'rgba(' + r + ',' + g + ',' + b + ',' + alpha + ')';
+}
+
+function renderAlert(index) {
+  var org = (typeof currentOrg !== 'undefined' && currentOrg) ? currentOrg : ((typeof window.currentOrg !== 'undefined' && window.currentOrg) ? window.currentOrg : 'ad');
+  window.currentOrg = org;
+  var alerts = alertsData[org] || alertsData.ad;
+  if (!alerts || !alerts.length) return;
+  var i = typeof index === 'number' ? index : 0;
+  if (i < 0 || i >= alerts.length) i = 0;
+  var a = alerts[i];
+  var safe = function(id, val) { var el = document.getElementById(id); if (el) el.textContent = val; };
+  var safeStyleLocal = function(id, prop, val) { var el = document.getElementById(id); if (el) el.style[prop] = val; };
+  safe('dash-alert-type', a.type);
+  safe('dash-alert-title', a.title);
+  safe('dash-alert-desc', a.desc);
+  safe('dash-alert-counter', (i + 1) + ' / ' + alerts.length);
+  safe('dash-alert-btn', a.btnLabel);
+  safeStyleLocal('dash-alert-dot', 'background', a.color);
+  var c = a.color;
+  safeStyleLocal('dash-alert-type', 'color', c);
+  safeStyleLocal('dash-alert-type', 'background', dashHexToRgba(c, 0.15));
+  safeStyleLocal('dash-alert-type', 'borderColor', dashHexToRgba(c, 0.3));
+  safeStyleLocal('dash-alert-title', 'color', c);
+  safeStyleLocal('dash-alert-btn', 'color', c);
+  safeStyleLocal('dash-alert-btn', 'borderColor', dashHexToRgba(c, 0.4));
+  safeStyleLocal('dash-alert-btn', 'background', dashHexToRgba(c, 0.15));
+  var btn = document.getElementById('dash-alert-btn');
+  if (btn) {
+    btn.onclick = function(ev) {
+      if (ev) { ev.preventDefault(); ev.stopPropagation(); }
+      showScreen(a.screen, null);
+    };
+  }
+  var banner = document.getElementById('dash-alert-banner');
+  if (banner && c) {
+    banner.style.background = 'linear-gradient(135deg,' + dashHexToRgba(c, 0.12) + ',' + dashHexToRgba(c, 0.06) + ')';
+    banner.style.borderColor = dashHexToRgba(c, 0.3);
+  }
+}
+
+function cycleAlert(dir) {
+  var org = (typeof currentOrg !== 'undefined' && currentOrg) ? currentOrg : ((typeof window.currentOrg !== 'undefined' && window.currentOrg) ? window.currentOrg : 'ad');
+  var alerts = alertsData[org] || alertsData.ad;
+  if (!alerts || !alerts.length) return;
+  window.currentAlertIndex = (window.currentAlertIndex + dir + alerts.length) % alerts.length;
+  renderAlert(window.currentAlertIndex);
+}
+
+function dashNavCardClick(ev, screen) {
+  if (ev && ev.target && ev.target.closest && ev.target.closest('.dr-card-foot')) return;
+  try { showScreen(screen, null); } catch (err) {}
+}
+
+function dashDashboardSectionClick(ev, screen) {
+  if (!ev || !ev.target || !ev.target.closest) return;
+  if (ev.target.closest('.dr-section-actions')) return;
+  if (ev.target.closest('button')) return;
+  if (ev.target.closest('.dr-section-filter')) return;
+  try { showScreen(screen, null); } catch (err2) {}
+}
+
+window._dashTrustScoreRaf = null;
+function animateTrustScore(targetScore, color) {
+  var el = document.getElementById('dash-global-score-number');
+  if (!el) return;
+  if (window._dashTrustScoreRaf) cancelAnimationFrame(window._dashTrustScoreRaf);
+  var numTarget = typeof targetScore === 'number' ? targetScore : parseFloat(String(targetScore));
+  if (isNaN(numTarget)) numTarget = 0;
+  var start = 0;
+  var duration = 1500;
+  var startTime = null;
+  el.style.color = color || el.style.color;
+  function step(timestamp) {
+    if (!startTime) startTime = timestamp;
+    var progress = Math.min((timestamp - startTime) / duration, 1);
+    var eased = 1 - Math.pow(1 - progress, 3);
+    var current = start + (numTarget - start) * eased;
+    el.textContent = current.toFixed(2);
+    if (progress < 1) window._dashTrustScoreRaf = requestAnimationFrame(step);
+    else {
+      window._dashTrustScoreRaf = null;
+      el.textContent = numTarget.toFixed(2);
+    }
+  }
+  window._dashTrustScoreRaf = requestAnimationFrame(step);
+}
+
+function dashAnimateTrustBar(pct, color) {
+  var bar = document.getElementById('dash-global-score-bar');
+  if (!bar) return;
+  bar.style.transition = 'none';
+  bar.style.width = '0%';
+  if (color) bar.style.background = color;
+  bar.offsetHeight;
+  setTimeout(function() {
+    bar.style.transition = 'width 1.2s ease-out';
+    bar.style.width = pct + '%';
+  }, 50);
 }
 
 const DASH_INDUSTRY = {
@@ -7195,6 +7385,40 @@ const DASH_INDUSTRY = {
   }
 };
 
+function refreshDashboard(ev) {
+  if (ev) { ev.preventDefault(); ev.stopPropagation(); }
+  var org = window.currentOrg || 'ad';
+  var scoreMap = { ad: 0.74, fin: 0.81, health: 0.83 };
+  var colorMap = { ad: '#f59e0b', fin: '#22c55e', health: '#22c55e' };
+  var cfgX = typeof DASH_INDUSTRY !== 'undefined' ? (DASH_INDUSTRY[org] || DASH_INDUSTRY.ad) : null;
+  var pctRefresh = cfgX ? cfgX.trustWidth : 74;
+  animateTrustScore(scoreMap[org], colorMap[org]);
+  dashAnimateTrustBar(pctRefresh, colorMap[org]);
+  window.currentAlertIndex = 0;
+  try { renderAlert(0); } catch (_r0) {}
+
+  var btn = document.querySelector('#screen-dashboard .refresh-analysis-btn');
+  if (btn) {
+    btn.classList.add('refreshing');
+    var lbl = btn.querySelector('.refresh-analysis-label');
+    if (lbl) lbl.textContent = ' Refreshing...';
+    setTimeout(function() {
+      btn.classList.remove('refreshing');
+      if (lbl) lbl.textContent = ' Refresh Analysis';
+    }, 1500);
+  }
+
+  var ts = document.getElementById('dash-last-updated');
+  if (ts) {
+    ts.textContent = 'Analysis updated — just now';
+    ts.style.opacity = '1';
+    clearTimeout(window._dashAnalysisFadeT);
+    window._dashAnalysisFadeT = setTimeout(function() {
+      ts.style.opacity = '0';
+    }, 2000);
+  }
+}
+
 function _drRegIconSVG(color) {
   if (color === '#22c55e') {
     return '<circle cx="12" cy="12" r="10"/><polyline points="9 12 11 14 15 10"/>';
@@ -7236,13 +7460,17 @@ function updateDashboardIndustry(org) {
     safeStyle('dr-alerts-num', 'color', cfg.alertsColor);
   }
 
-  safeSet('dr-trust-score', cfg.trustNum);
+  window.currentAlertIndex = 0;
+  try { renderAlert(0); } catch (_ra) {}
+
+  var animColorMap = { ad: '#f59e0b', fin: '#22c55e', health: '#22c55e' };
+  var animCol = animColorMap[org] || '#f59e0b';
+  var tgtScore = parseFloat(cfg.trustNum);
+  animateTrustScore(tgtScore, animCol);
   safeSet('dr-trust-label', cfg.trustLabel);
-  var _tr = dashGlobalTrustScoreColor(parseFloat(cfg.trustNum));
-  safeStyle('dr-trust-score', 'color', _tr);
+  var _tr = dashGlobalTrustScoreColor(tgtScore);
   safeStyle('dr-trust-label', 'color', _tr);
-  safeStyle('dr-trust-progress-fill', 'width', cfg.trustWidth + '%');
-  safeStyle('dr-trust-progress-fill', 'background', _tr);
+  dashAnimateTrustBar(cfg.trustWidth, animCol);
   if (cfg.certLine) safeSet('dr-global-trust-cert-line', cfg.certLine);
 
   safeSet('dr-bias-det-num', cfg.biasDet + '%');
