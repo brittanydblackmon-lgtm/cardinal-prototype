@@ -2030,7 +2030,7 @@ Settings
 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
 <span>Adam</span>
 </button>
-<div class="topbar-alert" onclick="showScreen('compliance',document.querySelectorAll('.nav-item')[9])">
+<div class="topbar-alert" onclick="showScreen('warroom', null)">
 <span class="alert-dot"></span>
 <span id="topbar-alert-count">2 Critical Cases</span>
 </div>
@@ -2038,6 +2038,17 @@ Settings
 <div class="content">
 <!-- ══ DASHBOARD ══ -->
 <div id="screen-dashboard" class="screen active"><span id="commons-avg-score" style="display:none"></span>
+
+<div id="cardinal-ask-bar" style="background:linear-gradient(135deg,rgba(13,14,20,0.95),rgba(15,17,26,0.95));border:1px solid rgba(166,218,255,0.15);border-radius:12px;padding:10px 16px;margin-bottom:12px;display:flex;align-items:center;gap:10px;">
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(166,218,255,0.6)" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+  <input id="cardinal-ask-input" placeholder='Ask Cardinal — "Why is my Trust Score declining?" or "What do I fix before the NYC audit?"' style="flex:1;background:transparent;border:none;outline:none;color:#e2e8f0;font-size:12px;caret-color:#a6daff;" />
+  <div style="display:flex;align-items:center;gap:6px;">
+    <span style="font-size:10px;color:#4b5563;">Ask</span>
+    <button type="button" id="eve-quick-btn" onclick="openEveWithQuery()" style="background:rgba(166,218,255,0.1);border:1px solid rgba(166,218,255,0.25);color:#a6daff;border-radius:6px;padding:4px 10px;font-size:11px;cursor:pointer;">Eve</button>
+    <span style="font-size:10px;color:#4b5563;">or</span>
+    <button type="button" id="adam-quick-btn" onclick="openAdamWithQuery()" style="background:rgba(96,165,250,0.1);border:1px solid rgba(96,165,250,0.25);color:#60a5fa;border-radius:6px;padding:4px 10px;font-size:11px;cursor:pointer;">Adam</button>
+  </div>
+</div>
 
 <!-- MULTI-ALERT BANNER (dashboard) -->
 <div id="dash-alert-banner" style="background:linear-gradient(135deg,rgba(239,68,68,0.12),rgba(239,68,68,0.06));border:1px solid rgba(239,68,68,0.3);border-radius:10px;padding:12px 16px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;gap:12px;">
@@ -2084,7 +2095,7 @@ Settings
       <div class="dr-card-title" id="dr-stat-title-2">Credential Integrity</div>
       <div class="dr-card-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
     </div>
-    <div class="dr-stat-prot-inline"><span id="dr-prot-num" class="dr-stat-num dr-stat-num-inline" style="color:#22c55e">8</span><span class="dr-stat-slash">/</span><span class="dr-prot-unit" id="dr-prot-unit">models monitored</span></div>
+    <div class="dr-stat-prot-inline"><span id="dr-prot-monitored-line" class="dr-stat-num dr-stat-num-inline" style="font-size:13px;font-weight:600;color:#94a3b8;line-height:1.3;">8 monitored · 2 at risk</span></div>
     <div class="dr-stat-pill-gap" aria-hidden="true"></div>
     <div class="dr-vis dr-vis-prot"><div id="dash-protected-dots" class="dash-protected-dots"></div></div>
     <div class="dr-card-foot"><button type="button" class="dr-card-min" onclick="event.stopPropagation()" title="Minimize">−</button></div>
@@ -2154,10 +2165,10 @@ Settings
     </div>
   </div>
 
-  <div class="dr-cert-box">
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+  <div id="dr-global-trust-cert-box" class="dr-cert-box" title="Cardinal Certification means this organization meets the minimum thresholds for bias fairness (DI ≥ 0.80), fraud integrity (≥ 85%), and regulatory compliance across all applicable jurisdictions.">
+    <svg id="dr-global-trust-cert-shield" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
     <div class="dr-cert-title" id="dr-global-trust-cert-line">Certified by Obsidian</div>
-    <div class="dr-cert-sub">Public Trust Badge Preview</div>
+    <div class="dr-cert-sub" id="dr-global-trust-cert-sub">Public Trust Badge Preview</div>
   </div>
 
   <div style="text-align:right;margin-top:8px;">
@@ -2167,6 +2178,18 @@ Settings
 
   <div class="dr-panel-actions" onclick="event.stopPropagation()">
     <button type="button" class="dr-btn-ghost refresh-analysis-btn" onclick="refreshDashboard(event); event.stopPropagation();"><svg class="refresh-analysis-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg><span class="refresh-analysis-label"> Refresh Analysis</span></button>
+  </div>
+</div>
+
+<div id="dash-core-status" class="card" style="margin-bottom:16px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:16px;">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+    <div>
+      <div style="font-size:15px;font-weight:600;color:#e2e8f0;">Core Status — Live Overview</div>
+      <div style="font-size:11px;color:#64748b;">Live status of all Cardinal cores — click any core to go deeper</div>
+    </div>
+    <div style="font-size:10px;color:#4b5563;">Last updated: just now</div>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;" id="core-status-grid">
   </div>
 </div>
 
@@ -6797,20 +6820,27 @@ function drawDashParityChart() {
 function drawDashProtectedDots() {
   var wrap = document.getElementById('dash-protected-dots');
   if (!wrap) return;
-  var items = [
-    { cap: 'Race', st: 'good' },
-    { cap: 'Gender', st: 'good' },
-    { cap: 'Age', st: 'warn' },
-    { cap: 'Disability', st: 'bad' },
-    { cap: 'Religion', st: 'good' },
-    { cap: 'National Origin', st: 'good' },
-    { cap: 'Veteran Status', st: 'warn' },
-    { cap: 'Income Level', st: 'good' }
-  ];
+  var org = typeof window.currentOrg !== 'undefined' ? window.currentOrg : 'ad';
+  var dashCfg = typeof DASH_INDUSTRY !== 'undefined' ? DASH_INDUSTRY[org] : null;
+  var items =
+    dashCfg && dashCfg.protectedDots && dashCfg.protectedDots.length
+      ? dashCfg.protectedDots
+      : [
+          { cap: 'Race', st: 'good' },
+          { cap: 'Gender', st: 'good' },
+          { cap: 'Age', st: 'warn' },
+          { cap: 'Disability', st: 'bad' },
+          { cap: 'Religion', st: 'good' },
+          { cap: 'National Origin', st: 'good' },
+          { cap: 'Veteran Status', st: 'warn' },
+          { cap: 'Income Level', st: 'good' }
+        ];
   var glyph = { good: '\u2713', warn: '\u26a0', bad: '\u2717' };
   wrap.innerHTML = items.map(function(it) {
+    var g = glyph[it.st] || '';
+    var capLbl = String(it.cap) + (g ? '\u202f ' + g : '');
     return '<div class="dash-prot-item"><div class="dash-prot-dot ' + it.st + '">' + glyph[it.st] + '</div>' +
-           '<span class="dash-prot-cap">' + it.cap + '</span></div>';
+           '<span class="dash-prot-cap">' + capLbl + '</span></div>';
   }).join('');
 }
 
@@ -7178,7 +7208,21 @@ const DASH_INDUSTRY = {
     biasNum: 67, biasColor: '#ef4444',
     trustNum: '0.74', trustWidth: 74,
     trustLabel: 'Below Threshold — Not Certified',
-    certLine: 'Not Yet Certified — Score below 0.80 threshold',
+    monitoredAtRiskLine: '8 monitored · 2 at risk',
+    criticalCaseCount: 1,
+    protectedDots: [
+      { cap: 'Race', st: 'good' },
+      { cap: 'Gender', st: 'good' },
+      { cap: 'Age', st: 'warn' },
+      { cap: 'Disability', st: 'bad' },
+      { cap: 'Religion', st: 'good' },
+      { cap: 'National Origin', st: 'good' },
+      { cap: 'Veteran Status', st: 'warn' },
+      { cap: 'Income', st: 'good' }
+    ],
+    certHeading: 'Not Yet Certified by Project Cardinal',
+    certSubtext: 'Score below 0.80 threshold · DoD AI Ethics · EO 13960 · ISO 42001',
+    certCertified: false,
     biasDet: 67, biasDetColor: '#ef4444',
     fraud:   91, fraudColor:   '#22c55e',
     comp:    82, compColor:    '#22c55e',
@@ -7248,7 +7292,21 @@ const DASH_INDUSTRY = {
     biasNum: 74, biasColor: '#f59e0b',
     trustNum: '0.81', trustWidth: 81,
     trustLabel: 'Approaching Threshold',
-    certLine: 'Certified — ECOA Compliant',
+    monitoredAtRiskLine: '8 monitored · 1 at risk',
+    criticalCaseCount: 2,
+    protectedDots: [
+      { cap: 'Race', st: 'warn' },
+      { cap: 'Gender', st: 'good' },
+      { cap: 'Age', st: 'good' },
+      { cap: 'Disability', st: 'good' },
+      { cap: 'Religion', st: 'good' },
+      { cap: 'National Origin', st: 'good' },
+      { cap: 'Veteran Status', st: 'good' },
+      { cap: 'Income', st: 'good' }
+    ],
+    certHeading: 'Certified by Project Cardinal',
+    certSubtext: 'Meets Cardinal standards for Fair Lending · ECOA · NYC Law 144',
+    certCertified: true,
     biasDet: 74, biasDetColor: '#f59e0b',
     fraud:   88, fraudColor:   '#22c55e',
     comp:    76, compColor:    '#f59e0b',
@@ -7318,7 +7376,21 @@ const DASH_INDUSTRY = {
     biasNum: 64, biasColor: '#ef4444',
     trustNum: '0.83', trustWidth: 83,
     trustLabel: 'Within Compliance',
-    certLine: 'Certified — ACA 1557 Compliant',
+    monitoredAtRiskLine: '8 monitored · 3 at risk',
+    criticalCaseCount: 3,
+    protectedDots: [
+      { cap: 'Race', st: 'warn' },
+      { cap: 'Gender', st: 'good' },
+      { cap: 'Age', st: 'bad' },
+      { cap: 'Disability', st: 'warn' },
+      { cap: 'Religion', st: 'good' },
+      { cap: 'National Origin', st: 'good' },
+      { cap: 'Veteran Status', st: 'good' },
+      { cap: 'Income', st: 'good' }
+    ],
+    certHeading: 'Certified by Project Cardinal',
+    certSubtext: 'Meets Cardinal standards for Clinical Equity · ACA 1557 · CMS Oversight',
+    certCertified: true,
     biasDet: 81, biasDetColor: '#22c55e',
     fraud:   84, fraudColor:   '#22c55e',
     comp:    77, compColor:    '#f59e0b',
@@ -7385,6 +7457,78 @@ const DASH_INDUSTRY = {
   }
 };
 
+var DASH_CERT_TOOLTIP =
+  'Cardinal Certification means this organization meets the minimum thresholds for bias fairness (DI ≥ 0.80), fraud integrity (≥ 85%), and regulatory compliance across all applicable jurisdictions.';
+
+/** Per-industry payloads for dashboard Core Status panel (below Global Trust Score). */
+var CORE_STATUS_BY_ORG = {
+  ad: [
+    { name: 'Eden Core', color: '#ef4444', desc: '2 bias flags active', metric: 'DI: 0.67', screen: 'eden' },
+    { name: 'Obsidian Core', color: '#f59e0b', desc: '23 synthetic credentials flagged', metric: '$2.1M blocked', screen: 'obsidian' },
+    { name: 'Genesis Core', color: '#60a5fa', desc: 'Shadow deploy v2.5 running', metric: '5% traffic', screen: 'genesis' },
+    { name: 'Atonement Core', color: '#f59e0b', desc: 'Remediation in progress', metric: '847 cohort', screen: 'atonement' },
+    { name: 'HALO Core', color: '#f59e0b', desc: '3 deadlines in 30 days', metric: '$28M exposure', screen: 'halo' },
+    { name: 'Echo Core', color: '#60a5fa', desc: 'Audit log running — tamper-proof', metric: 'All events sealed', screen: 'echo' },
+    { name: 'Compliance', color: '#f59e0b', desc: 'DoD audit in 2 days', metric: '71.2%', screen: 'compliance' },
+    { name: 'Trust Ledger', color: '#60a5fa', desc: 'All decisions sealed', metric: 'Verified', screen: 'trustledger' },
+    { name: 'Sentinel', color: '#60a5fa', desc: '6.2 days ahead of incidents', metric: '3 pre-caught', screen: 'sentinel' },
+    { name: 'War Room', color: '#ef4444', desc: 'Case #AD-2847 — Day 5', metric: '7 days left', screen: 'warroom' }
+  ],
+  fin: [
+    { name: 'Eden Core', color: '#ef4444', desc: '1 bias flag active', metric: 'DI: 0.74', screen: 'eden' },
+    { name: 'Obsidian Core', color: '#f59e0b', desc: '47 applications flagged', metric: '$890K blocked', screen: 'obsidian' },
+    { name: 'Genesis Core', color: '#60a5fa', desc: 'Shadow deploy v3.5 running', metric: '5% traffic', screen: 'genesis' },
+    { name: 'Atonement Core', color: '#f59e0b', desc: '687 re-approved', metric: '$2.1M recovered', screen: 'atonement' },
+    { name: 'HALO Core', color: '#ef4444', desc: 'NYC audit in 13 days', metric: '$40M exposure', screen: 'halo' },
+    { name: 'Echo Core', color: '#60a5fa', desc: 'Audit log running — tamper-proof', metric: 'All events sealed', screen: 'echo' },
+    { name: 'Compliance', color: '#ef4444', desc: 'ECOA violation active', metric: '68.3%', screen: 'compliance' },
+    { name: 'Trust Ledger', color: '#60a5fa', desc: 'All decisions sealed', metric: 'Verified', screen: 'trustledger' },
+    { name: 'Sentinel', color: '#60a5fa', desc: 'Monitoring 5 models', metric: '2 pre-caught', screen: 'sentinel' },
+    { name: 'War Room', color: '#ef4444', desc: 'Case #FIN-1203 — Day 14', metric: 'Deploy ready', screen: 'warroom' }
+  ],
+  health: [
+    { name: 'Eden Core', color: '#ef4444', desc: '1 bias flag active', metric: 'DI: 0.64', screen: 'eden' },
+    { name: 'Obsidian Core', color: '#f59e0b', desc: '31 providers flagged', metric: '$1.1M blocked', screen: 'obsidian' },
+    { name: 'Genesis Core', color: '#60a5fa', desc: 'Fix modeled, awaiting approval', metric: 'v2.0 staged', screen: 'genesis' },
+    { name: 'Atonement Core', color: '#64748b', desc: 'Awaiting CMO sign-off', metric: '2,847 cohort', screen: 'atonement' },
+    { name: 'HALO Core', color: '#ef4444', desc: 'CMS audit in 30 days', metric: '$65M exposure', screen: 'halo' },
+    { name: 'Echo Core', color: '#60a5fa', desc: 'Audit log running — tamper-proof', metric: 'All events sealed', screen: 'echo' },
+    { name: 'Compliance', color: '#ef4444', desc: 'ACA 1557 violation', metric: '64.8%', screen: 'compliance' },
+    { name: 'Trust Ledger', color: '#60a5fa', desc: 'All decisions sealed', metric: 'Verified', screen: 'trustledger' },
+    { name: 'Sentinel', color: '#60a5fa', desc: 'Monitoring 3 models', metric: '4 pre-caught', screen: 'sentinel' },
+    { name: 'War Room', color: '#ef4444', desc: 'Case #HS-2847 — Day 5', metric: 'Awaiting CMO', screen: 'warroom' }
+  ]
+};
+
+function dashFormatCriticalCasesTopbar(count) {
+  count = typeof count === 'number' ? count : parseInt(count, 10);
+  if (count === 1) return '1 Critical Case';
+  if (isNaN(count)) return '0 Critical Cases';
+  return count + ' Critical Cases';
+}
+
+function buildCoreStatusGrid(org) {
+  var grid = document.getElementById('core-status-grid');
+  if (!grid || typeof CORE_STATUS_BY_ORG === 'undefined') return;
+  var cores = CORE_STATUS_BY_ORG[org] || CORE_STATUS_BY_ORG.ad || [];
+  grid.innerHTML = cores.map(function(c) {
+    var bg = typeof dashHexToRgba === 'function' ? dashHexToRgba(c.color, 0.1) : 'rgba(255,255,255,0.06)';
+    var brd = typeof dashHexToRgba === 'function' ? dashHexToRgba(c.color, 0.25) : 'rgba(255,255,255,0.1)';
+    var dashEsc = typeof c.screen === 'string' ? c.screen.replace(/'/g, "\\'") : '';
+    var desc = String(c.desc).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    var name = String(c.name).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    var met = String(c.metric).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    return '<div onclick="showScreen(\'' + dashEsc + '\',null)" style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:12px;cursor:pointer;transition:border-color 0.2s;" onmouseover="this.style.borderColor=\'rgba(200,210,240,0.2)\'" onmouseout="this.style.borderColor=\'rgba(255,255,255,0.07)\'">' +
+      '<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">' +
+        '<div style="width:7px;height:7px;border-radius:50%;background:' + c.color + ';box-shadow:0 0 5px ' + c.color + ';flex-shrink:0;"></div>' +
+        '<span style="font-size:11px;font-weight:600;color:#e2e8f0;">' + name + '</span>' +
+      '</div>' +
+      '<div style="font-size:10px;color:#64748b;margin-bottom:8px;line-height:1.4;">' + desc + '</div>' +
+      '<div style="font-size:10px;font-weight:600;color:' + c.color + ';background:' + bg + ';border:1px solid ' + brd + ';border-radius:4px;padding:2px 7px;display:inline-block;">' + met + '</div>' +
+    '</div>';
+  }).join('');
+}
+
 function refreshDashboard(ev) {
   if (ev) { ev.preventDefault(); ev.stopPropagation(); }
   var org = window.currentOrg || 'ad';
@@ -7445,7 +7589,7 @@ function updateDashboardIndustry(org) {
   if (cfg.dashCharts) {
     var dc = cfg.dashCharts;
     safeSet('dr-bias-trend', dc.biasTrend);
-    safeSet('dr-prot-unit', dc.protUnitSuffix);
+    if (cfg.monitoredAtRiskLine) safeSet('dr-prot-monitored-line', cfg.monitoredAtRiskLine);
     safeSet('dr-parity-num', dc.parityAvgPct);
     safeStyle('dr-parity-num', 'color', dc.parityAvgColor);
     safeHTML('dash-incidents-list', dashFormatIncidentRows(dc.incidents || []));
@@ -7463,6 +7607,10 @@ function updateDashboardIndustry(org) {
   window.currentAlertIndex = 0;
   try { renderAlert(0); } catch (_ra) {}
 
+  if (typeof cfg.criticalCaseCount === 'number') {
+    safeSet('topbar-alert-count', dashFormatCriticalCasesTopbar(cfg.criticalCaseCount));
+  }
+
   var animColorMap = { ad: '#f59e0b', fin: '#22c55e', health: '#22c55e' };
   var animCol = animColorMap[org] || '#f59e0b';
   var tgtScore = parseFloat(cfg.trustNum);
@@ -7471,7 +7619,23 @@ function updateDashboardIndustry(org) {
   var _tr = dashGlobalTrustScoreColor(tgtScore);
   safeStyle('dr-trust-label', 'color', _tr);
   dashAnimateTrustBar(cfg.trustWidth, animCol);
-  if (cfg.certLine) safeSet('dr-global-trust-cert-line', cfg.certLine);
+  if (cfg.certHeading) safeSet('dr-global-trust-cert-line', cfg.certHeading);
+  if (cfg.certSubtext) safeSet('dr-global-trust-cert-sub', cfg.certSubtext);
+  var certBox = document.getElementById('dr-global-trust-cert-box');
+  var shield = document.getElementById('dr-global-trust-cert-shield');
+  if (certBox && typeof DASH_CERT_TOOLTIP === 'string') certBox.title = DASH_CERT_TOOLTIP;
+  if (certBox) {
+    certBox.style.borderColor = cfg.certCertified ? 'rgba(34,197,94,0.3)' : '';
+  }
+  if (shield) {
+    if (cfg.certCertified) {
+      shield.setAttribute('stroke', '#22c55e');
+      shield.style.filter = 'drop-shadow(0 0 6px #22c55e)';
+    } else {
+      shield.setAttribute('stroke', '#64748b');
+      shield.style.filter = 'none';
+    }
+  }
 
   safeSet('dr-bias-det-num', cfg.biasDet + '%');
   safeStyle('dr-bias-det-num', 'color', cfg.biasDetColor);
@@ -7581,6 +7745,7 @@ function updateDashboardIndustry(org) {
     }
   }
 
+  try { buildCoreStatusGrid(org); } catch (_cs) {}
   try { initDashboardCharts(); } catch(eIC) {}
   try { updateEdenIndustry(org); } catch(ed) {}
   try { updateHaloIndustry(org); } catch(_halo) {}
@@ -7673,7 +7838,15 @@ function loadIndustry(org) {
  safeSet('dash-fraud', dimScores.fraud);
  safeStyle('dash-fraud', 'color', dimScores.fraud >= 80 ? '#22C55E' : '#F59E0B');
  safeSet('dash-cases', d.activeCases);
- safeSet('topbar-alert-count', d.cases.filter(c=>c.sev==='Critical').length + ' Critical Cases');
+ var _critTop =
+   typeof DASH_INDUSTRY !== 'undefined' &&
+   DASH_INDUSTRY[org] &&
+   typeof DASH_INDUSTRY[org].criticalCaseCount === 'number'
+     ? DASH_INDUSTRY[org].criticalCaseCount
+     : d.cases.filter(c=>c.sev==='Critical').length;
+ safeSet('topbar-alert-count', typeof dashFormatCriticalCasesTopbar === 'function'
+   ? dashFormatCriticalCasesTopbar(_critTop)
+   : _critTop + ' Critical Cases');
  safeSet('nav-comp-badge', d.cases.filter(c=>c.sev==='Critical').length);
  safeSet('nav-eden-badge', d.edenRows.filter(r=>r[4]==='Critical'||r[4]==='High').length);
 
@@ -9673,6 +9846,23 @@ function initEveIfNeeded() {
  const a = (EVE_ALERTS[currentOrg]||EVE_ALERTS.ad)[0];
  addEveMsg('eve', a.msg, a.badge, a.label, true);
  }, 600);
+}
+
+function openEveWithQuery() {
+ var q = document.getElementById('cardinal-ask-input');
+ var query = q ? q.value : '';
+ var panel = document.getElementById('eve-panel');
+ if (panel) panel.classList.add('open');
+ if (typeof initEveIfNeeded === 'function') initEveIfNeeded();
+ var eveInput = document.getElementById('eve-input');
+ if (eveInput && query) eveInput.value = query;
+ if (q) q.value = '';
+}
+
+function openAdamWithQuery() {
+ var q = document.getElementById('cardinal-ask-input');
+ showScreen('trustloop', null);
+ if (q) q.value = '';
 }
 
 function addEveMsg(who, text, badge, badgeLabel, speak) {
@@ -15164,6 +15354,18 @@ function closeModelDetail() {
     document.addEventListener('touchend', onUp);
   }
   initDraggableEve();
+})();
+(function wireCardinalAskBarOnce(){
+  function go() {
+    var inp = document.getElementById('cardinal-ask-input');
+    if (!inp || inp.dataset.cardinalAskWired) return;
+    inp.dataset.cardinalAskWired = '1';
+    inp.addEventListener('keydown', function(e){
+      if (e.key === 'Enter') { e.preventDefault(); openEveWithQuery(); }
+    });
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', go);
+  else go();
 })();
 </script>
 </body>
