@@ -1760,7 +1760,40 @@ animation:none;transform-origin:center;
 /* ══ EVE AGENT ══ */
 @keyframes pulse-dot{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.6;transform:scale(1.2)}}
 #eve-bubble{position:fixed;bottom:28px;right:28px;z-index:999;display:none;flex-direction:column;align-items:flex-end;gap:12px}
+#eve-toggle-wrap{position:relative;align-self:flex-end}
+#eve-hover-label{
+  position:absolute;
+  right:70px;
+  top:50%;
+  transform:translateY(-50%);
+  background:rgba(8,12,20,0.95);
+  border:1px solid rgba(166,218,255,0.25);
+  border-radius:20px;
+  padding:5px 12px;
+  font-size:11px;
+  color:#a6daff;
+  white-space:nowrap;
+  pointer-events:none;
+  opacity:0;
+  transition:opacity 0.2s ease;
+  z-index:2;
+}
+#eve-toggle-wrap:hover #eve-hover-label{opacity:1}
 #eve-toggle-btn{width:56px;height:56px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#1a3a5c,#0a1628);border:1px solid rgba(166,218,255,.3);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--accent);box-shadow:0 0 24px rgba(166,218,255,.4),0 0 48px rgba(166,218,255,.15),inset 0 0 12px rgba(166,218,255,.15);transition:all .3s;position:relative;animation:evePulse 3s ease-in-out infinite}
+#eve-online-pulse{
+  position:absolute;
+  top:2px;
+  right:2px;
+  width:8px;
+  height:8px;
+  border-radius:50%;
+  background:#22c55e;
+  box-shadow:0 0 0 2px rgba(10,15,26,1);
+  animation:pulse 2s infinite;
+  pointer-events:none;
+  z-index:3;
+}
+#eve-toggle-btn.eve-critical #eve-online-pulse{opacity:0;visibility:hidden}
 #eve-toggle-btn::before{content:'';position:absolute;inset:-6px;border-radius:50%;border:1px solid rgba(166,218,255,.28);animation:eveRipple 2.5s ease-out infinite;pointer-events:none}
 #eve-toggle-btn::after{content:'';position:absolute;inset:-12px;border-radius:50%;border:1px solid rgba(166,218,255,.14);animation:eveRipple 2.5s ease-out infinite .8s;pointer-events:none}
 #eve-toggle-btn:hover{transform:scale(1.08);box-shadow:0 0 36px rgba(166,218,255,.55),0 0 72px rgba(166,218,255,.25),inset 0 0 16px rgba(166,218,255,.22)}
@@ -1769,8 +1802,8 @@ animation:none;transform-origin:center;
 @keyframes evePulse{0%,100%{box-shadow:0 0 24px rgba(166,218,255,.4),0 0 48px rgba(166,218,255,.15),inset 0 0 12px rgba(166,218,255,.15)}50%{box-shadow:0 0 32px rgba(166,218,255,.55),0 0 64px rgba(166,218,255,.22),inset 0 0 16px rgba(166,218,255,.22)}}
 @keyframes eveRipple{0%{transform:scale(1);opacity:.6}100%{transform:scale(1.4);opacity:0}}
 @keyframes eveOrbit{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
-#eve-urgency-dot{position:absolute;top:0;right:0;width:14px;height:14px;border-radius:50%;background:var(--amber);border:2px solid var(--bg);animation:pulse-dot 2s infinite}
-#eve-urgency-dot.critical{background:var(--red)}
+#eve-urgency-dot{position:absolute;bottom:4px;right:4px;top:auto;width:12px;height:12px;border-radius:50%;background:var(--amber);border:2px solid rgba(10,15,26,.95);opacity:0;transform:scale(0);pointer-events:none;z-index:2;transition:opacity .2s,transform .2s}
+#eve-urgency-dot.critical{opacity:1;transform:scale(1);background:var(--red);animation:pulse-dot 2s infinite}
 #eve-panel{width:380px;background:linear-gradient(135deg,#080c14 0%,#0d1220 50%,#080c14 100%);border:1px solid rgba(166,218,255,.2);border-radius:20px;overflow:hidden;box-shadow:0 0 0 1px rgba(166,218,255,.08),0 20px 60px rgba(0,0,0,.8),0 0 40px rgba(166,218,255,.06);display:none;flex-direction:column;max-height:600px;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)}
 #eve-panel.open{display:flex}
 .eve-header{background:linear-gradient(135deg,#0a1020,#0f1828);padding:16px 18px;display:flex;align-items:center;gap:12px;border-bottom:1px solid rgba(166,218,255,.1);box-shadow:inset 0 1px 0 rgba(166,218,255,.15)}
@@ -2070,12 +2103,10 @@ Settings
 <div id="cardinal-ask-bar" style="background:linear-gradient(135deg,rgba(13,14,20,0.95),rgba(15,17,26,0.95));border:1px solid rgba(166,218,255,0.15);border-radius:12px;padding:10px 16px;margin-bottom:12px;display:flex;align-items:center;gap:10px;">
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(166,218,255,0.6)" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
   <input id="cardinal-ask-input" placeholder='Ask Cardinal — "Why is my Trust Score declining?" or "What do I fix before the NYC audit?"' style="flex:1;background:transparent;border:none;outline:none;color:#e2e8f0;font-size:12px;caret-color:#a6daff;" />
-  <div style="display:flex;align-items:center;gap:6px;">
-    <span style="font-size:10px;color:#4b5563;">Ask</span>
-    <button type="button" id="eve-quick-btn" onclick="openEveWithQuery()" style="background:rgba(166,218,255,0.1);border:1px solid rgba(166,218,255,0.25);color:#a6daff;border-radius:6px;padding:4px 10px;font-size:11px;cursor:pointer;">Eve</button>
-    <span style="font-size:10px;color:#4b5563;">or</span>
-    <button type="button" id="adam-quick-btn" onclick="openAdamWithQuery()" style="background:rgba(96,165,250,0.1);border:1px solid rgba(96,165,250,0.25);color:#60a5fa;border-radius:6px;padding:4px 10px;font-size:11px;cursor:pointer;">Adam</button>
-  </div>
+  <button type="button" id="trustloop-ask-bar-btn" onclick="showScreen('trustloop', null)" title="Open Trust Loop for deeper conversation" style="flex-shrink:0;display:inline-flex;align-items:center;gap:6px;background:rgba(166,218,255,0.08);border:1px solid rgba(166,218,255,0.2);border-radius:8px;padding:6px 10px;cursor:pointer;font-family:var(--sans);">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#a6daff" stroke-width="2"><path d="M17 2.1l4 4-4 4"/><path d="M3 12.03V11a9 9 0 0 1 9-9h3"/><path d="M7 21.9l-4-4 4-4"/><path d="M21 12v1a9 9 0 0 1-9 9h-3"/></svg>
+    <span style="font-size:11px;font-weight:600;color:#a6daff;">Trust Loop</span>
+  </button>
 </div>
 
 <!-- MULTI-ALERT BANNER (dashboard) -->
@@ -5242,7 +5273,10 @@ Admin access: READ ONLY · Cannot edit · Cannot delete · Regulator access: Ava
 <button class="eve-send-btn" onclick="sendEveMessage()">→</button>
 </div>
 </div>
-<div id="eve-toggle-btn" onclick="document.getElementById('eve-panel').classList.toggle('open');initEveIfNeeded()" title="Eve — AI agent" aria-label="Open Eve assistant"><svg class="eve-icon" width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><circle cx="14" cy="14" r="6" stroke="rgba(166,218,255,0.9)" stroke-width="1.5"/><circle cx="14" cy="14" r="2" fill="rgba(166,218,255,1)"/><ellipse class="orbit" cx="14" cy="14" rx="12" ry="5" stroke="rgba(166,218,255,0.4)" stroke-width="1" transform="rotate(45 14 14)"/><ellipse class="orbit" cx="14" cy="14" rx="12" ry="5" stroke="rgba(166,218,255,0.4)" stroke-width="1" transform="rotate(-45 14 14)"/></svg><div id="eve-urgency-dot"></div></div>
+<div id="eve-toggle-wrap">
+<div id="eve-hover-label">Eve — AI Assistant</div>
+<div id="eve-toggle-btn" onclick="document.getElementById('eve-panel').classList.toggle('open');initEveIfNeeded()" title="Open Eve floating assistant (quick chat)" aria-label="Open Eve assistant"><span id="eve-online-pulse" aria-hidden="true"></span><svg class="eve-icon" width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><circle cx="14" cy="14" r="6" stroke="rgba(166,218,255,0.9)" stroke-width="1.5"/><circle cx="14" cy="14" r="2" fill="rgba(166,218,255,1)"/><ellipse class="orbit" cx="14" cy="14" rx="12" ry="5" stroke="rgba(166,218,255,0.4)" stroke-width="1" transform="rotate(45 14 14)"/><ellipse class="orbit" cx="14" cy="14" rx="12" ry="5" stroke="rgba(166,218,255,0.4)" stroke-width="1" transform="rotate(-45 14 14)"/></svg><div id="eve-urgency-dot"></div></div>
+</div>
 </div>
 <div id="critical-overlay">
 <div class="critical-box">
@@ -5795,8 +5829,7 @@ window.Chart = function(ctx, config) {
 Chart.defaults = {font:{size:10}};
 Chart.register = function(){};
 
-
-
+var genesisLog = {};
 
 const INDUSTRY_DIMENSIONS = {
  ad:[
@@ -9703,14 +9736,20 @@ function initEveIfNeeded() {
 }
 
 function openEveWithQuery() {
- var q = document.getElementById('cardinal-ask-input');
- var query = q ? q.value : '';
- var panel = document.getElementById('eve-panel');
- if (panel) panel.classList.add('open');
- if (typeof initEveIfNeeded === 'function') initEveIfNeeded();
- var eveInput = document.getElementById('eve-input');
- if (eveInput && query) eveInput.value = query;
- if (q) q.value = '';
+  var q = document.getElementById('cardinal-ask-input');
+  var query = q ? q.value.trim() : '';
+  var panel = document.getElementById('eve-panel');
+  if (panel) {
+    panel.style.visibility = 'visible';
+    panel.classList.add('open');
+  }
+  if (typeof initEveIfNeeded === 'function') initEveIfNeeded();
+  var eveInput = document.getElementById('eve-input');
+  if (eveInput && query) {
+    eveInput.value = query;
+    eveInput.focus();
+  }
+  if (q) q.value = '';
 }
 
 function openAdamWithQuery() {
@@ -9922,6 +9961,7 @@ function triggerAlert(level) {
  const a = alerts[level-1];
  if(!a) return;
  const panel = document.getElementById('eve-panel');
+ if(level!==3 && !panel) return;
  if(level===3) {
  document.getElementById('critical-title').textContent = `Critical — ${DATA[currentOrg].industry}`;
  document.getElementById('critical-body').textContent = a.msg;
@@ -9932,7 +9972,12 @@ function triggerAlert(level) {
  if(!panel.classList.contains('open')) panel.classList.add('open');
  if(!eveInitialized) eveInitialized=true;
  addEveMsg('eve',a.msg,a.badge,a.label,true);
- if(level===2) document.getElementById('eve-urgency-dot').classList.add('critical');
+ if(level===2) {
+  var ur = document.getElementById('eve-urgency-dot');
+  if(ur) ur.classList.add('critical');
+  var etb = document.getElementById('eve-toggle-btn');
+  if(etb) etb.classList.add('eve-critical');
+ }
 }
 
 const TL_SEED = {
@@ -12219,11 +12264,6 @@ function exportLawsuitPackage() {
  if(panel) panel.classList.add('open');
  if(!eveInitialized) eveInitialized=true;
 }
-
-setTimeout(()=>{
- const dot=document.getElementById('eve-urgency-dot');
- if(dot) dot.style.background='var(--amber)';
-},3000);
 
 setTimeout(()=>{
  if(checkinConfig.morning.enabled) triggerMorningBriefing();
