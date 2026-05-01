@@ -3,46 +3,6 @@
   ════════════════════════════════════════════════════════════════════
   PROJECT CARDINAL — CHANGELOG
   ════════════════════════════════════════════════════════════════════
-  May 1, 2026 — Trust Score screen comprehensive revision.
-    Fixed broken "WHY IS MY SCORE 74 ? SCORE COMPOSITION" header — now
-    clean two-line structure ("Why is your score X?" + methodology sub).
-    Comprehensive tooltip sweep: every technical term, label, score name,
-    regulation, badge, model name, core name, action button now has a
-    hoverable tooltip via showTooltip() (was previously numbers-only).
-    Moved Eve Executive Summary up to position 2 (right after Hero) —
-    narrative is the answer, leads not trails.
-    Consolidated 3 separate Eve narrative blocks (Monthly, Quarterly,
-    Q1 Executive) into single section with timeframe toggle
-    [Monthly][Quarterly][YTD]; forward forecasting moved out of Trust Score.
-    Heatmap section: added intro paragraph, tooltips on every row label
-    and column header, cell tooltips with plain-English meaning, "Top
-    Finding" callout below grid (all 3 industries).
-    Removed duplicate "Detail Views" block; merged Confidence Band into
-    Hero as "Score Confidence" callout; merged Score Impact Preview into
-    Path to Certification.
-    Removed broken "Score History" with blank trend chart; consolidated
-    into single 12-Month Trust Score History with dual toggles
-    ([Week][Month][Quarter][Year] + [Trust/Bias/Fraud/Compliance]) plus
-    contextual caption strip below chart.
-    Replaced 3-column composition (Bias 40 / Fraud 30 / Compliance 30)
-    with 6-dimension version (Fairness 25 / Fraud 20 / Transparency 15 /
-    Privacy 15 / Governance 15 / Monitoring 10); each dimension routes
-    to its core (Eden / Obsidian / Trust Loop / Trust Ledger / Compliance
-    Exchange / Sentinel).
-    Removed standalone Sensitivity View; merged into Path to Certification
-    as "What would raise your score?" green column.
-    Kept Model-Level Trust Scores as own section between Composition and
-    Heatmap; per-model score, weight, DI, status badge, click routes to
-    model in lifecycle stage.
-    Path to Certification now contains 3 columns: Why low (red blockers) +
-    What raises (green upside) + What can lower (amber downside) +
-    Projected Score gauge — single source for "what changes the score".
-    Final 9-section order: Hero / Eve / History / Composition / Model-Level
-    / Heatmap / Path to Cert / Peers / Echo footer.
-    CARDINAL_DATA additions: dimensionScores (6 per org), scoreConfidence,
-    modelLevelScores, fixImpactScenarios, riskScenarios, heatmapContext
-    (intro + row/col label tooltips + topFinding), eveNarrativeByTimeframe
-    (monthly/quarterly/ytd), 6-dim scoreWeights overwrite.
   May 1, 2026 — Fixed blocked sidebar toggle.
     Root cause: .sidebar has overflow-x:hidden which clipped the
     toggle that was positioned at right:-11px (poking outside the
@@ -3193,629 +3153,6 @@ animation:none;transform-origin:center;
   border-color: rgba(166, 218, 255, 0.65);
 }
 
-/* ════════════════════════════════════════════════════════════════════
-   TRUST SCORE V2 — Comprehensive Revision (May 1, 2026)
-   ════════════════════════════════════════════════════════════════════ */
-
-/* Hero — Score Confidence sub-block */
-.tsv2-conf-card {
-  background: rgba(166, 218, 255, 0.04);
-  border: 1px solid rgba(166, 218, 255, 0.14);
-  border-radius: 12px;
-  padding: 12px 14px;
-}
-.tsv2-conf-title {
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--chrome2);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  margin-bottom: 2px;
-}
-.tsv2-conf-sub {
-  font-size: 10px;
-  color: var(--muted);
-  margin-bottom: 10px;
-}
-.tsv2-conf-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 11px;
-  color: var(--muted2);
-  padding: 4px 0;
-  border-top: 1px dashed rgba(166, 218, 255, 0.08);
-}
-.tsv2-conf-row:first-of-type { border-top: none; }
-.tsv2-conf-row .v { font-weight: 700; color: var(--chrome2); }
-.tsv2-conf-row .v.green { color: #22c55e; }
-.tsv2-conf-row .v.amber { color: #f59e0b; }
-.tsv2-conf-row .v.red   { color: #ef4444; }
-
-/* Eve Narrative section */
-.tsv2-eve-section {
-  background: linear-gradient(180deg, rgba(166, 218, 255, 0.06) 0%, rgba(166, 218, 255, 0.02) 100%);
-  border: 1px solid rgba(166, 218, 255, 0.20);
-  border-radius: 14px;
-  padding: 18px 20px;
-  box-shadow: 0 0 0 1px rgba(166, 218, 255, 0.05) inset, 0 0 24px rgba(166, 218, 255, 0.06);
-}
-.tsv2-eve-head {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 12px;
-}
-.tsv2-eve-avatar {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background: radial-gradient(circle, #a6daff 0%, #4a90c0 100%);
-  color: #0a0c12;
-  font-weight: 800;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 16px;
-  box-shadow: 0 0 18px rgba(166, 218, 255, 0.45);
-  flex-shrink: 0;
-}
-.tsv2-eve-title-wrap { flex: 1; min-width: 0; }
-.tsv2-eve-title {
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--chrome2);
-}
-.tsv2-eve-subtitle {
-  font-size: 10.5px;
-  color: var(--muted);
-  margin-top: 2px;
-}
-.tsv2-eve-tabs {
-  display: flex;
-  gap: 6px;
-  padding: 4px;
-  background: rgba(0, 0, 0, 0.25);
-  border-radius: 9px;
-  margin-bottom: 12px;
-  width: fit-content;
-}
-.tsv2-eve-tabs button {
-  background: transparent;
-  border: none;
-  color: var(--muted);
-  border-radius: 6px;
-  padding: 6px 14px;
-  font-size: 11px;
-  font-weight: 600;
-  cursor: pointer;
-  font-family: var(--sans);
-  transition: all 0.16s ease;
-}
-.tsv2-eve-tabs button:hover { color: var(--chrome2); }
-.tsv2-eve-tabs button.active {
-  background: rgba(166, 218, 255, 0.20);
-  color: var(--accent);
-}
-.tsv2-eve-body {
-  font-size: 12px;
-  color: var(--muted2);
-  line-height: 1.7;
-}
-.tsv2-eve-body p { margin: 0 0 10px 0; }
-.tsv2-eve-body p:last-child { margin-bottom: 0; }
-.tsv2-eve-actions {
-  display: flex;
-  gap: 8px;
-  margin-top: 14px;
-  flex-wrap: wrap;
-}
-.tsv2-eve-btn {
-  background: rgba(166, 218, 255, 0.14);
-  border: 1px solid rgba(166, 218, 255, 0.36);
-  color: var(--accent);
-  border-radius: 7px;
-  padding: 8px 14px;
-  font-size: 11px;
-  font-weight: 600;
-  cursor: pointer;
-  font-family: var(--sans);
-  transition: all 0.16s ease;
-}
-.tsv2-eve-btn:hover {
-  background: rgba(166, 218, 255, 0.24);
-  border-color: rgba(166, 218, 255, 0.55);
-}
-
-/* History section additions: timeframe row + caption */
-.tsv2-history-tf {
-  display: flex;
-  gap: 4px;
-  background: rgba(0, 0, 0, 0.25);
-  border-radius: 8px;
-  padding: 3px;
-  margin-bottom: 8px;
-  width: fit-content;
-}
-.tsv2-history-tf button {
-  background: transparent;
-  border: none;
-  color: var(--muted);
-  border-radius: 6px;
-  padding: 5px 12px;
-  font-size: 10.5px;
-  font-weight: 600;
-  cursor: pointer;
-  font-family: var(--sans);
-  transition: all 0.14s ease;
-}
-.tsv2-history-tf button:hover { color: var(--chrome2); }
-.tsv2-history-tf button.active {
-  background: rgba(166, 218, 255, 0.18);
-  color: var(--accent);
-}
-.tsv2-history-caption {
-  margin-top: 12px;
-  background: rgba(166, 218, 255, 0.04);
-  border: 1px solid rgba(166, 218, 255, 0.12);
-  border-radius: 8px;
-  padding: 10px 14px;
-  font-size: 11px;
-  color: var(--muted2);
-  line-height: 1.6;
-}
-.tsv2-history-caption strong { font-weight: 700; }
-
-/* Composition by Dimension (6-dim) */
-.tsv2-dim-list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-top: 4px;
-}
-.tsv2-dim-row {
-  display: grid;
-  grid-template-columns: minmax(220px, 1.4fr) 56px 1fr 50px;
-  align-items: center;
-  gap: 14px;
-  padding: 12px 14px;
-  background: rgba(166, 218, 255, 0.03);
-  border: 1px solid rgba(166, 218, 255, 0.10);
-  border-radius: 10px;
-  cursor: pointer;
-  transition: all 0.14s ease;
-}
-.tsv2-dim-row:hover {
-  background: rgba(166, 218, 255, 0.07);
-  border-color: rgba(166, 218, 255, 0.25);
-  transform: translateX(2px);
-}
-.tsv2-dim-name {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--chrome2);
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-.tsv2-dim-name .arrow {
-  color: var(--muted);
-  font-size: 11px;
-  opacity: 0.6;
-  transition: all 0.14s ease;
-}
-.tsv2-dim-row:hover .tsv2-dim-name .arrow {
-  color: var(--accent);
-  transform: translateX(2px);
-  opacity: 1;
-}
-.tsv2-dim-weight {
-  font-size: 10.5px;
-  color: var(--muted);
-  font-weight: 600;
-  text-align: center;
-}
-.tsv2-dim-bar-wrap {
-  position: relative;
-  height: 8px;
-  background: rgba(166, 218, 255, 0.06);
-  border-radius: 4px;
-  overflow: hidden;
-}
-.tsv2-dim-bar {
-  position: absolute;
-  left: 0; top: 0; bottom: 0;
-  border-radius: 4px;
-  transition: width 1.1s cubic-bezier(0.4, 0.2, 0.2, 1), background 0.3s ease;
-}
-.tsv2-dim-score {
-  font-size: 14px;
-  font-weight: 700;
-  text-align: right;
-  font-family: var(--sans);
-}
-.tsv2-dim-footer {
-  margin-top: 12px;
-  padding: 8px 12px;
-  background: rgba(0, 0, 0, 0.18);
-  border-radius: 8px;
-  font-size: 10.5px;
-  color: var(--muted);
-  text-align: center;
-}
-
-/* Model-Level Trust Scores */
-.tsv2-models-list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-top: 4px;
-}
-.tsv2-model-row {
-  display: grid;
-  grid-template-columns: minmax(240px, 1.4fr) 1fr 60px 90px;
-  align-items: center;
-  gap: 14px;
-  padding: 12px 14px;
-  background: rgba(166, 218, 255, 0.03);
-  border: 1px solid rgba(166, 218, 255, 0.10);
-  border-radius: 10px;
-  cursor: pointer;
-  transition: all 0.14s ease;
-}
-.tsv2-model-row:hover {
-  background: rgba(166, 218, 255, 0.07);
-  border-color: rgba(166, 218, 255, 0.25);
-  transform: translateX(2px);
-}
-.tsv2-model-name {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--chrome2);
-}
-.tsv2-model-meta {
-  font-size: 10px;
-  color: var(--muted);
-  margin-top: 2px;
-}
-.tsv2-model-bar-wrap {
-  position: relative;
-  height: 8px;
-  background: rgba(166, 218, 255, 0.06);
-  border-radius: 4px;
-  overflow: hidden;
-}
-.tsv2-model-bar {
-  position: absolute;
-  left: 0; top: 0; bottom: 0;
-  border-radius: 4px;
-  transition: width 1.0s cubic-bezier(0.4, 0.2, 0.2, 1);
-}
-.tsv2-model-score {
-  font-size: 14px;
-  font-weight: 700;
-  text-align: right;
-}
-.tsv2-model-status {
-  font-size: 10px;
-  font-weight: 700;
-  text-align: center;
-  padding: 5px 10px;
-  border-radius: 999px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-.tsv2-model-status.critical { background: rgba(239, 68, 68, 0.18); color: #ef4444; }
-.tsv2-model-status.watch    { background: rgba(245, 158, 11, 0.18); color: #f59e0b; }
-.tsv2-model-status.passing  { background: rgba(34, 197, 94, 0.16);  color: #22c55e; }
-
-/* Heatmap with context */
-.tsv2-heat-intro {
-  font-size: 11.5px;
-  color: var(--muted2);
-  line-height: 1.65;
-  background: rgba(166, 218, 255, 0.04);
-  border: 1px solid rgba(166, 218, 255, 0.12);
-  border-radius: 8px;
-  padding: 10px 14px;
-  margin-bottom: 12px;
-}
-.tsv2-heat-grid {
-  display: grid;
-  gap: 4px;
-  margin-top: 8px;
-}
-.tsv2-heat-cell {
-  padding: 12px 8px;
-  text-align: center;
-  border-radius: 6px;
-  font-size: 11px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.14s ease;
-  font-family: var(--sans);
-}
-.tsv2-heat-cell:hover {
-  transform: scale(1.05);
-  box-shadow: 0 0 0 2px rgba(166, 218, 255, 0.5);
-  z-index: 2;
-}
-.tsv2-heat-row-label {
-  font-size: 10.5px;
-  color: var(--muted2);
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  padding-right: 6px;
-  cursor: help;
-}
-.tsv2-heat-col-label {
-  font-size: 10px;
-  color: var(--muted);
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.4px;
-  text-align: center;
-  padding-bottom: 4px;
-  cursor: help;
-}
-.tsv2-heat-finding {
-  margin-top: 14px;
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  padding: 14px 16px;
-  background: linear-gradient(90deg, rgba(239, 68, 68, 0.10) 0%, rgba(245, 158, 11, 0.06) 100%);
-  border: 1px solid rgba(239, 68, 68, 0.30);
-  border-radius: 10px;
-}
-.tsv2-heat-finding-icon {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background: rgba(239, 68, 68, 0.20);
-  color: #ef4444;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 18px;
-  font-weight: 700;
-  flex-shrink: 0;
-}
-.tsv2-heat-finding-body { flex: 1; min-width: 0; }
-.tsv2-heat-finding-title {
-  font-size: 11px;
-  font-weight: 700;
-  color: #ef4444;
-  text-transform: uppercase;
-  letter-spacing: 0.6px;
-}
-.tsv2-heat-finding-text {
-  font-size: 12px;
-  color: var(--chrome2);
-  line-height: 1.6;
-  margin-top: 4px;
-}
-.tsv2-heat-finding-btn {
-  background: rgba(239, 68, 68, 0.18);
-  border: 1px solid rgba(239, 68, 68, 0.45);
-  color: #ef4444;
-  border-radius: 8px;
-  padding: 8px 14px;
-  font-size: 11px;
-  font-weight: 700;
-  cursor: pointer;
-  white-space: nowrap;
-  font-family: var(--sans);
-  transition: all 0.14s ease;
-}
-.tsv2-heat-finding-btn:hover {
-  background: rgba(239, 68, 68, 0.30);
-  border-color: rgba(239, 68, 68, 0.65);
-}
-
-/* Path to Certification — 3 column layout */
-.tsv2-path-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  gap: 14px;
-  margin-top: 4px;
-}
-.tsv2-path-col {
-  border-radius: 12px;
-  padding: 14px;
-  border: 1px solid;
-}
-.tsv2-path-col.col-low    { background: rgba(239, 68, 68, 0.04);  border-color: rgba(239, 68, 68, 0.18); }
-.tsv2-path-col.col-raise  { background: rgba(34, 197, 94, 0.04);  border-color: rgba(34, 197, 94, 0.18); }
-.tsv2-path-col.col-lower  { background: rgba(245, 158, 11, 0.04); border-color: rgba(245, 158, 11, 0.18); }
-.tsv2-path-col-title {
-  font-size: 11.5px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  margin-bottom: 10px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-.tsv2-path-col.col-low   .tsv2-path-col-title { color: #ef4444; }
-.tsv2-path-col.col-raise .tsv2-path-col-title { color: #22c55e; }
-.tsv2-path-col.col-lower .tsv2-path-col-title { color: #f59e0b; }
-.tsv2-path-items {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-.tsv2-path-item {
-  background: rgba(0, 0, 0, 0.25);
-  border-radius: 8px;
-  padding: 10px 12px;
-  cursor: pointer;
-  transition: all 0.14s ease;
-  border: 1px solid transparent;
-}
-.tsv2-path-item:hover {
-  border-color: rgba(166, 218, 255, 0.25);
-  transform: translateX(2px);
-}
-.tsv2-path-item-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-}
-.tsv2-path-item-text {
-  font-size: 11.5px;
-  color: var(--chrome2);
-  line-height: 1.5;
-  flex: 1;
-  min-width: 0;
-}
-.tsv2-path-item-route {
-  font-size: 10px;
-  color: var(--muted);
-  margin-top: 3px;
-}
-.tsv2-path-item-impact {
-  font-size: 13px;
-  font-weight: 800;
-  white-space: nowrap;
-  font-family: var(--sans);
-}
-.tsv2-path-item-impact.up   { color: #22c55e; }
-.tsv2-path-item-impact.down { color: #ef4444; }
-.tsv2-path-blocker-meta {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-top: 6px;
-  flex-wrap: wrap;
-}
-.tsv2-path-blocker-meta .sev {
-  font-size: 9px;
-  font-weight: 700;
-  padding: 3px 8px;
-  border-radius: 999px;
-  text-transform: uppercase;
-  letter-spacing: 0.4px;
-}
-.tsv2-path-blocker-meta .sev.critical { background: rgba(239, 68, 68, 0.20);  color: #ef4444; }
-.tsv2-path-blocker-meta .sev.high     { background: rgba(245, 158, 11, 0.20); color: #f59e0b; }
-.tsv2-path-blocker-meta .sev.medium   { background: rgba(166, 218, 255, 0.20); color: var(--accent); }
-.tsv2-path-blocker-meta .eta {
-  font-size: 10px;
-  color: var(--muted);
-}
-.tsv2-path-fix-btn {
-  margin-top: 8px;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  background: rgba(239, 68, 68, 0.16);
-  border: 1px solid rgba(239, 68, 68, 0.36);
-  color: #ef4444;
-  border-radius: 6px;
-  padding: 6px 12px;
-  font-size: 10.5px;
-  font-weight: 700;
-  cursor: pointer;
-  font-family: var(--sans);
-  transition: all 0.14s ease;
-}
-.tsv2-path-fix-btn:hover {
-  background: rgba(239, 68, 68, 0.26);
-  border-color: rgba(239, 68, 68, 0.55);
-}
-
-/* Projected score gauge (mini) */
-.tsv2-projected-mini {
-  margin-top: 16px;
-  display: flex;
-  align-items: center;
-  gap: 18px;
-  padding: 16px 18px;
-  background: linear-gradient(90deg, rgba(34, 197, 94, 0.08) 0%, rgba(34, 197, 94, 0.02) 100%);
-  border: 1px solid rgba(34, 197, 94, 0.25);
-  border-radius: 12px;
-}
-.tsv2-projected-mini-gauge {
-  width: 120px;
-  height: 120px;
-  position: relative;
-  flex-shrink: 0;
-}
-.tsv2-projected-mini-gauge svg { width: 100%; height: 100%; }
-.tsv2-projected-mini-num {
-  font-size: 36px;
-  font-weight: 800;
-  font-family: var(--sans);
-}
-.tsv2-projected-mini-body { flex: 1; min-width: 0; }
-.tsv2-projected-mini-title {
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--chrome2);
-}
-.tsv2-projected-mini-sub {
-  font-size: 11px;
-  color: var(--muted2);
-  margin-top: 4px;
-  line-height: 1.5;
-}
-.tsv2-projected-mini-sub strong {
-  color: #22c55e;
-  font-weight: 800;
-}
-
-/* Live calc dot under gauge */
-.tsv2-live-stamp-inline {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 10.5px;
-  color: var(--muted);
-  margin-top: 6px;
-}
-.tsv2-live-stamp-inline .dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: #22c55e;
-  box-shadow: 0 0 8px rgba(34, 197, 94, 0.6);
-  animation: tsv2LivePulse 1.6s ease-in-out infinite;
-}
-@keyframes tsv2LivePulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.4; }
-}
-
-/* Section header for "Why is your score X?" — clean two-line */
-.tsv2-q-header {
-  font-size: 18px;
-  font-weight: 700;
-  color: var(--chrome2);
-  letter-spacing: -0.2px;
-}
-.tsv2-q-header .num {
-  color: var(--accent);
-  font-weight: 800;
-}
-.tsv2-q-sub {
-  font-size: 11.5px;
-  color: var(--muted);
-  margin-top: 4px;
-  line-height: 1.55;
-}
-
-/* Responsive tweaks */
-@media (max-width: 1100px) {
-  .tsv2-path-grid { grid-template-columns: 1fr; }
-  .tsv2-dim-row   { grid-template-columns: 1fr 50px 1fr 50px; }
-  .tsv2-model-row { grid-template-columns: 1fr 1fr 50px 80px; }
-}
-
 </style>
 </head>
 <body>
@@ -6111,7 +5448,7 @@ Admin access: READ ONLY · Cannot edit · Cannot delete · Regulator access: Ava
      ════════════════════════════════════════════════════════════════ -->
 <div id="ts-v2-root">
 
-  <!-- ══ SECTION 1 — HERO (with Score Confidence) ══ -->
+  <!-- ══ SECTION 1 — HERO ══ -->
   <div class="tsv2-section tsv2-hero" id="tsv2-hero">
     <div class="tsv2-hero-left">
       <div class="tsv2-gauge" id="tsv2-gauge-wrap">
@@ -6119,184 +5456,123 @@ Admin access: READ ONLY · Cannot edit · Cannot delete · Regulator access: Ava
         <svg viewBox="0 0 200 200">
           <circle cx="100" cy="100" r="86" fill="none" stroke="rgba(166,218,255,.06)" stroke-width="14"/>
           <circle id="tsv2-gauge-ring" cx="100" cy="100" r="86" fill="none" stroke="#f59e0b" stroke-width="14" stroke-linecap="round" stroke-dasharray="540.35" stroke-dashoffset="140" transform="rotate(-90 100 100)" style="transition: stroke-dashoffset 1.2s ease, stroke 0.4s ease;"/>
-          <line x1="100" y1="6" x2="100" y2="20" stroke="rgba(34,197,94,.65)" stroke-width="2" transform="rotate(108 100 100)"/>
           <text id="tsv2-gauge-num" class="tsv2-gauge-num" x="100" y="105" text-anchor="middle" dominant-baseline="middle" fill="#f59e0b">74</text>
           <text id="tsv2-score-range-tip" x="100" y="135" text-anchor="middle" font-size="11" fill="rgba(180,190,220,.55)" font-family="var(--sans)" style="cursor:help">/ 100</text>
         </svg>
       </div>
       <div style="flex:1;min-width:0">
         <div class="tsv2-status" id="tsv2-status">Below Threshold — Not Certified</div>
-        <div class="tsv2-live-stamp-inline">
-          <span class="dot"></span>
-          <span id="tsv2-live-text">Last calculated <strong id="tsv2-last-calc" style="color:var(--chrome2)">2 minutes ago</strong></span>
-        </div>
-        <div class="tsv2-subscores" style="margin-top:14px">
+        <div class="tsv2-status-sub" id="tsv2-status-sub">Aggregate score across all monitored AI systems · industry-tailored weights</div>
+        <div id="tsv2-cert-badge-wrap" style="margin-bottom:14px"></div>
+        <div class="tsv2-subscores">
           <div class="tsv2-sub-pill" id="tsv2-pill-bias" onclick="showScreen('eden', null)">
-            <span class="pill-label" id="tsv2-pill-bias-label">Bias Detection</span>
+            <span class="pill-label">Bias</span>
             <span class="pill-num" id="tsv2-pill-bias-num">67%</span>
           </div>
           <div class="tsv2-sub-pill" id="tsv2-pill-fraud" onclick="showScreen('obsidian', null)">
-            <span class="pill-label" id="tsv2-pill-fraud-label">Fraud Prevention</span>
+            <span class="pill-label">Fraud</span>
             <span class="pill-num" id="tsv2-pill-fraud-num">91%</span>
           </div>
           <div class="tsv2-sub-pill" id="tsv2-pill-comp" onclick="showScreen('compliance', null)">
-            <span class="pill-label" id="tsv2-pill-comp-label">Compliance</span>
+            <span class="pill-label">Compliance</span>
             <span class="pill-num" id="tsv2-pill-comp-num">82%</span>
           </div>
         </div>
       </div>
     </div>
     <div class="tsv2-hero-right">
-      <div id="tsv2-cert-badge-wrap"></div>
       <div class="tsv2-peer-block" id="tsv2-peer-block">
         <div class="tsv2-peer-line">
-          <span id="tsv2-peer-title">Industry Position</span>
+          <span>Peer Comparison</span>
           <span class="tsv2-peer-percentile" id="tsv2-peer-percentile">38th percentile</span>
         </div>
         <div style="font-size:11px;color:var(--muted2);margin-bottom:4px" id="tsv2-peer-text">
-          Your Score 74 · Industry Avg 79
+          Industry avg 79 · Your score 74
         </div>
         <div class="tsv2-peer-track">
           <div class="threshold" style="left:80%"></div>
           <div class="you" id="tsv2-peer-you" style="left:74%;color:#f59e0b"></div>
         </div>
         <div style="display:flex;justify-content:space-between;font-size:9.5px;color:var(--muted);margin-top:2px">
-          <span>0</span><span>50</span><span id="tsv2-peer-thresh-label">80 threshold</span><span>100</span>
+          <span>0</span><span>50</span><span>80 threshold</span><span>100</span>
         </div>
       </div>
-      <div class="tsv2-conf-card">
-        <div class="tsv2-conf-title" id="tsv2-conf-title">Score Confidence</div>
-        <div class="tsv2-conf-sub" id="tsv2-conf-sub">How reliable is this score?</div>
-        <div class="tsv2-conf-row"><span id="tsv2-conf-band-label">Confidence Band</span><span class="v" id="tsv2-conf-band">±3 points</span></div>
-        <div class="tsv2-conf-row"><span id="tsv2-conf-comp-label">Data Completeness</span><span class="v" id="tsv2-conf-completeness">94%</span></div>
-        <div class="tsv2-conf-row"><span id="tsv2-conf-age-label">Model Age</span><span class="v" id="tsv2-conf-age">48 days</span></div>
-        <div class="tsv2-conf-row"><span id="tsv2-conf-val-label">Validation Coverage</span><span class="v" id="tsv2-conf-validation">78%</span></div>
+      <div class="tsv2-live-stamp">
+        <span class="tsv2-live-dot"></span>
+        <span>Live — last calculated <strong id="tsv2-last-calc" style="color:var(--chrome2)">2 minutes ago</strong></span>
       </div>
     </div>
   </div>
 
-  <!-- ══ SECTION 2 — EVE NARRATIVE (consolidated, moved up) ══ -->
-  <div class="tsv2-section tsv2-eve-section" id="tsv2-eve-section">
-    <div class="tsv2-eve-head">
-      <div class="tsv2-eve-avatar" id="tsv2-eve-avatar">✦</div>
-      <div class="tsv2-eve-title-wrap">
-        <div class="tsv2-eve-title" id="tsv2-eve-title">Eve — Executive Summary</div>
-        <div class="tsv2-eve-subtitle" id="tsv2-eve-subtitle">Auto-generated from Echo Core audit data · Refreshes weekly · Board-ready</div>
-      </div>
-    </div>
-    <div class="tsv2-eve-tabs" id="tsv2-eve-tabs">
-      <button data-tf="monthly"   onclick="tsv2SetEveTimeframe('monthly', this)">Monthly · April 2026</button>
-      <button class="active" data-tf="quarterly" onclick="tsv2SetEveTimeframe('quarterly', this)">Quarterly · Q1 2026</button>
-      <button data-tf="ytd"       onclick="tsv2SetEveTimeframe('ytd', this)">YTD · 12 Months</button>
-    </div>
-    <div class="tsv2-eve-body" id="tsv2-eve-body"></div>
-    <div class="tsv2-eve-actions">
-      <button class="tsv2-eve-btn" id="tsv2-eve-pdf-btn" onclick="tsv2DownloadBoardBrief()">Download Board Brief PDF</button>
-      <button class="tsv2-eve-btn" id="tsv2-eve-share-btn" onclick="tsv2ShareToTrustLoop()">Share to Trust Loop</button>
-    </div>
-  </div>
-
-  <!-- ══ SECTION 3 — 12-MONTH HISTORY (dual toggle + caption) ══ -->
+  <!-- ══ SECTION 2 — 12-MONTH HISTORY ══ -->
   <div class="tsv2-section">
-    <div class="tsv2-section-title" id="tsv2-history-title">Trust Score History</div>
-    <div class="tsv2-section-sub" id="tsv2-history-sub">Hover any month for what was happening · Dashed line = 80 certification threshold</div>
-    <div class="tsv2-history-tf" id="tsv2-history-tf">
-      <button data-range="week"    onclick="tsv2SetHistoryRange('week', this)">Week</button>
-      <button data-range="month"   onclick="tsv2SetHistoryRange('month', this)">Month</button>
-      <button data-range="quarter" onclick="tsv2SetHistoryRange('quarter', this)">Quarter</button>
-      <button class="active" data-range="year" onclick="tsv2SetHistoryRange('year', this)">Year</button>
-    </div>
+    <div class="tsv2-section-title" id="tsv2-history-title">12-Month Trust Score History</div>
+    <div class="tsv2-section-sub">Hover any month for what was happening · Dashed line = 80 certification threshold</div>
     <div class="tsv2-history-toggle" id="tsv2-history-toggle">
-      <button class="active" data-series="score"      onclick="tsv2SetHistorySeries('score', this)">Trust Score</button>
-      <button data-series="bias"       onclick="tsv2SetHistorySeries('bias', this)">Bias</button>
-      <button data-series="fraud"      onclick="tsv2SetHistorySeries('fraud', this)">Fraud</button>
+      <button class="active" data-series="score" onclick="tsv2SetHistorySeries('score', this)">Trust Score</button>
+      <button data-series="bias" onclick="tsv2SetHistorySeries('bias', this)">Bias</button>
+      <button data-series="fraud" onclick="tsv2SetHistorySeries('fraud', this)">Fraud</button>
       <button data-series="compliance" onclick="tsv2SetHistorySeries('compliance', this)">Compliance</button>
     </div>
     <div class="tsv2-history-canvas-wrap" id="tsv2-history-canvas-wrap">
       <div id="tsv2-history-svg" style="position:absolute;inset:0;width:100%;height:100%"></div>
       <div id="tsv2-history-pins"></div>
     </div>
-    <div class="tsv2-history-caption" id="tsv2-history-caption">—</div>
   </div>
 
-  <!-- ══ SECTION 4 — SCORE COMPOSITION BY DIMENSION (6-dim) ══ -->
+  <!-- ══ SECTION 3 — SCORE COMPOSITION ══ -->
   <div class="tsv2-section">
-    <div class="tsv2-q-header" id="tsv2-comp-title">Why is your score <span class="num" id="tsv2-comp-num-inline">74</span>?</div>
-    <div class="tsv2-q-sub" id="tsv2-comp-sub">Composite score across 6 governance dimensions. Hover any dimension for methodology. Weights vary by industry. Click any dimension to drill into the relevant core.</div>
-    <div class="tsv2-dim-list" id="tsv2-dim-list"></div>
-    <div class="tsv2-dim-footer" id="tsv2-dim-footer">Weights: Fairness 25% · Fraud 20% · Transparency 15% · Privacy 15% · Governance 15% · Monitoring 10%</div>
+    <div class="tsv2-section-title" id="tsv2-comp-title">Why Is My Score <span id="tsv2-comp-num-inline" style="color:var(--accent);font-weight:800">74</span>? Score Composition</div>
+    <div class="tsv2-section-sub">Composite score = Bias 40% + Fraud 30% + Compliance 30% · Click any factor to drill into the source core</div>
+    <div class="tsv2-comp-grid" id="tsv2-comp-grid"></div>
   </div>
 
-  <!-- ══ SECTION 5 — MODEL-LEVEL TRUST SCORES ══ -->
-  <div class="tsv2-section">
-    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px">
-      <div>
-        <div class="tsv2-section-title" id="tsv2-models-title">Model-Level Trust Scores</div>
-        <div class="tsv2-section-sub" id="tsv2-models-sub">Each AI model scored individually. Weighted aggregation feeds Global Score. Click any row for details.</div>
-      </div>
-      <span class="badge badge-blue" id="tsv2-models-agg">Weighted Aggregation</span>
-    </div>
-    <div class="tsv2-models-list" id="tsv2-models-list"></div>
-  </div>
-
-  <!-- ══ SECTION 6 — WHERE THE SCORE IS WEAKEST (heatmap) ══ -->
-  <div class="tsv2-section">
-    <div class="tsv2-section-title" id="tsv2-heatmap-title">Where the Score is Weakest</div>
-    <div class="tsv2-section-sub" id="tsv2-heatmap-sub">Visual concentration of disparity · Click any cell to drill into Eden Core filtered to that cohort</div>
-    <div class="tsv2-heat-intro" id="tsv2-heat-intro">—</div>
-    <div id="tsv2-heatmap-render"></div>
-    <div class="tsv2-heatmap-legend" id="tsv2-heatmap-legend">
-      <span id="tsv2-heat-leg-low">1.0x parity</span>
-      <div class="tsv2-heatmap-gradient"></div>
-      <span id="tsv2-heat-leg-high">2.5x+ disparity</span>
-    </div>
-    <div class="tsv2-heat-finding" id="tsv2-heat-finding">
-      <div class="tsv2-heat-finding-icon">!</div>
-      <div class="tsv2-heat-finding-body">
-        <div class="tsv2-heat-finding-title" id="tsv2-heat-finding-title">Top Finding</div>
-        <div class="tsv2-heat-finding-text" id="tsv2-heat-finding-text">—</div>
-      </div>
-      <button class="tsv2-heat-finding-btn" id="tsv2-heat-finding-btn" onclick="tsv2OpenTopFindingCase()">Open Case in Eden →</button>
-    </div>
-  </div>
-
-  <!-- ══ SECTION 7 — PATH TO CERTIFICATION (3-col + projected gauge) ══ -->
+  <!-- ══ SECTION 4 — PATH TO CERTIFICATION ══ -->
   <div class="tsv2-section">
     <div class="tsv2-section-title" id="tsv2-path-title">What's Blocking Your Certification</div>
-    <div class="tsv2-section-sub" id="tsv2-path-sub">Resolve every blocker, model the upside, and watch the downside risks.</div>
-    <div class="tsv2-path-grid">
-      <div class="tsv2-path-col col-low">
-        <div class="tsv2-path-col-title" id="tsv2-path-low-title">Why is your score low?</div>
-        <div class="tsv2-path-items" id="tsv2-path-low"></div>
+    <div class="tsv2-section-sub" id="tsv2-path-sub">Each blocker shows score impact and routes directly to the core that fixes it</div>
+    <div class="tsv2-blockers" id="tsv2-blockers"></div>
+    <div class="tsv2-projected" id="tsv2-projected" style="display:none">
+      <div>
+        <div class="tsv2-projected-text" id="tsv2-projected-text">Projected Trust Score after all fixes complete</div>
+        <div style="font-size:10.5px;color:var(--muted);margin-top:3px" id="tsv2-projected-sub"></div>
       </div>
-      <div class="tsv2-path-col col-raise">
-        <div class="tsv2-path-col-title" id="tsv2-path-raise-title">What would raise your score?</div>
-        <div class="tsv2-path-items" id="tsv2-path-raise"></div>
-      </div>
-      <div class="tsv2-path-col col-lower">
-        <div class="tsv2-path-col-title" id="tsv2-path-lower-title">What can lower the score?</div>
-        <div class="tsv2-path-items" id="tsv2-path-lower"></div>
-      </div>
+      <div class="tsv2-projected-num" id="tsv2-projected-num">84</div>
     </div>
-    <div class="tsv2-projected-mini" id="tsv2-projected-mini">
-      <div class="tsv2-projected-mini-gauge">
-        <svg viewBox="0 0 120 120">
-          <circle cx="60" cy="60" r="50" fill="none" stroke="rgba(34,197,94,.10)" stroke-width="9"/>
-          <circle id="tsv2-projected-mini-ring" cx="60" cy="60" r="50" fill="none" stroke="#22c55e" stroke-width="9" stroke-linecap="round" stroke-dasharray="314" stroke-dashoffset="76" transform="rotate(-90 60 60)" style="transition: stroke-dashoffset 1.2s ease;"/>
-          <text class="tsv2-projected-mini-num" id="tsv2-projected-mini-num" x="60" y="64" text-anchor="middle" dominant-baseline="middle" fill="#22c55e">82</text>
-        </svg>
-      </div>
-      <div class="tsv2-projected-mini-body">
-        <div class="tsv2-projected-mini-title" id="tsv2-projected-mini-title">Projected Trust Score After All Fixes</div>
-        <div class="tsv2-projected-mini-sub" id="tsv2-projected-mini-sub">—</div>
+  </div>
+
+  <!-- ══ SECTION 5 — QUARTERLY EVE SUMMARY ══ -->
+  <div class="tsv2-section">
+    <div class="tsv2-summary-wrap">
+      <div class="tsv2-summary-avatar">✦</div>
+      <div class="tsv2-summary-body">
+        <div class="tsv2-section-title" id="tsv2-summary-title">Q1 2026 Executive Summary — Auto-generated for board</div>
+        <div class="tsv2-section-sub">Generated by Eve from Echo Core audit data · Refreshes weekly · Board-ready language</div>
+        <div id="tsv2-summary-paragraphs"></div>
+        <div class="tsv2-summary-actions">
+          <button class="tsv2-summary-btn" onclick="tsv2DownloadBoardBrief()">Download Board Brief PDF</button>
+          <button class="tsv2-summary-btn" onclick="tsv2ShareToTrustLoop()">Share to Trust Loop</button>
+        </div>
       </div>
     </div>
   </div>
 
-  <!-- ══ SECTION 8 — PEER COMPARISON ══ -->
+  <!-- ══ SECTION 6 — DISPARITY HEATMAPS ══ -->
   <div class="tsv2-section">
-    <div class="tsv2-section-title" id="tsv2-peers-title">How You Compare</div>
-    <div class="tsv2-section-sub" id="tsv2-peers-sub">Anonymized industry peers using Cardinal · 10-firm cohort</div>
+    <div class="tsv2-section-title" id="tsv2-heatmap-title">Disparity Heatmap</div>
+    <div class="tsv2-section-sub" id="tsv2-heatmap-sub">Visual concentration of disparity · Red = high disparity · Click any cell to drill into Eden Core filtered to that cohort</div>
+    <div id="tsv2-heatmap-render"></div>
+    <div class="tsv2-heatmap-legend" id="tsv2-heatmap-legend">
+      <span>1.0x parity</span>
+      <div class="tsv2-heatmap-gradient"></div>
+      <span>2.5x+ disparity</span>
+    </div>
+  </div>
+
+  <!-- ══ SECTION 7 — PEER COMPARISON DETAIL ══ -->
+  <div class="tsv2-section">
+    <div class="tsv2-section-title" id="tsv2-peers-title">Peer Comparison Detail</div>
+    <div class="tsv2-section-sub">Your Trust Score vs anonymized industry peers using Cardinal · 10-firm cohort</div>
     <div class="tsv2-peer-bars" id="tsv2-peer-bars"></div>
     <div style="display:flex;justify-content:space-between;font-size:9.5px;color:var(--muted);margin-top:6px;padding:0 4px">
       <span>Lowest</span><span>Highest</span>
@@ -6304,16 +5580,160 @@ Admin access: READ ONLY · Cannot edit · Cannot delete · Regulator access: Ava
     <div class="tsv2-peer-stats" id="tsv2-peer-stats"></div>
   </div>
 
-  <!-- ══ SECTION 9 — ECHO CORE AUDIT FOOTER ══ -->
+  <!-- ══ SECTION 8 — ECHO CORE AUDIT STRIP ══ -->
   <div class="tsv2-section tsv2-audit" id="tsv2-audit">
     <div>
-      <div class="tsv2-audit-text" id="tsv2-audit-text">Every Trust Score change is logged <strong>tamper-proof</strong> in Echo Core. Cryptographic, court-admissible, regulator-ready.</div>
+      <div class="tsv2-audit-text">Every Trust Score change is logged <strong>tamper-proof</strong> in Echo Core.</div>
       <div class="tsv2-audit-sub" id="tsv2-audit-sub">Most recent event: —</div>
     </div>
-    <button class="tsv2-audit-btn" id="tsv2-audit-btn" onclick="tsv2OpenEchoCoreAuditLog()">View Full Score Audit Log →</button>
+    <button class="tsv2-audit-btn" onclick="tsv2OpenEchoCoreAuditLog()">View Full Score Audit Log →</button>
   </div>
 
 </div><!-- /ts-v2-root -->
+
+<div style="font-size:10px;font-weight:700;letter-spacing:1px;color:var(--muted);text-transform:uppercase;margin:24px 0 10px;padding-top:14px;border-top:1px solid rgba(166,218,255,.08)">Detail Views</div>
+
+<!-- ══ HERO: GLOBAL SCORE — biggest, with surrounding context cards ══ -->
+<div style="display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:14px;margin-bottom:14px">
+<div class="card" style="display:flex;align-items:center;gap:24px;padding:24px">
+<div style="position:relative;flex-shrink:0">
+<svg width="180" height="180" viewBox="0 0 180 180">
+<circle cx="90" cy="90" r="76" fill="none" stroke="rgba(166,218,255,.06)" stroke-width="14"/>
+<circle id="ts-ring" cx="90" cy="90" r="76" fill="none" stroke="#F59E0B" stroke-width="14" stroke-linecap="round" stroke-dasharray="477.5" stroke-dashoffset="124" transform="rotate(-90 90 90)" style="transition:stroke-dashoffset .6s ease, stroke .3s"/>
+<text id="ts-ring-num" x="90" y="92" text-anchor="middle" dominant-baseline="middle" font-size="50" font-weight="700" fill="#F59E0B" font-family="var(--sans)">74</text>
+<text x="90" y="120" text-anchor="middle" font-size="11" fill="var(--muted)" font-family="var(--sans)">/ 100</text>
+</svg>
+</div>
+<div style="flex:1;min-width:0">
+<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+<div style="font-size:13px;font-weight:600;color:var(--chrome2)">Global Trust Score</div>
+<span class="badge badge-amber" id="ts-cert-badge">Not Certified</span>
+<span class="ts-info-trigger" data-tip="Aggregate score across all your AI models. This is your public-facing number — what investors, regulators, and partners see. Confidence band shows how stable the score is.">i</span>
+</div>
+<div style="font-size:11px;color:var(--muted2);line-height:1.55;margin-bottom:14px">Aggregate across all AI models. Public-facing number for investors, regulators, and partners.</div>
+<div style="display:flex;gap:14px;flex-wrap:wrap;font-size:11px">
+<div><div style="color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.5px">Confidence band</div><div style="color:var(--chrome2);font-weight:600" id="ts-band">±3</div></div>
+<div><div style="color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.5px">Trend (30d)</div><div id="ts-trend" style="color:var(--red);font-weight:600">▼ 2 pts</div></div>
+<div><div style="color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.5px">Last certified</div><div style="color:var(--chrome2);font-weight:600" id="ts-last-cert">Jan 14, 2026</div></div>
+<div><div style="color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.5px">Renewal due</div><div id="ts-renewal" style="color:var(--amber);font-weight:600">Apr 14, 2026</div></div>
+</div>
+</div>
+</div>
+<div style="display:grid;grid-template-rows:1fr 1fr;gap:14px">
+<div class="card" style="padding:14px">
+<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+<div style="font-size:11px;font-weight:600;color:var(--chrome2);text-transform:uppercase;letter-spacing:.5px">Confidence band <span style="text-transform:none;color:var(--muted);font-weight:400">±3</span></div>
+<span class="ts-info-trigger" data-tip="The ± value reflects how confident we are in the score. Drivers: how much data we have, how recent the model is, and validation coverage. Smaller band = more trustworthy number.">i</span>
+</div>
+<div id="ts-band-drivers" style="font-size:10px"></div>
+</div>
+<div class="card" style="padding:14px">
+<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+<div style="font-size:11px;font-weight:600;color:var(--chrome2);text-transform:uppercase;letter-spacing:.5px">Score impact preview</div>
+<span class="ts-info-trigger" data-tip="What single actions would move the score next. Click an item to drill in.">i</span>
+</div>
+<div id="ts-quick-impacts"></div>
+</div>
+</div>
+</div>
+
+<!-- ══ DIMENSIONS GRID ══ -->
+<div class="card" style="margin-bottom:14px">
+<div class="section-hdr" style="margin-bottom:12px">
+<div>
+<div class="section-title" style="display:flex;align-items:center;gap:8px">Dimension Sub-Scores <span class="ts-info-trigger" data-tip="The 6 components that make up the global Trust Score. Industry-tailored weights — e.g. Fraud Integrity is weighted higher in financial services than in defense.">i</span></div>
+<div style="font-size:10px;color:var(--muted);margin-top:2px">Hover any dimension for the methodology · Weights vary by industry</div>
+</div>
+<div style="font-size:10px;color:var(--muted)">Weights: Fairness 25% · Fraud 20% · Transparency 15% · Privacy 15% · Governance 15% · Monitoring 10%</div>
+</div>
+<div id="score-dims"></div>
+</div>
+
+<!-- ══ SCORE HISTORY CHART (Week/Month/Quarter/Year) ══ -->
+<div class="card" style="margin-bottom:14px">
+<div class="section-hdr" style="margin-bottom:12px">
+<div>
+<div class="section-title" style="display:flex;align-items:center;gap:8px">Score History <span class="ts-info-trigger" data-tip="How your Trust Score has moved over time. The dashed line is the 80 certification threshold. Hover any point for the AI summary of what happened that period.">i</span></div>
+<div style="font-size:10px;color:var(--muted);margin-top:2px" id="ts-history-sub">View by week, month, quarter, or year · Hover points for AI summary</div>
+</div>
+<div style="display:flex;gap:4px;background:var(--bg3);border-radius:7px;padding:3px">
+<button class="th-btn ts-range-btn active" data-range="week" onclick="setScoreHistoryRange('week',this)" style="background:rgba(166,218,255,.12);border:none;color:var(--accent);border-radius:5px;padding:5px 12px;font-size:10px;cursor:pointer;font-family:var(--sans)">Week</button>
+<button class="th-btn ts-range-btn" data-range="month" onclick="setScoreHistoryRange('month',this)" style="background:transparent;border:none;color:var(--muted);border-radius:5px;padding:5px 12px;font-size:10px;cursor:pointer;font-family:var(--sans)">Month</button>
+<button class="th-btn ts-range-btn" data-range="quarter" onclick="setScoreHistoryRange('quarter',this)" style="background:transparent;border:none;color:var(--muted);border-radius:5px;padding:5px 12px;font-size:10px;cursor:pointer;font-family:var(--sans)">Quarter</button>
+<button class="th-btn ts-range-btn" data-range="year" onclick="setScoreHistoryRange('year',this)" style="background:transparent;border:none;color:var(--muted);border-radius:5px;padding:5px 12px;font-size:10px;cursor:pointer;font-family:var(--sans)">Year</button>
+</div>
+</div>
+<div style="position:relative;height:240px;width:100%"><canvas id="scoreChartReal"></canvas></div>
+<div id="ts-period-summary" style="margin-top:12px;background:rgba(166,218,255,.04);border:1px solid rgba(166,218,255,.12);border-radius:8px;padding:10px 12px;font-size:11px;color:var(--muted2);line-height:1.6"></div>
+</div>
+
+<!-- ══ WHY LOW + WHAT RAISES + ALERTS THAT LOWER ══ -->
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px">
+<div class="card" style="background:rgba(239,68,68,.04);border-color:rgba(239,68,68,.18)">
+<div class="section-title" style="margin-bottom:10px;color:var(--red);display:flex;align-items:center;gap:8px">Why is my score low? <span class="ts-info-trigger" data-tip="The specific issues currently dragging your global score below 80. Each item links back to its source.">i</span></div>
+<div id="ts-why-low" style="display:flex;flex-direction:column;gap:8px"></div>
+</div>
+<div class="card" style="background:rgba(34,197,94,.04);border-color:rgba(34,197,94,.18)">
+<div class="section-title" style="margin-bottom:10px;color:var(--green);display:flex;align-items:center;gap:8px">What would raise my score? <span class="ts-info-trigger" data-tip="Specific actions Eve recommends to improve your score, with projected point gains.">i</span></div>
+<div id="ts-raise-score" style="display:flex;flex-direction:column;gap:8px"></div>
+</div>
+<div class="card" style="background:rgba(245,158,11,.04);border-color:rgba(245,158,11,.18)">
+<div class="section-title" style="margin-bottom:10px;color:var(--amber);display:flex;align-items:center;gap:8px">What can lower the score? <span class="ts-info-trigger" data-tip="Watch-list of risks that, if triggered, would drop your score. Use this for proactive remediation planning.">i</span></div>
+<div id="ts-watch-list" style="display:flex;flex-direction:column;gap:8px"></div>
+</div>
+</div>
+
+<!-- ══ MODEL-LEVEL TRUST SCORES ══ -->
+<div class="card" style="margin-bottom:14px">
+<div class="section-hdr" style="margin-bottom:12px">
+<div>
+<div class="section-title" style="display:flex;align-items:center;gap:8px">Model-Level Trust Scores <span class="ts-info-trigger" data-tip="Each AI model is scored individually. Critical systems (e.g. credit scoring, medical diagnostics) carry more weight in the global aggregate.">i</span></div>
+<div style="font-size:10px;color:var(--muted);margin-top:2px">Each model scored individually · Weighted aggregation feeds Global Score · Click any row for details</div>
+</div>
+<span class="badge badge-blue">Weighted Aggregation</span>
+</div>
+<div id="ts-model-scores"></div>
+</div>
+
+<!-- ══ AI MONTHLY/QUARTERLY NARRATIVE ══ -->
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+<div class="card" style="background:rgba(166,218,255,.04);border-color:rgba(166,218,255,.15)">
+<div style="display:flex;gap:10px;align-items:flex-start">
+<div class="eve-avatar" style="width:32px;height:32px;font-size:14px;flex-shrink:0">✦</div>
+<div style="flex:1">
+<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+<div style="font-size:11px;font-weight:600;color:var(--accent)">Eve — Monthly Summary</div>
+<span style="font-size:10px;color:var(--muted)" id="ts-month-label">April 2026</span>
+</div>
+<div id="ts-eve-monthly" style="font-size:11px;color:var(--muted2);line-height:1.7"></div>
+</div>
+</div>
+</div>
+<div class="card" style="background:rgba(166,218,255,.04);border-color:rgba(166,218,255,.15)">
+<div style="display:flex;gap:10px;align-items:flex-start">
+<div class="eve-avatar" style="width:32px;height:32px;font-size:14px;flex-shrink:0">✦</div>
+<div style="flex:1">
+<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+<div style="font-size:11px;font-weight:600;color:var(--accent)">Eve — Quarterly Narrative</div>
+<span style="font-size:10px;color:var(--muted)" id="ts-quarter-label">Q2 2026</span>
+</div>
+<div id="ts-eve-narrative" style="font-size:11px;color:var(--muted2);line-height:1.7"></div>
+</div>
+</div>
+</div>
+</div>
+
+<!-- ══ SENSITIVITY VIEW ══ -->
+<div class="card" style="margin-bottom:14px">
+<div class="section-hdr" style="margin-bottom:12px">
+<div>
+<div class="section-title" style="display:flex;align-items:center;gap:8px">Sensitivity View <span class="ts-info-trigger" data-tip="Scenario modeling: how much would the score move if specific events occurred? Helps you prioritize remediation by impact.">i</span></div>
+<div style="font-size:10px;color:var(--muted);margin-top:2px">If violations occur or fixes are applied — guides remediation planning</div>
+</div>
+<span class="badge badge-blue">Scenario Modeling</span>
+</div>
+<div id="ts-sensitivity"></div>
+</div>
 
 </div><!-- /screen-trustscore -->
 <!-- ══ TRUST LEDGER ══ -->
@@ -8849,194 +8269,6 @@ var CARDINAL_DATA_TS_EXT = {
   } catch(_e) {}
 })();
 window.CARDINAL_DATA_TS_EXT = CARDINAL_DATA_TS_EXT;
-
-// ════════════════════════════════════════════════════════════════════
-// Trust Score Screen V2 — comprehensive revision (May 1, 2026)
-// 9-section deep-dive. Adds 6-dimension breakdown, scoreConfidence,
-// modelLevelScores, fixImpactScenarios, riskScenarios, heatmapContext,
-// eveNarrativeByTimeframe. Overwrites scoreWeights (3-dim → 6-dim).
-// ════════════════════════════════════════════════════════════════════
-var CARDINAL_DATA_TS_V2 = {
-  ad: {
-    scoreWeights: { fairness:25, fraud:20, transparency:15, privacy:15, governance:15, monitoring:10 },
-    dimensionScores: { fairness:67, fraud:91, transparency:78, privacy:82, governance:72, monitoring:68 },
-    scoreConfidence: { confidenceBand:3, dataCompleteness:94, modelAge:48, validationCoverage:78 },
-    modelLevelScores: [
-      { name:'Personnel Assignment v2.4', weight:35, di:0.67, score:67, status:'Critical', lifecycleStage:'atonement',
-        purpose:'Allocates technicians across forward bases. Currently in Atonement Core remediation.' },
-      { name:'Mission Readiness v1.1',    weight:25, di:0.91, score:82, status:'Watch',    lifecycleStage:'eden',
-        purpose:'Predicts unit readiness scores. Currently in Eden Core monitoring.' },
-      { name:'Fraud Detection v3.2',      weight:25, di:0.97, score:91, status:'Passing',  lifecycleStage:'modellibrary',
-        purpose:'Identifies credential fraud and synthetic identities. Currently in Model Library — passing all checks.' },
-      { name:'Maintenance Routing v1.2',  weight:15, di:0.78, score:78, status:'Watch',    lifecycleStage:'eden',
-        purpose:'Routes maintenance tasks across the fleet. Currently in Eden Core monitoring.' }
-    ],
-    fixImpactScenarios: [
-      { action:'Fix Case #2847 (Personnel bias)',          points:4.2, route:'atonement' },
-      { action:'Complete DoD attestation filing',          points:1.8, route:'compliance' },
-      { action:'Improve monitoring coverage to 85%',       points:1.1, route:'sentinel' },
-      { action:'Deploy shadow fix to 100%',                points:0.8, route:'atonement' }
-    ],
-    riskScenarios: [
-      { risk:'New bias pattern in Logistics model',        points:-3.5, route:'eden',
-        explain:'If a new bias pattern surfaces in the Logistics model, it could drop the Trust Score by 3.5 points.' },
-      { risk:'Miss DoD attestation deadline (8 days)',     points:-2.7, route:'compliance',
-        explain:'Missing the DoD AI Ethics attestation triggers an automatic 2.7-point penalty under contract terms.' },
-      { risk:'Adversarial drift on Personnel v2.4',        points:-1.4, route:'atonement',
-        explain:'If Personnel v2.4 drifts further before the v2.5 patch fully deploys, the score drops 1.4 points.' },
-      { risk:'Audit cycle missed for Q2',                  points:-2.0, route:'compliance',
-        explain:'Missing the Q2 audit cycle triggers a 2-point compliance penalty.' }
-    ],
-    heatmapContext: {
-      intro:'Personnel Assignment v2.4 makes deployment decisions across four major Army installations. This grid shows which demographic groups face higher denial rates at each base. Cells above 1.0x mean the AI is denying that group more often than the baseline. Red cells (1.5x+) indicate violations.',
-      rowLabels:[
-        { label:'Pendleton', tooltip:'Camp Pendleton — primary West Coast Marine base. ~38,000 personnel processed by this AI model annually.' },
-        { label:'Bragg',     tooltip:'Fort Bragg — largest US Army installation, special operations command. ~52,000 personnel.' },
-        { label:'Lewis',     tooltip:'Joint Base Lewis-McChord — Pacific Northwest joint operations. ~29,000 personnel.' },
-        { label:'Hood',      tooltip:'Fort Hood — armored division command, central Texas. ~36,000 personnel.' }
-      ],
-      colLabels:[
-        { label:'Hispanic', tooltip:'Service members self-identifying as Hispanic or Latino in personnel records.' },
-        { label:'Black',    tooltip:'Service members self-identifying as Black or African American.' },
-        { label:'White',    tooltip:'Service members self-identifying as White (baseline group for ratio comparison).' },
-        { label:'Asian',    tooltip:'Service members self-identifying as Asian or Pacific Islander.' },
-        { label:'Other',    tooltip:'Service members self-identifying as Native American, multi-racial, or unspecified.' }
-      ],
-      topFinding:'Hispanic technicians at Camp Pendleton are 2.3x more likely to be denied premium-base placement than the baseline group. This is the violation that triggered Case #AD-2847.'
-    },
-    eveNarrativeByTimeframe: {
-      monthly:'April saw a 2-point drop, driven entirely by Personnel Assignment v2.4. The model crossed the disparate-impact threshold on April 3 when ZIP-code-correlated patterns surfaced in technician assignments. Sentinel flagged it within hours; Atonement has the fix queued. We expect a 4-point rebound when the patch deploys to 100%.',
-      quarterly:'Atlas Defense Systems Q1 2026 Trust Score sits at 74, below the 80 certification threshold and in the 38th percentile of A&D peers. The driver is Personnel Assignment v2.4, an AI model used to allocate technicians across forward bases. Eden Core flagged a disparate impact ratio of 0.67 in January after the demographic_classification feature showed a 0.81 correlation with assignment outcomes — Hispanic technicians were 2.3x more likely to be denied premium-base placement. 847 service members were affected. Total regulatory and litigation exposure is $67M ($28M DoD penalties, $39M projected litigation).\n\nAtonement Core is running a shadow deployment of Personnel v2.5 at 5% of live traffic with bias metrics tracking back toward the 0.80 floor. Remediation is 35% complete; full rollout estimated May 15. The DoD AI Ethics audit is overdue and must be filed via Compliance Exchange this week.\n\nRecommended board action: approve full v2.5 traffic expansion and authorize remediation cohort outreach to all 847 affected service members.',
-      ytd:'Year-to-date, Trust Score has moved from 78 (May 2025) to 74 (April 2026) — net -4 points across the year. The decline is not gradual: it concentrates entirely in Q1 2026 when Personnel Assignment v2.4 entered violation. Pre-violation, the score was tracking at or above the 80 certification threshold for 7 consecutive months. Atlas Defense Systems has been on Cardinal for 12 months; the platform caught the v2.4 issue 6.2 days before any external regulator inquiry. Once the v2.5 fix completes, projected return to 82 by end of Q2.'
-    }
-  },
-  fin: {
-    scoreWeights: { fairness:25, fraud:20, transparency:15, privacy:15, governance:15, monitoring:10 },
-    dimensionScores: { fairness:74, fraud:88, transparency:81, privacy:85, governance:76, monitoring:79 },
-    scoreConfidence: { confidenceBand:2, dataCompleteness:96, modelAge:32, validationCoverage:87 },
-    modelLevelScores: [
-      { name:'Credit Scoring v3.4',   weight:40, di:0.79, score:71, status:'Critical', lifecycleStage:'atonement',
-        purpose:'Underwrites consumer loan applications. Currently in Atonement Core remediation for ZIP-code proxy bias.' },
-      { name:'Fraud Screening v2.7',  weight:30, di:0.93, score:88, status:'Passing',  lifecycleStage:'modellibrary',
-        purpose:'Detects synthetic identity and behavioral anomaly fraud. Currently in Model Library — passing all checks.' },
-      { name:'Underwriting v4.1',     weight:20, di:0.86, score:83, status:'Watch',    lifecycleStage:'eden',
-        purpose:'Underwrites commercial credit. Currently in Eden Core monitoring.' },
-      { name:'Collections AI v1.3',   weight:10, di:0.81, score:79, status:'Watch',    lifecycleStage:'eden',
-        purpose:'Prioritizes collections outreach. Currently in Eden Core monitoring for proxy drift.' }
-    ],
-    fixImpactScenarios: [
-      { action:'Deploy Credit v3.5 to full traffic',     points:4.5, route:'atonement' },
-      { action:'Complete ECOA renewal filing',           points:2.1, route:'compliance' },
-      { action:'Close NYC Law 144 audit packet',         points:1.5, route:'compliance' },
-      { action:'Improve monitoring coverage to 90%',     points:0.9, route:'sentinel' }
-    ],
-    riskScenarios: [
-      { risk:'New zip_code proxy in Underwriting',       points:-3.2, route:'eden',
-        explain:'If a fresh ZIP-code proxy surfaces in Underwriting v4.1, it could drop the Trust Score by 3.2 points.' },
-      { risk:'Miss NYC Law 144 audit (13 days)',         points:-3.5, route:'compliance',
-        explain:'Missing the NYC Local Law 144 bias audit triggers a 3.5-point compliance penalty.' },
-      { risk:'Drift on Fraud Screening v2.7',            points:-1.1, route:'obsidian',
-        explain:'Fraud detection drift on v2.7 would shave 1.1 points off the score until retrained.' },
-      { risk:'ECOA recertification gap',                 points:-2.0, route:'compliance',
-        explain:'A lapsed ECOA recertification triggers a 2-point compliance penalty.' }
-    ],
-    heatmapContext: {
-      intro:'Credit Scoring v3.4 underwrites loan applications across NYC ZIP code clusters. This grid shows approval disparity by ZIP cluster and applicant race. Cells above 1.0x mean the AI is denying that group at a higher rate. The model uses zip_code as an input that correlates 0.82 with race — that proxy is the source of the violation.',
-      rowLabels:[
-        { label:'10001', tooltip:'Midtown South Manhattan. Median income $98K. Predominantly White and Asian residents.' },
-        { label:'10031', tooltip:'Hamilton Heights, Manhattan. Median income $52K. Predominantly Hispanic and Black residents.' },
-        { label:'10453', tooltip:'Morris Heights, Bronx. Median income $34K. Predominantly Black and Hispanic residents — highest disparity ZIP.' },
-        { label:'11212', tooltip:'Brownsville, Brooklyn. Median income $31K. Predominantly Black residents.' },
-        { label:'11226', tooltip:'Flatbush, Brooklyn. Median income $48K. Diverse demographics.' },
-        { label:'11368', tooltip:'Corona, Queens. Median income $51K. Predominantly Hispanic residents.' }
-      ],
-      colLabels:[
-        { label:'Black',    tooltip:'Applicants self-identifying as Black or African American on loan applications.' },
-        { label:'Hispanic', tooltip:'Applicants self-identifying as Hispanic or Latino.' },
-        { label:'White',    tooltip:'Applicants self-identifying as White (baseline group for ratio comparison).' },
-        { label:'Asian',    tooltip:'Applicants self-identifying as Asian.' },
-        { label:'Other',    tooltip:'Applicants self-identifying as multi-racial, Native American, or unspecified.' }
-      ],
-      topFinding:'Black applicants in ZIP 10453 (Morris Heights) are 2.1x more likely to be denied than the baseline group, despite comparable credit profiles. This is the ECOA violation that triggered Case #FIN-1203.'
-    },
-    eveNarrativeByTimeframe: {
-      monthly:'April saw a 1-point gain. Credit Scoring v3.5 shadow deployment expanded from 5% to 35% of live traffic with bias metrics tracking back toward the 0.80 floor. 687 of the 1,203 affected applicants have been re-approved — 57% of the remediation cohort complete. NYC Law 144 audit packet is 80% prepared.',
-      quarterly:'Blackmoor Wealth Group Q1 2026 Trust Score is 81, above the 80 certification threshold and in the 64th percentile of finance peers. Cardinal ECOA certification is active. The current open issue is Credit Scoring v3.4, which Eden Core flagged in February for a 0.82 correlation between zip_code and race. 1,203 applicants in protected ZIP clusters were affected, with an approval disparity of 2.1x. Total exposure is $73M ($40M ECOA fines, $33M CFPB action).\n\nCredit v3.5 is running in Atonement shadow deployment with the proxy variable removed; 687 of the 1,203 affected applicants have already been re-approved (57% of the remediation cohort complete). Full v3.5 rollout is on track for May 8, ahead of the NYC Local Law 144 audit deadline of May 14. Remaining work: complete remediation cohort outreach and finalize the NYC audit packet via Compliance Exchange.\n\nCardinal certification renews October 12, 2026.',
-      ytd:'Year-to-date, Trust Score has moved from 76 (May 2025) to 81 (April 2026) — net +5 points. The trajectory is steady improvement with two minor incidents caught early (Aug 2025 Credit v3.2 ECOA flag, Feb 2026 Credit v3.4 catch). Cardinal certification is active and renews October 12, 2026. Blackmoor Wealth has been on Cardinal for 12 months; bias-fraud connection caught 3 fraud rings in Q4 2025 that traditional fraud-only systems missed.'
-    }
-  },
-  health: {
-    scoreWeights: { fairness:25, fraud:20, transparency:15, privacy:15, governance:15, monitoring:10 },
-    dimensionScores: { fairness:64, fraud:84, transparency:80, privacy:88, governance:77, monitoring:75 },
-    scoreConfidence: { confidenceBand:4, dataCompleteness:91, modelAge:61, validationCoverage:74 },
-    modelLevelScores: [
-      { name:'Claims Adjudication v1.9', weight:45, di:0.77, score:64, status:'Critical', lifecycleStage:'atonement',
-        purpose:'Reviews medical claims for adjudication. Currently in Atonement Core remediation for age_cost_proxy bias.' },
-      { name:'Diagnosis Support v2.3',   weight:30, di:0.89, score:84, status:'Watch',    lifecycleStage:'eden',
-        purpose:'Assists clinicians with diagnosis suggestions. Currently in Eden Core monitoring.' },
-      { name:'Prior Auth v1.5',          weight:25, di:0.94, score:89, status:'Passing',  lifecycleStage:'modellibrary',
-        purpose:'Pre-authorizes medical procedures. Currently in Model Library — passing all checks.' }
-    ],
-    fixImpactScenarios: [
-      { action:'Get CMO sign-off on shadow deploy',  points:5.0, route:'warroom' },
-      { action:'Complete CMS audit packet',          points:2.3, route:'compliance' },
-      { action:'Fix Claims v1.9 age proxy',          points:3.1, route:'atonement' },
-      { action:'Improve monitoring coverage to 85%', points:1.0, route:'sentinel' }
-    ],
-    riskScenarios: [
-      { risk:'New age_cost_proxy in Diagnosis Support', points:-3.0, route:'eden',
-        explain:'If a similar age proxy surfaces in Diagnosis Support v2.3, it could drop the Trust Score by 3 points.' },
-      { risk:'Miss CMS audit (30 days)',                points:-3.8, route:'compliance',
-        explain:'Missing the CMS audit triggers a 3.8-point compliance penalty and exclusion-list risk.' },
-      { risk:'ACA 1557 enforcement action',             points:-4.5, route:'compliance',
-        explain:'An ACA Section 1557 enforcement action triggers a 4.5-point penalty plus civil rights remedies.' },
-      { risk:'HIPAA breach exposure',                   points:-2.2, route:'trustledger',
-        explain:'A HIPAA breach exposure event would drop the Trust Score by 2.2 points until containment is logged in Trust Ledger.' }
-    ],
-    heatmapContext: {
-      intro:'Claims Adjudication v1.9 reviews medical claims across age brackets and care types. This grid shows claim denial disparity by patient age and claim category. Cells above 1.0x mean the AI is denying that group at a higher rate. The model uses an age_cost_proxy feature that correlates 0.81 with patient age.',
-      rowLabels:[
-        { label:'18-30', tooltip:'Young adult patients. Lowest care utilization, lowest historical claim cost.' },
-        { label:'31-50', tooltip:'Middle-age patients. Mid-range care utilization.' },
-        { label:'51-64', tooltip:'Pre-Medicare patients. Higher care utilization, mostly employer-insured.' },
-        { label:'65-74', tooltip:'Medicare-eligible patients. High specialty care utilization.' },
-        { label:'75+',   tooltip:'Elderly patients. Highest care utilization — disparity concentrates here.' }
-      ],
-      colLabels:[
-        { label:'Inpatient',  tooltip:'Hospital admission claims. Highest dollar value claims.' },
-        { label:'Outpatient', tooltip:'Outpatient procedure and visit claims.' },
-        { label:'Specialty',  tooltip:'Specialist consultation and procedure claims — disparity concentrates here.' },
-        { label:'Emergency',  tooltip:'Emergency department claims.' },
-        { label:'Preventive', tooltip:'Preventive care and screening claims.' }
-      ],
-      topFinding:'Patients 75+ requesting Specialty care are 2.3x more likely to have claims denied than the baseline group. This is the ACA Section 1557 violation that triggered Case #HS-2847.'
-    },
-    eveNarrativeByTimeframe: {
-      monthly:'April held steady at 83. Claims Adjudication v1.9 remediation is blocked awaiting CMO approval — 0 of 2,847 affected claims re-evaluated this month. CMS audit deadline is in 30 days. Recommend escalating CMO sign-off this week to start Atonement shadow deploy.',
-      quarterly:'Sterling Health Q1 2026 Trust Score is 83, above the 80 certification threshold and in the 71st percentile of healthcare peers. Cardinal ACA Section 1557 certification is active. The current open issue is Claims Adjudication v1.9, which Eden Core flagged in March for a 0.81 correlation between an age_cost_proxy feature and claim adjudication outcomes. 2,847 patient claims were affected, with a 2.3x disparity for patients 65 and older receiving specialty care. Total exposure is $150M ($65M ACA penalties, $85M CMS exclusion risk).\n\nRemediation is currently blocked awaiting CMO sign-off to begin shadow deployment — 0 of 2,847 claims re-evaluated to date. CMS audit deadline is in 30 days.\n\nRecommended board action: escalate CMO approval this week to start the Atonement shadow deploy and unblock the remediation cohort. Estimated full remediation completion June 1.',
-      ytd:'Year-to-date, Trust Score has moved from 80 (May 2025) to 83 (April 2026) — net +3 points despite an active ACA 1557 violation in flight. Cardinal certification is active. Sterling Health has been on Cardinal for 12 months; the platform caught Claims v1.9 age_cost_proxy issue 9.4 days before any patient complaint surfaced. CMO approval remains the gating item to begin remediation.'
-    }
-  }
-};
-
-// Merge V2 fields into CARDINAL_DATA. scoreWeights is overwritten (3-dim → 6-dim);
-// all other keys are additive (won't overwrite if already present).
-(function _mergeCardinalDataV2(){
-  try {
-    Object.keys(CARDINAL_DATA_TS_V2).forEach(function(k){
-      if (!CARDINAL_DATA[k]) return;
-      var src = CARDINAL_DATA_TS_V2[k];
-      Object.keys(src).forEach(function(p){
-        if (p === 'scoreWeights') {
-          CARDINAL_DATA[k][p] = src[p]; // explicit overwrite
-        } else if (!(p in CARDINAL_DATA[k])) {
-          CARDINAL_DATA[k][p] = src[p];
-        }
-      });
-    });
-  } catch(_e) { if (window.console) console.warn('mergeCardinalDataV2', _e); }
-})();
-window.CARDINAL_DATA_TS_V2 = CARDINAL_DATA_TS_V2;
 
 // Helper: get current data record
 function cd(org) {
@@ -12983,9 +12215,7 @@ function loadIndustry(org) {
 function scoreColor(s) { return s>=80?'#22C55E':s>=70?'#F59E0B':'#EF4444'; }
 
 function buildScoreDims() {
- var _scoreDimsEl = document.getElementById('score-dims');
- if (!_scoreDimsEl) return;
- _scoreDimsEl.innerHTML = DIMENSIONS.map(d => `
+ document.getElementById('score-dims').innerHTML = DIMENSIONS.map(d => `
  <div class="score-dim">
  <span class="score-dim-name">${d.label}</span>
  <span class="score-dim-weight">${Math.round(d.weight*100)}%</span>
@@ -19725,7 +18955,7 @@ function tsv2OrdSuffix(n) {
   return n + (s[(v - 20) % 10] || s[v] || s[0]);
 }
 
-// ── Section 1: Hero (with Score Confidence) ─────────────────────────
+// ── Section 1: Hero ─────────────────────────────────────────────────
 function tsv2BuildHero(d) {
   if (!d) return;
   var score = parseInt(d.trustScoreDisplay, 10) || 0;
@@ -19760,7 +18990,7 @@ function tsv2BuildHero(d) {
   if (certWrap) {
     var isCertified = !!(d.certStatus && /^certified/i.test(d.certStatus) && !/not.+certified/i.test(d.certStatus));
     if (isCertified) {
-      var renewLine = d.certRenewal ? ' · Active — renews ' + d.certRenewal : ' · Active';
+      var renewLine = d.certRenewal ? ' · renews ' + d.certRenewal : ' · Active';
       certWrap.innerHTML =
         '<div class="tsv2-cert-badge green" id="tsv2-cert-badge-el">' +
           '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 4v6c0 5-3.5 9-8 10-4.5-1-8-5-8-10V6l8-4z"/><path d="M9 12l2 2 4-4"/></svg>' +
@@ -19770,7 +19000,7 @@ function tsv2BuildHero(d) {
       certWrap.innerHTML =
         '<div class="tsv2-cert-badge amber" id="tsv2-cert-badge-el">' +
           '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/></svg>' +
-          '<span>Not Certified — 80+ Required</span>' +
+          '<span>Not Certified — Trust Score 80+ Required</span>' +
         '</div>';
     }
   }
@@ -19785,7 +19015,7 @@ function tsv2BuildHero(d) {
   var med = pd.industryAvg || pd.median || 79;
   setT('tsv2-peer-percentile', tsv2OrdSuffix(pct) + ' percentile');
   var peerText = document.getElementById('tsv2-peer-text');
-  if (peerText) peerText.innerHTML = '<strong>Your Score</strong> ' + score + '  ·  Industry Avg ' + med + '  ·  ' + tsv2OrdSuffix(pct) + ' Percentile';
+  if (peerText) peerText.innerHTML = '<strong>Your Score</strong> ' + score + '  ·  Industry Avg ' + med;
   var youDot = document.getElementById('tsv2-peer-you');
   if (youDot) {
     youDot.style.left = Math.max(0, Math.min(100, score)) + '%';
@@ -19793,25 +19023,6 @@ function tsv2BuildHero(d) {
     youDot.style.background = color;
   }
   setT('tsv2-last-calc', d.auditTimestamp || '2 minutes ago');
-
-  // Score Confidence card
-  var sc = d.scoreConfidence || {};
-  setT('tsv2-conf-band', '±' + (sc.confidenceBand != null ? sc.confidenceBand : 3) + ' points');
-  var compEl = document.getElementById('tsv2-conf-completeness');
-  if (compEl) {
-    var dc = sc.dataCompleteness != null ? sc.dataCompleteness : 90;
-    compEl.textContent = dc + '%';
-    compEl.classList.remove('green','amber','red');
-    compEl.classList.add(dc >= 90 ? 'green' : dc >= 80 ? 'amber' : 'red');
-  }
-  setT('tsv2-conf-age', (sc.modelAge != null ? sc.modelAge : 0) + ' days');
-  var valEl = document.getElementById('tsv2-conf-validation');
-  if (valEl) {
-    var vc = sc.validationCoverage != null ? sc.validationCoverage : 0;
-    valEl.textContent = vc + '%';
-    valEl.classList.remove('green','amber','red');
-    valEl.classList.add(vc >= 85 ? 'green' : vc >= 70 ? 'amber' : 'red');
-  }
 }
 
 // ── Section 2: 12-Month History (D3.js) ─────────────────────────────
@@ -19821,8 +19032,8 @@ function tsv2HistorySeriesKey() {
 
 function tsv2BuildHistoryChart(d) {
   if (!d || typeof d3 === 'undefined') return;
-  var hist = (typeof TSV2_CURRENT_RANGE !== 'undefined') ? tsv2GetRangeSeries(d, TSV2_CURRENT_RANGE) : (d.trustScoreHistory || []).slice();
-  if (!hist || !hist.length) return;
+  var hist = (d.trustScoreHistory || []).slice();
+  if (!hist.length) return;
   var seriesKey = tsv2HistorySeriesKey();
 
   var wrap = document.getElementById('tsv2-history-canvas-wrap');
@@ -19959,72 +19170,96 @@ function tsv2SetHistorySeries(series, btn) {
   }
   var d = tsv2Data(typeof currentOrg !== 'undefined' ? currentOrg : 'ad');
   tsv2BuildHistoryChart(d);
-  if (typeof tsv2BuildHistoryCaption === 'function') {
-    tsv2BuildHistoryCaption(d, TSV2_CURRENT_RANGE, tsv2GetRangeSeries(d, TSV2_CURRENT_RANGE));
-  }
 }
 window.tsv2SetHistorySeries = tsv2SetHistorySeries;
 
-// ── Section 4: Score Composition by Dimension (6-dim) ───────────────
-var TSV2_DIMENSIONS = [
-  { key:'fairness',     name:'Fairness',                   sub:'Eden Core',           route:'eden',
-    tooltip:['Fairness', 'Disparate Impact, Equalized Odds, Demographic Parity. Driven by Eden Core.'] },
-  { key:'fraud',        name:'Fraud Integrity',            sub:'Obsidian Core',       route:'obsidian',
-    tooltip:['Fraud Integrity', 'Synthetic identity, behavioral anomaly, cluster fraud detection. Driven by Obsidian Core.'] },
-  { key:'transparency', name:'Transparency',               sub:'Trust Loop',          route:'trustloop',
-    tooltip:['Transparency', 'Decision receipts, model documentation, explainability scores. Driven by Trust Loop.'] },
-  { key:'privacy',      name:'Privacy & Data Rights',      sub:'Trust Ledger',        route:'trustledger',
-    tooltip:['Privacy', 'Data minimization, consent, deletion compliance. Driven by Trust Ledger.'] },
-  { key:'governance',   name:'Governance & Security',      sub:'Compliance Exchange', route:'compliance',
-    tooltip:['Governance', 'Regulatory adherence, certification status, audit readiness. Driven by Compliance Exchange.'] },
-  { key:'monitoring',   name:'Post-Deployment Monitoring', sub:'Sentinel',            route:'sentinel',
-    tooltip:['Monitoring', 'Drift detection, ongoing validation, incident response time. Driven by Sentinel.'] }
-];
-
+// ── Section 3: Score Composition Breakdown ──────────────────────────
 function tsv2BuildComposition(d) {
-  var list = document.getElementById('tsv2-dim-list');
-  if (!list || !d) return;
+  var grid = document.getElementById('tsv2-comp-grid');
+  if (!grid || !d) return;
   var inline = document.getElementById('tsv2-comp-num-inline');
-  if (inline) inline.textContent = d.trustScoreDisplay || '—';
+  if (inline) inline.textContent = d.trustScoreDisplay || '';
 
-  var weights = d.scoreWeights || { fairness:25, fraud:20, transparency:15, privacy:15, governance:15, monitoring:10 };
-  var dims = d.dimensionScores || {};
-  var color = d.trustColor || tsv2ScoreColor(parseInt(d.trustScoreDisplay, 10) || 0);
+  var weights = d.scoreWeights || { bias:40, fraud:30, compliance:30 };
+  var biasFactors = d.biasFactors || [];
+  var fb = d.fraudBreakdown || {};
+  var regs = d.regulationsList || [];
+  var color = d.trustColor || tsv2ScoreColor(parseInt(d.trustScoreDisplay,10) || 0);
 
-  list.innerHTML = TSV2_DIMENSIONS.map(function (dim) {
-    var score = dims[dim.key] != null ? dims[dim.key] : 0;
-    var w = weights[dim.key] != null ? weights[dim.key] : 0;
-    var c = tsv2ScoreColor(score);
-    var pct = Math.max(0, Math.min(100, score));
-    return '<div class="tsv2-dim-row" data-dim-key="' + dim.key + '" onclick="openScreen(\'' + dim.route + '\')">' +
-      '<div class="tsv2-dim-name" data-dim-tip="' + dim.key + '">' + dim.name + ' <span style="color:var(--muted);font-weight:500;font-size:10px">· ' + dim.sub + '</span> <span class="arrow">→</span></div>' +
-      '<div class="tsv2-dim-weight" data-weight-tip="1">' + w + '%</div>' +
-      '<div class="tsv2-dim-bar-wrap"><div class="tsv2-dim-bar" style="background:' + c + ';width:0%" data-target-w="' + pct + '"></div></div>' +
-      '<div class="tsv2-dim-score" style="color:' + c + '">' + score + '</div>' +
+  var biasFactorHtml = biasFactors.map(function (f) {
+    var hasProxy = !!f.proxyTerm;
+    return '<div class="tsv2-comp-factor" onclick="openScreen(\'eden\')">' +
+      '<div class="tsv2-comp-factor-label"' + (hasProxy ? ' data-proxy-term="' + f.proxyTerm + '"' : '') + '>' + f.label + '</div>' +
+      '</div>';
+  }).join('');
+
+  var biasCol = '<div class="tsv2-comp-col" id="tsv2-comp-bias-col">' +
+    '<div class="tsv2-comp-head"><span class="tsv2-comp-name" id="tsv2-comp-bias-title">Bias Detection</span><span class="tsv2-comp-weight">' + weights.bias + '% of Trust Score</span></div>' +
+    '<div class="tsv2-comp-num" style="color:' + tsv2ScoreColor(d.biasScore) + '">' + (d.biasScore != null ? d.biasScore : '—') + '</div>' +
+    '<div style="font-size:10.5px;color:var(--muted);margin-bottom:8px">' + (d.biasDetection != null ? d.biasDetection + '%' : (d.biasScore + '%')) + ' of monitored decisions equitable</div>' +
+    '<div class="tsv2-comp-factors">' + biasFactorHtml + '</div>' +
+    '<a class="tsv2-comp-corelink" id="tsv2-comp-bias-corelink" onclick="openScreen(\'eden\')" style="font-size:10.5px;color:var(--accent);cursor:pointer;display:inline-flex;align-items:center;gap:4px">Driven by Eden Core →</a>' +
+  '</div>';
+
+  var fraudRows = [
+    { id:'tsv2-fb-synth', label:'Synthetic Identity Detection', value: fb.syntheticIdentity },
+    { id:'tsv2-fb-beh', label:'Behavioral Anomaly', value: fb.behavioralAnomaly },
+    { id:'tsv2-fb-clu', label:'Cluster Fraud', value: fb.clusterFraud }
+  ];
+  var fraudFactorHtml = fraudRows.map(function (r) {
+    return '<div class="tsv2-comp-factor" id="' + r.id + '" onclick="openScreen(\'obsidian\')">' +
+      '<div class="tsv2-comp-factor-label">' + r.label + '</div>' +
+      '<div class="tsv2-comp-factor-sub">Detection rate: <strong style="color:#22c55e">' + (r.value != null ? r.value + '%' : '—') + '</strong></div>' +
     '</div>';
   }).join('');
 
-  // animate bars
-  setTimeout(function () {
-    list.querySelectorAll('.tsv2-dim-bar').forEach(function (b) {
-      b.style.width = b.getAttribute('data-target-w') + '%';
-    });
-  }, 80);
+  var fraudCol = '<div class="tsv2-comp-col" id="tsv2-comp-fraud-col">' +
+    '<div class="tsv2-comp-head"><span class="tsv2-comp-name" id="tsv2-comp-fraud-title">Fraud Prevention</span><span class="tsv2-comp-weight">' + weights.fraud + '% of Trust Score</span></div>' +
+    '<div class="tsv2-comp-num" style="color:' + tsv2ScoreColor(d.fraudScore) + '">' + (d.fraudScore != null ? d.fraudScore : '—') + '</div>' +
+    '<div style="font-size:10.5px;color:var(--muted);margin-bottom:8px">' + (d.fraudPrevention != null ? d.fraudPrevention + '%' : (d.fraudScore + '%')) + ' fraud detection rate</div>' +
+    '<div class="tsv2-comp-factors">' + fraudFactorHtml + '</div>' +
+    (fb.biasFraudConnection != null ? '<div class="tsv2-comp-bias-fraud" id="tsv2-bias-fraud-link" onclick="openScreen(\'obsidian\')" style="cursor:pointer"><strong>Bias-Fraud Connection:</strong> ' + fb.biasFraudConnection + ' cases where bias blind spots created fraud exposure.</div>' : '') +
+    '<a class="tsv2-comp-corelink" id="tsv2-comp-fraud-corelink" onclick="openScreen(\'obsidian\')" style="font-size:10.5px;color:var(--accent);cursor:pointer;display:inline-flex;align-items:center;gap:4px;margin-top:6px">Driven by Obsidian Core →</a>' +
+  '</div>';
 
-  // dimension footer reflects actual weights
-  var footEl = document.getElementById('tsv2-dim-footer');
-  if (footEl) {
-    footEl.textContent = 'Weights: Fairness ' + weights.fairness + '% · Fraud ' + weights.fraud + '% · Transparency ' + weights.transparency + '% · Privacy ' + weights.privacy + '% · Governance ' + weights.governance + '% · Monitoring ' + weights.monitoring + '%';
-  }
+  var compRowsHtml = regs.map(function (r) {
+    var statusColor = r.status === 'compliant' ? '#22c55e' : r.status === 'approaching' ? '#f59e0b' : '#ef4444';
+    var statusLabel = r.status === 'compliant' ? 'Compliant' : r.status === 'approaching' ? 'Approaching' : 'Below Threshold';
+    return '<div class="tsv2-comp-reg-row" data-reg-key="' + (r.key || '') + '" onclick="tsv2OpenComplianceForReg(\'' + (r.key || '') + '\', \'' + (r.name || '').replace(/\'/g,"\\\'") + '\')">' +
+      '<div>' +
+        '<div class="tsv2-comp-reg-name" data-reg-tip="' + (r.key || '') + '">' + r.name + ' <span style="color:' + statusColor + ';font-size:9.5px;margin-left:6px;font-weight:700">● ' + statusLabel + '</span></div>' +
+      '</div>' +
+      '<div class="tsv2-comp-reg-pct" style="color:' + statusColor + '">' + r.score.toFixed(1) + '%</div>' +
+    '</div>';
+  }).join('');
 
-  // dimension tooltips
-  list.querySelectorAll('[data-dim-tip]').forEach(function (el) {
-    var k = el.getAttribute('data-dim-tip');
-    var dim = TSV2_DIMENSIONS.find(function (x) { return x.key === k; });
-    if (dim) showTooltip(el, dim.tooltip[0], dim.tooltip[1]);
+  var compCol = '<div class="tsv2-comp-col" id="tsv2-comp-reg-col">' +
+    '<div class="tsv2-comp-head"><span class="tsv2-comp-name" id="tsv2-comp-reg-title">Compliance</span><span class="tsv2-comp-weight">' + weights.compliance + '% of Trust Score</span></div>' +
+    '<div class="tsv2-comp-num" style="color:' + tsv2ScoreColor(d.complianceScore) + '">' + (d.complianceScore != null ? d.complianceScore : '—') + '</div>' +
+    '<div style="font-size:10.5px;color:var(--muted);margin-bottom:8px">' + (d.complianceScore != null ? d.complianceScore : '—') + '% across all applicable regulations</div>' +
+    compRowsHtml +
+    '<a class="tsv2-comp-corelink" id="tsv2-comp-reg-corelink" onclick="openScreen(\'compliance\')" style="font-size:10.5px;color:var(--accent);cursor:pointer;display:inline-flex;align-items:center;gap:4px;margin-top:8px">Driven by Compliance Exchange →</a>' +
+  '</div>';
+
+  grid.innerHTML = biasCol + fraudCol + compCol;
+
+  // DI tooltips
+  grid.querySelectorAll('.tsv2-comp-factor-label').forEach(function (sp) {
+    var txt = sp.textContent || '';
+    if (/\bDI\s+0\.[0-9]+/i.test(txt) && !sp.getAttribute('data-tsv2-di-bound')) {
+      showTooltip(sp, 'Disparate Impact Ratio', 'Lowest group approval rate divided by highest. Must be 0.80+ to meet EEOC four-fifths rule.');
+      sp.setAttribute('data-tsv2-di-bound', '1');
+    }
+    if (sp.getAttribute('data-proxy-term')) {
+      showTooltip(sp, 'Proxy Variable', 'A feature that correlates with a protected attribute (race, age, gender) even when the attribute itself is excluded. Still illegal discrimination.');
+    }
   });
-  list.querySelectorAll('[data-weight-tip]').forEach(function (el) {
-    showTooltip(el, 'Weight', 'How much this dimension contributes to the composite Trust Score.');
+
+  // regulation tooltips via existing CARDINAL_REG_TIPS
+  grid.querySelectorAll('[data-reg-tip]').forEach(function (sp) {
+    var k = sp.getAttribute('data-reg-tip');
+    var tk = (window.CARDINAL_REG_TIPS || {})[k];
+    if (tk) showTooltip(sp, tk[0], tk[1]);
   });
 }
 
@@ -20037,210 +19272,110 @@ function tsv2OpenComplianceForReg(key, name) {
 }
 window.tsv2OpenComplianceForReg = tsv2OpenComplianceForReg;
 
-// ── Section 7: Path to Certification (3-col + projected gauge) ──────
+// ── Section 4: Path to Certification ────────────────────────────────
 function tsv2BuildPath(d) {
   if (!d) return;
   var setT = function (id, v) { var e = document.getElementById(id); if (e) e.textContent = v; };
   var isCertified = !!(d.certStatus && /^certified/i.test(d.certStatus) && !/not.+certified/i.test(d.certStatus));
 
-  setT('tsv2-path-title', isCertified ? 'Maintaining Your Certification' : 'What\'s Blocking Your Certification');
-  setT('tsv2-path-sub', 'Resolve every blocker, model the upside, and watch the downside risks.');
+  setT('tsv2-path-title', isCertified ? 'Maintaining Your Certification — Action Required' : 'What\'s Blocking Your Certification');
+  var subEl = document.getElementById('tsv2-path-sub');
+  if (subEl) {
+    subEl.textContent = isCertified
+      ? 'Stay above 80 and resolve open items to keep certification active.' + (d.certRenewal ? ' Certification renews ' + d.certRenewal + '.' : '')
+      : 'Resolve every blocker to reach 80+ and unlock Cardinal certification.';
+  }
 
-  // Column 1 — Why is your score low? (red blockers)
+  // Use enriched pathToCertBlockers if present, else map certBlockers strings
   var blockers = (d.pathToCertBlockers && d.pathToCertBlockers.length)
     ? d.pathToCertBlockers
     : (d.certBlockers || []).map(function (b) {
         return { title: b.text || String(b), severity:'High', explanation:'', scoreImpact:'+3 points to Trust Score', fixCore:'Atonement Core', fixScreen: b.fixScreen || 'atonement', eta: d.remediationETA || '' };
       });
-  var lowEl = document.getElementById('tsv2-path-low');
-  if (lowEl) {
-    if (!blockers.length) {
-      lowEl.innerHTML = '<div style="padding:14px;background:rgba(34,197,94,.06);border:1px solid rgba(34,197,94,.22);border-radius:8px;color:#22c55e;font-size:11px">No active blockers.</div>';
-    } else {
-      lowEl.innerHTML = blockers.map(function (b) {
-        var sev = (b.severity || 'medium').toLowerCase();
-        var coreLabel = b.fixCore || 'Atonement Core';
-        var actionVerb = 'Fix';
-        var lower = (coreLabel + ' ' + (b.title || '')).toLowerCase();
-        var fixOnclick;
-        if (lower.indexOf('compliance exchange') !== -1 || (b.regKey && /audit|file/.test(lower))) {
-          actionVerb = 'File';
-        }
-        if (lower.indexOf('awaiting') !== -1 && (lower.indexOf('cmo') !== -1 || lower.indexOf('approval') !== -1)) {
-          actionVerb = 'Approve';
-          coreLabel = 'War Room';
-          fixOnclick = "openScreen('warroom')";
-        } else if (b.model) {
-          fixOnclick = "goToModel('" + (b.model || '').replace(/'/g, "\\'") + "')";
-        } else if (b.regKey) {
-          fixOnclick = "tsv2OpenComplianceForReg('" + b.regKey + "')";
-        } else {
-          fixOnclick = "openScreen('" + (b.fixScreen || 'atonement') + "')";
-        }
-        var impactNum = '';
-        if (b.scoreImpact) {
-          var match = String(b.scoreImpact).match(/([+\-]?\s*[0-9]+(?:\.[0-9]+)?)/);
-          if (match) {
-            var n = parseFloat(match[1].replace(/\s+/g, ''));
-            impactNum = (n >= 0 ? '+' : '') + n;
-          }
-        }
-        return '<div class="tsv2-path-item">' +
-          '<div class="tsv2-path-item-row">' +
-            '<div class="tsv2-path-item-text"><strong>' + (b.title || '') + '</strong>' +
-              (b.explanation ? '<div class="tsv2-path-item-route" style="margin-top:4px">' + b.explanation + '</div>' : '') +
-            '</div>' +
-            '<div class="tsv2-path-item-impact up" data-impact-tip="1">' + impactNum + '</div>' +
+
+  var wrap = document.getElementById('tsv2-blockers');
+  if (!wrap) return;
+
+  if (!blockers.length) {
+    wrap.innerHTML = '<div style="padding:18px;background:rgba(34,197,94,.06);border:1px solid rgba(34,197,94,.22);border-radius:10px;color:#22c55e;font-size:12px">No blockers — Trust Score is fully certified across all dimensions.</div>';
+  } else {
+    wrap.innerHTML = blockers.map(function (b, i) {
+      var sevClass = (b.severity || 'medium').toLowerCase();
+      var fixOnclick;
+      var coreLabel = b.fixCore || 'Atonement Core';
+      var actionVerb = 'Fix';
+      var lower = (coreLabel + ' ' + (b.title || '')).toLowerCase();
+      if (lower.indexOf('compliance exchange') !== -1 || (b.regKey && /audit|file/.test(lower))) {
+        actionVerb = 'File';
+      }
+      if (lower.indexOf('awaiting') !== -1 && (lower.indexOf('cmo') !== -1 || lower.indexOf('approval') !== -1)) {
+        actionVerb = 'Approve';
+        coreLabel = 'War Room';
+        fixOnclick = 'openScreen(\'warroom\')';
+      } else if (b.model) {
+        fixOnclick = 'goToModel(\'' + (b.model || '').replace(/\'/g, '\\\'') + '\')';
+      } else if (b.regKey) {
+        fixOnclick = 'tsv2OpenComplianceForReg(\'' + b.regKey + '\')';
+      } else {
+        fixOnclick = 'openScreen(\'' + (b.fixScreen || 'atonement') + '\')';
+      }
+      return '<div class="tsv2-blocker severity-' + sevClass + '" data-blocker-i="' + i + '">' +
+        '<div>' +
+          '<div class="tsv2-blocker-head">' +
+            '<span class="tsv2-blocker-title">' + b.title + '</span>' +
+            '<span class="tsv2-blocker-sev ' + sevClass + '" data-sev-tip="1">' + (b.severity || 'Medium') + '</span>' +
           '</div>' +
-          '<div class="tsv2-path-blocker-meta">' +
-            '<span class="sev ' + sev + '" data-sev-tip="1">' + (b.severity || 'Medium') + '</span>' +
-            (b.eta ? '<span class="eta">' + b.eta + '</span>' : '') +
+          (b.explanation ? '<div class="tsv2-blocker-explain">' + b.explanation + '</div>' : '') +
+          '<div class="tsv2-blocker-meta">' +
+            (b.scoreImpact ? '<span data-impact-tip="1">Score impact: <strong>' + b.scoreImpact + '</strong></span>' : '') +
+            (b.eta ? '<span>ETA: ' + b.eta + '</span>' : '') +
           '</div>' +
-          '<button class="tsv2-path-fix-btn" onclick="event.stopPropagation();' + fixOnclick + '" data-fix-tip="1">' + actionVerb + ' in ' + coreLabel + ' →</button>' +
-        '</div>';
-      }).join('');
-      lowEl.querySelectorAll('[data-sev-tip]').forEach(function (sp) {
-        showTooltip(sp, 'Severity', 'Critical = 14-day fix deadline. High = 30 days. Medium = 60 days. Echo Core enforces.');
-      });
-      lowEl.querySelectorAll('[data-impact-tip]').forEach(function (sp) {
-        showTooltip(sp, 'Score Impact', 'Projected Trust Score gain when this action completes.');
-      });
-      lowEl.querySelectorAll('[data-fix-tip]').forEach(function (sp) {
-        showTooltip(sp, 'Fix Action', 'Click to navigate to the core where this fix lives.');
-      });
-    }
-  }
+        '</div>' +
+        '<button class="tsv2-blocker-fix" onclick="' + fixOnclick + '">' + actionVerb + ' in ' + coreLabel + ' →</button>' +
+      '</div>';
+    }).join('');
 
-  // Column 2 — What would raise your score? (green upside)
-  var raiseEl = document.getElementById('tsv2-path-raise');
-  if (raiseEl) {
-    var ups = d.fixImpactScenarios || [];
-    if (!ups.length) {
-      raiseEl.innerHTML = '<div style="padding:12px;color:var(--muted);font-size:11px">—</div>';
-    } else {
-      raiseEl.innerHTML = ups.map(function (u) {
-        return '<div class="tsv2-path-item" onclick="openScreen(\'' + (u.route || 'atonement') + '\')">' +
-          '<div class="tsv2-path-item-row">' +
-            '<div class="tsv2-path-item-text">' + u.action +
-              '<div class="tsv2-path-item-route">→ ' + (u.route || '') + '</div>' +
-            '</div>' +
-            '<div class="tsv2-path-item-impact up" data-impact-tip="1">+' + u.points.toFixed(1) + '</div>' +
-          '</div>' +
-        '</div>';
-      }).join('');
-      raiseEl.querySelectorAll('[data-impact-tip]').forEach(function (sp) {
-        showTooltip(sp, 'Score Impact', 'Projected Trust Score gain when this action completes.');
-      });
-    }
-  }
-
-  // Column 3 — What can lower the score? (amber/red downside)
-  var lowerEl = document.getElementById('tsv2-path-lower');
-  if (lowerEl) {
-    var dns = d.riskScenarios || [];
-    if (!dns.length) {
-      lowerEl.innerHTML = '<div style="padding:12px;color:var(--muted);font-size:11px">—</div>';
-    } else {
-      lowerEl.innerHTML = dns.map(function (r, i) {
-        var explainAttr = r.explain ? ' data-risk-explain="' + r.explain.replace(/"/g, '&quot;') + '"' : '';
-        return '<div class="tsv2-path-item" data-risk-idx="' + i + '"' + explainAttr + ' onclick="openScreen(\'' + (r.route || 'eden') + '\')">' +
-          '<div class="tsv2-path-item-row">' +
-            '<div class="tsv2-path-item-text">' + r.risk +
-              '<div class="tsv2-path-item-route">→ ' + (r.route || '') + '</div>' +
-            '</div>' +
-            '<div class="tsv2-path-item-impact down">' + r.points.toFixed(1) + '</div>' +
-          '</div>' +
-        '</div>';
-      }).join('');
-      lowerEl.querySelectorAll('[data-risk-explain]').forEach(function (it) {
-        showTooltip(it, 'Risk Scenario', it.getAttribute('data-risk-explain'));
-      });
-    }
-  }
-
-  // Projected mini gauge
-  var miniRing = document.getElementById('tsv2-projected-mini-ring');
-  var miniNum = document.getElementById('tsv2-projected-mini-num');
-  var miniSub = document.getElementById('tsv2-projected-mini-sub');
-  var projected = d.projectedScoreAfterFixes || d.projectedScore;
-  var current = parseInt(d.trustScoreDisplay, 10) || 0;
-  if (miniRing && miniNum && projected) {
-    var circ2 = 2 * Math.PI * 50;
-    var color2 = tsv2ScoreColor(projected);
-    miniRing.setAttribute('stroke-dasharray', circ2.toFixed(2));
-    miniRing.setAttribute('stroke', color2);
-    miniRing.style.strokeDashoffset = circ2.toFixed(2);
-    setTimeout(function () { miniRing.style.strokeDashoffset = (circ2 * (1 - projected / 100)).toFixed(2); }, 80);
-    miniNum.setAttribute('fill', color2);
-    var fromVal2 = parseInt(miniNum.textContent, 10) || 0;
-    tsv2AnimateNumber(miniNum, fromVal2, projected, 1200);
-    if (miniSub) {
-      var delta = projected - current;
-      var msg = 'Up ' + delta + ' points from current. Assumes all green column items completed.';
-      if (isCertified && d.certRenewal) msg += ' Certification renews ' + d.certRenewal + '.';
-      else if (!isCertified) msg += ' Crosses the 80 threshold and unlocks Cardinal Certified.';
-      miniSub.innerHTML = msg.replace(/Up (\d+)/, 'Up <strong>$1</strong>');
-    }
-  }
-}
-
-// ── Section 2: Eve Narrative (timeframe-tabbed, consolidated) ───────
-var TSV2_EVE_TIMEFRAME = 'quarterly';
-
-function tsv2EveText(d, tf) {
-  if (!d) return '';
-  var bag = d.eveNarrativeByTimeframe || {};
-  if (bag[tf]) return bag[tf];
-  // Fallback chain
-  if (tf === 'quarterly') {
-    var qs = d.quarterlySummary;
-    if (typeof qs === 'string') return qs;
-    if (qs && qs.paragraphs) return qs.paragraphs.join('\n\n');
-  }
-  return bag.quarterly || '';
-}
-
-function tsv2RenderEveBody(d) {
-  var body = document.getElementById('tsv2-eve-body');
-  if (!body) return;
-  var text = tsv2EveText(d, TSV2_EVE_TIMEFRAME);
-  // Split on blank lines first; if only one paragraph, split sentences into 2-3 chunks.
-  var paras = String(text || '').split(/\n\n+/).map(function (p) { return p.trim(); }).filter(Boolean);
-  if (paras.length === 1) {
-    var sentences = paras[0].split(/(?<=[.!?])\s+/);
-    if (sentences.length >= 4) {
-      var third = Math.ceil(sentences.length / 3);
-      paras = [sentences.slice(0, third).join(' '), sentences.slice(third, third * 2).join(' '), sentences.slice(third * 2).join(' ')];
-    } else if (sentences.length >= 2) {
-      var half = Math.ceil(sentences.length / 2);
-      paras = [sentences.slice(0, half).join(' '), sentences.slice(half).join(' ')];
-    }
-  }
-  body.innerHTML = paras.map(function (p) { return '<p>' + p + '</p>'; }).join('');
-}
-
-function tsv2SetEveTimeframe(tf, btn) {
-  TSV2_EVE_TIMEFRAME = tf;
-  var tabs = document.getElementById('tsv2-eve-tabs');
-  if (tabs) {
-    tabs.querySelectorAll('button').forEach(function (b) { b.classList.remove('active'); });
-    if (btn) btn.classList.add('active');
-  }
-  var d = tsv2Data(typeof currentOrg !== 'undefined' ? currentOrg : 'ad');
-  tsv2RenderEveBody(d);
-}
-window.tsv2SetEveTimeframe = tsv2SetEveTimeframe;
-
-function tsv2BuildSummary(d) {
-  if (!d) return;
-  TSV2_EVE_TIMEFRAME = 'quarterly';
-  var tabs = document.getElementById('tsv2-eve-tabs');
-  if (tabs) {
-    tabs.querySelectorAll('button').forEach(function (b) {
-      b.classList.toggle('active', b.getAttribute('data-tf') === 'quarterly');
+    wrap.querySelectorAll('[data-impact-tip]').forEach(function (sp) {
+      showTooltip(sp, 'Score Impact Estimate', 'Projected Trust Score change once this blocker is resolved, based on weight of affected sub-score.');
+    });
+    wrap.querySelectorAll('[data-sev-tip]').forEach(function (sp) {
+      showTooltip(sp, 'Severity', 'Critical = 14-day fix deadline. High = 30 days. Medium = 60 days. Echo Core enforces.');
     });
   }
-  tsv2RenderEveBody(d);
+
+  var proj = document.getElementById('tsv2-projected');
+  var pNum = document.getElementById('tsv2-projected-num');
+  var pSub = document.getElementById('tsv2-projected-sub');
+  var projected = d.projectedScoreAfterFixes || d.projectedScore;
+  if (proj && pNum) {
+    if (projected && blockers.length) {
+      proj.style.display = 'flex';
+      var current = parseInt(d.trustScoreDisplay, 10) || 0;
+      var delta = projected - current;
+      var fromVal = parseInt(pNum.textContent, 10) || 0;
+      tsv2AnimateNumber(pNum, fromVal, projected, 1300);
+      var pTxt = document.getElementById('tsv2-projected-text');
+      if (pTxt) pTxt.textContent = 'Projected Trust Score After All Fixes';
+      if (pSub) pSub.textContent = 'Up ' + delta + ' points from current' + (isCertified ? ' · maintains certification.' : ' · crosses the 80 threshold and unlocks Cardinal Certified.');
+      showTooltip(proj, 'Projected Trust Score', 'Where the score lands when every open blocker is resolved.');
+    } else {
+      proj.style.display = 'none';
+    }
+  }
+}
+
+// ── Section 5: Quarterly Eve Summary + Board Brief PDF ──────────────
+function tsv2BuildSummary(d) {
+  if (!d) return;
+  var setT = function (id, v) { var e = document.getElementById(id); if (e) e.textContent = v; };
+  setT('tsv2-summary-title', 'Q1 2026 Executive Summary');
+  var body = document.getElementById('tsv2-summary-paragraphs');
+  if (!body) return;
+  var qs = d.quarterlySummary || '';
+  var paras = (typeof qs === 'string') ? qs.split(/\n\n+/) : (qs.paragraphs || []);
+  body.innerHTML = paras.map(function (p) {
+    return '<div class="tsv2-summary-paragraph">' + p + '</div>';
+  }).join('');
 }
 
 function tsv2DownloadBoardBrief() {
@@ -20421,8 +19556,8 @@ function tsv2HeatmapColor(v) {
 function tsv2BuildHeatmap(d) {
   if (!d) return;
   var hd = d.heatmapData || [];
-  var ctx = d.heatmapContext || null;
   var axes = d.heatmapAxes || null;
+  var subEl = document.getElementById('tsv2-heatmap-sub');
 
   var titleByOrg = {
     ad: 'By Base Location × Demographic Group',
@@ -20431,80 +19566,44 @@ function tsv2BuildHeatmap(d) {
   };
   var titleEl = document.getElementById('tsv2-heatmap-title');
   if (titleEl) titleEl.textContent = 'Where the Score is Weakest · ' + (titleByOrg[(typeof currentOrg !== 'undefined' ? currentOrg : 'ad')] || '');
-  var subEl = document.getElementById('tsv2-heatmap-sub');
-  if (subEl) subEl.textContent = 'Concentration of disparity. Hover row/column labels for context. Click any cell to drill into Eden Core.';
 
-  // Intro paragraph
-  var introEl = document.getElementById('tsv2-heat-intro');
-  if (introEl) introEl.textContent = (ctx && ctx.intro) || '';
+  if (subEl) subEl.textContent = 'Concentration of disparity. Click any cell to drill into Eden Core.';
 
   var render = document.getElementById('tsv2-heatmap-render');
   if (!render) return;
+  if (!hd.length || !axes) { render.innerHTML = ''; return; }
 
-  // Resolve labels: prefer heatmapContext (with tooltip text), fallback to axes
-  var rowLabels = (ctx && ctx.rowLabels) ? ctx.rowLabels : (axes && axes.rows ? axes.rows.map(function (r) { return { label: r, tooltip: '' }; }) : []);
-  var colLabels = (ctx && ctx.colLabels) ? ctx.colLabels : (axes && axes.cols ? axes.cols.map(function (c) { return { label: c, tooltip: '' }; }) : []);
-
-  if (!hd.length || !rowLabels.length || !colLabels.length) {
-    render.innerHTML = '';
-    return;
-  }
-
+  var rows = axes.rows, cols = axes.cols;
   var lookup = {};
   hd.forEach(function (c) { lookup[c.row + '||' + c.col] = c.value; });
 
-  var nCols = colLabels.length;
-  var html = '<div class="tsv2-heat-grid" style="grid-template-columns: 110px repeat(' + nCols + ', minmax(0,1fr))">';
-  // header row
-  html += '<div></div>';
-  colLabels.forEach(function (cl, i) {
-    html += '<div class="tsv2-heat-col-label" data-heat-col-tip="' + i + '">' + cl.label + '</div>';
-  });
-  // body rows
-  rowLabels.forEach(function (rl, r) {
-    html += '<div class="tsv2-heat-row-label" data-heat-row-tip="' + r + '">' + rl.label + '</div>';
-    colLabels.forEach(function (cl) {
-      var v = lookup[rl.label + '||' + cl.label];
+  var html = '<div class="tsv2-heatmap-table" style="grid-template-columns: 130px repeat(' + cols.length + ', minmax(0,1fr))">';
+  for (var r = 0; r < rows.length; r++) {
+    html += '<div class="tsv2-heatmap-row" style="display:contents">';
+    html += '<div class="tsv2-heatmap-y">' + rows[r] + '</div>';
+    for (var c = 0; c < cols.length; c++) {
+      var v = lookup[rows[r] + '||' + cols[c]];
       v = (typeof v === 'number') ? v : 1.0;
       var bg = tsv2HeatmapColor(v);
       var label = v.toFixed(2) + 'x';
-      var cohort = rl.label + ' × ' + cl.label;
-      var meaning = tsv2CellMeaning(rl.label, cl.label, v);
-      html += '<div class="tsv2-heat-cell" style="background:' + bg + '" data-cohort="' + cohort.replace(/"/g, '&quot;') + '" data-disp="' + v.toFixed(2) + '" data-meaning="' + meaning.replace(/"/g, '&quot;') + '" onclick="tsv2DrillHeatmap(\'' + cohort.replace(/\'/g, "\\'") + '\')">' + label + '</div>';
-    });
-  });
+      var cohort = rows[r] + ' × ' + cols[c];
+      html += '<div class="tsv2-heatmap-cell" style="background:' + bg + '" onclick="tsv2DrillHeatmap(\'' + cohort.replace(/\'/g, '\\\'') + '\')" data-cohort="' + cohort + '" data-disp="' + v.toFixed(2) + '">' + label + '</div>';
+    }
+    html += '</div>';
+  }
+  html += '</div>';
+  html += '<div class="tsv2-heatmap-x-row" style="grid-template-columns: 130px repeat(' + cols.length + ', minmax(0,1fr))">';
+  html += '<div></div>';
+  cols.forEach(function (x) { html += '<div class="tsv2-heatmap-x">' + x + '</div>'; });
   html += '</div>';
   render.innerHTML = html;
 
-  // row label tooltips
-  rowLabels.forEach(function (rl, i) {
-    var el = render.querySelector('[data-heat-row-tip="' + i + '"]');
-    if (el && rl.tooltip) showTooltip(el, rl.label, rl.tooltip);
-  });
-  // column label tooltips
-  colLabels.forEach(function (cl, i) {
-    var el = render.querySelector('[data-heat-col-tip="' + i + '"]');
-    if (el && cl.tooltip) showTooltip(el, cl.label, cl.tooltip);
-  });
-  // cell tooltips
-  render.querySelectorAll('.tsv2-heat-cell').forEach(function (cell) {
+  render.querySelectorAll('.tsv2-heatmap-cell').forEach(function (cell) {
     var cohort = cell.getAttribute('data-cohort');
     var disp = cell.getAttribute('data-disp');
-    var meaning = cell.getAttribute('data-meaning') || '';
-    showTooltip(cell, 'Disparity Ratio ' + disp + 'x — ' + cohort,
-      meaning + ' Click to view in Eden Core.');
+    showTooltip(cell, 'Disparity Cell',
+      'Disparity ratio <span class="tt-accent">' + disp + 'x</span> for ' + cohort + '. Click to view in Eden.');
   });
-
-  // Top finding callout
-  var tfText = document.getElementById('tsv2-heat-finding-text');
-  if (tfText) tfText.textContent = (ctx && ctx.topFinding) || '';
-}
-
-function tsv2CellMeaning(row, col, v) {
-  var lvl = v >= 1.51 ? 'severe' : v >= 1.06 ? 'elevated' : 'parity';
-  if (lvl === 'parity') return 'Parity (' + v.toFixed(2) + 'x) for ' + col + ' in ' + row + ' — within tolerance.';
-  return col + ' in ' + row + ' is ' + v.toFixed(2) + 'x more likely to receive an adverse decision than the baseline group. ' +
-    (lvl === 'severe' ? 'This is a severe disparity (1.5x+).' : 'This is elevated disparity above parity.');
 }
 
 function tsv2DrillHeatmap(cohort) {
@@ -20512,12 +19611,6 @@ function tsv2DrillHeatmap(cohort) {
   if (typeof showToast === 'function') showToast('Drilling into ' + cohort);
 }
 window.tsv2DrillHeatmap = tsv2DrillHeatmap;
-
-function tsv2OpenTopFindingCase() {
-  try { openScreen('eden'); } catch (_e) {}
-  if (typeof showToast === 'function') showToast('Opening top-finding case in Eden Core');
-}
-window.tsv2OpenTopFindingCase = tsv2OpenTopFindingCase;
 
 // ── Section 7: Peer Comparison Detail ───────────────────────────────
 function tsv2BuildPeers(d) {
@@ -20576,153 +19669,7 @@ function tsv2BuildPeers(d) {
   }
 }
 
-// ── Section 5: Model-Level Trust Scores ─────────────────────────────
-function tsv2BuildModelLevel(d) {
-  if (!d) return;
-  var list = document.getElementById('tsv2-models-list');
-  if (!list) return;
-  var models = d.modelLevelScores || [];
-  if (!models.length) {
-    list.innerHTML = '<div style="padding:14px;color:var(--muted);font-size:11px">No model-level data available.</div>';
-    return;
-  }
-  list.innerHTML = models.map(function (m, i) {
-    var c = tsv2ScoreColor(m.score);
-    var statusClass = (m.status || 'watch').toLowerCase();
-    return '<div class="tsv2-model-row" data-model-i="' + i + '" onclick="goToModel(\'' + (m.name || '').replace(/\'/g, "\\'") + '\')">' +
-      '<div>' +
-        '<div class="tsv2-model-name" data-model-tip="' + i + '">' + m.name + '</div>' +
-        '<div class="tsv2-model-meta"><span data-weight-tip="1">Weight: ' + m.weight + '%</span> · <span data-di-tip="1">DI: ' + (m.di != null ? m.di.toFixed(2) : '—') + '</span></div>' +
-      '</div>' +
-      '<div class="tsv2-model-bar-wrap"><div class="tsv2-model-bar" style="background:' + c + ';width:0%" data-target-w="' + m.score + '"></div></div>' +
-      '<div class="tsv2-model-score" style="color:' + c + '">' + m.score + '</div>' +
-      '<div class="tsv2-model-status ' + statusClass + '" data-status-tip="' + statusClass + '">' + m.status + '</div>' +
-    '</div>';
-  }).join('');
-
-  setTimeout(function () {
-    list.querySelectorAll('.tsv2-model-bar').forEach(function (b) {
-      b.style.width = b.getAttribute('data-target-w') + '%';
-    });
-  }, 80);
-
-  // tooltips
-  list.querySelectorAll('[data-model-tip]').forEach(function (el) {
-    var i = parseInt(el.getAttribute('data-model-tip'), 10);
-    var m = models[i];
-    if (m) showTooltip(el, m.name, m.purpose || ('AI model. Currently in ' + (m.lifecycleStage || 'eden') + '.'));
-  });
-  list.querySelectorAll('[data-weight-tip]').forEach(function (el) {
-    showTooltip(el, 'Model Weight', 'How much this model\'s score contributes to your Global Trust Score.');
-  });
-  list.querySelectorAll('[data-di-tip]').forEach(function (el) {
-    showTooltip(el, 'Disparate Impact', 'Lowest group approval rate divided by highest. Must be 0.80+ to meet EEOC four-fifths rule.');
-  });
-  list.querySelectorAll('[data-status-tip]').forEach(function (el) {
-    var k = el.getAttribute('data-status-tip');
-    var t = ({
-      critical:['Critical', 'Active violation. 14-day fix deadline enforced by Echo Core.'],
-      watch:   ['Watch',    'Within tolerance but trending toward threshold. Active monitoring.'],
-      passing: ['Passing',  'Meets all fairness, fraud, and compliance thresholds.']
-    })[k];
-    if (t) showTooltip(el, t[0], t[1]);
-  });
-
-  // Aggregation badge tooltip
-  var agg = document.getElementById('tsv2-models-agg');
-  if (agg) showTooltip(agg, 'Weighted Aggregation', 'Global Trust Score = sum of (each model score × its weight).');
-}
-
-// ── Section 3: History range support (week/month/quarter/year) + caption ──
-var TSV2_CURRENT_RANGE = 'year';
-
-function tsv2SyntheticDailySeries(d, days) {
-  var hist = (d.trustScoreHistory || []).slice();
-  var endScore = parseInt(d.trustScoreDisplay, 10) || (hist.length ? hist[hist.length - 1].score : 75);
-  var startScore = endScore;
-  if (hist.length >= 2) {
-    var prev = hist[hist.length - 2].score;
-    var slopePerDay = ((endScore - prev) / 30) || 0;
-    startScore = endScore - slopePerDay * (days - 1);
-  }
-  var arr = [];
-  var now = new Date();
-  for (var i = 0; i < days; i++) {
-    var t = i / Math.max(1, days - 1);
-    var base = startScore + (endScore - startScore) * t;
-    var jitter = ((i * 9301 + 49297) % 233280) / 233280;
-    var v = Math.round(base + (jitter - 0.5) * 1.6);
-    var dt = new Date(now.getTime() - (days - 1 - i) * 86400000);
-    arr.push({
-      month: (dt.getMonth() + 1) + '/' + dt.getDate(),
-      score: v,
-      biasScore: Math.max(0, Math.min(100, v - 4)),
-      fraudScore: Math.max(0, Math.min(100, v + 8)),
-      complianceScore: Math.max(0, Math.min(100, v - 1)),
-      annotation: null
-    });
-  }
-  // Carry over the most recent yearly annotation onto the last point if any
-  for (var j = hist.length - 1; j >= 0; j--) {
-    if (hist[j].annotation) { arr[arr.length - 1].annotation = hist[j].annotation; break; }
-  }
-  return arr;
-}
-
-function tsv2GetRangeSeries(d, range) {
-  var hist = (d.trustScoreHistory || []).slice();
-  if (range === 'year' || !range) return hist;
-  if (range === 'quarter') return hist.slice(-3).length ? tsv2SyntheticDailySeries(d, 90) : hist;
-  if (range === 'month')   return tsv2SyntheticDailySeries(d, 30);
-  if (range === 'week')    return tsv2SyntheticDailySeries(d, 7);
-  return hist;
-}
-
-function tsv2BuildHistoryCaption(d, range, series) {
-  var capEl = document.getElementById('tsv2-history-caption');
-  if (!capEl || !series || !series.length) return;
-  var key = tsv2HistorySeriesKey();
-  var values = series.map(function (p) { return p[key]; });
-  var first = values[0], last = values[values.length - 1];
-  var minV = Math.min.apply(null, values), maxV = Math.max.apply(null, values);
-  var delta = last - first;
-  var deltaStr = (delta >= 0 ? '+' : '') + delta;
-  var color = d.trustColor || tsv2ScoreColor(parseInt(d.trustScoreDisplay, 10) || 0);
-  var bold = function (v) { return '<strong style="color:' + color + '">' + v + '</strong>'; };
-  var ann = '';
-  for (var i = series.length - 1; i >= 0; i--) {
-    if (series[i].annotation) { ann = series[i].annotation; break; }
-  }
-  var annCount = series.filter(function (p) { return !!p.annotation; }).length;
-  var lowIdx = values.indexOf(minV);
-  var lowMonth = series[lowIdx] && series[lowIdx].month ? series[lowIdx].month : '';
-  var msg = '';
-  if (range === 'week') {
-    msg = 'This week: Score moved from ' + bold(first) + ' to ' + bold(last) + ' (' + bold(deltaStr) + ' pts) · Range ' + minV + '-' + maxV + (ann ? ' · ' + ann : '');
-  } else if (range === 'month') {
-    msg = 'This month: Score moved from ' + bold(first) + ' to ' + bold(last) + ' (' + bold(deltaStr) + ' pts) · Range ' + minV + '-' + maxV + (ann ? ' · Key event: ' + ann : '');
-  } else if (range === 'quarter') {
-    msg = 'This quarter: Score moved from ' + bold(first) + ' to ' + bold(last) + ' (' + bold(deltaStr) + ' pts) · ' + annCount + ' events logged · See Echo Core for full audit';
-  } else {
-    msg = 'Past 12 months: Score moved from ' + bold(first) + ' to ' + bold(last) + ' (' + bold(deltaStr) + ' pts) · ' + annCount + ' annotations · Trough at ' + lowMonth + ' ' + minV;
-  }
-  capEl.innerHTML = msg;
-}
-
-function tsv2SetHistoryRange(range, btn) {
-  TSV2_CURRENT_RANGE = range;
-  var tf = document.getElementById('tsv2-history-tf');
-  if (tf) {
-    tf.querySelectorAll('button').forEach(function (b) { b.classList.remove('active'); });
-    if (btn) btn.classList.add('active');
-  }
-  var d = tsv2Data(typeof currentOrg !== 'undefined' ? currentOrg : 'ad');
-  tsv2BuildHistoryChart(d);
-  tsv2BuildHistoryCaption(d, range, tsv2GetRangeSeries(d, range));
-}
-window.tsv2SetHistoryRange = tsv2SetHistoryRange;
-
-// ── Section 9: Echo Core Audit Strip ────────────────────────────────
+// ── Section 8: Echo Core Audit Strip ────────────────────────────────
 function tsv2BuildAudit(d) {
   if (!d) return;
   var subEl = document.getElementById('tsv2-audit-sub');
@@ -20739,27 +19686,23 @@ function tsv2OpenEchoCoreAuditLog() {
 }
 window.tsv2OpenEchoCoreAuditLog = tsv2OpenEchoCoreAuditLog;
 
-// ── Comprehensive tooltip sweep — every meaningful term ─────────────
+// ── 44 Tooltips ─────────────────────────────────────────────────────
 function tsv2WireTooltips() {
   try {
     var T = function (id, title, body) { var e = document.getElementById(id); if (e) showTooltip(e, title, body); };
 
-    // ── HERO ──
-    T('tsv2-gauge-num',         'Trust Score',        'Composite 0-100 score across 6 governance dimensions. 80+ required for Cardinal certification.');
-    T('tsv2-gauge-wrap',        'Trust Score',        'Composite 0-100 score across 6 governance dimensions. 80+ required for Cardinal certification.');
-    T('tsv2-score-range-tip',   'Score Range',        '0-100 scale. 80 is the certification floor.');
-    T('tsv2-live-text',         'Live Score',         'Recalculated continuously from Echo Core audit data.');
-    T('tsv2-status',            'Score Status',       'Where your score sits relative to certification thresholds.');
+    // 1-3: hero
+    T('tsv2-gauge-num', 'Trust Score', 'Composite 0-100 score across bias fairness, fraud integrity, and regulatory compliance. 80+ required for Cardinal certification.');
+    T('tsv2-gauge-wrap', 'Trust Score', 'Composite 0-100 score across bias fairness, fraud integrity, and regulatory compliance. 80+ required for Cardinal certification.');
+    T('tsv2-score-range-tip', 'Score Range', '0-100 scale. 80 is the certification floor.');
+    T('tsv2-live-stamp', 'Live Score', 'Recalculated continuously from Echo Core audit data.');
 
-    // sub-score pills (whole pill + label)
-    T('tsv2-pill-bias',         'Bias Detection',     'Disparate Impact ratio across all monitored demographic groups. Higher = more equitable. Driven by Eden Core.');
-    T('tsv2-pill-bias-label',   'Bias Detection',     'Disparate Impact ratio across all monitored demographic groups. Higher = more equitable. Driven by Eden Core.');
-    T('tsv2-pill-fraud',        'Fraud Prevention',   'Synthetic identity, behavioral anomaly, and cluster fraud detection rate. Driven by Obsidian Core.');
-    T('tsv2-pill-fraud-label',  'Fraud Prevention',   'Synthetic identity, behavioral anomaly, and cluster fraud detection rate. Driven by Obsidian Core.');
-    T('tsv2-pill-comp',         'Compliance',         'Weighted average across all regulations applicable to your industry. Driven by Compliance Exchange.');
-    T('tsv2-pill-comp-label',   'Compliance',         'Weighted average across all regulations applicable to your industry. Driven by Compliance Exchange.');
+    // 4-6: sub-score pills
+    T('tsv2-pill-bias', 'Bias Detection', 'Disparate Impact ratio across all monitored demographic groups. Higher = more equitable outcomes. 40% weight in Trust Score.');
+    T('tsv2-pill-fraud', 'Fraud Prevention', 'Synthetic identity, behavioral anomaly, and cluster fraud detection rate. 30% weight in Trust Score.');
+    T('tsv2-pill-comp', 'Compliance', 'Weighted average across all regulations applicable to your industry. 30% weight in Trust Score.');
 
-    // certification badge
+    // 7-8: cert badge
     var certEl = document.getElementById('tsv2-cert-badge-el');
     var d2 = tsv2Data(typeof currentOrg !== 'undefined' ? currentOrg : 'ad');
     var isCert2 = !!(d2 && d2.certStatus && /^certified/i.test(d2.certStatus) && !/not.+certified/i.test(d2.certStatus));
@@ -20771,98 +19714,85 @@ function tsv2WireTooltips() {
       }
     }
 
-    T('tsv2-peer-block',        'Peer Position',      'Your rank vs anonymized industry peers using Cardinal.');
-    T('tsv2-peer-title',        'Peer Position',      'Your rank vs anonymized industry peers using Cardinal.');
-    T('tsv2-peer-percentile',   'Percentile Rank',    'Percentage of industry peers your score is above.');
-    T('tsv2-peer-thresh-label', 'Certification Threshold', 'Cardinal certification requires Trust Score 80+ sustained.');
+    // 9: peer position bar
+    T('tsv2-peer-block', 'Peer Position', 'Your rank vs anonymized industry peers using Cardinal.');
 
-    // Score Confidence card
-    T('tsv2-conf-title',     'Score Confidence',    'How reliable is this score? Low confidence = score may shift as more data comes in.');
-    T('tsv2-conf-sub',       'Score Confidence',    'How reliable is this score? Low confidence = score may shift as more data comes in.');
-    T('tsv2-conf-band-label','Confidence Band',     'Statistical margin of error on the Trust Score. Smaller = more reliable.');
-    T('tsv2-conf-band',      'Confidence Band',     'Statistical margin of error on the Trust Score. Smaller = more reliable.');
-    T('tsv2-conf-comp-label','Data Completeness',   'Percentage of expected audit signals received. Higher = more complete picture.');
-    T('tsv2-conf-completeness','Data Completeness', 'Percentage of expected audit signals received. Higher = more complete picture.');
-    T('tsv2-conf-age-label', 'Model Age',           'Days since the AI model was last retrained or revalidated.');
-    T('tsv2-conf-age',       'Model Age',           'Days since the AI model was last retrained or revalidated.');
-    T('tsv2-conf-val-label', 'Validation Coverage', 'Percentage of decisions independently validated by counterfactual testing.');
-    T('tsv2-conf-validation','Validation Coverage', 'Percentage of decisions independently validated by counterfactual testing.');
+    // 10: history toggle
+    T('tsv2-history-toggle', 'Score Composition', 'Switch between Trust Score and its three sub-scores.');
 
-    // ── EVE NARRATIVE ──
-    T('tsv2-eve-avatar',     'Eve',                 'Executive AI agent. Generates plain-English board summaries from Echo Core audit data.');
-    T('tsv2-eve-title',      'Eve — Executive Summary', 'Executive AI agent. Generates plain-English board summaries from Echo Core audit data.');
-    T('tsv2-eve-subtitle',   'Auto-Generated',      'Refreshes weekly from Echo Core audit data. Board-ready language.');
-    var tabs = document.getElementById('tsv2-eve-tabs');
-    if (tabs) {
-      tabs.querySelectorAll('button').forEach(function (b) {
-        var tf = b.getAttribute('data-tf');
-        if (tf === 'monthly')   showTooltip(b, 'Monthly View',      'Last 30 days summary.');
-        if (tf === 'quarterly') showTooltip(b, 'Quarterly View',    'Last quarter board-ready brief.');
-        if (tf === 'ytd')       showTooltip(b, 'Year-to-Date View', 'Full 12-month story.');
-      });
-    }
-    T('tsv2-eve-pdf-btn',    'Board Brief',         'Auto-generated PDF combining the summary, score, and open blockers. Board-ready.');
-    T('tsv2-eve-share-btn',  'Trust Loop',          'Continuous feedback cycle where human review and AI monitoring learn from each other.');
+    // 11: cert threshold dashed line — bound inside tsv2BuildHistoryChart on #tsv2-threshold-line
+    // 12: annotation pins — bound dynamically per pin
 
-    // ── HISTORY ──
-    T('tsv2-history-title',  'Score History',       'Every Trust Score change logged tamper-proof in Echo Core.');
-    T('tsv2-history-sub',    'Score History',       'Hover any month for the AI summary of what happened. Dashed line = 80 certification threshold.');
-    var tfRow = document.getElementById('tsv2-history-tf');
-    if (tfRow) tfRow.querySelectorAll('button').forEach(function (b) {
-      showTooltip(b, 'Timeframe', 'Switch between time horizons. Week shows daily granularity; Year shows monthly.');
+    // 13: bias column header
+    T('tsv2-comp-bias-title', 'Bias Detection', '40% of Trust Score. Driven by Eden Core.');
+
+    // 14-15: DI / proxy — bound dynamically inside tsv2BuildComposition
+
+    // 16: fraud column header
+    T('tsv2-comp-fraud-title', 'Fraud Prevention', '30% of Trust Score. Driven by Obsidian Core.');
+
+    // 17-19: fraud breakdown rows
+    T('tsv2-fb-synth', 'Synthetic Identity', 'Detection of fabricated or stitched-together identities used for fraud.');
+    T('tsv2-fb-beh', 'Behavioral Anomaly', 'Patterns inconsistent with stated identity — typing cadence, device fingerprint, navigation.');
+    T('tsv2-fb-clu', 'Cluster Fraud', 'Multiple applications sharing devices, IP ranges, or sequential identifiers.');
+
+    // 20: bias-fraud connection
+    T('tsv2-bias-fraud-link', 'Bias-Fraud Connection', 'Cases where bias blind spots created fraud exposure. Cardinal is the only platform monitoring both simultaneously.');
+
+    // 21: compliance column header
+    T('tsv2-comp-reg-title', 'Compliance', '30% of Trust Score. Driven by Compliance Exchange.');
+
+    // 22-33: regulation tooltips — bound per data-reg-tip via CARDINAL_REG_TIPS, but ensure entries exist with the spec wording
+    var SPEC_REG = {
+      ecoa:       ['ECOA',              'Equal Credit Opportunity Act. Federal law prohibiting credit discrimination. CFPB enforces.'],
+      aca1557:    ['ACA Section 1557',  'Non-discrimination in health programs receiving federal funding.'],
+      nyc144:     ['NYC Local Law 144', 'Mandatory bias audits for AI used in employment and lending decisions in New York City.'],
+      dod:        ['DoD AI Ethics',     'Department of Defense five principles — Responsible, Equitable, Traceable, Reliable, Governable.'],
+      faa:        ['FAA Compliance',    'Federal Aviation Administration AI use requirements for defense and aerospace contractors.'],
+      iso42001:   ['ISO 42001',         'International AI management system standard.'],
+      eo13960:    ['EO 13960',          'Executive Order on federal contractor AI trustworthiness requirements.'],
+      fcra:       ['FCRA',              'Fair Credit Reporting Act. Credit data fairness, accuracy, and privacy.'],
+      euaiact:    ['EU AI Act',         'European Union high-risk AI mandatory audits and oversight.'],
+      hipaa:      ['HIPAA',             'Patient health information protection.'],
+      cms:        ['CMS',               'Centers for Medicare and Medicaid Services. Federal health program oversight.'],
+      sb53:       ['CA SB 53',          'California AI transparency and disclosure requirements.']
+    };
+    document.querySelectorAll('#tsv2-comp-grid [data-reg-tip]').forEach(function (sp) {
+      var k = sp.getAttribute('data-reg-tip');
+      var t = SPEC_REG[k];
+      if (t) showTooltip(sp, t[0], t[1]);
     });
-    var seriesRow = document.getElementById('tsv2-history-toggle');
-    if (seriesRow) seriesRow.querySelectorAll('button').forEach(function (b) {
-      var s = b.getAttribute('data-series');
-      var label = ({score:'Trust Score', bias:'Bias', fraud:'Fraud', compliance:'Compliance'})[s] || s;
-      showTooltip(b, label, 'Switch the chart to the ' + label + ' series.');
-    });
-    T('tsv2-history-caption','Caption Strip',       'Plain-English summary of the selected timeframe.');
 
-    // ── COMPOSITION (6-dim) ── tooltips bound dynamically inside tsv2BuildComposition
-    T('tsv2-comp-title',     'Composite Score',     'Weighted average across 6 governance dimensions.');
-    T('tsv2-comp-sub',       'Methodology',         'Six-dimension trust framework. Industry-tailored weights. Click any dimension to drill into the relevant core.');
-    T('tsv2-dim-footer',     'Dimension Weights',   'How much each governance dimension contributes to the composite Trust Score.');
+    // 34: severity badges — bound inside tsv2BuildPath
+    // 35: score impact estimate — bound inside tsv2BuildPath
 
-    // ── MODEL-LEVEL ──
-    T('tsv2-models-title',   'Model-Level Scores',  'Each AI model scored individually. Aggregated into Global Trust Score by weight.');
-    T('tsv2-models-sub',     'Weighted Aggregation','Global Trust Score = sum of (each model score × its weight).');
-    T('tsv2-models-agg',     'Weighted Aggregation','Global Trust Score = sum of (each model score × its weight).');
+    // 36: projected gauge
+    T('tsv2-projected', 'Projected Trust Score', 'Where the score lands when every open blocker is resolved.');
 
-    // ── HEATMAP ──
-    T('tsv2-heatmap-title',  'Disparity Grid',      'Where the AI\'s worst decisions concentrate by demographic and location/category.');
-    T('tsv2-heatmap-sub',    'Disparity Grid',      'Hover row/column labels for context. Click any cell to drill into Eden Core filtered to that cohort.');
-    T('tsv2-heat-intro',     'Context',             'Plain-English explanation of what this grid is showing and why.');
-    T('tsv2-heatmap-legend', 'Disparity Scale',     '1.0x = parity. Below 0.80 violates EEOC four-fifths rule. 2.0x+ is severe.');
-    T('tsv2-heat-leg-low',   'Disparity Scale',     '1.0x = parity. The baseline group sets the reference rate.');
-    T('tsv2-heat-leg-high',  'Disparity Scale',     '2.5x+ disparity is severe and triggers automatic case opening.');
-    T('tsv2-heat-finding',   'Top Finding',         'The worst-disparity cell on the grid, in plain English. This is the violation driving your case.');
-    T('tsv2-heat-finding-title', 'Top Finding',     'The worst-disparity cell on the grid, in plain English.');
-    T('tsv2-heat-finding-text',  'Top Finding',     'Plain-English explanation of the worst cell and the case it triggered.');
-    T('tsv2-heat-finding-btn',   'Open Case',       'Drill into Eden Core filtered to this cohort for full root-cause analysis.');
+    // 37: Eve avatar in summary
+    var evAv = document.querySelector('#screen-trustscore .tsv2-summary-avatar');
+    if (evAv) showTooltip(evAv, 'Eve', 'Executive AI agent. Generates plain-English board summaries from Echo Core audit data.');
 
-    // ── PATH TO CERT (3-col) ──
-    T('tsv2-path-title',     'Path to Certification','Everything that affects your score: blockers to fix, upside scenarios to model, downside risks to watch.');
-    T('tsv2-path-sub',       'Path to Certification','Resolve every blocker, model the upside, and watch the downside risks.');
-    T('tsv2-path-low-title', 'Active Blockers',     'Issues currently dragging your score down. Resolve to recover points.');
-    T('tsv2-path-raise-title','Upside Scenarios',   'Actions you can take that would add points. Hover for impact.');
-    T('tsv2-path-lower-title','Downside Risks',     'Scenarios that would drop your score. Watch and prevent.');
-    T('tsv2-projected-mini', 'Projected Score',     'Where your score lands when every active blocker is resolved.');
-    T('tsv2-projected-mini-num', 'Projected Score', 'Where your score lands when every active blocker is resolved.');
-    T('tsv2-projected-mini-title', 'Projected Score','Where your score lands when every active blocker is resolved.');
-    T('tsv2-projected-mini-sub',   'Projected Score Detail', 'Breakdown of point gain assumptions and certification status.');
+    // 38: download board brief
+    var dlBtn = document.querySelector('#screen-trustscore .tsv2-summary-actions button:nth-child(1)');
+    if (dlBtn) showTooltip(dlBtn, 'Board Brief', 'Auto-generated PDF combining the quarterly summary, score, and open blockers. Board-ready.');
 
-    // ── PEERS ──
-    T('tsv2-peers-title',    'Peer Comparison',     'Anonymized industry peers using Cardinal.');
-    T('tsv2-peers-sub',      'Peer Comparison',     'Anonymized industry peers using Cardinal. 10-firm cohort.');
+    // 39: share to trust loop
+    var shBtn = document.querySelector('#screen-trustscore .tsv2-summary-actions button:nth-child(2)');
+    if (shBtn) showTooltip(shBtn, 'Trust Loop', 'Continuous feedback cycle where human review and AI monitoring learn from each other.');
+
+    // 40: heatmap cells — bound dynamically inside tsv2BuildHeatmap
+
+    // 41: heatmap legend
+    T('tsv2-heatmap-legend', 'Disparity Scale', '1.0x = parity. Below 0.80 violates EEOC four-fifths. 2.0x+ is severe.');
+
+    // 42: peer chart your bar — bound dynamically inside tsv2BuildPeers
+    // 43: peer chart 80 line tip — anchor on stats line for visibility
     var pStats = document.getElementById('tsv2-peer-stats');
-    if (pStats) showTooltip(pStats, 'Certification Threshold', 'Peers above 80 are Cardinal Certified.');
+    if (pStats) showTooltip(pStats, 'Certification Threshold', 'Peers above this line are Cardinal Certified.');
 
-    // ── ECHO FOOTER ──
-    T('tsv2-audit',          'Echo Core',           'Tamper-proof, court-admissible log of every Trust Score change with timestamp, model version, and team member.');
-    T('tsv2-audit-text',     'Echo Core',           'Cryptographic, court-admissible audit log. Regulator-ready.');
-    T('tsv2-audit-sub',      'Most Recent Event',   'Last logged Trust Score event in Echo Core.');
-    T('tsv2-audit-btn',      'Open Audit Log',      'Open Echo Core filtered to Trust Score events.');
+    // 44: echo core audit link
+    T('tsv2-audit', 'Echo Core', 'Tamper-proof, court-admissible log of every Trust Score change with timestamp, model version, and team member.');
   } catch (_e) { if (window.console) console.warn('tsv2WireTooltips', _e); }
 }
 
@@ -20870,26 +19800,14 @@ function tsv2WireTooltips() {
 function renderTrustScore(org) {
   var o = org || (typeof currentOrg !== 'undefined' ? currentOrg : 'ad');
   TSV2_LAST_ORG = o;
-  // Reset state on industry switch
-  TSV2_CURRENT_SERIES = 'score';
-  TSV2_CURRENT_RANGE = 'year';
-  TSV2_EVE_TIMEFRAME = 'quarterly';
-  // Sync toggle button active states
-  var tfRow = document.getElementById('tsv2-history-tf');
-  if (tfRow) tfRow.querySelectorAll('button').forEach(function (b) { b.classList.toggle('active', b.getAttribute('data-range') === 'year'); });
-  var seriesRow = document.getElementById('tsv2-history-toggle');
-  if (seriesRow) seriesRow.querySelectorAll('button').forEach(function (b) { b.classList.toggle('active', b.getAttribute('data-series') === 'score'); });
-
   var d = tsv2Data(o);
   if (!d) return;
   try { tsv2BuildHero(d); }            catch (e) { if (window.console) console.warn('tsv2BuildHero', e); }
-  try { tsv2BuildSummary(d); }         catch (e) { if (window.console) console.warn('tsv2BuildSummary', e); }
   try { tsv2BuildHistoryChart(d); }    catch (e) { if (window.console) console.warn('tsv2BuildHistoryChart', e); }
-  try { tsv2BuildHistoryCaption(d, TSV2_CURRENT_RANGE, tsv2GetRangeSeries(d, TSV2_CURRENT_RANGE)); } catch (e) { if (window.console) console.warn('tsv2BuildHistoryCaption', e); }
   try { tsv2BuildComposition(d); }     catch (e) { if (window.console) console.warn('tsv2BuildComposition', e); }
-  try { tsv2BuildModelLevel(d); }      catch (e) { if (window.console) console.warn('tsv2BuildModelLevel', e); }
-  try { tsv2BuildHeatmap(d); }         catch (e) { if (window.console) console.warn('tsv2BuildHeatmap', e); }
   try { tsv2BuildPath(d); }            catch (e) { if (window.console) console.warn('tsv2BuildPath', e); }
+  try { tsv2BuildSummary(d); }         catch (e) { if (window.console) console.warn('tsv2BuildSummary', e); }
+  try { tsv2BuildHeatmap(d); }         catch (e) { if (window.console) console.warn('tsv2BuildHeatmap', e); }
   try { tsv2BuildPeers(d); }           catch (e) { if (window.console) console.warn('tsv2BuildPeers', e); }
   try { tsv2BuildAudit(d); }           catch (e) { if (window.console) console.warn('tsv2BuildAudit', e); }
   try { tsv2WireTooltips(); }          catch (e) { if (window.console) console.warn('tsv2WireTooltips', e); }
