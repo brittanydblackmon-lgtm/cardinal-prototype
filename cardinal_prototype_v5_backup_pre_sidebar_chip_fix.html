@@ -16,8 +16,6 @@
     10. Design rule #20 added: same user intent → one parent surface with tabs.
     11. Settings: comprehensive overhaul — customize dashboard refreshed to current build, role presets refreshed, Eve panel preferences, Trust Loop default tab, sidebar default collapsed, model scores default filter, notifications, industry-specific settings, integrations gallery, compliance & audit config, Trust Score config, appearance expansion. Tier 2 Coming Soon placeholders for Account/Team/Eve Advanced/Privacy/Developer/Billing.
 
-  May 1, 2026 — Sidebar collapsed chip fix (targeted). Restructured Trust Score into mutually exclusive .trust-score-chip-full (expanded) and .trust-score-chip-badge (collapsed, 40×40). Only one branch renders at a time; fixes stacked circular badge plus wrapped status text caused by #sidebar-status inline display overriding collapsed hide rules.
-
   DESIGN RULES (prototype documentation)
     20. When two or more screens serve the same user intent (e.g., team communication), they go under one parent surface with tabs — not separate nav items. (Established May 1, 2026, when Town Hall was absorbed into Trust Loop.)
 
@@ -468,65 +466,46 @@ padding: 12px 14px; border-top: 1px solid var(--border);
 transition: padding .25s;
 }
 .sidebar.collapsed .sidebar-bottom { padding: 12px 6px; }
-/* Trust score: full chip (expanded) vs circular badge (collapsed) — mutually exclusive */
-.trust-score-mini-wrap { cursor: pointer; }
-.sidebar:not(.collapsed) .trust-score-chip-badge {
-  display: none !important;
-}
-.sidebar.collapsed .trust-score-chip-full {
-  display: none !important;
-}
-.sidebar.collapsed .trust-score-chip-badge {
-  display: flex !important;
-  align-items: center;
-  justify-content: center;
+.sidebar.collapsed .trust-score-mini {
   width: 40px;
   height: 40px;
   min-width: 40px;
+  padding: 0;
   margin: 0 auto;
   border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   position: relative;
   box-sizing: border-box;
-  border: 2px solid rgba(255,255,255,0.12);
 }
-.trust-score-chip-badge-num {
-  font-size: 15px;
-  font-weight: 700;
-  color: #fff;
-  line-height: 1;
-}
-.trust-score-chip-badge-dot {
+.sidebar.collapsed .trust-score-mini-label,
+.sidebar.collapsed .trust-score-mini-status,
+.sidebar.collapsed #sidebar-cert-badge,
+.sidebar.collapsed #score-label { display: none; }
+.sidebar.collapsed .trust-score-mini-val { font-size: 13px; font-weight: 700; }
+.sidebar.collapsed .trust-score-mini.cert-dot-red::after,
+.sidebar.collapsed .trust-score-mini.cert-dot-green::after {
+  content: '';
   position: absolute;
-  bottom: 2px;
-  right: 2px;
-  width: 10px;
-  height: 10px;
+  bottom: 1px;
+  right: 1px;
+  width: 9px;
+  height: 9px;
   border-radius: 50%;
   border: 2px solid var(--bg2);
   box-sizing: border-box;
 }
-.trust-score-chip-badge-dot.is-cert { background: #22c55e; }
-.trust-score-chip-badge-dot.is-not-cert { background: #ef4444; }
-.trust-score-chip-full {
+.sidebar.collapsed .trust-score-mini.cert-dot-green::after { background: #22c55e; }
+.sidebar.collapsed .trust-score-mini.cert-dot-red::after { background: #ef4444; }
+.trust-score-mini {
 position: relative;
 }
-.trust-score-mini-wrap.below-threshold .trust-score-chip-full::before {
+.trust-score-mini.below-threshold::before {
 content: ''; position: absolute; top: 8px; right: 8px;
 width: 8px; height: 8px; border-radius: 50%;
 background: var(--amber); box-shadow: 0 0 0 0 rgba(245,158,11,.5);
 animation: ts-pulse 2s infinite;
-z-index: 1;
-pointer-events: none;
-}
-.sidebar.collapsed .trust-score-mini-wrap.below-threshold .trust-score-chip-full::before {
-  display: none !important;
-}
-.sidebar.collapsed .trust-score-mini-wrap.below-threshold .trust-score-chip-badge::before {
-content: ''; position: absolute; top: 3px; right: 3px;
-width: 6px; height: 6px; border-radius: 50%;
-background: var(--amber); box-shadow: 0 0 0 0 rgba(245,158,11,.5);
-animation: ts-pulse 2s infinite;
-pointer-events: none;
 }
 @keyframes ts-pulse {
   0% { box-shadow: 0 0 0 0 rgba(245,158,11,.5); }
@@ -4191,8 +4170,7 @@ Trust Loop
 </div>
 </nav>
 <div class="sidebar-bottom">
-<div class="trust-score-mini-wrap" onclick="showScreen('trustscore',document.querySelector('.nav-item'))" style="cursor:pointer">
-<div class="trust-score-mini trust-score-chip-full">
+<div class="trust-score-mini" onclick="showScreen('trustscore',document.querySelector('.nav-item'))" style="cursor:pointer">
 <div class="trust-score-mini-label">Global Trust Score</div>
 <div class="trust-score-mini-val" id="sidebar-score" style="color:#F59E0B">74</div>
 <div class="trust-score-mini-status" id="sidebar-status" style="display:flex;align-items:center;gap:4px">
@@ -4200,11 +4178,6 @@ Trust Loop
 Below 80 threshold
 </div>
 <div id="sidebar-cert-badge" style="font-size:9px;color:var(--muted);margin-top:1px"></div>
-</div>
-<div class="trust-score-chip-badge" id="sidebar-trust-badge-collapsed" aria-hidden="true" style="background:#F59E0B">
-<span class="trust-score-chip-badge-num" id="sidebar-score-badge">74</span>
-<span class="trust-score-chip-badge-dot is-not-cert" aria-hidden="true"></span>
-</div>
 </div>
 <div style="border-top:1px solid var(--border);margin:8px 0"></div>
 <div class="nav-item" onclick="showScreen('settings',this)" style="margin:0 0 8px 0">
@@ -9651,9 +9624,6 @@ function applyCardinalData(org) {
   setT('sidebar-avatar', d.initials);
   setT('sidebar-score', d.trustScoreDisplay);
   setS('sidebar-score', 'color', d.trustColor);
-  setT('sidebar-score-badge', d.trustScoreDisplay);
-  var sbadgeEl = document.getElementById('sidebar-trust-badge-collapsed');
-  if (sbadgeEl) sbadgeEl.style.background = d.trustColor;
 
   // Sidebar status text + cert badge
   var sst = document.getElementById('sidebar-status');
@@ -9665,33 +9635,14 @@ function applyCardinalData(org) {
   var scb = document.getElementById('sidebar-cert-badge');
   if (scb) scb.textContent = d.certStatus;
 
-  var certed = d.trustScore >= 0.80;
-  var dotEl = document.querySelector('#sidebar-trust-badge-collapsed .trust-score-chip-badge-dot');
-  if (dotEl) {
-    dotEl.classList.remove('is-cert', 'is-not-cert');
-    dotEl.classList.add(certed ? 'is-cert' : 'is-not-cert');
-    dotEl.onmouseenter = function (ev) {
-      try { showTooltip('Certification Status', certed ? 'Green: Cardinal certified or meets the certification threshold.' : 'Red: not certified — below the Cardinal certification floor.', ev); } catch (_e) {}
-    };
-  }
-
-  var tWrap = document.querySelector('.trust-score-mini-wrap');
-  if (tWrap) {
-    tWrap.classList.toggle('below-threshold', parseInt(d.trustScoreDisplay, 10) < 80);
-    var tipBody = d.trustStatus;
-    if (certed && d.certStatus) tipBody = d.trustStatus + ', Certified ' + d.certStatus;
-    tWrap.onmouseenter = function (ev) {
-      try { showTooltip('Trust Score ' + d.trustScoreDisplay, tipBody, ev); } catch (_tip) {}
-    };
-  }
-
-  var suc = document.getElementById('sidebar-user-card');
-  if (suc) {
-    suc.onmouseenter = function (ev) {
-      var sb = document.querySelector('.sidebar');
-      if (sb && sb.classList.contains('collapsed')) {
-        try { showTooltip(d.user, d.org, ev); } catch (_e) {}
-      }
+  var tsm = document.querySelector('.sidebar-bottom .trust-score-mini');
+  if (tsm) {
+    var certed = d.trustScore >= 0.80;
+    tsm.classList.remove('cert-dot-green', 'cert-dot-red');
+    tsm.classList.add(certed ? 'cert-dot-green' : 'cert-dot-red');
+    tsm.onmouseenter = function (ev) {
+      var body = d.trustStatus + (certed ? (' — Certified: ' + (d.certStatus || 'Meets threshold')) : ' — Not Certified');
+      try { showTooltip('Trust Score ' + d.trustScoreDisplay, body, ev); } catch (_tip) {}
     };
   }
 
@@ -23374,8 +23325,8 @@ function closeModelDetail() {
     } catch(e) {}
     // Mark trust score below threshold for pulsing dot
     const score = parseInt(document.getElementById('sidebar-score')?.textContent || '0', 10);
-    const tsWrap = document.querySelector('.trust-score-mini-wrap');
-    if(tsWrap && score < 80) tsWrap.classList.add('below-threshold');
+    const mini = document.querySelector('.trust-score-mini');
+    if(mini && score < 80) mini.classList.add('below-threshold');
     // Wire sidebar toggle tooltip on first DOM-ready (works before dashboard renders).
     try { if (typeof window.initSidebarToggleTooltip === 'function') window.initSidebarToggleTooltip(); } catch(_e) {}
   }
