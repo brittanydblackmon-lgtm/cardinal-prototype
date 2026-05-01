@@ -2245,7 +2245,7 @@ Settings
     <div style="font-size:15px;font-weight:600;color:#e2e8f0;">Core Status — Live Overview</div>
     <div style="font-size:11px;color:#64748b;margin-top:3px;">Click any core to go deeper</div>
   </div>
-  <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;" id="core-status-grid"></div>
+  <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:12px;" id="core-status-grid"></div>
 </div>
 
 <!-- ░░ ROW: DEMOGRAPHIC BREAKDOWN + REGULATORY ░░ -->
@@ -7346,43 +7346,103 @@ const DASH_INDUSTRY = {
 var DASH_CERT_TOOLTIP =
   'Cardinal Certification means this organization meets the minimum thresholds for bias fairness (DI ≥ 0.80), fraud integrity (≥ 85%), and regulatory compliance across all applicable jurisdictions.';
 
-/** Per-industry payloads for dashboard Core Status panel (below Global Trust Score). */
-var CORE_STATUS_BY_ORG = {
+/** Dashboard Core Status: 6 tiles × top 3 items per org. */
+var CORE_STATUS_TILES_BY_ORG = {
   ad: [
-    { name: 'Eden Core', color: '#ef4444', desc: '2 bias flags active', metric: 'DI: 0.67 ⚠', screen: 'eden' },
-    { name: 'Obsidian Core', color: '#f59e0b', desc: '23 credentials flagged', metric: '$2.1M blocked', screen: 'obsidian' },
-    { name: 'Genesis Core', color: '#60a5fa', desc: 'Shadow v2.5 running', metric: '5% traffic', screen: 'genesis' },
-    { name: 'Atonement Core', color: '#f59e0b', desc: 'Remediation in progress', metric: '847 cohort', screen: 'atonement' },
-    { name: 'Halo Core', color: '#f59e0b', desc: '3 deadlines in 30 days', metric: '$28M exposure', screen: 'halo' },
-    { name: 'Echo Core', color: '#60a5fa', desc: 'Audit log active', metric: 'All events sealed', screen: 'echo' },
-    { name: 'Compliance', color: '#f59e0b', desc: 'DoD audit in 2 days', metric: '71.2% avg', screen: 'compliance' },
-    { name: 'Trust Ledger', color: '#22c55e', desc: 'All decisions sealed', metric: 'Verified ✓', screen: 'trustledger' },
-    { name: 'Sentinel', color: '#22c55e', desc: '3 risks pre-caught', metric: '6.2 days early', screen: 'sentinel' },
-    { name: 'War Room', color: '#ef4444', desc: 'Case #AD-2847 — Day 5', metric: '7 days left', screen: 'warroom' }
+    { name: 'Eden Core', screen: 'eden', headerDot: '#ef4444', badge: '2 active', items: [
+      { dotColor: '#ef4444', text: 'Personnel Assignment v2.4 — DI 0.67 — 847 records below threshold', tag: 'CRITICAL' },
+      { dotColor: '#f59e0b', text: 'Mission Readiness v1.1 — Equalized Odds 0.18 — above 0.10 limit', tag: 'WARNING' },
+      { dotColor: '#ef4444', text: 'Native American technicians — 0.3% training coverage vs 1.2% population', tag: 'GAP' }
+    ]},
+    { name: 'Obsidian Core', screen: 'obsidian', headerDot: '#f59e0b', badge: '2 flags', items: [
+      { dotColor: '#f59e0b', text: '23 synthetic credential applications — shared device fingerprints', tag: 'ACTIVE' },
+      { dotColor: '#f59e0b', text: 'Demographic proxy creating fraud blind spot — same feature as bias', tag: 'LINKED' },
+      { dotColor: '#22c55e', text: '$2.1M in fraudulent credentials blocked this quarter', tag: 'BLOCKED' }
+    ]},
+    { name: 'Genesis Core', screen: 'genesis', headerDot: '#60a5fa', badge: '1 running', items: [
+      { dotColor: '#60a5fa', text: 'Personnel v2.5 shadow deploy — 5% traffic — 1,847 decisions logged', tag: 'RUNNING' },
+      { dotColor: '#f59e0b', text: 'Counterfactual proof generated — DI 0.67 → 0.84 projected', tag: 'READY' },
+      { dotColor: '#ef4444', text: '3 demographic groups with zero training data coverage', tag: 'GAP' }
+    ]},
+    { name: 'Atonement Core', screen: 'atonement', headerDot: '#f59e0b', badge: 'In progress', items: [
+      { dotColor: '#f59e0b', text: '847 service members — re-evaluation cohort — pending deployment', tag: 'COHORT' },
+      { dotColor: '#60a5fa', text: 'Personnel v2.5 shadow at 5% — approve to expand to 100%', tag: 'ACTION' },
+      { dotColor: '#22c55e', text: 'Estimated fix timeline: 2 weeks — DoD audit deadline: 2 days', tag: 'TIMELINE' }
+    ]},
+    { name: 'Halo Core', screen: 'halo', headerDot: '#f59e0b', badge: '3 deadlines', items: [
+      { dotColor: '#ef4444', text: 'DoD AI Ethics Audit — Apr 30, 2026 — TODAY — 2 days past due', tag: 'OVERDUE' },
+      { dotColor: '#f59e0b', text: 'ITAR Compliance Review — May 8, 2026 — 8 days', tag: 'UPCOMING' },
+      { dotColor: '#ef4444', text: '$28M penalty exposure if Trust Score stays below 0.80 by Q4', tag: 'EXPOSURE' }
+    ]},
+    { name: 'Sentinel & War Room', screen: 'warroom', headerDot: '#ef4444', badge: '1 open case', items: [
+      { dotColor: '#ef4444', text: 'Case #AD-2847 — Day 5 of 14 — Personnel bias — 847 affected', tag: 'DAY 5' },
+      { dotColor: '#22c55e', text: 'Sentinel pre-caught bias 6.2 days before manual discovery', tag: 'WIN' },
+      { dotColor: '#f59e0b', text: 'DoD disclosure package ready — awaiting legal sign-off', tag: 'PENDING' }
+    ]}
   ],
   fin: [
-    { name: 'Eden Core', color: '#ef4444', desc: 'ECOA violation active', metric: 'DI: 0.74 ⚠', screen: 'eden' },
-    { name: 'Obsidian Core', color: '#f59e0b', desc: '47 apps flagged', metric: '$890K blocked', screen: 'obsidian' },
-    { name: 'Genesis Core', color: '#60a5fa', desc: 'Shadow v3.5 running', metric: '5% traffic', screen: 'genesis' },
-    { name: 'Atonement Core', color: '#f59e0b', desc: '687 re-approved', metric: '$2.1M recovered', screen: 'atonement' },
-    { name: 'Halo Core', color: '#ef4444', desc: 'NYC audit in 13 days', metric: '$40M exposure', screen: 'halo' },
-    { name: 'Echo Core', color: '#60a5fa', desc: 'Audit log active', metric: 'All events sealed', screen: 'echo' },
-    { name: 'Compliance', color: '#ef4444', desc: 'ECOA violation active', metric: '68.3% avg', screen: 'compliance' },
-    { name: 'Trust Ledger', color: '#22c55e', desc: 'All decisions sealed', metric: 'Verified ✓', screen: 'trustledger' },
-    { name: 'Sentinel', color: '#22c55e', desc: '2 risks pre-caught', metric: 'Active monitoring', screen: 'sentinel' },
-    { name: 'War Room', color: '#ef4444', desc: 'Case #FIN-1203 — Day 14', metric: 'Ready to deploy', screen: 'warroom' }
+    { name: 'Eden Core', screen: 'eden', headerDot: '#f59e0b', badge: '1 active', items: [
+      { dotColor: '#ef4444', text: 'Credit Scoring v3.4 — ZIP proxy 0.82 correlation — 1,203 applicants', tag: 'CRITICAL' },
+      { dotColor: '#f59e0b', text: 'Auto Loan v2.1 — Employment type proxy 0.71 — 891 applicants', tag: 'WARNING' },
+      { dotColor: '#ef4444', text: 'Pacific Islander applicants — 44x underrepresented in training data', tag: 'GAP' }
+    ]},
+    { name: 'Obsidian Core', screen: 'obsidian', headerDot: '#f59e0b', badge: '2 flags', items: [
+      { dotColor: '#ef4444', text: '47 loan applications from 1 device — synthetic identity ring', tag: 'ACTIVE' },
+      { dotColor: '#f59e0b', text: 'ZIP code exploitation — fraudsters using upscale ZIPs', tag: 'LINKED' },
+      { dotColor: '#22c55e', text: '$890K in fraudulent applications blocked', tag: 'BLOCKED' }
+    ]},
+    { name: 'Genesis Core', screen: 'genesis', headerDot: '#60a5fa', badge: '1 running', items: [
+      { dotColor: '#60a5fa', text: 'Credit v3.5 shadow deploy — 5% traffic — 3,241 decisions logged', tag: 'RUNNING' },
+      { dotColor: '#f59e0b', text: 'ZIP removal proof — DI 0.74 → 0.91 projected — ECOA passing', tag: 'READY' },
+      { dotColor: '#ef4444', text: 'Rural applicants — 11.2% population gap in training data', tag: 'GAP' }
+    ]},
+    { name: 'Atonement Core', screen: 'atonement', headerDot: '#f59e0b', badge: 'In progress', items: [
+      { dotColor: '#22c55e', text: '687 of 1,203 applicants re-approved — $2.1M revenue recovered', tag: 'PROGRESS' },
+      { dotColor: '#60a5fa', text: 'Credit v3.5 ready for full deployment — NYC audit in 13 days', tag: 'ACTION' },
+      { dotColor: '#f59e0b', text: '516 applicants still pending re-evaluation', tag: 'PENDING' }
+    ]},
+    { name: 'Halo Core', screen: 'halo', headerDot: '#ef4444', badge: '3 deadlines', items: [
+      { dotColor: '#ef4444', text: 'NYC Local Law 144 Audit — May 11, 2026 — 13 days', tag: 'CRITICAL' },
+      { dotColor: '#ef4444', text: 'ECOA violation active — CFPB notification window open', tag: 'ACTIVE' },
+      { dotColor: '#ef4444', text: '$40M penalty exposure if Credit v3.4 not fixed before Q3', tag: 'EXPOSURE' }
+    ]},
+    { name: 'Sentinel & War Room', screen: 'warroom', headerDot: '#ef4444', badge: '2 open cases', items: [
+      { dotColor: '#ef4444', text: 'Case #FIN-1203 — Day 14 — Credit bias — 1,203 affected', tag: 'DAY 14' },
+      { dotColor: '#60a5fa', text: 'Credit v3.5 approved — ready for full deployment', tag: 'READY' },
+      { dotColor: '#22c55e', text: 'Sentinel pre-caught ZIP proxy before CFPB audit cycle', tag: 'WIN' }
+    ]}
   ],
   health: [
-    { name: 'Eden Core', color: '#ef4444', desc: 'ACA 1557 violation', metric: 'DI: 0.64 ⚠', screen: 'eden' },
-    { name: 'Obsidian Core', color: '#f59e0b', desc: '31 providers flagged', metric: '$1.1M blocked', screen: 'obsidian' },
-    { name: 'Genesis Core', color: '#60a5fa', desc: 'Fix modeled — pending', metric: 'v2.0 staged', screen: 'genesis' },
-    { name: 'Atonement Core', color: '#64748b', desc: 'Awaiting CMO sign-off', metric: '2,847 cohort', screen: 'atonement' },
-    { name: 'Halo Core', color: '#ef4444', desc: 'CMS audit in 30 days', metric: '$65M exposure', screen: 'halo' },
-    { name: 'Echo Core', color: '#60a5fa', desc: 'Audit log active', metric: 'All events sealed', screen: 'echo' },
-    { name: 'Compliance', color: '#ef4444', desc: 'ACA 1557 violation', metric: '64.8% avg', screen: 'compliance' },
-    { name: 'Trust Ledger', color: '#22c55e', desc: 'All decisions sealed', metric: 'Verified ✓', screen: 'trustledger' },
-    { name: 'Sentinel', color: '#22c55e', desc: '4 risks pre-caught', metric: 'Active monitoring', screen: 'sentinel' },
-    { name: 'War Room', color: '#ef4444', desc: 'Case #HS-2847 — Day 5', metric: 'Awaiting sign-off', screen: 'warroom' }
+    { name: 'Eden Core', screen: 'eden', headerDot: '#ef4444', badge: '2 active', items: [
+      { dotColor: '#ef4444', text: 'Claims Adjudication v1.9 — Age proxy 0.81 — 2,847 claims', tag: 'CRITICAL' },
+      { dotColor: '#f59e0b', text: 'Triage Priority v2.0 — Rural distance proxy 0.76 — 1,204 patients', tag: 'WARNING' },
+      { dotColor: '#ef4444', text: 'Patients 75+ — 2.2x underrepresented in training data', tag: 'GAP' }
+    ]},
+    { name: 'Obsidian Core', screen: 'obsidian', headerDot: '#f59e0b', badge: '2 flags', items: [
+      { dotColor: '#ef4444', text: '31 providers — prescription fraud ring — shared patient profiles', tag: 'ACTIVE' },
+      { dotColor: '#f59e0b', text: 'Age proxy creating blind spot — younger profiles submitted for elderly', tag: 'LINKED' },
+      { dotColor: '#22c55e', text: '$1.1M in fraudulent claims blocked', tag: 'BLOCKED' }
+    ]},
+    { name: 'Genesis Core', screen: 'genesis', headerDot: '#60a5fa', badge: '1 running', items: [
+      { dotColor: '#60a5fa', text: 'Claims v2.0 modeled — awaiting CMO approval to start shadow', tag: 'PENDING' },
+      { dotColor: '#f59e0b', text: 'Age proxy removal proof — DI 0.64 → 0.89 projected', tag: 'READY' },
+      { dotColor: '#ef4444', text: 'Patients 75+ — 5.1% population gap in training data', tag: 'GAP' }
+    ]},
+    { name: 'Atonement Core', screen: 'atonement', headerDot: '#64748b', badge: 'In progress', items: [
+      { dotColor: '#ef4444', text: '2,847 patient claims — cohort ready — awaiting CMO sign-off', tag: 'BLOCKED' },
+      { dotColor: '#ef4444', text: 'CMO approval required before shadow deploy can begin', tag: 'ACTION' },
+      { dotColor: '#f59e0b', text: 'ACA 1557 deadline: May 2 — 4 days to initiate remediation', tag: 'URGENT' }
+    ]},
+    { name: 'Halo Core', screen: 'halo', headerDot: '#ef4444', badge: '3 deadlines', items: [
+      { dotColor: '#ef4444', text: 'ACA 1557 Remediation Deadline — May 2, 2026 — 4 days', tag: 'CRITICAL' },
+      { dotColor: '#ef4444', text: 'CMS AI Oversight Audit — May 28, 2026 — 30 days', tag: 'UPCOMING' },
+      { dotColor: '#ef4444', text: '$65M penalty exposure + potential CMS program exclusion', tag: 'EXPOSURE' }
+    ]},
+    { name: 'Sentinel & War Room', screen: 'warroom', headerDot: '#ef4444', badge: '3 open cases', items: [
+      { dotColor: '#ef4444', text: 'Case #HS-2847 — Day 5 — Claims bias — 2,847 affected', tag: 'DAY 5' },
+      { dotColor: '#ef4444', text: 'Waiting on CMO sign-off — 4 days until ACA deadline', tag: 'BLOCKED' },
+      { dotColor: '#22c55e', text: 'Sentinel pre-caught age proxy within 48 hrs of deployment', tag: 'WIN' }
+    ]}
   ]
 };
 
@@ -7479,25 +7539,42 @@ function dashFormatCriticalCasesTopbar(count) {
 }
 
 function buildCoreStatusGrid(org) {
-  var grid = document.getElementById('core-status-grid');
-  if (!grid || typeof CORE_STATUS_BY_ORG === 'undefined') return;
-  var cores = CORE_STATUS_BY_ORG[org] || CORE_STATUS_BY_ORG.ad || [];
-  grid.innerHTML = cores.map(function(c) {
-    var bg = typeof dashHexToRgba === 'function' ? dashHexToRgba(c.color, 0.1) : 'rgba(255,255,255,0.06)';
-    var brd = typeof dashHexToRgba === 'function' ? dashHexToRgba(c.color, 0.25) : 'rgba(255,255,255,0.1)';
-    var dashEsc = typeof c.screen === 'string' ? c.screen.replace(/'/g, "\\'") : '';
-    var desc = String(c.desc).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-    var name = String(c.name).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-    var met = String(c.metric).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-    return '<div onclick="showScreen(\'' + dashEsc + '\',null)" style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:12px;cursor:pointer;transition:border-color 0.2s;" onmouseover="this.style.borderColor=\'rgba(200,210,240,0.18)\'" onmouseout="this.style.borderColor=\'rgba(255,255,255,0.07)\'">' +
-      '<div style="display:flex;align-items:center;gap:6px;margin-bottom:5px;">' +
-        '<div style="width:7px;height:7px;border-radius:50%;background:' + c.color + ';box-shadow:0 0 5px ' + c.color + ';flex-shrink:0;"></div>' +
-        '<span style="font-size:11px;font-weight:600;color:#e2e8f0;">' + name + '</span>' +
+  function esc(str) {
+    if (str == null) return '';
+    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+  function tileHTML(t) {
+    var hdr = esc(t.name);
+    var scr = String(t.screen || 'dashboard').replace(/'/g, "\\'");
+    var headerDot = t.headerDot || '#64748b';
+    var badge = esc(t.badge || '');
+    var itemsHtml = (t.items || []).slice(0, 3).map(function(row) {
+      var dc = row.dotColor || '#94a3b8';
+      var tagBg = typeof dashHexToRgba === 'function' ? dashHexToRgba(dc, 0.15) : 'rgba(148,163,184,0.15)';
+      return '<div style="display:flex;align-items:flex-start;gap:7px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.04);">' +
+        '<div style="width:5px;height:5px;border-radius:50%;background:' + dc + ';margin-top:4px;flex-shrink:0;"></div>' +
+        '<div style="flex:1;font-size:10px;color:#94a3b8;line-height:1.4;">' + esc(row.text) + '</div>' +
+        '<div style="font-size:9px;font-weight:700;color:' + dc + ';background:' + tagBg + ';border-radius:3px;padding:1px 5px;flex-shrink:0;white-space:nowrap;">' + esc(row.tag) + '</div>' +
+      '</div>';
+    }).join('');
+    var badgeBg = 'rgba(148,163,184,0.12)';
+    return '<div tabindex="0" onclick="showScreen(\'' + scr + '\',null)" style="min-height:180px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:14px;cursor:pointer;transition:border-color 0.2s;box-sizing:border-box;display:flex;flex-direction:column;" onmouseover="this.style.borderColor=\'rgba(200,210,240,0.2)\'" onmouseout="this.style.borderColor=\'rgba(255,255,255,0.08)\'">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">' +
+        '<div style="display:flex;align-items:center;gap:8px;min-width:0;">' +
+          '<div style="width:8px;height:8px;border-radius:50%;background:' + headerDot + ';box-shadow:0 0 8px ' + headerDot + ';flex-shrink:0;"></div>' +
+          '<span style="font-size:12px;font-weight:700;color:#e2e8f0;line-height:1.2;">' + hdr + '</span>' +
+        '</div>' +
+        '<span style="font-size:9px;font-weight:600;color:#94a3b8;background:' + badgeBg + ';border-radius:999px;padding:3px 8px;flex-shrink:0;">' + badge + '</span>' +
       '</div>' +
-      '<div style="font-size:10px;color:#64748b;margin-bottom:8px;line-height:1.4;">' + desc + '</div>' +
-      '<div style="font-size:10px;font-weight:600;color:' + c.color + ';background:' + bg + ';border:1px solid ' + brd + ';border-radius:4px;padding:2px 7px;display:inline-block;">' + met + '</div>' +
+      '<div style="height:1px;background:rgba(255,255,255,0.06);margin-bottom:10px;flex-shrink:0;"></div>' +
+      '<div style="flex:1;">' + itemsHtml + '</div>' +
+      '<div style="text-align:right;margin-top:auto;padding-top:8px;"><span style="font-size:10px;color:#a6daff;">View all →</span></div>' +
     '</div>';
-  }).join('');
+  }
+  var grid = document.getElementById('core-status-grid');
+  if (!grid || typeof CORE_STATUS_TILES_BY_ORG === 'undefined') return;
+  var tiles = CORE_STATUS_TILES_BY_ORG[org] || CORE_STATUS_TILES_BY_ORG.ad || [];
+  grid.innerHTML = tiles.map(tileHTML).join('');
 }
 
 function refreshDashboard(ev) {
