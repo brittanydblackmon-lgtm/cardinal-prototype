@@ -1061,6 +1061,14 @@ line-height: 1; margin-bottom: 5px;
   align-self: stretch;
   min-height: 0;
 }
+/* Core dashboard panels — drag handle emphasis on hover */
+#core-panels-grid .core-panel > div:first-child .drag-handle {
+  opacity: 0.38;
+  transition: opacity 0.15s ease, color 0.15s ease;
+}
+#core-panels-grid .core-panel:hover > div:first-child .drag-handle {
+  opacity: 1;
+}
 /* Regulatory panel — matched height with Demographic Breakdown column, no internal scroll */
 #dash-regulatory-panel.dash-reg-panel {
   box-sizing: border-box;
@@ -2243,31 +2251,35 @@ Settings
 <div id="dash-core-status" class="dash-core-status-panel" style="margin-bottom:16px;background:var(--card);border:1px solid var(--border2);border-radius:16px;padding:20px;">
   <div style="margin-bottom:14px;">
     <div style="font-size:15px;font-weight:600;color:#e2e8f0;">Core Status — Live Overview</div>
-    <div style="font-size:11px;color:#64748b;margin-top:3px;">Click any core to go deeper</div>
+    <div style="font-size:11px;color:#64748b;margin-top:3px;">Drag ⠿ handles to reorder · Collapse panels with ▸ · Open a core with the arrow</div>
   </div>
-  <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:12px;" id="core-status-grid"></div>
+  <div id="core-panels-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;"></div>
 </div>
 
 <!-- ░░ ROW: DEMOGRAPHIC BREAKDOWN + REGULATORY ░░ -->
-<div class="dr-2col">
+<div class="dr-2col" id="dashboard-bottom-columns">
 
   <!-- LEFT: DEMOGRAPHIC BREAKDOWN -->
-  <div class="dr-card dr-section-panel dash-2col-cell" onclick="dashDashboardSectionClick(event,'eden')" title="Open Eden Core" style="cursor:pointer;">
-    <div class="dr-section-head">
-      <div class="dr-section-head-left">
-        <div class="dr-section-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
-        <div>
-          <div class="dr-section-title">Demographic Breakdown</div>
-          <div class="dr-section-sub" id="dr-demo-panel-sub">Personnel Assignment Patterns by Protected Groups</div>
+  <div id="dash-demographic-panel" class="dashboard-bottom-panel dr-card dr-section-panel dash-2col-cell core-layout-card" data-core="dash-demographic" title="Demographic breakdown" style="cursor:default;background:var(--card);border:1px solid var(--border2);border-radius:14px;padding:0;overflow:hidden;">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid rgba(255,255,255,0.06);" onclick="event.stopPropagation();">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <div class="dash-bottom-drag-handle drag-handle" draggable="true" title="Drag to reorder" onclick="event.stopPropagation();" style="color:rgba(255,255,255,0.15);cursor:grab;font-size:14px;padding:2px 4px;line-height:1;">⠿</div>
+        <div class="dr-section-head-left" style="gap:10px;display:flex;align-items:flex-start;">
+          <div class="dr-section-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+          <div>
+            <div class="dr-section-title">Demographic Breakdown</div>
+            <div class="dr-section-sub" id="dr-demo-panel-sub">Personnel Assignment Patterns by Protected Groups</div>
+          </div>
         </div>
       </div>
-      <div class="dr-section-head-right">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <button type="button" class="collapse-btn" onclick="togglePanel(this);event.stopPropagation();" style="background:transparent;border:none;color:#64748b;cursor:pointer;font-size:14px;padding:2px 6px;line-height:1;">▾</button>
         <span style="font-size:10px;color:#60a5fa;cursor:pointer;white-space:nowrap;" onclick="event.stopPropagation(); showScreen('eden',null);">View full breakdown →</span>
         <span class="dr-section-time">Last run 10/10/2025</span>
-        <button type="button" class="dr-dots" title="More" onclick="event.stopPropagation();">⋯</button>
       </div>
     </div>
-    <div class="dr-panel-divider"></div>
+    <div class="panel-content" onclick="dashDashboardSectionClick(event,'eden')" style="cursor:pointer;padding:0 16px 16px;">
+    <div class="dr-panel-divider" style="margin:0 0 14px;"></div>
 
     <!-- Section 1 -->
     <div class="dr-sub">
@@ -2316,20 +2328,29 @@ Settings
   </div>
 
   <!-- RIGHT: REGULATORY DEADLINES & CERTIFICATIONS -->
-  <div id="dash-regulatory-panel" class="dash-reg-panel dash-2col-cell">
-    <div class="dash-reg-header" style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
-      <div style="width:32px;height:32px;border-radius:10px;background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.25);display:flex;align-items:center;justify-content:center;color:#22c55e;flex-shrink:0;">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+  <div id="dash-regulatory-panel" class="dashboard-bottom-panel dash-reg-panel dash-2col-cell core-layout-card" data-core="dash-regulatory" style="background:var(--card);border:1px solid var(--border2);border-radius:14px;padding:0;overflow:hidden;display:flex;flex-direction:column;min-height:0;">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid rgba(255,255,255,0.06);flex-shrink:0;">
+      <div style="display:flex;align-items:center;gap:10px;min-width:0;">
+        <div class="dash-bottom-drag-handle drag-handle" draggable="true" title="Drag to reorder" onclick="event.stopPropagation();" style="color:rgba(255,255,255,0.15);cursor:grab;font-size:14px;padding:2px 4px;line-height:1;">⠿</div>
+        <div style="width:32px;height:32px;border-radius:10px;background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.25);display:flex;align-items:center;justify-content:center;color:#22c55e;flex-shrink:0;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        </div>
+        <div style="min-width:0;">
+          <div style="font-size:14px;font-weight:700;color:#e2e8f0;line-height:1.2;">Regulatory Deadlines &amp; Certifications</div>
+          <div style="font-size:10px;color:#64748b;margin-top:2px;line-height:1.3;">Deadlines, violations, renewals · Click actions to resolve in-core</div>
+        </div>
       </div>
-      <div style="min-width:0;">
-        <div style="font-size:14px;font-weight:700;color:#e2e8f0;line-height:1.2;">Regulatory Deadlines &amp; Certifications</div>
-        <div style="font-size:10px;color:#64748b;margin-top:2px;line-height:1.3;">Deadlines, violations, renewals · Click actions to resolve in-core</div>
+      <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
+        <button type="button" class="collapse-btn" onclick="togglePanel(this);event.stopPropagation();" style="background:transparent;border:none;color:#64748b;cursor:pointer;font-size:14px;padding:2px 6px;line-height:1;">▾</button>
+        <button type="button" onclick="showScreen('compliance',null);" title="Open Compliance" style="width:26px;height:26px;border-radius:50%;background:rgba(166,218,255,0.08);border:1px solid rgba(166,218,255,0.2);color:#a6daff;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px;">→</button>
       </div>
     </div>
-    <div class="dash-reg-body">
-      <div id="dash-reg-section-action" style="border-left:3px solid #ef4444;padding-left:10px;margin-bottom:10px;flex-shrink:0;"></div>
-      <div id="dash-reg-section-coming" style="border-left:3px solid #f59e0b;padding-left:10px;margin-bottom:10px;flex-shrink:0;"></div>
-      <div id="dash-reg-section-active" style="border-left:3px solid #22c55e;padding-left:10px;flex-shrink:0;"></div>
+    <div class="panel-content" style="padding:14px 16px;flex:1;min-height:0;overflow:hidden;display:flex;flex-direction:column;font-family:var(--sans);">
+      <div class="dash-reg-body" style="flex:1;min-height:0;display:flex;flex-direction:column;">
+        <div id="dash-reg-section-action" style="border-left:3px solid #ef4444;padding-left:10px;margin-bottom:10px;flex-shrink:0;"></div>
+        <div id="dash-reg-section-coming" style="border-left:3px solid #f59e0b;padding-left:10px;margin-bottom:10px;flex-shrink:0;"></div>
+        <div id="dash-reg-section-active" style="border-left:3px solid #22c55e;padding-left:10px;flex-shrink:0;"></div>
+      </div>
     </div>
   </div>
 
@@ -7346,106 +7367,854 @@ const DASH_INDUSTRY = {
 var DASH_CERT_TOOLTIP =
   'Cardinal Certification means this organization meets the minimum thresholds for bias fairness (DI ≥ 0.80), fraud integrity (≥ 85%), and regulatory compliance across all applicable jurisdictions.';
 
-/** Dashboard Core Status: 6 tiles × top 3 items per org. */
-var CORE_STATUS_TILES_BY_ORG = {
-  ad: [
-    { name: 'Eden Core', screen: 'eden', headerDot: '#ef4444', badge: '2 active', items: [
-      { dotColor: '#ef4444', text: 'Personnel Assignment v2.4 — DI 0.67 — 847 records below threshold', tag: 'CRITICAL' },
-      { dotColor: '#f59e0b', text: 'Mission Readiness v1.1 — Equalized Odds 0.18 — above 0.10 limit', tag: 'WARNING' },
-      { dotColor: '#ef4444', text: 'Native American technicians — 0.3% training coverage vs 1.2% population', tag: 'GAP' }
-    ]},
-    { name: 'Obsidian Core', screen: 'obsidian', headerDot: '#f59e0b', badge: '2 flags', items: [
-      { dotColor: '#f59e0b', text: '23 synthetic credential applications — shared device fingerprints', tag: 'ACTIVE' },
-      { dotColor: '#f59e0b', text: 'Demographic proxy creating fraud blind spot — same feature as bias', tag: 'LINKED' },
-      { dotColor: '#22c55e', text: '$2.1M in fraudulent credentials blocked this quarter', tag: 'BLOCKED' }
-    ]},
-    { name: 'Genesis Core', screen: 'genesis', headerDot: '#60a5fa', badge: '1 running', items: [
-      { dotColor: '#60a5fa', text: 'Personnel v2.5 shadow deploy — 5% traffic — 1,847 decisions logged', tag: 'RUNNING' },
-      { dotColor: '#f59e0b', text: 'Counterfactual proof generated — DI 0.67 → 0.84 projected', tag: 'READY' },
-      { dotColor: '#ef4444', text: '3 demographic groups with zero training data coverage', tag: 'GAP' }
-    ]},
-    { name: 'Atonement Core', screen: 'atonement', headerDot: '#f59e0b', badge: 'In progress', items: [
-      { dotColor: '#f59e0b', text: '847 service members — re-evaluation cohort — pending deployment', tag: 'COHORT' },
-      { dotColor: '#60a5fa', text: 'Personnel v2.5 shadow at 5% — approve to expand to 100%', tag: 'ACTION' },
-      { dotColor: '#22c55e', text: 'Estimated fix timeline: 2 weeks — DoD audit deadline: 2 days', tag: 'TIMELINE' }
-    ]},
-    { name: 'Halo Core', screen: 'halo', headerDot: '#f59e0b', badge: '3 deadlines', items: [
-      { dotColor: '#ef4444', text: 'DoD AI Ethics Audit — Apr 30, 2026 — TODAY — 2 days past due', tag: 'OVERDUE' },
-      { dotColor: '#f59e0b', text: 'ITAR Compliance Review — May 8, 2026 — 8 days', tag: 'UPCOMING' },
-      { dotColor: '#ef4444', text: '$28M penalty exposure if Trust Score stays below 0.80 by Q4', tag: 'EXPOSURE' }
-    ]},
-    { name: 'Sentinel & War Room', screen: 'warroom', headerDot: '#ef4444', badge: '1 open case', items: [
-      { dotColor: '#ef4444', text: 'Case #AD-2847 — Day 5 of 14 — Personnel bias — 847 affected', tag: 'DAY 5' },
-      { dotColor: '#22c55e', text: 'Sentinel pre-caught bias 6.2 days before manual discovery', tag: 'WIN' },
-      { dotColor: '#f59e0b', text: 'DoD disclosure package ready — awaiting legal sign-off', tag: 'PENDING' }
-    ]}
-  ],
-  fin: [
-    { name: 'Eden Core', screen: 'eden', headerDot: '#f59e0b', badge: '1 active', items: [
-      { dotColor: '#ef4444', text: 'Credit Scoring v3.4 — ZIP proxy 0.82 correlation — 1,203 applicants', tag: 'CRITICAL' },
-      { dotColor: '#f59e0b', text: 'Auto Loan v2.1 — Employment type proxy 0.71 — 891 applicants', tag: 'WARNING' },
-      { dotColor: '#ef4444', text: 'Pacific Islander applicants — 44x underrepresented in training data', tag: 'GAP' }
-    ]},
-    { name: 'Obsidian Core', screen: 'obsidian', headerDot: '#f59e0b', badge: '2 flags', items: [
-      { dotColor: '#ef4444', text: '47 loan applications from 1 device — synthetic identity ring', tag: 'ACTIVE' },
-      { dotColor: '#f59e0b', text: 'ZIP code exploitation — fraudsters using upscale ZIPs', tag: 'LINKED' },
-      { dotColor: '#22c55e', text: '$890K in fraudulent applications blocked', tag: 'BLOCKED' }
-    ]},
-    { name: 'Genesis Core', screen: 'genesis', headerDot: '#60a5fa', badge: '1 running', items: [
-      { dotColor: '#60a5fa', text: 'Credit v3.5 shadow deploy — 5% traffic — 3,241 decisions logged', tag: 'RUNNING' },
-      { dotColor: '#f59e0b', text: 'ZIP removal proof — DI 0.74 → 0.91 projected — ECOA passing', tag: 'READY' },
-      { dotColor: '#ef4444', text: 'Rural applicants — 11.2% population gap in training data', tag: 'GAP' }
-    ]},
-    { name: 'Atonement Core', screen: 'atonement', headerDot: '#f59e0b', badge: 'In progress', items: [
-      { dotColor: '#22c55e', text: '687 of 1,203 applicants re-approved — $2.1M revenue recovered', tag: 'PROGRESS' },
-      { dotColor: '#60a5fa', text: 'Credit v3.5 ready for full deployment — NYC audit in 13 days', tag: 'ACTION' },
-      { dotColor: '#f59e0b', text: '516 applicants still pending re-evaluation', tag: 'PENDING' }
-    ]},
-    { name: 'Halo Core', screen: 'halo', headerDot: '#ef4444', badge: '3 deadlines', items: [
-      { dotColor: '#ef4444', text: 'NYC Local Law 144 Audit — May 11, 2026 — 13 days', tag: 'CRITICAL' },
-      { dotColor: '#ef4444', text: 'ECOA violation active — CFPB notification window open', tag: 'ACTIVE' },
-      { dotColor: '#ef4444', text: '$40M penalty exposure if Credit v3.4 not fixed before Q3', tag: 'EXPOSURE' }
-    ]},
-    { name: 'Sentinel & War Room', screen: 'warroom', headerDot: '#ef4444', badge: '2 open cases', items: [
-      { dotColor: '#ef4444', text: 'Case #FIN-1203 — Day 14 — Credit bias — 1,203 affected', tag: 'DAY 14' },
-      { dotColor: '#60a5fa', text: 'Credit v3.5 approved — ready for full deployment', tag: 'READY' },
-      { dotColor: '#22c55e', text: 'Sentinel pre-caught ZIP proxy before CFPB audit cycle', tag: 'WIN' }
-    ]}
-  ],
-  health: [
-    { name: 'Eden Core', screen: 'eden', headerDot: '#ef4444', badge: '2 active', items: [
-      { dotColor: '#ef4444', text: 'Claims Adjudication v1.9 — Age proxy 0.81 — 2,847 claims', tag: 'CRITICAL' },
-      { dotColor: '#f59e0b', text: 'Triage Priority v2.0 — Rural distance proxy 0.76 — 1,204 patients', tag: 'WARNING' },
-      { dotColor: '#ef4444', text: 'Patients 75+ — 2.2x underrepresented in training data', tag: 'GAP' }
-    ]},
-    { name: 'Obsidian Core', screen: 'obsidian', headerDot: '#f59e0b', badge: '2 flags', items: [
-      { dotColor: '#ef4444', text: '31 providers — prescription fraud ring — shared patient profiles', tag: 'ACTIVE' },
-      { dotColor: '#f59e0b', text: 'Age proxy creating blind spot — younger profiles submitted for elderly', tag: 'LINKED' },
-      { dotColor: '#22c55e', text: '$1.1M in fraudulent claims blocked', tag: 'BLOCKED' }
-    ]},
-    { name: 'Genesis Core', screen: 'genesis', headerDot: '#60a5fa', badge: '1 running', items: [
-      { dotColor: '#60a5fa', text: 'Claims v2.0 modeled — awaiting CMO approval to start shadow', tag: 'PENDING' },
-      { dotColor: '#f59e0b', text: 'Age proxy removal proof — DI 0.64 → 0.89 projected', tag: 'READY' },
-      { dotColor: '#ef4444', text: 'Patients 75+ — 5.1% population gap in training data', tag: 'GAP' }
-    ]},
-    { name: 'Atonement Core', screen: 'atonement', headerDot: '#64748b', badge: 'In progress', items: [
-      { dotColor: '#ef4444', text: '2,847 patient claims — cohort ready — awaiting CMO sign-off', tag: 'BLOCKED' },
-      { dotColor: '#ef4444', text: 'CMO approval required before shadow deploy can begin', tag: 'ACTION' },
-      { dotColor: '#f59e0b', text: 'ACA 1557 deadline: May 2 — 4 days to initiate remediation', tag: 'URGENT' }
-    ]},
-    { name: 'Halo Core', screen: 'halo', headerDot: '#ef4444', badge: '3 deadlines', items: [
-      { dotColor: '#ef4444', text: 'ACA 1557 Remediation Deadline — May 2, 2026 — 4 days', tag: 'CRITICAL' },
-      { dotColor: '#ef4444', text: 'CMS AI Oversight Audit — May 28, 2026 — 30 days', tag: 'UPCOMING' },
-      { dotColor: '#ef4444', text: '$65M penalty exposure + potential CMS program exclusion', tag: 'EXPOSURE' }
-    ]},
-    { name: 'Sentinel & War Room', screen: 'warroom', headerDot: '#ef4444', badge: '3 open cases', items: [
-      { dotColor: '#ef4444', text: 'Case #HS-2847 — Day 5 — Claims bias — 2,847 affected', tag: 'DAY 5' },
-      { dotColor: '#ef4444', text: 'Waiting on CMO sign-off — 4 days until ACA deadline', tag: 'BLOCKED' },
-      { dotColor: '#22c55e', text: 'Sentinel pre-caught age proxy within 48 hrs of deployment', tag: 'WIN' }
-    ]}
-  ]
-};
+/** Dashboard Core Status — full collapsible draggable panels */
+var CORE_PANEL_DRAG_SRC = null;
 
+function togglePanel(btn) {
+  var panel = btn.closest('.core-panel') || btn.closest('.dashboard-bottom-panel');
+  if (!panel) return;
+  var content = panel.querySelector('.panel-content');
+  if (!content) return;
+  var collapsed = content.style.display === 'none';
+  content.style.display = collapsed ? 'block' : 'none';
+  btn.textContent = collapsed ? '\u25be' : '\u25b8';
+  var panelId = panel.dataset.core || panel.id;
+  if (panelId) {
+    try {
+      var states = JSON.parse(localStorage.getItem('cardinal-panel-states') || '{}');
+      states[panelId] = content.style.display === 'none';
+      localStorage.setItem('cardinal-panel-states', JSON.stringify(states));
+    } catch (_e) {}
+  }
+}
+
+function restorePanelStates() {
+  var states = {};
+  try { states = JSON.parse(localStorage.getItem('cardinal-panel-states') || '{}'); } catch (_s) {}
+  Object.keys(states).forEach(function(id) {
+    if (!states[id]) return;
+    var panel =
+      document.querySelector('.core-panel[data-core="' + id + '"]') ||
+      document.querySelector('.dashboard-bottom-panel[data-core="' + id + '"]');
+    if (!panel) return;
+    var content = panel.querySelector('.panel-content');
+    var btn = panel.querySelector('.collapse-btn');
+    if (content) content.style.display = 'none';
+    if (btn) btn.textContent = '\u25b8';
+  });
+}
+
+function restorePanelOrder(key, gridId, itemSelector) {
+  try {
+    var order = JSON.parse(localStorage.getItem(key) || 'null');
+    if (!order || !Array.isArray(order)) return;
+    var grid = document.getElementById(gridId);
+    if (!grid) return;
+    order.forEach(function (coreId) {
+      var p = grid.querySelector(itemSelector + '[data-core="' + coreId + '"]');
+      if (p) grid.appendChild(p);
+    });
+  } catch (_e1) {}
+}
+
+function dashboardRestoreDashboardLayoutAfterRender() {
+  try {
+    restorePanelOrder('cardinal-panel-order', 'core-panels-grid', '.core-panel');
+  } catch (_r) {}
+  try {
+    restorePanelOrder('cardinal-bottom-panel-order', 'dashboard-bottom-columns', '.dashboard-bottom-panel');
+  } catch (_rb) {}
+  try {
+    restorePanelStates();
+  } catch (_rs) {}
+}
+
+function dashCorePzEsc(s) {
+  if (s == null || s === '') return '';
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function dashCorePzIcon(which) {
+  var st =
+    'width:12px;height:12px;flex-shrink:0;display:block;color:#94a3b8;stroke:currentColor;fill:none';
+  switch (which) {
+    case 'clock':
+      return '<svg xmlns="http://www.w3.org/2000/svg" style="' +
+        st +
+        '" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke-width="2"/><polyline points="12 6 12 12 16 14" stroke-width="2"/></svg>';
+    case 'person':
+      return '<svg xmlns="http://www.w3.org/2000/svg" style="' +
+        st +
+        '" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke-width="2"/><circle cx="9" cy="7" r="4" stroke-width="2"/></svg>';
+    case 'globe':
+      return '<svg xmlns="http://www.w3.org/2000/svg" style="' +
+        st +
+        '" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke-width="2"/><line x1="2" y1="12" x2="22" y2="12" stroke-width="2"/></svg>';
+    case 'bolt':
+      return '<svg xmlns="http://www.w3.org/2000/svg" style="' +
+        st +
+        '" viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" stroke-width="2" stroke-linejoin="round"/></svg>';
+    default:
+      return '<svg xmlns="http://www.w3.org/2000/svg" style="' +
+        st +
+        '" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke-width="2"/><path d="M12 16v.01M12 12a2 2 0 0 0 2-2c0-.74-.41-1.38-1-1.72V8" stroke-width="2"/></svg>';
+  }
+}
+
+function dashCorePzRowInner(r) {
+  var bd = r.bd || '#94a3b8';
+  var bg22 = typeof dashHexToRgba === 'function' ? dashHexToRgba(bd, 0.127) : 'rgba(148,163,184,0.13)';
+  var br44 = typeof dashHexToRgba === 'function' ? dashHexToRgba(bd, 0.267) : 'rgba(148,163,184,0.27)';
+  var barBlock = '';
+  if (typeof r.pct === 'number' && !isNaN(r.pct)) {
+    var th = '';
+    if (typeof r.th === 'number' && !isNaN(r.th)) {
+      th =
+        '<div style="pointer-events:none;position:absolute;inset:0;">' +
+        '<div style="position:absolute;left:' +
+        Math.min(100, Math.max(0, r.th)) +
+        '%;top:-1px;bottom:-1px;width:1px;background:rgba(226,232,240,0.85);transform:translateX(-50%);"></div>' +
+        '</div>';
+    }
+    barBlock =
+      '<div style="position:relative;height:3px;background:rgba(255,255,255,0.06);border-radius:2px;margin-bottom:4px;">' +
+      th +
+      '<div style="position:relative;height:3px;background:' +
+      dashCorePzEsc(r.bc || bd) +
+      ';border-radius:2px;width:' +
+      Math.min(100, Math.max(0, r.pct)) +
+      '%;max-width:100%;"></div></div>';
+  }
+  return (
+    '<div style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.04);">' +
+    '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">' +
+    '<div style="display:flex;align-items:center;gap:6px;min-width:0;">' +
+    dashCorePzIcon(r.ic) +
+    '<span style="font-size:11px;font-weight:600;color:#e2e8f0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' +
+    dashCorePzEsc(r.lb) +
+    '</span>' +
+    '</div>' +
+    '<span style="font-size:9px;font-weight:700;color:' +
+    dashCorePzEsc(bd) +
+    ';background:' +
+    bg22 +
+    ';border:1px solid ' +
+    br44 +
+    ';border-radius:3px;padding:1px 6px;flex-shrink:0;">' +
+    dashCorePzEsc(r.bg) +
+    '</span>' +
+    '</div>' +
+    barBlock +
+    '<div style="font-size:10px;color:#64748b;line-height:1.4;">' +
+    dashCorePzEsc(r.cx) +
+    '</div>' +
+    '</div>'
+  );
+}
+
+function dashCorePzPanelMarkup(p) {
+  var prio = p.prioHex || p.dot || '#a6daff';
+  var prioBg = typeof dashHexToRgba === 'function' ? dashHexToRgba(prio, 0.127) : 'rgba(148,163,184,0.13)';
+  var prioBr = typeof dashHexToRgba === 'function' ? dashHexToRgba(prio, 0.267) : 'rgba(148,163,184,0.27)';
+  var scr = String(p.screen || 'dashboard').replace(/'/g, "\\'");
+  var rows = (p.rows || []).map(dashCorePzRowInner).join('');
+  var eveTxt = dashCorePzEsc(p.eve || '');
+  return (
+    '<div class="core-panel" data-core="' +
+    dashCorePzEsc(p.id) +
+    '" style="background:var(--card);border:1px solid var(--border2);border-radius:14px;padding:0;overflow:hidden;">' +
+    '<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid rgba(255,255,255,0.06);">' +
+    '<div style="display:flex;align-items:center;gap:8px;min-width:0;">' +
+    '<div class="drag-handle" draggable="true" title="Drag to reorder" style="color:rgba(255,255,255,0.15);cursor:grab;font-size:14px;padding:2px 4px;line-height:1;">⠿</div>' +
+    '<div style="width:8px;height:8px;border-radius:50%;background:' +
+    prio +
+    ';box-shadow:0 0 6px ' +
+    prio +
+    ';flex-shrink:0;"></div>' +
+    '<span style="font-size:13px;font-weight:700;color:#e2e8f0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' +
+    dashCorePzEsc(p.title) +
+    '</span>' +
+    '<span style="font-size:9px;font-weight:700;color:' +
+    prio +
+    ';background:' +
+    prioBg +
+    ';border:1px solid ' +
+    prioBr +
+    ';border-radius:4px;padding:2px 7px;letter-spacing:0.5px;flex-shrink:0;margin-left:6px;">' +
+    dashCorePzEsc(p.badge) +
+    '</span>' +
+    '</div>' +
+    '<div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">' +
+    '<button type="button" class="collapse-btn" onclick="togglePanel(this);" style="background:transparent;border:none;color:#64748b;cursor:pointer;font-size:14px;padding:2px 4px;line-height:1;">\u25be</button>' +
+    '<button type="button" onclick="showScreen(\'' +
+    scr +
+    '\',null);event.stopPropagation();" style="width:26px;height:26px;border-radius:50%;background:rgba(166,218,255,0.08);border:1px solid rgba(166,218,255,0.2);color:#a6daff;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px;line-height:1;">\u2192</button>' +
+    '</div>' +
+    '</div>' +
+    '<div class="panel-content" style="padding:14px 16px;display:block;">' +
+    '<div style="background:rgba(166,218,255,0.05);border:1px solid rgba(166,218,255,0.1);border-radius:8px;padding:8px 12px;margin-bottom:12px;font-size:11px;color:#94a3b8;line-height:1.5;">' +
+    '<span style="color:#a6daff;font-weight:600;">Eve: </span>' +
+    eveTxt +
+    '</div>' +
+    rows +
+    '</div></div>'
+  );
+}
+
+function getDashboardCorePanelsConfig(org) {
+  var cf = {};
+  cf.ad_eden_rows = [
+    { ic: 'clock', lb: 'Personnel Assignment v2.4', bg: 'CRITICAL', bd: '#ef4444', pct: 67, bc: '#ef4444', th: 80, cx: 'DI 0.67 \u2014 847 service members denied at 2.3x rate' },
+    { ic: 'person', lb: 'Mission Readiness v1.1', bg: 'WARNING', bd: '#f59e0b', pct: 72, bc: '#f59e0b', th: 40, cx: 'Equalized Odds 0.18 vs 0.10 limit \u2014 age 55+ flagged at 1.8x for same performance score' },
+    {
+      ic: 'globe',
+      lb: 'Training Coverage Gap',
+      bg: 'GAP',
+      bd: '#64748b',
+      cx: 'Native American technicians: 0.3% of training data vs 1.2% of population'
+    }
+  ];
+  cf.fin_eden_rows = [
+    { ic: 'clock', lb: 'Credit Scoring v3.4', bg: 'CRITICAL', bd: '#ef4444', pct: 74, bc: '#ef4444', th: 80, cx: 'DI 0.74 \u2014 1,203 applicants \u2014 ZIP proxy 0.82' },
+    { ic: 'person', lb: 'Auto Loan v2.1', bg: 'WARNING', bd: '#f59e0b', pct: 71, bc: '#f59e0b', th: 50, cx: 'Employment type proxy affecting 891 applicants' },
+    { ic: 'globe', lb: 'Coverage Gap', bg: 'GAP', bd: '#64748b', cx: 'Pacific Islander: 44x underrepresented in training data' }
+  ];
+  cf.hl_eden_rows = [
+    { ic: 'clock', lb: 'Claims Adjudication v1.9', bg: 'CRITICAL', bd: '#ef4444', pct: 64, bc: '#ef4444', th: 80, cx: 'DI 0.64 \u2014 2,847 claims \u2014 age proxy 0.81' },
+    { ic: 'person', lb: 'Triage Priority v2.0', bg: 'WARNING', bd: '#f59e0b', pct: 76, bc: '#f59e0b', th: 50, cx: 'Rural distance proxy \u2014 1,204 patients' },
+    { ic: 'globe', lb: 'Coverage Gap', bg: 'GAP', bd: '#64748b', cx: 'Patients 75+: 2.2x underrepresented in training data' }
+  ];
+
+  if (org === 'ad')
+    return [
+      dashCorePzPanelMarkup({
+        id: 'eden',
+        title: 'Eden Core',
+        screen: 'eden',
+        dot: '#ef4444',
+        prioHex: '#ef4444',
+        badge: '2 CRITICAL',
+        eve: 'Two models are discriminating against protected groups. Personnel Assignment v2.4 has a 0.67 disparate impact ratio \u2014 below DoD\'s 0.80 threshold. 847 service members are affected. DoD audit is in 2 days.',
+        rows: cf.ad_eden_rows
+      }),
+      dashCorePzPanelMarkup({
+        id: 'obsidian',
+        title: 'Obsidian Core',
+        screen: 'obsidian',
+        dot: '#f59e0b',
+        prioHex: '#f59e0b',
+        badge: '2 FLAGS',
+        eve: '23 synthetic credential applications detected sharing device fingerprints. The same demographic proxy causing bias in Eden is also creating a fraud blind spot. $2.1M in fraudulent credentials blocked this quarter.',
+        rows: [
+          { ic: 'clock', lb: 'Synthetic credentials detected', bg: 'ACTIVE', bd: '#f59e0b', pct: 78, bc: '#f59e0b', cx: '23 applications \u2014 shared device fingerprints' },
+          {
+            ic: 'bolt',
+            lb: 'Bias-fraud link identified',
+            bg: 'LINKED',
+            bd: '#f59e0b',
+            pct: 65,
+            bc: '#f59e0b',
+            cx: 'Same demographic classification proxy enabling both discrimination and fraud'
+          },
+          { ic: 'person', lb: 'Fraud blocked this quarter', bg: 'BLOCKED', bd: '#22c55e', pct: 100, bc: '#22c55e', cx: '$2.1M in fraudulent credentials blocked' }
+        ]
+      }),
+      dashCorePzPanelMarkup({
+        id: 'genesis',
+        title: 'Genesis Core',
+        screen: 'genesis',
+        dot: '#60a5fa',
+        prioHex: '#60a5fa',
+        badge: '1 RUNNING',
+        eve: 'Personnel v2.5 shadow deployment is running at 5% traffic. 1,847 decisions logged. Projected DI improves from 0.67 to 0.84 \u2014 above DoD threshold. Counterfactual proof is ready for legal review.',
+        rows: [
+          { ic: 'clock', lb: 'Shadow deployment status', bg: 'RUNNING', bd: '#60a5fa', pct: 50, bc: '#60a5fa', cx: '5% traffic \u2022 1,847 decisions logged' },
+          {
+            ic: 'bolt',
+            lb: 'Counterfactual proof',
+            bg: 'READY',
+            bd: '#f59e0b',
+            pct: 88,
+            bc: '#22c55e',
+            th: 80,
+            cx: 'DI projected 0.67 \u2192 0.84 (above threshold)'
+          },
+          { ic: 'globe', lb: 'Training data gaps', bg: 'GAP', bd: '#ef4444', cx: '3 demographic groups with zero training data coverage' }
+        ]
+      }),
+      dashCorePzPanelMarkup({
+        id: 'atonement',
+        title: 'Atonement Core',
+        screen: 'atonement',
+        dot: '#f59e0b',
+        prioHex: '#f59e0b',
+        badge: 'IN PROGRESS',
+        eve: '847 service members have been identified for re-evaluation. Personnel v2.5 shadow deployment is passing all DoD thresholds. Approve expansion to 100% traffic to complete remediation before the 2-day audit deadline.',
+        rows: [
+          { ic: 'person', lb: 'Cohort status', bg: 'COHORT', bd: '#f59e0b', pct: 52, bc: '#f59e0b', cx: '847 service members in re-evaluation pipeline' },
+          {
+            ic: 'bolt',
+            lb: 'Next action required',
+            bg: 'ACTION',
+            bd: '#60a5fa',
+            pct: 40,
+            bc: '#60a5fa',
+            cx: 'Approve shadow expansion from 5% to 100% traffic'
+          },
+          {
+            ic: 'clock',
+            lb: 'Timeline',
+            bg: 'URGENT',
+            bd: '#ef4444',
+            pct: 92,
+            bc: '#ef4444',
+            cx: '2 days until audit \u2014 remediation must complete immediately'
+          }
+        ]
+      }),
+      dashCorePzPanelMarkup({
+        id: 'halo',
+        title: 'Halo Core',
+        screen: 'halo',
+        dot: '#f59e0b',
+        prioHex: '#f59e0b',
+        badge: '3 DEADLINES',
+        eve: 'The DoD AI Ethics audit was due today and is now overdue. ITAR review is in 8 days. If the Trust Score stays below 0.80 through Q4, estimated penalty exposure is $28M. Fixing Personnel v2.4 now prevents all of this.',
+        rows: [
+          {
+            ic: 'bolt',
+            lb: 'DoD AI Ethics Audit',
+            bg: 'OVERDUE',
+            bd: '#ef4444',
+            pct: 96,
+            bc: '#ef4444',
+            cx: 'Apr 30, 2026 \u2014 TODAY \u2014 2 days past due'
+          },
+          {
+            ic: 'clock',
+            lb: 'ITAR Compliance Review',
+            bg: 'UPCOMING',
+            bd: '#f59e0b',
+            pct: 58,
+            bc: '#f59e0b',
+            cx: 'May 8, 2026 \u2014 8 days remaining'
+          },
+          { ic: 'person', lb: 'Total exposure', bg: 'EXPOSURE', bd: '#ef4444', cx: '$28M predicted if Trust Score stays below 0.80 by Q4' }
+        ]
+      }),
+      dashCorePzPanelMarkup({
+        id: 'sentinel-warroom',
+        title: 'Sentinel & War Room',
+        screen: 'warroom',
+        dot: '#ef4444',
+        prioHex: '#ef4444',
+        badge: '1 OPEN CASE',
+        eve: 'Case #AD-2847 is on Day 5 of a 14-day SLA. The DoD disclosure package is ready and awaiting legal sign-off. Sentinel pre-caught this bias 6.2 days before it would have been discovered manually.',
+        rows: [
+          {
+            ic: 'bolt',
+            lb: 'Active case',
+            bg: 'DAY 5',
+            bd: '#ef4444',
+            pct: 36,
+            bc: '#ef4444',
+            cx: 'Case #AD-2847 \u2014 personnel bias \u2014 847 affected'
+          },
+          { ic: 'clock', lb: 'Next action', bg: 'PENDING', bd: '#f59e0b', cx: 'DoD disclosure package ready \u2014 awaiting legal sign-off' },
+          {
+            ic: 'person',
+            lb: 'Sentinel win',
+            bg: 'WIN',
+            bd: '#22c55e',
+            pct: 85,
+            bc: '#22c55e',
+            cx: 'Pre-caught bias 6.2 days before manual discovery'
+          }
+        ]
+      })
+    ];
+  if (org === 'fin')
+    return [
+      dashCorePzPanelMarkup({
+        id: 'eden',
+        title: 'Eden Core',
+        screen: 'eden',
+        dot: '#f59e0b',
+        prioHex: '#f59e0b',
+        badge: '1 CRITICAL',
+        eve: 'Credit Scoring v3.4 is using ZIP code as a proxy for race \u2014 illegal under ECOA. 1,203 applicants have been unfairly denied. NYC Law 144 audit is in 13 days.',
+        rows: cf.fin_eden_rows
+      }),
+      dashCorePzPanelMarkup({
+        id: 'obsidian',
+        title: 'Obsidian Core',
+        screen: 'obsidian',
+        dot: '#f59e0b',
+        prioHex: '#f59e0b',
+        badge: '2 FLAGS',
+        eve: 'A synthetic identity ring is exploiting the ZIP code bias blind spot. 47 applications came from a single device. $890K in fraudulent loans blocked.',
+        rows: [
+          {
+            ic: 'clock',
+            lb: 'Synthetic identities detected',
+            bg: 'ACTIVE',
+            bd: '#f59e0b',
+            pct: 88,
+            bc: '#f59e0b',
+            cx: '47 applications from single device fingerprint'
+          },
+          {
+            ic: 'bolt',
+            lb: 'Bias-fraud link identified',
+            bg: 'LINKED',
+            bd: '#f59e0b',
+            pct: 70,
+            bc: '#f59e0b',
+            cx: 'Same ZIP exploitation enabling discrimination and synthetic identity passes'
+          },
+          { ic: 'person', lb: 'Fraud blocked this quarter', bg: 'BLOCKED', bd: '#22c55e', pct: 100, bc: '#22c55e', cx: '$890K in fraudulent loans blocked' }
+        ]
+      }),
+      dashCorePzPanelMarkup({
+        id: 'genesis',
+        title: 'Genesis Core',
+        screen: 'genesis',
+        dot: '#60a5fa',
+        prioHex: '#60a5fa',
+        badge: '1 RUNNING',
+        eve: 'Credit v3.5 shadow deployment is running at 5% traffic. 3,241 decisions logged. ZIP removal brings DI from 0.74 to 0.91 \u2014 ECOA compliant. Ready for full deployment approval.',
+        rows: [
+          { ic: 'clock', lb: 'Shadow deployment status', bg: 'RUNNING', bd: '#60a5fa', pct: 50, bc: '#60a5fa', cx: '5% traffic \u2022 3,241 decisions logged' },
+          {
+            ic: 'bolt',
+            lb: 'Counterfactual proof',
+            bg: 'READY',
+            bd: '#f59e0b',
+            pct: 91,
+            bc: '#22c55e',
+            th: 80,
+            cx: 'ZIP removal lifts DI from 0.74 to 0.91 \u2014 passes ECOA floor'
+          },
+          { ic: 'globe', lb: 'Training data gaps', bg: 'GAP', bd: '#ef4444', cx: 'Rural applicants: 11.2% gap vs population benchmarks' }
+        ]
+      }),
+      dashCorePzPanelMarkup({
+        id: 'atonement',
+        title: 'Atonement Core',
+        screen: 'atonement',
+        dot: '#f59e0b',
+        prioHex: '#f59e0b',
+        badge: 'IN PROGRESS',
+        eve: '687 of 1,203 applicants have already been re-approved \u2014 $2.1M in revenue recovered. Credit v3.5 is ready for full deployment. NYC Law 144 audit is in 13 days \u2014 approve now.',
+        rows: [
+          {
+            ic: 'person',
+            lb: 'Cohort status',
+            bg: 'PROGRESS',
+            bd: '#22c55e',
+            pct: 57,
+            bc: '#22c55e',
+            cx: '687 of 1,203 applicants re-approved \u2014 $2.1M revenue recovered'
+          },
+          {
+            ic: 'bolt',
+            lb: 'Next action required',
+            bg: 'ACTION',
+            bd: '#60a5fa',
+            cx: 'Deploy Credit v3.5 before NYC bias audit cutoff'
+          },
+          {
+            ic: 'clock',
+            lb: 'Timeline',
+            bg: 'URGENT',
+            bd: '#ef4444',
+            pct: 94,
+            bc: '#ef4444',
+            cx: '13 days until NYC Law 144 audit'
+          }
+        ]
+      }),
+      dashCorePzPanelMarkup({
+        id: 'halo',
+        title: 'Halo Core',
+        screen: 'halo',
+        dot: '#ef4444',
+        prioHex: '#ef4444',
+        badge: '3 DEADLINES',
+        eve: 'NYC Local Law 144 audit is in 13 days and Credit Scoring v3.4 is currently failing the bias threshold. ECOA violation is active. Total Q4 penalty exposure is $40M if not resolved.',
+        rows: [
+          {
+            ic: 'bolt',
+            lb: 'NYC Local Law 144 Audit',
+            bg: 'CRITICAL',
+            bd: '#ef4444',
+            pct: 90,
+            bc: '#ef4444',
+            cx: 'May 11, 2026 \u2014 13 days'
+          },
+          {
+            ic: 'clock',
+            lb: 'ECOA violation active',
+            bg: 'ACTIVE',
+            bd: '#ef4444',
+            pct: 82,
+            bc: '#ef4444',
+            cx: 'CFPB notification window open'
+          },
+          { ic: 'person', lb: 'Total exposure', bg: 'EXPOSURE', bd: '#ef4444', cx: '$40M if Credit v3.4 not remediated before Q3' }
+        ]
+      }),
+      dashCorePzPanelMarkup({
+        id: 'sentinel-warroom',
+        title: 'Sentinel & War Room',
+        screen: 'warroom',
+        dot: '#ef4444',
+        prioHex: '#ef4444',
+        badge: '2 OPEN CASES',
+        eve: 'Case #FIN-1203 is on Day 14. Credit v3.5 has been approved and is ready for full deployment. CFPB pre-notification has been filed. Sentinel pre-caught the ZIP proxy before the CFPB audit cycle.',
+        rows: [
+          {
+            ic: 'bolt',
+            lb: 'Active case',
+            bg: 'DAY 14',
+            bd: '#ef4444',
+            pct: 100,
+            bc: '#ef4444',
+            cx: 'Case #FIN-1203 \u2014 credit bias \u2014 1,203 affected'
+          },
+          { ic: 'clock', lb: 'Next action', bg: 'READY', bd: '#60a5fa', cx: 'Credit v3.5 approved \u2014 staged for prod cutover + CFPB pre-note filed' },
+          {
+            ic: 'person',
+            lb: 'Sentinel win',
+            bg: 'WIN',
+            bd: '#22c55e',
+            pct: 80,
+            bc: '#22c55e',
+            cx: 'ZIP proxy flagged ahead of supervisory audit cycle'
+          }
+        ]
+      })
+    ];
+
+  /* health default */
+  return [
+    dashCorePzPanelMarkup({
+      id: 'eden',
+      title: 'Eden Core',
+      screen: 'eden',
+      dot: '#ef4444',
+      prioHex: '#ef4444',
+      badge: '1 CRITICAL',
+      eve: 'Claims Adjudication v1.9 is denying elderly patients at 2.3x the rate of younger patients with identical diagnoses. 2,847 claims are affected. ACA 1557 violation active.',
+      rows: cf.hl_eden_rows
+    }),
+    dashCorePzPanelMarkup({
+      id: 'obsidian',
+      title: 'Obsidian Core',
+      screen: 'obsidian',
+      dot: '#f59e0b',
+      prioHex: '#f59e0b',
+      badge: '2 FLAGS',
+      eve: '31 providers are submitting claims under younger patient profiles to exploit the age proxy blind spot. $1.1M in fraudulent claims blocked.',
+      rows: [
+        {
+          ic: 'clock',
+          lb: 'Synthetic claims detected',
+          bg: 'ACTIVE',
+          bd: '#f59e0b',
+          pct: 92,
+          bc: '#f59e0b',
+          cx: '31 providers \u2014 shared beneficiary fingerprints'
+        },
+        {
+          ic: 'bolt',
+          lb: 'Bias-fraud link identified',
+          bg: 'LINKED',
+          bd: '#f59e0b',
+          pct: 68,
+          bc: '#f59e0b',
+          cx: 'Age proxy overlaps with fraud submission templates'
+        },
+        { ic: 'person', lb: 'Fraud blocked this quarter', bg: 'BLOCKED', bd: '#22c55e', pct: 100, bc: '#22c55e', cx: '$1.1M fraudulent claims intercepted' }
+      ]
+    }),
+    dashCorePzPanelMarkup({
+      id: 'genesis',
+      title: 'Genesis Core',
+      screen: 'genesis',
+      dot: '#60a5fa',
+      prioHex: '#60a5fa',
+      badge: '1 RUNNING',
+      eve: 'Claims v2.0 fix has been modeled and validated. DI projects to improve from 0.64 to 0.89. Awaiting CMO approval to begin shadow deployment.',
+      rows: [
+        { ic: 'clock', lb: 'Shadow deployment status', bg: 'PENDING', bd: '#64748b', cx: 'Modeled remediation awaiting CMO go-live approval' },
+        {
+          ic: 'bolt',
+          lb: 'Counterfactual proof',
+          bg: 'READY',
+          bd: '#f59e0b',
+          pct: 86,
+          bc: '#22c55e',
+          th: 80,
+          cx: 'Age proxy removal pushes DI from 0.64 to 0.89'
+        },
+        { ic: 'globe', lb: 'Training data gaps', bg: 'GAP', bd: '#ef4444', cx: '7 demographic cohorts report zero adjudication-history coverage' }
+      ]
+    }),
+    dashCorePzPanelMarkup({
+      id: 'atonement',
+      title: 'Atonement Core',
+      screen: 'atonement',
+      dot: '#ef4444',
+      prioHex: '#ef4444',
+      badge: 'BLOCKED',
+      eve: '2,847 patient claims are ready for re-adjudication but CMO sign-off is required before remediation can begin. ACA 1557 deadline is in 4 days. This is blocked.',
+      rows: [
+        { ic: 'person', lb: 'Cohort status', bg: 'BLOCKED', bd: '#ef4444', pct: 30, bc: '#ef4444', cx: 'Claims packaged \u2014 waiting on clinician approval queue' },
+        {
+          ic: 'bolt',
+          lb: 'Next action required',
+          bg: 'ACTION',
+          bd: '#60a5fa',
+          cx: 'CMO must unlock shadow deploy + notify compliance desk'
+        },
+        {
+          ic: 'clock',
+          lb: 'Timeline',
+          bg: 'URGENT',
+          bd: '#ef4444',
+          pct: 93,
+          bc: '#ef4444',
+          cx: 'ACA 1557 remediation clock: 4 days'
+        }
+      ]
+    }),
+    dashCorePzPanelMarkup({
+      id: 'halo',
+      title: 'Halo Core',
+      screen: 'halo',
+      dot: '#ef4444',
+      prioHex: '#ef4444',
+      badge: '3 DEADLINES',
+      eve: 'ACA 1557 remediation deadline is in 4 days. CMS audit is in 30 days. If Claims v1.9 is not fixed, penalty exposure reaches $65M with potential CMS program exclusion.',
+      rows: [
+        {
+          ic: 'bolt',
+          lb: 'ACA 1557 Remediation Deadline',
+          bg: 'CRITICAL',
+          bd: '#ef4444',
+          pct: 95,
+          bc: '#ef4444',
+          cx: 'May 2, 2026 \u2014 4 days'
+        },
+        {
+          ic: 'clock',
+          lb: 'CMS AI Oversight Audit',
+          bg: 'UPCOMING',
+          bd: '#f59e0b',
+          pct: 60,
+          bc: '#f59e0b',
+          cx: 'May 28, 2026 \u2014 30 days'
+        },
+        { ic: 'person', lb: 'Total exposure', bg: 'EXPOSURE', bd: '#ef4444', cx: '$65M penalties + CMS program exclusion if no action taken' }
+      ]
+    }),
+    dashCorePzPanelMarkup({
+      id: 'sentinel-warroom',
+      title: 'Sentinel & War Room',
+      screen: 'warroom',
+      dot: '#ef4444',
+      prioHex: '#ef4444',
+      badge: '3 OPEN CASES',
+      eve: 'Case #HS-2847 is on Day 5. The fix is ready but CMO sign-off is blocking remediation. ACA 1557 deadline is in 4 days. Sentinel pre-caught the age proxy within 48 hours of deployment.',
+      rows: [
+        {
+          ic: 'bolt',
+          lb: 'Active case',
+          bg: 'DAY 5',
+          bd: '#ef4444',
+          pct: 36,
+          bc: '#ef4444',
+          cx: 'Case #HS-2847 \u2014 claims bias \u2014 2,847 affected'
+        },
+        {
+          ic: 'clock',
+          lb: 'Next action',
+          bg: 'BLOCKED',
+          bd: '#ef4444',
+          cx: 'CMO approvals still outstanding with 4 days on ACA remediation clock'
+        },
+        {
+          ic: 'person',
+          lb: 'Sentinel win',
+          bg: 'WIN',
+          bd: '#22c55e',
+          pct: 75,
+          bc: '#22c55e',
+          cx: 'Age proxy flagged inside 48 hours of production launch'
+        }
+      ]
+    })
+  ];
+}
+
+function buildCoreStatusPanels(org) {
+  var grid = document.getElementById('core-panels-grid');
+  if (!grid) return;
+  var o =
+    typeof org !== 'undefined' && org
+      ? org
+      : typeof currentOrg !== 'undefined' && currentOrg
+        ? currentOrg
+        : typeof window.currentOrg !== 'undefined' && window.currentOrg
+          ? window.currentOrg
+          : 'ad';
+  var htmlParts = getDashboardCorePanelsConfig(o);
+  grid.innerHTML = htmlParts.join('');
+}
+
+function dashboardInitCoreReorderOnce() {
+  var grid = document.getElementById('core-panels-grid');
+  if (!grid || grid.dataset.reorderBound === '1') return;
+  grid.dataset.reorderBound = '1';
+
+  grid.addEventListener(
+    'dragstart',
+    function (e) {
+      var handle = e.target.closest('.drag-handle');
+      if (!handle || !grid.contains(handle)) return;
+      var panel = handle.closest('.core-panel');
+      if (!panel || !grid.contains(panel)) return;
+      CORE_PANEL_DRAG_SRC = panel;
+      panel.style.opacity = '0.5';
+      try {
+        e.dataTransfer.setData('text/plain', panel.dataset.core || '');
+        e.dataTransfer.effectAllowed = 'move';
+      } catch (_dt) {}
+    },
+    true
+  );
+
+  grid.addEventListener('dragend', function () {
+    if (CORE_PANEL_DRAG_SRC) CORE_PANEL_DRAG_SRC.style.opacity = '1';
+    CORE_PANEL_DRAG_SRC = null;
+    grid.querySelectorAll('.core-panel').forEach(function (p) {
+      p.style.borderColor = '';
+    });
+  });
+
+  grid.addEventListener('dragover', function (e) {
+    var p = e.target.closest('.core-panel');
+    if (!p || !grid.contains(p)) return;
+    e.preventDefault();
+    try {
+      e.dataTransfer.dropEffect = 'move';
+    } catch (_e) {}
+    p.style.borderColor = 'rgba(166,218,255,0.4)';
+  });
+
+  grid.addEventListener('dragleave', function (e) {
+    var p = e.target.closest('.core-panel');
+    if (p && grid.contains(p)) p.style.borderColor = '';
+  });
+
+  grid.addEventListener('drop', function (e) {
+    var dest = e.target.closest('.core-panel');
+    e.preventDefault();
+    if (!dest || !grid.contains(dest)) return;
+    var src = CORE_PANEL_DRAG_SRC;
+    if (!src || !grid.contains(src) || src === dest) {
+      dest.style.borderColor = '';
+      return;
+    }
+    var panels = [].slice.call(grid.querySelectorAll('.core-panel'));
+    var srcIdx = panels.indexOf(src);
+    var dstIdx = panels.indexOf(dest);
+    if (srcIdx < 0 || dstIdx < 0) {
+      dest.style.borderColor = '';
+      return;
+    }
+    if (srcIdx < dstIdx) grid.insertBefore(src, dest.nextSibling);
+    else grid.insertBefore(src, dest);
+    dest.style.borderColor = '';
+    try {
+      var order = [].slice.call(grid.querySelectorAll('.core-panel')).map(function (p0) {
+        return p0.dataset.core;
+      });
+      localStorage.setItem('cardinal-panel-order', JSON.stringify(order));
+    } catch (_s) {}
+    CORE_PANEL_DRAG_SRC = null;
+  });
+}
+
+function dashboardInitBottomReorderOnce() {
+  var grid = document.getElementById('dashboard-bottom-columns');
+  if (!grid || grid.dataset.reorderBottomBound === '1') return;
+  grid.dataset.reorderBottomBound = '1';
+
+  grid.addEventListener(
+    'dragstart',
+    function (e) {
+      var handle = e.target.closest('.dash-bottom-drag-handle');
+      if (!handle || !grid.contains(handle)) return;
+      var panel = handle.closest('.dashboard-bottom-panel');
+      if (!panel || !grid.contains(panel)) return;
+      CORE_PANEL_DRAG_SRC = panel;
+      panel.style.opacity = '0.5';
+      try {
+        e.dataTransfer.effectAllowed = 'move';
+      } catch (_d) {}
+    },
+    true
+  );
+
+  grid.addEventListener('dragend', function () {
+    if (CORE_PANEL_DRAG_SRC) CORE_PANEL_DRAG_SRC.style.opacity = '1';
+    CORE_PANEL_DRAG_SRC = null;
+    grid.querySelectorAll('.dashboard-bottom-panel').forEach(function (p) {
+      p.style.borderColor = '';
+    });
+  });
+
+  grid.addEventListener('dragover', function (e) {
+    var p = e.target.closest('.dashboard-bottom-panel');
+    if (!p || !grid.contains(p)) return;
+    e.preventDefault();
+    try {
+      e.dataTransfer.dropEffect = 'move';
+    } catch (_e) {}
+    p.style.borderColor = 'rgba(166,218,255,0.4)';
+  });
+
+  grid.addEventListener('dragleave', function (e) {
+    var p = e.target.closest('.dashboard-bottom-panel');
+    if (p && grid.contains(p)) p.style.borderColor = '';
+  });
+
+  grid.addEventListener('drop', function (e) {
+    var dest = e.target.closest('.dashboard-bottom-panel');
+    e.preventDefault();
+    if (!dest || !grid.contains(dest)) return;
+    var src = CORE_PANEL_DRAG_SRC;
+    if (!src || !grid.contains(src) || src === dest) {
+      dest.style.borderColor = '';
+      return;
+    }
+    var panels = [].slice.call(grid.querySelectorAll('.dashboard-bottom-panel'));
+    var si = panels.indexOf(src),
+      di = panels.indexOf(dest);
+    if (si < di) grid.insertBefore(src, dest.nextSibling);
+    else grid.insertBefore(src, dest);
+    dest.style.borderColor = '';
+    try {
+      var order = [].slice.call(grid.querySelectorAll('.dashboard-bottom-panel')).map(function (x) {
+        return x.dataset.core;
+      });
+      localStorage.setItem('cardinal-bottom-panel-order', JSON.stringify(order));
+    } catch (_x) {}
+    CORE_PANEL_DRAG_SRC = null;
+  });
+}
 function dashRegulatoryEsc(s) {
   if (s == null || s === '') return '';
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
@@ -7536,45 +8305,6 @@ function dashFormatCriticalCasesTopbar(count) {
   if (count === 1) return '1 Critical Case';
   if (isNaN(count)) return '0 Critical Cases';
   return count + ' Critical Cases';
-}
-
-function buildCoreStatusGrid(org) {
-  function esc(str) {
-    if (str == null) return '';
-    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-  }
-  function tileHTML(t) {
-    var hdr = esc(t.name);
-    var scr = String(t.screen || 'dashboard').replace(/'/g, "\\'");
-    var headerDot = t.headerDot || '#64748b';
-    var badge = esc(t.badge || '');
-    var itemsHtml = (t.items || []).slice(0, 3).map(function(row) {
-      var dc = row.dotColor || '#94a3b8';
-      var tagBg = typeof dashHexToRgba === 'function' ? dashHexToRgba(dc, 0.15) : 'rgba(148,163,184,0.15)';
-      return '<div style="display:flex;align-items:flex-start;gap:7px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.04);">' +
-        '<div style="width:5px;height:5px;border-radius:50%;background:' + dc + ';margin-top:4px;flex-shrink:0;"></div>' +
-        '<div style="flex:1;font-size:10px;color:#94a3b8;line-height:1.4;">' + esc(row.text) + '</div>' +
-        '<div style="font-size:9px;font-weight:700;color:' + dc + ';background:' + tagBg + ';border-radius:3px;padding:1px 5px;flex-shrink:0;white-space:nowrap;">' + esc(row.tag) + '</div>' +
-      '</div>';
-    }).join('');
-    var badgeBg = 'rgba(148,163,184,0.12)';
-    return '<div tabindex="0" onclick="showScreen(\'' + scr + '\',null)" style="min-height:180px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:14px;cursor:pointer;transition:border-color 0.2s;box-sizing:border-box;display:flex;flex-direction:column;" onmouseover="this.style.borderColor=\'rgba(200,210,240,0.2)\'" onmouseout="this.style.borderColor=\'rgba(255,255,255,0.08)\'">' +
-      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">' +
-        '<div style="display:flex;align-items:center;gap:8px;min-width:0;">' +
-          '<div style="width:8px;height:8px;border-radius:50%;background:' + headerDot + ';box-shadow:0 0 8px ' + headerDot + ';flex-shrink:0;"></div>' +
-          '<span style="font-size:12px;font-weight:700;color:#e2e8f0;line-height:1.2;">' + hdr + '</span>' +
-        '</div>' +
-        '<span style="font-size:9px;font-weight:600;color:#94a3b8;background:' + badgeBg + ';border-radius:999px;padding:3px 8px;flex-shrink:0;">' + badge + '</span>' +
-      '</div>' +
-      '<div style="height:1px;background:rgba(255,255,255,0.06);margin-bottom:10px;flex-shrink:0;"></div>' +
-      '<div style="flex:1;">' + itemsHtml + '</div>' +
-      '<div style="text-align:right;margin-top:auto;padding-top:8px;"><span style="font-size:10px;color:#a6daff;">View all →</span></div>' +
-    '</div>';
-  }
-  var grid = document.getElementById('core-status-grid');
-  if (!grid || typeof CORE_STATUS_TILES_BY_ORG === 'undefined') return;
-  var tiles = CORE_STATUS_TILES_BY_ORG[org] || CORE_STATUS_TILES_BY_ORG.ad || [];
-  grid.innerHTML = tiles.map(tileHTML).join('');
 }
 
 function refreshDashboard(ev) {
@@ -7707,7 +8437,12 @@ function updateDashboardIndustry(org) {
   safeSet('dr-eth-other-pct',  cfg.eth.other[0]);
   safeSet('dr-eth-other-apps', cfg.eth.other[1]);
 
-  try { buildCoreStatusGrid(org); } catch (_cs) {}
+  try { buildCoreStatusPanels(org); } catch (_cs) {}
+  try {
+    dashboardInitCoreReorderOnce();
+    dashboardInitBottomReorderOnce();
+    dashboardRestoreDashboardLayoutAfterRender();
+  } catch (_dashLayout) {}
   try { buildDashRegulatoryDeadlines(org); } catch (_rg) {}
   try { initDashboardCharts(); } catch(eIC) {}
   try { syncDashAgeChartJsIfRegistered(org); } catch (_sj) {}
@@ -8083,7 +8818,17 @@ function showScreen(name, navEl) {
  if(name==='echo') buildEcho(currentOrg);
  if(name==='modellibrary') buildModelLibrary(currentOrg);
  if(name==='lucid') buildLucid(currentOrg);
- if(name==='dashboard') { try{ refreshDashboardGreeting(); }catch(e){} setTimeout(function(){ try{ initDashboardCharts(); }catch(e){} }, 80); }
+ if(name==='dashboard') {
+    try { refreshDashboardGreeting(); } catch (e) {}
+    setTimeout(function () {
+      try { initDashboardCharts(); } catch (e) {}
+      try {
+        dashboardInitCoreReorderOnce();
+        dashboardInitBottomReorderOnce();
+        dashboardRestoreDashboardLayoutAfterRender();
+      } catch (_dl) {}
+    }, 80);
+  }
  if(name==='compliance') buildCompliance(currentOrg);
  if(name==='genesis') { setTimeout(()=>initGenesisLog(currentOrg),100); setTimeout(()=>buildPMProfiles(currentOrg),150); }
  if(name==='trustscore') { buildTrustScore(currentOrg); buildScoreDims(); buildTrustScoreNew(currentOrg); }
