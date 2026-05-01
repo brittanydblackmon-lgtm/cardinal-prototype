@@ -3,20 +3,6 @@
   ════════════════════════════════════════════════════════════════════
   PROJECT CARDINAL — CHANGELOG
   ════════════════════════════════════════════════════════════════════
-  May 1, 2026 — Eve panel UX redesign.
-    Repositioned: bottom-right docked at 24px right / 100px bottom
-    (above orbital button), 400 x 600 default. Made draggable from
-    header with viewport constraint and localStorage position
-    persistence. Added minimize/expand button with state persistence
-    (cardinal_eve_minimized). Added ESC and CMD+M keyboard shortcuts.
-    Removed duplicate floating "Close" tooltip outside panel.
-    Removed full-screen backdrop — page content stays fully visible
-    and interactive behind Eve. Made responsive: 400px desktop,
-    380px tablet, full-width on mobile. Added scrollbar styling for
-    conversation area. Added 9 new tooltips for header icons and
-    controls. All existing Eve behavior preserved: morning briefing,
-    quick action chips, smart responses, clickable core links, mic,
-    input field, floating orbital button.
   May 1, 2026 — Built full Trust Score screen.
     Sections: Hero with animated gauge + cert badge + peer comparison;
     12-month history chart with sub-score toggle and per-industry
@@ -2023,7 +2009,7 @@ animation:none;transform-origin:center;
 @keyframes waveform { 0%{transform:scaleY(.2)} 100%{transform:scaleY(1)} }
 /* ══ EVE AGENT ══ */
 @keyframes pulse-dot{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.6;transform:scale(1.2)}}
-#eve-bubble{position:fixed;bottom:28px;right:28px;z-index:9999;display:none;flex-direction:column;align-items:flex-end;gap:12px}
+#eve-bubble{position:fixed;bottom:28px;right:28px;z-index:999;display:none;flex-direction:column;align-items:flex-end;gap:12px}
 #eve-toggle-wrap{position:relative;align-self:flex-end;width:74px;height:74px;display:flex;align-items:center;justify-content:center}
 #eve-hover-label{
   position:absolute;
@@ -2112,61 +2098,9 @@ animation:none;transform-origin:center;
 @keyframes eveOrbit{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
 #eve-urgency-dot{position:absolute;bottom:4px;right:4px;top:auto;width:12px;height:12px;border-radius:50%;background:var(--amber);border:2px solid rgba(10,15,26,.95);opacity:0;transform:scale(0);pointer-events:none;z-index:2;transition:opacity .2s,transform .2s}
 #eve-urgency-dot.critical{opacity:1;transform:scale(1);background:var(--red);animation:pulse-dot 2s infinite}
-/* ── Eve panel — bottom-right docked, draggable, responsive (May 1, 2026) ── */
-#eve-panel{
-  position:fixed; right:24px; bottom:100px;
-  width:400px; height:600px; max-height:80vh;
-  background:linear-gradient(135deg,#080c14 0%,#0d1220 50%,#080c14 100%);
-  border:1px solid rgba(166,218,255,.2);
-  border-radius:20px;
-  overflow:hidden;
-  box-shadow:0 0 0 1px rgba(166,218,255,.08),0 20px 60px rgba(0,0,0,.4),0 0 40px rgba(166,218,255,.06);
-  display:none;
-  flex-direction:column;
-  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
-  z-index:9998;
-  transition:height .22s cubic-bezier(.4,.2,.2,1);
-}
+#eve-panel{width:380px;background:linear-gradient(135deg,#080c14 0%,#0d1220 50%,#080c14 100%);border:1px solid rgba(166,218,255,.2);border-radius:20px;overflow:hidden;box-shadow:0 0 0 1px rgba(166,218,255,.08),0 20px 60px rgba(0,0,0,.8),0 0 40px rgba(166,218,255,.06);display:none;flex-direction:column;max-height:600px;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)}
 #eve-panel.open{display:flex}
-#eve-panel.dragging{transition:none;cursor:grabbing;user-select:none}
-#eve-panel.minimized{height:60px !important;max-height:60px;overflow:hidden}
-#eve-panel.minimized #eve-messages,
-#eve-panel.minimized #eve-quick-actions,
-#eve-panel.minimized .eve-input-row{display:none !important}
-@media (max-width:1280px){
-  #eve-panel{width:380px}
-}
-@media (max-width:768px){
-  #eve-panel{
-    width:calc(100vw - 32px); right:16px; left:16px; bottom:90px;
-    height:70vh; max-height:70vh;
-  }
-}
-/* Custom scrollbar for Eve conversation */
-#eve-messages{scrollbar-width:thin;scrollbar-color:rgba(255,255,255,0.15) transparent}
-#eve-messages::-webkit-scrollbar{width:6px}
-#eve-messages::-webkit-scrollbar-track{background:transparent}
-#eve-messages::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.0);border-radius:3px;transition:background .25s ease}
-#eve-messages:hover::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.15)}
-#eve-messages::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,0.25)}
-.eve-header{background:linear-gradient(135deg,#0a1020,#0f1828);padding:14px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid rgba(166,218,255,.1);box-shadow:inset 0 1px 0 rgba(166,218,255,.15);cursor:grab;user-select:none;flex-shrink:0;min-height:60px;box-sizing:border-box}
-.eve-header.grabbing,#eve-panel.dragging .eve-header{cursor:grabbing}
-.eve-header button,.eve-header .eve-drag-handle{cursor:pointer}
-.eve-drag-handle{
-  display:none;align-items:center;justify-content:center;
-  width:22px;height:22px;color:rgba(180,190,220,.45);
-  font-size:14px;line-height:1;letter-spacing:-1px;
-  margin-right:2px;cursor:grab;user-select:none;
-  opacity:0;transition:opacity .15s ease, color .15s ease;
-}
-.eve-header:hover .eve-drag-handle{display:inline-flex;opacity:1}
-.eve-header .eve-drag-handle:hover{color:#a6daff}
-.eve-min-btn{
-  background:transparent;border:none;color:var(--muted);cursor:pointer;
-  font-size:14px;padding:4px 6px;border-radius:5px;transition:color .15s ease;
-  line-height:1;
-}
-.eve-min-btn:hover{color:var(--chrome2)}
+.eve-header{background:linear-gradient(135deg,#0a1020,#0f1828);padding:16px 18px;display:flex;align-items:center;gap:12px;border-bottom:1px solid rgba(166,218,255,.1);box-shadow:inset 0 1px 0 rgba(166,218,255,.15)}
 .eve-avatar{width:40px;height:40px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#1a3a5c,#0a1628);border:1px solid rgba(166,218,255,.4);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;box-shadow:0 0 16px rgba(166,218,255,.3),inset 0 0 8px rgba(166,218,255,.1)}
 .eve-header-info{flex:1}
 .eve-name{font-size:14px;font-weight:700;background:linear-gradient(135deg,#a6daff,#7eb8f0);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;color:#a6daff;letter-spacing:.3px}
@@ -6619,8 +6553,8 @@ Admin access: READ ONLY · Cannot edit · Cannot delete · Regulator access: Ava
 </div>
 </div>
 <div id="eve-panel">
-<div class="eve-header" id="eve-header">
-<div class="eve-avatar" id="eve-avatar-header">✦</div>
+<div class="eve-header">
+<div class="eve-avatar">✦</div>
 <div class="eve-header-info">
 <div class="eve-name">Eve</div>
 <div class="eve-status"><div class="eve-status-dot"></div>Monitoring your models</div>
@@ -6634,15 +6568,13 @@ Admin access: READ ONLY · Cannot edit · Cannot delete · Regulator access: Ava
 <div class="eve-waveform-bar" style="height:14px;--dur:.35s"></div>
 </div>
 </div>
-<div style="display:flex;gap:6px;align-items:center" id="eve-header-actions">
-<button class="eve-icon-btn" id="eve-btn-bell" onclick="eveShowLatestAlertInChat()" aria-label="Notifications">&#x1F514;</button>
-<button class="eve-icon-btn" id="eve-btn-bolt" onclick="toggleEveQuickActions()" aria-label="Quick actions">&#x26A1;</button>
-<button class="eve-icon-btn" id="eve-btn-doc" onclick="generateRemediationDoc()" aria-label="Transcript">&#x1F4C4;</button>
-<button class="eve-ctrl-btn" id="eve-btn-voice" onclick="toggleVoiceSettings()" aria-label="Voice settings">🔊</button>
-<button class="eve-ctrl-btn" id="eve-btn-mute" onclick="toggleEveMute()" aria-label="Mute Eve" style="font-size:14px">&#x1F507;</button>
-<span class="eve-drag-handle" id="eve-drag-handle" aria-label="Drag">&#x205A;&#x205A;&#x205A;</span>
-<button class="eve-min-btn" id="eve-btn-min" onclick="eveToggleMinimize()" aria-label="Minimize">&#x2014;</button>
-<button class="eve-ctrl-btn" id="eve-btn-close" onclick="eveCloseAndReset()" aria-label="Close">✕</button>
+<div style="display:flex;gap:6px;align-items:center">
+<button class="eve-icon-btn" onclick="eveShowLatestAlertInChat()" title="Show latest alert">&#x1F514;</button>
+<button class="eve-icon-btn" onclick="toggleEveQuickActions()" title="Quick actions">&#x26A1;</button>
+<button class="eve-icon-btn" onclick="generateRemediationDoc()" title="Generate remediation report">&#x1F4C4;</button>
+<button class="eve-ctrl-btn" onclick="toggleVoiceSettings()" title="Voice settings">🔊</button>
+<button class="eve-ctrl-btn" id="eve-mute-btn" onclick="toggleEveMute()" title="Mute Eve" style="font-size:14px">&#x1F507;</button>
+<button class="eve-ctrl-btn" onclick="document.getElementById('eve-panel').classList.remove('open')" title="Close">✕</button>
 </div>
 </div>
 <div id="eve-messages"></div>
@@ -6660,7 +6592,7 @@ Admin access: READ ONLY · Cannot edit · Cannot delete · Regulator access: Ava
 </div>
 <div id="eve-toggle-wrap">
 <div id="eve-hover-label">Eve — AI Governance Assistant</div>
-<div id="eve-toggle-btn" onclick="eveToggleFromOrbital()" aria-label="Open Eve assistant"><span id="eve-online-pulse" aria-hidden="true"></span><svg class="eve-icon" width="30" height="30" viewBox="0 0 30 30" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><ellipse class="orbit" cx="15" cy="15" rx="13" ry="5" stroke="rgba(166,218,255,0.35)" stroke-width="1" transform="rotate(45 15 15)"/><ellipse class="orbit" cx="15" cy="15" rx="13" ry="5" stroke="rgba(166,218,255,0.2)" stroke-width="1" transform="rotate(-45 15 15)"/><circle cx="15" cy="15" r="7" stroke="rgba(166,218,255,0.5)" stroke-width="1"/><circle cx="15" cy="15" r="4" fill="rgba(166,218,255,0.9)" style="filter: drop-shadow(0 0 4px rgba(166,218,255,0.8))"/></svg><div id="eve-urgency-dot"></div></div>
+<div id="eve-toggle-btn" onclick="document.getElementById('eve-panel').classList.toggle('open');initEveIfNeeded()" aria-label="Open Eve assistant"><span id="eve-online-pulse" aria-hidden="true"></span><svg class="eve-icon" width="30" height="30" viewBox="0 0 30 30" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><ellipse class="orbit" cx="15" cy="15" rx="13" ry="5" stroke="rgba(166,218,255,0.35)" stroke-width="1" transform="rotate(45 15 15)"/><ellipse class="orbit" cx="15" cy="15" rx="13" ry="5" stroke="rgba(166,218,255,0.2)" stroke-width="1" transform="rotate(-45 15 15)"/><circle cx="15" cy="15" r="7" stroke="rgba(166,218,255,0.5)" stroke-width="1"/><circle cx="15" cy="15" r="4" fill="rgba(166,218,255,0.9)" style="filter: drop-shadow(0 0 4px rgba(166,218,255,0.8))"/></svg><div id="eve-urgency-dot"></div></div>
 </div>
 </div>
 <div id="critical-overlay">
@@ -14130,286 +14062,6 @@ function initEveIfNeeded() {
    } catch (_a) {}
  }, 1500);
 }
-
-// ════════════════════════════════════════════════════════════════════
-// Eve panel UX — docked, draggable, minimizable (May 1, 2026)
-// ════════════════════════════════════════════════════════════════════
-var EVE_POSITION_KEY = 'cardinal_eve_position';
-var EVE_MINIMIZED_KEY = 'cardinal_eve_minimized';
-var EVE_DRAG_STATE = { dragging: false, startX: 0, startY: 0, panelLeft: 0, panelTop: 0, hasMoved: false };
-
-function eveResetPanelToDocked() {
-  var panel = document.getElementById('eve-panel');
-  if (!panel) return;
-  panel.style.left = '';
-  panel.style.top = '';
-  panel.style.right = '';
-  panel.style.bottom = '';
-  // Inline override is removed — CSS reasserts right:24px / bottom:100px.
-}
-
-function eveApplySavedPosition() {
-  var panel = document.getElementById('eve-panel');
-  if (!panel) return;
-  try {
-    var raw = localStorage.getItem(EVE_POSITION_KEY);
-    if (!raw) { eveResetPanelToDocked(); return; }
-    var pos = JSON.parse(raw);
-    if (!pos || typeof pos.x !== 'number' || typeof pos.y !== 'number') { eveResetPanelToDocked(); return; }
-    var rect = panel.getBoundingClientRect();
-    var w = rect.width || 400;
-    var h = rect.height || 600;
-    var maxX = window.innerWidth - w - 16;
-    var maxY = window.innerHeight - h - 16;
-    var x = Math.max(16, Math.min(maxX, pos.x));
-    var y = Math.max(16, Math.min(maxY, pos.y));
-    panel.style.left = x + 'px';
-    panel.style.top = y + 'px';
-    panel.style.right = 'auto';
-    panel.style.bottom = 'auto';
-  } catch (_e) { eveResetPanelToDocked(); }
-}
-
-function eveSavePosition(x, y) {
-  try { localStorage.setItem(EVE_POSITION_KEY, JSON.stringify({ x: x, y: y })); } catch (_e) {}
-}
-
-function eveClearSavedPosition() {
-  try { localStorage.removeItem(EVE_POSITION_KEY); } catch (_e) {}
-}
-
-function eveDragStart(ev) {
-  if (!ev) return;
-  // Don't drag when starting on a button / interactive element
-  var t = ev.target;
-  if (t && t.closest && t.closest('button, input, select, textarea, .eve-min-btn, .eve-ctrl-btn, .eve-icon-btn')) return;
-  var panel = document.getElementById('eve-panel');
-  if (!panel || !panel.classList.contains('open')) return;
-  var rect = panel.getBoundingClientRect();
-  EVE_DRAG_STATE.dragging = true;
-  EVE_DRAG_STATE.hasMoved = false;
-  EVE_DRAG_STATE.startX = ev.clientX;
-  EVE_DRAG_STATE.startY = ev.clientY;
-  EVE_DRAG_STATE.panelLeft = rect.left;
-  EVE_DRAG_STATE.panelTop = rect.top;
-  panel.classList.add('dragging');
-  panel.style.right = 'auto';
-  panel.style.bottom = 'auto';
-  panel.style.left = rect.left + 'px';
-  panel.style.top = rect.top + 'px';
-  ev.preventDefault();
-}
-
-function eveDragMove(ev) {
-  if (!EVE_DRAG_STATE.dragging) return;
-  var panel = document.getElementById('eve-panel');
-  if (!panel) return;
-  var dx = ev.clientX - EVE_DRAG_STATE.startX;
-  var dy = ev.clientY - EVE_DRAG_STATE.startY;
-  if (!EVE_DRAG_STATE.hasMoved && (Math.abs(dx) > 2 || Math.abs(dy) > 2)) {
-    EVE_DRAG_STATE.hasMoved = true;
-  }
-  var rect = panel.getBoundingClientRect();
-  var w = rect.width;
-  var h = rect.height;
-  var nx = EVE_DRAG_STATE.panelLeft + dx;
-  var ny = EVE_DRAG_STATE.panelTop + dy;
-  var maxX = window.innerWidth - w - 16;
-  var maxY = window.innerHeight - h - 16;
-  nx = Math.max(16, Math.min(maxX, nx));
-  ny = Math.max(16, Math.min(maxY, ny));
-  panel.style.left = nx + 'px';
-  panel.style.top = ny + 'px';
-}
-
-function eveDragEnd(ev) {
-  if (!EVE_DRAG_STATE.dragging) return;
-  EVE_DRAG_STATE.dragging = false;
-  var panel = document.getElementById('eve-panel');
-  if (panel) {
-    panel.classList.remove('dragging');
-    if (EVE_DRAG_STATE.hasMoved) {
-      var rect = panel.getBoundingClientRect();
-      eveSavePosition(rect.left, rect.top);
-    }
-  }
-}
-
-function eveToggleMinimize() {
-  var panel = document.getElementById('eve-panel');
-  if (!panel) return;
-  var nowMin = panel.classList.toggle('minimized');
-  var btn = document.getElementById('eve-btn-min');
-  if (btn) {
-    btn.innerHTML = nowMin ? '&#x25A2;' : '&#x2014;';
-    btn.setAttribute('aria-label', nowMin ? 'Expand' : 'Minimize');
-  }
-  try { localStorage.setItem(EVE_MINIMIZED_KEY, nowMin ? '1' : '0'); } catch (_e) {}
-  // Refresh tooltip on the button to match new label
-  try {
-    btn && btn.removeAttribute('data-cardinal-tt-bound');
-    showTooltip(btn, nowMin ? 'Expand' : 'Minimize',
-      nowMin ? 'Restore Eve to full size.' : 'Collapse Eve to header only. Conversation stays alive.');
-  } catch (_t) {}
-}
-window.eveToggleMinimize = eveToggleMinimize;
-
-function eveApplySavedMinimized() {
-  var panel = document.getElementById('eve-panel');
-  if (!panel) return;
-  var min = false;
-  try { min = localStorage.getItem(EVE_MINIMIZED_KEY) === '1'; } catch (_e) {}
-  if (min) {
-    panel.classList.add('minimized');
-    var btn = document.getElementById('eve-btn-min');
-    if (btn) { btn.innerHTML = '&#x25A2;'; btn.setAttribute('aria-label', 'Expand'); }
-  } else {
-    panel.classList.remove('minimized');
-    var btn2 = document.getElementById('eve-btn-min');
-    if (btn2) { btn2.innerHTML = '&#x2014;'; btn2.setAttribute('aria-label', 'Minimize'); }
-  }
-}
-
-function eveCloseAndReset() {
-  var panel = document.getElementById('eve-panel');
-  if (!panel) return;
-  panel.classList.remove('open');
-  panel.classList.remove('minimized');
-  // Reset to docked anchor; clear saved position so the next open is fresh.
-  eveResetPanelToDocked();
-  eveClearSavedPosition();
-  try { localStorage.removeItem(EVE_MINIMIZED_KEY); } catch (_e) {}
-  // Reset minimize button label
-  var btn = document.getElementById('eve-btn-min');
-  if (btn) { btn.innerHTML = '&#x2014;'; btn.setAttribute('aria-label', 'Minimize'); }
-  // Clear conversation so reopen starts fresh
-  try {
-    var msgs = document.getElementById('eve-messages');
-    if (msgs) msgs.innerHTML = '';
-    eveInitialized = false;
-  } catch (_e2) {}
-}
-window.eveCloseAndReset = eveCloseAndReset;
-
-function eveOpenPanel() {
-  var panel = document.getElementById('eve-panel');
-  if (!panel) return;
-  panel.classList.add('open');
-  // Apply any saved drag position; default-docked when none.
-  setTimeout(eveApplySavedPosition, 0);
-  setTimeout(eveApplySavedMinimized, 0);
-  try { initEveIfNeeded(); } catch (_e) {}
-}
-window.eveOpenPanel = eveOpenPanel;
-
-function eveToggleFromOrbital() {
-  var panel = document.getElementById('eve-panel');
-  if (!panel) return;
-  if (panel.classList.contains('open')) {
-    eveCloseAndReset();
-  } else {
-    eveOpenPanel();
-  }
-}
-window.eveToggleFromOrbital = eveToggleFromOrbital;
-
-function eveBindHeaderDrag() {
-  var header = document.getElementById('eve-header');
-  if (!header || header.getAttribute('data-eve-drag-bound') === '1') return;
-  header.setAttribute('data-eve-drag-bound', '1');
-  header.addEventListener('mousedown', eveDragStart);
-  document.addEventListener('mousemove', eveDragMove);
-  document.addEventListener('mouseup', eveDragEnd);
-  // Touch passthrough — basic
-  header.addEventListener('touchstart', function (ev) {
-    if (ev.touches && ev.touches.length) {
-      eveDragStart({ target: ev.target, clientX: ev.touches[0].clientX, clientY: ev.touches[0].clientY, preventDefault: function () {} });
-    }
-  }, { passive: true });
-  document.addEventListener('touchmove', function (ev) {
-    if (EVE_DRAG_STATE.dragging && ev.touches && ev.touches.length) {
-      eveDragMove({ clientX: ev.touches[0].clientX, clientY: ev.touches[0].clientY });
-    }
-  }, { passive: true });
-  document.addEventListener('touchend', eveDragEnd);
-}
-
-function eveBindKeyboardShortcuts() {
-  if (window.__eveKbdBound) return;
-  window.__eveKbdBound = true;
-  document.addEventListener('keydown', function (ev) {
-    var panel = document.getElementById('eve-panel');
-    if (!panel || !panel.classList.contains('open')) return;
-
-    // CMD/CTRL + M: toggle minimize
-    if ((ev.metaKey || ev.ctrlKey) && (ev.key === 'm' || ev.key === 'M')) {
-      ev.preventDefault();
-      eveToggleMinimize();
-      return;
-    }
-
-    // ESC behavior
-    if (ev.key === 'Escape') {
-      var input = document.getElementById('eve-input');
-      var inputFocused = input && document.activeElement === input;
-      if (inputFocused && input.value && input.value.length > 0) {
-        // First ESC clears input
-        ev.preventDefault();
-        input.value = '';
-        return;
-      }
-      // Otherwise (or second ESC on empty input), close
-      ev.preventDefault();
-      eveCloseAndReset();
-    }
-  });
-}
-
-function eveWireUxTooltips() {
-  try {
-    var T = function (id, title, body) { var e = document.getElementById(id); if (e) showTooltip(e, title, body); };
-    T('eve-drag-handle', 'Drag', 'Click and drag the header to move Eve.');
-    T('eve-btn-min', 'Minimize', 'Collapse Eve to header only. Conversation stays alive.');
-    T('eve-btn-close', 'Close', 'Close Eve. Conversation resets on reopen.');
-    T('eve-btn-bell', 'Notifications', 'New alerts and flagged items from Cardinal.');
-    T('eve-btn-bolt', 'Quick Actions', 'One-tap workflows — generate report, check score, escalate.');
-    T('eve-btn-doc', 'Transcript', 'Download this conversation as a remediation document.');
-    T('eve-btn-voice', 'Voice', 'Toggle Eve\u2019s voice on or off.');
-    T('eve-btn-mute', 'Voice', 'Toggle Eve\u2019s voice on or off.');
-    var mic = document.getElementById('eve-mic-btn');
-    if (mic) showTooltip(mic, 'Voice Input', 'Hold to speak. Release to send.');
-  } catch (_e) {}
-}
-
-// Reposition on window resize so the panel stays inside viewport.
-window.addEventListener('resize', function () {
-  var panel = document.getElementById('eve-panel');
-  if (!panel || !panel.classList.contains('open')) return;
-  if (panel.style.left || panel.style.top) {
-    var rect = panel.getBoundingClientRect();
-    var w = rect.width, h = rect.height;
-    var maxX = window.innerWidth - w - 16;
-    var maxY = window.innerHeight - h - 16;
-    var x = Math.max(16, Math.min(maxX, rect.left));
-    var y = Math.max(16, Math.min(maxY, rect.top));
-    panel.style.left = x + 'px';
-    panel.style.top = y + 'px';
-    eveSavePosition(x, y);
-  }
-});
-
-// Bind once DOM is interactive
-function eveUxBindAll() {
-  try { eveBindHeaderDrag(); } catch (_e) {}
-  try { eveBindKeyboardShortcuts(); } catch (_e) {}
-  try { eveWireUxTooltips(); } catch (_e) {}
-}
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', eveUxBindAll);
-} else {
-  setTimeout(eveUxBindAll, 0);
-}
-window.eveUxBindAll = eveUxBindAll;
 
 function openEveWithQuery() {
   var q = document.getElementById('cardinal-ask-input');
