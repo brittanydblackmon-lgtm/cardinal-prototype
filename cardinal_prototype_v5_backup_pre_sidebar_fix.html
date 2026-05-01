@@ -3,17 +3,6 @@
   ════════════════════════════════════════════════════════════════════
   PROJECT CARDINAL — CHANGELOG
   ════════════════════════════════════════════════════════════════════
-  May 1, 2026 — Fixed blocked sidebar toggle.
-    Root cause: .sidebar has overflow-x:hidden which clipped the
-    toggle that was positioned at right:-11px (poking outside the
-    sidebar boundary). Moved the toggle inside the sidebar (right:10px),
-    bumped z-index from 30 to 100, expanded hit target from 28x28 to
-    32x32, set pointer-events:auto, added 56px right padding to
-    .sidebar-logo so logo text never crowds the toggle, added clear
-    hover/active state, removed the title="Toggle sidebar" attribute
-    that was producing a duplicate native browser tooltip on top of
-    the showTooltip-bound tip. Added "Collapse Sidebar" tooltip via
-    showTooltip(). localStorage-backed collapse state preserved.
   May 1, 2026 — Eve panel UX redesign.
     Repositioned: bottom-right docked at 24px right / 100px bottom
     (above orbital button), 400 x 600 default. Made draggable from
@@ -232,14 +221,10 @@ box-shadow: 0 4px 16px rgba(0,0,0,0.3);
 .sidebar.collapsed { width: 56px; }
 .sidebar-logo {
 display: flex; align-items: center; gap: 10px;
-padding: 18px 56px 18px 16px; border-bottom: 1px solid var(--border);
+padding: 18px 16px; border-bottom: 1px solid var(--border);
 position: relative;
-overflow: visible;
 }
-.sidebar.collapsed .sidebar-logo { padding: 18px 8px; justify-content: flex-end; }
-/* In collapsed mode, hide the PC mark so it doesn't overlap the toggle
-   (which lives inside the 56px sidebar boundary at right:10px). */
-.sidebar.collapsed .sidebar-logo-mark { display: none; }
+.sidebar.collapsed .sidebar-logo { padding: 18px 0; justify-content: center; }
 .sidebar-logo-mark {
 width: 26px; height: 26px;
 border: 1px solid var(--border2); border-radius: 6px;
@@ -260,41 +245,31 @@ opacity: 1; transition: opacity .15s;
 #collapse-btn {
   position: absolute !important;
   top: 50% !important;
-  right: 10px !important;
+  right: -11px !important;
   transform: translateY(-50%) !important;
-  z-index: 100 !important;
+  z-index: 30 !important;
   background: rgba(166, 218, 255, 0.15) !important;
   border: 1px solid rgba(166, 218, 255, 0.4) !important;
   color: #a6daff !important;
   border-radius: 6px !important;
-  width: 32px !important;
-  height: 32px !important;
+  width: 28px !important;
+  height: 28px !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
   cursor: pointer !important;
-  pointer-events: auto !important;
   box-shadow: 0 0 8px rgba(166,218,255,0.2) !important;
   opacity: 1 !important;
   visibility: visible !important;
-  transition: background .18s ease, border-color .18s ease, box-shadow .18s ease, transform .18s ease !important;
 }
 .sidebar-collapse-toggle:hover,
 .sidebar-toggle:hover,
 #sidebar-toggle:hover,
 #sidebar-toggle-btn:hover,
 #collapse-btn:hover {
-  background: rgba(166, 218, 255, 0.30) !important;
-  border-color: rgba(166, 218, 255, 0.75) !important;
-  box-shadow: 0 0 16px rgba(166,218,255,0.40) !important;
-  transform: translateY(-50%) scale(1.06) !important;
-}
-.sidebar-collapse-toggle:active,
-.sidebar-toggle:active,
-#sidebar-toggle:active,
-#sidebar-toggle-btn:active,
-#collapse-btn:active {
-  transform: translateY(-50%) scale(0.96) !important;
+  background: rgba(166, 218, 255, 0.28) !important;
+  border-color: rgba(166, 218, 255, 0.7) !important;
+  box-shadow: 0 0 14px rgba(166,218,255,0.35) !important;
 }
 .sidebar-collapse-toggle svg { transition: transform .25s; }
 .sidebar-collapse-toggle svg path { stroke: #a6daff !important; opacity: 1 !important; }
@@ -3230,7 +3205,7 @@ animation:none;transform-origin:center;
 <!-- SIDEBAR -->
 <div class="sidebar">
 <div class="sidebar-logo">
-<button class="sidebar-collapse-toggle" id="sidebar-toggle" onclick="toggleSidebar()" aria-label="Toggle sidebar" style="background:rgba(166,218,255,0.15);border:1px solid rgba(166,218,255,0.4);color:#a6daff;border-radius:6px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;cursor:pointer;pointer-events:auto;box-shadow:0 0 8px rgba(166,218,255,0.2)"><svg width="12" height="12" viewBox="0 0 10 10" fill="none" stroke="#a6daff" opacity="1"><path d="M6.5 2L3.5 5l3 3" stroke="#a6daff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" opacity="1"/></svg></button>
+<button class="sidebar-collapse-toggle" id="sidebar-toggle" onclick="toggleSidebar()" title="Toggle sidebar (⌘B)" aria-label="Toggle sidebar" style="background:rgba(166,218,255,0.15);border:1px solid rgba(166,218,255,0.4);color:#a6daff;border-radius:6px;width:28px;height:28px;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 0 8px rgba(166,218,255,0.2)"><svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="#a6daff" opacity="1"><path d="M6.5 2L3.5 5l3 3" stroke="#a6daff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" opacity="1"/></svg></button>
 <div class="sidebar-logo-mark">PC</div>
 <span class="sidebar-logo-text">project cardinal</span>
 </div>
@@ -11707,29 +11682,10 @@ var CARDINAL_REG_TIPS = {
   ]
 };
 
-function initSidebarToggleTooltip() {
-  try {
-    var btn = document.getElementById('sidebar-toggle');
-    if (btn) {
-      var sidebar = document.querySelector('.sidebar');
-      var collapsed = sidebar && sidebar.classList.contains('collapsed');
-      showTooltip(
-        btn,
-        collapsed ? 'Expand Sidebar' : 'Collapse Sidebar',
-        collapsed
-          ? 'Show full sidebar with section labels and trust score panel.'
-          : 'Hide sidebar to expand main content area. Click again to expand.'
-      );
-    }
-  } catch (_e) {}
-}
-window.initSidebarToggleTooltip = initSidebarToggleTooltip;
-
 function initDashboardTooltips() {
   try {
     var diBody =
       'The most important bias metric in US law. Calculated as: <span class="tt-accent">approval rate of lowest group ÷ approval rate of highest group</span>. Under the EEOC\'s four-fifths rule, a DI below 0.80 is presumed discriminatory. Cardinal monitors this in real time across all models.';
-    initSidebarToggleTooltip();
 
     showTooltip(
       document.getElementById('dash-global-score-number'),
@@ -20941,12 +20897,6 @@ function closeModelDetail() {
     if(!sb) return;
     sb.classList.toggle('collapsed');
     try { localStorage.setItem(STORAGE_KEY, sb.classList.contains('collapsed') ? '1' : '0'); } catch(e) {}
-    // Refresh the toggle tooltip to match new state.
-    try {
-      var btn = document.getElementById('sidebar-toggle');
-      if (btn) btn.removeAttribute('data-cardinal-tt-bound');
-      if (typeof window.initSidebarToggleTooltip === 'function') window.initSidebarToggleTooltip();
-    } catch(_e) {}
   };
 
   function applyInitial() {
@@ -20960,8 +20910,6 @@ function closeModelDetail() {
     const score = parseInt(document.getElementById('sidebar-score')?.textContent || '0', 10);
     const mini = document.querySelector('.trust-score-mini');
     if(mini && score < 80) mini.classList.add('below-threshold');
-    // Wire sidebar toggle tooltip on first DOM-ready (works before dashboard renders).
-    try { if (typeof window.initSidebarToggleTooltip === 'function') window.initSidebarToggleTooltip(); } catch(_e) {}
   }
 
   document.addEventListener('DOMContentLoaded', applyInitial);
