@@ -2101,6 +2101,36 @@ animation:none;transform-origin:center;
 
 @keyframes slideIn { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 .comp-tab.active { background: var(--card) !important; color: var(--text) !important; font-weight: 600 !important; }
+
+/* ══ Cardinal dashboard term tooltips ══ */
+.cardinal-tooltip {
+  position: fixed;
+  background: rgba(13,14,22,0.97);
+  border: 1px solid rgba(166,218,255,0.2);
+  border-radius: 8px;
+  padding: 10px 14px;
+  max-width: 280px;
+  font-size: 11px;
+  color: #94a3b8;
+  line-height: 1.5;
+  z-index: 9999;
+  pointer-events: none;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.6);
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+.cardinal-tooltip.visible { opacity: 1; }
+.cardinal-tooltip .tt-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: #e2e8f0;
+  margin-bottom: 4px;
+}
+.cardinal-tooltip .tt-accent {
+  color: #a6daff;
+  font-weight: 600;
+}
+
 </style>
 </head>
 <body>
@@ -2405,7 +2435,7 @@ Settings
   <div id="dr-trust-blocking-wrap" class="dr-trust-blockers"></div>
   <div id="dr-trust-peer-wrap" class="dr-trust-peer"></div>
 
-  <div id="dr-global-trust-cert-box" class="dr-cert-box" title="Cardinal Certification means this organization meets the minimum thresholds for bias fairness (DI ≥ 0.80), fraud integrity (≥ 85%), and regulatory compliance across all applicable jurisdictions.">
+  <div id="dash-cert-box" class="dr-cert-box">
     <svg id="dr-global-trust-cert-shield" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
     <div class="dr-cert-title" id="dr-global-trust-cert-line">Certified by Obsidian</div>
     <div class="dr-cert-sub" id="dr-global-trust-cert-sub">Public Trust Badge Preview</div>
@@ -2453,7 +2483,7 @@ Settings
     </div>
     <div class="panel-content dash-demographic-inner" onclick="dashDashboardSectionClick(event,'eden')" style="cursor:pointer;padding:20px;">
     <div style="background:linear-gradient(135deg,rgba(239,68,68,0.08),rgba(239,68,68,0.04));border:1px solid rgba(239,68,68,0.2);border-radius:8px;padding:12px 14px;margin-bottom:20px;">
-      <div style="font-size:10px;font-weight:700;color:#ef4444;letter-spacing:0.5px;margin-bottom:8px;">⚠ GROUPS WITH STATISTICALLY SIGNIFICANT DISPARITIES</div>
+      <div id="dash-demo-disparity-callout-head" style="font-size:10px;font-weight:700;color:#ef4444;letter-spacing:0.5px;margin-bottom:8px;">⚠ GROUPS WITH STATISTICALLY SIGNIFICANT DISPARITIES</div>
       <div id="dash-impacted-groups" style="display:flex;flex-direction:column;gap:5px;"></div>
     </div>
     <div class="dash-demo-3col">
@@ -7487,7 +7517,9 @@ function dashApplyExecutiveCards(org) {
     );
   }
 
-  root.innerHTML = cardModels() + cardPenalty() + cardCert() + cardRem();
+  root.innerHTML = dashMarkDisparateImpactInHtml(
+    cardModels() + cardPenalty() + cardCert() + cardRem()
+  );
 }
 
 function drawTrustMiniTrend(org) {
@@ -7534,8 +7566,9 @@ function dashRenderImpactedGroups(groups) {
     if (el) el.innerHTML = '';
     return;
   }
-  el.innerHTML = groups
-    .map(function (g) {
+  el.innerHTML = dashMarkDisparateImpactInHtml(
+    groups
+      .map(function (g) {
       var tagEsc = dashRegulatoryEsc(g.tag || '');
       var lineEsc = dashRegulatoryEsc(g.line || '');
       return (
@@ -7549,7 +7582,8 @@ function dashRenderImpactedGroups(groups) {
         '</span></div>'
       );
     })
-    .join('');
+      .join('')
+  );
 }
 
 function escAttr(s) {
@@ -7745,7 +7779,7 @@ function dashApplyTrustUxPanels(org) {
           );
         })
         .join('');
-      blk.innerHTML =
+      blk.innerHTML = dashMarkDisparateImpactInHtml(
         '<div style="margin-top:14px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.06);">' +
         '<div style="font-size:11px;color:' +
         ttlColor +
@@ -7753,7 +7787,8 @@ function dashApplyTrustUxPanels(org) {
         title +
         '</div>' +
         lis +
-        '</div>';
+        '</div>'
+      );
     }
   }
   if (peerEl && tx.peer) {
@@ -8866,7 +8901,9 @@ function dashCorePzPanelMarkup(p) {
     ';box-shadow:0 0 6px ' +
     prio +
     ';flex-shrink:0;"></div>' +
-    '<span style="font-size:13px;font-weight:700;color:#e2e8f0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' +
+    '<span data-dash-core-tip="' +
+    dashCorePzEsc(p.id) +
+    '" style="font-size:13px;font-weight:700;color:#e2e8f0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:help;">' +
     dashCorePzEsc(p.title) +
     '</span>' +
     '<span style="font-size:9px;font-weight:700;color:' +
@@ -9639,6 +9676,199 @@ function dashApplyAgeInsight(cfg) {
   }
 }
 
+/* ── Cardinal dashboard tooltips (400ms delay, help cursor) ── */
+var cardinalTipTimer = null;
+
+function showTooltip(el, title, body) {
+  if (!el || el.getAttribute('data-cardinal-tt-bound') === '1') return;
+  el.setAttribute('data-cardinal-tt-bound', '1');
+  el.addEventListener('mouseenter', function (e) {
+    clearTimeout(cardinalTipTimer);
+    cardinalTipTimer = setTimeout(function () {
+      var ttTit = document.getElementById('tt-title');
+      var ttBd = document.getElementById('tt-body');
+      var tt = document.getElementById('cardinal-tooltip');
+      if (!ttTit || !ttBd || !tt) return;
+      ttTit.textContent = title;
+      ttBd.innerHTML = body;
+      var rect = el.getBoundingClientRect();
+      tt.style.left = Math.min(e.clientX + 12, window.innerWidth - 300) + 'px';
+      tt.style.top = rect.bottom + 8 + 'px';
+      tt.classList.add('visible');
+    }, 400);
+  });
+  el.addEventListener('mouseleave', function () {
+    clearTimeout(cardinalTipTimer);
+    var tt = document.getElementById('cardinal-tooltip');
+    if (tt) tt.classList.remove('visible');
+  });
+  el.addEventListener('mousemove', function (e) {
+    var tt = document.getElementById('cardinal-tooltip');
+    if (!tt || !tt.classList.contains('visible')) return;
+    tt.style.left = Math.min(e.clientX + 12, window.innerWidth - 300) + 'px';
+    tt.style.top = e.clientY + 14 + 'px';
+  });
+  el.style.cursor = 'help';
+}
+
+function dashMarkDisparateImpactInHtml(html) {
+  if (!html || html.indexOf('dash-tip-di') !== -1) return html;
+  html = html.replace(
+    /Disparate Impact/gi,
+    '<span class="dash-tip-di" style="cursor:help;text-decoration:underline dotted rgba(166,218,255,0.35);text-underline-offset:2px">Disparate Impact</span>'
+  );
+  html = html.replace(
+    /\b(DI\s+)([0-9]+\.?[0-9]*)/g,
+    '<span class="dash-tip-di" style="cursor:help;text-decoration:underline dotted rgba(166,218,255,0.35);text-underline-offset:2px">$1$2</span>'
+  );
+  return html;
+}
+
+function dashRegTipify(html, needle, key) {
+  if (!html || html.indexOf('data-dash-reg-tip="' + key + '"') !== -1) return html;
+  var rep =
+    '<span data-dash-reg-tip="' +
+    key +
+    '" style="cursor:help;text-decoration:underline dotted rgba(166,218,255,0.35);text-underline-offset:3px">' +
+    needle +
+    '</span>';
+  return html.split(needle).join(rep);
+}
+
+function dashRegAnnotateTips(html) {
+  html = dashRegTipify(html, 'NYC Local Law 144', 'nyc144');
+  html = dashRegTipify(html, 'ACA 1557', 'aca1557');
+  html = dashRegTipify(html, 'DoD AI Ethics', 'dod');
+  html = dashRegTipify(html, 'ECOA', 'ecoa');
+  return html;
+}
+
+var CARDINAL_CORE_PANEL_TIPS = {
+  eden: [
+    'Eden Core — Bias Detection',
+    'Cardinal\'s real-time bias detection engine. Monitors every AI decision for disparate impact, equalized odds violations, and proxy discrimination. <span class="tt-accent">Catches bias patterns in hours, not months</span> — and generates legal-grade counterfactual evidence.'
+  ],
+  obsidian: [
+    'Obsidian Core — Fraud Detection',
+    'Monitors AI systems for fraud patterns AND the connection between bias and fraud. <span class="tt-accent">Biased models create blind spots that fraudsters exploit</span> — Obsidian detects both simultaneously. The only platform that catches this bias-fraud connection.'
+  ],
+  'sentinel-warroom': [
+    'Sentinel & War Room',
+    '<span class="tt-accent">Sentinel</span> catches risks before they become incidents — stress-testing models with synthetic personas. <span class="tt-accent">War Room</span> manages active incidents with team assignments, SLA tracking, and one-click regulatory disclosure.'
+  ]
+};
+
+var CARDINAL_REG_TIPS = {
+  dod: [
+    'DoD AI Ethics Principles',
+    'The Department of Defense\'s 5 AI Ethics Principles: Responsible, Equitable, Traceable, Reliable, and Governable. All DoD contractors using AI in personnel, logistics, or mission systems must demonstrate compliance. <span class="tt-accent">Cardinal automates this attestation.</span>'
+  ],
+  ecoa: [
+    'ECOA — Equal Credit Opportunity Act',
+    'Federal law prohibiting credit discrimination based on race, color, religion, national origin, sex, age, or marital status. The CFPB enforces ECOA. <span class="tt-accent">Cardinal\'s ZIP code proxy detection directly addresses the most common ECOA violation pattern.</span>'
+  ],
+  aca1557: [
+    'ACA Section 1557',
+    'The non-discrimination provision of the Affordable Care Act. Prohibits discrimination in health programs receiving federal funding — including AI-driven claims adjudication. <span class="tt-accent">Age-based and disability-based AI discrimination are the most common 1557 violations Cardinal detects.</span>'
+  ],
+  nyc144: [
+    'NYC Local Law 144',
+    'New York City\'s Automated Employment Decision Tool law — the first law in the US requiring bias audits for AI used in hiring. Extended to cover AI in financial services. <span class="tt-accent">Requires annual third-party bias audits. Cardinal provides the audit-ready documentation.</span>'
+  ]
+};
+
+function initDashboardTooltips() {
+  try {
+    var diBody =
+      'The most important bias metric in US law. Calculated as: <span class="tt-accent">approval rate of lowest group ÷ approval rate of highest group</span>. Under the EEOC\'s four-fifths rule, a DI below 0.80 is presumed discriminatory. Cardinal monitors this in real time across all models.';
+
+    showTooltip(
+      document.getElementById('dash-global-score-number'),
+      'Global Trust Score',
+      'Cardinal\'s composite score (0–100) measuring your AI system\'s bias fairness, fraud integrity, and regulatory compliance. <span class="tt-accent">80+ = Cardinal Certified.</span> Below 80 means at least one critical threshold is failing. Think of it like a FICO score — but for AI ethics.'
+    );
+
+    showTooltip(
+      document.getElementById('dash-cert-box'),
+      'Cardinal Certification',
+      'An organization is Cardinal Certified when its AI models meet all three thresholds: <span class="tt-accent">Bias fairness (DI ≥ 0.80)</span>, fraud integrity (≥ 85%), and regulatory compliance across all applicable jurisdictions. Similar to SOC 2 or ISO 27001 — but for AI governance.'
+    );
+
+    var cols = document.querySelectorAll('#dash-global-score-panel .dr-trust-cols .dr-trust-col');
+    if (cols && cols.length >= 3) {
+      showTooltip(
+        cols[0].querySelector('.dr-trust-col-label'),
+        'Bias Detection Score',
+        'Measures whether your AI models are making fair decisions across all demographic groups. Calculated using <span class="tt-accent">Disparate Impact Ratio</span> — the approval rate of the lowest-approved group divided by the highest. Must be ≥ 0.80 to pass.'
+      );
+      showTooltip(
+        cols[1].querySelector('.dr-trust-col-label'),
+        'Fraud Prevention Score',
+        'Measures how effectively your AI systems detect and block fraudulent activity. Cardinal\'s Obsidian Core monitors for synthetic identities, device fingerprint clustering, and behavioral anomalies. <span class="tt-accent">≥ 85% required for certification.</span>'
+      );
+      showTooltip(
+        cols[2].querySelector('.dr-trust-col-label'),
+        'Compliance Score',
+        'The weighted average of your compliance scores across all applicable regulations in your operating jurisdictions — ECOA, DoD AI Ethics, ACA 1557, NYC Law 144, etc. <span class="tt-accent">Each jurisdiction is weighted by audit risk and penalty exposure.</span>'
+      );
+    }
+
+    var execRoot = document.getElementById('dash-exec-cards-root');
+    if (execRoot) {
+      execRoot.querySelectorAll('.dash-exec-card .dash-exec-title').forEach(function (t) {
+        var tx = (t.textContent || '').trim();
+        if (tx === 'Models at Risk') {
+          showTooltip(
+            t,
+            'Models at Risk',
+            'AI models that are currently failing one or more of Cardinal\'s fairness thresholds. A model is "at risk" when its <span class="tt-accent">Disparate Impact Ratio falls below 0.80</span>, or when a protected group is being treated materially differently than the baseline group.'
+          );
+        } else if (tx === 'Penalty Exposure') {
+          showTooltip(
+            t,
+            'Penalty Exposure',
+            'The estimated total regulatory fines, litigation costs, and remediation expenses if current violations are not resolved. Calculated based on <span class="tt-accent">historical penalty data from CFPB, CMS, and DoD enforcement actions</span>, scaled to your affected population size.'
+          );
+        } else if (tx === 'Certification Status') {
+          showTooltip(
+            t,
+            'Time to Certification',
+            'How close your organization is to meeting all Cardinal certification thresholds. <span class="tt-accent">Fixing the listed blockers is the fastest path to reaching 80+</span> and unlocking Cardinal Certified status — which you can display publicly to regulators and partners.'
+          );
+        } else if (tx === 'Remediation Progress') {
+          showTooltip(
+            t,
+            'Remediation Progress',
+            'Tracks how much of your active bias and fraud remediation has been completed. Includes shadow deployment progress, cohort re-evaluation counts, and sign-off status. <span class="tt-accent">Green = fix deployed. Amber = in progress. Red = blocked.</span>'
+          );
+        }
+      });
+    }
+
+    showTooltip(
+      document.getElementById('dash-demo-disparity-callout-head'),
+      'Statistically Significant Disparity',
+      'A disparity is statistically significant when the difference in outcomes between demographic groups is large enough that it\'s unlikely to be random. Cardinal uses the <span class="tt-accent">EEOC four-fifths rule</span>: if one group\'s approval rate is less than 80% of the highest group\'s rate, that is a legal disparity.'
+    );
+
+    document.querySelectorAll('#dash-regulatory-panel [data-dash-reg-tip]').forEach(function (sp) {
+      var k = sp.getAttribute('data-dash-reg-tip');
+      var tk = CARDINAL_REG_TIPS[k];
+      if (tk) showTooltip(sp, tk[0], tk[1]);
+    });
+
+    document.querySelectorAll('#core-panels-grid [data-dash-core-tip]').forEach(function (sp) {
+      var id = sp.getAttribute('data-dash-core-tip');
+      var tk = CARDINAL_CORE_PANEL_TIPS[id];
+      if (tk) showTooltip(sp, tk[0], tk[1]);
+    });
+
+    document.querySelectorAll('#screen-dashboard .dash-tip-di').forEach(function (sp) {
+      showTooltip(sp, 'Disparate Impact Ratio (DI)', diBody);
+    });
+  } catch (_tt) {}
+}
+
 function buildDashRegulatoryDeadlines(org) {
   var cfg = typeof DASH_INDUSTRY !== 'undefined' ? DASH_INDUSTRY[org] : null;
   if (!cfg || !cfg.regulatoryPanel) return;
@@ -9727,9 +9957,9 @@ function buildDashRegulatoryDeadlines(org) {
     }).join('');
   }
 
-  elA.innerHTML = hdrA + actionRows(rp.action);
-  elB.innerHTML = hdrB + comingRows(rp.coming);
-  elC.innerHTML = hdrC + activeRows(rp.active);
+  elA.innerHTML = dashRegAnnotateTips(hdrA + actionRows(rp.action));
+  elB.innerHTML = dashRegAnnotateTips(hdrB + comingRows(rp.coming));
+  elC.innerHTML = dashRegAnnotateTips(hdrC + activeRows(rp.active));
 }
 
 function dashFormatCriticalCasesTopbar(count) {
@@ -9801,9 +10031,8 @@ function updateDashboardIndustry(org) {
   dashAnimateTrustBar(cfg.trustWidth, animCol);
   if (cfg.certHeading) safeSet('dr-global-trust-cert-line', cfg.certHeading);
   if (cfg.certSubtext) safeSet('dr-global-trust-cert-sub', cfg.certSubtext);
-  var certBox = document.getElementById('dr-global-trust-cert-box');
+  var certBox = document.getElementById('dash-cert-box');
   var shield = document.getElementById('dr-global-trust-cert-shield');
-  if (certBox && typeof DASH_CERT_TOOLTIP === 'string') certBox.title = DASH_CERT_TOOLTIP;
   if (certBox) {
     certBox.style.borderColor = cfg.certCertified ? 'rgba(34,197,94,0.3)' : '';
   }
@@ -9861,6 +10090,10 @@ function updateDashboardIndustry(org) {
   try { updateEdenIndustry(org); } catch(ed) {}
   try { updateHaloIndustry(org); } catch(_halo) {}
   try { updateHaloInaction(org); } catch(_hi) {}
+
+  try {
+    initDashboardTooltips();
+  } catch (_idt) {}
 }
 
 function setEl(id, val) {
@@ -17496,5 +17729,9 @@ function closeModelDetail() {
   else go();
 })();
 </script>
+<div id="cardinal-tooltip" class="cardinal-tooltip">
+  <div class="tt-title" id="tt-title"></div>
+  <div id="tt-body"></div>
+</div>
 </body>
 </html>
