@@ -18,6 +18,21 @@
 
   May 1, 2026 — Sidebar collapsed chip fix (targeted). Restructured Trust Score into mutually exclusive .trust-score-chip-full (expanded) and .trust-score-chip-badge (collapsed, 40×40). Only one branch renders at a time; fixes stacked circular badge plus wrapped status text caused by #sidebar-status inline display overriding collapsed hide rules.
 
+  May 1, 2026 (evening) — Dashboard cleanup patch.
+    - Global Trust Score panel: removed redundant certification sub-box / duplicate line. Hero is three lines: title GLOBAL TRUST SCORE, score (display integer), single status row with icon + trustStatus or certStatus from CARDINAL_DATA.
+    - Active Channels: fixed chip layout (explicit flex, contrast colors); repositioned strip between 911 Alert Banner and 4 executive stat cards; horizontal scroll row of 280×64 chips, filter pills, View All link; optional __dashChAllChannels for demo without unread gate; __dashChMockZeroUnread for empty state QA.
+    - Echo Core Integration Reminder (full architecture for next Echo build) — see comment block immediately below.
+
+  ════════════════════════════════════════════════════════════════════
+  ECHO CORE INTEGRATION REMINDER (do not implement in this patch; reference when Echo Core ships)
+  Next Echo Core build MUST follow Master Doc Part 14 in full:
+  • THREE MEMORY LAYERS: (1) Auto-logged — every system event, immutable, cryptographically timestamped; (2) User-pinned — explicit “Send to Echo Core” actions; (3) Sealed Memories — append-only, originals never deleted/edited, addendums chained cryptographically (James Park Apr 16 dismissal = Sealed, echo-AD-2026-04-16-1422-pp01).
+  • MULTI-AXIS FILTERS: Time × Core × Event Type × User × Severity × Linked Case × Crypto Status — stackable, save as named Views.
+  • FIVE VIEW MODES: Feed / Cross-Core Timeline / By Case / By User / By Memory Type.
+  • CROSS-CORE TIMELINE (Case #AD-2847): Eden (Apr 14) → Eve flag in #governance-team (Apr 16, James Park dismissal SEALED) → Sarah Chen review (Apr 17) → Eve auto-escalation (Apr 21) → James Park addendum (Apr 21) → War Room Case #AD-2847 (Apr 22) → Genesis counterfactual (Apr 25) → Atonement v2.5 shadow 5% (Apr 28) → DI 0.74 (May 1) → Atonement full rollout projected (May 8) → DoD attestation (May 21).
+  • ADDITIONAL: full-text search; Watch List / alerts; regulator export bundles (PDF / signed JSON); public verification UI; memory templates (Regulator Comm, Board Decision, Whistleblower, Model Approval, Cross-team Review); cross-references; separate comment threads; privacy tiers; saved Views; CARDINAL_DATA echoMemories pre-seeded per industry with full case lifecycle.
+  ════════════════════════════════════════════════════════════════════
+
   DESIGN RULES (prototype documentation)
     20. When two or more screens serve the same user intent (e.g., team communication), they go under one parent surface with tabs — not separate nav items. (Established May 1, 2026, when Town Hall was absorbed into Trust Loop.)
 
@@ -1247,6 +1262,9 @@ line-height: 1; margin-bottom: 5px;
 .dr-trust-label {
   font-size: 14px; color: #64748b;
   margin-top: 8px;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
 }
 .dr-trust-progress {
   height: 6px; background: rgba(255,255,255,0.08);
@@ -2527,6 +2545,215 @@ animation:waveform var(--dur) ease-in-out infinite alternate;
   transition: transform 0.18s ease;
 }
 .cardinal-alert-cta:hover .arrow { transform: translateX(3px); }
+/* ══ Dashboard Active Channels top strip ══ */
+#dash-active-channels-host { margin-bottom: 14px; }
+.dash-ac-strip {
+  background: rgba(4, 10, 20, 0.55);
+  border: 1px solid rgba(148, 163, 184, 0.12);
+  border-bottom: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 12px;
+  padding: 14px 16px;
+  display: flex;
+  align-items: stretch;
+  gap: 16px;
+  flex-wrap: wrap;
+  position: relative;
+}
+.dash-ac-strip-left {
+  flex: 0 0 auto;
+  min-width: 200px;
+  max-width: 280px;
+}
+.dash-ac-strip-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #e2e8f0;
+  letter-spacing: 0.02em;
+  margin: 0 0 4px 0;
+}
+.dash-ac-strip-sub {
+  font-size: 12px;
+  color: #94a3b8;
+  margin: 0;
+  line-height: 1.4;
+}
+.dash-ac-strip-center {
+  flex: 1 1 280px;
+  min-width: 0;
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.dash-ac-chips-scroll {
+  display: flex;
+  align-items: stretch;
+  gap: 12px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x proximity;
+  padding: 4px 2px 10px;
+  flex: 1;
+  min-width: 0;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148,163,184,.35) transparent;
+}
+.dash-ac-chips-scroll::-webkit-scrollbar { height: 6px; }
+.dash-ac-chips-scroll::-webkit-scrollbar-thumb {
+  background: rgba(148,163,184,.35);
+  border-radius: 99px;
+}
+.dash-ac-chips-fade {
+  pointer-events: none;
+  position: absolute;
+  right: 72px;
+  top: 0;
+  bottom: 0;
+  width: 48px;
+  background: linear-gradient(90deg, transparent, rgba(4, 10, 20, 0.92));
+  z-index: 1;
+}
+.dash-ac-scroll-btn {
+  flex-shrink: 0;
+  width: 28px;
+  height: 64px;
+  border-radius: 8px;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  background: rgba(255,255,255,0.04);
+  color: #94a3b8;
+  cursor: pointer;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background .15s, color .15s;
+}
+.dash-ac-scroll-btn:hover {
+  background: rgba(166, 218, 255, 0.08);
+  color: #e2e8f0;
+}
+.dash-ac-chip {
+  flex: 0 0 280px;
+  width: 280px;
+  height: 64px;
+  box-sizing: border-box;
+  scroll-snap-align: start;
+  border-radius: 10px;
+  border: 1px solid rgba(148, 163, 184, 0.15);
+  background: rgba(15, 23, 42, 0.65);
+  padding: 8px 10px 8px 8px;
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 10px;
+  cursor: pointer;
+  text-align: left;
+  transition: background .15s, border-color .15s, box-shadow .15s;
+}
+.dash-ac-chip:hover {
+  background: rgba(30, 41, 59, 0.85);
+  border-color: rgba(166, 218, 255, 0.25);
+  box-shadow: 0 4px 14px rgba(0,0,0,0.25);
+}
+.dash-ac-chip-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-top: 4px;
+}
+.dash-ac-chip-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.dash-ac-chip-top {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+.dash-ac-chip-name {
+  font-size: 12px;
+  font-weight: 700;
+  color: #f1f5f9;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.dash-ac-chip-badge {
+  font-size: 10px;
+  font-weight: 700;
+  background: rgba(166, 218, 255, 0.15);
+  color: #bae6fd;
+  padding: 2px 7px;
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+.dash-ac-chip-snippet {
+  font-size: 11px;
+  color: #cbd5e1;
+  line-height: 1.35;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.dash-ac-chip-meta {
+  font-size: 11px;
+  color: #94a3b8;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.dash-ac-strip-right {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  justify-content: center;
+}
+.dash-ac-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: flex-end;
+}
+.dash-ac-pill {
+  font-size: 10px;
+  padding: 5px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  background: rgba(255,255,255,0.04);
+  color: #94a3b8;
+  cursor: pointer;
+  font-family: var(--sans);
+}
+.dash-ac-pill.active {
+  background: rgba(166, 218, 255, 0.12);
+  border-color: rgba(166, 218, 255, 0.35);
+  color: #e2e8f0;
+}
+.dash-ac-viewall {
+  font-size: 11px;
+  color: #7dd3fc;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-decoration: underline;
+  padding: 0;
+  font-family: var(--sans);
+}
+.dash-ac-empty {
+  font-size: 12px;
+  color: #94a3b8;
+  padding: 12px 8px;
+  flex: 1;
+}
+
 .cardinal-alert-cycle {
   background: rgba(255,255,255,0.05);
   border: 1px solid rgba(255,255,255,0.10);
@@ -4272,11 +4499,12 @@ Settings
   </div>
 </div>
 
+<div id="dash-active-channels-host"></div>
+
 <!-- ░░░ DASHBOARD REDESIGN ░░░ -->
 
 <!-- Executive summary — 4 cards (filled by dashApplyExecutiveCards) -->
 <div class="dr-grid-4" id="dash-exec-cards-root"></div>
-<div id="dash-active-channels-host"></div>
 
 <!-- ░░ GLOBAL TRUST SCORE PANEL ░░ -->
 <div class="dr-card dr-trust-panel dr-trust-panel-click" id="dash-global-score-panel" onclick="dashGlobalTrustPanelClick(event)" style="cursor:pointer;">
@@ -4284,8 +4512,7 @@ Settings
     <div class="dr-panel-head-left">
       <div class="dr-panel-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
       <div>
-        <div class="dr-panel-title">Global Trust Score</div>
-        <div class="dr-panel-sub">Comprehensive overview of AI Model Integrity</div>
+        <div class="dr-panel-title" style="letter-spacing:0.06em;font-size:12px">GLOBAL TRUST SCORE</div>
       </div>
     </div>
     <div class="dr-trend-pill dr-trend-up">↗ +2.3% this month</div>
@@ -4323,12 +4550,6 @@ Settings
 
   <div id="dr-trust-blocking-wrap" class="dr-trust-blockers"></div>
   <div id="dr-trust-peer-wrap" class="dr-trust-peer"></div>
-
-  <div id="dash-cert-box" class="dr-cert-box">
-    <svg id="dr-global-trust-cert-shield" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-    <div class="dr-cert-title" id="dr-global-trust-cert-line">Certified by Obsidian</div>
-    <div class="dr-cert-sub" id="dr-global-trust-cert-sub">Public Trust Badge Preview</div>
-  </div>
 
   <div style="text-align:right;margin-top:8px;">
     <span style="font-size:10px;color:#64748b;cursor:pointer;text-decoration:underline;" onclick="event.stopPropagation(); showScreen('trustscore',null);">View full Trust Score report →</span>
@@ -9527,7 +9748,7 @@ function _buildCardinalDataMaster() {
         { id: 'meth-AD-5', timestamp: '2026-04-24T08:00:00Z', type: 'human-review', participants: ['Legal Counsel'], summary: 'Legal approved outreach template under FRCP preservation guidance.' },
         { id: 'meth-AD-6', timestamp: '2026-04-25T10:00:00Z', type: 'eve-adam-exchange', participants: ['Eve', 'Adam'], summary: 'Eve summarized week; Adam confirmed no new adversarial drift.' }
       ],
-      caseChannels: [{ caseId: 'AD-2847', channelName: '#case-AD-2847', members: ['Sarah Chen', 'James Martinez', 'James Park', 'Eve', 'Adam'], archived: false, messages: adCaseMsgs }],
+      caseChannels: [{ caseId: 'AD-2847', channelName: '#case-AD-2847', unreadCount: 7, members: ['Sarah Chen', 'James Martinez', 'James Park', 'Eve', 'Adam'], archived: false, messages: adCaseMsgs }],
       settingsState: _ss('ad')
     },
     fin: {
@@ -9549,8 +9770,8 @@ function _buildCardinalDataMaster() {
         { id: 'meth-F-6', timestamp: '2026-04-18T13:00:00Z', type: 'model-update', participants: ['Adam'], summary: 'Automated monitoring cadence tightened for collections watch.' }
       ],
       caseChannels: [
-        { caseId: 'FIN-1203', channelName: '#case-FIN-1203', members: ['Riley Whitmore', 'Lisa Torres', 'Eve', 'Adam'], archived: false, messages: finCase1 },
-        { caseId: 'FIN-0842', channelName: '#case-FIN-0842', members: ['Riley Whitmore', 'Adam'], archived: false, messages: finCase2 }
+        { caseId: 'FIN-1203', channelName: '#case-FIN-1203', unreadCount: 5, members: ['Riley Whitmore', 'Lisa Torres', 'Eve', 'Adam'], archived: false, messages: finCase1 },
+        { caseId: 'FIN-0842', channelName: '#case-FIN-0842', unreadCount: 3, members: ['Riley Whitmore', 'Adam'], archived: false, messages: finCase2 }
       ],
       settingsState: _ss('fin')
     },
@@ -9573,9 +9794,9 @@ function _buildCardinalDataMaster() {
         { id: 'meth-H-6', timestamp: '2026-04-10T13:00:00Z', type: 'model-update', participants: ['Adam'], summary: 'Claims adjudication graph v2 promoted to shadow staging.' }
       ],
       caseChannels: [
-        { caseId: 'HS-2847', channelName: '#case-HS-2847', members: ['Dr. Maya Osei', 'Priya Sharma', 'Eve', 'Adam'], archived: false, messages: hsCase1 },
-        { caseId: 'HS-0912', channelName: '#case-HS-0912', members: ['Dr. Maya Osei', 'Priya Sharma'], archived: false, messages: hsCase2 },
-        { caseId: 'HS-0441', channelName: '#case-HS-0441', members: ['General Counsel', 'Dr. Nguyen'], archived: false, messages: hsCase3 }
+        { caseId: 'HS-2847', channelName: '#case-HS-2847', unreadCount: 8, members: ['Dr. Maya Osei', 'Priya Sharma', 'Eve', 'Adam'], archived: false, messages: hsCase1 },
+        { caseId: 'HS-0912', channelName: '#case-HS-0912', unreadCount: 2, members: ['Dr. Maya Osei', 'Priya Sharma'], archived: false, messages: hsCase2 },
+        { caseId: 'HS-0441', channelName: '#case-HS-0441', unreadCount: 3, members: ['General Counsel', 'Dr. Nguyen'], archived: false, messages: hsCase3 }
       ],
       settingsState: _ss('health')
     }
@@ -9638,6 +9859,18 @@ function cdCriticalCasesLabel(n) {
 
 // Apply CARDINAL_DATA derived values to the dashboard surface
 // (sidebar, topbar, trust score panel, certification card etc.)
+function formatDashTrustStatusHtml(d) {
+  if (!d) return '';
+  var certified = d.trustScore >= 0.80;
+  var esc = function (s) {
+    return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+  };
+  var iconWarn = '<svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true" style="flex-shrink:0"><path d="M7 1.5L1.5 12.5h11L7 1.5z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M7 5.5v3M7 10v.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>';
+  var iconCheck = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" style="flex-shrink:0"><path d="M20 6L9 17l-5-5"/></svg>';
+  var text = certified ? (d.certStatus || d.trustStatus || '') : (d.trustStatus || '');
+  return '<span class="dash-trust-status-inner" style="display:inline-flex;align-items:center;gap:8px">' + (certified ? iconCheck : iconWarn) + '<span>' + esc(text) + '</span></span>';
+}
+
 function applyCardinalData(org) {
   var d = cd(org);
   if (!d) return;
@@ -9700,8 +9933,11 @@ function applyCardinalData(org) {
   if (tac) tac.textContent = cdCriticalCasesLabel(d.criticalCases);
 
   // Trust Score panel — score / status / bar / 3 columns
-  setT('dr-trust-label', d.trustStatus);
-  setS('dr-trust-label', 'color', d.trustColor);
+  var dtl = document.getElementById('dr-trust-label');
+  if (dtl) {
+    dtl.innerHTML = formatDashTrustStatusHtml(d);
+    dtl.style.color = d.trustScore >= 0.80 ? '#22c55e' : d.trustColor;
+  }
   setT('dr-bias-det-num', d.biasDetection);
   setS('dr-bias-det-num', 'color', d.biasScore >= 80 ? '#22c55e' : (d.biasScore >= 70 ? '#f59e0b' : '#ef4444'));
   var bd = document.getElementById('dr-bias-det-bar');
@@ -9715,24 +9951,11 @@ function applyCardinalData(org) {
   var cb = document.getElementById('dr-comp-bar');
   if (cb) { cb.style.width = d.complianceScore + '%'; cb.style.background = d.complianceScore >= 80 ? '#22c55e' : '#f59e0b'; }
 
-  // Trust Score number (animated)
+  // Trust Score number (animated) + bar
   try { animateTrustScore(d.trustScore, d.trustColor); } catch(_a) {}
   try { dashAnimateTrustBar(parseInt(d.trustScoreDisplay, 10), d.trustColor); } catch(_b) {}
 
-  // Cert box headline + sub
-  setT('dr-global-trust-cert-line', d.certStatus);
-  var subText = d.certRenewal ? ('Renewal: ' + d.certRenewal) : 'Public Trust Badge Preview';
-  setT('dr-global-trust-cert-sub', subText);
-  var certBox = document.getElementById('dash-cert-box');
-  var shield = document.getElementById('dr-global-trust-cert-shield');
   var certified = d.trustScore >= 0.80;
-  if (certBox) certBox.style.borderColor = certified ? 'rgba(34,197,94,0.3)' : 'rgba(239,68,68,0.3)';
-  if (shield) {
-    shield.setAttribute('stroke', certified ? '#22c55e' : '#64748b');
-    shield.style.filter = certified ? 'drop-shadow(0 0 6px #22c55e)' : 'none';
-  }
-
-  // ── Override Trust Score panel blockers + peer comparison from CARDINAL_DATA ──
   var blkWrap = document.getElementById('dr-trust-blocking-wrap');
   if (blkWrap) {
     var blockers = Array.isArray(d.certBlockers) ? d.certBlockers : [];
@@ -10359,6 +10582,8 @@ function doLogin() {
     try { loadIndustry(currentOrg); } catch(e4) { console.log('loadIndustry:', e4.message); }
     try { applyUserSettingsMerge(currentOrg); } catch(_um0) {}
     try { updateDashboardIndustry(currentOrg); } catch(eUDI) { console.log('updateDashboardIndustry:', eUDI.message); }
+    try { applyCardinalData(currentOrg); } catch (eACD) { console.log('applyCardinalData:', eACD.message); }
+    try { renderDashboardActiveChannels(currentOrg); } catch (eDAC) { console.log('renderDashboardActiveChannels:', eDAC.message); }
     try { window.currentAlertIndex = 0; renderAlert(0); } catch (_eAlerts) {}
     try { refreshDashboardGreeting(); } catch(e5) {}
     // Charts now lazy-load via showScreen — no initCharts here
@@ -10542,6 +10767,7 @@ function animateTrustScore(targetScore, color) {
   if (window._dashTrustScoreRaf) cancelAnimationFrame(window._dashTrustScoreRaf);
   var numTarget = typeof targetScore === 'number' ? targetScore : parseFloat(String(targetScore));
   if (isNaN(numTarget)) numTarget = 0;
+  if (numTarget > 0 && numTarget <= 1) numTarget = Math.round(numTarget * 100);
   var start = 0;
   var duration = 1500;
   var startTime = null;
@@ -10551,11 +10777,11 @@ function animateTrustScore(targetScore, color) {
     var progress = Math.min((timestamp - startTime) / duration, 1);
     var eased = 1 - Math.pow(1 - progress, 3);
     var current = start + (numTarget - start) * eased;
-    el.textContent = current.toFixed(2);
+    el.textContent = String(Math.round(current));
     if (progress < 1) window._dashTrustScoreRaf = requestAnimationFrame(step);
     else {
       window._dashTrustScoreRaf = null;
-      el.textContent = numTarget.toFixed(2);
+      el.textContent = String(Math.round(numTarget));
     }
   }
   window._dashTrustScoreRaf = requestAnimationFrame(step);
@@ -13146,10 +13372,13 @@ function initDashboardTooltips() {
       'Cardinal\'s composite score (0–100) measuring your AI system\'s bias fairness, fraud integrity, and regulatory compliance. <span class="tt-accent">80+ = Cardinal Certified.</span> Below 80 means at least one critical threshold is failing. Think of it like a FICO score — but for AI ethics.'
     );
 
+    var orgInit = (typeof currentOrg !== 'undefined' && currentOrg) || window.currentOrg || 'ad';
+    var dInit = typeof cd === 'function' ? cd(orgInit) : null;
+    var isCertInit = dInit && dInit.trustScore >= 0.80;
     showTooltip(
-      document.getElementById('dash-cert-box'),
-      'Cardinal Certification',
-      'An organization is Cardinal Certified when its AI models meet all three thresholds: <span class="tt-accent">Bias fairness (DI ≥ 0.80)</span>, fraud integrity (≥ 85%), and regulatory compliance across all applicable jurisdictions. Similar to SOC 2 or ISO 27001 — but for AI governance.'
+      document.getElementById('dr-trust-label'),
+      'Trust status',
+      isCertInit ? 'Certification line from CARDINAL_DATA for this industry (trustScore at or above the Cardinal floor). Shown with the check icon.' : 'Below threshold: at least one fairness, fraud, or compliance gate is not met. Open the full Trust Score report for remediation paths.'
     );
 
     var cols = document.querySelectorAll('#dash-global-score-panel .dr-trust-cols .dr-trust-col');
@@ -13349,6 +13578,14 @@ function refreshDashboard(ev) {
   var cfgX = typeof DASH_INDUSTRY !== 'undefined' ? (DASH_INDUSTRY[org] || DASH_INDUSTRY.ad) : null;
   var pctRefresh = cfgX ? cfgX.trustWidth : 74;
   animateTrustScore(scoreMap[org], colorMap[org]);
+  try {
+    var dR = cd(org);
+    var elL = document.getElementById('dr-trust-label');
+    if (elL && dR) {
+      elL.innerHTML = formatDashTrustStatusHtml(dR);
+      elL.style.color = dR.trustScore >= 0.80 ? '#22c55e' : (dR.trustColor || '#f59e0b');
+    }
+  } catch (_rf) {}
   dashAnimateTrustBar(pctRefresh, colorMap[org]);
   window.currentAlertIndex = 0;
   try { renderAlert(0); } catch (_r0) {}
@@ -13397,26 +13634,15 @@ function updateDashboardIndustry(org) {
   var animCol = animColorMap[org] || '#f59e0b';
   var tgtScore = parseFloat(cfg.trustNum);
   animateTrustScore(tgtScore, animCol);
-  safeSet('dr-trust-label', cfg.trustLabel);
-  var _tr = dashGlobalTrustScoreColor(tgtScore);
-  safeStyle('dr-trust-label', 'color', _tr);
   dashAnimateTrustBar(cfg.trustWidth, animCol);
-  if (cfg.certHeading) safeSet('dr-global-trust-cert-line', cfg.certHeading);
-  if (cfg.certSubtext) safeSet('dr-global-trust-cert-sub', cfg.certSubtext);
-  var certBox = document.getElementById('dash-cert-box');
-  var shield = document.getElementById('dr-global-trust-cert-shield');
-  if (certBox) {
-    certBox.style.borderColor = cfg.certCertified ? 'rgba(34,197,94,0.3)' : '';
-  }
-  if (shield) {
-    if (cfg.certCertified) {
-      shield.setAttribute('stroke', '#22c55e');
-      shield.style.filter = 'drop-shadow(0 0 6px #22c55e)';
-    } else {
-      shield.setAttribute('stroke', '#64748b');
-      shield.style.filter = 'none';
+  try {
+    var dCd = cd(org);
+    var lblEl = document.getElementById('dr-trust-label');
+    if (lblEl && dCd) {
+      lblEl.innerHTML = formatDashTrustStatusHtml(dCd);
+      lblEl.style.color = dCd.trustScore >= 0.80 ? '#22c55e' : (dCd.trustColor || '#f59e0b');
     }
-  }
+  } catch (_esl) {}
 
   safeSet('dr-bias-det-num', cfg.biasDet + '%');
   safeStyle('dr-bias-det-num', 'color', cfg.biasDetColor);
@@ -16703,60 +16929,216 @@ function renderWarRoomCaseChannel(org) {
  });
 }
 
+function dashAcQuote(s) {
+  return String(s == null ? '' : s).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+}
+
 function renderDashboardActiveChannels(org) {
- var host = document.getElementById('dash-active-channels-host');
- if (!host) return;
- var d = cd(org);
- var standing = d.trustLoopChannels || [];
- var cases = d.caseChannels || [];
- var filt = (window._dashChFilter || 'all');
- var rows = [];
- standing.forEach(function (c) {
-   if ((c.unreadCount || 0) <= 0) return;
-   var msgs = tlwMergeMsgs(c.messages || [], c.id);
-   var last = msgs.length ? msgs.sort(function (a, b) { return new Date(b.timestamp) - new Date(a.timestamp); })[0] : null;
-   rows.push({ kind: 'stand', name: c.name, snippet: (last && last.content) || '', author: (last && last.author) || '', t: last && last.timestamp, unread: c.unreadCount || 0, routeTab: 'channels', routeId: c.id });
- });
- cases.forEach(function (cc) {
-   var msgs = (cc.messages || []).slice();
-   var extra = (window.__wrCaseRuntime && window.__wrCaseRuntime[cc.caseId]) || [];
-   msgs = msgs.concat(extra);
-   var unread = 2;
-   var last = msgs.length ? msgs.sort(function (a, b) { return new Date(b.timestamp) - new Date(a.timestamp); })[0] : null;
-   rows.push({ kind: 'case', name: cc.channelName, snippet: (last && last.content) || '', author: (last && last.author) || '', t: last && last.timestamp, unread: unread, caseId: cc.caseId });
- });
- if (filt === 'cases') rows = rows.filter(function (r) { return r.kind === 'case'; });
- else if (filt === 'standing') rows = rows.filter(function (r) { return r.kind === 'stand'; });
- rows.sort(function (a, b) { return new Date(b.t || 0) - new Date(a.t || 0); });
- var totalUnread = rows.reduce(function (s, r) { return s + (r.unread || 0); }, 0);
- var nCh = new Set(rows.map(function (r) { return r.name; })).size;
- var snip = function (s) { s = s || ''; return s.length <= 50 ? s : s.slice(0, 47) + '…'; };
- var rowHtml = rows.slice(0, 5).map(function (r) {
-   var dot = r.kind === 'case' ? 'background:var(--red)' : 'background:#60a5fa';
-   var click = r.kind === 'case' ? 'onclick="openWarRoomToCase(\'' + tlwEsc(r.caseId) + '\')"' : 'onclick="openTrustLoopTo(\'channels\',\'' + tlwEsc(r.routeId) + '\')"';
-   return '<div ' + click + ' style="display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-bottom:1px solid rgba(180,190,220,.06);cursor:pointer">' +
-     '<span style="width:8px;height:8px;border-radius:50%;margin-top:4px;flex-shrink:0;' + dot + '" onclick="event.stopPropagation();showTooltip(\'' + (r.kind === 'case' ? 'Case Channel' : 'Standing Channel') + '\',\'' + (r.kind === 'case' ? 'Active incident — time-bound, archives when case closes.' : 'Ongoing governance discussion — persistent.') + '\',event)"></span>' +
-     '<div style="flex:1;min-width:0"><div style="font-size:11px;font-weight:600;color:var(--chrome2)">' + tlwEsc(r.name) + '</div>' +
-     '<div style="font-size:10px;color:var(--muted);line-height:1.4">' + snip(r.snippet) + '</div>' +
-     '<div style="font-size:9px;color:var(--muted2);margin-top:2px">' + tlwEsc(r.author) + ' · ' + tlwRelMin(r.t) + '</div></div>' +
-     '<span style="font-size:10px;font-weight:700;background:rgba(166,218,255,.12);padding:2px 8px;border-radius:8px;align-self:center" onclick="event.stopPropagation();showTooltip(\'Unread Messages\',\'Click to mark as read.\',event)">' + r.unread + '</span></div>';
- }).join('');
- var more = rows.length > 5 ? '<div style="font-size:10px;color:var(--muted);padding-top:6px">+' + (rows.length - 5) + ' more</div>' : '';
- var fa = filt === 'all' ? 'active' : '';
- var fc = filt === 'cases' ? 'active' : '';
- var fs = filt === 'standing' ? 'active' : '';
- host.innerHTML = '<div class="dr-card" style="padding:16px;margin-bottom:14px">' +
-   '<div style="font-size:14px;font-weight:700;color:var(--chrome2);margin-bottom:4px" onmouseenter="showTooltip(\'Active Channels\',\'Where governance team conversations happen. Case channels (red) for active incidents; standing channels (blue) for ongoing discussion. Click any to jump in.\',event)">Active Channels</div>' +
-   '<div style="font-size:11px;color:var(--muted2);margin-bottom:12px">' + totalUnread + ' unread across ' + nCh + ' channels</div>' +
-   '<div style="display:flex;gap:6px;margin-bottom:10px">' +
-   '<button type="button" class="gen-tab ' + fa + '" style="font-size:10px;padding:4px 10px" onclick="event.stopPropagation();window._dashChFilter=\'all\';renderDashboardActiveChannels(\'' + org + '\')">All</button>' +
-   '<button type="button" class="gen-tab ' + fc + '" style="font-size:10px;padding:4px 10px" onclick="event.stopPropagation();window._dashChFilter=\'cases\';renderDashboardActiveChannels(\'' + org + '\')">Cases</button>' +
-   '<button type="button" class="gen-tab ' + fs + '" style="font-size:10px;padding:4px 10px" onclick="event.stopPropagation();window._dashChFilter=\'standing\';renderDashboardActiveChannels(\'' + org + '\')">Standing</button></div>' +
-   rowHtml + more +
-   '<div style="margin-top:10px"><button type="button" class="btn-ghost" style="font-size:10px" onclick="openTrustLoopTo(\'channels\',null)">View All Channels →</button></div></div>';
- try {
-   host.removeAttribute('onclick');
- } catch (e2) {}
+  var host = document.getElementById('dash-active-channels-host');
+  if (!host) return;
+  try {
+    if (typeof applyUserSettingsMerge === 'function') applyUserSettingsMerge(org);
+    var pan = (cd(org).settingsState && cd(org).settingsState.dashboardPanels) || {};
+    if (pan.activeChannels === false) {
+      host.style.display = 'none';
+      return;
+    }
+    host.style.display = '';
+  } catch (_vis) {}
+
+  var d = cd(org);
+  var standing = d.trustLoopChannels || [];
+  var cases = d.caseChannels || [];
+  var filt = window._dashChFilter || 'all';
+  var mockZero = !!window.__dashChMockZeroUnread;
+  var allStanding = !!window.__dashChAllChannels;
+
+  function rowFromStand(c) {
+    var msgs = tlwMergeMsgs(c.messages || [], c.id);
+    var last = msgs.length ? msgs.slice().sort(function (a, b) { return new Date(b.timestamp) - new Date(a.timestamp); })[0] : null;
+    return {
+      kind: 'stand',
+      name: c.name,
+      desc: c.description || c.name,
+      snippet: (last && last.content) || '',
+      author: (last && last.author) || '',
+      t: last && last.timestamp,
+      unread: c.unreadCount || 0,
+      routeId: c.id
+    };
+  }
+
+  function rowFromCase(cc) {
+    if (cc.archived) return null;
+    var msgs = (cc.messages || []).slice();
+    var extra = (window.__wrCaseRuntime && window.__wrCaseRuntime[cc.caseId]) || [];
+    msgs = msgs.concat(extra);
+    var unread = typeof cc.unreadCount === 'number' ? cc.unreadCount : 2;
+    var last = msgs.length ? msgs.slice().sort(function (a, b) { return new Date(b.timestamp) - new Date(a.timestamp); })[0] : null;
+    return {
+      kind: 'case',
+      name: cc.channelName,
+      desc: 'War Room case channel for case ' + cc.caseId + ' — opens this case with the Case Channel pane.',
+      snippet: (last && last.content) || '',
+      author: (last && last.author) || '',
+      t: last && last.timestamp,
+      unread: unread,
+      caseId: cc.caseId
+    };
+  }
+
+  var baseRows = [];
+  standing.forEach(function (c) {
+    if (!allStanding && (c.unreadCount || 0) <= 0) return;
+    baseRows.push(rowFromStand(c));
+  });
+  cases.forEach(function (cc) {
+    var rr = rowFromCase(cc);
+    if (rr) baseRows.push(rr);
+  });
+
+  var hasCases = baseRows.some(function (r) { return r.kind === 'case'; });
+  var hasStand = baseRows.some(function (r) { return r.kind === 'stand'; });
+
+  var rows = baseRows.slice();
+  if (filt === 'cases') rows = rows.filter(function (r) { return r.kind === 'case'; });
+  else if (filt === 'standing') rows = rows.filter(function (r) { return r.kind === 'stand'; });
+
+  rows.sort(function (a, b) { return new Date(b.t || 0) - new Date(a.t || 0); });
+
+  var totalUnread = mockZero ? 0 : rows.reduce(function (s, r) { return s + (r.unread || 0); }, 0);
+  var nCh = new Set(rows.map(function (r) { return r.name; })).size;
+
+  var snip = function (s) {
+    s = s || '';
+    return s.length <= 40 ? s : s.slice(0, 37) + '\u2026';
+  };
+
+  var chipsHtml = '';
+  if (!mockZero && rows.length) {
+    chipsHtml = rows.slice(0, 12).map(function (r) {
+      var dotColor = r.kind === 'case' ? '#ef4444' : '#60a5fa';
+      var click =
+        r.kind === 'case'
+          ? 'onclick="openWarRoomToCase(\'' + dashAcQuote(r.caseId) + '\')"'
+          : 'onclick="openTrustLoopTo(\'channels\',\'' + dashAcQuote(r.routeId) + '\')"';
+      var dotTipT = r.kind === 'case' ? 'Case Channel' : 'Standing Channel';
+      var dotTipB =
+        r.kind === 'case'
+          ? 'Active incident - time-bound. Archives when case closes.'
+          : 'Ongoing governance discussion - persistent.';
+      return (
+        '<div class="dash-ac-chip" ' +
+        click +
+        '>' +
+        '<span class="dash-ac-chip-dot" style="background:' +
+        dotColor +
+        '" onmouseenter="showTooltip(\'' +
+        dotTipT +
+        '\',\'' +
+        dashAcQuote(dotTipB) +
+        '\',event)"></span>' +
+        '<div class="dash-ac-chip-body">' +
+        '<div class="dash-ac-chip-top">' +
+        '<span class="dash-ac-chip-name" onmouseenter="showTooltip(\'' +
+        dashAcQuote(r.name) +
+        '\',\'' +
+        dashAcQuote(r.desc || r.name) +
+        '\',event)">' +
+        tlwEsc(r.name) +
+        '</span>' +
+        '<span class="dash-ac-chip-badge" onmouseenter="showTooltip(\'Unread Messages\',\'Messages awaiting your read receipt in this channel.\',event)">' +
+        r.unread +
+        '</span>' +
+        '</div>' +
+        '<div class="dash-ac-chip-snippet">' +
+        tlwEsc(snip(r.snippet)) +
+        '</div>' +
+        '<div class="dash-ac-chip-meta">' +
+        tlwEsc(r.author) +
+        ' · ' +
+        tlwRelMin(r.t) +
+        '</div>' +
+        '</div></div>'
+      );
+    }).join('');
+  }
+
+  var pillAll =
+    '<button type="button" class="dash-ac-pill ' +
+    (filt === 'all' ? 'active' : '') +
+    '" onclick="window._dashChFilter=\'all\';renderDashboardActiveChannels(\'' +
+    org +
+    '\')" onmouseenter="showTooltip(\'All channels\',\'Standing Trust Loop channels plus active War Room case channels in CARDINAL_DATA for this industry.\',event)">All</button>';
+  var pillCases = '';
+  var pillStand = '';
+  if (hasCases && hasStand) {
+    pillCases =
+      '<button type="button" class="dash-ac-pill ' +
+      (filt === 'cases' ? 'active' : '') +
+      '" onclick="window._dashChFilter=\'cases\';renderDashboardActiveChannels(\'' +
+      org +
+      '\')" onmouseenter="showTooltip(\'Cases filter\',\'Show only War Room case channels (red).\',event)">Cases</button>';
+    pillStand =
+      '<button type="button" class="dash-ac-pill ' +
+      (filt === 'standing' ? 'active' : '') +
+      '" onclick="window._dashChFilter=\'standing\';renderDashboardActiveChannels(\'' +
+      org +
+      '\')" onmouseenter="showTooltip(\'Standing filter\',\'Show only persistent Trust Loop channels (blue).\',event)">Standing</button>';
+  } else if (hasCases && !hasStand) {
+    pillCases =
+      '<button type="button" class="dash-ac-pill ' +
+      (filt === 'cases' ? 'active' : '') +
+      '" onclick="window._dashChFilter=\'cases\';renderDashboardActiveChannels(\'' +
+      org +
+      '\')" onmouseenter="showTooltip(\'Cases filter\',\'Case channels only.\',event)">Cases</button>';
+  } else if (!hasCases && hasStand) {
+    pillStand =
+      '<button type="button" class="dash-ac-pill ' +
+      (filt === 'standing' ? 'active' : '') +
+      '" onclick="window._dashChFilter=\'standing\';renderDashboardActiveChannels(\'' +
+      org +
+      '\')" onmouseenter="showTooltip(\'Standing filter\',\'Standing channels only.\',event)">Standing</button>';
+  }
+
+  var centerHtml;
+  if (mockZero || !rows.length) {
+    centerHtml = '<div class="dash-ac-empty">No unread messages</div>';
+  } else {
+    centerHtml =
+      '<div class="dash-ac-chips-fade"></div>' +
+      '<button type="button" class="dash-ac-scroll-btn" aria-label="Scroll left" onclick="this.nextElementSibling.scrollBy({left:-300,behavior:\'smooth\'})" onmouseenter="showTooltip(\'Scroll\',\'Scroll channel chips left.\',event)">‹</button>' +
+      '<div class="dash-ac-chips-scroll" id="dash-ac-chips-scroll">' +
+      chipsHtml +
+      '</div>' +
+      '<button type="button" class="dash-ac-scroll-btn" aria-label="Scroll right" onclick="this.previousElementSibling.scrollBy({left:300,behavior:\'smooth\'})" onmouseenter="showTooltip(\'Scroll\',\'Scroll channel chips right.\',event)">›</button>';
+  }
+
+  host.innerHTML =
+    '<section class="dash-ac-strip" aria-label="Active channels summary">' +
+    '<div class="dash-ac-strip-left">' +
+    '<h2 class="dash-ac-strip-title" onmouseenter="showTooltip(\'Active Channels\',\'Where governance team conversations happen. Case channels (red) for active incidents; standing channels (blue) for ongoing discussion.\',event)">Active Channels</h2>' +
+    '<p class="dash-ac-strip-sub">' +
+    totalUnread +
+    ' unread across ' +
+    nCh +
+    ' channels</p>' +
+    '</div>' +
+    '<div class="dash-ac-strip-center">' +
+    centerHtml +
+    '</div>' +
+    '<div class="dash-ac-strip-right">' +
+    '<div class="dash-ac-pills">' +
+    pillAll +
+    pillCases +
+    pillStand +
+    '</div>' +
+    '<button type="button" class="dash-ac-viewall" onclick="openTrustLoopTo(\'channels\',null)" onmouseenter="showTooltip(\'All Channels\',\'Open Trust Loop on the Channels tab to see every channel including DMs.\',event)">View All →</button>' +
+    '</div></section>';
+
+  try {
+    host.removeAttribute('onclick');
+  } catch (e2) {}
 }
 
 function initTLChat() {
