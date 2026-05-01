@@ -1051,8 +1051,36 @@ line-height: 1; margin-bottom: 5px;
 
 /* 2-column row */
 .dr-2col {
-  display: grid; grid-template-columns: 1fr 1fr;
-  gap: 16px; margin-bottom: 16px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: stretch;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+.dash-2col-cell {
+  align-self: stretch;
+  min-height: 0;
+}
+/* Regulatory panel — matched height with Demographic Breakdown column, no internal scroll */
+#dash-regulatory-panel.dash-reg-panel {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  background: var(--card);
+  border: 1px solid var(--border2);
+  border-radius: 16px;
+  padding: 14px 16px;
+  font-family: var(--sans);
+  overflow: hidden;
+}
+#dash-regulatory-panel.dash-reg-panel .dash-reg-header {
+  flex-shrink: 0;
+}
+#dash-regulatory-panel.dash-reg-panel .dash-reg-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 .dr-section-panel {
   padding: 20px;
@@ -2193,7 +2221,7 @@ Settings
 <div class="dr-2col">
 
   <!-- LEFT: DEMOGRAPHIC BREAKDOWN -->
-  <div class="dr-card dr-section-panel" onclick="dashDashboardSectionClick(event,'eden')" title="Open Eden Core" style="cursor:pointer;">
+  <div class="dr-card dr-section-panel dash-2col-cell" onclick="dashDashboardSectionClick(event,'eden')" title="Open Eden Core" style="cursor:pointer;">
     <div class="dr-section-head">
       <div class="dr-section-head-left">
         <div class="dr-section-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
@@ -2257,19 +2285,21 @@ Settings
   </div>
 
   <!-- RIGHT: REGULATORY DEADLINES & CERTIFICATIONS -->
-  <div id="dash-regulatory-panel" style="background:var(--card);border:1px solid var(--border2);border-radius:16px;padding:20px;overflow-y:auto;max-height:600px;font-family:var(--sans);">
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
-      <div style="width:34px;height:34px;border-radius:10px;background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.25);display:flex;align-items:center;justify-content:center;color:#22c55e;">
-        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+  <div id="dash-regulatory-panel" class="dash-reg-panel dash-2col-cell">
+    <div class="dash-reg-header" style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+      <div style="width:32px;height:32px;border-radius:10px;background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.25);display:flex;align-items:center;justify-content:center;color:#22c55e;flex-shrink:0;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
       </div>
-      <div>
-        <div style="font-size:14px;font-weight:700;color:#e2e8f0;">Regulatory Deadlines &amp; Certifications</div>
-        <div style="font-size:11px;color:#64748b;">Deadlines, violations, renewals · Click actions to resolve in-core</div>
+      <div style="min-width:0;">
+        <div style="font-size:14px;font-weight:700;color:#e2e8f0;line-height:1.2;">Regulatory Deadlines &amp; Certifications</div>
+        <div style="font-size:10px;color:#64748b;margin-top:2px;line-height:1.3;">Deadlines, violations, renewals · Click actions to resolve in-core</div>
       </div>
     </div>
-    <div id="dash-reg-section-action" style="border-left:3px solid #ef4444;padding-left:14px;margin-bottom:20px;"></div>
-    <div id="dash-reg-section-coming" style="border-left:3px solid #f59e0b;padding-left:14px;margin-bottom:20px;"></div>
-    <div id="dash-reg-section-active" style="border-left:3px solid #22c55e;padding-left:14px;"></div>
+    <div class="dash-reg-body">
+      <div id="dash-reg-section-action" style="border-left:3px solid #ef4444;padding-left:10px;margin-bottom:10px;flex-shrink:0;"></div>
+      <div id="dash-reg-section-coming" style="border-left:3px solid #f59e0b;padding-left:10px;margin-bottom:10px;flex-shrink:0;"></div>
+      <div id="dash-reg-section-active" style="border-left:3px solid #22c55e;padding-left:10px;flex-shrink:0;"></div>
+    </div>
   </div>
 
 </div>
@@ -7337,12 +7367,31 @@ function buildDashRegulatoryDeadlines(org) {
   var elC = document.getElementById('dash-reg-section-active');
   if (!elA || !elB || !elC) return;
 
-  var hdrA = '<div style="font-size:11px;font-weight:700;letter-spacing:0.8px;text-transform:uppercase;color:#ef4444;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid rgba(255,255,255,0.06);">⚠ Action Required</div>';
-  var hdrB = '<div style="font-size:11px;font-weight:700;letter-spacing:0.8px;text-transform:uppercase;color:#f59e0b;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid rgba(255,255,255,0.06);">📅 Coming Up — Next 90 Days</div>';
-  var hdrC = '<div style="font-size:11px;font-weight:700;letter-spacing:0.8px;text-transform:uppercase;color:#22c55e;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid rgba(255,255,255,0.06);">✓ Active Certifications</div>';
+  var secHdr = function(color, txt) {
+    return '<div style="font-size:9px;font-weight:700;letter-spacing:0.8px;text-transform:uppercase;color:' + color + ';margin-bottom:5px;padding-bottom:4px;border-bottom:1px solid rgba(255,255,255,0.06);">' + txt + '</div>';
+  };
+  var hdrA = secHdr('#ef4444', '⚠ Action Required');
+  var hdrB = secHdr('#f59e0b', '📅 Coming Up — Next 90 Days');
+  var hdrC = secHdr('#22c55e', '✓ Active Certifications');
+
+  function comingInlineTitle(it) {
+    var nm = String(it.title || '');
+    var datePart = '';
+    if (it.sub) {
+      var firstSeg = String(it.sub).split('·')[0].trim();
+      datePart = firstSeg.replace(/,\s*\d{4}\s*$/, '').trim();
+    }
+    var combined = nm + (datePart ? ' · ' + datePart : '');
+    return dashRegulatoryEsc(combined);
+  }
+
+  function activeTitleBare(t) {
+    return dashRegulatoryEsc(String(t || '').replace(/\s*✓\s*$/,'').trim());
+  }
 
   function actionRows(arr) {
-    if (!arr || !arr.length) return '<div style="font-size:11px;color:#64748b;">No urgent regulatory items.</div>';
+    arr = Array.isArray(arr) ? arr.slice(0, 3) : [];
+    if (!arr.length) return '<div style="font-size:11px;color:#64748b;padding:4px 0;">No urgent regulatory items.</div>';
     return arr.map(function(it) {
       var tone = it.badgeTone === 'amber' ? 'amber' : 'red';
       var badgeFg = tone === 'amber' ? '#b45309' : '#fecaca';
@@ -7350,38 +7399,36 @@ function buildDashRegulatoryDeadlines(org) {
       var badgeBr = tone === 'amber' ? 'rgba(245,158,11,0.35)' : 'rgba(239,68,68,0.35)';
       var scr = String(it.screen || 'compliance').replace(/\\/g,'').replace(/'/g,'\\\'');
       var btn = dashRegulatoryEsc(it.btnLabel || 'View →');
-      return '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.04);">' +
-        '<div style="flex:1;min-width:0">' +
-          '<div style="font-size:12px;color:#e2e8f0;font-weight:500">' + dashRegulatoryEsc(it.title) + '</div>' +
-          (it.dateLine ? '<div style="font-size:10px;color:#64748b;margin-top:2px;line-height:1.35">' + dashRegulatoryEsc(it.dateLine) + '</div>' : '') +
-        '</div>' +
-        '<div style="display:flex;align-items:center;gap:8px;flex-shrink:0">' +
-          '<span style="font-size:9px;font-weight:700;color:' + badgeFg + ';background:' + badgeBg + ';border:1px solid ' + badgeBr + ';border-radius:4px;padding:2px 6px;white-space:nowrap;">' + dashRegulatoryEsc(it.badge) + '</span>' +
-          '<button type="button" onclick="event.stopPropagation();showScreen(\'' + scr + '\',null)" style="font-size:10px;font-weight:600;color:#93c5fd;background:rgba(96,165,250,0.08);border:1px solid rgba(96,165,250,0.28);border-radius:6px;padding:4px 8px;cursor:pointer;white-space:nowrap;font-family:var(--sans);">' + btn + '</button>' +
+      return '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.04);">' +
+        '<span style="max-width:55%;flex:1 1 auto;min-width:0;font-size:12px;font-weight:500;color:#e2e8f0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' +
+          dashRegulatoryEsc(it.title) +
+        '</span>' +
+        '<div style="display:flex;align-items:center;gap:6px;flex-shrink:0">' +
+          '<span style="font-size:9px;font-weight:700;color:' + badgeFg + ';background:' + badgeBg + ';border:1px solid ' + badgeBr + ';border-radius:4px;padding:1px 5px;white-space:nowrap;line-height:1.35;">' + dashRegulatoryEsc(it.badge) + '</span>' +
+          '<button type="button" onclick="event.stopPropagation();showScreen(\'' + scr + '\',null)" style="font-size:10px;font-weight:600;color:#93c5fd;background:rgba(96,165,250,0.08);border:1px solid rgba(96,165,250,0.28);border-radius:5px;padding:3px 6px;cursor:pointer;white-space:nowrap;line-height:1.35;font-family:var(--sans);">' + btn + '</button>' +
         '</div>' +
       '</div>';
     }).join('');
   }
 
   function comingRows(arr) {
-    if (!arr || !arr.length) return '';
+    arr = Array.isArray(arr) ? arr.slice(0, 2) : [];
+    if (!arr.length) return '';
     return arr.map(function(it) {
-      return '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 10px;margin-bottom:8px;border-left:3px solid #f59e0b;background:rgba(245,158,11,0.05);border-radius:0 8px 8px 0;border-bottom:1px solid rgba(255,255,255,0.04);">' +
-        '<div style="flex:1;min-width:0">' +
-          '<div style="font-size:12px;color:#e2e8f0;font-weight:500">' + dashRegulatoryEsc(it.title) + '</div>' +
-          '<div style="font-size:10px;color:#64748b;margin-top:2px">' + dashRegulatoryEsc(it.sub) + '</div>' +
-        '</div>' +
-        '<span style="font-size:9px;font-weight:700;color:#f59e0b;background:rgba(245,158,11,0.12);border:1px solid rgba(245,158,11,0.32);border-radius:4px;padding:2px 7px;white-space:nowrap;">' + dashRegulatoryEsc(it.pill) + '</span>' +
+      return '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:5px 6px;margin-bottom:4px;margin-left:-3px;border-left:3px solid #f59e0b;background:rgba(245,158,11,0.05);border-radius:0 6px 6px 0;border-bottom:1px solid rgba(255,255,255,0.04);">' +
+        '<span style="max-width:55%;flex:1 1 auto;min-width:0;font-size:12px;font-weight:500;color:#e2e8f0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + comingInlineTitle(it) + '</span>' +
+        '<span style="font-size:9px;font-weight:700;color:#f59e0b;background:rgba(245,158,11,0.12);border:1px solid rgba(245,158,11,0.32);border-radius:4px;padding:2px 6px;white-space:nowrap;flex-shrink:0;line-height:1.35;">' + dashRegulatoryEsc(it.pill) + '</span>' +
       '</div>';
     }).join('');
   }
 
   function activeRows(arr) {
-    if (!arr || !arr.length) return '';
+    arr = Array.isArray(arr) ? arr.slice(0, 2) : [];
+    if (!arr.length) return '';
     return arr.map(function(it) {
-      return '<div style="padding:8px 10px;margin-bottom:8px;border-left:3px solid #22c55e;background:rgba(34,197,94,0.06);border-radius:0 8px 8px 0;border-bottom:1px solid rgba(255,255,255,0.04);">' +
-        '<div style="font-size:12px;color:#e2e8f0;font-weight:500">' + dashRegulatoryEsc(it.title) + '</div>' +
-        (it.sub ? '<div style="font-size:10px;color:#64748b;margin-top:2px;line-height:1.35">' + dashRegulatoryEsc(it.sub) + '</div>' : '') +
+      return '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:5px 6px;margin-bottom:4px;margin-left:-3px;border-left:3px solid #22c55e;background:rgba(34,197,94,0.06);border-radius:0 6px 6px 0;border-bottom:1px solid rgba(255,255,255,0.04);">' +
+        '<span style="max-width:85%;flex:1 1 auto;min-width:0;font-size:12px;font-weight:500;color:#e2e8f0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + activeTitleBare(it.title) + '</span>' +
+        '<span style="flex-shrink:0;font-size:12px;font-weight:700;color:#22c55e;line-height:1;">✓</span>' +
       '</div>';
     }).join('');
   }
