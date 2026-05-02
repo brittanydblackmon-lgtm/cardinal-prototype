@@ -12,6 +12,9 @@
     - War Room: `openWarRoomCase` + optional channel stub ensures overlap case IDs route with case channel pane; `selectWarRoomCase` alias.
     - CARDINAL_DATA (via `_edoMergeVisualExt`): `edenEveSummary`, `obsidianEveSummary`, `edenScoreHistory`, `obsidianScoreHistory` per industry.
 
+  May 2, 2026 — Sidebar Trust Score chip cleanup.
+    Removed redundant "Below Cardinal certification floor (80+ required)" subtext (`#sidebar-cert-badge`). Expanded chip now renders 3 lines: header / number / status with icon (same `formatDashTrustStatusHtml` logic as the Global Trust Score panel). Collapsed circular badge state preserved.
+
   May 2, 2026 — Eden Core + Obsidian Core parallel build.
     - Both screens use shared 8-section architecture: Hero, Active Cases, Demographics / fraud lens breakdown, Model Coverage Grid, Model Detail Drill-In (Bias / Fraud / Side-by-Side), Cohort Explorer (Cohort Summary default + Individual Drill-In Admin/Legal-only), Bias-Fraud Connection visualization, Echo Footer.
     - Cohort Explorer: cohort-level summary for all roles; individual PII drill-in for Admin/Legal Counsel with automatic Echo Memory access-granted events; demo role switcher; CSV export.
@@ -592,6 +595,13 @@ font-size: 22px; font-weight: 600; line-height: 1;
 }
 .trust-score-mini-status {
 font-size: 10px; color: var(--muted); margin-top: 3px;
+}
+.trust-score-mini-status .dash-trust-status-inner {
+  gap: 4px;
+}
+.trust-score-mini-status .dash-trust-status-inner svg {
+  width: 9px;
+  height: 9px;
 }
 .ts-info-trigger {
   display: inline-flex; align-items: center; justify-content: center;
@@ -2615,10 +2625,28 @@ animation:waveform var(--dur) ease-in-out infinite alternate;
 .dash-ac-strip-center {
   flex: 1 1 280px;
   min-width: 0;
-  position: relative;
   display: flex;
   align-items: center;
   gap: 8px;
+}
+/* Scroll buttons sit outside the chip viewport — chips never extend under arrows */
+.dash-ac-chips-viewport {
+  flex: 1 1 auto;
+  min-width: 0;
+  position: relative;
+  border-radius: 10px;
+}
+.dash-ac-chips-viewport::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 44px;
+  pointer-events: none;
+  background: linear-gradient(90deg, rgba(4, 10, 20, 0), rgba(4, 10, 20, 0.88));
+  z-index: 1;
+  border-radius: 0 10px 10px 0;
 }
 .dash-ac-chips-scroll {
   display: flex;
@@ -2627,45 +2655,47 @@ animation:waveform var(--dur) ease-in-out infinite alternate;
   overflow-x: auto;
   overflow-y: hidden;
   scroll-snap-type: x mandatory;
-  padding: 4px 2px 10px;
-  flex: 1;
+  padding: 4px 40px 10px 4px;
+  width: 100%;
+  box-sizing: border-box;
   min-width: 0;
   scrollbar-width: thin;
   scrollbar-color: rgba(148,163,184,.35) transparent;
+  position: relative;
+  z-index: 0;
 }
 .dash-ac-chips-scroll::-webkit-scrollbar { height: 6px; }
 .dash-ac-chips-scroll::-webkit-scrollbar-thumb {
   background: rgba(148,163,184,.35);
   border-radius: 99px;
 }
-.dash-ac-chips-fade {
-  pointer-events: none;
-  position: absolute;
-  right: 72px;
-  top: 0;
-  bottom: 0;
-  width: 48px;
-  background: linear-gradient(90deg, transparent, rgba(4, 10, 20, 0.92));
-  z-index: 1;
-}
 .dash-ac-scroll-btn {
   flex-shrink: 0;
-  width: 28px;
+  width: 32px;
   height: 64px;
   border-radius: 8px;
-  border: 1px solid rgba(148, 163, 184, 0.2);
-  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  background: rgba(15, 23, 42, 0.85);
   color: #94a3b8;
   cursor: pointer;
-  font-size: 16px;
+  font-size: 18px;
+  line-height: 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background .15s, color .15s;
+  transition: background .15s, color .15s, border-color .15s;
+  position: relative;
+  z-index: 2;
+  pointer-events: auto;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 .dash-ac-scroll-btn:hover {
-  background: rgba(166, 218, 255, 0.08);
+  background: rgba(30, 41, 59, 0.95);
+  border-color: rgba(166, 218, 255, 0.35);
   color: #e2e8f0;
+}
+.dash-ac-scroll-btn:active {
+  transform: translateY(1px);
 }
 .dash-ac-chip {
   flex: 0 0 280px;
@@ -4500,11 +4530,7 @@ Trust Loop
 <div class="trust-score-mini trust-score-chip-full">
 <div class="trust-score-mini-label">Global Trust Score</div>
 <div class="trust-score-mini-val" id="sidebar-score" style="color:#F59E0B">74</div>
-<div class="trust-score-mini-status" id="sidebar-status" style="display:flex;align-items:center;gap:4px">
-<svg width="9" height="9" viewBox="0 0 14 14" fill="none"><path d="M7 1.5L1.5 12.5h11L7 1.5z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M7 5.5v3M7 10v.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-Below 80 threshold
-</div>
-<div id="sidebar-cert-badge" style="font-size:9px;color:var(--muted);margin-top:1px"></div>
+<div class="trust-score-mini-status" id="sidebar-status" style="display:flex;align-items:center;gap:4px"></div>
 </div>
 <div class="trust-score-chip-badge" id="sidebar-trust-badge-collapsed" aria-hidden="true" style="background:#F59E0B">
 <span class="trust-score-chip-badge-num" id="sidebar-score-badge">74</span>
@@ -11963,15 +11989,12 @@ function applyCardinalData(org) {
   var sbadgeEl = document.getElementById('sidebar-trust-badge-collapsed');
   if (sbadgeEl) sbadgeEl.style.background = d.trustColor;
 
-  // Sidebar status text + cert badge
+  // Sidebar status — single row with icon (matches Global Trust Score panel; no separate cert subtext)
   var sst = document.getElementById('sidebar-status');
   if (sst) {
-    var iconHtml = '<svg width="9" height="9" viewBox="0 0 14 14" fill="none"><path d="M7 1.5L1.5 12.5h11L7 1.5z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M7 5.5v3M7 10v.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>';
-    sst.innerHTML = iconHtml + d.trustStatus;
-    sst.style.color = d.trustColor;
+    sst.innerHTML = formatDashTrustStatusHtml(d);
+    sst.style.color = d.trustScore >= 0.80 ? '#22c55e' : d.trustColor;
   }
-  var scb = document.getElementById('sidebar-cert-badge');
-  if (scb) scb.textContent = d.certStatus;
 
   var certed = d.trustScore >= 0.80;
   var dotEl = document.querySelector('#sidebar-trust-badge-collapsed .trust-score-chip-badge-dot');
@@ -15848,13 +15871,10 @@ function syncIndustrySidebarChrome(org) {
 
  var scoreMap = {ad:74, fin:81, health:83};
  var scoreColorMap = {ad:'#F59E0B', fin:'#22C55E', health:'#22C55E'};
- var statusMap = {ad:'Below 80 threshold', fin:'✓ Certified', health:'✓ Certified'};
 
  var scoreEl = document.getElementById('sidebar-score');
- var statusEl = document.getElementById('sidebar-status');
 
  if(scoreEl) { scoreEl.textContent = scoreMap[org]; scoreEl.style.color = scoreColorMap[org]; }
- if(statusEl) statusEl.textContent = statusMap[org];
 
  var subMap = {
   ad: 'Atlas Defense Systems · A&D Pilot',
@@ -15998,7 +16018,15 @@ function updateDim(id, val) {
  });
 
  document.getElementById('dash-trust-sub').textContent = score>=80?'✓ Certified':'⚠ Below 80 — Not Certified';
- document.getElementById('sidebar-status').textContent = score>=80?'✓ Certified':'⚠ Below 80 threshold';
+ var sstDim = document.getElementById('sidebar-status');
+ if (sstDim) {
+   sstDim.innerHTML = formatDashTrustStatusHtml({
+     trustScore: score / 100,
+     trustStatus: score >= 80 ? 'Within Compliance' : 'Below Threshold — Not Certified',
+     certStatus: score >= 80 ? 'Certified' : 'Not Certified'
+   });
+   sstDim.style.color = score >= 80 ? '#22c55e' : sc;
+ }
 
  const cb = document.getElementById('cert-badge');
  if(cb) {
@@ -19090,6 +19118,16 @@ function dashAcQuote(s) {
   return String(s == null ? '' : s).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
 }
 
+window.dashAcScrollChips = function (delta) {
+  var el = document.getElementById('dash-ac-chips-scroll');
+  if (!el || typeof delta !== 'number') return;
+  el.scrollBy({ left: delta, behavior: 'smooth' });
+};
+window.dashAcSetFilter = function (filt, org) {
+  window._dashChFilter = filt || 'all';
+  renderDashboardActiveChannels(org);
+};
+
 function renderDashboardActiveChannels(org) {
   var host = document.getElementById('dash-active-channels-host');
   if (!host) return;
@@ -19181,8 +19219,8 @@ function renderDashboardActiveChannels(org) {
       var dotColor = r.kind === 'case' ? '#ef4444' : '#60a5fa';
       var click =
         r.kind === 'case'
-          ? 'onclick="openWarRoomToCase(\'' + dashAcQuote(r.caseId) + '\')"'
-          : 'onclick="openTrustLoopTo(\'channels\',\'' + dashAcQuote(r.routeId) + '\')"';
+          ? 'onclick=' + JSON.stringify('openWarRoomToCase(' + JSON.stringify(String(r.caseId || '').replace(/^#/, '')) + ')')
+          : 'onclick=' + JSON.stringify('openTrustLoopTo("channels",' + JSON.stringify(r.routeId) + ')');
       var dotTipT = r.kind === 'case' ? 'Case Channel' : 'Standing Channel';
       var dotTipB =
         r.kind === 'case'
@@ -19228,51 +19266,60 @@ function renderDashboardActiveChannels(org) {
   var pillAll =
     '<button type="button" class="dash-ac-pill ' +
     (filt === 'all' ? 'active' : '') +
-    '" onclick="window._dashChFilter=\'all\';renderDashboardActiveChannels(\'' +
-    org +
-    '\')" onmouseenter="showTooltip(\'All\',\'Shows every standing Trust Loop channel plus active War Room case channels from CARDINAL_DATA for this industry.\',event)">All</button>';
+    '" onclick=' +
+    JSON.stringify('dashAcSetFilter("all",' + JSON.stringify(org) + ')') +
+    ' onmouseenter="showTooltip(\'All\',\'Shows every standing Trust Loop channel plus active War Room case channels from CARDINAL_DATA for this industry.\',event)">All</button>';
   var pillCases = '';
   var pillStand = '';
   if (hasCases && hasStand) {
     pillCases =
       '<button type="button" class="dash-ac-pill ' +
       (filt === 'cases' ? 'active' : '') +
-      '" onclick="window._dashChFilter=\'cases\';renderDashboardActiveChannels(\'' +
-      org +
-      '\')" onmouseenter="showTooltip(\'Cases\',\'Only War Room case channels (red dot) tied to active incidents.\',event)">Cases</button>';
+      '" onclick=' +
+      JSON.stringify('dashAcSetFilter("cases",' + JSON.stringify(org) + ')') +
+      ' onmouseenter="showTooltip(\'Cases\',\'Only War Room case channels (red dot) tied to active incidents.\',event)">Cases</button>';
     pillStand =
       '<button type="button" class="dash-ac-pill ' +
       (filt === 'standing' ? 'active' : '') +
-      '" onclick="window._dashChFilter=\'standing\';renderDashboardActiveChannels(\'' +
-      org +
-      '\')" onmouseenter="showTooltip(\'Standing\',\'Only persistent Trust Loop channels (blue dot).\',event)">Standing</button>';
+      '" onclick=' +
+      JSON.stringify('dashAcSetFilter("standing",' + JSON.stringify(org) + ')') +
+      ' onmouseenter="showTooltip(\'Standing\',\'Only persistent Trust Loop channels (blue dot).\',event)">Standing</button>';
   } else if (hasCases && !hasStand) {
     pillCases =
       '<button type="button" class="dash-ac-pill ' +
       (filt === 'cases' ? 'active' : '') +
-      '" onclick="window._dashChFilter=\'cases\';renderDashboardActiveChannels(\'' +
-      org +
-      '\')" onmouseenter="showTooltip(\'Cases\',\'Case channels only (War Room).\',event)">Cases</button>';
+      '" onclick=' +
+      JSON.stringify('dashAcSetFilter("cases",' + JSON.stringify(org) + ')') +
+      ' onmouseenter="showTooltip(\'Cases\',\'Case channels only (War Room).\',event)">Cases</button>';
   } else if (!hasCases && hasStand) {
     pillStand =
       '<button type="button" class="dash-ac-pill ' +
       (filt === 'standing' ? 'active' : '') +
-      '" onclick="window._dashChFilter=\'standing\';renderDashboardActiveChannels(\'' +
-      org +
-      '\')" onmouseenter="showTooltip(\'Standing\',\'Standing channels only (Trust Loop).\',event)">Standing</button>';
+      '" onclick=' +
+      JSON.stringify('dashAcSetFilter("standing",' + JSON.stringify(org) + ')') +
+      ' onmouseenter="showTooltip(\'Standing\',\'Standing channels only (Trust Loop).\',event)">Standing</button>';
   }
 
   var centerHtml;
   if (mockZero || !rows.length) {
     centerHtml = '<div class="dash-ac-empty">No unread messages</div>';
   } else {
+    var scrTip = ' onmouseenter="showTooltip(\'Scroll Channels\',\'Scroll Channels / Click to scroll left or right through all active channels.\',event)"';
     centerHtml =
-      '<div class="dash-ac-chips-fade"></div>' +
-      '<button type="button" class="dash-ac-scroll-btn" aria-label="Scroll left" onclick="this.nextElementSibling.scrollBy({left:-300,behavior:\'smooth\'})" onmouseenter="showTooltip(\'Scroll\',\'Scroll channel chips left.\',event)">‹</button>' +
+      '<button type="button" class="dash-ac-scroll-btn dash-ac-scroll-btn--prev" aria-label="Scroll channels left"' +
+      ' onclick=' +
+      JSON.stringify('dashAcScrollChips(-280)') +
+      scrTip +
+      '>‹</button>' +
+      '<div class="dash-ac-chips-viewport">' +
       '<div class="dash-ac-chips-scroll" id="dash-ac-chips-scroll">' +
       chipsHtml +
-      '</div>' +
-      '<button type="button" class="dash-ac-scroll-btn" aria-label="Scroll right" onclick="this.previousElementSibling.scrollBy({left:300,behavior:\'smooth\'})" onmouseenter="showTooltip(\'Scroll\',\'Scroll channel chips right.\',event)">›</button>';
+      '</div></div>' +
+      '<button type="button" class="dash-ac-scroll-btn dash-ac-scroll-btn--next" aria-label="Scroll channels right"' +
+      ' onclick=' +
+      JSON.stringify('dashAcScrollChips(280)') +
+      scrTip +
+      '>›</button>';
   }
 
   host.innerHTML =
@@ -19290,7 +19337,10 @@ function renderDashboardActiveChannels(org) {
     pillCases +
     pillStand +
     '</div>' +
-    '<button type="button" class="dash-ac-viewall" onclick="openTrustLoopTo(\'channels\',null)" onmouseenter="showTooltip(\'All Channels\',\'Open Trust Loop > Channels tab to see every channel including DMs.\',event)">View All →</button>' +
+    '<button type="button" class="dash-ac-viewall"' +
+    ' onclick=' +
+    JSON.stringify('openTrustLoopTo("channels",null)') +
+    ' onmouseenter="showTooltip(\'All Channels\',\'Open Trust Loop > Channels tab to see every channel including DMs.\',event)">View All →</button>' +
     '</div></section>';
 
   try {
@@ -25718,7 +25768,14 @@ function showDeploySuccess() {
   var newScore = newScores[org]||82;
   if(scoreEl) { scoreEl.textContent = newScore; scoreEl.style.color = 'var(--green)'; }
   var statusEl = document.getElementById('sidebar-status');
-  if(statusEl) statusEl.textContent = '✓ Certified';
+  if (statusEl) {
+    statusEl.innerHTML = formatDashTrustStatusHtml({
+      trustScore: newScore / 100,
+      trustStatus: 'Within Compliance',
+      certStatus: 'Certified'
+    });
+    statusEl.style.color = 'var(--green)';
+  }
   var dashEl = document.getElementById('dash-trust');
   if(dashEl) { dashEl.textContent = newScore; dashEl.style.color = 'var(--green)'; }
   // Update shadow badge
