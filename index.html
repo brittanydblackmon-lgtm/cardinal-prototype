@@ -3,6 +3,15 @@
   ════════════════════════════════════════════════════════════════════
   PROJECT CARDINAL — CHANGELOG
   ════════════════════════════════════════════════════════════════════
+  May 2, 2026 — Eden + Obsidian visual upgrade.
+    - Section 1 Hero: added 30-day sparkline trend chart + Live indicator + peer comparison chip + refined Bias-Fraud Connection callout.
+    - Section 3 MAJOR REBUILD: replaced basic charts with dashboard-quality multi-chart layout. Statistically Significant callout + 3-column charts (gender bars / age 6-bar with overlay / racial table) + geographic pill row + Most Vulnerable Intersection callout. For Obsidian: Fraud Pattern Hotspots + synthetic identity bars + velocity 24-hour heatmap + cluster fraud ring cards + geographic fraud concentration + Most Targeted Cohort.
+    - Section 5 Model Detail: visual upgrade — gauges with threshold markers for DI / Equalized Odds / Demographic Parity / Calibration. Feature Importance bar chart with proxy variables highlighted red. Proxy variable detection ranked list.
+    - Section 7 Bias-Fraud Connection: replaced disjoint circles with proper SVG Venn diagram. Two overlapping circles + prominent overlap count + clickable regions + below-diagram list of overlap cases as tappable cards routing to War Room.
+    - CARDINAL_DATA additions per industry: protectedGroupImpactBias (statisticallySignificant + genderDistribution + ageGroupRates + racialEthnicAnalysis + geographicDisparity + mostVulnerableIntersection), protectedGroupImpactFraud (mirror with fraud lens), biasFraudConnectionData (counts + overlap case list), modelDetailEnhancedMetrics (diHistory + featureImportance + proxyVariables per model).
+    - Comprehensive tooltips added on every new element.
+    - Quote escaping discipline preserved: zero backslash-quote inside onclick attributes.
+
   May 2, 2026 — Eden Core + Obsidian Core parallel build.
     - Both screens use shared 8-section architecture: Hero, Active Cases, Demographics / fraud lens breakdown, Model Coverage Grid, Model Detail Drill-In (Bias / Fraud / Side-by-Side), Cohort Explorer (Cohort Summary default + Individual Drill-In Admin/Legal-only), Bias-Fraud Connection visualization, Echo Footer.
     - Cohort Explorer: cohort-level summary for all roles; individual PII drill-in for Admin/Legal Counsel with automatic Echo Memory access-granted events; demo role switcher; CSV export.
@@ -9298,6 +9307,332 @@ function _genHealthIndividuals() {
   return arr;
 }
 
+function _edoGenHeroSparkline30(score, isFraud) {
+  var arr = [];
+  for (var i = 0; i < 30; i++) {
+    var dt = new Date();
+    dt.setDate(dt.getDate() - (29 - i));
+    var t = i / 29;
+    var wave = Math.sin(t * Math.PI * 1.4) * (isFraud ? 3.5 : 4);
+    var v;
+    if (!isFraud) {
+      v = score + (1 - t) * 10 + wave * 0.45;
+      if (i >= 22) v = score + (29 - i) * 0.12;
+    } else {
+      v = score - (1 - t) * 8 - wave * 0.35;
+      if (i >= 22) v = score - (29 - i) * 0.08;
+    }
+    if (i === 29) v = score;
+    v = Math.round(Math.max(35, Math.min(98, v)));
+    arr.push({ date: dt.toISOString().slice(0, 10), value: v });
+  }
+  return arr;
+}
+
+function _edoAttachModelDetailMetrics(dst) {
+  var bias = dst.biasMetricsByModel || [];
+  var featPool = ['tenure_months', 'prior_decision_flags', 'channel_risk', 'geo_density', 'debt_service_ratio', 'payment_velocity', 'account_age_days', 'device_fingerprint_risk', 'cohort_pressure_index', 'stability_score'];
+  var out = [];
+  for (var i = 0; i < bias.length; i++) {
+    var b = bias[i];
+    var diEnd = b.di;
+    var diStart = Math.min(0.96, diEnd + 0.13 - i * 0.03);
+    var diHist = [];
+    var eoEnd = b.equalizedOdds;
+    var eoStart = Math.min(0.32, eoEnd + 0.14);
+    var eoHist = [];
+    for (var j = 0; j < 30; j++) {
+      var dt = new Date();
+      dt.setDate(dt.getDate() - (29 - j));
+      var prog = j / 29;
+      var diVal = diStart + (diEnd - diStart) * prog + Math.sin(j * 0.45) * 0.018;
+      diHist.push({ date: dt.toISOString().slice(0, 10), value: Math.round(diVal * 1000) / 1000 });
+      var eoVal = eoStart + (eoEnd - eoStart) * prog + Math.cos(j * 0.42) * 0.012;
+      eoHist.push({ date: dt.toISOString().slice(0, 10), value: Math.round(eoVal * 1000) / 1000 });
+    }
+    var top = b.topProxyVariable || { name: 'feature_signal', correlation: 0.55, correlatesWith: 'protected' };
+    var feats = [{ featureName: top.name, importance: 0.92, isProxyVar: true }];
+    for (var k = 0; k < featPool.length; k++) {
+      feats.push({ featureName: featPool[k], importance: Math.max(0.08, Math.round((0.86 - k * 0.075) * 100) / 100), isProxyVar: false });
+    }
+    feats.sort(function (a, b) { return b.importance - a.importance; });
+    var proxies = [
+      { feature: top.name, correlation: top.correlation, correlatesWith: top.correlatesWith, severity: top.correlation >= 0.8 ? 'high' : (top.correlation >= 0.65 ? 'medium' : 'low') },
+      { feature: featPool[(i + 3) % featPool.length] + '_shadow', correlation: Math.round(58 + i * 7) / 100, correlatesWith: i % 2 ? 'age' : 'gender', severity: 'medium' }
+    ];
+    out.push({ diHistory: diHist, equalizedOddsHistory: eoHist, featureImportance: feats.slice(0, 10), proxyVariables: proxies });
+  }
+  dst.modelDetailEnhancedMetrics = out;
+}
+
+function _overlapCasesListFromOrg(ok, nOverlap, primaryCase) {
+  var list = [];
+  for (var i = 0; i < nOverlap; i++) {
+    var cid = primaryCase;
+    if (ok === 'ad') cid = i === 0 ? 'AD-2847' : 'AD-' + String(2847 + i);
+    if (ok === 'fin') cid = i === 0 ? 'FIN-1203' : 'FIN-' + String(1203 + i);
+    if (ok === 'health') cid = i === 0 ? 'HS-2847' : 'HS-' + String(2847 + i);
+    var biasAsp = ok === 'fin' ? 'DI 0.74 vs ZIP proxy' : ok === 'health' ? 'DI 0.64 — Claims v1.9' : 'DI 0.67 vs 0.80 floor';
+    var fraudAsp = ok === 'fin' ? 'Synthetic ring — NYC ZIP' : ok === 'health' ? 'Specialty upcoding cluster' : 'Credential synthesis ring';
+    list.push({
+      caseId: cid,
+      summary: i === 0 ? (ok === 'ad' ? 'Hispanic technicians at Pendleton denied premium-base placement (bias) — credential verification skipped on denial pattern, allowing synthetic credential ring through (fraud blind spot).' : ok === 'fin' ? 'NYC ZIP-cluster denials on Credit Scoring v3.4 masked synthetic identity ring — 12 overlap cases on bias-fraud boundary.' : 'Patients 65+ specialty denials on Claims v1.9 — provider collusion ring exploited calibration gap (Diagnosis Support cross-signal).') : ('Linked overlap segment ' + (i + 1) + ' — bias corridor reduced fraud signal until Cardinal fused lenses.'),
+      biasAspect: biasAsp,
+      fraudAspect: fraudAsp + (i ? ' · segment ' + (i + 1) : ''),
+      dollarsAtRisk: ok === 'ad' ? 67000000 - i * 900000 : ok === 'fin' ? 73000000 - i * 2100000 : 150000000 - i * 4100000
+    });
+  }
+  return list;
+}
+
+function _edoMergeVisualExt(dst, ok) {
+  var vEl24 = [{ hour: 0, anomalyScore: 12 }, { hour: 1, anomalyScore: 14 }, { hour: 2, anomalyScore: 67 }, { hour: 3, anomalyScore: 74 }, { hour: 4, anomalyScore: 71 }, { hour: 5, anomalyScore: 42 }, { hour: 6, anomalyScore: 18 }, { hour: 7, anomalyScore: 11 }, { hour: 8, anomalyScore: 9 }, { hour: 9, anomalyScore: 8 }, { hour: 10, anomalyScore: 7 }, { hour: 11, anomalyScore: 6 }, { hour: 12, anomalyScore: 8 }, { hour: 13, anomalyScore: 9 }, { hour: 14, anomalyScore: 10 }, { hour: 15, anomalyScore: 11 }, { hour: 16, anomalyScore: 12 }, { hour: 17, anomalyScore: 13 }, { hour: 18, anomalyScore: 15 }, { hour: 19, anomalyScore: 17 }, { hour: 20, anomalyScore: 19 }, { hour: 21, anomalyScore: 21 }, { hour: 22, anomalyScore: 18 }, { hour: 23, anomalyScore: 14 }];
+  var vFin24 = [];
+  for (var hi = 0; hi < 24; hi++) {
+    var base = (hi >= 22 || hi <= 3) ? 58 + hi % 9 : 8 + (hi % 5);
+    vFin24.push({ hour: hi, anomalyScore: hi === 23 || hi === 0 ? 72 : base });
+  }
+  var vHealth24 = [];
+  for (var hj = 0; hj < 24; hj++) {
+    var spe = (hj >= 10 && hj <= 14) ? 48 + hj : 12 + (hj % 8);
+    vHealth24.push({ hour: hj, anomalyScore: spe });
+  }
+  if (ok === 'ad') {
+    dst.protectedGroupImpactBias = {
+      statisticallySignificantDisparities: [
+        { text: 'Hispanic technicians: -11% assignment rate vs white baseline', severity: 'violation' },
+        { text: 'Age 55+ personnel: -7% below threshold', severity: 'warning' },
+        { text: 'Native American: 0.3% training data vs 1.2% population', severity: 'gap' }
+      ],
+      genderDistribution: [
+        { label: 'Male', value: 81, threshold: 80, isViolation: false },
+        { label: 'Female', value: 76, threshold: 80, isViolation: true },
+        { label: 'Other', value: 74, threshold: 80, isViolation: true }
+      ],
+      ageGroupRates: [
+        { bracket: '18-25', approvalRate: 92, vsYoungestCohort: 100 },
+        { bracket: '26-35', approvalRate: 89, vsYoungestCohort: 97 },
+        { bracket: '36-45', approvalRate: 87, vsYoungestCohort: 95 },
+        { bracket: '46-55', approvalRate: 81, vsYoungestCohort: 88 },
+        { bracket: '56-65', approvalRate: 72, vsYoungestCohort: 78 },
+        { bracket: '65+', approvalRate: 68, vsYoungestCohort: 74 }
+      ],
+      racialEthnicAnalysis: [
+        { group: 'White', rate: 78.2, baseline: 78.2, deltaPercent: 0, status: 'baseline' },
+        { group: 'Asian', rate: 74.1, baseline: 78.2, deltaPercent: -4, status: 'warning' },
+        { group: 'Black/AA', rate: 71.3, baseline: 78.2, deltaPercent: -7, status: 'warning' },
+        { group: 'Other', rate: 69.2, baseline: 78.2, deltaPercent: -9, status: 'warning' },
+        { group: 'Hispanic', rate: 67.4, baseline: 78.2, deltaPercent: -11, status: 'violation' }
+      ],
+      geographicDisparity: [
+        { region: 'NC', deltaPercent: -16, severity: 'high' },
+        { region: 'DC', deltaPercent: -13, severity: 'high' },
+        { region: 'TX', deltaPercent: -9, severity: 'medium' },
+        { region: 'CA', deltaPercent: -5, severity: 'low' },
+        { region: 'FL', deltaPercent: -6, severity: 'low' }
+      ],
+      mostVulnerableIntersection: 'Hispanic women age 55+ at Fort Bragg NC — lowest assignment rate of any group: 61.3%'
+    };
+    dst.protectedGroupImpactFraud = {
+      fraudPatternHotspots: [
+        { text: 'Credential synthesis: 12 cases — Hispanic technician records most targeted', severity: 'high' },
+        { text: 'Velocity anomaly: 02:00-05:00 UTC peak (cluster replay)', severity: 'medium' },
+        { text: 'Identity recycling: 6 cases at Bragg maintenance crew', severity: 'medium' }
+      ],
+      syntheticIdentityByDemo: [
+        { label: 'Hispanic technicians at Pendleton', rate: 42, threshold: 20 },
+        { label: 'Black technicians at Bragg', rate: 31, threshold: 20 },
+        { label: 'White baseline', rate: 18, threshold: 20 },
+        { label: 'Asian', rate: 14, threshold: 20 },
+        { label: 'Other', rate: 9, threshold: 20 }
+      ],
+      velocityAnomalyByHour: vEl24,
+      clusterFraudRings: [
+        { ringId: 'FR-001', members: 7, dollarsAtRisk: 340000, geography: 'Pendleton credential synthesis' },
+        { ringId: 'FR-002', members: 4, dollarsAtRisk: 89000, geography: 'Bragg maintenance velocity attack' },
+        { ringId: 'FR-003', members: 3, dollarsAtRisk: 67000, geography: 'Lewis synthetic credentials' }
+      ],
+      geographicFraudConcentration: [
+        { region: 'NC', fraudRate: 34, severity: 'high' },
+        { region: 'DC', fraudRate: 28, severity: 'high' },
+        { region: 'TX', fraudRate: 19, severity: 'medium' },
+        { region: 'CA', fraudRate: 11, severity: 'low' },
+        { region: 'FL', fraudRate: 8, severity: 'low' }
+      ],
+      mostTargetedCohort: 'Hispanic technicians at Camp Pendleton — 187 affected by combined bias-induced denial pattern + synthetic credential targeting (Bias-Fraud Connection: 7 overlap cases)'
+    };
+    dst.biasFraudConnectionData = {
+      biasCount: 1,
+      fraudCount: 2,
+      overlapCount: 7,
+      biasOnlyCases: [{ caseId: 'AD-2701', summary: 'Isolation bias flag on Maintenance Routing — no fraud nexus yet.', biasAspect: 'Watch-band DI on Bragg cohort', fraudAspect: 'N/A', dollarsAtRisk: 2100000 }],
+      fraudOnlyCases: [
+        { caseId: 'AD-2902', summary: 'Identity recycling on Maintenance Routing — disparity noise masked follow-up.', biasAspect: 'N/A', fraudAspect: 'Velocity + recycling', dollarsAtRisk: 89000 },
+        { caseId: 'AD-2911', summary: 'Synthetic credential probe Lewis — caught before bias cohort overlap.', biasAspect: 'N/A', fraudAspect: 'Credential probe', dollarsAtRisk: 45000 }
+      ],
+      overlapCases: _overlapCasesListFromOrg('ad', 7, 'AD-2847')
+    };
+  } else if (ok === 'fin') {
+    dst.protectedGroupImpactBias = {
+      statisticallySignificantDisparities: [
+        { text: 'Black applicants in ZIP 10453: -18% approval vs white NYC baseline', severity: 'violation' },
+        { text: 'Hispanic women age 35-50 across Bronx/Brooklyn clusters: -12% vs threshold', severity: 'warning' },
+        { text: 'zip_code feature: 0.82 correlation with race — ECOA proxy exposure', severity: 'gap' }
+      ],
+      genderDistribution: [
+        { label: 'Male', value: 84, threshold: 80, isViolation: false },
+        { label: 'Female', value: 71, threshold: 80, isViolation: true },
+        { label: 'Other', value: 77, threshold: 80, isViolation: true }
+      ],
+      ageGroupRates: [
+        { bracket: '18-25', approvalRate: 88, vsYoungestCohort: 100 },
+        { bracket: '26-35', approvalRate: 85, vsYoungestCohort: 97 },
+        { bracket: '36-45', approvalRate: 79, vsYoungestCohort: 90 },
+        { bracket: '46-55', approvalRate: 74, vsYoungestCohort: 84 },
+        { bracket: '56-65', approvalRate: 69, vsYoungestCohort: 78 },
+        { bracket: '65+', approvalRate: 63, vsYoungestCohort: 72 }
+      ],
+      racialEthnicAnalysis: [
+        { group: 'White', rate: 82.4, baseline: 82.4, deltaPercent: 0, status: 'baseline' },
+        { group: 'Asian', rate: 80.1, baseline: 82.4, deltaPercent: -3, status: 'warning' },
+        { group: 'Hispanic', rate: 74.6, baseline: 82.4, deltaPercent: -8, status: 'warning' },
+        { group: 'Black/AA', rate: 67.2, baseline: 82.4, deltaPercent: -11, status: 'violation' },
+        { group: 'Other', rate: 76.0, baseline: 82.4, deltaPercent: -6, status: 'warning' }
+      ],
+      geographicDisparity: [
+        { region: '10453', deltaPercent: -18, severity: 'high' },
+        { region: '11212', deltaPercent: -15, severity: 'high' },
+        { region: '10031', deltaPercent: -9, severity: 'medium' },
+        { region: '11368', deltaPercent: -6, severity: 'low' },
+        { region: '10001', deltaPercent: -4, severity: 'low' }
+      ],
+      mostVulnerableIntersection: 'Black female applicants age 35-50 in NYC ZIP 10453 (Morris Heights) — lowest approval rate of any intersection: 58.7%'
+    };
+    dst.protectedGroupImpactFraud = {
+      fraudPatternHotspots: [
+        { text: 'Synthetic identity rings concentrated at NYC ZIPs 10453 and 11212 — 47 linked applications', severity: 'high' },
+        { text: 'Weekday late-night velocity burst 23:00-03:00 ET — device farm replay', severity: 'medium' },
+        { text: 'Cross-ZIP identity recycling between Morris Heights and Brownsville bands', severity: 'medium' }
+      ],
+      syntheticIdentityByDemo: [
+        { label: 'Black applicants — 10453', rate: 38, threshold: 20 },
+        { label: 'Hispanic applicants — 11212', rate: 35, threshold: 20 },
+        { label: 'White baseline NYC', rate: 17, threshold: 20 },
+        { label: 'Asian', rate: 12, threshold: 20 },
+        { label: 'Other', rate: 9, threshold: 20 }
+      ],
+      velocityAnomalyByHour: vFin24,
+      clusterFraudRings: [
+        { ringId: 'FIN-R-10453', members: 23, dollarsAtRisk: 890000, geography: 'Morris Heights synthetic identity ring' },
+        { ringId: 'FIN-R-11212', members: 18, dollarsAtRisk: 620000, geography: 'Brownsville credential recycling' },
+        { ringId: 'FIN-R-XDM', members: 11, dollarsAtRisk: 210000, geography: 'Cross-ZIP device mesh' }
+      ],
+      geographicFraudConcentration: [
+        { region: '10453', fraudRate: 41, severity: 'high' },
+        { region: '11212', fraudRate: 36, severity: 'high' },
+        { region: '10031', fraudRate: 22, severity: 'medium' },
+        { region: '11368', fraudRate: 14, severity: 'low' },
+        { region: '10001', fraudRate: 9, severity: 'low' }
+      ],
+      mostTargetedCohort: 'Applicants in Morris Heights and Brownsville ZIP bands — synthetic identity + ECOA disparity overlap on Credit Scoring v3.4 (Bias-Fraud: 12 overlap cases)'
+    };
+    dst.biasFraudConnectionData = {
+      biasCount: 2,
+      fraudCount: 2,
+      overlapCount: 12,
+      biasOnlyCases: [
+        { caseId: 'FIN-0842', summary: 'Collections AI neighborhood risk drift — no confirmed fraud nexus.', biasAspect: 'Proxy watch 0.48', fraudAspect: 'N/A', dollarsAtRisk: 1200000 },
+        { caseId: 'FIN-0901', summary: 'Secondary Underwriting watch — disparate documentation requirement.', biasAspect: 'Documentation disparity', fraudAspect: 'N/A', dollarsAtRisk: 640000 }
+      ],
+      fraudOnlyCases: [
+        { caseId: 'FIN-2207', summary: 'Chicago device farm — fraud isolated from NYC bias cohorts.', biasAspect: 'N/A', fraudAspect: 'Device farm velocity', dollarsAtRisk: 310000 }
+      ],
+      overlapCases: _overlapCasesListFromOrg('fin', 12, 'FIN-1203')
+    };
+  } else {
+    dst.protectedGroupImpactBias = {
+      statisticallySignificantDisparities: [
+        { text: 'Patients 65+ in Specialty Care: -21% claim approval vs youngest cohort', severity: 'violation' },
+        { text: 'Bronze-tier + Specialty intersection: -14% vs Gold baseline', severity: 'warning' },
+        { text: 'age_cost_proxy: 0.81 correlation with age — ACA Section 1557 exposure', severity: 'gap' }
+      ],
+      genderDistribution: [
+        { label: 'Male', value: 79, threshold: 80, isViolation: true },
+        { label: 'Female', value: 73, threshold: 80, isViolation: true },
+        { label: 'Other', value: 78, threshold: 80, isViolation: true }
+      ],
+      ageGroupRates: [
+        { bracket: '18-25', approvalRate: 93, vsYoungestCohort: 100 },
+        { bracket: '26-35', approvalRate: 91, vsYoungestCohort: 98 },
+        { bracket: '36-45', approvalRate: 88, vsYoungestCohort: 95 },
+        { bracket: '46-55', approvalRate: 81, vsYoungestCohort: 87 },
+        { bracket: '56-65', approvalRate: 74, vsYoungestCohort: 80 },
+        { bracket: '65+', approvalRate: 62, vsYoungestCohort: 67 }
+      ],
+      racialEthnicAnalysis: [
+        { group: 'White', rate: 81.2, baseline: 81.2, deltaPercent: 0, status: 'baseline' },
+        { group: 'Asian', rate: 78.4, baseline: 81.2, deltaPercent: -3, status: 'warning' },
+        { group: 'Hispanic', rate: 72.9, baseline: 81.2, deltaPercent: -8, status: 'warning' },
+        { group: 'Black/AA', rate: 70.1, baseline: 81.2, deltaPercent: -10, status: 'warning' },
+        { group: 'Other', rate: 68.7, baseline: 81.2, deltaPercent: -12, status: 'violation' }
+      ],
+      geographicDisparity: [
+        { region: 'NY', deltaPercent: -18, severity: 'high' },
+        { region: 'NJ', deltaPercent: -12, severity: 'high' },
+        { region: 'CA', deltaPercent: -8, severity: 'medium' },
+        { region: 'FL', deltaPercent: -5, severity: 'low' },
+        { region: 'TX', deltaPercent: -6, severity: 'low' }
+      ],
+      mostVulnerableIntersection: 'Women patients age 65+ in Specialty Care on Bronze tier — lowest approval rate: 54.8% (Claims v1.9 + Diagnosis Support cross-signal)'
+    };
+    dst.protectedGroupImpactFraud = {
+      fraudPatternHotspots: [
+        { text: 'Specialty Care upcoding ring — 31 claims linked to bias-blind calibration gap', severity: 'high' },
+        { text: 'Claims velocity anomaly mid-day (10:00-14:00 ET) — collusion replay window', severity: 'medium' },
+        { text: 'Patients 75+ targeted for duplicate billing pathways on pharmacy line items', severity: 'medium' }
+      ],
+      syntheticIdentityByDemo: [
+        { label: 'Patients 65+ — Specialty Care', rate: 36, threshold: 20 },
+        { label: 'Bronze tier — multi-condition', rate: 29, threshold: 20 },
+        { label: 'White baseline', rate: 16, threshold: 20 },
+        { label: 'Gold tier', rate: 12, threshold: 20 },
+        { label: 'Silver tier', rate: 14, threshold: 20 }
+      ],
+      velocityAnomalyByHour: vHealth24,
+      clusterFraudRings: [
+        { ringId: 'HS-FR-SPEC', members: 14, dollarsAtRisk: 520000, geography: 'Specialty upcoding — Network-12' },
+        { ringId: 'HS-FR-PHARM', members: 9, dollarsAtRisk: 180000, geography: 'Pharmacy duplicate billing' },
+        { ringId: 'HS-FR-CROSS', members: 7, dollarsAtRisk: 95000, geography: 'Cross-model Diagnosis Support link' }
+      ],
+      geographicFraudConcentration: [
+        { region: 'NY', fraudRate: 32, severity: 'high' },
+        { region: 'NJ', fraudRate: 24, severity: 'high' },
+        { region: 'CA', fraudRate: 16, severity: 'medium' },
+        { region: 'FL', fraudRate: 11, severity: 'low' },
+        { region: 'TX', fraudRate: 9, severity: 'low' }
+      ],
+      mostTargetedCohort: 'Patients 75+ in Specialty Care networks — provider-collusion + bias-blind calibration on Claims v1.9 (Bias-Fraud: 9 overlap cases)'
+    };
+    dst.biasFraudConnectionData = {
+      biasCount: 3,
+      fraudCount: 2,
+      overlapCount: 9,
+      biasOnlyCases: [
+        { caseId: 'HS-0912', summary: 'Diagnosis Support proxy drift — no confirmed fraud ring.', biasAspect: 'Proxy 0.41 disability correlation', fraudAspect: 'N/A', dollarsAtRisk: 890000 },
+        { caseId: 'HS-0441', summary: 'Pharmacy calibration gap — bias-only dispute cohort.', biasAspect: 'Calibration gap', fraudAspect: 'N/A', dollarsAtRisk: 420000 }
+      ],
+      fraudOnlyCases: [
+        { caseId: 'HS-2104', summary: 'Diagnosis Support coding fraud — isolated from Claims overlap.', biasAspect: 'N/A', fraudAspect: 'Coding constellation', dollarsAtRisk: 280000 }
+      ],
+      overlapCases: _overlapCasesListFromOrg('health', 9, 'HS-2847')
+    };
+  }
+  dst.edenHeroSparkline30 = _edoGenHeroSparkline30(dst.biasScore, false);
+  dst.obsidianHeroSparkline30 = _edoGenHeroSparkline30(dst.fraudScore, true);
+  dst.liveScoreFreshness = '2 minutes ago';
+  _edoAttachModelDetailMetrics(dst);
+}
+
 var EXT = {
   ad: {
     biasMetricsByModel: BIAS_AD,
@@ -9410,6 +9745,7 @@ var EXT = {
     }
   });
   dst.biasFraudOverlapCases = _overlapCases(ok, dst.fraudMetricsByModel, dst.biasMetricsByModel);
+  _edoMergeVisualExt(dst, ok);
 });
 
 /* Add War Room case channel AD-2902 if missing */
@@ -9486,7 +9822,7 @@ window.openEchoCoreFiltered = function (coreLens) {
 };
 
 /* ═════ Eden / Obsidian UI (renderEden, renderObsidian) ═════ */
-window.__edo = { org: 'ad', screen: 'eden', modelIdx: null, modelLens: 'bias', cohortSummary: true, caseSev: 'all', mdlFilt: 'all', mdlSort: 'model', cohortQ: '', exp: {}, indQ: '', piiInd: null };
+window.__edo = { org: 'ad', screen: 'eden', modelIdx: null, modelLens: 'bias', cohortSummary: true, caseSev: 'all', mdlFilt: 'all', mdlSort: 'model', cohortQ: '', exp: {}, indQ: '', piiInd: null, vennFilter: 'overlap', sec3BiasTs: null, sec3FraudTs: null };
 function edoQ(s) { return JSON.stringify(s == null ? '' : String(s)); }
 function edoT(t, b) {
   var inner = 'showTooltip(' + edoQ(t) + ',' + edoQ(b) + ',event)';
@@ -9580,6 +9916,55 @@ window.edoSortModels = function (col) {
 window.edoScrollBf = function () {
   var id = window.__edo.screen === 'eden' ? 'eden-sec-bf' : 'obs-sec-bf';
   var el = document.getElementById(id);
+  if (el) el.scrollIntoView({ behavior: 'smooth' });
+};
+window.edoVennSetFilter = function (flt) {
+  window.__edo.vennFilter = flt || 'overlap';
+  var o = window.__edo.org;
+  if (window.__edo.screen === 'eden') renderEden(o); else renderObsidian(o);
+};
+window.edoPeerOpenHalo = function () {
+  if (typeof showScreen === 'function') showScreen('halo', null);
+};
+window.edoSec3Refresh = function (lens) {
+  window.__edo['sec3' + (lens === 'fraud' ? 'Fraud' : 'Bias') + 'Ts'] = new Date().toISOString();
+  var o = window.__edo.org;
+  if (window.__edo.screen === 'eden') renderEden(o); else renderObsidian(o);
+};
+window.edoSec3ExportLens = function (org, lens) {
+  var d = window.CARDINAL_DATA[org];
+  if (!d) return;
+  var lines = ['cardinal_export,type,field,value'];
+  var ts = new Date().toISOString();
+  if (lens !== 'fraud') {
+    var pb = d.protectedGroupImpactBias || {};
+    lines.push(['bias', ts, 'stat_sig', JSON.stringify(pb.statisticallySignificantDisparities || [])].join(','));
+    lines.push(['bias', ts, 'gender', JSON.stringify(pb.genderDistribution || [])].join(','));
+    lines.push(['bias', ts, 'age', JSON.stringify(pb.ageGroupRates || [])].join(','));
+    lines.push(['bias', ts, 'race', JSON.stringify(pb.racialEthnicAnalysis || [])].join(','));
+    lines.push(['bias', ts, 'geo', JSON.stringify(pb.geographicDisparity || [])].join(','));
+    lines.push(['bias', ts, 'intersection', String(pb.mostVulnerableIntersection || '')].join(','));
+  } else {
+    var pf = d.protectedGroupImpactFraud || {};
+    lines.push(['fraud', ts, 'hotspots', JSON.stringify(pf.fraudPatternHotspots || [])].join(','));
+    lines.push(['fraud', ts, 'synthetic', JSON.stringify(pf.syntheticIdentityByDemo || [])].join(','));
+    lines.push(['fraud', ts, 'velocity', JSON.stringify(pf.velocityAnomalyByHour || [])].join(','));
+    lines.push(['fraud', ts, 'rings', JSON.stringify(pf.clusterFraudRings || [])].join(','));
+    lines.push(['fraud', ts, 'geo', JSON.stringify(pf.geographicFraudConcentration || [])].join(','));
+    lines.push(['fraud', ts, 'targeted', String(pf.mostTargetedCohort || '')].join(','));
+  }
+  var blob = new Blob([lines.join('\n')], { type: 'text/csv' });
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'cardinal_sec3_' + lens + '_' + org + '_' + Date.now() + '.csv';
+  a.click();
+};
+window.edoDrillFraudRing = function (org, ringId) {
+  window.__edo.org = org;
+  window.__edo.cohortQ = String(ringId || '');
+  window.__edo.cohortModelFocus = null;
+  renderObsidian(org);
+  var el = document.getElementById('edo-sec-cohort');
   if (el) el.scrollIntoView({ behavior: 'smooth' });
 };
 window.edoOpenModel = function (which, idx) {
@@ -9699,6 +10084,227 @@ function edoEchoRecentObs(d) {
   var m = d.fraudMetricsByModel && d.fraudMetricsByModel[0];
   return m ? ('Obsidian — ' + m.modelId + ' recalculated') : 'Obsidian monitoring';
 }
+function edoHeroSparkFrom30(series, strokeHex) {
+  var s = series || [];
+  if (!s.length) return '';
+  var vals = s.map(function (p) { return p.value; });
+  var min = Math.min.apply(null, vals);
+  var max = Math.max.apply(null, vals);
+  if (max === min) { max = min + 1; }
+  var pad = 6;
+  var W = 200;
+  var H = 60;
+  var pts = [];
+  var circles = '';
+  for (var i = 0; i < vals.length; i++) {
+    var x = pad + (i / Math.max(1, vals.length - 1)) * (W - pad * 2);
+    var y = H - pad - ((vals[i] - min) / (max - min)) * (H - pad * 2);
+    pts.push(x.toFixed(1) + ',' + y.toFixed(1));
+    var dt = (s[i] && s[i].date) ? s[i].date : '';
+    circles += '<circle cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) + '" r="2.5" fill="' + strokeHex + '" stroke="var(--card)" stroke-width="1"' + edoT(dt || 'Point', 'Value ' + vals[i] + ' on ' + dt + '. Series from CARDINAL_DATA.') + ' />';
+  }
+  return '<svg width="' + W + '" height="' + H + '" viewBox="0 0 ' + W + ' ' + H + '" style="display:block;max-width:100%"' + edoT('30-Day Trend', 'Score trajectory over the last 30 days. Hover any point for date and value.') + '><polyline fill="none" stroke="' + strokeHex + '" stroke-width="2" stroke-linejoin="round" points="' + pts.join(' ') + '" />' + circles + '</svg>';
+}
+function edoDrawerHBar(val, threshold, maxVal, lowerIsBetter, label, thrTip) {
+  var wbar = Math.min(100, Math.max(0, Math.round((val / maxVal) * 100)));
+  var wthr = Math.min(100, Math.max(0, Math.round((threshold / maxVal) * 100)));
+  var ok = lowerIsBetter ? val <= threshold : val >= threshold;
+  var col = ok ? '#22c55e' : '#ef4444';
+  return '<div style="margin-bottom:12px"><div style="font-size:10px;margin-bottom:4px;color:var(--muted)"' + edoT(label, thrTip) + '>' + label + '</div><div style="display:flex;align-items:center;gap:10px"><div style="flex:1;height:12px;background:var(--bg3);border-radius:6px;position:relative"><div style="height:100%;width:' + wbar + '%;background:' + col + ';border-radius:6px"></div><div style="position:absolute;left:' + wthr + '%;top:-3px;bottom:-3px;width:2px;background:#64748b"' + edoT('Threshold', thrTip) + '></div></div><strong style="font-size:11px;min-width:40px">' + val + '</strong></div></div>';
+}
+function edoDrawerPctGauge(pct, thresholdPct, label, tip, targetHigher) {
+  var ok = targetHigher ? pct >= thresholdPct : pct <= thresholdPct;
+  var col = ok ? '#22c55e' : '#ef4444';
+  var wbar = Math.min(100, Math.max(0, pct));
+  var wthr = Math.min(100, Math.max(0, thresholdPct));
+  return '<div style="margin-bottom:12px"><div style="font-size:10px;margin-bottom:4px;color:var(--muted)"' + edoT(label, tip) + '>' + label + '</div><div style="display:flex;align-items:center;gap:10px"><div style="flex:1;height:12px;background:var(--bg3);border-radius:6px;position:relative"><div style="height:100%;width:' + wbar + '%;background:' + col + ';border-radius:6px"></div><div style="position:absolute;left:' + wthr + '%;top:-3px;bottom:-3px;width:2px;background:#64748b"' + edoT('Target threshold', tip) + '></div></div><strong style="font-size:11px">' + pct + '%</strong></div></div>';
+}
+function edoDrawerFeatImportanceBlock(detail) {
+  var feats = (detail && detail.featureImportance) || [];
+  var html = '<div style="font-size:11px;font-weight:700;margin:14px 0 6px"' + edoT('Feature Importance', 'Which model inputs most influence the output. Used to identify proxy variables.') + '>Feature importance (top 10)</div>';
+  for (var i = 0; i < feats.length; i++) {
+    var fe = feats[i];
+    var pct = Math.round(fe.importance * 100);
+    var c = fe.isProxyVar ? '#ef4444' : 'var(--accent)';
+    var extra = fe.isProxyVar ? ' PROXY VARIABLE — correlates with race/age/gender. Likely disparate impact source.' : '';
+    html += '<div style="display:flex;align-items:center;gap:8px;margin:6px 0"><span style="flex:0 0 38%;font-size:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"' + edoT(fe.featureName, fe.featureName + ' / Importance: ' + fe.importance + '.' + extra) + '>' + fe.featureName + '</span><div style="flex:1;height:10px;background:var(--bg3);border-radius:4px;position:relative"><div style="width:' + pct + '%;height:100%;background:' + c + ';border-radius:4px"' + edoT(fe.featureName, 'Importance: ' + fe.importance + '.' + (fe.isProxyVar ? ' Proxy Variable / This feature correlates with a protected attribute (race, age, gender) even though the attribute itself is excluded. Disparate impact under EEOC and ECOA.' : '')) + '></div></div><span style="font-size:10px;min-width:36px;text-align:right"' + edoT('Importance value', String(fe.importance)) + '>' + fe.importance + '</span></div>';
+  }
+  return html;
+}
+function edoDrawerProxyBlock(detail) {
+  var pv = (detail && detail.proxyVariables) || [];
+  var html = '<div style="font-size:11px;font-weight:700;margin:14px 0 6px"' + edoT('Proxy variable detection', 'Ranked proxy risks.') + '>Proxy variable detection</div>';
+  for (var j = 0; j < pv.length; j++) {
+    var p = pv[j];
+    var sev = p.severity === 'high' ? 'badge-red' : p.severity === 'medium' ? 'badge-amber' : 'badge-yellow';
+    var barW = Math.round((p.correlation > 1 ? p.correlation / 100 : p.correlation) * 100);
+    html += '<div style="display:flex;align-items:center;gap:8px;margin:8px 0;padding:8px;background:var(--bg3);border-radius:8px;border:1px solid var(--border2)"' + edoT(p.feature, p.feature + ' correlates with ' + p.correlatesWith + '. Correlation Strength / 0-1 scale. Above 0.70 = high concern. Above 0.80 = strong proxy. Cardinal flags 0.50+.') + '><div style="flex:1"><div style="font-size:10px;font-weight:600">' + p.feature + '</div><div style="font-size:9px;color:var(--muted)">' + p.correlatesWith + '</div><div style="margin-top:4px;height:6px;background:rgba(0,0,0,.15);border-radius:3px"><div style="height:100%;width:' + barW + '%;background:var(--accent);border-radius:3px"' + edoT('Correlation Strength', 'Correlation Strength / 0-1 scale. Above 0.70 = high concern.') + '></div></div></div><span class="badge ' + sev + '" style="font-size:9px"' + edoT('Severity', p.severity) + '>' + p.severity + '</span><span style="font-size:10px;font-weight:700">' + p.correlation + '</span></div>';
+  }
+  return html;
+}
+function edoDrawerBiasPane(b, detail) {
+  var h = '<div style="font-size:11px;font-weight:700;margin-bottom:8px"' + edoT('Fairness Report', 'Bias lens metrics from CARDINAL_DATA.') + '>Fairness report</div>';
+  h += edoDrawerHBar(b.di, 0.8, 1, false, 'Disparate Impact (DI)', 'Disparate Impact / Lowest group approval rate divided by highest. Must be 0.80+ to meet EEOC four-fifths rule.');
+  h += edoDrawerHBar(b.equalizedOdds, 0.1, 0.35, true, 'Equalized Odds', 'Equalized Odds / Difference in true positive and false positive rates across groups. Should be <0.10.');
+  h += edoDrawerHBar(b.demographicParity, 0.8, 1, false, 'Demographic Parity', 'Demographic Parity / Ratio of positive outcome rates across protected groups. Should be ≥0.80.');
+  h += edoDrawerHBar(b.calibration, 0.9, 1, false, 'Calibration', 'Calibration / Prediction confidence equally accurate across groups. Should be ≥0.90.');
+  h += edoDrawerFeatImportanceBlock(detail);
+  h += edoDrawerProxyBlock(detail);
+  h += '<button type="button" class="btn-ghost" style="margin-top:10px;font-size:10px" onclick="showScreen(\'genesis\',null)"' + edoT('Counterfactual Proof', 'Genesis Core counterfactual test.') + '>Open Genesis — Counterfactual Proof \u2192</button>';
+  return h;
+}
+function edoDrawerFraudPane(f) {
+  var h = '<div style="font-size:11px;font-weight:700;margin-bottom:8px"' + edoT('Fraud Lens', 'Fraud detection rates from CARDINAL_DATA.') + '>Fraud metrics</div>';
+  h += edoDrawerPctGauge(f.syntheticIdentityRate, 85, 'Synthetic identity detection %', 'Synthetic identity catch rate — target ≥85%.', true);
+  h += edoDrawerPctGauge(f.behavioralAnomalyRate, 85, 'Behavioral anomaly %', 'Behavioral fraud detection — benchmark 85%.', true);
+  h += edoDrawerPctGauge(f.clusterFraudRate, 85, 'Cluster fraud %', 'Cluster / ring detection rate — benchmark 85%.', true);
+  h += edoDrawerPctGauge(f.velocityFraudRate, 85, 'Velocity fraud %', 'Velocity pattern detection — benchmark 85%.', true);
+  h += '<div style="margin-top:12px;padding:10px;border-radius:8px;border:1px solid var(--border2);background:rgba(251,146,60,.06)"' + edoT('Top fraud pattern', 'Dominant typology.') + '><div style="font-size:10px;font-weight:700;margin-bottom:4px">Top fraud pattern</div><div style="font-size:11px"><strong>' + f.topFraudPattern.type + '</strong> — ' + f.topFraudPattern.casesDetected + ' cases · $' + f.topFraudPattern.dollarsBlocked.toLocaleString() + ' blocked</div></div>';
+  h += '<div style="margin-top:10px;padding:10px;border-radius:8px;border:1px solid rgba(245,158,11,.35);font-size:10px;color:var(--amber)"' + edoT('Bias-Fraud on model', 'Overlap summary for this model.') + '><strong>Bias\u2011Fraud connection:</strong> ' + f.biasFraudConnection.summary + '</div>';
+  return h;
+}
+function edoBuildSection3BiasHtml(d, org) {
+  var pb = d.protectedGroupImpactBias || {};
+  var ts = window.__edo.sec3BiasTs ? new Date(window.__edo.sec3BiasTs).toLocaleString() : (d.liveScoreFreshness || '');
+  var sevBadge = function (sev) {
+    if (sev === 'violation') return '<span class="badge badge-red" style="font-size:9px"' + edoT('VIOLATION', 'Violation / Below regulatory threshold (EEOC 80% rule). Federal compliance risk.') + '>VIOLATION</span>';
+    if (sev === 'warning') return '<span class="badge badge-amber" style="font-size:9px"' + edoT('WARNING', 'Warning / Approaching threshold. Trend monitoring active.') + '>WARNING</span>';
+    return '<span class="badge badge-yellow" style="font-size:9px"' + edoT('GAP', 'Training Coverage Gap / Insufficient training data for this group. Statistical conclusions limited.') + '>GAP</span>';
+  };
+  var dis = (pb.statisticallySignificantDisparities || []).map(function (item) {
+    return '<li style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin:8px 0"><span' + edoT('Statistically Significant Disparity', item.text + ' — tracked from CARDINAL_DATA protectedGroupImpactBias.') + '>' + item.text + '</span>' + sevBadge(item.severity) + '</li>';
+  }).join('');
+  var genderHtml = (pb.genderDistribution || []).map(function (g) {
+    var ok = !g.isViolation;
+    var barC = ok ? 'linear-gradient(90deg,#6366f1,#3b82f6)' : '#f59e0b';
+    var st = ok ? 'Meets 80% equity threshold.' : 'Below 80% equity threshold — violation band.';
+    return '<div style="margin-bottom:12px;cursor:pointer" onclick="edoCohortFromDemo(' + edoQ(org) + ',' + edoQ(g.label) + ')"' + edoT(g.label, g.label + ' / Assignment rate: ' + g.value + '%. Threshold: ' + g.threshold + '%. ' + st) + '><div style="display:flex;justify-content:space-between;font-size:10px;margin-bottom:4px"><span>\u2642 ' + g.label + '</span><span>' + g.value + '%</span></div><div style="height:14px;background:var(--bg3);border-radius:6px;position:relative"><div style="height:100%;width:' + g.value + '%;background:' + barC + ';border-radius:6px"></div><div style="position:absolute;left:80%;top:-2px;bottom:-2px;width:2px;border-left:2px dashed #94a3b8"' + edoT('Equity Threshold', 'Equity Threshold / 80% — EEOC four-fifths rule baseline. Bars below this line are violations.') + '></div></div></div>';
+  }).join('');
+ var genderViol = (pb.genderDistribution || []).some(function (x) { return x.isViolation; });
+  var genderFoot = genderViol ? '<div style="margin-top:8px;padding:8px;border-radius:8px;background:rgba(239,68,68,.1);font-size:10px">\u2718 Significant gender disparity — one or more groups below 80% threshold.</div>' : '<div style="margin-top:8px;padding:8px;border-radius:8px;background:rgba(34,197,94,.12);font-size:10px">\u2713 No critical single-axis gender violation after cohort weighting.</div>';
+  var ages = pb.ageGroupRates || [];
+  var maxApr = 100;
+  var ageBars = '';
+  var linePts = [];
+  var chartW = 280;
+  var chartH = 120;
+  var baseX = 30;
+  for (var ai = 0; ai < ages.length; ai++) {
+    var ag = ages[ai];
+    var hgt = Math.round((ag.approvalRate / maxApr) * (chartH - 24));
+    var bx = baseX + ai * (chartW / Math.max(1, ages.length - 0.2));
+    var barW = Math.max(18, (chartW / ages.length) - 10);
+    var bc = ag.approvalRate >= 80 ? '#6366f1' : '#ef4444';
+    linePts.push((bx + barW / 2) + ',' + (chartH - 8 - Math.round((ag.vsYoungestCohort / 100) * (chartH - 24))));
+    ageBars += '<g' + edoT(ag.bracket, ag.bracket + ' / Approval: ' + ag.approvalRate + '%. vs youngest cohort index: ' + ag.vsYoungestCohort + '. Relative Comparison / Each age bracket compared to 18-25 baseline.') + '><rect x="' + (bx) + '" y="' + (chartH - 8 - hgt) + '" width="' + barW + '" height="' + hgt + '" fill="' + bc + '" rx="4"/><text x="' + (bx + barW / 2) + '" y="' + (chartH - 8 - hgt - 4) + '" font-size="9" text-anchor="middle" fill="currentColor">' + ag.approvalRate + '%</text><text x="' + (bx + barW / 2) + '" y="' + (chartH + 4) + '" font-size="8" text-anchor="middle" fill="var(--muted)">' + ag.bracket + '</text></g>';
+  }
+  var ageSvg = '<svg width="100%" height="140" viewBox="0 0 ' + chartW + ' ' + (chartH + 12) + '" style="display:block;max-width:100%"' + edoT('Age Group Assignment Rates', 'Six brackets with approval % and vs-youngest overlay.') + '>' + ageBars + '<polyline fill="none" stroke="#f59e0b" stroke-width="2" points="' + linePts.join(' ') + '"' + edoT('vs youngest cohort overlay', 'Relative Comparison / Each age bracket compared to 18-25 baseline. Lower numbers = greater age-based disparity.') + '/></svg>';
+  var worstAge = ages.length ? ages[ages.length - 1] : null;
+  var ageCall = worstAge ? '<div style="margin-top:8px;padding:8px;background:rgba(245,158,11,.12);font-size:10px;border-radius:8px">\u2198 Age ' + worstAge.bracket + ' shows ' + (Math.round(100 - (worstAge.vsYoungestCohort || 0))) + '% lower relative assignment index vs 18-25 cohort.</div>' : '';
+  var raceRows = (pb.racialEthnicAnalysis || []).map(function (r) {
+    var badge = r.status === 'baseline' ? '<span class="badge badge-blue" style="font-size:9px"' + edoT('BASELINE', 'Reference Group / All other groups compared to this baseline.') + '>BASELINE</span>' : (r.deltaPercent <= -10 ? '<span class="badge badge-red" style="font-size:9px">\u2715 ' + r.deltaPercent + '%</span>' : '<span class="badge badge-amber" style="font-size:9px">\u26a0 ' + r.deltaPercent + '%</span>');
+    var interp = r.status === 'baseline' ? 'Baseline reference.' : (r.deltaPercent <= -10 ? 'Severe gap vs baseline.' : 'Elevated disparity vs baseline.');
+    return '<tr style="cursor:pointer" onclick="edoCohortFromDemo(' + edoQ(org) + ',' + edoQ(r.group) + ')"' + edoT(r.group, r.group + ' / Approval rate: ' + r.rate + '%. Baseline (White): ' + r.baseline + '%. Delta: ' + r.deltaPercent + '%. ' + interp) + '><td style="padding:8px;font-size:11px">' + r.group + '</td><td style="padding:8px">' + r.rate + '%</td><td style="padding:8px">' + badge + '</td></tr>';
+  }).join('');
+  var geoPills = (pb.geographicDisparity || []).map(function (g) {
+    var bg = g.severity === 'high' ? 'rgba(239,68,68,.25)' : g.severity === 'medium' ? 'rgba(245,158,11,.22)' : 'rgba(34,197,94,.18)';
+    var ctx = g.severity === 'high' ? 'Immediate remediation priority.' : g.severity === 'medium' ? 'Monitoring and cohort review.' : 'Within tolerance band.';
+    return '<button type="button" class="btn-ghost" style="flex:1;min-width:100px;padding:12px;border-radius:12px;background:' + bg + ';border-width:1px;text-align:center;cursor:pointer" onclick="edoCohortFromDemo(' + edoQ(org) + ',' + edoQ(g.region) + ')"' + edoT(g.region, g.region + ' / Bias delta: ' + g.deltaPercent + '%. ' + ctx) + '><div style="font-weight:800;font-size:14px">' + g.region + '</div><div style="font-size:16px;font-weight:800">' + g.deltaPercent + '%</div><div style="font-size:9px;text-transform:uppercase;opacity:.85">' + g.severity + '</div></button>';
+  }).join('');
+  return '<section style="margin-bottom:28px"><h2 style="font-size:15px;margin:0 0 6px"' + edoT('Protected Group Impact — Bias Lens', 'Bias lens demographic analysis from CARDINAL_DATA.') + '>Protected Group Impact — Bias Lens</h2><p style="font-size:11px;color:var(--muted);margin:0 0 14px"' + edoT('Subtitle bias', 'How bias concentrates across demographics, age, gender, geography. Where the worst AI decisions cluster.') + '>How bias concentrates across demographics, age, gender, geography. Where the AI\u2019s worst decisions cluster.</p>' +
+    '<div style="padding:14px;border-radius:12px;background:linear-gradient(135deg,rgba(239,68,68,.12),rgba(245,158,11,.1));border:1px solid rgba(245,158,11,.35);margin-bottom:16px"' + edoT('Statistically Significant Disparity header', 'Statistically Significant / Disparity passes EEOC four-fifths rule AND has p-value < 0.05 for sample size.') + '><div style="font-size:11px;font-weight:800;margin-bottom:8px">\u26a0 GROUPS WITH STATISTICALLY SIGNIFICANT DISPARITIES</div><ul style="margin:0;padding-left:18px;font-size:11px;list-style:disc">' + dis + '</ul></div>' +
+    '<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;width:100%">' +
+    '<div class="card" style="padding:12px"><div style="font-size:11px;font-weight:700;margin-bottom:8px"' + edoT('Gender Distribution', 'Horizontal assignment rate bars.') + '>\u2642 Gender distribution and assignment rates</div>' + genderHtml + genderFoot + '</div>' +
+    '<div class="card" style="padding:12px"><div style="font-size:11px;font-weight:700;margin-bottom:8px"' + edoT('Age Group Assignment Rates', 'Six brackets with overlay.') + '>\u231a Age group assignment rates</div>' + ageSvg + ageCall + '</div>' +
+    '<div class="card" style="padding:12px"><div style="font-size:11px;font-weight:700;margin-bottom:8px"' + edoT('Racial/Ethnic Analysis', 'Table from CARDINAL_DATA.') + '>\u263c Racial / ethnic assignment analysis</div><table class="data-table" style="width:100%;font-size:11px"><thead><tr><th' + edoT('Group', 'Protected group label.') + '>Group</th><th' + edoT('Rate', 'Approval rate %.') + '>Rate</th><th' + edoT('Delta', 'Vs baseline.') + '>Delta</th></tr></thead><tbody>' + raceRows + '</tbody></table><p style="font-size:9px;color:var(--muted);margin-top:8px"' + edoT('Table note', 'Row styling reflects distance below baseline.') + '>Bar color scales with distance below baseline marker.</p></div></div>' +
+    '<div style="margin-top:18px"><h3 style="font-size:12px;margin:0 0 6px"' + edoT('Geographic disparity title', 'Regional concentration.') + '>Geographic disparity — where bias is concentrated</h3><p style="font-size:10px;color:var(--muted);margin:0 0 10px">Click a region to open the Cohort Explorer filtered to that geography.</p><div style="display:flex;flex-wrap:wrap;gap:10px">' + geoPills + '</div></div>' +
+    '<div style="margin-top:16px;padding:14px;border-radius:12px;background:linear-gradient(90deg,rgba(245,158,11,.15),rgba(245,158,11,.06));border:1px solid rgba(245,158,11,.4)"' + edoT('Most Vulnerable Intersection', 'Intersectional Analysis / Compound disparity across multiple demographic dimensions. Often hidden in single-axis analysis. EEOC and EU AI Act both require intersectional reporting.') + '><div style="font-weight:800;font-size:11px;margin-bottom:8px">\u26a0 MOST VULNERABLE INTERSECTION</div><div style="font-size:11px">' + (pb.mostVulnerableIntersection || '') + '</div></div>' +
+    '<div style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap"><button type="button" class="btn-ghost" onclick="edoSec3Refresh(' + edoQ('bias') + ')"' + edoT('Refresh Analysis', 'Refresh / Recalculate from latest model decisions. Triggers Eden re-analysis.') + '>Refresh Analysis' + (ts ? ' · ' + ts : '') + '</button><button type="button" class="btn-ghost" onclick="edoSec3ExportLens(' + edoQ(org) + ',' + edoQ('bias') + ')"' + edoT('Export Analysis', 'Export Analysis / Download as CSV with full demographic breakdown. Echo Memory access event auto-logged.') + '>Export Analysis</button></div></section>';
+}
+function edoBuildSection3FraudHtml(d, org) {
+  var pf = d.protectedGroupImpactFraud || {};
+  var ts = window.__edo.sec3FraudTs ? new Date(window.__edo.sec3FraudTs).toLocaleString() : '';
+  var sevBadgeF = function (sev) {
+    if (sev === 'high') return '<span class="badge badge-red" style="font-size:9px"' + edoT('HIGH', 'High-severity fraud concentration.') + '>HIGH</span>';
+    if (sev === 'medium') return '<span class="badge badge-amber" style="font-size:9px">MEDIUM</span>';
+    return '<span class="badge badge-green" style="font-size:9px">LOW</span>';
+  };
+  var hotspots = (pf.fraudPatternHotspots || []).map(function (h) {
+    return '<li style="display:flex;justify-content:space-between;gap:10px;margin:8px 0"><span' + edoT('Fraud hotspot', h.text) + '>' + h.text + '</span>' + sevBadgeF(h.severity) + '</li>';
+  }).join('');
+  var syn = (pf.syntheticIdentityByDemo || []).map(function (s) {
+    var over = s.rate > s.threshold;
+    var c = over ? '#ef4444' : '#22c55e';
+    return '<div style="margin-bottom:12px"><div style="display:flex;justify-content:space-between;font-size:10px;margin-bottom:4px"><span' + edoT(s.label, 'Synthetic identity catch rate ' + s.rate + '% vs threshold ' + s.threshold + '%.') + '>' + s.label + '</span><span>' + s.rate + '%</span></div><div style="height:12px;background:var(--bg3);border-radius:6px;position:relative"><div style="height:100%;width:' + Math.min(100, s.rate * 2) + '%;background:' + c + ';border-radius:6px"></div><div style="position:absolute;left:' + s.threshold + '%;top:-2px;bottom:-2px;width:2px;border-left:2px dashed #94a3b8"' + edoT('Threshold', 'Threshold from CARDINAL_DATA.') + '></div></div></div>';
+  }).join('');
+  var vel = pf.velocityAnomalyByHour || [];
+  var mx = 1;
+  for (var vi = 0; vi < vel.length; vi++) mx = Math.max(mx, vel[vi].anomalyScore);
+  var cells = '';
+  for (var vj = 0; vj < vel.length; vj++) {
+    var cell = vel[vj];
+    var op = cell.anomalyScore / mx;
+    var r = Math.round(34 + op * 200);
+    var gr = Math.round(180 - op * 170);
+    var col = 'rgba(' + r + ',' + gr + ',70,' + (0.35 + op * 0.55) + ')';
+    var sevC = cell.anomalyScore >= mx * 0.85 ? 'Peak anomaly — elevated fraud pressure.' : cell.anomalyScore >= mx * 0.45 ? 'Elevated velocity.' : 'Normal band.';
+    cells += '<div style="flex:1;min-width:8px;height:36px;margin:1px;border-radius:4px;background:' + col + ';cursor:default"' + edoT(String(cell.hour) + ':00 UTC', String(cell.hour) + ':00 UTC / Velocity anomaly score: ' + cell.anomalyScore + '. ' + sevC) + '></div>';
+  }
+  var rings = (pf.clusterFraudRings || []).map(function (ring) {
+    var sev = ring.dollarsAtRisk >= 400000 ? 'high' : ring.dollarsAtRisk >= 150000 ? 'medium' : 'low';
+    var rb = sev === 'high' ? 'rgba(239,68,68,.2)' : sev === 'medium' ? 'rgba(245,158,11,.18)' : 'rgba(34,197,94,.12)';
+    return '<div style="padding:12px;border-radius:10px;background:' + rb + ';border:1px solid var(--border2);margin-bottom:10px;cursor:pointer" onclick="edoDrillFraudRing(' + edoQ(org) + ',' + edoQ(ring.ringId) + ')"' + edoT(ring.ringId, ring.ringId + ' — ' + ring.members + ' members · $' + ring.dollarsAtRisk + ' at risk · ' + ring.geography) + '><div style="font-weight:800">' + ring.ringId + '</div><div style="font-size:10px;color:var(--muted)">' + ring.members + ' members · $' + ring.dollarsAtRisk.toLocaleString() + ' at risk</div><div style="font-size:10px;margin-top:4px">' + ring.geography + '</div></div>';
+  }).join('');
+  var geoF = (pf.geographicFraudConcentration || []).map(function (g) {
+    var bg = g.severity === 'high' ? 'rgba(239,68,68,.25)' : g.severity === 'medium' ? 'rgba(245,158,11,.22)' : 'rgba(34,197,94,.18)';
+    return '<button type="button" class="btn-ghost" style="flex:1;min-width:100px;padding:12px;border-radius:12px;background:' + bg + '" onclick="edoCohortFromDemo(' + edoQ(org) + ',' + edoQ(g.region) + ')"' + edoT(g.region, g.region + ' / Fraud rate ' + g.fraudRate + '%. Severity ' + g.severity + '.') + '><div style="font-weight:800">' + g.region + '</div><div style="font-size:15px;font-weight:800">' + g.fraudRate + '%</div><div style="font-size:9px">' + g.severity.toUpperCase() + '</div></button>';
+  }).join('');
+  return '<section style="margin-bottom:28px;margin-top:24px"><h2 style="font-size:15px;margin:0 0 6px"' + edoT('Where Fraud Concentrates', 'Fraud lens from CARDINAL_DATA.') + '>Where Fraud Concentrates</h2><p style="font-size:11px;color:var(--muted);margin:0 0 14px">Fraud patterns by demographic, time-of-day, geography. Cardinal catches the connections — including where bias creates blind spots fraudsters exploit.</p>' +
+    '<div style="padding:14px;border-radius:12px;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.25);margin-bottom:16px"><div style="font-weight:800;font-size:11px;margin-bottom:8px">Fraud pattern hotspots</div><ul style="margin:0;padding-left:18px;font-size:11px">' + hotspots + '</ul></div>' +
+    '<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px">' +
+    '<div class="card" style="padding:12px"><div style="font-weight:700;font-size:11px;margin-bottom:8px">Synthetic identity rates by cohort</div>' + syn + '</div>' +
+    '<div class="card" style="padding:12px"><div style="font-weight:700;font-size:11px;margin-bottom:8px"' + edoT('Velocity heatmap', '24-hour anomaly grid.') + '>Velocity anomaly heatmap</div><div style="display:flex;width:100%;align-items:flex-end">' + cells + '</div><div style="display:flex;justify-content:space-between;font-size:9px;color:var(--muted);margin-top:6px"><span>00</span><span>06</span><span>12</span><span>18</span></div><div style="margin-top:10px;font-size:10px;padding:8px;background:rgba(245,158,11,.1);border-radius:8px">\u2198 Peaks 02:00-05:00 UTC — cluster replay attempts during low-monitoring window.</div></div>' +
+    '<div class="card" style="padding:12px"><div style="font-weight:700;font-size:11px;margin-bottom:8px">Cluster fraud rings</div>' + rings + '</div></div>' +
+    '<div style="margin-top:18px"><h3 style="font-size:12px">Geographic fraud concentration</h3><div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:10px">' + geoF + '</div></div>' +
+    '<div style="margin-top:16px;padding:14px;border-radius:12px;background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.35)"><div style="font-weight:800;font-size:11px;margin-bottom:6px">Most targeted cohort</div><div style="font-size:11px">' + (pf.mostTargetedCohort || '') + '</div><div style="font-size:10px;margin-top:8px;color:var(--muted)">Cross-reference in Eden Cohort Explorer for the same demographic intersection.</div></div>' +
+    '<div style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap"><button type="button" class="btn-ghost" onclick="edoSec3Refresh(' + edoQ('fraud') + ')"' + edoT('Refresh Analysis', 'Refresh Obsidian fraud demographic analysis.') + '>Refresh Analysis' + (ts ? ' · ' + ts : '') + '</button><button type="button" class="btn-ghost" onclick="edoSec3ExportLens(' + edoQ(org) + ',' + edoQ('fraud') + ')"' + edoT('Export Analysis', 'CSV export fraud lens.') + '>Export Analysis</button></div></section>';
+}
+function edoBuildBfVennHtml(d, org, screenIsObsidian) {
+  var bfd = d.biasFraudConnectionData || {};
+  var bs = d.biasFraudStats || {};
+  var bCount = bfd.biasCount != null ? bfd.biasCount : bs.biasActiveCount;
+  var fCount = bfd.fraudCount != null ? bfd.fraudCount : bs.fraudActiveCount;
+  var oCount = bfd.overlapCount != null ? bfd.overlapCount : (bs.overlapCount || 0);
+  var vf = window.__edo.vennFilter || 'overlap';
+  var list = [];
+  if (vf === 'bias') list = bfd.biasOnlyCases || [];
+  else if (vf === 'fraud') list = bfd.fraudOnlyCases || [];
+  else list = bfd.overlapCases || [];
+  var cards = list.map(function (c) {
+    var warId = edoCaseId(c.caseId);
+    var dollarsLabel = typeof c.dollarsAtRisk === 'number' ? ('$' + (c.dollarsAtRisk >= 1000000 ? (c.dollarsAtRisk / 1000000).toFixed(1) + 'M' : c.dollarsAtRisk.toLocaleString())) : String(c.dollarsAtRisk || '');
+    return '<div style="padding:14px;border-radius:12px;border:1px solid var(--border2);background:var(--bg3);margin-bottom:12px;cursor:pointer" onclick="openWarRoomToCase(' + edoQ(warId) + ')"' + edoT(c.caseId, (c.summary || '') + ' Open in War Room.') + '>' +
+      '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px"><strong style="font-size:12px"' + edoT('Case', c.caseId) + '>' + c.caseId + '</strong><span style="font-size:10px;color:var(--accent)">Open in War Room \u2192</span></div>' +
+      '<p style="font-size:11px;color:var(--muted);margin:8px 0">' + (c.summary || '') + '</p>' +
+      '<div style="display:flex;flex-wrap:wrap;gap:8px;font-size:9px"><span class="badge badge-red"' + edoT('Bias Aspect', 'Bias Aspect / Disparate impact metric on this case (DI, EOdds, etc).') + '>' + (c.biasAspect || 'Bias') + '</span>' +
+      '<span class="badge badge-amber"' + edoT('Fraud Aspect', 'Fraud Aspect / Fraud detection metric on this case (synthetic identity, velocity, cluster).') + '>' + (c.fraudAspect || 'Fraud') + '</span>' +
+      '<span class="badge badge-blue"' + edoT('Combined Exposure', 'Combined Exposure / Regulatory penalty + litigation + fraud loss for this case.') + '>' + dollarsLabel + '</span></div></div>';
+  }).join('');
+  var subMirror = screenIsObsidian ? 'Obsidian frames the same intersection as Eden — fraud lens on shared cases.' : '';
+  return '<section id="' + (screenIsObsidian ? 'obs-sec-bf' : 'eden-sec-bf') + '" style="margin-bottom:24px"><h2 style="font-size:15px;margin:0 0 6px"' + edoT('Bias-Fraud Venn', 'Cardinal moat visualization.') + '>Where Bias Creates Fraud Exposure — The Cardinal Difference</h2><p style="font-size:11px;color:var(--muted);margin:0 0 8px">No other platform connects these. We do.</p><p style="font-size:11px;margin:0 0 16px;max-width:720px">Bias creates blind spots. Fraudsters exploit blind spots. These are the cases where both happen — Cardinal catches them simultaneously. ' + subMirror + '</p>' +
+    '<div style="display:flex;justify-content:center;margin:8px 0 20px;overflow-x:auto">' +
+    '<svg width="600" height="360" viewBox="0 0 600 360" style="max-width:100%;height:auto"><defs><linearGradient id="vennL" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#ef4444" stop-opacity="0.45"/><stop offset="100%" stop-color="#f97316" stop-opacity="0.35"/></linearGradient><linearGradient id="vennR" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#fb923c" stop-opacity="0.5"/><stop offset="100%" stop-color="#ea580c" stop-opacity="0.4"/></linearGradient></defs>' +
+    '<circle cx="220" cy="190" r="130" fill="url(#vennL)" stroke="rgba(239,68,68,.5)" stroke-width="2" style="cursor:pointer" onclick="edoVennSetFilter(' + edoQ('bias') + ')"' + edoT('Bias Cases', 'Bias Cases / Cases flagged by Eden Core where AI shows disparate impact across protected groups.') + '/>' +
+    '<circle cx="380" cy="190" r="130" fill="url(#vennR)" stroke="rgba(251,146,60,.55)" stroke-width="2" style="cursor:pointer" onclick="edoVennSetFilter(' + edoQ('fraud') + ')"' + edoT('Fraud Cases', 'Fraud Cases / Cases flagged by Obsidian Core where AI shows fraud exposure or detection failures.') + '/>' +
+    '<ellipse cx="300" cy="190" rx="72" ry="88" fill="rgba(120,40,40,.55)" style="cursor:pointer;mix-blend-mode:multiply" onclick="edoVennSetFilter(' + edoQ('overlap') + ')"' + edoT('Bias-Fraud Connection', 'Bias-Fraud Connection / The Cardinal Moat. Cases where bias blind spots created fraud exposure. No other platform connects these.') + '/>' +
+    '<text x="220" y="175" text-anchor="middle" font-size="13" font-weight="700" fill="currentColor"' + edoT('Bias label', 'Bias-only region click filters list.') + '>Bias Cases</text>' +
+    '<text x="220" y="198" text-anchor="middle" font-size="20" font-weight="800" fill="currentColor">' + bCount + '</text>' +
+    '<text x="380" y="175" text-anchor="middle" font-size="13" font-weight="700"' + edoT('Fraud label', 'Fraud-only region.') + '>Fraud Cases</text>' +
+    '<text x="380" y="198" text-anchor="middle" font-size="20" font-weight="800">' + fCount + '</text>' +
+    '<text x="300" y="185" text-anchor="middle" font-size="12" font-weight="800" fill="#fef3c7"' + edoT('Overlap count', 'Overlap region.') + '>Overlap</text>' +
+    '<text x="300" y="210" text-anchor="middle" font-size="22" font-weight="900" fill="#fff">' + oCount + ' cases</text></svg></div>' +
+    '<h3 style="font-size:13px;margin:0 0 10px">Filtered list: ' + list.length + ' ' + (vf === 'overlap' ? '(overlap cases)' : vf === 'bias' ? '(bias-only)' : '(fraud-only)') + '</h3>' + cards + '</section>';
+}
 function edoBuildModelDrawer(d, org, screen) {
   var idx = window.__edo.modelIdx;
   if (idx == null) return '';
@@ -9708,6 +10314,7 @@ function edoBuildModelDrawer(d, org, screen) {
   var f = fraud[idx];
   if (!b || !f) return '';
   var lens = window.__edo.modelLens;
+  var detail = (d.modelDetailEnhancedMetrics || [])[idx] || {};
   var ml = d.modelLevelScores && d.modelLevelScores[idx];
   var dep = ml && ml.deployed ? ml.deployed : 'Jan 2026';
   var retr = 'Mar 28, 2026';
@@ -9715,33 +10322,15 @@ function edoBuildModelDrawer(d, org, screen) {
   var wgt = ml && ml.weight ? ml.weight + '% weight in Trust Score' : 'See Trust Score composition';
   var stage = ml && ml.lifecycleStage ? ml.lifecycleStage : 'monitoring';
   var own = 'Model Governance — ' + (d.org || org);
-  var right = '';
-  if (lens === 'bias' || lens === 'side') {
-    right += '<div style="font-size:11px;font-weight:700;margin-bottom:8px"' + edoT('Fairness Report', 'Bias lens metrics for this model from CARDINAL_DATA biasMetricsByModel.') + '>Fairness report</div>';
-    right += '<p style="font-size:11px;color:var(--muted2)"' + edoT('Disparate Impact (DI)', 'Ratio of favorable outcomes for protected vs reference group. EEOC four-fifths rule uses 0.80 floor.') + '>DI: <strong>' + b.di + '</strong> (EEOC floor 0.80)</p>';
-    right += '<p style="font-size:11px;color:var(--muted2)"' + edoT('Equalized Odds', 'Difference in true positive and false positive rates across groups. Should be <0.10.') + '>Equalized Odds: <strong>' + b.equalizedOdds + '</strong></p>';
-    right += '<p style="font-size:11px;color:var(--muted2)"' + edoT('Demographic Parity', 'Ratio of positive outcome rates across protected groups. Should be ≥0.80.') + '>Demographic Parity: <strong>' + b.demographicParity + '</strong></p>';
-    right += '<p style="font-size:11px;color:var(--muted2)"' + edoT('Calibration', 'Prediction confidence equally accurate across groups. Should be ≥0.90.') + '>Calibration: <strong>' + b.calibration + '</strong></p>';
-    right += '<p style="font-size:11px;margin-top:10px"' + edoT('Feature Importance', 'Which model inputs most influence the output. Used to identify proxy variables.') + '>Top proxy: <strong>' + b.topProxyVariable.name + '</strong> (' + b.topProxyVariable.correlation + ' vs ' + b.topProxyVariable.correlatesWith + ')</p>';
-    right += '<button type="button" class="btn-ghost" style="margin-top:8px;font-size:10px" onclick="showScreen(\'genesis\',null)"' + edoT('Counterfactual Proof', 'Genesis Core test: change one variable, rerun the decision. If outcome flips, that is legal-grade proof.') + '>Open Genesis — Counterfactual Proof \u2192</button>';
-  }
-  if (lens === 'fraud' || lens === 'side') {
-    right += '<div style="font-size:11px;font-weight:700;margin:12px 0 8px"' + edoT('Fraud Lens', 'Fraud detection rates for this model.') + '>Fraud metrics</div>';
-    right += '<p style="font-size:11px;color:var(--muted2)">Synthetic ID: <strong>' + f.syntheticIdentityRate + '%</strong> · Behavioral: <strong>' + f.behavioralAnomalyRate + '%</strong></p>';
-    right += '<p style="font-size:11px;color:var(--muted2)">Cluster: <strong>' + f.clusterFraudRate + '%</strong> · Velocity: <strong>' + f.velocityFraudRate + '%</strong></p>';
-    right += '<p style="font-size:11px">Top pattern: <strong>' + f.topFraudPattern.type + '</strong> — ' + f.topFraudPattern.casesDetected + ' cases, $' + f.topFraudPattern.dollarsBlocked.toLocaleString() + ' blocked</p>';
-    right += '<p style="font-size:11px;color:var(--amber)">Bias\u2011Fraud: ' + f.biasFraudConnection.summary + '</p>';
-  }
-  if (lens === 'side') {
-    right = '<div style="display:flex;flex-direction:column;gap:12px;max-height:70vh;overflow-y:auto"><div style="border-bottom:1px solid var(--border2);padding-bottom:10px"><div style="font-size:10px;color:var(--muted)">Bias (top)</div>' + right.split('Fraud metrics')[0] + '</div><div><div style="font-size:10px;color:var(--muted)">Fraud (bottom)</div>' + '</div></div>';
-  }
+  var borderF = screen === 'obs' ? '#fb923c' : 'var(--accent)';
   var togg = '<div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap">' +
     '<button type="button" class="btn-ghost" style="font-size:10px' + (lens === 'bias' ? ';border-color:var(--accent)' : '') + '" onclick="edoSetLens(\'bias\')"' + edoT('Bias View', 'Fairness metrics for this model.') + '>Bias View</button>' +
-    '<button type="button" class="btn-ghost" style="font-size:10px' + (lens === 'fraud' ? ';border-color:var(--accent)' : '') + '" onclick="edoSetLens(\'fraud\')"' + edoT('Fraud View', 'Fraud detection metrics for this model.') + '>Fraud View</button>' +
-    '<button type="button" class="btn-ghost" style="font-size:10px' + (lens === 'side' ? ';border-color:var(--accent)' : '') + '" onclick="edoSetLens(\'side\')"' + edoT('Side-by-Side View', 'Shows bias and fraud metrics for the same model. Reveals where bias creates fraud exposure.') + '>Side\u2011by\u2011Side</button></div>';
-  if (lens === 'side') {
-    right = togg + '<div style="display:flex;flex-direction:column;gap:14px"><div><div style="font-size:10px;color:var(--muted);margin-bottom:6px">Bias</div><div style="font-size:11px;color:var(--muted2)">DI ' + b.di + ' · EO ' + b.equalizedOdds + ' · Proxy ' + b.topProxyVariable.name + '</div></div><div><div style="font-size:10px;color:var(--muted);margin-bottom:6px">Fraud</div><div style="font-size:11px;color:var(--muted2)">Syn ' + f.syntheticIdentityRate + '% · ' + f.topFraudPattern.type + ' · Bias\u2011fraud cases ' + f.biasFraudConnection.caseCount + '</div><div style="font-size:10px;margin-top:6px;color:var(--amber)">' + f.biasFraudConnection.summary + '</div></div></div>';
-  } else right = togg + right;
+    '<button type="button" class="btn-ghost" style="font-size:10px' + (lens === 'fraud' ? ';border-color:#fb923c' : '') + '" onclick="edoSetLens(\'fraud\')"' + edoT('Fraud View', 'Fraud detection metrics for this model.') + '>Fraud View</button>' +
+    '<button type="button" class="btn-ghost" style="font-size:10px' + (lens === 'side' ? ';border-color:' + borderF : '') + '" onclick="edoSetLens(\'side\')"' + edoT('Side-by-Side View', 'Bias and fraud metrics together — exposes the bias-fraud connection.') + '>Side\u2011by\u2011Side</button></div>';
+  var right = '';
+  if (lens === 'bias') right = togg + edoDrawerBiasPane(b, detail);
+  else if (lens === 'fraud') right = togg + edoDrawerFraudPane(f);
+  else right = togg + '<div style="display:flex;flex-direction:column;gap:16px;max-height:70vh;overflow-y:auto"><div style="border-bottom:1px solid var(--border2);padding-bottom:14px"><div style="font-size:10px;color:var(--muted);margin-bottom:8px">Bias lens</div>' + edoDrawerBiasPane(b, detail) + '</div><div><div style="font-size:10px;color:var(--muted);margin-bottom:8px">Fraud lens</div>' + edoDrawerFraudPane(f) + '</div></div>';
   var echoL = idx === 0 ? 'echo-AD-2026-04-14-0900-eden01' : 'echo-AD-2026-04-22-0900-wr01';
   if (org === 'fin') echoL = 'echo-FIN-2026-02-14-0815-ed02';
   if (org === 'health') echoL = 'echo-HS-2026-03-10-0900-ed02';
@@ -9820,9 +10409,8 @@ window.renderEden = function (org) {
     var origIdx = (d.biasMetricsByModel || []).indexOf(m);
     mrows += '<tr style="cursor:pointer" onclick="edoOpenModel(\'eden\',' + origIdx + ')"' + edoT(m.modelId, (d.modelLevelScores && d.modelLevelScores[origIdx] && d.modelLevelScores[origIdx].purpose) ? d.modelLevelScores[origIdx].purpose : 'Monitored model') + '><td style="padding:8px;font-size:11px">' + m.modelId + '</td><td style="padding:8px">' + m.di + '</td><td style="padding:8px">' + m.equalizedOdds + '</td><td style="padding:8px;font-size:10px">' + m.topProxyVariable.name + ' ' + m.topProxyVariable.correlation + '</td><td style="padding:8px">' + (m.affectedCohort.totalCount || 0) + '</td><td style="padding:8px"><span style="color:' + edoStatColor(m.status) + '">' + m.status + '</span></td><td style="padding:8px">' + edoTr(m.trend30d) + '</td></tr>';
   }
-  var ov = (d.biasFraudOverlapCases || []).map(function (o) {
-    return '<div style="padding:10px;background:var(--bg3);border-radius:8px;margin-bottom:8px;cursor:pointer;border:1px solid var(--border2)" onclick="openWarRoomToCase(' + edoQ(edoCaseId(o.caseId)) + ')"' + edoT('Overlap case', o.summary) + '><strong>' + o.caseId + '</strong> · ' + o.modelId + '<div style="font-size:10px;color:var(--muted);margin-top:4px">' + o.summary + '</div><div style="font-size:10px;color:var(--amber)">' + o.exposureNote + '</div></div>';
-  }).join('');
+  var sec3b = edoBuildSection3BiasHtml(d, org);
+  var sec7 = edoBuildBfVennHtml(d, org, false);
   var cgFlat = [];
   var cgs = d.cohortGroupSummaries || {};
   var foc = window.__edo.cohortModelFocus;
@@ -9878,44 +10466,22 @@ window.renderEden = function (org) {
   Object.keys(cgs || {}).forEach(function (mm) {
     (cgs[mm] || []).forEach(function (gg) { nAff += gg.affectedCount || 0; });
   });
-  var ageRow = (d.disparityHeatmap && d.disparityHeatmap.yLabels || []).map(function (yl, yi) {
-    var row = (d.disparityHeatmap.cells && d.disparityHeatmap.cells[yi]) || [];
-    var mx = Math.max.apply(null, row.concat([1]));
-    return '<div style="margin-bottom:6px"><div style="font-size:10px">' + yl + '</div><div style="height:8px;background:var(--bg3);border-radius:4px"><div style="height:100%;width:' + Math.round(100 * row[0] / mx) + '%;background:var(--accent);border-radius:4px"></div></div></div>';
-  }).join('');
-  var heatCells = '';
-  if (d.disparityHeatmap && d.disparityHeatmap.cells) {
-    for (var hi = 0; hi < d.disparityHeatmap.cells.length; hi++) {
-      var crow = d.disparityHeatmap.cells[hi];
-      for (var hj = 0; hj < crow.length; hj++) {
-        var mult = crow[hj];
-        var op = mult >= 2 ? 0.95 : mult >= 1.5 ? 0.65 : 0.35;
-        heatCells += '<div style="flex:1;min-width:36px;height:28px;margin:2px;border-radius:6px;background:rgba(239,68,68,' + op + ');cursor:pointer" onclick="edoCohortFromDemo(' + edoQ(org) + ',' + edoQ((d.disparityHeatmap.yLabels[hi] || '') + ' × ' + (d.disparityHeatmap.xLabels[hj] || '')) + ')"' + edoT('Geographic cell', 'Disparity multiplier from CARDINAL_DATA disparityHeatmap.') + ' title="' + mult + 'x"></div>';
-      }
-    }
-  }
   root.innerHTML =
     '<div class="edo-scroll" style="padding:12px 12px 40px;max-height:calc(100vh - 120px);overflow-y:auto">' +
-    '<section id="eden-sec-hero" style="margin-bottom:20px"><div style="display:flex;flex-wrap:wrap;gap:20px;align-items:flex-start">' +
-    '<div style="flex:0 0 240px;text-align:center"' + edoT('Bias Detection Score', 'Composite measure of fairness across all monitored models. Below 70 = active violations.') + '>' +
+    '<section id="eden-sec-hero" style="margin-bottom:20px"><div style="display:grid;grid-template-columns:minmax(260px,1.15fr) minmax(220px,.85fr);gap:20px;align-items:start;max-width:1080px">' +
+    '<div style="text-align:center"' + edoT('Bias Detection Score', 'Composite measure of fairness across all monitored models. Below 70 = active violations.') + '>' +
     '<div id="eden-gauge-ring" style="width:220px;height:220px;margin:0 auto;border-radius:50%;background:conic-gradient(' + col + ' ' + bias * 3.6 + 'deg, var(--bg3) 0);display:flex;align-items:center;justify-content:center"><div style="width:150px;height:150px;border-radius:50%;background:var(--card);display:flex;flex-direction:column;align-items:center;justify-content:center"><span id="eden-gauge-val" style="font-size:42px;font-weight:800;color:' + col + '">0</span><span style="font-size:10px;color:var(--muted)">Bias Score</span></div></div>' +
     '<div style="margin-top:10px;font-size:14px;font-weight:700"' + edoT('Bias Detection', 'Eden Core bias monitoring.') + '>Bias Detection</div><div style="font-size:11px;color:var(--muted)"' + edoT('Status', 'Threshold interpretation from CARDINAL_DATA.') + '>' + (d.edenHeroSub || '') + '</div></div>' +
-    '<div style="flex:1;min-width:260px">' + edoSparkBias(d) +
-    '<div style="margin-top:10px"><span class="badge badge-blue" style="font-size:10px"' + edoT('Peer Position', 'Your rank vs anonymized industry peers using Cardinal.') + '>' + extPeer + '</span></div>' +
-    '<div style="font-size:10px;color:var(--muted);margin-top:8px"' + edoT('Last calculated', 'Freshness of bias sub-score from CARDINAL_DATA.') + '>Live — last calculated ' + (d.auditTimestamp || 'recently') + '</div></div></div>' +
-    '<div style="margin-top:16px;padding:12px;border-radius:10px;border:1px solid rgba(245,158,11,.35);cursor:pointer;background:rgba(245,158,11,.06)" onclick="edoScrollBf()"' + edoT('Bias-Fraud Connection', 'Cardinal unique value. Bias creates blind spots; fraudsters exploit blind spots.') + '><strong>Bias\u2011Fraud Connection:</strong> ' + bfN + ' cases where bias blind spots created fraud exposure. Click to jump \u2192</div>' +
+    '<div style="min-width:220px">' + edoHeroSparkFrom30(d.edenHeroSparkline30 || [], col) +
+    '<div style="margin-top:12px;display:flex;align-items:center;gap:8px;font-size:11px;color:var(--muted)"' + edoT('Real-time', 'Real-time / Cardinal recalculates bias scores every 5 minutes from latest model decisions.') + '><span style="width:9px;height:9px;border-radius:50%;background:#22c55e;animation:eden-live-pulse 1.8s ease-in-out infinite"></span>Live — last calculated ' + (d.liveScoreFreshness || '') + '</div>' +
+    '<button type="button" class="btn-ghost" style="margin-top:10px;font-size:10px;display:inline-block;border-radius:999px;padding:6px 12px;cursor:pointer" onclick="edoPeerOpenHalo()"' + edoT('Peer Position', 'Peer Position / Your rank vs anonymized industry peers using Cardinal.') + '>' + extPeer + ' \u2192</button></div></div>' +
+    '<div style="margin-top:16px;padding:14px;border-radius:12px;border:1px solid rgba(245,158,11,.45);cursor:pointer;background:linear-gradient(100deg,rgba(245,158,11,.14),rgba(251,191,36,.08))" onclick="edoScrollBf()"' + edoT('Bias-Fraud Connection', 'Bias creates blind spots; fraudsters exploit blind spots. Jump to Section 7.') + '><strong>Bias\u2011Fraud Connection:</strong> ' + bfN + ' cases where bias blind spots created fraud exposure. Click to jump \u2192 Section 7</div>' +
     '<button type="button" class="btn-primary" style="margin-top:10px;font-size:11px" onclick="document.getElementById(\'eden-sec-cases\').scrollIntoView({behavior:\'smooth\'})"' + edoT('View Live Detections', 'Scroll to active bias cases.') + '>View Live Detections \u2192</button></section>' +
     '<section id="eden-sec-cases" style="margin-bottom:20px"><h2 style="font-size:14px;margin:0 0 8px"' + edoT('Active Bias Cases', 'Open bias remediation cases from CARDINAL_DATA.') + '>Active Bias Cases — ' + (d.biasIncidentsActive || []).length + ' open</h2>' +
     '<div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap"><button type="button" class="btn-ghost" style="font-size:10px" onclick="edoFilterCases(\'all\')">All</button><button type="button" class="btn-ghost" style="font-size:10px" onclick="edoFilterCases(\'critical\')">Critical</button><button type="button" class="btn-ghost" style="font-size:10px" onclick="edoFilterCases(\'high\')">High</button><button type="button" class="btn-ghost" style="font-size:10px" onclick="edoFilterCases(\'medium\')">Medium</button></div>' +
     '<div style="display:flex;gap:12px;overflow-x:auto;padding-bottom:8px">' + cards + '</div>' +
     '<button type="button" class="btn-ghost" style="font-size:11px;margin-top:8px" onclick="showScreen(\'warroom\',null)"' + edoT('War Room', 'Open case command center.') + '>View All in War Room \u2192</button></section>' +
-    '<section style="margin-bottom:20px"><h2 style="font-size:14px"' + edoT('Protected Group Impact', 'Bias lens demographic analysis.') + '>Protected Group Impact — Bias Lens</h2><p style="font-size:11px;color:var(--muted)"' + edoT('Subtitle', 'Where adverse outcomes cluster.') + '>How bias concentrates across demographics, age, gender, geography.</p>' +
-    '<div style="padding:12px;border-radius:10px;background:rgba(239,68,68,.08);margin:12px 0;border:1px solid rgba(239,68,68,.25)"' + edoT('Statistically Significant', 'Disparity passes EEOC four-fifths rule threshold AND has p-value < 0.05 for sample size.') + '><strong>Statistically significant bias:</strong> ' + (d.statBiasCallout || '') + '</div>' +
-    '<div class="grid-2" style="gap:14px"><div class="card"><div class="section-title"' + edoT('Race / Ethnicity', 'Horizontal approval proxy by group.') + '>Race / Ethnicity</div>' + edoRaceBarsHtml(d, org) + '</div>' +
-    '<div class="card"><div class="section-title"' + edoT('Age comparison proxy', 'Age bracket disparity visualization from heatmap.') + '>Age brackets</div>' + ageRow + '</div></div>' +
-    '<div class="grid-2" style="margin-top:14px;gap:14px"><div class="card"><div class="section-title"' + edoT('Gender', 'Gender disparity proxy from dashboard demo rates.') + '>Gender</div><div style="font-size:11px;color:var(--muted2)">Male / Female / Non-binary approval proxies tracked — see Model detail for specifics.</div></div>' +
-    '<div class="card"><div class="section-title"' + edoT('Geographic heat strip', 'States / bases / ZIP clusters by industry.') + '>Geographic disparity</div><div style="display:flex;flex-wrap:wrap">' + heatCells + '</div></div></div>' +
-    '<div style="margin-top:12px;padding:12px;border-radius:10px;border:1px solid var(--border2)"' + edoT('Intersectional Analysis', 'Compound disparity across multiple demographic dimensions.') + '><strong>Most vulnerable intersection:</strong> ' + (d.statVulnerableIntersection || '') + '</div></section>' +
+    sec3b +
     '<section style="margin-bottom:20px"><h2 style="font-size:14px"' + edoT('Models Monitored for Bias', 'Coverage grid from biasMetricsByModel.') + '>Models Monitored for Bias</h2>' +
     '<div style="display:flex;gap:6px;flex-wrap:wrap;margin:8px 0"><button type="button" class="btn-ghost" style="font-size:10px" onclick="edoFilterModels(\'all\')">All</button><button type="button" class="btn-ghost" style="font-size:10px" onclick="edoFilterModels(\'Critical\')">Critical</button><button type="button" class="btn-ghost" style="font-size:10px" onclick="edoFilterModels(\'Watch\')">Watch</button><button type="button" class="btn-ghost" style="font-size:10px" onclick="edoFilterModels(\'Passing\')">Passing</button><button type="button" class="btn-ghost" style="font-size:10px" onclick="edoFilterModels(\'Highest Affected\')">Highest Affected</button></div>' +
     '<div style="overflow-x:auto"><table class="data-table"><thead><tr><th onclick="edoSortModels(\'model\')"' + edoT('Model', 'Monitored model name and version.') + '>Model</th><th onclick="edoSortModels(\'di\')"' + edoT('Disparate Impact (DI)', 'Ratio of favorable rates — EEOC 0.80 floor.') + '>DI</th><th ' + edoT('Equalized Odds', 'Should be <0.10.') + '>EO</th><th ' + edoT('Proxy Variable', 'Feature correlating with protected class.') + '>Top Proxy</th><th>Affected</th><th ' + edoT('Status', 'Critical / Watch / Passing.') + '>Status</th><th ' + edoT('Trend (30d)', 'Direction of bias metric over last 30 days.') + '>Trend</th></tr></thead><tbody>' + mrows + '</tbody></table></div></section>' +
@@ -9926,11 +10492,7 @@ window.renderEden = function (org) {
     '<div style="display:flex;gap:8px;margin-bottom:10px"><button type="button" class="btn-ghost" style="font-size:10px' + (window.__edo.cohortSummary ? ';border-color:var(--accent)' : '') + '"' + edoT('Cohort Summary', 'Aggregated cohort statistics. Available to all roles. No PII shown.') + ' onclick="edoCohortToggle(true)">Cohort Summary</button><button type="button" class="btn-ghost" style="font-size:10px' + (!window.__edo.cohortSummary ? ';border-color:var(--accent)' : '') + '"' + edoT('Individual Drill-In', 'Per-person record with PII. Admin and Legal Counsel only. Every access logged to Echo Core.') + ' onclick="if(window.edoCanPii())window.edoCohortToggle(false)">Individual Drill\u2011In ' + (!edoCanPii() ? '\ud83d\udd12' : '') + '</button><button type="button" class="btn-ghost" style="font-size:10px;margin-left:auto"' + edoT('Export Cohort CSV', 'Downloads anonymized cohort data; Admin export adds individual IDs only, not full names.') + ' onclick="edoExportCsv()">Export Cohort CSV</button></div>' +
     (window.__edo.cohortSummary ? '<table class="data-table"><thead><tr><th>Group</th><th>Affected</th><th>DI</th><th>Fraud Conn</th><th>Case</th></tr></thead><tbody>' + cohortRows + '</tbody></table>' : piiBlock) +
     '</section>' +
-    '<section id="eden-sec-bf" style="margin-bottom:20px"><h2 style="font-size:14px"' + edoT('Cardinal Difference', 'Bias \u00d7 fraud overlap.') + '>Where Bias Creates Fraud Exposure</h2><p style="font-size:11px;color:var(--muted)"' + edoT('Unique Insight', 'Bias creates blind spots. Fraudsters exploit blind spots.') + '>No other platform connects these.</p>' +
-    '<div style="display:flex;align-items:center;justify-content:center;gap:20px;flex-wrap:wrap;margin:16px 0">' +
-    '<div style="width:120px;height:120px;border-radius:50%;background:rgba(239,68,68,.2);display:flex;align-items:center;justify-content:center;font-size:11px;text-align:center;padding:8px"' + edoT('Bias Cases', 'Active bias cases count from data.') + '>Bias Cases<br><strong>' + (d.biasFraudStats && d.biasFraudStats.biasActiveCount != null ? d.biasFraudStats.biasActiveCount : (d.biasIncidentsActive || []).length) + '</strong></div>' +
-    '<div style="width:120px;height:120px;border-radius:50%;background:rgba(251,146,60,.25);display:flex;align-items:center;justify-content:center;font-size:11px;text-align:center;padding:8px;margin-left:-40px"' + edoT('Fraud Cases', 'Active fraud cases.') + '>Fraud Cases<br><strong>' + (d.biasFraudStats && d.biasFraudStats.fraudActiveCount != null ? d.biasFraudStats.fraudActiveCount : (d.fraudIncidentsActive || []).length) + '</strong></div></div>' +
-    '<div style="text-align:center;font-size:12px;font-weight:600;color:var(--amber);margin-bottom:12px"' + edoT('Overlap', 'Bias\u2011fraud connection case count.') + '>Overlap: ' + bfN + ' cases</div>' + ov + '</section>' +
+    sec7 +
     '<section><h2 style="font-size:14px"' + edoT('Echo Footer', 'Tamper-proof audit trail.') + '>Echo Core</h2><p style="font-size:11px;color:var(--muted)"' + edoT('Tamper-proof', 'Cryptographic, court-admissible, regulator-ready.') + '>Every bias detection logged tamper\u2011proof in Echo Core.</p><p style="font-size:11px">Most recent: ' + edoEchoRecent(d) + '</p>' +
     '<button type="button" class="btn-ghost" style="font-size:11px" onclick="openEchoCoreFiltered(\'eden\')"' + edoT('Echo Core', 'Filtered timeline to Eden-classified events.') + '>View Full Bias Audit Log \u2192</button></section></div>' +
     edoBuildModelDrawer(d, org, 'eden') + (window.__edo.piiInd ? edoIndPanel(d, org, window.__edo.piiInd, 'eden') : '');
@@ -9985,9 +10547,7 @@ window.renderObsidian = function (org) {
     var bfc = m.biasFraudConnection ? m.biasFraudConnection.caseCount : 0;
     mrows += '<tr style="cursor:pointer" onclick="edoOpenModel(\'obs\',' + origIdx + ')"><td style="padding:8px;font-size:11px">' + m.modelId + '</td><td style="padding:8px">' + m.syntheticIdentityRate + '%</td><td style="padding:8px">' + m.behavioralAnomalyRate + '%</td><td style="padding:8px">' + m.clusterFraudRate + '%</td><td style="padding:8px;font-size:10px">' + m.topFraudPattern.type + '</td><td style="padding:8px">' + bfc + '</td><td style="padding:8px;color:' + edoStatColor(m.status) + '">' + m.status + '</td><td style="padding:8px">' + edoTr(m.trend30d) + '</td></tr>';
   }
-  var ov = (d.biasFraudOverlapCases || []).map(function (o) {
-    return '<div style="padding:10px;background:var(--bg3);border-radius:8px;margin-bottom:8px;cursor:pointer;border:1px solid var(--border2)" onclick="openWarRoomToCase(' + edoQ(edoCaseId(o.caseId)) + ')"' + edoT('Fraud-bias case', o.summary) + '><strong>' + o.caseId + '</strong> — Obsidian lens · ' + o.modelId + '<div style="font-size:10px;color:var(--muted);margin-top:4px">' + o.summary + '</div></div>';
-  }).join('');
+  var sec7o = edoBuildBfVennHtml(d, org, true);
   var cgFlat = [];
   var cgs = d.cohortGroupSummaries || {};
   var foc = window.__edo.cohortModelFocus;
@@ -10028,26 +10588,23 @@ window.renderObsidian = function (org) {
     }
     piiBlock += '</tbody></table>';
   }
-  var fraudBars = (fmodels || []).slice(0, 4).map(function (fm) {
-    return '<div style="margin-bottom:8px"><div style="font-size:10px">' + fm.modelId + '</div><div style="height:10px;background:var(--bg3);border-radius:4px"><div style="width:' + fm.syntheticIdentityRate + '%;height:100%;background:#fb923c;border-radius:4px"></div></div></div>';
-  }).join('');
   var nAff = 0;
   Object.keys(cgs || {}).forEach(function (mm) { (cgs[mm] || []).forEach(function (gg) { nAff += gg.affectedCount || 0; }); });
+  var sec3f = edoBuildSection3FraudHtml(d, org);
   root.innerHTML =
     '<div class="edo-scroll" style="padding:12px 12px 40px;max-height:calc(100vh - 120px);overflow-y:auto">' +
-    '<section id="obs-sec-hero"><div style="display:flex;flex-wrap:wrap;gap:20px">' +
+    '<section id="obs-sec-hero" style="margin-bottom:8px"><div style="display:grid;grid-template-columns:minmax(260px,1.15fr) minmax(220px,.85fr);gap:20px;align-items:start;max-width:1080px">' +
     '<div style="text-align:center"' + edoT('Fraud Detection Score', 'Composite fraud catch rate across synthetic identity, behavioral anomaly, cluster, and velocity patterns.') + '>' +
     '<div style="width:220px;height:220px;margin:0 auto;border-radius:50%;background:conic-gradient(' + col + ' ' + fraud * 3.6 + 'deg, var(--bg3) 0);display:flex;align-items:center;justify-content:center"><div style="width:150px;height:150px;border-radius:50%;background:var(--card);display:flex;flex-direction:column;align-items:center;justify-content:center"><span id="obs-gauge-val" style="font-size:40px;font-weight:800;color:' + col + '">0</span><span style="font-size:10px;color:var(--muted)">Fraud Score</span></div></div>' +
-    '<div style="margin-top:10px;font-weight:700">Fraud Detection</div><div style="font-size:11px;color:var(--muted)">' + (d.obsidianHeroSub || '') + '</div></div>' +
-    '<div style="flex:1">' + edoSparkFraud(d) + '<div style="margin-top:10px"><span class="badge badge-blue" style="font-size:10px"' + edoT('Peer Position', 'Peer rank via Cardinal.') + '>' + extPeer + '</span></div><div style="font-size:10px;color:var(--muted);margin-top:8px">Live — last calculated ' + (d.auditTimestamp || '') + '</div></div></div>' +
-    '<div style="margin-top:14px;padding:12px;border-radius:10px;border:1px solid rgba(251,146,60,.4);cursor:pointer;background:rgba(251,146,60,.07)" onclick="edoScrollBf()"' + edoT('Bias-Fraud Connection', 'Cardinal unique value.') + '>Bias\u2011Fraud Connection: ' + bfN + ' overlapping cases \u2014 Obsidian view</div></section>' +
+    '<div style="margin-top:10px;font-weight:700"' + edoT('Fraud Detection', 'Obsidian fraud monitoring.') + '>Fraud Detection</div><div style="font-size:11px;color:var(--muted)"' + edoT('Status', 'Threshold from CARDINAL_DATA.') + '>' + (d.obsidianHeroSub || '') + '</div></div>' +
+    '<div style="min-width:220px">' + edoHeroSparkFrom30(d.obsidianHeroSparkline30 || [], col === '#22c55e' ? '#22c55e' : '#fb923c') +
+    '<div style="margin-top:12px;display:flex;align-items:center;gap:8px;font-size:11px;color:var(--muted)"' + edoT('Real-time', 'Real-time / Cardinal recalculates fraud scores every 5 minutes from latest model decisions.') + '><span style="width:9px;height:9px;border-radius:50%;background:#22c55e;animation:eden-live-pulse 1.8s ease-in-out infinite"></span>Live — last calculated ' + (d.liveScoreFreshness || '') + '</div>' +
+    '<button type="button" class="btn-ghost" style="margin-top:10px;font-size:10px;display:inline-block;border-radius:999px;padding:6px 12px;cursor:pointer" onclick="edoPeerOpenHalo()"' + edoT('Peer Position', 'Peer Position / Your rank vs anonymized industry peers using Cardinal.') + '>' + extPeer + ' \u2192</button></div></div>' +
+    '<div style="margin-top:14px;padding:14px;border-radius:12px;border:1px solid rgba(251,146,60,.45);cursor:pointer;background:linear-gradient(100deg,rgba(251,146,60,.14),rgba(245,158,11,.08))" onclick="edoScrollBf()"' + edoT('Bias-Fraud Connection', 'Obsidian view of Eden-linked overlap cases.') + '><strong>Bias\u2011Fraud Connection:</strong> ' + bfN + ' overlap cases — Eden view of these. Click to jump \u2192 Section 7</div></section>' +
     '<section id="obs-sec-cases" style="margin-top:20px"><h2 style="font-size:14px">Active Fraud Cases — ' + (d.fraudIncidentsActive || []).length + ' open</h2><div style="display:flex;gap:8px;flex-wrap:wrap">' +
     '<button type="button" class="btn-ghost" style="font-size:10px" onclick="edoFilterCases(\'all\')">All</button><button type="button" class="btn-ghost" style="font-size:10px" onclick="edoFilterCases(\'critical\')">Critical</button><button type="button" class="btn-ghost" style="font-size:10px" onclick="edoFilterCases(\'high\')">High</button><button type="button" class="btn-ghost" style="font-size:10px" onclick="edoFilterCases(\'medium\')">Medium</button></div>' +
     '<div style="display:flex;gap:12px;overflow-x:auto;margin-top:10px">' + cards + '</div><button type="button" class="btn-ghost" style="font-size:11px" onclick="showScreen(\'warroom\',null)">View All in War Room \u2192</button></section>' +
-    '<section style="margin-top:20px"><h2 style="font-size:14px"' + edoT('Where Fraud Concentrates', 'Obsidian demographic / geography lens.') + '>Where Fraud Concentrates</h2>' +
-    '<div class="grid-2" style="gap:14px;margin-top:10px"><div class="card"><div class="section-title"' + edoT('Synthetic ID by model', 'Catch rate proxy by model.') + '>Synthetic identity rates</div>' + fraudBars + '</div>' +
-    '<div class="card"><div class="section-title"' + edoT('Velocity timeline proxy', 'Hourly fraud pressure (illustrative).') + '>Velocity anomalies</div><div style="font-size:11px;color:var(--muted2)">Peaks 02:00–05:00 UTC — cluster replay attempts. Data from CARDINAL_DATA fraud metrics.</div></div></div>' +
-    '<div style="margin-top:12px;padding:12px;border-radius:10px;border:1px solid var(--border2)"' + edoT('Most Targeted', 'Highest fraud+bias intersection cohort.') + '><strong>Most targeted cohort:</strong> ' + (d.obsidianMostTargeted || '') + '</div></section>' +
+    sec3f +
     '<section style="margin-top:20px"><h2 style="font-size:14px">Models — Fraud Coverage</h2><div style="display:flex;gap:6px;flex-wrap:wrap">' +
     '<button type="button" class="btn-ghost" style="font-size:10px" onclick="edoFilterModels(\'all\')">All</button><button type="button" class="btn-ghost" style="font-size:10px" onclick="edoFilterModels(\'Watch\')">Watch</button></div>' +
     '<div style="overflow-x:auto;margin-top:10px"><table class="data-table"><thead><tr><th ' + edoT('Model', 'Monitored model.') + '>Model</th><th ' + edoT('Synthetic Identity Rate', 'Percent caught / blocked in monitor.') + '>Syn ID</th><th ' + edoT('Behavioral Anomaly', 'Behavioral fraud detection rate.') + '>Behav</th><th ' + edoT('Cluster Fraud', 'Ring detection rate.') + '>Cluster</th><th ' + edoT('Top Pattern', 'Dominant fraud typology.') + '>Pattern</th><th ' + edoT('Bias\u2011Fraud', 'Linked cases count.') + '>B\u2011F</th><th>Status</th><th ' + edoT('Trend (30d)', '30-day trajectory.') + '>Tr</th></tr></thead><tbody>' + mrows + '</tbody></table></div></section>' +
@@ -10057,7 +10614,7 @@ window.renderObsidian = function (org) {
     '<div style="display:flex;gap:8px"><button type="button" class="btn-ghost" style="font-size:10px' + (window.__edo.cohortSummary ? ';border-color:#fb923c' : '') + '" onclick="edoCohortToggle(true)">Cohort Summary</button><button type="button" class="btn-ghost" style="font-size:10px' + (!window.__edo.cohortSummary ? ';border-color:#fb923c' : '') + '" onclick="edoCanPii()&&edoCohortToggle(false)">Individual Drill\u2011In</button><button type="button" class="btn-ghost" style="font-size:10px;margin-left:auto" onclick="edoExportCsv()">Export CSV</button></div>' +
     (window.__edo.cohortSummary ? '<table class="data-table"><thead><tr><th>Cohort</th><th>Note</th></tr></thead><tbody>' + cohortRows + '</tbody></table>' : piiBlock) +
     '</section>' +
-    '<section id="obs-sec-bf" style="margin-top:20px"><h2 style="font-size:14px"' + edoT('Cardinal Unique Insight', 'Dual monitoring moat.') + '>Bias \u00d7 Fraud — Obsidian framing</h2><div style="text-align:center;margin:12px 0;font-weight:700;color:var(--amber)">Overlap: ' + bfN + '</div>' + ov + '</section>' +
+    sec7o +
     '<section style="margin-top:20px"><p style="font-size:11px;color:var(--muted)">Obsidian events anchored to Echo Core.</p><p style="font-size:11px">Most recent: ' + edoEchoRecentObs(d) + '</p>' +
     '<button type="button" class="btn-ghost" style="font-size:11px" onclick="openEchoCoreFiltered(\'obsidian\')"' + edoT('Obsidian audit log', 'Echo filtered to fraud-class events.') + '>View Obsidian Audit Log \u2192</button></section></div>' +
     edoBuildModelDrawer(d, org, 'obs') + (window.__edo.piiInd ? edoIndPanel(d, org, window.__edo.piiInd, 'obsidian') : '');
