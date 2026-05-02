@@ -26,9 +26,9 @@
   May 1, 2026 — Sidebar collapsed chip fix (targeted). Restructured Trust Score into mutually exclusive .trust-score-chip-full (expanded) and .trust-score-chip-badge (collapsed, 40×40). Only one branch renders at a time; fixes stacked circular badge plus wrapped status text caused by #sidebar-status inline display overriding collapsed hide rules.
 
   May 1, 2026 (evening) — Dashboard cleanup patch.
-    - Global Trust Score panel: removed redundant certification sub-box / duplicate line. Hero is three lines: title GLOBAL TRUST SCORE, score (display integer), single status row with icon + trustStatus or certStatus from CARDINAL_DATA.
-    - Active Channels: fixed chip layout (explicit flex, contrast colors); repositioned strip between 911 Alert Banner and 4 executive stat cards; horizontal scroll row of 280×64 chips, filter pills, View All link; optional __dashChAllChannels for demo without unread gate; __dashChMockZeroUnread for empty state QA.
-    - Echo Core Integration Reminder (full architecture for next Echo build) — see comment block immediately below.
+    - Global Trust Score panel: removed redundant certification subtext; one status row with icon reads trustStatus (sub-threshold) or certStatus (certified) from CARDINAL_DATA[currentOrg] only.
+    - Active Channels: top strip between 911 Alert Banner and 4 executive stat cards; horizontal scroll row of 280×64 chips (scroll-snap), filter pills [All][Cases][Standing], "View All →" to Trust Loop > Channels; tooltips on title, channel dots, unread badges, filters, and View All.
+    - Cardinal Sentinel: implemented buildSentinel(org) and scoped switchSentinelTab so the Sentinel screen renders without ReferenceError and tabs do not collide with other gen-tab UIs.
 
   May 1, 2026 (evening) — Echo Core data seeding (pre-build).
     - Added echoMemories arrays per industry (A&D 14+, Finance 12+, Health 13+) covering full Case lifecycles across all cores.
@@ -1279,7 +1279,7 @@ line-height: 1; margin-bottom: 5px;
 }
 .dr-trust-label {
   font-size: 14px; color: #64748b;
-  margin-top: 8px;
+  margin-top: 6px;
   display: flex;
   align-items: center;
   flex-wrap: wrap;
@@ -2595,6 +2595,10 @@ animation:waveform var(--dur) ease-in-out infinite alternate;
   margin: 0;
   line-height: 1.4;
 }
+.dash-ac-strip-sub-empty {
+  color: #64748b;
+  font-style: normal;
+}
 .dash-ac-strip-center {
   flex: 1 1 280px;
   min-width: 0;
@@ -2609,7 +2613,7 @@ animation:waveform var(--dur) ease-in-out infinite alternate;
   gap: 12px;
   overflow-x: auto;
   overflow-y: hidden;
-  scroll-snap-type: x proximity;
+  scroll-snap-type: x mandatory;
   padding: 4px 2px 10px;
   flex: 1;
   min-width: 0;
@@ -8746,7 +8750,8 @@ var CARDINAL_DATA = {
     org: 'Atlas Defense Systems', user: 'Anthony Broadnax', initials: 'AB',
     trustScore: 0.74, trustScoreDisplay: '74', trustColor: '#f59e0b',
     trustStatus: 'Below Threshold — Not Certified',
-    certStatus: 'Not Yet Certified by Project Cardinal',
+    certStatus: 'Below Cardinal certification floor (80+ required)',
+    sentinelKpis: { leadLabel: '6.2 days', prevented: '23', exposureQ: '$87M' },
     biasScore: 67, fraudScore: 91, complianceScore: 82,
     biasDetection: '67%', fraudPrevention: '91%', compliance: '82%',
     activeIncidents: 1, criticalCases: 1,
@@ -8852,8 +8857,9 @@ var CARDINAL_DATA = {
   fin: {
     org: 'Blackmoor Wealth Group', user: 'Riley Whitmore', initials: 'RW',
     trustScore: 0.81, trustScoreDisplay: '81', trustColor: '#22c55e',
-    trustStatus: 'Approaching Threshold',
-    certStatus: 'Certified — Cardinal ECOA Compliant',
+    trustStatus: 'Within Compliance',
+    certStatus: 'Certified Cardinal — ECOA Compliant',
+    sentinelKpis: { leadLabel: '5.4 days', prevented: '31', exposureQ: '$112K' },
     biasScore: 74, fraudScore: 88, complianceScore: 76,
     biasDetection: '74%', fraudPrevention: '88%', compliance: '76%',
     activeIncidents: 2, criticalCases: 2,
@@ -8956,7 +8962,8 @@ var CARDINAL_DATA = {
     org: 'Sterling Health', user: 'Dr. Maya Osei', initials: 'MO',
     trustScore: 0.83, trustScoreDisplay: '83', trustColor: '#22c55e',
     trustStatus: 'Within Compliance',
-    certStatus: 'Certified — Cardinal ACA 1557 Compliant',
+    certStatus: 'Certified Cardinal — ACA 1557 Compliant',
+    sentinelKpis: { leadLabel: '7.1 days', prevented: '18', exposureQ: '$2.4M' },
     biasScore: 64, fraudScore: 84, complianceScore: 77,
     biasDetection: '81%', fraudPrevention: '84%', compliance: '77%',
     activeIncidents: 3, criticalCases: 3,
@@ -10776,13 +10783,16 @@ function cdCriticalCasesLabel(n) {
 function formatDashTrustStatusHtml(d) {
   if (!d) return '';
   var certified = d.trustScore >= 0.80;
+  var cs = d.certStatus != null ? String(d.certStatus) : '';
+  var posCert = cs && /^certified/i.test(cs) && !/^not\b/i.test(cs.trim());
   var esc = function (s) {
     return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
   };
   var iconWarn = '<svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true" style="flex-shrink:0"><path d="M7 1.5L1.5 12.5h11L7 1.5z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M7 5.5v3M7 10v.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>';
   var iconCheck = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" style="flex-shrink:0"><path d="M20 6L9 17l-5-5"/></svg>';
-  var text = certified ? (d.certStatus || d.trustStatus || '') : (d.trustStatus || '');
-  return '<span class="dash-trust-status-inner" style="display:inline-flex;align-items:center;gap:8px">' + (certified ? iconCheck : iconWarn) + '<span>' + esc(text) + '</span></span>';
+  var text = certified ? (posCert ? cs : (d.trustStatus || cs || '')) : (d.trustStatus || '');
+  var useCheck = certified && posCert;
+  return '<span class="dash-trust-status-inner" style="display:inline-flex;align-items:center;gap:8px">' + (useCheck ? iconCheck : iconWarn) + '<span>' + esc(text) + '</span></span>';
 }
 
 function applyCardinalData(org) {
@@ -11551,6 +11561,10 @@ function switchIndustry(org, btn) {
    var obsScr = document.getElementById('screen-obsidian');
    if (obsScr && obsScr.classList.contains('active') && typeof renderObsidian === 'function') renderObsidian(org);
  } catch (_obsSw) {}
+ try {
+   var sentScr = document.getElementById('screen-sentinel');
+   if (sentScr && sentScr.classList.contains('active') && typeof buildSentinel === 'function') buildSentinel(org);
+ } catch (_sentSw) {}
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -12404,9 +12418,6 @@ const DASH_INDUSTRY = {
       { cap: 'Veteran Status', st: 'warn' },
       { cap: 'Income', st: 'good' }
     ],
-    certHeading: 'Not Yet Certified by Project Cardinal',
-    certSubtext: 'Score below 0.80 threshold · DoD AI Ethics · EO 13960 · ISO 42001',
-    certCertified: false,
     biasDet: 67, biasDetColor: '#ef4444',
     fraud:   91, fraudColor:   '#22c55e',
     comp:    82, compColor:    '#22c55e',
@@ -12711,9 +12722,6 @@ const DASH_INDUSTRY = {
       { cap: 'Veteran Status', st: 'good' },
       { cap: 'Income', st: 'good' }
     ],
-    certHeading: 'Certified by Project Cardinal',
-    certSubtext: 'Meets Cardinal standards for Fair Lending · ECOA · NYC Law 144',
-    certCertified: true,
     biasDet: 74, biasDetColor: '#f59e0b',
     fraud:   88, fraudColor:   '#22c55e',
     comp:    76, compColor:    '#f59e0b',
@@ -13019,9 +13027,6 @@ const DASH_INDUSTRY = {
       { cap: 'Veteran Status', st: 'good' },
       { cap: 'Income', st: 'good' }
     ],
-    certHeading: 'Certified by Project Cardinal',
-    certSubtext: 'Meets Cardinal standards for Clinical Equity · ACA 1557 · CMS Oversight',
-    certCertified: true,
     biasDet: 81, biasDetColor: '#22c55e',
     fraud:   84, fraudColor:   '#22c55e',
     comp:    77, compColor:    '#f59e0b',
@@ -14328,7 +14333,9 @@ function initDashboardTooltips() {
     showTooltip(
       document.getElementById('dr-trust-label'),
       'Trust status',
-      isCertInit ? 'Certification line from CARDINAL_DATA for this industry (trustScore at or above the Cardinal floor). Shown with the check icon.' : 'Below threshold: at least one fairness, fraud, or compliance gate is not met. Open the full Trust Score report for remediation paths.'
+      isCertInit
+        ? 'Single certification line from CARDINAL_DATA[currentOrg].certStatus when trustScore meets the Cardinal floor (80+).'
+        : 'Single status line from CARDINAL_DATA[currentOrg].trustStatus when below threshold. Open the full Trust Score report for remediation paths.'
     );
 
     var cols = document.querySelectorAll('#dash-global-score-panel .dr-trust-cols .dr-trust-col');
@@ -17970,6 +17977,10 @@ function renderDashboardActiveChannels(org) {
 
   var totalUnread = mockZero ? 0 : rows.reduce(function (s, r) { return s + (r.unread || 0); }, 0);
   var nCh = new Set(rows.map(function (r) { return r.name; })).size;
+  var subLine =
+    mockZero || !baseRows.length
+      ? '<p class="dash-ac-strip-sub dash-ac-strip-sub-empty">No unread messages</p>'
+      : '<p class="dash-ac-strip-sub">' + totalUnread + ' unread across ' + nCh + ' channels</p>';
 
   var snip = function (s) {
     s = s || '';
@@ -17987,8 +17998,8 @@ function renderDashboardActiveChannels(org) {
       var dotTipT = r.kind === 'case' ? 'Case Channel' : 'Standing Channel';
       var dotTipB =
         r.kind === 'case'
-          ? 'Active incident - time-bound. Archives when case closes.'
-          : 'Ongoing governance discussion - persistent.';
+          ? 'Active incident — time-bound. Archives when case closes.'
+          : 'Ongoing governance discussion — persistent.';
       return (
         '<div class="dash-ac-chip" ' +
         click +
@@ -18009,7 +18020,7 @@ function renderDashboardActiveChannels(org) {
         '\',event)">' +
         tlwEsc(r.name) +
         '</span>' +
-        '<span class="dash-ac-chip-badge" onmouseenter="showTooltip(\'Unread Messages\',\'Messages awaiting your read receipt in this channel.\',event)">' +
+        '<span class="dash-ac-chip-badge" onmouseenter="showTooltip(\'Unread Messages\',\'Click to read.\',event)">' +
         r.unread +
         '</span>' +
         '</div>' +
@@ -18031,7 +18042,7 @@ function renderDashboardActiveChannels(org) {
     (filt === 'all' ? 'active' : '') +
     '" onclick="window._dashChFilter=\'all\';renderDashboardActiveChannels(\'' +
     org +
-    '\')" onmouseenter="showTooltip(\'All channels\',\'Standing Trust Loop channels plus active War Room case channels in CARDINAL_DATA for this industry.\',event)">All</button>';
+    '\')" onmouseenter="showTooltip(\'All\',\'Shows every standing Trust Loop channel plus active War Room case channels from CARDINAL_DATA for this industry.\',event)">All</button>';
   var pillCases = '';
   var pillStand = '';
   if (hasCases && hasStand) {
@@ -18040,27 +18051,27 @@ function renderDashboardActiveChannels(org) {
       (filt === 'cases' ? 'active' : '') +
       '" onclick="window._dashChFilter=\'cases\';renderDashboardActiveChannels(\'' +
       org +
-      '\')" onmouseenter="showTooltip(\'Cases filter\',\'Show only War Room case channels (red).\',event)">Cases</button>';
+      '\')" onmouseenter="showTooltip(\'Cases\',\'Only War Room case channels (red dot) tied to active incidents.\',event)">Cases</button>';
     pillStand =
       '<button type="button" class="dash-ac-pill ' +
       (filt === 'standing' ? 'active' : '') +
       '" onclick="window._dashChFilter=\'standing\';renderDashboardActiveChannels(\'' +
       org +
-      '\')" onmouseenter="showTooltip(\'Standing filter\',\'Show only persistent Trust Loop channels (blue).\',event)">Standing</button>';
+      '\')" onmouseenter="showTooltip(\'Standing\',\'Only persistent Trust Loop channels (blue dot).\',event)">Standing</button>';
   } else if (hasCases && !hasStand) {
     pillCases =
       '<button type="button" class="dash-ac-pill ' +
       (filt === 'cases' ? 'active' : '') +
       '" onclick="window._dashChFilter=\'cases\';renderDashboardActiveChannels(\'' +
       org +
-      '\')" onmouseenter="showTooltip(\'Cases filter\',\'Case channels only.\',event)">Cases</button>';
+      '\')" onmouseenter="showTooltip(\'Cases\',\'Case channels only (War Room).\',event)">Cases</button>';
   } else if (!hasCases && hasStand) {
     pillStand =
       '<button type="button" class="dash-ac-pill ' +
       (filt === 'standing' ? 'active' : '') +
       '" onclick="window._dashChFilter=\'standing\';renderDashboardActiveChannels(\'' +
       org +
-      '\')" onmouseenter="showTooltip(\'Standing filter\',\'Standing channels only.\',event)">Standing</button>';
+      '\')" onmouseenter="showTooltip(\'Standing\',\'Standing channels only (Trust Loop).\',event)">Standing</button>';
   }
 
   var centerHtml;
@@ -18079,12 +18090,8 @@ function renderDashboardActiveChannels(org) {
   host.innerHTML =
     '<section class="dash-ac-strip" aria-label="Active channels summary">' +
     '<div class="dash-ac-strip-left">' +
-    '<h2 class="dash-ac-strip-title" onmouseenter="showTooltip(\'Active Channels\',\'Where governance team conversations happen. Case channels (red) for active incidents; standing channels (blue) for ongoing discussion.\',event)">Active Channels</h2>' +
-    '<p class="dash-ac-strip-sub">' +
-    totalUnread +
-    ' unread across ' +
-    nCh +
-    ' channels</p>' +
+    '<h2 class="dash-ac-strip-title" onmouseenter="showTooltip(\'Active Channels\',\'Where governance team conversations happen. Case channels (red) for active incidents; standing channels (blue) for ongoing discussion. Click any channel to jump in.\',event)">Active Channels</h2>' +
+    subLine +
     '</div>' +
     '<div class="dash-ac-strip-center">' +
     centerHtml +
@@ -18095,7 +18102,7 @@ function renderDashboardActiveChannels(org) {
     pillCases +
     pillStand +
     '</div>' +
-    '<button type="button" class="dash-ac-viewall" onclick="openTrustLoopTo(\'channels\',null)" onmouseenter="showTooltip(\'All Channels\',\'Open Trust Loop on the Channels tab to see every channel including DMs.\',event)">View All →</button>' +
+    '<button type="button" class="dash-ac-viewall" onclick="openTrustLoopTo(\'channels\',null)" onmouseenter="showTooltip(\'All Channels\',\'Open Trust Loop > Channels tab to see every channel including DMs.\',event)">View All →</button>' +
     '</div></section>';
 
   try {
@@ -24229,6 +24236,137 @@ function renderBFCompare() {
   setEl('bf-shared-profiles', sharedHtml);
 }
 
+// ══ CARDINAL SENTINEL SCREEN ══
+function switchSentinelTab(name, idx) {
+  var bar = document.getElementById('sentinel-tabs');
+  if (bar) {
+    var btns = bar.querySelectorAll('.gen-tab');
+    btns.forEach(function (t, i) {
+      t.classList.toggle('active', i === idx);
+    });
+  }
+  ['caught', 'timeline', 'monitoring', 'triage', 'livefeed'].forEach(function (id) {
+    var el = document.getElementById('sentinel-tab-' + id);
+    if (el) el.style.display = id === name ? 'block' : 'none';
+  });
+  if (name === 'livefeed') {
+    try { startSentinelFeed(); } catch (_sf) {}
+  } else {
+    try { stopSentinelFeed(); } catch (_st) {}
+  }
+}
+window.switchSentinelTab = switchSentinelTab;
+
+function buildSentinel(org) {
+  var o = org || currentOrg || window.currentOrg || 'ad';
+  var d = typeof cd === 'function' ? cd(o) : null;
+  if (!d) return;
+  var esc = function (s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/"/g, '&quot;');
+  };
+  var sk = d.sentinelKpis || {};
+  var mar = d.modelsAtRiskList || [];
+  var caughtEl = document.getElementById('sentinel-caught-list');
+  if (caughtEl) {
+    caughtEl.innerHTML = mar.length
+      ? mar
+          .map(function (m) {
+            var st = String(m.status || m.stage || 'WARNING').toUpperCase();
+            var sev = st.indexOf('CRIT') >= 0 ? 'red' : 'amber';
+            var det = m.issue || m.detail || 'Cardinal triaged this model before it surfaced as a client dashboard alert.';
+            return (
+              '<div style="padding:12px 0;border-bottom:1px solid rgba(180,190,220,.06);">' +
+              '<div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start;">' +
+              '<span style="font-size:11px;font-weight:700;color:var(--chrome2);">' +
+              esc(m.name) +
+              '</span>' +
+              '<span class="badge badge-' +
+              sev +
+              '" style="font-size:9px;">' +
+              esc(st) +
+              '</span></div>' +
+              '<div style="font-size:10px;color:var(--muted2);margin-top:6px;line-height:1.45;">' +
+              esc(det) +
+              '</div></div>'
+            );
+          })
+          .join('')
+      : '<div style="font-size:11px;color:var(--muted);padding:12px 0;">No pre-caught issues listed for this org in CARDINAL_DATA.</div>';
+  }
+  var monEl = document.getElementById('sentinel-monitoring-list');
+  if (monEl) {
+    monEl.innerHTML = [
+      { k: 'Bias signals', v: d.biasDetection || '—', ok: (d.biasScore || 0) >= 80 },
+      { k: 'Fraud signals', v: d.fraudPrevention || '—', ok: (d.fraudScore || 0) >= 85 },
+      { k: 'Compliance signals', v: d.compliance || '—', ok: (d.complianceScore || 0) >= 80 }
+    ]
+      .map(function (x) {
+        return (
+          '<div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid rgba(180,190,220,.05);">' +
+          '<span style="font-size:11px;color:var(--muted2);">' +
+          esc(x.k) +
+          '</span>' +
+          '<span style="font-size:11px;font-weight:600;color:var(--' +
+          (x.ok ? 'green' : 'amber') +
+          ');">' +
+          esc(x.v) +
+          '</span></div>'
+        );
+      })
+      .join('');
+  }
+  var tri = document.getElementById('sentinel-triage-steps');
+  if (tri) {
+    tri.innerHTML =
+      '<ol style="margin:0;padding-left:18px;font-size:11px;color:var(--muted2);line-height:1.7;">' +
+      '<li><strong style="color:var(--chrome2);">Validate</strong> — Cardinal replays the affected cohort for ' +
+      esc(d.org || o) +
+      ' and confirms the signal.</li>' +
+      '<li><strong style="color:var(--chrome2);">Notify</strong> — Routing package sent to your governance lead with remediation context.</li>' +
+      '<li><strong style="color:var(--chrome2);">Prepare</strong> — War Room draft + Echo receipts staged before the client sees a red alert.</li>' +
+      '<li><strong style="color:var(--chrome2);">Resolve</strong> — Atonement tracks the fix; Sentinel clears when CARDINAL_DATA thresholds pass.</li>' +
+      '</ol>';
+  }
+  var tl = document.getElementById('sentinel-timeline-chart');
+  if (tl) {
+    tl.innerHTML = mar.length
+      ? mar
+          .map(function (m, i) {
+            var daysEarly = Math.max(3, 9 - i * 2);
+            var pct = Math.min(100, daysEarly * 12);
+            return (
+              '<div style="margin-bottom:12px;">' +
+              '<div style="display:flex;justify-content:space-between;margin-bottom:4px;font-size:10px;color:var(--muted2);">' +
+              '<span>' +
+              esc(m.name) +
+              '</span><span>' +
+              daysEarly +
+              'd lead</span></div>' +
+              '<div style="height:8px;background:rgba(255,255,255,0.06);border-radius:4px;">' +
+              '<div style="height:100%;width:' +
+              pct +
+              '%;background:var(--accent);border-radius:4px;"></div></div></div>'
+            );
+          })
+          .join('')
+      : '<div style="font-size:11px;color:var(--muted);">No detection timeline rows in modelsAtRiskList for this org.</div>';
+  }
+  function setTxt(id, v) {
+    var el = document.getElementById(id);
+    if (el) el.textContent = v;
+  }
+  setTxt('sent-caught', String(mar.length));
+  setTxt('sent-lead', sk.leadLabel != null ? String(sk.leadLabel) : '6.2 days');
+  setTxt('sent-prevented', sk.prevented != null ? String(sk.prevented) : '23');
+  setTxt('sent-exposure', sk.exposureQ != null ? String(sk.exposureQ) : String(d.penaltyExposure || '—'));
+  try {
+    switchSentinelTab('caught', 0);
+  } catch (_sw) {}
+}
+
 // ══ SENTINEL LIVE FEED ══
 var sentinelFeedInterval = null;
 var sentinelFeedPaused = false;
@@ -24320,10 +24458,6 @@ function clearSentinelFeed() {
   var countEl = document.getElementById('sentinel-feed-count');
   if(countEl) countEl.textContent = '0 alerts this session';
 }
-
-// Start feed when live feed tab is clicked
-var origSwitchSentinel = window.switchSentinelTab;
-
 
 function openDeployModal() {
   var m = document.getElementById('deploy-confirm-modal');
