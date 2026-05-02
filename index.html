@@ -15,6 +15,9 @@
   May 2, 2026 — Sidebar Trust Score chip cleanup.
     Removed redundant "Below Cardinal certification floor (80+ required)" subtext (`#sidebar-cert-badge`). Expanded chip now renders 3 lines: header / number / status with icon (same `formatDashTrustStatusHtml` logic as the Global Trust Score panel). Collapsed circular badge state preserved.
 
+  May 2, 2026 — Eden + Obsidian Active Cases filter pills fix.
+    Filter pills [All][Critical][High][Medium] were non-functional for some builds (fragile `onclick` escaping). Replaced with `button type="button"` + `JSON.stringify` handlers calling `edoFilterCases`. Normalized `caseSev`; filters `biasIncidentsActive` / `fraudIncidentsActive` by severity; active pill styling; "No cases at this severity" when empty; tooltips on each pill.
+
   May 2, 2026 — Eden Core + Obsidian Core parallel build.
     - Both screens use shared 8-section architecture: Hero, Active Cases, Demographics / fraud lens breakdown, Model Coverage Grid, Model Detail Drill-In (Bias / Fraud / Side-by-Side), Cohort Explorer (Cohort Summary default + Individual Drill-In Admin/Legal-only), Bias-Fraud Connection visualization, Echo Footer.
     - Cohort Explorer: cohort-level summary for all roles; individual PII drill-in for Admin/Legal Counsel with automatic Echo Memory access-granted events; demo role switcher; CSV export.
@@ -2103,6 +2106,15 @@ font-size: 11px; cursor: pointer; transition: all 0.15s;
 font-family: var(--sans);
 }
 .btn-ghost:hover { background: rgba(255,255,255,0.04); color: var(--chrome2); }
+.edo-case-pill--active {
+  border-color: var(--accent) !important;
+  background: rgba(166, 218, 255, 0.12) !important;
+  color: var(--chrome2) !important;
+}
+#obsidian-core-root .edo-case-pill--active {
+  border-color: rgba(251, 146, 60, 0.65) !important;
+  background: rgba(251, 146, 60, 0.12) !important;
+}
 /* ── BADGE ── */
 .badge {
 display: inline-flex; align-items: center;
@@ -10233,10 +10245,26 @@ window.edoSetDemoRole = function (role) {
   if (window.__edo.screen === 'eden') renderEden(o); else renderObsidian(o);
 };
 window.edoFilterCases = function (sev) {
-  window.__edo.caseSev = sev;
+  var s = String(sev == null ? 'all' : sev).toLowerCase();
+  if (s !== 'all' && s !== 'critical' && s !== 'high' && s !== 'medium') s = 'all';
+  window.__edo.caseSev = s;
   var o = window.__edo.org;
   if (window.__edo.screen === 'eden') renderEden(o); else renderObsidian(o);
 };
+function edoActiveCasePillsHtml() {
+  var cur = String(window.__edo.caseSev || 'all').toLowerCase();
+  if (cur !== 'all' && cur !== 'critical' && cur !== 'high' && cur !== 'medium') cur = 'all';
+  function one(filt, label, tipT, tipB) {
+    var active = cur === filt ? ' edo-case-pill--active' : '';
+    return '<button type="button" class="edo-case-pill btn-ghost' + active + '" style="font-size:10px" data-filter="' + filt + '" onclick=' + JSON.stringify('edoFilterCases(' + JSON.stringify(filt) + ')') + edoT(tipT, tipB) + '>' + label + '</button>';
+  }
+  return '<div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap">' +
+    one('all', 'All', 'All Cases', 'All Cases / Show every active case regardless of severity.') +
+    one('critical', 'Critical', 'Critical Severity', 'Critical Severity / Highest priority — federal violation, immediate action required.') +
+    one('high', 'High', 'High Severity', 'High Severity / Significant violation — remediation required within 30 days.') +
+    one('medium', 'Medium', 'Medium Severity', 'Medium Severity / Approaching threshold — monitoring active.') +
+    '</div>';
+}
 window.edoFilterModels = function (f) {
   window.__edo.mdlFilt = f;
   var o = window.__edo.org;
@@ -11003,8 +11031,14 @@ window.renderEden = function (org) {
   var bfN = d.biasFraudStats ? d.biasFraudStats.overlapCount : 0;
   var bias = d.biasScore;
   var cases = d.biasIncidentsActive || [];
-  var sev = window.__edo.caseSev;
-  if (sev !== 'all') cases = cases.filter(function (c) { return String(c.severity).toLowerCase() === sev; });
+  var sev = String(window.__edo.caseSev || 'all').toLowerCase();
+  if (sev !== 'all' && sev !== 'critical' && sev !== 'high' && sev !== 'medium') sev = 'all';
+  window.__edo.caseSev = sev;
+  if (sev !== 'all') {
+    cases = cases.filter(function (c) {
+      return String(c.severity == null ? '' : c.severity).toLowerCase() === sev;
+    });
+  }
   var biasModels = (d.biasMetricsByModel || []).slice();
   var mf = window.__edo.mdlFilt;
   if (mf === 'Critical') biasModels = biasModels.filter(function (m) { return m.status === 'Critical'; });
@@ -11024,6 +11058,9 @@ window.renderEden = function (org) {
       '<div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px"><span style="font-size:10px"' + edoT('Lead Assignee', 'Case owner — ' + c.leadAssignee) + '>' + c.leadAssignee + '</span>' +
       '<button type="button" class="btn-primary" style="font-size:10px;padding:4px 10px"' + edoOn('openWarRoomCase', [edoCaseId(c.caseId)]) + '>Open Case</button></div></div>';
   }).join('');
+  var cardsRow = cases.length
+    ? '<div style="display:flex;gap:12px;overflow-x:auto;padding-bottom:8px">' + cards + '</div>'
+    : '<div class="edo-case-empty" style="font-size:11px;color:var(--muted);padding:14px;border:1px dashed var(--border2);border-radius:10px;text-align:center"' + edoT('No cases at this severity', 'No open cases match this severity filter. Choose All or another severity.') + '>No cases at this severity</div>';
   var mrows = '';
   for (var r = 0; r < biasModels.length; r++) {
     var m = biasModels[r];
@@ -11096,8 +11133,8 @@ window.renderEden = function (org) {
     eveSec +
     histSec +
     '<section id="eden-sec-cases" style="margin-bottom:20px"><h2 style="font-size:14px;margin:0 0 8px"' + edoT('Active Bias Cases', 'Open bias remediation cases from CARDINAL_DATA.') + '>Active Bias Cases — ' + (d.biasIncidentsActive || []).length + ' open</h2>' +
-    '<div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap"><button type="button" class="btn-ghost" style="font-size:10px" onclick="edoFilterCases(\'all\')">All</button><button type="button" class="btn-ghost" style="font-size:10px" onclick="edoFilterCases(\'critical\')">Critical</button><button type="button" class="btn-ghost" style="font-size:10px" onclick="edoFilterCases(\'high\')">High</button><button type="button" class="btn-ghost" style="font-size:10px" onclick="edoFilterCases(\'medium\')">Medium</button></div>' +
-    '<div style="display:flex;gap:12px;overflow-x:auto;padding-bottom:8px">' + cards + '</div>' +
+    edoActiveCasePillsHtml() +
+    cardsRow +
     '<button type="button" class="btn-ghost" style="font-size:11px;margin-top:8px" onclick="showScreen(\'warroom\',null)"' + edoT('War Room', 'Open case command center.') + '>View All in War Room \u2192</button></section>' +
     sec3b +
     '<section style="margin-bottom:20px"><h2 style="font-size:14px"' + edoT('Models Monitored for Bias', 'Coverage grid from biasMetricsByModel.') + '>Models Monitored for Bias</h2>' +
@@ -11137,8 +11174,14 @@ window.renderObsidian = function (org) {
   var fraud = d.fraudScore;
   var bfN = d.biasFraudStats ? d.biasFraudStats.overlapCount : 0;
   var cases = d.fraudIncidentsActive || [];
-  var sev = window.__edo.caseSev;
-  if (sev !== 'all') cases = cases.filter(function (c) { return String(c.severity).toLowerCase() === sev; });
+  var sev = String(window.__edo.caseSev || 'all').toLowerCase();
+  if (sev !== 'all' && sev !== 'critical' && sev !== 'high' && sev !== 'medium') sev = 'all';
+  window.__edo.caseSev = sev;
+  if (sev !== 'all') {
+    cases = cases.filter(function (c) {
+      return String(c.severity == null ? '' : c.severity).toLowerCase() === sev;
+    });
+  }
   var fmodels = (d.fraudMetricsByModel || []).slice();
   var mf = window.__edo.mdlFilt;
   if (mf === 'Critical') fmodels = fmodels.filter(function (m) { return m.status === 'Critical'; });
@@ -11155,6 +11198,9 @@ window.renderObsidian = function (org) {
       '<div style="font-size:10px;color:var(--amber);margin-top:4px"' + edoT('SLA Countdown', 'Cardinal enforces SLA deadlines on fraud remediation.') + '>' + sla + ' days remaining</div>' +
       '<div style="margin-top:8px"><button type="button" class="btn-primary" style="font-size:10px;padding:4px 10px"' + edoOn('openWarRoomCase', [edoCaseId(c.caseId)]) + '>Open Case</button></div></div>';
   }).join('');
+  var cardsRowObs = cases.length
+    ? '<div style="display:flex;gap:12px;overflow-x:auto;margin-top:10px;padding-bottom:8px">' + cards + '</div>'
+    : '<div class="edo-case-empty" style="font-size:11px;color:var(--muted);margin-top:10px;padding:14px;border:1px dashed var(--border2);border-radius:10px;text-align:center"' + edoT('No cases at this severity', 'No open fraud cases match this severity filter.') + '>No cases at this severity</div>';
   var mrows = '';
   for (var r = 0; r < fmodels.length; r++) {
     var m = fmodels[r];
@@ -11214,9 +11260,10 @@ window.renderObsidian = function (org) {
     heroObs +
     eveSecO +
     histSecO +
-    '<section id="obs-sec-cases" style="margin-top:20px"><h2 style="font-size:14px">Active Fraud Cases — ' + (d.fraudIncidentsActive || []).length + ' open</h2><div style="display:flex;gap:8px;flex-wrap:wrap">' +
-    '<button type="button" class="btn-ghost" style="font-size:10px" onclick="edoFilterCases(\'all\')">All</button><button type="button" class="btn-ghost" style="font-size:10px" onclick="edoFilterCases(\'critical\')">Critical</button><button type="button" class="btn-ghost" style="font-size:10px" onclick="edoFilterCases(\'high\')">High</button><button type="button" class="btn-ghost" style="font-size:10px" onclick="edoFilterCases(\'medium\')">Medium</button></div>' +
-    '<div style="display:flex;gap:12px;overflow-x:auto;margin-top:10px">' + cards + '</div><button type="button" class="btn-ghost" style="font-size:11px" onclick="showScreen(\'warroom\',null)">View All in War Room \u2192</button></section>' +
+    '<section id="obs-sec-cases" style="margin-top:20px"><h2 style="font-size:14px"' + edoT('Active Fraud Cases', 'Open fraud remediation cases from CARDINAL_DATA.') + '>Active Fraud Cases — ' + (d.fraudIncidentsActive || []).length + ' open</h2>' +
+    edoActiveCasePillsHtml() +
+    cardsRowObs +
+    '<button type="button" class="btn-ghost" style="font-size:11px;margin-top:8px" onclick="showScreen(\'warroom\',null)"' + edoT('War Room', 'Open case command center.') + '>View All in War Room \u2192</button></section>' +
     sec3f +
     '<section style="margin-top:20px"><h2 style="font-size:14px">Models — Fraud Coverage</h2><div style="display:flex;gap:6px;flex-wrap:wrap">' +
     '<button type="button" class="btn-ghost" style="font-size:10px" onclick="edoFilterModels(\'all\')">All</button><button type="button" class="btn-ghost" style="font-size:10px" onclick="edoFilterModels(\'Watch\')">Watch</button></div>' +
