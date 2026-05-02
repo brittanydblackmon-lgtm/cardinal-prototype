@@ -3,6 +3,13 @@
   ════════════════════════════════════════════════════════════════════
   PROJECT CARDINAL — CHANGELOG
   ════════════════════════════════════════════════════════════════════
+  May 2, 2026 (late evening) — Model Detail drill-in + universal routing fix.
+    - SYSTEMIC: `edoOn` / `edoOnStop` prepend `preventDefault` + `stopPropagation`; Eden/Obsidian history range + series toggles use `edoRefreshHistoryUI` (chart/caption/panels only) instead of full re-render — no scroll jump on chart controls.
+    - Full-screen Model Detail drill-in (`openModelDetail(modelId, sourceContext)`): breadcrumb, Cmd+K search across industries, 8-row layout, lens toggle, Esc / backdrop / X close with scroll restoration.
+    - `CARDINAL_DATA.modelDetailDrillIn` registry (generated per model); history annotations gain `linkedModelId`; pins open drill-in (Echo fallback when no model).
+    - History chart: model search + clear, sticky context panel, Eve callout under chart, richer point tooltips, stronger grid + fill; Trust Score / ML grid / legacy Eden table resolve slugs via registry keys.
+    - `<a href="#">` dashboard fix links converted to `<button type="button">`.
+
   May 2, 2026 (evening) — Eden + Obsidian refinements (V7).
     - Issue 8: History chart on Eden and Obsidian uses shared `cardinalHistoryChartRender` with Trust Score — matching Y-axis ticks (50–100), grid, line weight, dots, pins, threshold styling, and animations.
     - Issue 9: Eve Executive Summaries scoped — Eden paragraphs are bias-only; Obsidian are fraud-only; Bias–Fraud Connection appears only as a one-line para 3 pointer to Section 7.
@@ -9476,14 +9483,14 @@ function _edoAssignEveHist(dst, ok) {
   var orgLabel = ok === 'ad' ? 'Atlas Defense Systems' : ok === 'fin' ? 'Blackmoor Wealth Group' : 'Sterling Health';
   if (ok === 'ad') {
     var biasScore = [78, 79, 80, 81, 82, 80, 78, 75, 67, 68, 70, 67];
-    var annEden = [null, null, null, null, null, null, null, { severity: 'high', summary: 'DI ratio dropped below 0.75 — model degradation accelerating. Eve flagged for review.', echoMemoryId: 'echo-AD-2025-12-01-di' }, { severity: 'critical', summary: 'DI 0.67. Hispanic technician denial 2.3x baseline. James Park dismissed Eve flag (April 16 dismissal preserved as Sealed Memory).', echoMemoryId: 'echo-AD-2026-04-16-1422-pp01' }, null, { severity: 'high', summary: 'Eve auto-escalated, Case #AD-2847 opened. Sarah Chen lead. Genesis counterfactual proof confirmed.', echoMemoryId: 'echo-AD-2026-04-21-cef' }, null];
+    var annEden = [null, null, null, null, null, null, null, { severity: 'high', summary: 'DI ratio dropped below 0.75 — model degradation accelerating. Eve flagged for review.', echoMemoryId: 'echo-AD-2025-12-01-di', linkedModelId: 'Personnel Assignment v2.4' }, { severity: 'critical', summary: 'DI 0.67. Hispanic technician denial 2.3x baseline. James Park dismissed Eve flag (April 16 dismissal preserved as Sealed Memory).', echoMemoryId: 'echo-AD-2026-04-16-1422-pp01', linkedModelId: 'Personnel Assignment v2.4' }, null, { severity: 'high', summary: 'Eve auto-escalated, Case #AD-2847 opened. Sarah Chen lead. Genesis counterfactual proof confirmed.', echoMemoryId: 'echo-AD-2026-04-21-cef', linkedModelId: 'Personnel Assignment v2.4' }, null];
     var dias = [0.852, 0.855, 0.86, 0.865, 0.87, 0.862, 0.85, 0.82, 0.78, 0.76, 0.77, 0.67];
     var eod = [0.095, 0.092, 0.09, 0.088, 0.085, 0.09, 0.095, 0.11, 0.14, 0.155, 0.16, 0.18];
     var sc = [98, 97, 97, 96, 96, 95, 94, 94, 93, 93, 94, 94];
     dst.edenScoreHistory = [];
     for (var i = 0; i < 12; i++) dst.edenScoreHistory.push({ month: months[i], biasScore: biasScore[i], di: dias[i], equalizedOdds: eod[i], sampleCoverage: sc[i], annotation: annEden[i] });
     var fs = [84, 84, 85, 86, 86, 87, 87, 88, 88, 89, 92, 91];
-    var annO = [null, null, null, { severity: 'medium', summary: 'Synthetic identity ring signatures clustered at Camp Pendleton.', echoMemoryId: 'echo-AD-2025-08-20-fraud' }, null, null, null, { severity: 'high', summary: '$1.4M in blocked fraudulent credentials — velocity spike overnight.', echoMemoryId: 'echo-AD-2025-12-10-fr' }, null, { severity: 'medium', summary: 'Overnight replay signatures — extended 02:00\u201305:00 UTC monitoring window flagged.', echoMemoryId: 'echo-AD-2026-02-05-fr' }, { severity: 'high', summary: '23 synthetic applications shared device fingerprints — ring confirmed.', echoMemoryId: 'echo-AD-2026-03-01-fr' }, { severity: 'low', summary: '$2.1M cumulative blocked this quarter — posture above Cardinal threshold.', echoMemoryId: 'echo-AD-2026-04-01-fr' }];
+    var annO = [null, null, null, { severity: 'medium', summary: 'Synthetic identity ring signatures clustered at Camp Pendleton.', echoMemoryId: 'echo-AD-2025-08-20-fraud', linkedModelId: 'Personnel Assignment v2.4' }, null, null, null, { severity: 'high', summary: '$1.4M in blocked fraudulent credentials — velocity spike overnight.', echoMemoryId: 'echo-AD-2025-12-10-fr', linkedModelId: 'Fraud Detection v3.2' }, null, { severity: 'medium', summary: 'Overnight replay signatures — extended 02:00\u201305:00 UTC monitoring window flagged.', echoMemoryId: 'echo-AD-2026-02-05-fr', linkedModelId: 'Fraud Detection v3.2' }, { severity: 'high', summary: '23 synthetic applications shared device fingerprints — ring confirmed.', echoMemoryId: 'echo-AD-2026-03-01-fr', linkedModelId: 'Personnel Assignment v2.4' }, { severity: 'low', summary: '$2.1M cumulative blocked this quarter — posture above Cardinal threshold.', echoMemoryId: 'echo-AD-2026-04-01-fr', linkedModelId: 'Fraud Detection v3.2' }];
     dst.obsidianScoreHistory = [];
     for (var j = 0; j < 12; j++) dst.obsidianScoreHistory.push({ month: months[j], fraudScore: fs[j], syntheticId: [78, 79, 80, 82, 83, 84, 85, 86, 87, 88, 88, 89][j], behavioralAnomaly: [80, 81, 81, 82, 83, 84, 84, 85, 86, 86, 87, 87][j], clusterFraud: [82, 83, 84, 85, 86, 87, 88, 89, 89, 90, 90, 91][j], velocity: [77, 78, 79, 80, 82, 83, 84, 85, 86, 87, 88, 88][j], annotation: annO[j] });
     dst.edenEveSummary = {
@@ -9512,7 +9519,7 @@ function _edoAssignEveHist(dst, ok) {
         di: ok === 'fin' ? 0.88 - t * 0.14 : 0.78 - t * 0.14,
         equalizedOdds: 0.06 + t * 0.11,
         sampleCoverage: 96 - (k % 3),
-        annotation: k === 6 ? { severity: 'medium', summary: ok === 'fin' ? 'ECOA watch — ZIP proxy drift on Credit Scoring v3.4 remediated in shadow.' : 'ACA Section 1557 review — Claims v1.9 calibration watch.', echoMemoryId: ok === 'fin' ? 'echo-FIN-2025-11-01-ec' : 'echo-HS-2025-11-01-ac' } : (k === 10 ? { severity: 'high', summary: ok === 'fin' ? 'NYC Local Law 144 audit prep — documentation sprint logged.' : 'CMS audit countdown — dual lens readout requested.', echoMemoryId: ok === 'fin' ? 'echo-FIN-2026-03-15-ny' : 'echo-HS-2026-03-15-cm' } : null)
+        annotation: k === 6 ? { severity: 'medium', summary: ok === 'fin' ? 'ECOA watch — ZIP proxy drift on Credit Scoring v3.4 remediated in shadow.' : 'ACA Section 1557 review — Claims v1.9 calibration watch.', echoMemoryId: ok === 'fin' ? 'echo-FIN-2025-11-01-ec' : 'echo-HS-2025-11-01-ac', linkedModelId: ok === 'fin' ? 'Credit Scoring v3.4' : 'Claims Adjudication v1.9' } : (k === 10 ? { severity: 'high', summary: ok === 'fin' ? 'NYC Local Law 144 audit prep — documentation sprint logged.' : 'CMS audit countdown — dual lens readout requested.', echoMemoryId: ok === 'fin' ? 'echo-FIN-2026-03-15-ny' : 'echo-HS-2026-03-15-cm', linkedModelId: ok === 'fin' ? 'Credit Scoring v3.4' : 'Claims Adjudication v1.9' } : null)
       });
       dst.obsidianScoreHistory.push({
         month: months[k],
@@ -9522,8 +9529,8 @@ function _edoAssignEveHist(dst, ok) {
         clusterFraud: Math.min(96, 79 + Math.round(12 * t)),
         velocity: Math.min(94, 74 + Math.round(14 * t)),
         annotation: k === 5 ? (ok === 'fin'
-          ? { severity: 'medium', summary: 'Synthetic identity burst in Morris Heights ZIP band — 41 linked applications.', echoMemoryId: 'echo-FIN-2025-12-12-sy' }
-          : { severity: 'medium', summary: 'Specialty upcoding ring — 19 claims cross-linked to Diagnosis Support.', echoMemoryId: 'echo-HS-2025-12-12-sp' }) : null
+          ? { severity: 'medium', summary: 'Synthetic identity burst in Morris Heights ZIP band — 41 linked applications.', echoMemoryId: 'echo-FIN-2025-12-12-sy', linkedModelId: 'Credit Scoring v3.4' }
+          : { severity: 'medium', summary: 'Specialty upcoding ring — 19 claims cross-linked to Diagnosis Support.', echoMemoryId: 'echo-HS-2025-12-12-sp', linkedModelId: 'Diagnosis Support v2.3' }) : null
       });
     }
     var pctB = (dst.biasIndustryPosition && dst.biasIndustryPosition.percentile) || 40;
@@ -10131,6 +10138,112 @@ var EXT = {
   }
 };
 
+function _cardinalChartHistoryCloneFromOrg(dst, b, f) {
+  var eh = dst.edenScoreHistory || [];
+  var oh = dst.obsidianScoreHistory || [];
+  var biasDelta = b && b.status === 'Critical' ? -7 : b && b.status === 'Watch' ? -3 : 0;
+  var fraudDelta = f && f.status === 'Watch' ? -3 : 0;
+  return {
+    biasScore: eh.map(function (row, i) { return Math.max(50, Math.min(100, row.biasScore + biasDelta + (i % 2))); }),
+    di: eh.map(function (row) { return Math.min(0.99, Math.max(0.52, row.di + biasDelta / 100)); }),
+    equalizedOdds: eh.map(function (row) { return row.equalizedOdds; }),
+    sampleCoverage: eh.map(function (row) { return row.sampleCoverage; }),
+    fraudScore: oh.map(function (row) { return Math.max(50, Math.min(100, row.fraudScore + fraudDelta)); }),
+    syntheticId: oh.map(function (r) { return r.syntheticId; }),
+    behavioralAnomaly: oh.map(function (r) { return r.behavioralAnomaly; }),
+    clusterFraud: oh.map(function (r) { return r.clusterFraud; }),
+    velocity: oh.map(function (r) { return r.velocity; })
+  };
+}
+function _cardinalBuildModelDetailDrillInRegistry(CD) {
+  var reg = {};
+  function linkedCasesForModel(d, mid) {
+    var ids = [];
+    (d.biasIncidentsActive || []).concat(d.fraudIncidentsActive || []).forEach(function (c) {
+      if (c.modelId === mid && c.caseId) ids.push(String(c.caseId).replace(/^#/, ''));
+    });
+    return ids;
+  }
+  function echoTail(d, mid, n) {
+    var out = [];
+    var mem = d.echoMemories || [];
+    var short = mid.indexOf(' v') >= 0 ? mid.split(' v')[0] : mid;
+    for (var i = mem.length - 1; i >= 0 && out.length < (n || 5); i--) {
+      var m = mem[i];
+      if (!m) continue;
+      if (m.modelId === mid || (m.summary && m.summary.indexOf(short) >= 0)) out.push(m.id);
+    }
+    return out;
+  }
+  ['ad', 'fin', 'health'].forEach(function (ok) {
+    var d = CD[ok];
+    if (!d) return;
+    var mids = {};
+    (d.biasMetricsByModel || []).forEach(function (b) { mids[b.modelId] = true; });
+    (d.fraudMetricsByModel || []).forEach(function (f) { mids[f.modelId] = true; });
+    Object.keys(mids).forEach(function (mid) {
+      if (reg[mid]) return;
+      var b = (d.biasMetricsByModel || []).filter(function (x) { return x.modelId === mid; })[0] || null;
+      var f = (d.fraudMetricsByModel || []).filter(function (x) { return x.modelId === mid; })[0] || null;
+      if (!b && !f) return;
+      var bidx = -1;
+      for (var ii = 0; ii < (d.biasMetricsByModel || []).length; ii++) {
+        if (d.biasMetricsByModel[ii].modelId === mid) { bidx = ii; break; }
+      }
+      var enh = (bidx >= 0 && d.modelDetailEnhancedMetrics) ? d.modelDetailEnhancedMetrics[bidx] : null;
+      var purpose = '';
+      (d.modelLevelScores || []).forEach(function (m) {
+        if (m.name === mid) purpose = m.purpose || '';
+      });
+      if (!purpose) purpose = 'Production model monitored under Cardinal bias and fraud lenses.';
+      var stat = (b && b.status) || (f && f.status) || 'Watch';
+      var tags = ok === 'ad' ? ['A&D', 'Workforce AI', 'DoD', 'EEOC'] : ok === 'fin' ? ['Finance', 'Credit', 'ECOA', 'NYC LL144'] : ['Health', 'Payer', 'ACA 1557', 'CMS'];
+      reg[mid] = {
+        industryOrg: ok,
+        identity: {
+          name: mid,
+          version: (mid.match(/v[\d.]+$/i) || ['v1.0'])[0],
+          creationDate: 'Mar 2019',
+          lastUpdate: 'Apr 2026',
+          ownerTeam: (d.org || ok) + ' · Model Office',
+          description: purpose,
+          tags: tags
+        },
+        statusLabel: stat,
+        biasMetrics: {
+          di: { current: b ? b.di : 0.88, threshold: 0.8, history30d: _edoGenHeroSparkline30(b ? Math.round(b.di * 100) : 85, false) },
+          equalizedOdds: { current: b ? b.equalizedOdds : 0.08, threshold: 0.1, history30d: _edoGenHeroSparkline30(82, false) },
+          demographicParity: { current: b ? b.demographicParity : 0.9, threshold: 0.8, history30d: _edoGenHeroSparkline30(86, false) },
+          calibration: { current: b ? b.calibration : 0.92, threshold: 0.9, history30d: _edoGenHeroSparkline30(90, false) }
+        },
+        fraudMetrics: {
+          syntheticId: { current: f ? f.syntheticIdentityRate : 88, threshold: 85, history30d: _edoGenHeroSparkline30(f ? f.syntheticIdentityRate : 88, true) },
+          behavioralAnomaly: { current: f ? f.behavioralAnomalyRate : 85, threshold: 85, history30d: _edoGenHeroSparkline30(f ? f.behavioralAnomalyRate : 85, true) },
+          clusterFraud: { current: f ? f.clusterFraudRate : 87, threshold: 85, history30d: _edoGenHeroSparkline30(f ? f.clusterFraudRate : 87, true) },
+          velocity: { current: f ? f.velocityFraudRate : 86, threshold: 85, history30d: _edoGenHeroSparkline30(f ? f.velocityFraudRate : 86, true) }
+        },
+        featureImportance: (enh && enh.featureImportance) ? enh.featureImportance.slice(0, 10) : [{ featureName: b && b.topProxyVariable ? b.topProxyVariable.name : 'dominant_feature', importance: 0.85, isProxyVar: true }, { featureName: 'stability_score', importance: 0.62, isProxyVar: false }],
+        proxyVariables: (enh && enh.proxyVariables) ? enh.proxyVariables : (b && b.topProxyVariable ? [{ feature: b.topProxyVariable.name, correlation: b.topProxyVariable.correlation, correlatesWith: b.topProxyVariable.correlatesWith, severity: 'high' }] : []),
+        linkedCases: linkedCasesForModel(d, mid),
+        lineage: mid.indexOf('Personnel Assignment v2.4') === 0 && ok === 'ad'
+          ? [{ phase: 'Production', label: 'Personnel v2.4', note: 'DI watch' }, { phase: 'Shadow', label: 'Personnel v2.5', note: '5% traffic' }]
+          : [{ phase: 'Production', label: mid, note: 'Active' }],
+        cohortsAffected: (d.cohortGroupSummaries && d.cohortGroupSummaries[mid]) ? [mid] : [],
+        echoLogTail: echoTail(d, mid, 5),
+        chartHistory12m: _cardinalChartHistoryCloneFromOrg(d, b, f),
+        fraudPatterns: f && f.topFraudPattern ? [{ type: f.topFraudPattern.type, dollars: f.topFraudPattern.dollarsBlocked, cases: f.topFraudPattern.casesDetected }] : [],
+        biasFraudBlurb: f && f.biasFraudConnection ? (String(f.biasFraudConnection.caseCount) + ' of this model\'s bias cases also showed fraud exposure — see Section 7.') : 'No bias-fraud overlap summary for this model.'
+      };
+    });
+  });
+  var alias = { 'PAM-v24': 'Personnel Assignment v2.4', 'PAM-v25': 'Personnel Assignment v2.4', 'MRM-v11': 'Mission Readiness v1.1', 'FDM-v32': 'Fraud Detection v3.2', 'MRT-v12': 'Maintenance Routing v1.2', 'CSM-v34': 'Credit Scoring v3.4', 'ALM-v21': 'Auto Loan v2.1', 'CAM-v19': 'Claims Adjudication v1.9', 'DAM-v23': 'Diagnosis Support v2.3', 'DIM-v10': 'Drug Interaction v1.0' };
+  Object.keys(alias).forEach(function (k) {
+    var tgt = alias[k];
+    if (reg[tgt]) reg[k] = reg[tgt];
+  });
+  return reg;
+}
+
 ['ad', 'fin', 'health'].forEach(function (ok) {
   var dst = CD[ok];
   if (!dst) return;
@@ -10158,6 +10271,8 @@ var EXT = {
   dst.biasFraudOverlapCases = _overlapCases(ok, dst.fraudMetricsByModel, dst.biasMetricsByModel);
   _edoMergeVisualExt(dst, ok);
 });
+
+CD.modelDetailDrillIn = _cardinalBuildModelDetailDrillInRegistry(CD);
 
 /* Add War Room case channel AD-2902 if missing */
 (function () {
@@ -10233,16 +10348,16 @@ window.openEchoCoreFiltered = function (coreLens) {
 };
 
 /* ═════ Eden / Obsidian UI (renderEden, renderObsidian) ═════ */
-window.__edo = { org: 'ad', screen: 'eden', modelIdx: null, modelLens: 'bias', cohortSummary: true, caseSev: 'all', mdlFilt: 'all', mdlSort: 'model', cohortQ: '', exp: {}, indQ: '', piiInd: null, vennFilter: 'overlap', sec3BiasTs: null, sec3FraudTs: null, eveTfEden: 'quarterly', eveTfObsidian: 'quarterly', histRangeEden: 'year', histSeriesEden: 'biasScore', histRangeObsidian: 'year', histSeriesObsidian: 'fraudScore', highlightTierLabel: null };
+window.__edo = { org: 'ad', screen: 'eden', modelIdx: null, modelLens: 'bias', cohortSummary: true, caseSev: 'all', mdlFilt: 'all', mdlSort: 'model', cohortQ: '', exp: {}, indQ: '', piiInd: null, vennFilter: 'overlap', sec3BiasTs: null, sec3FraudTs: null, eveTfEden: 'quarterly', eveTfObsidian: 'quarterly', histRangeEden: 'year', histSeriesEden: 'biasScore', histRangeObsidian: 'year', histSeriesObsidian: 'fraudScore', histModelFilterId: null, highlightTierLabel: null };
 function edoQ(s) { return JSON.stringify(s == null ? '' : String(s)); }
 /** Safe inline handlers: single-quoted onclick so JSON.stringify args do not break HTML attributes. */
 function edoOn(fnName, args) {
   var parts = (args || []).map(function (x) { return JSON.stringify(x); }).join(',');
-  return ' onclick=\'' + fnName + '(' + parts + ')\'';
+  return ' onclick=\'event.preventDefault();event.stopPropagation();' + fnName + '(' + parts + ');return false;\'';
 }
 function edoOnStop(fnName, args) {
   var parts = (args || []).map(function (x) { return JSON.stringify(x); }).join(',');
-  return ' onclick=\'event.stopPropagation();' + fnName + '(' + parts + ')\'';
+  return ' onclick=\'event.preventDefault();event.stopPropagation();' + fnName + '(' + parts + ');return false;\'';
 }
 function edoT(t, b) {
   var inner = 'showTooltip(' + edoQ(t) + ',' + edoQ(b) + ',event)';
@@ -10593,9 +10708,15 @@ window.edoDrillFraudRing = function (org, ringId) {
   if (el) el.scrollIntoView({ behavior: 'smooth' });
 };
 window.edoOpenModel = function (which, idx) {
-  window.__edo.modelIdx = idx;
-  window.__edo.modelLens = which === 'obs' ? 'fraud' : 'bias';
-  if (which === 'obs') renderObsidian(window.__edo.org); else renderEden(window.__edo.org);
+  var o = window.__edo.org;
+  var d = window.CARDINAL_DATA && window.CARDINAL_DATA[o];
+  if (!d) return;
+  var list = which === 'obs' ? (d.fraudMetricsByModel || []) : (d.biasMetricsByModel || []);
+  var row = list[idx];
+  if (!row || !row.modelId) return;
+  var ctx = which === 'obs' ? '\u2190 Obsidian Core / Model Coverage Grid' : '\u2190 Eden Core / Model Coverage Grid';
+  window.__edo.modelIdx = null;
+  if (typeof openModelDetail === 'function') openModelDetail(row.modelId, ctx);
 };
 window.edoCloseModel = function () {
   window.__edo.modelIdx = null;
@@ -10797,6 +10918,130 @@ function edoHistGetRangeSeries(arr, range) {
   if (range === 'month' || range === 'week') return h.slice(-1);
   return h;
 }
+function edoHistApplyModelFilter(arrFull, lens, modelFilterId) {
+  if (!modelFilterId || !window.CARDINAL_DATA || !window.CARDINAL_DATA.modelDetailDrillIn) return arrFull;
+  var det = window.CARDINAL_DATA.modelDetailDrillIn[modelFilterId];
+  if (!det || !det.chartHistory12m) return arrFull;
+  var ch = det.chartHistory12m;
+  return arrFull.map(function (row, i) {
+    var o = Object.assign({}, row);
+    if (lens === 'eden') {
+      if (ch.biasScore && ch.biasScore[i] != null) o.biasScore = ch.biasScore[i];
+      if (ch.di && ch.di[i] != null) o.di = ch.di[i];
+      if (ch.equalizedOdds && ch.equalizedOdds[i] != null) o.equalizedOdds = ch.equalizedOdds[i];
+      if (ch.sampleCoverage && ch.sampleCoverage[i] != null) o.sampleCoverage = ch.sampleCoverage[i];
+    } else {
+      if (ch.fraudScore && ch.fraudScore[i] != null) o.fraudScore = ch.fraudScore[i];
+      if (ch.syntheticId && ch.syntheticId[i] != null) o.syntheticId = ch.syntheticId[i];
+      if (ch.behavioralAnomaly && ch.behavioralAnomaly[i] != null) o.behavioralAnomaly = ch.behavioralAnomaly[i];
+      if (ch.clusterFraud && ch.clusterFraud[i] != null) o.clusterFraud = ch.clusterFraud[i];
+      if (ch.velocity && ch.velocity[i] != null) o.velocity = ch.velocity[i];
+    }
+    return o;
+  });
+}
+window.edoSyncHistoryToggleClasses = function (lens) {
+  var idP = lens === 'obsidian' ? 'obs' : 'eden';
+  var rng = lens === 'obsidian' ? window.__edo.histRangeObsidian : window.__edo.histRangeEden;
+  var ser = lens === 'obsidian' ? window.__edo.histSeriesObsidian : window.__edo.histSeriesEden;
+  var tf = document.getElementById(idP + '-hist-tf');
+  if (tf) tf.querySelectorAll('button').forEach(function (b) {
+    b.classList.toggle('active', b.getAttribute('data-range') === rng);
+  });
+  var sb = document.getElementById(idP + '-hist-series');
+  if (sb) sb.querySelectorAll('button').forEach(function (b) {
+    b.classList.toggle('active', b.getAttribute('data-series') === ser);
+  });
+};
+window.edoRefreshHistoryUI = function (lens, org) {
+  edoBuildHistoryChartCore(lens, org);
+  edoBuildHistoryCaptionCore(lens, org);
+  if (typeof edoUpdateHistSidePanels === 'function') edoUpdateHistSidePanels(lens, org);
+};
+window.edoHistModelSearchInput = function (lens, org, q) {
+  var idP = lens === 'obsidian' ? 'obs' : 'eden';
+  var dd = document.getElementById(idP + '-hist-search-dd');
+  if (!dd) return;
+  var qq = String(q || '').trim().toLowerCase();
+  if (!qq) { dd.style.display = 'none'; dd.innerHTML = ''; return; }
+  var d = window.CARDINAL_DATA[org];
+  if (!d) return;
+  var mids = {};
+  (d.biasMetricsByModel || []).forEach(function (b) { mids[b.modelId] = true; });
+  (d.fraudMetricsByModel || []).forEach(function (f) { mids[f.modelId] = true; });
+  var hits = Object.keys(mids).filter(function (m) { return m.toLowerCase().indexOf(qq) >= 0; }).slice(0, 14);
+  if (!hits.length) { dd.style.display = 'none'; return; }
+  dd.innerHTML = hits.map(function (m) {
+    return '<button type="button" class="btn-ghost" style="display:block;width:100%;text-align:left;font-size:10px;border-radius:0;border:none;border-bottom:1px solid var(--border2);color:var(--chrome2)" onclick="edoHistPickModel(' + JSON.stringify(lens) + ',' + JSON.stringify(org) + ',' + JSON.stringify(m) + ')">' + m + '</button>';
+  }).join('');
+  dd.style.display = 'block';
+};
+window.edoHistPickModel = function (lens, org, modelId) {
+  window.__edo.histModelFilterId = modelId;
+  var idP = lens === 'obsidian' ? 'obs' : 'eden';
+  var dd = document.getElementById(idP + '-hist-search-dd');
+  if (dd) { dd.style.display = 'none'; dd.innerHTML = ''; }
+  var inp = document.getElementById(idP + '-hist-model-q');
+  if (inp) inp.value = '';
+  if (typeof openModelDetail === 'function') {
+    openModelDetail(modelId, lens === 'obsidian' ? 'Obsidian History Chart search' : 'Eden History Chart search');
+  }
+  window.edoSyncHistoryToggleClasses(lens);
+  window.edoRefreshHistoryUI(lens, org);
+};
+window.edoClearHistModelFilter = function (lens, org) {
+  window.__edo.histModelFilterId = null;
+  window.edoSyncHistoryToggleClasses(lens);
+  window.edoRefreshHistoryUI(lens, org);
+};
+function edoHistSubscoreContextBlurb(lens, seriesKey, org) {
+  var orgNm = org === 'ad' ? 'Atlas Defense' : org === 'fin' ? 'Blackmoor' : 'Sterling Health';
+  if (lens === 'eden') {
+    var m = {
+      biasScore: { h: 'Bias Score', b: 'Composite bias posture across monitored cohorts. 70 is Eden\u2019s EEOC-aligned violation floor; sustained reads above 80 indicate healthier parity.', e: orgNm + ' — watch the DI and equalized-odds sub-scores when headline bias is below 80.' },
+      di: { h: 'DI Ratio (\u00d7100)', b: 'Scaled disparate impact readout. Values below 80 on this axis imply approval-rate ratios may violate the four-fifths rule.', e: 'Troughs in this series usually coincide with deployed model changes or cohort shifts.' },
+      equalizedOdds: { h: 'Equalized Odds (\u00d7100)', b: 'True/false positive parity across groups; tolerance tightens as this scaled value rises above ~10.', e: 'Eden escalates when odds gaps widen month-over-month without documented mitigation.' },
+      sampleCoverage: { h: 'Sample Coverage', b: 'Training/eval coverage sufficiency for protected attributes — higher is better.', e: 'Coverage dips precede unstable DI estimates; Compliance reviews these before attestations.' }
+    }[seriesKey] || { h: 'Sub-score', b: 'Bias detection sub-metric from Echo Core monthly rollup.', e: '' };
+    return '<div style="font-weight:700;margin-bottom:6px;color:var(--chrome2)"' + edoT(m.h, m.b) + '>' + m.h + '</div><p style="margin:0;line-height:1.55;color:var(--muted2)">' + m.b + '</p><p style="margin:8px 0 0;line-height:1.5;font-size:10px;color:var(--muted)">' + m.e + '</p>';
+  }
+  var f = {
+    fraudScore: { h: 'Fraud Score', b: 'Headline Obsidian posture across synthetic identity, behavioral, cluster, and velocity lanes.', e: orgNm + ' keeps certification posture when this stays above the 80 reference in the chart.' },
+    syntheticId: { h: 'Synthetic ID Rate', b: 'Share of synthetic-identity typologies caught before settlement — target band \u226585.', e: 'Spikes often follow enrollment surges; ring FR-001 style cases anchor executive briefings.' },
+    behavioralAnomaly: { h: 'Behavioral Anomaly Score', b: 'Detects deviations from established user patterns; 80 is the Cardinal benchmark.', e: 'Eve insight: stable reads above 85 usually mean velocity rules are holding; pair with cluster fraud when triaging.' },
+    clusterFraud: { h: 'Cluster Fraud Rate', b: 'Ring and collusion coverage — strongest when paired with geography-aware sentinels.', e: 'Month-over-month lift suggests new M.O.s in high-throughput channels.' },
+    velocity: { h: 'Velocity Detection', b: 'Throughput and replay-pattern catch rate — overnight windows remain highest variance.', e: 'Align staffing to heatmaps when this lane dips while fraud score stays high.' }
+  }[seriesKey] || { h: 'Sub-score', b: 'Fraud detection sub-metric from Echo Core monthly rollup.', e: '' };
+  return '<div style="font-weight:700;margin-bottom:6px;color:var(--chrome2)"' + edoT(f.h, f.b) + '>' + f.h + '</div><p style="margin:0;line-height:1.55;color:var(--muted2)">' + f.b + '</p><p style="margin:8px 0 0;line-height:1.5;font-size:10px;color:var(--muted)">' + f.e + '</p>';
+}
+function edoEveInsightForHist(lens, seriesKey, org) {
+  if (lens === 'obsidian' && seriesKey === 'behavioralAnomaly') {
+    return 'Eve insight: Behavioral Anomaly score has been stable above 85 since July 2025. Annotation pins on this axis are often detection wins \u2014 credentials blocked before payroll or settlement entry.';
+  }
+  if (lens === 'obsidian') {
+    return 'Eve insight: Obsidian sub-scores move independently \u2014 when ' + seriesKey + ' leads variance, pair Genesis receipts with Trust Loop threads before clearing queues.';
+  }
+  return 'Eve insight: Bias headline and DI spine should move together after Atonement promotions; if they diverge, Eden opens a parity review and logs to Echo Core.';
+}
+function edoUpdateHistSidePanels(lens, org) {
+  var idP = lens === 'obsidian' ? 'obs' : 'eden';
+  var seriesKey = lens === 'obsidian' ? window.__edo.histSeriesObsidian : window.__edo.histSeriesEden;
+  var ctx = document.getElementById(idP + '-hist-context');
+  if (ctx) {
+    var cur = edoHistYValue;
+    var d = window.CARDINAL_DATA[org];
+    var arrFull = edoHistApplyModelFilter(lens === 'obsidian' ? (d.obsidianScoreHistory || []) : (d.edenScoreHistory || []), lens, window.__edo.histModelFilterId);
+    var range = lens === 'obsidian' ? window.__edo.histRangeObsidian : window.__edo.histRangeEden;
+    var series = edoHistGetRangeSeries(arrFull, range);
+    var last = series.length ? cur(series[series.length - 1], lens, seriesKey) : null;
+    var thr = (seriesKey === 'di' || seriesKey === 'equalizedOdds') ? (seriesKey === 'equalizedOdds' ? ' <0.10 raw' : ' \u22650.80 raw') : ' 80 benchmark';
+    ctx.innerHTML = edoHistSubscoreContextBlurb(lens, seriesKey, org) + (last != null ? '<p style="margin-top:12px;font-size:10px;color:var(--accent)">Current window terminal value: <strong>' + last + '</strong> · Reference: ' + thr + '</p>' : '');
+  }
+  var ev = document.getElementById(idP + '-hist-eve');
+  if (ev) {
+    ev.innerHTML = '<div style="font-size:10px;color:var(--muted);margin-top:10px;padding:10px;border-radius:10px;border:1px solid rgba(166,218,255,.22);background:rgba(166,218,255,.05)"' + edoT('Eve insight', 'Narrative tied to the selected sub-score.') + '>' + edoEveInsightForHist(lens, seriesKey, org) + '</div>';
+  }
+}
 function edoHistYValue(row, lens, seriesKey) {
   if (!row) return 0;
   if (lens === 'eden') {
@@ -10846,12 +11091,15 @@ function edoBuildHistorySection(lens, d, org) {
   var idP = lens === 'obsidian' ? 'obs' : 'eden';
   var title = lens === 'obsidian' ? 'Fraud Detection History' : 'Bias Detection History';
   var sub = lens === 'obsidian'
-    ? 'Hover any month for what was happening · Dashed line = 80 detection threshold'
-    : 'Hover any month for what was happening · Dashed line = 70 EEOC violation floor';
+    ? 'Hover any month for full context · Dashed line = 80 detection threshold · Pins deep-link models'
+    : 'Hover any month for full context · Dashed line = 70 EEOC violation floor · Pins deep-link models';
   var rng = lens === 'obsidian' ? window.__edo.histRangeObsidian : window.__edo.histRangeEden;
   var ser = lens === 'obsidian' ? window.__edo.histSeriesObsidian : window.__edo.histSeriesEden;
+  var filtBadge = window.__edo.histModelFilterId
+    ? '<span class="badge badge-blue" style="font-size:9px;margin-left:8px">Chart: ' + window.__edo.histModelFilterId + '</span>'
+    : '';
   var tfBtns = [['week', 'Week'], ['month', 'Month'], ['quarter', 'Quarter'], ['year', 'Year']].map(function (x) {
-    return '<button type="button" class="' + (rng === x[0] ? 'active' : '') + '"' + edoOn('edoSetHistoryRangeCore', [lens, x[0]]) + edoT('Time Period', 'Chart window / Week, month, quarter, or full 12-month year view.') + '>' + x[1] + '</button>';
+    return '<button type="button" class="' + (rng === x[0] ? 'active' : '') + '" data-range="' + x[0] + '"' + edoOn('edoSetHistoryRangeCore', [lens, x[0]]) + edoT('Time Period', 'Chart window / Week, month, quarter, or full 12-month year view.') + '>' + x[1] + '</button>';
   }).join('');
   var seriesBtns;
   if (lens === 'eden') {
@@ -10859,26 +11107,41 @@ function edoBuildHistorySection(lens, d, org) {
       return '<button type="button" class="' + (ser === x[0] ? 'active' : '') + '" data-series="' + x[0] + '"' + edoOn('edoSetHistorySeriesCore', [lens, x[0]]) + edoT(x[1], 'Sub-score series / ' + x[1] + ' from CARDINAL_DATA edenScoreHistory.') + '>' + x[1] + '</button>';
     }).join('');
   } else {
-    seriesBtns = [['fraudScore', 'Fraud Score'], ['syntheticId', 'Synthetic ID Rate'], ['behavioralAnomaly', 'Behavioral Anomaly'], ['clusterFraud', 'Cluster Fraud'], ['velocity', 'Velocity']].map(function (x) {
-      return '<button type="button" class="' + (ser === x[0] ? 'active' : '') + '"' + edoOn('edoSetHistorySeriesCore', [lens, x[0]]) + edoT(x[1], 'Sub-score series / ' + x[1] + ' from CARDINAL_DATA obsidianScoreHistory.') + '>' + x[1] + '</button>';
+    seriesBtns = [['fraudScore', 'Fraud Score'], ['syntheticId', 'Synthetic ID'], ['behavioralAnomaly', 'Behavioral Anomaly'], ['clusterFraud', 'Cluster Fraud'], ['velocity', 'Velocity']].map(function (x) {
+      return '<button type="button" class="' + (ser === x[0] ? 'active' : '') + '" data-series="' + x[0] + '"' + edoOn('edoSetHistorySeriesCore', [lens, x[0]]) + edoT(x[1], 'Sub-score series / ' + x[1] + ' from CARDINAL_DATA obsidianScoreHistory. Click to switch series without leaving the page.') + '>' + x[1] + '</button>';
     }).join('');
   }
+  var searchBlock =
+    '<div style="position:relative;margin:8px 0 10px">' +
+    '<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center">' +
+    '<input type="search" id="' + idP + '-hist-model-q" placeholder="Search models in this industry\u2026" autocomplete="off" style="flex:1;min-width:200px;font-size:11px;padding:8px 10px;border-radius:8px;border:1px solid var(--border2);background:var(--bg3);color:var(--text);font-family:var(--sans)"' + edoT('Model search', 'Autocomplete models for this industry. Choosing one filters the chart and opens the Model Detail drill-in.') + ' oninput="edoHistModelSearchInput(' + JSON.stringify(lens) + ',' + JSON.stringify(org) + ',this.value)" />' +
+    '<button type="button" class="btn-ghost" style="font-size:10px"' + edoOn('edoClearHistModelFilter', [lens, org]) + edoT('Clear chart filter', 'Remove model-specific trajectory overlay from the chart.') + '>Clear filter</button>' +
+    filtBadge + '</div>' +
+    '<div id="' + idP + '-hist-search-dd" style="display:none;position:absolute;left:0;top:100%;margin-top:4px;z-index:80;background:var(--card);border:1px solid var(--border2);border-radius:8px;max-height:200px;overflow-y:auto;min-width:min(360px,92vw);box-shadow:0 12px 32px rgba(0,0,0,.45)"></div></div>';
+  var chartCol =
+    '<div style="flex:1;min-width:0">' +
+    searchBlock +
+    '<div class="tsv2-history-tf" id="' + idP + '-hist-tf">' + tfBtns + '</div>' +
+    '<div class="tsv2-history-toggle" id="' + idP + '-hist-series">' + seriesBtns + '</div>' +
+    '<div class="tsv2-history-canvas-wrap" id="' + idP + '-hist-canvas-wrap"' + edoT('History Chart', 'Line chart with annotation pins. Hover points for sub-scores; click pins for model drill-in.') + ' style="min-height:320px">' +
+    '<div id="' + idP + '-hist-svg" style="position:absolute;inset:0;width:100%;height:100%"></div>' +
+    '<div id="' + idP + '-hist-pins"></div></div>' +
+    '<div class="tsv2-history-caption" id="' + idP + '-hist-caption">\u2014</div>' +
+    '<div id="' + idP + '-hist-eve"></div></div>';
+  var ctxCol =
+    '<aside id="' + idP + '-hist-context" style="width:260px;flex-shrink:0;font-size:11px;line-height:1.45;padding:12px;border-radius:12px;border:1px solid var(--border2);background:var(--bg3);position:sticky;top:12px;align-self:flex-start"' + edoT('Sub-score context', 'Narrative context for the active history sub-score.') + '></aside>';
   return '<section class="tsv2-section" id="' + idP + '-hist-section" style="margin-bottom:20px">' +
     '<div class="tsv2-section-title" id="' + idP + '-hist-title"' + edoT(title, title + ' / Tamper-evident monthly series from Echo Core.') + '>' + title + '</div>' +
     '<div class="tsv2-section-sub" id="' + idP + '-hist-sub">' + sub + '</div>' +
-    '<div class="tsv2-history-tf" id="' + idP + '-hist-tf">' + tfBtns + '</div>' +
-    '<div class="tsv2-history-toggle" id="' + idP + '-hist-series">' + seriesBtns + '</div>' +
-    '<div class="tsv2-history-canvas-wrap" id="' + idP + '-hist-canvas-wrap"' + edoT('History Chart', 'Line chart with annotation pins. Hover points for values; click pins to open Echo Memories.') + '>' +
-    '<div id="' + idP + '-hist-svg" style="position:absolute;inset:0;width:100%;height:100%"></div>' +
-    '<div id="' + idP + '-hist-pins"></div></div>' +
-    '<div class="tsv2-history-caption" id="' + idP + '-hist-caption">—</div></section>';
+    '<div style="display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap">' + chartCol + ctxCol + '</div></section>';
 }
 function edoBuildHistoryCaptionCore(lens, org) {
   var d = window.CARDINAL_DATA[org];
   var idP = lens === 'obsidian' ? 'obs' : 'eden';
   var cap = document.getElementById(idP + '-hist-caption');
   if (!cap || !d) return;
-  var arrFull = lens === 'obsidian' ? (d.obsidianScoreHistory || []) : (d.edenScoreHistory || []);
+  var arrFullRaw = lens === 'obsidian' ? (d.obsidianScoreHistory || []) : (d.edenScoreHistory || []);
+  var arrFull = edoHistApplyModelFilter(arrFullRaw, lens, window.__edo.histModelFilterId);
   var range = lens === 'obsidian' ? window.__edo.histRangeObsidian : window.__edo.histRangeEden;
   var seriesKey = lens === 'obsidian' ? window.__edo.histSeriesObsidian : window.__edo.histSeriesEden;
   var series = edoHistGetRangeSeries(arrFull, range);
@@ -10917,8 +11180,9 @@ function edoBuildHistoryChartCore(lens, org) {
   if (typeof d3 === 'undefined' || typeof cardinalHistoryChartRender !== 'function') return;
   var d = window.CARDINAL_DATA[org];
   var idP = lens === 'obsidian' ? 'obs' : 'eden';
-  var arrFull = lens === 'obsidian' ? (d && d.obsidianScoreHistory) : (d && d.edenScoreHistory);
-  if (!d || !arrFull || !arrFull.length) return;
+  var arrFullRaw = lens === 'obsidian' ? (d && d.obsidianScoreHistory) : (d && d.edenScoreHistory);
+  if (!d || !arrFullRaw || !arrFullRaw.length) return;
+  var arrFull = edoHistApplyModelFilter(arrFullRaw, lens, window.__edo.histModelFilterId);
   var range = lens === 'obsidian' ? window.__edo.histRangeObsidian : window.__edo.histRangeEden;
   var seriesKey = lens === 'obsidian' ? window.__edo.histSeriesObsidian : window.__edo.histSeriesEden;
   var hist = edoHistGetRangeSeries(arrFull, range);
@@ -10962,9 +11226,28 @@ function edoBuildHistoryChartCore(lens, org) {
     pointClass: 'tsv2-pt',
     pointTooltipTitle: 'Score Point',
     pointTooltipLabel: ptLabel,
+    pinSourceContext: lens === 'obsidian' ? 'Obsidian History Chart annotation' : 'Eden History Chart annotation',
     formatPointAnnotation: function (p) {
       if (!p.annotation) return '';
       return typeof p.annotation === 'object' ? (p.annotation.summary || '') : String(p.annotation);
+    },
+    formatPointTooltipBody: function (p) {
+      var main = ptLabel + ': <span class="tt-accent">' + edoHistYValue(p, lens, seriesKey) + '</span>';
+      var bits = [main];
+      if (lens === 'eden') {
+        if (p.di != null) bits.push('DI (×100): <span class="tt-accent">' + Math.round(p.di * 100) + '</span>');
+        if (p.equalizedOdds != null) bits.push('Equalized Odds: <span class="tt-accent">' + p.equalizedOdds + '</span>');
+        if (p.sampleCoverage != null) bits.push('Sample coverage: <span class="tt-accent">' + p.sampleCoverage + '</span>');
+      } else {
+        if (p.fraudScore != null) bits.push('Fraud score: <span class="tt-accent">' + p.fraudScore + '</span>');
+        if (p.syntheticId != null) bits.push('Synthetic ID: <span class="tt-accent">' + p.syntheticId + '</span>');
+        if (p.behavioralAnomaly != null) bits.push('Behavioral anomaly: <span class="tt-accent">' + p.behavioralAnomaly + '</span>');
+        if (p.clusterFraud != null) bits.push('Cluster fraud: <span class="tt-accent">' + p.clusterFraud + '</span>');
+        if (p.velocity != null) bits.push('Velocity: <span class="tt-accent">' + p.velocity + '</span>');
+      }
+      var ann = p.annotation ? (typeof p.annotation === 'object' ? (p.annotation.summary || '') : String(p.annotation)) : '';
+      if (ann) bits.push('Event: ' + ann);
+      return bits.join('<br>');
     }
   });
 }
@@ -10990,12 +11273,26 @@ window.edoSetEveTimeframeCore = function (lens, tf) {
 window.edoSetHistoryRangeCore = function (lens, range) {
   if (lens === 'obsidian') window.__edo.histRangeObsidian = range;
   else window.__edo.histRangeEden = range;
-  if (lens === 'obsidian') renderObsidian(window.__edo.org); else renderEden(window.__edo.org);
+  var o = window.__edo.org;
+  if (lens === 'obsidian' && window.__edo.screen === 'obsidian') {
+    edoSyncHistoryToggleClasses('obsidian');
+    edoRefreshHistoryUI('obsidian', o);
+  } else if (lens === 'eden' && window.__edo.screen === 'eden') {
+    edoSyncHistoryToggleClasses('eden');
+    edoRefreshHistoryUI('eden', o);
+  }
 };
 window.edoSetHistorySeriesCore = function (lens, series) {
   if (lens === 'obsidian') window.__edo.histSeriesObsidian = series;
   else window.__edo.histSeriesEden = series;
-  if (lens === 'obsidian') renderObsidian(window.__edo.org); else renderEden(window.__edo.org);
+  var o2 = window.__edo.org;
+  if (lens === 'obsidian' && window.__edo.screen === 'obsidian') {
+    edoSyncHistoryToggleClasses('obsidian');
+    edoRefreshHistoryUI('obsidian', o2);
+  } else if (lens === 'eden' && window.__edo.screen === 'eden') {
+    edoSyncHistoryToggleClasses('eden');
+    edoRefreshHistoryUI('eden', o2);
+  }
 };
 window.edoDownloadBoardBriefCore = function (lens) {
   var org = (typeof currentOrg !== 'undefined' && currentOrg) || window.currentOrg || 'ad';
@@ -11492,6 +11789,9 @@ window.renderEden = function (org) {
   var heroEden = edoBuildEdenHeroSection(d, org, bfN);
   var eveSec = edoBuildEveExecutiveSection('eden', d, org);
   var histSec = edoBuildHistorySection('eden', d, org);
+  var _edoPrevScrollEden = 0;
+  var _edoScElEden = root.querySelector('.edo-scroll');
+  if (_edoScElEden) _edoPrevScrollEden = _edoScElEden.scrollTop;
   root.innerHTML =
     '<div class="edo-scroll" style="padding:12px 12px 40px;max-height:calc(100vh - 120px);overflow-y:auto">' +
     heroEden +
@@ -11517,14 +11817,18 @@ window.renderEden = function (org) {
     '<button type="button" class="btn-ghost" style="font-size:11px" onclick="openEchoCoreFiltered(\'eden\')"' + edoT('Echo Core', 'Filtered timeline to Eden-classified events.') + '>View Full Bias Audit Log \u2192</button></section></div>' +
     edoBuildModelDrawer(d, org, 'eden') + (window.__edo.piiInd ? edoIndPanel(d, org, window.__edo.piiInd, 'eden') : '');
   setTimeout(function () {
+    var _restore = root.querySelector('.edo-scroll');
+    if (_restore && _edoPrevScrollEden > 0) _restore.scrollTop = _edoPrevScrollEden;
     edoWireHeroGauge('edenhts', bias, edoGaugeColor(bias, false));
     edoRenderEveBodyCore('eden', d);
     edoBuildHistoryCaptionCore('eden', org);
+    edoUpdateHistSidePanels('eden', org);
     edoWireLensChartTooltips('eden');
   }, 40);
   setTimeout(function () {
     edoBuildHistoryChartCore('eden', org);
     edoBuildHistoryCaptionCore('eden', org);
+    edoUpdateHistSidePanels('eden', org);
   }, 180);
 };
 
@@ -11620,6 +11924,9 @@ window.renderObsidian = function (org) {
   var heroObs = edoBuildObsidianHeroSection(d, org, bfN);
   var eveSecO = edoBuildEveExecutiveSection('obsidian', d, org);
   var histSecO = edoBuildHistorySection('obsidian', d, org);
+  var _edoPrevScrollObs = 0;
+  var _edoScElObs = root.querySelector('.edo-scroll');
+  if (_edoScElObs) _edoPrevScrollObs = _edoScElObs.scrollTop;
   root.innerHTML =
     '<div class="edo-scroll" style="padding:12px 12px 40px;max-height:calc(100vh - 120px);overflow-y:auto">' +
     heroObs +
@@ -11644,14 +11951,18 @@ window.renderObsidian = function (org) {
     '<button type="button" class="btn-ghost" style="font-size:11px" onclick="openEchoCoreFiltered(\'obsidian\')"' + edoT('Obsidian audit log', 'Echo filtered to fraud-class events.') + '>View Obsidian Audit Log \u2192</button></section></div>' +
     edoBuildModelDrawer(d, org, 'obs') + (window.__edo.piiInd ? edoIndPanel(d, org, window.__edo.piiInd, 'obsidian') : '');
   setTimeout(function () {
+    var _restoreO = root.querySelector('.edo-scroll');
+    if (_restoreO && _edoPrevScrollObs > 0) _restoreO.scrollTop = _edoPrevScrollObs;
     edoWireHeroGauge('obshts', fraud, edoGaugeColor(fraud, true));
     edoRenderEveBodyCore('obsidian', d);
     edoBuildHistoryCaptionCore('obsidian', org);
+    edoUpdateHistSidePanels('obsidian', org);
     edoWireLensChartTooltips('obsidian');
   }, 40);
   setTimeout(function () {
     edoBuildHistoryChartCore('obsidian', org);
     edoBuildHistoryCaptionCore('obsidian', org);
+    edoUpdateHistSidePanels('obsidian', org);
   }, 180);
 };
 
@@ -12483,7 +12794,7 @@ function applyCardinalData(org) {
           '<div style="display:flex;align-items:flex-start;gap:8px;margin-top:6px;font-size:11px;line-height:1.45;color:#94a3b8;">' +
           '<span style="color:' + bulletColor + ';margin-top:2px;">\u2022</span>' +
           '<span style="flex:1">' + safeTxt +
-          ' <a href="#" class="dr-trust-fix-link" style="color:var(--accent);text-decoration:none;font-weight:600;" onclick="event.preventDefault();event.stopPropagation();showScreen(\'' + fs + '\',null);">Fix \u2192</a>' +
+          ' <button type="button" class="dr-trust-fix-link" style="color:var(--accent);text-decoration:none;font-weight:600;background:none;border:none;padding:0;cursor:pointer;font:inherit" onclick="event.preventDefault();event.stopPropagation();showScreen(\'' + fs + '\',null);">Fix \u2192</button>' +
           '</span></div>'
         );
       }).join('');
@@ -13453,8 +13764,9 @@ function dashApplyExecutiveCards(org) {
       var txt = typeof b === 'string' ? b : (b && b.text) || '';
       var fs = (b && b.fixScreen) || 'atonement';
       return '<li style="margin-bottom:4px">' + esc(txt) +
-        ' <a href="#" onclick="event.preventDefault();event.stopPropagation();showScreen(\'' +
-        fs + '\',null);" style="color:#a6daff;text-decoration:none;font-weight:600;">Fix \u2192</a></li>';
+        ' <button type="button" style="color:#a6daff;text-decoration:none;font-weight:600;background:none;border:none;padding:0;cursor:pointer;font:inherit" onclick="event.preventDefault();event.stopPropagation();showScreen(\'' +
+        fs +
+        '\',null);">Fix \u2192</button></li>';
     }).join('');
   }
 
@@ -13807,9 +14119,9 @@ function dashApplyTrustUxPanels(org) {
             ';margin-top:2px;">\u2022</span>' +
             '<span style="flex:1">' +
             txt +
-            ' <a href="#" class="dr-trust-fix-link" style="color:var(--accent);text-decoration:none;font-weight:600;" onclick="event.preventDefault();event.stopPropagation();showScreen(\'' +
+            ' <button type="button" class="dr-trust-fix-link" style="color:var(--accent);text-decoration:none;font-weight:600;background:none;border:none;padding:0;cursor:pointer;font:inherit" onclick="event.preventDefault();event.stopPropagation();showScreen(\'' +
             fs +
-            '\',null);">Fix \u2192</a>' +
+            '\',null);">Fix \u2192</button>' +
             '</span></div>'
           );
         })
@@ -23949,7 +24261,7 @@ function cardinalHistoryChartRender(cfg) {
   for (var gg = Math.ceil(yLo / gridStep) * gridStep; gg <= yHi; gg += gridStep) gridTicks.push(gg);
   g.append('g').selectAll('line').data(gridTicks).enter().append('line')
     .attr('x1', 0).attr('x2', w).attr('y1', function (v) { return y(v); }).attr('y2', function (v) { return y(v); })
-    .attr('stroke', 'rgba(180,190,220,0.06)');
+    .attr('stroke', 'rgba(180,190,220,0.14)');
   var xAxisG = g.append('g').attr('transform', 'translate(0,' + h + ')').call(d3.axisBottom(x).tickSize(0).tickPadding(8));
   xAxisG.selectAll('text').attr('fill', 'rgba(180,190,220,0.55)').style('font-size', '10px').style('font-family', 'Inter, sans-serif');
   xAxisG.selectAll('path,line').attr('stroke', 'rgba(180,190,220,0.10)');
@@ -23957,7 +24269,7 @@ function cardinalHistoryChartRender(cfg) {
   var yAxisG = g.append('g').call(d3.axisLeft(y).tickValues(yTicks).tickSize(-w).tickPadding(8));
   yAxisG.selectAll('text').attr('fill', 'rgba(180,190,220,0.55)').style('font-size', '10px').style('font-family', 'Inter, sans-serif');
   yAxisG.selectAll('path').attr('stroke', 'transparent');
-  yAxisG.selectAll('line').attr('stroke', 'rgba(180,190,220,0.05)');
+  yAxisG.selectAll('line').attr('stroke', 'rgba(180,190,220,0.10)');
   var threshGroup = g.append('g').attr('class', cfg.thresholdGroupClass || 'cardinal-hist-threshold');
   if (cfg.thresholdGroupId) threshGroup.attr('id', cfg.thresholdGroupId);
   (cfg.thresholds || []).forEach(function (th) {
@@ -23980,7 +24292,7 @@ function cardinalHistoryChartRender(cfg) {
     .y1(function (p) { return y(getVal(p)); });
   var defs = svg.append('defs');
   var grad = defs.append('linearGradient').attr('id', fillId).attr('x1', 0).attr('x2', 0).attr('y1', 0).attr('y2', 1);
-  grad.append('stop').attr('offset', '0%').attr('stop-color', lineColor).attr('stop-opacity', 0.30);
+  grad.append('stop').attr('offset', '0%').attr('stop-color', lineColor).attr('stop-opacity', 0.48);
   grad.append('stop').attr('offset', '100%').attr('stop-color', lineColor).attr('stop-opacity', 0);
   g.append('path').datum(hist).attr('fill', 'url(#' + fillId + ')').attr('d', area).attr('opacity', 0)
     .transition().delay(400).duration(900).attr('opacity', 1);
@@ -23992,6 +24304,14 @@ function cardinalHistoryChartRender(cfg) {
   var totalLen = path.node().getTotalLength();
   path.attr('stroke-dasharray', totalLen + ' ' + totalLen).attr('stroke-dashoffset', totalLen)
     .transition().duration(1500).ease(d3.easeCubicOut).attr('stroke-dashoffset', 0);
+  if (cfg.extraLine && typeof cfg.extraLine.getValue === 'function') {
+    var c2 = cfg.extraLine.color || '#22c55e';
+    var lineB = d3.line().curve(d3.curveCatmullRom.alpha(0.5))
+      .x(function (p) { return x(p.month); })
+      .y(function (p) { return y(cfg.extraLine.getValue(p)); });
+    g.append('path').datum(hist).attr('fill', 'none').attr('stroke', c2)
+      .attr('stroke-width', 2.5).attr('stroke-linecap', 'round').attr('opacity', 0.9).attr('d', lineB);
+  }
   var ptClass = cfg.pointClass || 'tsv2-pt';
   var pts = g.selectAll('circle.' + ptClass.replace(/ /g, '.')).data(hist).enter().append('circle')
     .attr('class', ptClass)
@@ -24005,9 +24325,9 @@ function cardinalHistoryChartRender(cfg) {
   var pTitle = cfg.pointTooltipTitle || 'Score Point';
   var pLbl = cfg.pointTooltipLabel || 'Value';
   pts.each(function (p) {
-    var body = pLbl + ': <span class="tt-accent">' + getVal(p) + '</span>';
-    var annTip = cfg.formatPointAnnotation ? cfg.formatPointAnnotation(p) : '';
-    if (annTip) body += '<br>' + annTip;
+    var body = typeof cfg.formatPointTooltipBody === 'function'
+      ? cfg.formatPointTooltipBody(p)
+      : (pLbl + ': <span class="tt-accent">' + getVal(p) + '</span>' + (cfg.formatPointAnnotation && cfg.formatPointAnnotation(p) ? '<br>' + cfg.formatPointAnnotation(p) : ''));
     showTooltip(this, p.month + ' — ' + pTitle, body);
   });
   hist.forEach(function (p, i) {
@@ -24026,16 +24346,26 @@ function cardinalHistoryChartRender(cfg) {
       pin.style.borderColor = '#f59e0b';
       pin.style.color = '#f59e0b';
       pin.textContent = '!';
-      var annStr = typeof annRaw === 'object' ? annRaw.summary : annRaw;
-      var annId = typeof annRaw === 'object' && annRaw.echoMemoryId ? annRaw.echoMemoryId : '';
-      showTooltip(pin, p.month, annStr || '');
-      if (annId) {
-        pin.style.cursor = 'pointer';
-        pin.onclick = function (ev) {
-          ev.stopPropagation();
-          if (typeof openEchoMemory === 'function') openEchoMemory(annId);
-        };
-      }
+      var annObj = typeof annRaw === 'object' && annRaw ? annRaw : null;
+      var annStr = annObj ? (annObj.summary || '') : String(annRaw || '');
+      var annId = annObj && annObj.echoMemoryId ? annObj.echoMemoryId : '';
+      var linkedMid = annObj && annObj.linkedModelId ? annObj.linkedModelId : '';
+      var pinCtx = cfg.pinSourceContext || 'History chart annotation';
+      var tipTitle = p.month + ' — Event';
+      var tipBody = (annStr || 'Annotation') +
+        (linkedMid ? '<br><span class="tt-accent">' + linkedMid + '</span>' : '') +
+        '<br><span style="font-size:10px;opacity:.88">Click for details</span>';
+      showTooltip(pin, tipTitle, tipBody);
+      pin.style.cursor = 'pointer';
+      pin.onclick = function (ev) {
+        ev.preventDefault();
+        ev.stopPropagation();
+        if (linkedMid && typeof openModelDetail === 'function') {
+          openModelDetail(linkedMid, pinCtx);
+        } else if (annId && typeof openEchoMemory === 'function') {
+          openEchoMemory(annId);
+        }
+      };
       pinsWrap.appendChild(pin);
     }
   });
@@ -26229,74 +26559,385 @@ function filterMLGrid(query) {
   buildMLGrid(org, 'all');
 }
 
-function openModelDetail(modelId) {
-  var org = currentOrg || 'ad';
-  var allModels = {
-    ad: [
-      {id:'PAM-v24',name:'Personnel Assignment v2.4',type:'Live',status:'Critical',trustScore:67,di:'0.67',fraudScore:72,transparency:71,governance:68,privacy:79,monitoring:65,creator:'Sarah Chen',deployed:'Mar 1, 2026',decisions:'847K',biasFlags:3,fraudFlags:0,rootCause:'demographic_classification (ZIP proxy)',
-        versions:[{v:'v2.4',date:'Mar 1, 2026',score:67,note:'Current — bias flag active'},{v:'v2.3',date:'Jan 15, 2026',score:71,note:'Previous production'},{v:'v2.2',date:'Nov 1, 2025',score:74,note:'Archived'}]},
-      {id:'MRM-v11',name:'Mission Readiness v1.1',type:'Live',status:'Watch',trustScore:82,di:'0.91',fraudScore:88,transparency:79,governance:81,privacy:84,monitoring:77,creator:'James Park',deployed:'Feb 15, 2026',decisions:'112K',biasFlags:1,fraudFlags:0,rootCause:'base_location (geographic proxy)',
-        versions:[{v:'v1.1',date:'Feb 15, 2026',score:82,note:'Current'},{v:'v1.0',date:'Oct 1, 2025',score:78,note:'Archived'}]},
-      {id:'FDM-v32',name:'Fraud Detection v3.2',type:'Live',status:'Passing',trustScore:91,di:'0.97',fraudScore:94,transparency:85,governance:90,privacy:88,monitoring:89,creator:'Adam',deployed:'Jan 20, 2026',decisions:'847K',biasFlags:0,fraudFlags:0,rootCause:'None',
-        versions:[{v:'v3.2',date:'Jan 20, 2026',score:91,note:'Current — clean'},{v:'v3.1',date:'Sep 1, 2025',score:88,note:'Archived'},{v:'v3.0',date:'Jun 1, 2025',score:84,note:'Archived'}]},
-      {id:'MRT-v12',name:'Maintenance Routing v1.2',type:'Live',status:'Watch',trustScore:78,di:'0.78',fraudScore:81,transparency:75,governance:77,privacy:82,monitoring:73,creator:'Sarah Chen',deployed:'Mar 10, 2026',decisions:'44K',biasFlags:1,fraudFlags:1,rootCause:'Geographic proxy (base_location)',
-        versions:[{v:'v1.2',date:'Mar 10, 2026',score:78,note:'Current'},{v:'v1.1',date:'Dec 1, 2025',score:75,note:'Archived'}]},
-      {id:'PAM-v25',name:'Personnel Assignment v2.5',type:'Shadow',status:'Testing',trustScore:84,di:'0.84',fraudScore:79,transparency:82,governance:80,privacy:84,monitoring:81,creator:'Atonement',deployed:'Apr 1, 2026',decisions:'1,847',biasFlags:0,fraudFlags:0,rootCause:'None — fix applied',
-        versions:[{v:'v2.5',date:'Apr 1, 2026',score:84,note:'Shadow — pending 100% deploy'}]},
-    ],
-    fin: [
-      {id:'CSM-v34',name:'Credit Scoring v3.4',type:'Live',status:'Critical',trustScore:72,di:'0.71',fraudScore:76,transparency:78,governance:74,privacy:81,monitoring:69,creator:'James Martinez',deployed:'Feb 1, 2026',decisions:'1.2M',biasFlags:2,fraudFlags:1,rootCause:'zip_code (race proxy)',
-        versions:[{v:'v3.4',date:'Feb 1, 2026',score:72,note:'Current — bias flag'},{v:'v3.3',date:'Oct 2025',score:76,note:'Archived'},{v:'v3.2',date:'Jul 2025',score:79,note:'Archived'}]},
-      {id:'ALM-v21',name:'Auto Loan v2.1',type:'Live',status:'Watch',trustScore:81,di:'0.88',fraudScore:84,transparency:79,governance:80,privacy:83,monitoring:76,creator:'Sarah Chen',deployed:'Jan 15, 2026',decisions:'687K',biasFlags:1,fraudFlags:0,rootCause:'dealer_location',
-        versions:[{v:'v2.1',date:'Jan 15, 2026',score:81,note:'Current'}]},
-      {id:'FRD-v40',name:'Fraud Ring Detector v4.0',type:'Live',status:'Passing',trustScore:94,di:'0.98',fraudScore:96,transparency:89,governance:92,privacy:91,monitoring:92,creator:'Adam',deployed:'Mar 5, 2026',decisions:'2.1M',biasFlags:0,fraudFlags:0,rootCause:'None',
-        versions:[{v:'v4.0',date:'Mar 5, 2026',score:94,note:'Current — clean'},{v:'v3.9',date:'Dec 2025',score:91,note:'Archived'}]},
-    ],
-    health: [
-      {id:'CAM-v19',name:'Claims Adjudication v1.9',type:'Live',status:'Watch',trustScore:79,di:'0.89',fraudScore:82,transparency:76,governance:81,privacy:85,monitoring:77,creator:'Dr. Nguyen',deployed:'Jan 10, 2026',decisions:'2.8M',biasFlags:1,fraudFlags:1,rootCause:'age_cost_proxy',
-        versions:[{v:'v1.9',date:'Jan 10, 2026',score:79,note:'Current — partial fix'},{v:'v1.8',date:'Sep 2025',score:64,note:'Archived — critical'},{v:'v1.7',date:'May 2025',score:71,note:'Archived'}]},
-      {id:'DAM-v23',name:'Diagnostic Assist v2.3',type:'Live',status:'Passing',trustScore:88,di:'0.94',fraudScore:87,transparency:84,governance:88,privacy:90,monitoring:85,creator:'Priya Sharma',deployed:'Feb 20, 2026',decisions:'312K',biasFlags:0,fraudFlags:0,rootCause:'None',
-        versions:[{v:'v2.3',date:'Feb 20, 2026',score:88,note:'Current'}]},
-      {id:'DIM-v10',name:'Drug Interaction v1.0',type:'Live',status:'Passing',trustScore:91,di:'0.96',fraudScore:89,transparency:86,governance:90,privacy:92,monitoring:88,creator:'Adam',deployed:'Mar 1, 2026',decisions:'89K',biasFlags:0,fraudFlags:0,rootCause:'None',
-        versions:[{v:'v1.0',date:'Mar 1, 2026',score:91,note:'Current — clean'}]},
-    ]
-  };
-  var list = allModels[org] || allModels.ad;
-  var model = list.find(function(m){ return m.id === modelId; });
-  if(!model) return;
-  var setText = function(id,v){ var el=document.getElementById(id); if(el) el.textContent=v; };
-  var setEl = function(id,v){ var el=document.getElementById(id); if(el) el.innerHTML=v; };
-  setText('mdm-name', model.name);
-  setText('mdm-id', model.id + ' · Deployed ' + model.deployed);
-  var badge = document.getElementById('mdm-badge');
-  if(badge){ badge.textContent=model.status; badge.className='badge badge-'+(model.status==='Critical'||model.status==='High Risk'?'red':model.status==='Watch'||model.status==='Testing'?'amber':'green'); }
-  setEl('mdm-stats', [
-    {label:'Trust Score', val:model.trustScore, c:model.trustScore>=80?'green':model.trustScore>=70?'amber':'red'},
-    {label:'Disparate Impact', val:model.di, c:parseFloat(model.di)>=0.8?'green':'red'},
-    {label:'Bias Flags', val:model.biasFlags, c:model.biasFlags>0?'red':'green'},
-    {label:'Fraud Flags', val:model.fraudFlags, c:model.fraudFlags>0?'amber':'green'},
-  ].map(function(s){ return '<div class="stat-card"><div class="stat-label">'+s.label+'</div><div style="font-size:22px;font-weight:700;color:var(--'+s.c+')">'+s.val+'</div></div>'; }).join(''));
-  setEl('mdm-details', [
-    {k:'Type', v:model.type},
-    {k:'Creator', v:model.creator},
-    {k:'Decisions', v:model.decisions},
-    {k:'Root Cause', v:model.rootCause},
-  ].map(function(d){ return '<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(180,190,220,.05);font-size:11px"><span style="color:var(--muted2)">'+d.k+'</span><span style="color:var(--chrome2);font-weight:500">'+d.v+'</span></div>'; }).join(''));
-  setEl('mdm-flags', model.biasFlags>0 || model.fraudFlags>0 ?
-    (model.biasFlags>0?'<div style="padding:8px;background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.15);border-radius:7px;margin-bottom:6px;font-size:11px;color:var(--red)">'+model.biasFlags+' bias flag'+(model.biasFlags>1?'s':'')+' — '+model.rootCause+'</div>':'') +
-    (model.fraudFlags>0?'<div style="padding:8px;background:rgba(245,158,11,.06);border:1px solid rgba(245,158,11,.15);border-radius:7px;font-size:11px;color:var(--amber)">'+model.fraudFlags+' fraud flag — ZIP cluster exploitation risk</div>':'') :
-    '<div style="font-size:11px;color:var(--green);padding:8px">No active flags</div>');
-  var dims = [{k:'Fairness',v:model.di?Math.round(parseFloat(model.di)*100):0},{k:'Fraud',v:model.fraudScore},{k:'Transparency',v:model.transparency},{k:'Privacy',v:model.privacy},{k:'Governance',v:model.governance},{k:'Monitoring',v:model.monitoring}];
-  setEl('mdm-dims', dims.map(function(d){ var c=d.v>=80?'green':d.v>=70?'amber':'red'; return '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><span style="font-size:10px;color:var(--muted2);width:90px;flex-shrink:0">'+d.k+'</span><div style="flex:1;height:4px;background:rgba(180,190,220,.1);border-radius:2px"><div style="width:'+d.v+'%;height:100%;background:var(--'+c+');border-radius:2px"></div></div><span style="font-size:11px;font-weight:600;color:var(--'+c+');width:28px;text-align:right">'+d.v+'</span></div>'; }).join(''));
-  setEl('mdm-versions', model.versions.map(function(v){ return '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(180,190,220,.05)"><div><span style="font-size:11px;font-weight:600;color:var(--chrome2)">'+v.v+'</span><span style="font-size:10px;color:var(--muted);margin-left:8px">'+v.date+'</span></div><div style="text-align:right"><div style="font-size:10px;color:var(--muted2)">'+v.note+'</div></div></div>'; }).join(''));
-  var m = document.getElementById('model-detail-modal');
-  if(m) m.style.display='flex';
+window.cardinalResolveModelDetailKey = function (rawId) {
+  var CD = window.CARDINAL_DATA;
+  if (rawId == null || !CD || !CD.modelDetailDrillIn) return null;
+  var reg = CD.modelDetailDrillIn;
+  var s = String(rawId);
+  if (reg[s]) return s;
+  var slug = s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  for (var k in reg) {
+    if (!Object.prototype.hasOwnProperty.call(reg, k)) continue;
+    var ks = String(k).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    if (ks === slug) return k;
+  }
+  for (var k2 in reg) {
+    if (!Object.prototype.hasOwnProperty.call(reg, k2)) continue;
+    var row = reg[k2];
+    var id = (row && row.identity && row.identity.name) ? row.identity.name : k2;
+    var is = String(id).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    if (is === slug || (slug.length >= 4 && is.indexOf(slug) >= 0)) return k2;
+  }
+  return null;
+};
+
+function mdmEsc(s) {
+  return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+}
+
+function mdmBadgeClass(st) {
+  var u = String(st || '');
+  if (/critical|high\s*risk/i.test(u)) return 'badge badge-red';
+  if (/watch|testing|medium/i.test(u)) return 'badge badge-amber';
+  return 'badge badge-green';
+}
+
+function mdmMiniSpark(arr, goodHigh) {
+  if (!arr || !arr.length) return '';
+  var last = arr[arr.length - 1];
+  var first = arr[0];
+  var up = last >= first;
+  var col = goodHigh ? (up ? 'var(--green)' : 'var(--amber)') : (!up ? 'var(--green)' : 'var(--amber)');
+  return '<span style="font-size:9px;color:' + col + '">30d: ' + arr.map(function (n) { return Math.round(n); }).join(' \u2192 ') + '</span>';
+}
+
+function mdmBiasGaugeHtml(label, pack, tipTitle, goodAbove) {
+  var cur = pack.current;
+  var th = pack.threshold;
+  var pct = typeof cur === 'number' && typeof th === 'number'
+    ? Math.max(5, Math.min(100, goodAbove ? (cur / th) * 80 : (th / Math.max(cur, 1e-6)) * 80))
+    : 50;
+  var curS = typeof cur === 'number' && cur <= 1 && cur >= 0 && /DI|parity|Calibr/i.test(label) ? cur.toFixed(2) : String(Math.round(cur * 100) / 100);
+  var thS = typeof th === 'number' && th <= 1 && th >= 0 && /DI|parity|Calibr/i.test(label) ? th.toFixed(2) : String(th);
+  return '<div title="' + mdmEsc(tipTitle) + '" style="flex:1;min-width:120px;background:var(--bg3);border:1px solid var(--border2);border-radius:10px;padding:10px">' +
+    '<div style="font-size:9px;color:var(--muted2);margin-bottom:6px;font-weight:600">' + mdmEsc(label) + '</div>' +
+    '<div style="font-size:18px;font-weight:700;color:var(--chrome2)">' + mdmEsc(curS) + '</div>' +
+    '<div style="font-size:9px;color:var(--muted);margin:4px 0">Threshold ' + mdmEsc(thS) + '</div>' +
+    '<div style="height:5px;background:rgba(180,190,220,.12);border-radius:3px;margin-bottom:6px"><div style="width:' + pct + '%;height:100%;background:var(--accent);border-radius:3px"></div></div>' +
+    mdmMiniSpark(pack.history30d || [], goodAbove) + '</div>';
+}
+
+function mdmFraudGaugeHtml(label, pack, tipTitle) {
+  var cur = pack.current;
+  var th = pack.threshold;
+  var pct = typeof cur === 'number' && typeof th === 'number' ? Math.max(5, Math.min(100, (cur / th) * 75)) : 50;
+  return '<div title="' + mdmEsc(tipTitle) + '" style="flex:1;min-width:120px;background:var(--bg3);border:1px solid var(--border2);border-radius:10px;padding:10px">' +
+    '<div style="font-size:9px;color:var(--muted2);margin-bottom:6px;font-weight:600">' + mdmEsc(label) + '</div>' +
+    '<div style="font-size:18px;font-weight:700;color:var(--chrome2)">' + mdmEsc(String(Math.round(cur))) + '</div>' +
+    '<div style="font-size:9px;color:var(--muted);margin:4px 0">Threshold ' + mdmEsc(String(th)) + '</div>' +
+    '<div style="height:5px;background:rgba(180,190,220,.12);border-radius:3px;margin-bottom:6px"><div style="width:' + pct + '%;height:100%;background:#22c55e;border-radius:3px"></div></div>' +
+    mdmMiniSpark(pack.history30d || [], true) + '</div>';
+}
+
+function mdmRenderMiniDualChart(det) {
+  if (typeof d3 === 'undefined' || typeof cardinalHistoryChartRender !== 'function') return;
+  var CD = window.CARDINAL_DATA;
+  var org = det.industryOrg;
+  var d = CD && CD[org];
+  var months = (d && d.edenScoreHistory) ? d.edenScoreHistory.map(function (x) { return x.month; }) : [];
+  var ch = det.chartHistory12m;
+  if (!ch || !months.length) return;
+  var hist = [];
+  var nb = (ch.biasScore || []).length;
+  var nf = (ch.fraudScore || []).length;
+  var n = Math.min(months.length, nb, nf);
+  for (var i = 0; i < n; i++) {
+    hist.push({ month: months[i], biasScore: ch.biasScore[i], fraudScore: ch.fraudScore[i] });
+  }
+  if (!hist.length) return;
+  var wrap = document.getElementById('mdm-mini-wrap');
+  var svg = document.getElementById('mdm-mini-svg');
+  var pins = document.getElementById('mdm-mini-pins');
+  if (!wrap || !svg) return;
+  var all = [];
+  hist.forEach(function (p) { all.push(p.biasScore, p.fraudScore); });
+  var lo = Math.min.apply(null, all);
+  var hi = Math.max.apply(null, all);
+  var yLo = Math.max(40, Math.floor(lo / 5) * 5 - 5);
+  var yHi = Math.min(100, Math.ceil(hi / 5) * 5 + 5);
+  var yTickValues = [50, 60, 70, 80, 90, 100].filter(function (t) { return t >= yLo - 1 && t <= yHi + 1; });
+  if (yTickValues.length < 2) yTickValues = [yLo, yHi];
+  var suf = String(det.identity && det.identity.name ? det.identity.name : 'm').replace(/[^a-z0-9]+/gi, '-');
+  cardinalHistoryChartRender({
+    wrap: wrap,
+    svgWrap: svg,
+    pinsWrap: pins || null,
+    hist: hist,
+    getValue: function (p) { return p.biasScore; },
+    lineColor: '#ef4444',
+    extraLine: { getValue: function (p) { return p.fraudScore; }, color: '#22c55e' },
+    yDomain: [yLo, yHi],
+    yTickValues: yTickValues,
+    gridStep: 5,
+    gradientIdBase: 'mdm-mini',
+    gradientSuffix: suf,
+    thresholds: [{ y: 80, stroke: 'rgba(180,190,220,0.35)', label: '80 ref', labelAnchor: 'end', labelFill: 'rgba(180,190,220,0.75)' }],
+    pointTooltipTitle: 'Dual lens',
+    pointTooltipLabel: 'Bias',
+    formatPointTooltipBody: function (p) {
+      return 'Bias: <span class="tt-accent">' + p.biasScore + '</span><br>Fraud: <span class="tt-accent">' + p.fraudScore + '</span>';
+    }
+  });
+}
+
+window.mdmBackdropClose = function (ev) {
+  if (ev && ev.target && ev.target.id === 'model-detail-modal') closeModelDetail();
+};
+
+window.mdmSetLens = function (mode) {
+  window.__mdmLens = mode;
+  var biasBlk = document.getElementById('mdm-bias-block');
+  var fraudBlk = document.getElementById('mdm-fraud-block');
+  var bBtn = document.getElementById('mdm-lens-bias');
+  var fBtn = document.getElementById('mdm-lens-fraud');
+  var sBtn = document.getElementById('mdm-lens-side');
+  [bBtn, fBtn, sBtn].forEach(function (el) {
+    if (el) {
+      el.classList.remove('active');
+      el.style.outline = 'none';
+      el.style.fontWeight = '500';
+      el.style.boxShadow = '';
+      el.style.background = '';
+    }
+  });
+  var active = mode === 'bias' ? bBtn : mode === 'fraud' ? fBtn : sBtn;
+  if (active) {
+    active.classList.add('active');
+    active.style.fontWeight = '700';
+    active.style.boxShadow = 'inset 0 0 0 1px rgba(166,218,255,.35)';
+    active.style.background = 'rgba(166,218,255,.08)';
+  }
+  if (biasBlk) biasBlk.style.display = mode === 'fraud' ? 'none' : 'block';
+  if (fraudBlk) fraudBlk.style.display = mode === 'bias' ? 'none' : 'block';
+};
+
+window.mdmOpenCaseFromDetail = function (cid) {
+  closeModelDetail();
+  if (typeof openWarRoomCase === 'function') openWarRoomCase(cid);
+};
+
+window.mdmOpenEchoFromDetail = function (eid) {
+  if (typeof openEchoMemory === 'function') openEchoMemory(eid);
+};
+
+window.mdmGoCohortFromDetail = function (mid) {
+  closeModelDetail();
+  window.__edo = window.__edo || {};
+  window.__edo.cohortModelFocus = mid;
+  window.__edo.cohortSummary = true;
+  var o = (typeof currentOrg !== 'undefined' && currentOrg) || window.currentOrg || 'ad';
+  window.__edo.org = o;
+  if (typeof showScreen === 'function') showScreen('eden', null);
+  setTimeout(function () {
+    if (typeof renderEden === 'function') renderEden(o);
+    var el = document.getElementById('edo-sec-cohort');
+    if (el) el.scrollIntoView({ behavior: 'smooth' });
+  }, 100);
+};
+
+window.mdmFooterRoute = function (screen) {
+  var mid = window.__mdmResolvedKey || '';
+  closeModelDetail();
+  if (typeof showScreen === 'function') showScreen(screen, null);
+  if (screen === 'atonement') window.__cardinalAtonementModelFilter = mid;
+  if (screen === 'genesis') window.__cardinalGenesisModelFilter = mid;
+  if (screen === 'compliance') window.__cardinalComplianceModelFilter = mid;
+  if (typeof showToast === 'function') {
+    showToast(screen === 'atonement' ? 'Atonement opened \u2014 filter: ' + mid : 'Opened ' + screen + (mid ? ' (model: ' + mid + ')' : '') + '.');
+  }
+};
+
+window.mdmSearchPick = function (modelKey) {
+  if (!modelKey) return;
+  var dd = document.getElementById('mdm-search-dd');
+  if (dd) { dd.style.display = 'none'; dd.innerHTML = ''; }
+  var inp = document.getElementById('mdm-search-input');
+  if (inp) inp.value = '';
+  openModelDetail(modelKey, 'Model Detail search');
+};
+
+window.mdmSearchInput = function (q) {
+  var dd = document.getElementById('mdm-search-dd');
+  if (!dd) return;
+  var qq = String(q || '').trim().toLowerCase();
+  var CD = window.CARDINAL_DATA;
+  if (!qq || !CD || !CD.modelDetailDrillIn) { dd.style.display = 'none'; dd.innerHTML = ''; return; }
+  var reg = CD.modelDetailDrillIn;
+  var hits = [];
+  for (var k in reg) {
+    if (!Object.prototype.hasOwnProperty.call(reg, k)) continue;
+    var nm = (reg[k].identity && reg[k].identity.name) || k;
+    if (String(nm).toLowerCase().indexOf(qq) >= 0 || String(k).toLowerCase().indexOf(qq) >= 0) hits.push(k);
+  }
+  hits = hits.slice(0, 16);
+  if (!hits.length) { dd.style.display = 'none'; return; }
+  dd.innerHTML = hits.map(function (k) {
+    var nm = (reg[k].identity && reg[k].identity.name) || k;
+    return '<button type="button" class="btn-ghost" style="display:block;width:100%;text-align:left;font-size:10px;border-radius:0;border:none;border-bottom:1px solid var(--border2);color:var(--chrome2)" onclick="mdmSearchPick(' + JSON.stringify(k) + ')">' + mdmEsc(nm) + '</button>';
+  }).join('');
+  dd.style.display = 'block';
+};
+
+function mdmPaintDrillInBody(det, resolvedKey) {
+  var id = det.identity || {};
+  var bm = det.biasMetrics || {};
+  var fm = det.fraudMetrics || {};
+  var tags = (id.tags || []).map(function (t) {
+    return '<span class="badge badge-green" style="font-size:8px;margin-right:4px">' + mdmEsc(t) + '</span>';
+  }).join('');
+  var feat = (det.featureImportance || []).map(function (f, fi) {
+    var w = Math.round((f.importance || 0) * 100);
+    var prox = f.isProxyVar ? 'color:var(--red);border-color:rgba(239,68,68,.25)' : 'border-color:var(--border2)';
+    var fn = mdmEsc(f.featureName || f.name || 'feature');
+    return '<details style="margin-bottom:6px;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:8px 10px;' + prox + '"><summary style="cursor:pointer;font-size:10px;font-weight:600;list-style-position:outside">' + fn + ' \u2014 ' + w + '%</summary>' +
+      '<div style="font-size:10px;color:var(--muted2);margin-top:8px;line-height:1.55">Correlation analysis: ranked contribution to outcome variance. ' + (f.isProxyVar ? '<strong style="color:var(--red)">Flagged as potential proxy variable.</strong>' : 'No proxy flag on this feature in Cardinal seed data.') + '</div></details>';
+  }).join('');
+  var proxList = (det.proxyVariables || []).map(function (pv) {
+    return '<div style="font-size:10px;padding:6px 0;border-bottom:1px solid rgba(180,190,220,.06)"><strong style="color:var(--chrome2)">' + mdmEsc(pv.feature || pv.name || '') + '</strong><div style="color:var(--muted);margin-top:2px">r=' + mdmEsc(String(pv.correlation != null ? pv.correlation : '')) + ' \u00b7 ' + mdmEsc(pv.correlatesWith || '') + '</div></div>';
+  }).join('') || '<div style="font-size:10px;color:var(--muted)">No proxy correlations listed.</div>';
+  var fp = (det.fraudPatterns || []).map(function (p) {
+    return '<tr><td style="padding:6px;font-size:10px">' + mdmEsc(p.type || '') + '</td><td style="padding:6px;font-size:10px;color:var(--chrome2)">' + mdmEsc(p.dollars != null ? p.dollars : '') + '</td><td style="padding:6px;font-size:10px">' + mdmEsc(String(p.cases != null ? p.cases : '')) + '</td></tr>';
+  }).join('');
+  var cases = (det.linkedCases || []).map(function (cid) {
+    return '<tr style="cursor:pointer" onclick="mdmOpenCaseFromDetail(' + JSON.stringify(String(cid)) + ')"><td style="padding:8px;font-size:10px;color:var(--accent)">' + mdmEsc(cid) + '</td><td style="padding:8px;font-size:10px">\u2014</td><td style="padding:8px;font-size:10px">\u2014</td><td style="padding:8px;font-size:10px">\u2014</td><td style="padding:8px;font-size:10px">Open</td></tr>';
+  }).join('') || '<tr><td colspan="5" style="padding:10px;font-size:10px;color:var(--muted)">No linked cases in seed data.</td></tr>';
+  var lineage = (det.lineage || []).map(function (ln) {
+    return '<div style="flex:1;min-width:100px;background:var(--bg3);border:1px solid var(--border2);border-radius:10px;padding:10px;text-align:center"><div style="font-size:9px;color:var(--muted)">' + mdmEsc(ln.phase || '') + '</div><div style="font-size:11px;font-weight:700;margin-top:4px;color:var(--chrome2)">' + mdmEsc(ln.label || '') + '</div><div style="font-size:9px;color:var(--muted2);margin-top:4px">' + mdmEsc(ln.note || '') + '</div></div>';
+  }).join('');
+  var cohorts = (det.cohortsAffected || []).map(function (c) {
+    return '<div style="cursor:pointer;background:var(--bg3);border:1px solid var(--border2);border-radius:10px;padding:12px;flex:1;min-width:140px" onclick="mdmGoCohortFromDetail(' + JSON.stringify(c) + ')"><div style="font-size:10px;font-weight:700;color:var(--chrome2)">Cohort</div><div style="font-size:10px;color:var(--muted);margin-top:4px">' + mdmEsc(c) + ' \u2014 Explorer</div></div>';
+  }).join('') || '<div style="font-size:10px;color:var(--muted)">No cohorts linked in seed.</div>';
+  var echo = (det.echoLogTail || []).map(function (eid) {
+    return '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(180,190,220,.06)"><code style="font-size:10px;color:var(--muted2)">' + mdmEsc(eid) + '</code><button type="button" class="btn-ghost" style="font-size:9px;padding:4px 8px" title="Open Echo Memory" onclick="mdmOpenEchoFromDetail(' + JSON.stringify(eid) + ')">View</button></div>';
+  }).join('') || '<div style="font-size:10px;color:var(--muted)">No Echo memories.</div>';
+
+  return (
+    '<section style="margin-bottom:20px;padding:16px;border-radius:12px;background:var(--bg3);border:1px solid var(--border2)">' +
+    '<div style="font-size:10px;color:var(--muted2);margin-bottom:6px">Model identity</div>' +
+    '<div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center"><div style="font-size:15px;font-weight:700;color:var(--chrome2)">' + mdmEsc(id.name) + '</div>' +
+    '<span class="badge badge-amber" style="font-size:9px">' + mdmEsc(id.version || '') + '</span></div>' +
+    '<div style="font-size:10px;color:var(--muted);margin-top:8px;line-height:1.55">ID <code>' + mdmEsc(resolvedKey) + '</code> \u00b7 Created ' + mdmEsc(id.creationDate) + ' \u00b7 Updated ' + mdmEsc(id.lastUpdate) + ' \u00b7 ' + mdmEsc(id.ownerTeam) + '</div>' +
+    '<p style="font-size:11px;color:var(--muted2);margin:12px 0 8px;line-height:1.55">' + mdmEsc(id.description) + '</p>' +
+    '<div>' + tags + '</div></section>' +
+
+    '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px">' +
+    '<button type="button" id="mdm-lens-bias" class="btn-ghost" style="font-size:10px;padding:6px 12px;border-radius:8px" title="Bias-only lens" onclick="mdmSetLens(\'bias\')">Bias view</button>' +
+    '<button type="button" id="mdm-lens-fraud" class="btn-ghost" style="font-size:10px;padding:6px 12px;border-radius:8px" title="Fraud-only lens" onclick="mdmSetLens(\'fraud\')">Fraud view</button>' +
+    '<button type="button" id="mdm-lens-side" class="btn-ghost" style="font-size:10px;padding:6px 12px;border-radius:8px" title="Bias + fraud (default)" onclick="mdmSetLens(\'side\')">Side-by-side</button></div>' +
+
+    '<div id="mdm-bias-block"><div style="font-size:11px;font-weight:700;color:var(--chrome2);margin:14px 0 8px">Bias lens</div>' +
+    '<div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:14px">' +
+    mdmBiasGaugeHtml('Disparate Impact', bm.di || {}, 'Disparate Impact ratio vs 0.80 policy floor.', true) +
+    mdmBiasGaugeHtml('Equalized Odds', bm.equalizedOdds || {}, 'Odds gap tolerance (model-specific scale in seed data).', true) +
+    mdmBiasGaugeHtml('Demographic parity', bm.demographicParity || {}, 'Parity distance vs threshold.', true) +
+    mdmBiasGaugeHtml('Calibration', bm.calibration || {}, 'Outcome calibration vs threshold.', true) +
+    '</div><div style="display:grid;grid-template-columns:1fr 220px;gap:14px;margin-bottom:8px">' +
+    '<div><div style="font-size:10px;font-weight:600;color:var(--chrome2);margin-bottom:8px">Feature importance (top 10)</div>' + feat + '</div>' +
+    '<div><div style="font-size:10px;font-weight:600;color:var(--chrome2);margin-bottom:8px">Proxy variables</div>' + proxList + '</div></div></div>' +
+
+    '<div id="mdm-fraud-block" style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border2)"><div style="font-size:11px;font-weight:700;color:var(--chrome2);margin-bottom:8px">Fraud lens</div>' +
+    '<div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:14px">' +
+    mdmFraudGaugeHtml('Synthetic identity', fm.syntheticId || {}, 'Synthetic identity detection posture.') +
+    mdmFraudGaugeHtml('Behavioral anomaly', fm.behavioralAnomaly || {}, 'Behavioral deviation scoring.') +
+    mdmFraudGaugeHtml('Cluster fraud', fm.clusterFraud || {}, 'Coordinated cluster detection.') +
+    mdmFraudGaugeHtml('Velocity', fm.velocity || {}, 'Velocity / burst fraud signals.') +
+    '</div><div style="display:grid;grid-template-columns:1fr 240px;gap:14px">' +
+    '<div><div style="font-size:10px;font-weight:600;color:var(--chrome2);margin-bottom:8px">Top fraud patterns</div>' +
+    '<table style="width:100%;border-collapse:collapse;font-size:10px"><thead><tr style="color:var(--muted2);text-align:left"><th style="padding:6px">Pattern</th><th style="padding:6px">$ impact</th><th style="padding:6px">Cases</th></tr></thead><tbody>' + (fp || '<tr><td colspan="3" style="padding:8px;color:var(--muted)">\u2014</td></tr>') + '</tbody></table></div>' +
+    '<div style="font-size:10px;line-height:1.55;background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.25);border-radius:10px;padding:12px;color:var(--chrome2)"><strong>Bias\u2013fraud connection</strong><p style="margin:8px 0 0;color:var(--muted2)">' + mdmEsc(det.biasFraudBlurb || '') + '</p></div></div></div>' +
+
+    '<section style="margin:20px 0"><div style="font-size:11px;font-weight:700;color:var(--chrome2);margin-bottom:8px">30-day history (bias vs fraud)</div>' +
+    '<div id="mdm-mini-wrap" style="position:relative;height:300px;width:100%"><div id="mdm-mini-svg" style="position:absolute;inset:0 0 28px 0"></div><div id="mdm-mini-pins" style="position:absolute;left:0;right:0;top:0;height:28px"></div>' +
+    '<div style="position:absolute;bottom:0;left:0;font-size:9px;color:var(--muted)">Red = bias track \u00b7 Green = fraud track</div></div></section>' +
+
+    '<section style="margin:20px 0"><div style="font-size:11px;font-weight:700;color:var(--chrome2);margin-bottom:8px">Recent cases</div>' +
+    '<table style="width:100%;border-collapse:collapse"><thead><tr style="font-size:9px;color:var(--muted2);text-align:left"><th style="padding:6px">Case</th><th style="padding:6px">Severity</th><th style="padding:6px">Opened</th><th style="padding:6px">Lead</th><th style="padding:6px">Status</th></tr></thead><tbody>' + cases + '</tbody></table></section>' +
+
+    '<section style="margin:20px 0"><div style="font-size:11px;font-weight:700;color:var(--chrome2);margin-bottom:8px">Model lineage</div><div style="display:flex;gap:10px;flex-wrap:wrap">' + lineage + '</div></section>' +
+
+    '<section style="margin:20px 0"><div style="font-size:11px;font-weight:700;color:var(--chrome2);margin-bottom:8px">Cohorts affected</div><div style="display:flex;gap:10px;flex-wrap:wrap">' + cohorts + '</div></section>' +
+
+    '<section style="margin:20px 0"><div style="font-size:11px;font-weight:700;color:var(--chrome2);margin-bottom:8px">Echo audit tail</div>' + echo + '</section>'
+  );
+}
+
+function openModelDetail(modelId, sourceContext) {
+  var CD = window.CARDINAL_DATA;
+  if (!CD || !CD.modelDetailDrillIn) {
+    if (typeof showToast === 'function') showToast('Model registry not ready.');
+    return;
+  }
+  var resolved = window.cardinalResolveModelDetailKey(modelId);
+  var det = resolved ? CD.modelDetailDrillIn[resolved] : null;
+  if (!det) {
+    if (typeof showToast === 'function') showToast('Unknown model: ' + String(modelId));
+    return;
+  }
+  var scEl = document.querySelector('.edo-scroll');
+  var scTop = scEl ? scEl.scrollTop : (window.scrollY || document.documentElement.scrollTop || 0);
+  window.__mdmRestore = { el: scEl, scrollTop: scTop };
+  window.__mdmResolvedKey = resolved;
+  window.__mdmSourceContext = sourceContext || '';
+
+  var modal = document.getElementById('model-detail-modal');
+  var titleEl = document.getElementById('mdm-header-title');
+  var badgeEl = document.getElementById('mdm-header-badge');
+  var crumb = document.getElementById('mdm-breadcrumb');
+  var body = document.getElementById('mdm-body-inner');
+  if (titleEl) {
+    var idn = det.identity || {};
+    titleEl.textContent = (idn.name || resolved) + ' \u00b7 ' + (idn.version || '') + ' \u00b7 ' + (det.statusLabel || '');
+  }
+  if (badgeEl) {
+    badgeEl.textContent = det.statusLabel || 'Status';
+    badgeEl.className = mdmBadgeClass(det.statusLabel);
+  }
+  if (crumb) {
+    crumb.innerHTML = '<button type="button" style="background:none;border:none;color:var(--accent);cursor:pointer;font-size:11px;font-family:var(--sans);padding:0" title="Back (close drill-in)" onclick="closeModelDetail()">\u2190 ' + mdmEsc(sourceContext || 'Cardinal') + '</button>';
+  }
+  if (body) body.innerHTML = mdmPaintDrillInBody(det, resolved);
+  var dd = document.getElementById('mdm-search-dd');
+  if (dd) { dd.style.display = 'none'; dd.innerHTML = ''; }
+  var inp = document.getElementById('mdm-search-input');
+  if (inp) inp.value = '';
+  window.mdmSetLens('side');
+
+  if (modal) {
+    modal.style.display = 'flex';
+    modal.style.flexDirection = 'column';
+    modal.style.justifyContent = 'flex-end';
+    modal.style.alignItems = 'stretch';
+  }
+  setTimeout(function () { mdmRenderMiniDualChart(det); }, 80);
+
+  if (!window.__mdmKeysBound) {
+    window.__mdmKeysBound = true;
+    document.addEventListener('keydown', function (e) {
+      var mod = document.getElementById('model-detail-modal');
+      if (!mod || mod.style.display === 'none') return;
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        closeModelDetail();
+      }
+      if ((e.metaKey || e.ctrlKey) && (e.key === 'k' || e.key === 'K')) {
+        e.preventDefault();
+        var si = document.getElementById('mdm-search-input');
+        if (si) si.focus();
+      }
+    });
+  }
 }
 
 function closeModelDetail() {
   var m = document.getElementById('model-detail-modal');
-  if(m) m.style.display='none';
+  if (m) m.style.display = 'none';
+  var r = window.__mdmRestore;
+  if (r && r.el) r.el.scrollTop = r.scrollTop;
+  else window.scrollTo(0, r ? r.scrollTop : 0);
+  var dd = document.getElementById('mdm-search-dd');
+  if (dd) { dd.style.display = 'none'; dd.innerHTML = ''; }
 }
+window.openModelDetail = openModelDetail;
 
 </script>
 
@@ -26444,41 +27085,35 @@ function closeModelDetail() {
 </div>
 </div>
 
-<!-- MODEL DETAIL MODAL -->
-<div id="model-detail-modal" style="display:none;position:fixed;inset:0;z-index:9994;background:rgba(4,7,13,.85);align-items:center;justify-content:center">
-<div style="background:var(--card);border:1px solid var(--border2);border-radius:16px;width:580px;max-width:92vw;max-height:82vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 8px 40px rgba(0,0,0,.7)">
-  <div style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;background:var(--bg2)">
-    <div>
-      <div style="font-size:14px;font-weight:600;color:var(--chrome2)" id="mdm-name">Model</div>
-      <div style="font-size:10px;color:var(--muted);margin-top:2px" id="mdm-id">ID —</div>
-    </div>
-    <div style="display:flex;gap:8px;align-items:center">
-      <span class="badge" id="mdm-badge">Status</span>
-      <button onclick="closeModelDetail()" style="background:transparent;border:none;color:var(--muted);cursor:pointer;font-size:18px">✕</button>
-    </div>
-  </div>
-  <div style="overflow-y:auto;padding:18px 20px;flex:1">
-    <div class="grid-4" style="margin-bottom:16px" id="mdm-stats"></div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px">
-      <div>
-        <div style="font-size:11px;font-weight:600;color:var(--chrome2);margin-bottom:8px">Model Details</div>
-        <div id="mdm-details"></div>
+<!-- MODEL DETAIL — full-screen drill-in -->
+<div id="model-detail-modal" onclick="mdmBackdropClose(event)" style="display:none;position:fixed;inset:0;z-index:9994;background:rgba(4,7,13,.86);overflow:hidden">
+  <div id="model-detail-panel" onclick="event.stopPropagation()" style="max-height:96vh;height:96vh;margin:0 auto;width:100%;max-width:1320px;background:var(--bg);border:1px solid var(--border2);border-radius:16px 16px 0 0;box-shadow:0 -16px 60px rgba(0,0,0,.55);display:flex;flex-direction:column;overflow:hidden;font-family:var(--sans)">
+    <div style="flex-shrink:0;padding:12px 16px;border-bottom:1px solid var(--border2);background:var(--bg2);display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+      <div id="mdm-breadcrumb" style="flex:0 0 auto;min-width:120px"></div>
+      <div style="flex:1;min-width:200px;text-align:center">
+        <div id="mdm-header-title" style="font-size:13px;font-weight:700;color:var(--chrome2)">Model</div>
+        <div style="font-size:9px;color:var(--muted);margin-top:2px">Cmd+K search \u00b7 Esc close</div>
       </div>
-      <div>
-        <div style="font-size:11px;font-weight:600;color:var(--chrome2);margin-bottom:8px">Bias & Fraud Flags</div>
-        <div id="mdm-flags"></div>
+      <div style="flex:0 1 280px;position:relative;min-width:200px">
+        <input id="mdm-search-input" type="search" placeholder="Search models..." title="Search all models (Cmd+K)"
+          oninput="mdmSearchInput(this.value)"
+          style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:8px 10px;font-size:11px;color:var(--text);outline:none;box-sizing:border-box"/>
+        <div id="mdm-search-dd" style="display:none;position:absolute;left:0;right:0;top:100%;margin-top:4px;max-height:200px;overflow-y:auto;background:var(--card);border:1px solid var(--border2);border-radius:8px;z-index:10;box-shadow:0 8px 32px rgba(0,0,0,.45)"></div>
+      </div>
+      <span class="badge badge-green" id="mdm-header-badge" style="font-size:9px">Status</span>
+      <button type="button" onclick="closeModelDetail()" title="Close" style="background:transparent;border:none;color:var(--muted);cursor:pointer;font-size:20px;line-height:1;padding:4px">\u2715</button>
+    </div>
+    <div id="mdm-body-scroll" style="flex:1;overflow-y:auto;padding:16px 18px 24px">
+      <div id="mdm-body-inner"></div>
+      <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border2);display:flex;flex-wrap:wrap;gap:8px">
+        <button type="button" class="btn-ghost" style="font-size:10px" title="Open Atonement Core filtered to this model" onclick="mdmFooterRoute('atonement')">View in Atonement</button>
+        <button type="button" class="btn-ghost" style="font-size:10px" title="Open Genesis workspace" onclick="mdmFooterRoute('genesis')">View in Genesis</button>
+        <button type="button" class="btn-ghost" style="font-size:10px" title="Compliance Exchange" onclick="mdmFooterRoute('compliance')">Compliance Exchange</button>
+        <button type="button" class="btn-primary" style="font-size:10px" title="Prototype export" onclick="closeModelDetail();showToast('Model report export queued (prototype).')">Export Model Report PDF</button>
+        <button type="button" class="btn-ghost" style="font-size:10px" title="Watch list" onclick="showToast('Added to watch list (prototype).')">Add to Watch List</button>
       </div>
     </div>
-    <div style="font-size:11px;font-weight:600;color:var(--chrome2);margin-bottom:8px">Dimension Scores</div>
-    <div id="mdm-dims" style="margin-bottom:16px"></div>
-    <div style="font-size:11px;font-weight:600;color:var(--chrome2);margin-bottom:8px">Version History</div>
-    <div id="mdm-versions"></div>
   </div>
-  <div style="padding:14px 20px;border-top:1px solid var(--border);display:flex;gap:8px">
-    <button onclick="closeModelDetail();showScreen('eden',null)" class="btn-ghost" style="flex:1;font-size:11px">View in Eden →</button>
-    <button onclick="closeModelDetail();showScreen('atonement',null)" class="btn-primary" style="flex:1;font-size:11px">Remediate in Atonement →</button>
-  </div>
-</div>
 </div>
 <script>
 /* ── SIDEBAR COLLAPSE / TOOLTIPS ── */
