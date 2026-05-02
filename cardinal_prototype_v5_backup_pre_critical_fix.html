@@ -10,10 +10,6 @@
     - Bias-Fraud Connection Venn-style visualization on both cores; Echo Core deep links with filtered timeline (Eden vs Obsidian).
     - Full tooltips on technical controls per Tooltip System rule.
 
-  May 1, 2026 (evening) — Critical fix patch.
-    - Fixed JS SyntaxError / “Unexpected end of input” on Eden Core, Obsidian Core, and Trust Score: edoT() emitted onmouseenter="showTooltip(" + JSON.stringify(...) so inner double-quotes closed the HTML attribute early and broke the DOM. edoT now entity-escapes & and " on the full handler so the attribute parses correctly.
-    - Tooltip timing: string-mode auto-hide 5s→1.5s; element-binding hover delay 400ms→250ms; 4s safety auto-hide after show for hover tooltips; timers cleared on mouseleave.
-
   May 1, 2026 (afternoon) — Master revision commit. Eleven updates merged:
     1. Eve panel default size shrunk, content-driven height, 380×~400px default.
     2. Eve panel premium voice-command UX: 44px gradient mic hero, animated chips, waveform animation, listening states.
@@ -7593,7 +7589,7 @@ Admin access: READ ONLY · Cannot edit · Cannot delete · Regulator access: Ava
 <button class="eve-icon-btn" id="eve-btn-bolt" onclick="toggleEveQuickActions()" aria-label="Quick actions">&#x26A1;</button>
 <button class="eve-icon-btn" id="eve-btn-doc" onclick="generateRemediationDoc()" aria-label="Transcript">&#x1F4C4;</button>
 <button class="eve-ctrl-btn" id="eve-btn-voice" onclick="toggleVoiceSettings()" aria-label="Voice settings"
- onmouseenter="showTooltip('Voice Output','Toggle Eve\u0027s voice on or off.',event)">🔊</button>
+ onmouseenter="showTooltip('Voice Output','Toggle Eve\'s voice on or off.',event)">🔊</button>
 <button class="eve-ctrl-btn" id="eve-btn-mute" onclick="toggleEveMute()" aria-label="Mute Eve" style="font-size:14px">&#x1F507;</button>
 <span class="eve-drag-handle" id="eve-drag-handle" aria-label="Drag">&#x205A;&#x205A;&#x205A;</span>
 <button class="eve-min-btn" id="eve-btn-min" onclick="eveToggleMinimize()" aria-label="Minimize">&#x2014;</button>
@@ -9488,11 +9484,7 @@ window.openEchoCoreFiltered = function (coreLens) {
 /* ═════ Eden / Obsidian UI (renderEden, renderObsidian) ═════ */
 window.__edo = { org: 'ad', screen: 'eden', modelIdx: null, modelLens: 'bias', cohortSummary: true, caseSev: 'all', mdlFilt: 'all', mdlSort: 'model', cohortQ: '', exp: {}, indQ: '', piiInd: null };
 function edoQ(s) { return JSON.stringify(s == null ? '' : String(s)); }
-function edoT(t, b) {
-  var inner = 'showTooltip(' + edoQ(t) + ',' + edoQ(b) + ',event)';
-  inner = inner.replace(/&/g, '&amp;').replace(/"/g, '&quot;');
-  return ' onmouseenter="' + inner + '"';
-}
+function edoT(t, b) { return ' onmouseenter="showTooltip(' + edoQ(t) + ',' + edoQ(b) + ',event)"'; }
 function edoCaseId(c) { return String(c || '').replace(/^#/, ''); }
 function edoCanPii() {
   var r = (window.__edoDemoRole || '').toLowerCase();
@@ -14124,7 +14116,7 @@ function dashApplyAgeInsight(cfg) {
   }
 }
 
-/* ── Cardinal dashboard tooltips (250ms hover delay, help cursor) ── */
+/* ── Cardinal dashboard tooltips (400ms delay, help cursor) ── */
 var cardinalTipTimer = null;
 
 function showTooltip(arg1, arg2, arg3) {
@@ -14142,7 +14134,7 @@ function showTooltip(arg1, arg2, arg3) {
     tt.style.top = cy + 14 + 'px';
     tt.classList.add('visible');
     clearTimeout(window._cardinalTipAutoHide);
-    window._cardinalTipAutoHide = setTimeout(function () { tt.classList.remove('visible'); }, 1500);
+    window._cardinalTipAutoHide = setTimeout(function () { tt.classList.remove('visible'); }, 5000);
     return;
   }
   var el = arg1;
@@ -14163,15 +14155,10 @@ function showTooltip(arg1, arg2, arg3) {
       tt.style.left = Math.min(e.clientX + 12, window.innerWidth - 300) + 'px';
       tt.style.top = rect.bottom + 8 + 'px';
       tt.classList.add('visible');
-      clearTimeout(window._cardinalTipAutoHide);
-      window._cardinalTipAutoHide = setTimeout(function () {
-        tt.classList.remove('visible');
-      }, 4000);
-    }, 250);
+    }, 400);
   });
   el.addEventListener('mouseleave', function () {
     clearTimeout(cardinalTipTimer);
-    clearTimeout(window._cardinalTipAutoHide);
     var tt = document.getElementById('cardinal-tooltip');
     if (tt) tt.classList.remove('visible');
   });
