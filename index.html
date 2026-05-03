@@ -48,17 +48,17 @@
     4. Trust Score Composition: merged 6-dimension + 3-column rich detail into one expandable section. Lowest dimension auto-expands. Header bug fixed. Double-percent bug fixed.
     5. War Room: added Case Channel pane (Slack-style chat per case) with Echo Core auto-logging, Eve+Adam bots, pinned decisions.
     6. Trust Loop: redefined as unified Team Workspace with three tabs (Channels, Town Hall, Loop Methodology). Standalone Town Hall absorbed; nav item removed.
-    7. Dashboard: Active Channels widget surfaces unread from War Room + Trust Loop.
+    7. Dashboard: Active Conversations widget surfaces unread from War Room + Trust Loop.
     8. CARDINAL_DATA: trustLoopChannels, trustLoopDirectMessages, trustLoopAnnouncements, trustLoopMethodologyEvents, caseChannels, dimensionDetailContent, modelLevelScores trend30d, settingsState — all per industry, pre-populated with realistic seeded conversation history including James Park April 16 pinned message.
     9. Sidebar collapsed state: Trust Score chip becomes circular badge with status dot.
     10. Design rule #20 added: same user intent → one parent surface with tabs.
     11. Settings: comprehensive overhaul — customize dashboard refreshed to current build, role presets refreshed, Eve panel preferences, Trust Loop default tab, sidebar default collapsed, model scores default filter, notifications, industry-specific settings, integrations gallery, compliance & audit config, Trust Score config, appearance expansion. Tier 2 Coming Soon placeholders for Account/Team/Eve Advanced/Privacy/Developer/Billing.
 
-  May 1, 2026 — Sidebar collapsed chip fix (targeted). Restructured Trust Score into mutually exclusive .trust-score-chip-full (expanded) and .trust-score-chip-badge (collapsed, 40×40). Only one branch renders at a time; fixes stacked circular badge plus wrapped status text caused by #sidebar-status inline display overriding collapsed hide rules.
+  May 1, 2026 — Sidebar collapsed chip fix (targeted). Restructured Trust Score into mutually exclusive .trust-score-chip-full (expanded) and .trust-score-chip-badge (collapsed, 40×40). Only one branch renders at a time; fixes stacked circular badge plus wrapped status text caused by inline status row overriding collapsed hide rules.
 
   May 1, 2026 (evening) — Dashboard cleanup patch.
     - Global Trust Score panel: removed redundant certification subtext; one status row with icon reads trustStatus (sub-threshold) or certStatus (certified) from CARDINAL_DATA[currentOrg] only.
-    - Active Channels: top strip between 911 Alert Banner and 4 executive stat cards; horizontal scroll row of 280×64 chips (scroll-snap), filter pills [All][Cases][Standing], "View All →" to Trust Loop > Channels; tooltips on title, channel dots, unread badges, filters, and View All.
+    - Active Conversations: top strip between 911 Alert Banner and 4 executive stat cards; horizontal scroll row of 280×64 chips (scroll-snap), filter pills [All][Cases][Standing], "View All →" to Trust Loop > Channels; tooltips on title, channel dots, unread badges, filters, and View All.
     - Cardinal Sentinel: implemented buildSentinel(org) and scoped switchSentinelTab so the Sentinel screen renders without ReferenceError and tabs do not collide with other gen-tab UIs.
 
   May 1, 2026 (evening) — Echo Core data seeding (pre-build).
@@ -2359,7 +2359,7 @@ animation:waveform var(--dur) ease-in-out infinite alternate;
 #eve-messages::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.0);border-radius:3px;transition:background .25s ease}
 #eve-messages:hover::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.15)}
 #eve-messages::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,0.25)}
-.eve-header{background:linear-gradient(135deg,#0a1020,#0f1828);padding:14px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid rgba(166,218,255,.1);box-shadow:inset 0 1px 0 rgba(166,218,255,.15);cursor:grab;user-select:none;flex-shrink:0;min-height:60px;box-sizing:border-box}
+.eve-header{background:linear-gradient(135deg,#0a1020,#0f1828);padding:14px 10px 14px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid rgba(166,218,255,.1);box-shadow:inset 0 1px 0 rgba(166,218,255,.15);cursor:grab;user-select:none;flex-shrink:0;min-height:60px;box-sizing:border-box}
 .eve-header.grabbing,#eve-panel.dragging .eve-header{cursor:grabbing}
 .eve-header button,.eve-header .eve-drag-handle{cursor:pointer}
 .eve-drag-handle{
@@ -2403,13 +2403,13 @@ animation:waveform var(--dur) ease-in-out infinite alternate;
 .eve-alert-badge.l3{background:rgba(239,68,68,.12);color:var(--red)}
 .eve-alert-badge.morning{background:rgba(96,165,250,0.15);border:1px solid rgba(96,165,250,0.3);color:#93c5fd;font-size:9px;font-weight:700;letter-spacing:.8px;border-radius:4px;padding:2px 7px;text-transform:uppercase}
 .eve-icon-btn{
-  width:28px;height:28px;border-radius:50%;
+  width:26px;height:26px;border-radius:50%;
   background:rgba(255,255,255,0.06);
   border:1px solid rgba(255,255,255,0.10);
   color:#64748b;
   cursor:pointer;
   display:inline-flex;align-items:center;justify-content:center;
-  font-size:12px;line-height:1;
+  font-size:11px;line-height:1;
   transition:color .15s ease, border-color .15s ease, background .15s ease;
   padding:0;
 }
@@ -2610,7 +2610,7 @@ animation:waveform var(--dur) ease-in-out infinite alternate;
   transition: transform 0.18s ease;
 }
 .cardinal-alert-cta:hover .arrow { transform: translateX(3px); }
-/* ══ Dashboard Active Channels top strip ══ */
+/* ══ Dashboard Active Conversations top strip ══ */
 #dash-active-channels-host { margin-bottom: 14px; }
 .dash-ac-strip {
   background: rgba(4, 10, 20, 0.55);
@@ -2666,7 +2666,7 @@ animation:waveform var(--dur) ease-in-out infinite alternate;
   top: 0;
   right: 0;
   bottom: 0;
-  width: 44px;
+  width: 24px;
   pointer-events: none;
   background: linear-gradient(90deg, rgba(4, 10, 20, 0), rgba(4, 10, 20, 0.88));
   z-index: 1;
@@ -2679,7 +2679,7 @@ animation:waveform var(--dur) ease-in-out infinite alternate;
   overflow-x: auto;
   overflow-y: hidden;
   scroll-snap-type: x mandatory;
-  padding: 4px 40px 10px 4px;
+  padding: 4px 12px 10px 4px;
   width: 100%;
   box-sizing: border-box;
   min-width: 0;
@@ -4554,7 +4554,6 @@ Trust Loop
 <div class="trust-score-mini trust-score-chip-full">
 <div class="trust-score-mini-label">Global Trust Score</div>
 <div class="trust-score-mini-val" id="sidebar-score" style="color:#F59E0B">74</div>
-<div class="trust-score-mini-status" id="sidebar-status" style="display:flex;align-items:center;gap:4px"></div>
 </div>
 <div class="trust-score-chip-badge" id="sidebar-trust-badge-collapsed" aria-hidden="true" style="background:#F59E0B">
 <span class="trust-score-chip-badge-num" id="sidebar-score-badge">74</span>
@@ -7690,12 +7689,11 @@ Admin access: READ ONLY · Cannot edit · Cannot delete · Regulator access: Ava
 <div class="eve-waveform-bar" style="height:14px;--dur:.35s"></div>
 </div>
 </div>
-<div style="display:flex;gap:6px;align-items:center" id="eve-header-actions">
+<div style="display:flex;gap:4px;align-items:center;flex-shrink:0" id="eve-header-actions">
 <button class="eve-icon-btn" id="eve-btn-bell" onclick="eveShowLatestAlertInChat()" aria-label="Notifications">&#x1F514;</button>
 <button class="eve-icon-btn" id="eve-btn-bolt" onclick="toggleEveQuickActions()" aria-label="Quick actions">&#x26A1;</button>
 <button class="eve-icon-btn" id="eve-btn-doc" onclick="generateRemediationDoc()" aria-label="Transcript">&#x1F4C4;</button>
-<button class="eve-ctrl-btn" id="eve-btn-voice" onclick="toggleVoiceSettings()" aria-label="Voice settings"
- onmouseenter="showTooltip('Voice Output','Toggle Eve\u0027s voice on or off.',event)">🔊</button>
+<button class="eve-ctrl-btn" id="eve-btn-voice" onclick="toggleVoiceSettings()" aria-label="Voice settings">🔊</button>
 <button class="eve-ctrl-btn" id="eve-btn-mute" onclick="toggleEveMute()" aria-label="Mute Eve" style="font-size:14px">&#x1F507;</button>
 <span class="eve-drag-handle" id="eve-drag-handle" aria-label="Drag">&#x205A;&#x205A;&#x205A;</span>
 <button class="eve-min-btn" id="eve-btn-min" onclick="eveToggleMinimize()" aria-label="Minimize">&#x2014;</button>
@@ -7762,7 +7760,7 @@ Admin access: READ ONLY · Cannot edit · Cannot delete · Regulator access: Ava
 <div class="d-widget-cell"><div style="flex:1" onmouseenter="showTooltip('Certification Status Card','Cardinal certification status with blocking factors.',event)"><div style="font-size:13px;color:var(--text)">Certification Status Card</div><div class="d-widget-meta">Cardinal certification status with blocking factors</div></div><button type="button" class="dashboard-widget-toggle d-toggle-track on" data-panel="certCard" onclick="toggleDashboardPanel(this,'certCard')"><span class="d-toggle-thumb"></span></button></div>
 <div class="d-widget-cell"><div style="flex:1" onmouseenter="showTooltip('Remediation Progress Card','Most urgent active remediation.',event)"><div style="font-size:13px;color:var(--text)">Remediation Progress Card</div><div class="d-widget-meta">Most urgent active remediation</div></div><button type="button" class="dashboard-widget-toggle d-toggle-track on" data-panel="remediationCard" onclick="toggleDashboardPanel(this,'remediationCard')"><span class="d-toggle-thumb"></span></button></div>
 <div class="d-widget-cell"><div style="flex:1" onmouseenter="showTooltip('Global Trust Score Panel','Main score with peer comparison and blocking factors.',event)"><div style="font-size:13px;color:var(--text)">Global Trust Score Panel</div><div class="d-widget-meta">Main score with peer comparison and blocking factors</div></div><button type="button" class="dashboard-widget-toggle d-toggle-track on" data-panel="trustPanel" onclick="toggleDashboardPanel(this,'trustPanel')"><span class="d-toggle-thumb"></span></button></div>
-<div class="d-widget-cell"><div style="flex:1" onmouseenter="showTooltip('Active Channels Widget','Unread messages from War Room and Trust Loop.',event)"><div style="font-size:13px;color:var(--text)">Active Channels Widget</div><div class="d-widget-meta">Unread messages from War Room and Trust Loop</div></div><button type="button" class="dashboard-widget-toggle d-toggle-track on" data-panel="activeChannels" onclick="toggleDashboardPanel(this,'activeChannels')"><span class="d-toggle-thumb"></span></button></div>
+<div class="d-widget-cell"><div style="flex:1" onmouseenter="showTooltip('Active Conversations Widget','Unread messages from War Room and Trust Loop.',event)"><div style="font-size:13px;color:var(--text)">Active Conversations Widget</div><div class="d-widget-meta">Unread messages from War Room and Trust Loop</div></div><button type="button" class="dashboard-widget-toggle d-toggle-track on" data-panel="activeChannels" onclick="toggleDashboardPanel(this,'activeChannels')"><span class="d-toggle-thumb"></span></button></div>
 </div>
 <div style="padding-left:12px;border-left:1px solid var(--border);">
 <div class="d-widget-cell"><div style="flex:1" onmouseenter="showTooltip('Eden Core Panel','Real-time bias detection summary.',event)"><div style="font-size:13px;color:var(--text)">Eden Core Panel</div><div class="d-widget-meta">Real-time bias detection summary</div></div><button type="button" class="dashboard-widget-toggle d-toggle-track on" data-panel="edenPanel" onclick="toggleDashboardPanel(this,'edenPanel')"><span class="d-toggle-thumb"></span></button></div>
@@ -10956,7 +10954,6 @@ window.edoSyncHistoryToggleClasses = function (lens) {
 window.edoRefreshHistoryUI = function (lens, org) {
   edoBuildHistoryChartCore(lens, org);
   edoBuildHistoryCaptionCore(lens, org);
-  if (typeof edoUpdateHistSidePanels === 'function') edoUpdateHistSidePanels(lens, org);
 };
 window.edoHistModelSearchInput = function (lens, org, q) {
   var idP = lens === 'obsidian' ? 'obs' : 'eden';
@@ -11065,8 +11062,30 @@ function edoRenderEveBodyCore(lens, d) {
   var tf = lens === 'obsidian' ? window.__edo.eveTfObsidian : window.__edo.eveTfEden;
   var bag = lens === 'obsidian' ? (d.obsidianEveSummary || {}) : (d.edenEveSummary || {});
   var block = bag[tf] || bag.quarterly || {};
-  var paras = [block.para1, block.para2, block.para3].filter(Boolean);
-  body.innerHTML = paras.map(function (p) { return '<p>' + p + '</p>'; }).join('');
+  var re = /\s*Bias[\u2010\u2011\u2013\u2014\-]Fraud Connection\s*:?/i;
+  var p3 = block.para3 || '';
+  var m = re.exec(p3);
+  var p3clean = p3;
+  var bfCloser = '';
+  if (m) {
+    p3clean = p3.slice(0, m.index).trim();
+    bfCloser = p3.slice(m.index).trim();
+  }
+  var html = '';
+  if (block.para1) html += '<p>' + block.para1 + '</p>';
+  if (block.para2) html += '<p>' + block.para2 + '</p>';
+  if (p3) {
+    if (m) {
+      if (p3clean) html += '<p>' + p3clean + '</p>';
+    } else {
+      html += '<p>' + p3 + '</p>';
+    }
+  }
+  if (bfCloser) {
+    var closerLine = bfCloser.replace(/(\u2192\s*see\s+Section\s+7[^<\n]*|see\s+Section\s+7[^<\n]*)/gi, '<span style="color:var(--accent);font-weight:700">$1</span>');
+    html += '<div class="edo-eve-bf-closer" style="margin-top:14px;padding:10px 14px;border-radius:10px;border:1px solid rgba(251,146,60,.38);background:linear-gradient(95deg,rgba(239,68,68,.14),rgba(245,158,11,.10));font-size:11px;cursor:pointer;display:flex;align-items:center;gap:10px"' + edoT('Bias-Fraud Connection', 'Bias-Fraud Connection / Click to jump to Section 7 where the overlap cases live with full case detail.') + ' onclick="edoScrollBf()">' + closerLine + '</div>';
+  }
+  body.innerHTML = html;
 }
 function edoBuildEveExecutiveSection(lens, d, org) {
   var idP = lens === 'obsidian' ? 'obs' : 'eden';
@@ -11119,21 +11138,18 @@ function edoBuildHistorySection(lens, d, org) {
     filtBadge + '</div>' +
     '<div id="' + idP + '-hist-search-dd" style="display:none;position:absolute;left:0;top:100%;margin-top:4px;z-index:80;background:var(--card);border:1px solid var(--border2);border-radius:8px;max-height:200px;overflow-y:auto;min-width:min(360px,92vw);box-shadow:0 12px 32px rgba(0,0,0,.45)"></div></div>';
   var chartCol =
-    '<div style="flex:1;min-width:0">' +
+    '<div style="width:100%">' +
     searchBlock +
     '<div class="tsv2-history-tf" id="' + idP + '-hist-tf">' + tfBtns + '</div>' +
     '<div class="tsv2-history-toggle" id="' + idP + '-hist-series">' + seriesBtns + '</div>' +
     '<div class="tsv2-history-canvas-wrap" id="' + idP + '-hist-canvas-wrap"' + edoT('History Chart', 'Line chart with annotation pins. Hover points for sub-scores; click pins for model drill-in.') + ' style="min-height:320px">' +
     '<div id="' + idP + '-hist-svg" style="position:absolute;inset:0;width:100%;height:100%"></div>' +
     '<div id="' + idP + '-hist-pins"></div></div>' +
-    '<div class="tsv2-history-caption" id="' + idP + '-hist-caption">\u2014</div>' +
-    '<div id="' + idP + '-hist-eve"></div></div>';
-  var ctxCol =
-    '<aside id="' + idP + '-hist-context" style="width:260px;flex-shrink:0;font-size:11px;line-height:1.45;padding:12px;border-radius:12px;border:1px solid var(--border2);background:var(--bg3);position:sticky;top:12px;align-self:flex-start"' + edoT('Sub-score context', 'Narrative context for the active history sub-score.') + '></aside>';
+    '<div class="tsv2-history-caption" id="' + idP + '-hist-caption">\u2014</div></div>';
   return '<section class="tsv2-section" id="' + idP + '-hist-section" style="margin-bottom:20px">' +
     '<div class="tsv2-section-title" id="' + idP + '-hist-title"' + edoT(title, title + ' / Tamper-evident monthly series from Echo Core.') + '>' + title + '</div>' +
     '<div class="tsv2-section-sub" id="' + idP + '-hist-sub">' + sub + '</div>' +
-    '<div style="display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap">' + chartCol + ctxCol + '</div></section>';
+    chartCol + '</section>';
 }
 function edoBuildHistoryCaptionCore(lens, org) {
   var d = window.CARDINAL_DATA[org];
@@ -11569,7 +11585,7 @@ function edoBuildBfVennHtml(d, org, screenIsObsidian) {
   var hTop = 149.666;
   var pathL = 'M 400 ' + (200 + hTop) + ' A 180 180 0 1 1 400 ' + (200 - hTop) + ' Z';
   var pathR = 'M 400 ' + (200 + hTop) + ' A 180 180 0 1 0 400 ' + (200 - hTop) + ' Z';
-  var heroBand = '<div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding:16px 18px;border-radius:14px;margin-bottom:18px;background:linear-gradient(95deg,rgba(239,68,68,.24),rgba(245,158,11,.18));border:1px solid rgba(251,146,60,.38);cursor:default"' + edoT('Bias-Fraud Connection', 'Bias-Fraud Connection / The Cardinal Difference. No other platform monitors bias and fraud in the same model. Cases here are where bias blind spots created fraud exposure simultaneously.') + '>' +
+  var heroBand = '<div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding:16px 18px;border-radius:14px;margin-bottom:18px;background:linear-gradient(95deg,rgba(239,68,68,.24),rgba(245,158,11,.18));border:1px solid rgba(251,146,60,.38);cursor:default"' + edoT('Bias-Fraud Connection', 'Bias-Fraud Connection / The structural overlap between bias and fraud detection. Cases here are where bias blind spots created fraud exposure simultaneously. The only platform monitoring both lenses on the same model decisions.') + '>' +
     '<div style="font-size:30px;line-height:1;opacity:.95" aria-hidden="true">\u2693</div>' +
     '<div style="flex:1;min-width:220px"><div style="font-size:12px;font-weight:800;line-height:1.4;color:var(--chrome2)">' + heroLine + '</div></div>' +
     '<div style="display:flex;align-items:center;gap:8px;font-size:10px;color:var(--muted2)"><span class="tsv2-live-dot" style="flex-shrink:0"' + edoT('Live indicator', 'Echo Core streaming indicators — shows narrative freshness for this section.') + '></span><span' + edoT('Updated', 'Live / Updated ' + fresh + '.') + '>Live · updated ' + fresh + '</span></div></div>';
@@ -11589,11 +11605,11 @@ function edoBuildBfVennHtml(d, org, screenIsObsidian) {
     '<div style="font-size:18px;line-height:1">\u26A0</div><div style="font-size:11px;font-weight:800;color:var(--chrome2)">Step 3: Fraud Exploits Gap</div>' +
     '<p style="margin:0;font-size:10px;color:var(--muted);line-height:1.5;flex:1">' + frE.text + '</p>' +
     '<div style="font-size:10px;font-weight:700;color:#fb923c"' + edoT('Fraud metrics', frE.metric) + '>' + frE.metric + '</div></div></div></div>';
-  var moat = '<div style="margin-top:20px;padding:14px 16px;border-radius:12px;border:1px solid rgba(166,218,255,.2);background:linear-gradient(90deg,rgba(10,14,22,.92),rgba(15,18,26,.88));display:flex;gap:14px;align-items:center;flex-wrap:wrap"' + edoT('Why this matters', 'The Cardinal Moat / Other vendors offer bias detection OR fraud detection. Cardinal does both with shared audit infrastructure (Echo Core), enabling cross-lens cases to be caught simultaneously.') + '>' +
+  var moat = '<div style="margin-top:20px;padding:14px 16px;border-radius:12px;border:1px solid rgba(166,218,255,.2);background:linear-gradient(90deg,rgba(10,14,22,.92),rgba(15,18,26,.88));display:flex;gap:14px;align-items:center;flex-wrap:wrap"' + edoT('Why this matters', 'Dual-lens posture / Other vendors offer bias detection OR fraud detection. This deployment ties both to shared audit infrastructure (Echo Core), so cross-lens cases surface together.') + '>' +
     '<div style="flex:1;min-width:240px"><div style="font-size:11px;font-weight:800;margin-bottom:6px;color:var(--chrome2)">Why this matters</div><div style="font-size:10px;color:var(--muted);line-height:1.55">Bias detection tools see Step 1. Fraud detection tools see Step 3. Cardinal is the only platform that connects them. Every overlap case here was caught because Eden and Obsidian share the same audit core.</div></div>' +
     '<div style="font-size:12px;font-weight:900;letter-spacing:.12em;color:var(--accent);opacity:.9"' + edoT('Cardinal', 'Unified Eden + Obsidian core.') + '>CARDINAL</div></div>';
   return '<section id="' + (screenIsObsidian ? 'obs-sec-bf' : 'eden-sec-bf') + '" style="margin-bottom:24px">' +
-    '<h2 style="font-size:15px;margin:0 0 6px"' + edoT('Bias-Fraud Venn', 'Cardinal moat visualization.') + '>Where Bias Creates Fraud Exposure — The Cardinal Difference</h2>' +
+    '<h2 style="font-size:15px;margin:0 0 6px"' + edoT('Bias-Fraud Overlap', 'Visualization of cases where bias and fraud share the same root proxy variable. The only platform monitoring both lenses on the same model decisions.') + '>Where Bias Creates Fraud Exposure</h2>' +
     '<p style="font-size:11px;color:var(--muted);margin:0 0 10px;max-width:760px">The only dual-lens view where bias signals and fraud telemetry converge on the same model decisions. ' + subMirror + '</p>' +
     heroBand + stepGrid +
     '<div style="display:flex;justify-content:center;margin:8px 0 20px;overflow-x:auto"' + edoT('Venn Diagram', 'Click a region to filter the case list: bias-only left lobe, fraud-only right lobe, or overlap (Bias-Fraud Connection).') + '>' +
@@ -11614,7 +11630,7 @@ function edoBuildBfVennHtml(d, org, screenIsObsidian) {
     '<text x="400" y="222" text-anchor="middle" font-size="24" font-weight="900" fill="#fef3c7"><tspan>' + oCount + '</tspan><tspan font-size="14" font-weight="700"> cases</tspan></text>' +
     '<path d="' + pathL + '" fill="rgba(239,68,68,0.01)" stroke="none" style="cursor:pointer"' + edoOn('edoVennSetFilter', ['bias']) + edoT('Bias-Only Cases', 'Bias-Only Cases / Cases where bias is detected but no fraud connection.') + '/>' +
     '<path d="' + pathR + '" fill="rgba(251,146,60,0.01)" stroke="none" style="cursor:pointer"' + edoOn('edoVennSetFilter', ['fraud']) + edoT('Fraud-Only Cases', 'Fraud-Only Cases / Cases where fraud is detected but no bias connection.') + '/>' +
-    '<ellipse cx="400" cy="200" rx="95" ry="115" fill="rgba(127,29,29,0.01)" style="cursor:pointer"' + edoOn('edoVennSetFilter', ['overlap']) + edoT('Bias-Fraud Connection', 'Bias-Fraud Connection / Cardinal\'s unique value. Cases where bias blind spots created fraud exposure. No other platform connects these.') + '/>' +
+    '<ellipse cx="400" cy="200" rx="95" ry="115" fill="rgba(127,29,29,0.01)" style="cursor:pointer"' + edoOn('edoVennSetFilter', ['overlap']) + edoT('Bias-Fraud Connection', 'Cases where bias blind spots created fraud exposure. The only platform monitoring both lenses simultaneously.') + '/>' +
     '</svg></div>' +
     '<h3 style="font-size:13px;margin:0 0 10px">Filtered list: ' + list.length + ' ' + (vf === 'overlap' ? '(overlap cases)' : vf === 'bias' ? '(bias-only)' : '(fraud-only)') + '</h3>' + cards + moat + '</section>';
 }
@@ -11822,13 +11838,11 @@ window.renderEden = function (org) {
     edoWireHeroGauge('edenhts', bias, edoGaugeColor(bias, false));
     edoRenderEveBodyCore('eden', d);
     edoBuildHistoryCaptionCore('eden', org);
-    edoUpdateHistSidePanels('eden', org);
     edoWireLensChartTooltips('eden');
   }, 40);
   setTimeout(function () {
     edoBuildHistoryChartCore('eden', org);
     edoBuildHistoryCaptionCore('eden', org);
-    edoUpdateHistSidePanels('eden', org);
   }, 180);
 };
 
@@ -11956,13 +11970,11 @@ window.renderObsidian = function (org) {
     edoWireHeroGauge('obshts', fraud, edoGaugeColor(fraud, true));
     edoRenderEveBodyCore('obsidian', d);
     edoBuildHistoryCaptionCore('obsidian', org);
-    edoUpdateHistSidePanels('obsidian', org);
     edoWireLensChartTooltips('obsidian');
   }, 40);
   setTimeout(function () {
     edoBuildHistoryChartCore('obsidian', org);
     edoBuildHistoryCaptionCore('obsidian', org);
-    edoUpdateHistSidePanels('obsidian', org);
   }, 180);
 };
 
@@ -12711,13 +12723,6 @@ function applyCardinalData(org) {
   setT('sidebar-score-badge', d.trustScoreDisplay);
   var sbadgeEl = document.getElementById('sidebar-trust-badge-collapsed');
   if (sbadgeEl) sbadgeEl.style.background = d.trustColor;
-
-  // Sidebar status — single row with icon (matches Global Trust Score panel; no separate cert subtext)
-  var sst = document.getElementById('sidebar-status');
-  if (sst) {
-    sst.innerHTML = formatDashTrustStatusHtml(d);
-    sst.style.color = d.trustScore >= 0.80 ? '#22c55e' : d.trustColor;
-  }
 
   var certed = d.trustScore >= 0.80;
   var dotEl = document.querySelector('#sidebar-trust-badge-collapsed .trust-score-chip-badge-dot');
@@ -16742,15 +16747,6 @@ function updateDim(id, val) {
  });
 
  document.getElementById('dash-trust-sub').textContent = score>=80?'✓ Certified':'⚠ Below 80 — Not Certified';
- var sstDim = document.getElementById('sidebar-status');
- if (sstDim) {
-   sstDim.innerHTML = formatDashTrustStatusHtml({
-     trustScore: score / 100,
-     trustStatus: score >= 80 ? 'Within Compliance' : 'Below Threshold — Not Certified',
-     certStatus: score >= 80 ? 'Certified' : 'Not Certified'
-   });
-   sstDim.style.color = score >= 80 ? '#22c55e' : sc;
- }
 
  const cb = document.getElementById('cert-badge');
  if(cb) {
@@ -20028,7 +20024,7 @@ function renderDashboardActiveChannels(org) {
   if (mockZero || !rows.length) {
     centerHtml = '<div class="dash-ac-empty">No unread messages</div>';
   } else {
-    var scrTip = ' onmouseenter="showTooltip(\'Scroll Channels\',\'Scroll Channels / Click to scroll left or right through all active channels.\',event)"';
+    var scrTip = ' onmouseenter="showTooltip(\'Scroll Channels\',\'Scroll Channels / Click to scroll left or right through all active conversations.\',event)"';
     centerHtml =
       '<button type="button" class="dash-ac-scroll-btn dash-ac-scroll-btn--prev" aria-label="Scroll channels left"' +
       ' onclick=' +
@@ -20047,9 +20043,9 @@ function renderDashboardActiveChannels(org) {
   }
 
   host.innerHTML =
-    '<section class="dash-ac-strip" aria-label="Active channels summary">' +
+    '<section class="dash-ac-strip" aria-label="Active conversations summary">' +
     '<div class="dash-ac-strip-left">' +
-    '<h2 class="dash-ac-strip-title" onmouseenter="showTooltip(\'Active Channels\',\'Where governance team conversations happen. Case channels (red) for active incidents; standing channels (blue) for ongoing discussion. Click any channel to jump in.\',event)">Active Channels</h2>' +
+    '<h2 class="dash-ac-strip-title" onmouseenter="showTooltip(\'Active Conversations\',\'Where governance team conversations happen. Case channels (red) for active incidents; standing channels (blue) for ongoing discussion. Click any channel to jump in.\',event)">Active Conversations</h2>' +
     subLine +
     '</div>' +
     '<div class="dash-ac-strip-center">' +
@@ -26537,15 +26533,6 @@ function showDeploySuccess() {
   var scoreEl = document.getElementById('sidebar-score');
   var newScore = newScores[org]||82;
   if(scoreEl) { scoreEl.textContent = newScore; scoreEl.style.color = 'var(--green)'; }
-  var statusEl = document.getElementById('sidebar-status');
-  if (statusEl) {
-    statusEl.innerHTML = formatDashTrustStatusHtml({
-      trustScore: newScore / 100,
-      trustStatus: 'Within Compliance',
-      certStatus: 'Certified'
-    });
-    statusEl.style.color = 'var(--green)';
-  }
   var dashEl = document.getElementById('dash-trust');
   if(dashEl) { dashEl.textContent = newScore; dashEl.style.color = 'var(--green)'; }
   // Update shadow badge
