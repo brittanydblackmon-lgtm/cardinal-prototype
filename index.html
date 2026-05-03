@@ -5497,6 +5497,7 @@ Halo Core
       <div style="position:absolute;top:12px;right:12px;background:rgba(239,68,68,0.2);border:1px solid rgba(239,68,68,0.4);border-radius:6px;padding:2px 8px;font-size:10px;font-weight:700;color:#ef4444;">2 WEEKS</div>
       <div id="halo-inaction-2wk-amount" style="font-size:28px;font-weight:800;color:#ef4444;margin-bottom:8px;">$2.8M</div>
       <div id="halo-inaction-2wk-text" style="font-size:11px;color:#94a3b8;line-height:1.6;margin-bottom:12px;">DoD audit deadline passes. Certification suspended. Personnel Assignment v2.4 flagged in federal contractor registry.</div>
+      <!-- // TODO Prompt 2C: Audit Fix Now buttons against caseType to route incidents to War Room instead of Atonement -->
       <button type="button" onclick="showScreen('atonement',null)" style="width:100%;background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.3);color:#ef4444;border-radius:6px;padding:7px;font-size:11px;cursor:pointer;font-weight:600;">Fix Now — Avoid This →</button>
     </div>
 
@@ -11627,9 +11628,14 @@ function edoBuildBfVennHtml(d, org, screenIsObsidian) {
   else list = bfd.overlapCases || [];
   var cards = list.map(function (c) {
     var warId = edoCaseId(c.caseId);
+    var allActive = (d.biasIncidentsActive || []).concat(d.fraudIncidentsActive || []);
+    var matched = allActive.filter(function (x) { return x.caseId === '#' + warId || x.caseId === warId || x.caseId === '#' + (c.caseId||'') || x.caseId === (c.caseId||''); })[0];
+    var routeType = matched ? (matched.caseType || 'lifecycle') : 'incident';
+    var routeStatus = matched ? (matched.status || 'open') : 'open';
+    var indicatorText = routeType === 'incident' ? 'Open in War Room \u2192' : (['remediation-in-progress','shadow-deploy','awaiting-approval','escalated'].indexOf(routeStatus.toLowerCase())>=0 ? 'View in Atonement \u2192' : 'View in Genesis \u2192');
     var dollarsLabel = typeof c.dollarsAtRisk === 'number' ? ('$' + (c.dollarsAtRisk >= 1000000 ? (c.dollarsAtRisk / 1000000).toFixed(1) + 'M' : c.dollarsAtRisk.toLocaleString())) : String(c.dollarsAtRisk || '');
-    return '<div style="padding:14px;border-radius:12px;border:1px solid var(--border2);background:var(--bg3);margin-bottom:12px;cursor:pointer"' + edoOn('openWarRoomCase', [warId]) + edoT(c.caseId, (c.summary || '') + ' Open in War Room.') + '>' +
-      '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px"><strong style="font-size:12px"' + edoT('Case', c.caseId) + '>' + c.caseId + '</strong><span style="font-size:10px;color:var(--accent)">Open in War Room \u2192</span></div>' +
+    return '<div style="padding:14px;border-radius:12px;border:1px solid var(--border2);background:var(--bg3);margin-bottom:12px;cursor:pointer"' + edoOn('cardinalRouteCase', [warId, routeType, routeStatus]) + edoT(c.caseId, (c.summary || '') + ' ' + indicatorText) + '>' +
+      '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px"><strong style="font-size:12px"' + edoT('Case', c.caseId) + '>' + c.caseId + '</strong><span style="font-size:10px;color:var(--accent)">' + indicatorText + '</span></div>' +
       '<p style="font-size:11px;color:var(--muted);margin:8px 0">' + (c.summary || '') + '</p>' +
       '<div style="display:flex;flex-wrap:wrap;gap:8px;font-size:9px"><span class="badge badge-red"' + edoT('Bias Aspect', 'Bias Aspect / Disparate impact metric on this case (DI, EOdds, etc).') + '>' + (c.biasAspect || 'Bias') + '</span>' +
       '<span class="badge badge-amber"' + edoT('Fraud Aspect', 'Fraud Aspect / Fraud detection metric on this case (synthetic identity, velocity, cluster).') + '>' + (c.fraudAspect || 'Fraud') + '</span>' +
@@ -11789,7 +11795,6 @@ window.renderEden = function (org) {
   var sortK = window.__edo.mdlSort;
   if (sortK === 'di') biasModels.sort(function (a, b) { return a.di - b.di; });
   var cards = cases.map(function (c) {
-    // TODO Prompt 2B: Use c.caseType to route: if lifecycle, go to Genesis/Atonement; if incident, go to War Room
     var se = c.severity === 'Critical' ? 'badge-red' : c.severity === 'High' ? 'badge-amber' : 'badge-yellow';
     var sla = edoSlaDays(c.slaDeadline);
     return '<div class="edo-case-card" style="min-width:320px;height:140px;background:var(--bg3);border-radius:12px;padding:12px;border:1px solid var(--border2);flex-shrink:0;transition:transform .15s;cursor:default" onmouseenter="this.style.transform=\'translateY(-3px)\'" onmouseleave="this.style.transform=\'none\'"' + edoT('Active Bias Case', 'Open remediation case tracked in War Room.') + '>' +
@@ -11798,7 +11803,7 @@ window.renderEden = function (org) {
       '<div style="font-size:10px;color:var(--muted);margin-top:4px">' + c.affectedCount + ' affected · ' + c.metricViolation + '</div>' +
       '<div style="font-size:10px;color:var(--amber);margin-top:4px"' + edoT('SLA Countdown', 'Cardinal enforces Critical 14d / High 30d / Medium 60d fix deadlines. Echo Core logs SLA events.') + '>' + sla + ' days remaining</div>' +
       '<div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px"><span style="font-size:10px"' + edoT('Lead Assignee', 'Case owner — ' + c.leadAssignee) + '>' + c.leadAssignee + '</span>' +
-      '<button type="button" class="btn-primary" style="font-size:10px;padding:4px 10px"' + edoOn('openWarRoomCase', [edoCaseId(c.caseId)]) + '>Open Case</button></div></div>';
+      '<button type="button" class="btn-primary" style="font-size:10px;padding:4px 10px"' + edoOn('cardinalRouteCase', [edoCaseId(c.caseId), c.caseType || 'lifecycle', c.status || 'open']) + edoT(c.caseType === 'incident' ? 'Open Incident' : 'View Case', c.caseType === 'incident' ? 'Incident — opens War Room with this case focused.' : 'Lifecycle case — opens ' + (['remediation-in-progress','shadow-deploy','awaiting-approval','escalated'].indexOf(String(c.status||'').toLowerCase())>=0 ? 'Atonement Core' : 'Genesis Core') + ' filtered to this case.') + '>' + (c.caseType === 'incident' ? 'Open Incident' : 'View Case') + '</button></div></div>';
   }).join('');
   var cardsRow = cases.length
     ? '<div style="display:flex;gap:12px;overflow-x:auto;padding-bottom:8px">' + cards + '</div>'
@@ -11936,7 +11941,6 @@ window.renderObsidian = function (org) {
   else if (mf === 'Passing') fmodels = fmodels.filter(function (m) { return m.status === 'Passing'; });
   else if (mf === 'Highest Affected') fmodels.sort(function (a, b) { return (b.topFraudPattern.casesDetected || 0) - (a.topFraudPattern.casesDetected || 0); });
   var cards = cases.map(function (c) {
-    // TODO Prompt 2B: Use c.caseType to route: if lifecycle, go to Genesis/Atonement; if incident, go to War Room
     var se = c.severity === 'Critical' ? 'badge-red' : c.severity === 'High' ? 'badge-amber' : 'badge-yellow';
     var sla = edoSlaDays(c.slaDeadline);
     return '<div class="edo-case-card" style="min-width:320px;height:140px;background:var(--bg3);border-radius:12px;padding:12px;border:1px solid var(--border2);flex-shrink:0" onmouseenter="this.style.transform=\'translateY(-3px)\'" onmouseleave="this.style.transform=\'none\'">' +
@@ -11944,7 +11948,7 @@ window.renderObsidian = function (org) {
       '<div style="font-size:12px;font-weight:700;margin-top:6px"' + edoT(c.caseId, 'War Room case.') + '>' + c.caseId + ' · ' + c.modelId + '</div>' +
       '<div style="font-size:10px;color:var(--muted)">' + c.metricViolation + '</div>' +
       '<div style="font-size:10px;color:var(--amber);margin-top:4px"' + edoT('SLA Countdown', 'Cardinal enforces SLA deadlines on fraud remediation.') + '>' + sla + ' days remaining</div>' +
-      '<div style="margin-top:8px"><button type="button" class="btn-primary" style="font-size:10px;padding:4px 10px"' + edoOn('openWarRoomCase', [edoCaseId(c.caseId)]) + '>Open Case</button></div></div>';
+      '<div style="margin-top:8px"><button type="button" class="btn-primary" style="font-size:10px;padding:4px 10px"' + edoOn('cardinalRouteCase', [edoCaseId(c.caseId), c.caseType || 'lifecycle', c.status || 'open']) + edoT(c.caseType === 'incident' ? 'Open Incident' : 'View Case', c.caseType === 'incident' ? 'Incident — opens War Room with this case focused.' : 'Lifecycle case — opens ' + (['remediation-in-progress','shadow-deploy','awaiting-approval','escalated'].indexOf(String(c.status||'').toLowerCase())>=0 ? 'Atonement Core' : 'Genesis Core') + ' filtered to this case.') + '>' + (c.caseType === 'incident' ? 'Open Incident' : 'View Case') + '</button></div></div>';
   }).join('');
   var cardsRowObs = cases.length
     ? '<div style="display:flex;gap:12px;overflow-x:auto;margin-top:10px;padding-bottom:8px">' + cards + '</div>'
@@ -19584,8 +19588,36 @@ window.edoEnsureWarRoomCaseChannel = function (org, caseId) {
     ]
   });
 };
+// Two-Flow Router — routes case clicks based on caseType (lifecycle→Genesis/Atonement, incident→War Room) and current lifecycle status. Default lifecycle if caseType missing.
+// Dispatch: Eden bias case cards call cardinalRouteCase via edoOn.
+// Dispatch: Obsidian fraud cards and Section 7 overlap cards call cardinalRouteCase via edoOn.
+window.cardinalRouteCase = function (caseId, caseType, status) {
+  var ct = String(caseType || 'lifecycle').toLowerCase();
+  var st = String(status || '').toLowerCase();
+  if (ct === 'incident') {
+    try { window.openWarRoomCase(caseId); } catch (_e) {}
+    return;
+  }
+  var genesisStates = ['open', 'under-review', 'under-investigation', 'monitoring', 'shadow-test', 'escalated-review'];
+  var atonementStates = ['remediation-in-progress', 'shadow-deploy', 'awaiting-approval', 'escalated'];
+  var dest;
+  if (genesisStates.indexOf(st) >= 0) dest = 'genesis';
+  else if (atonementStates.indexOf(st) >= 0) dest = 'atonement';
+  else dest = 'genesis';
+  window.__caseFocus = { caseId: caseId, caseType: ct, status: st, destination: dest, timestamp: new Date().toISOString() };
+  try {
+    if (typeof showToast === 'function') {
+      if (dest === 'atonement') showToast('Opening Atonement — remediation in progress');
+      else showToast('Opening Genesis — lifecycle review');
+    }
+  } catch (_e3) {}
+  try {
+    if (typeof showScreen === 'function') showScreen(dest, null);
+  } catch (_e2) {}
+};
 window.openWarRoomCase = function (caseId) {
   var id = caseId == null ? '' : String(caseId).replace(/^#/, '').trim();
+  try { if (typeof showToast === 'function') showToast('Opening War Room — incident response flow'); } catch (_eTI) {}
   var org = (typeof currentOrg !== 'undefined' && currentOrg) || window.currentOrg || 'ad';
   try { window.edoEnsureWarRoomCaseChannel(org, id); } catch (_e0) {}
   window.__wrFocusCaseId = id || null;
