@@ -10,6 +10,11 @@
     - History chart: model search + clear, sticky context panel, Eve callout under chart, richer point tooltips, stronger grid + fill; Trust Score / ML grid / legacy Eden table resolve slugs via registry keys.
     - `<a href="#">` dashboard fix links converted to `<button type="button">`.
 
+  May 2, 2026 — Prompt 2A: case seeding + error log + model filter pills.
+    - CARDINAL_DATA: additional bias/fraud incidents per industry (mixed severities); `caseType` lifecycle (#AD-2847 / #FIN-1203 / #HS-2847 thread) vs incident; `biasFraudStats` counts aligned.
+    - `window.__errorLog` ring buffer + upgraded `onerror` / `error` listener (click bar → console).
+    - `edoModelFilterPillsHtml()` — Eden + Obsidian model grid filters match case-pill pattern; TODO comments for Prompt 2B routing on case cards.
+
   May 2, 2026 (evening) — Eden + Obsidian refinements (V7).
     - Issue 8: History chart on Eden and Obsidian uses shared `cardinalHistoryChartRender` with Trust Score — matching Y-axis ticks (50–100), grid, line weight, dots, pins, threshold styling, and animations.
     - Issue 9: Eve Executive Summaries scoped — Eden paragraphs are bias-only; Obsidian are fraud-only; Bias–Fraud Connection appears only as a one-line para 3 pointer to Section 7.
@@ -8246,14 +8251,49 @@ Access Control
 </div><!-- /app -->
 
 <script>
-// Global error handler - shows errors visibly
-window.onerror = function(msg, src, line, col, err) {
+// Global error handler — visible bar + ring buffer for console diagnostics (Prompt 2A)
+window.__errorLog = [];
+window.__errorLogMax = 50;
+
+window.onerror = function (msg, src, line, col, err) {
+  var stack = (err && err.stack) ? err.stack : '(no stack)';
+  var entry = {
+    timestamp: new Date().toISOString(),
+    message: msg,
+    source: src,
+    line: line,
+    col: col,
+    stack: stack
+  };
+  window.__errorLog.push(entry);
+  if (window.__errorLog.length > window.__errorLogMax) {
+    window.__errorLog.shift();
+  }
   var div = document.createElement('div');
-  div.style.cssText = 'position:fixed;top:0;left:0;right:0;background:#ef4444;color:#fff;padding:12px;font-size:12px;z-index:99999;font-family:monospace;word-break:break-all';
-  div.textContent = 'JS ERROR: ' + msg + ' (line ' + line + ')';
+  div.style.cssText = 'position:fixed;top:0;left:0;right:0;background:#ef4444;color:#fff;padding:12px;font-size:12px;z-index:99999;font-family:monospace;word-break:break-all;cursor:pointer';
+  div.textContent = 'JS ERROR: ' + msg + ' (line ' + line + ') — console.log(window.__errorLog) to see full stack';
+  div.onclick = function () {
+    console.log('Cardinal Error Log:', window.__errorLog);
+    if (this.parentNode) this.parentNode.removeChild(this);
+  };
   document.body.appendChild(div);
   return false;
 };
+
+window.addEventListener('error', function (ev) {
+  if (ev.error && ev.error.stack) {
+    var entry = {
+      timestamp: new Date().toISOString(),
+      message: ev.message || 'Uncaught Error',
+      stack: ev.error.stack,
+      type: 'uncaught'
+    };
+    window.__errorLog.push(entry);
+    if (window.__errorLog.length > window.__errorLogMax) {
+      window.__errorLog.shift();
+    }
+  }
+});
 
 
 
@@ -10015,11 +10055,14 @@ var EXT = {
     biasMetricsByModel: BIAS_AD,
     fraudMetricsByModel: FRAUD_AD,
     biasIncidentsActive: [
-      { caseId: '#AD-2847', modelId: 'Personnel Assignment v2.4', severity: 'Critical', affectedCount: 847, cohortDescription: 'Hispanic technicians at Camp Pendleton — premium-base placement denials', metricViolation: 'DI 0.67 — below 0.80 EEOC floor', detectedDate: '2026-04-14T09:00:00Z', slaDeadline: _iso(9, 17), status: 'remediation-in-progress', leadAssignee: 'Sarah Chen', echoMemoryId: 'echo-AD-2026-04-14-0900-eden01' }
+      { caseId: '#AD-2847', caseType: 'lifecycle', modelId: 'Personnel Assignment v2.4', severity: 'Critical', affectedCount: 847, cohortDescription: 'Hispanic technicians at Camp Pendleton — premium-base placement denials', metricViolation: 'DI 0.67 — below 0.80 EEOC floor', detectedDate: '2026-04-14T09:00:00Z', slaDeadline: _iso(9, 17), status: 'remediation-in-progress', leadAssignee: 'Sarah Chen', echoMemoryId: 'echo-AD-2026-04-14-0900-eden01' },
+      { caseId: '#AD-2889', caseType: 'incident', modelId: 'Mission Readiness v1.1', severity: 'High', affectedCount: 203, cohortDescription: 'Female officers age 40+ assignment delays', metricViolation: 'DI 0.74 — age + gender proxy', detectedDate: '2026-03-15T14:30:00Z', slaDeadline: _iso(29, 17), status: 'under-review', leadAssignee: 'Marcus Williams', echoMemoryId: 'echo-AD-2026-03-15-1430-eden02' },
+      { caseId: '#AD-2751', caseType: 'incident', modelId: 'Maintenance Routing v1.2', severity: 'Medium', affectedCount: 89, cohortDescription: 'Hispanic base maintenance staff scheduling variance', metricViolation: 'Proxy 0.51 — shift allocation bias', detectedDate: '2026-02-28T09:00:00Z', slaDeadline: _iso(58, 17), status: 'monitoring', leadAssignee: 'Eve', echoMemoryId: 'echo-AD-2026-02-28-0900-eden03' }
     ],
     fraudIncidentsActive: [
-      { caseId: '#AD-2847', modelId: 'Personnel Assignment v2.4', severity: 'High', affectedCount: 12, cohortDescription: 'Synthetic credential ring exploiting bias-blind verification gap', metricViolation: 'Credential synthesis — 7 linked bias-fraud cases', detectedDate: '2026-04-01T14:00:00Z', slaDeadline: _iso(5, 17), status: 'open', leadAssignee: 'James Martinez', echoMemoryId: 'echo-AD-2026-04-22-0900-wr01' },
-      { caseId: '#AD-2902', modelId: 'Maintenance Routing v1.2', severity: 'Medium', affectedCount: 2, cohortDescription: 'Fraud missed in under-flagged cohort while Bragg crews over-flagged', metricViolation: 'Identity recycling + disparity overlap', detectedDate: '2026-03-22T11:00:00Z', slaDeadline: _iso(40, 17), status: 'awaiting-approval', leadAssignee: 'Sarah Chen', echoMemoryId: 'echo-AD-2026-04-25-1400-gn01' }
+      { caseId: '#AD-2847', caseType: 'lifecycle', modelId: 'Personnel Assignment v2.4', severity: 'High', affectedCount: 12, cohortDescription: 'Synthetic credential ring exploiting bias-blind verification gap', metricViolation: 'Credential synthesis — 7 linked bias-fraud cases', detectedDate: '2026-04-01T14:00:00Z', slaDeadline: _iso(5, 17), status: 'open', leadAssignee: 'James Martinez', echoMemoryId: 'echo-AD-2026-04-22-0900-wr01' },
+      { caseId: '#AD-2902', caseType: 'incident', modelId: 'Maintenance Routing v1.2', severity: 'Medium', affectedCount: 2, cohortDescription: 'Fraud missed in under-flagged cohort while Bragg crews over-flagged', metricViolation: 'Identity recycling + disparity overlap', detectedDate: '2026-03-22T11:00:00Z', slaDeadline: _iso(40, 17), status: 'awaiting-approval', leadAssignee: 'Sarah Chen', echoMemoryId: 'echo-AD-2026-04-25-1400-gn01' },
+      { caseId: '#AD-2918', caseType: 'incident', modelId: 'Fraud Detection v3.2', severity: 'Medium', affectedCount: 8, cohortDescription: 'Device-fingerprint spoofing cluster at Pendleton', metricViolation: 'Behavioral anomaly 72', detectedDate: '2026-04-05T16:45:00Z', slaDeadline: _iso(55, 17), status: 'escalated', leadAssignee: 'James Martinez', echoMemoryId: 'echo-AD-2026-04-05-1645-obsidian02' }
     ],
     cohortIndividuals: { 'Personnel Assignment v2.4': _genAdIndividuals() },
     cohortGroupSummaries: {
@@ -10044,7 +10087,7 @@ var EXT = {
         { groupId: 'g-bragg-maint', groupLabel: 'Hispanic maintenance crew at Fort Bragg', affectedCount: 41, biasMetric: 0.78, fraudMetric: 85, representativeCases: [] }
       ]
     },
-    biasFraudStats: { biasActiveCount: 1, fraudActiveCount: 2, overlapCount: 7 },
+    biasFraudStats: { biasActiveCount: 3, fraudActiveCount: 3, overlapCount: 7 },
     edenHeroSub: 'Below Threshold',
     obsidianHeroSub: 'Above Threshold',
     peerPercentileLabel: '38th percentile in A&D',
@@ -10057,12 +10100,15 @@ var EXT = {
     biasMetricsByModel: BIAS_FIN,
     fraudMetricsByModel: FRAUD_FIN,
     biasIncidentsActive: [
-      { caseId: '#FIN-1203', modelId: 'Credit Scoring v3.4', severity: 'Critical', affectedCount: 1203, cohortDescription: 'Black and Hispanic applicants in NYC ZIP clusters 10453 / 11212', metricViolation: 'DI 0.74 — ZIP proxy 0.82 race correlation', detectedDate: '2026-02-14T08:15:00Z', slaDeadline: _iso(8, 17), status: 'remediation-in-progress', leadAssignee: 'Priya Sharma', echoMemoryId: 'echo-FIN-2026-02-14-0815-ed02' },
-      { caseId: '#FIN-0842', modelId: 'Collections AI v1.3', severity: 'Medium', affectedCount: 56, cohortDescription: 'Neighborhood risk index drift — smaller secondary cohort', metricViolation: 'Proxy 0.48 — watch band', detectedDate: '2026-03-28T10:00:00Z', slaDeadline: _iso(45, 17), status: 'open', leadAssignee: 'Marcus Chen', echoMemoryId: 'echo-FIN-2026-04-02-1300-cx01' }
+      { caseId: '#FIN-1203', caseType: 'lifecycle', modelId: 'Credit Scoring v3.4', severity: 'Critical', affectedCount: 1203, cohortDescription: 'Black and Hispanic applicants in NYC ZIP clusters 10453 / 11212', metricViolation: 'DI 0.74 — ZIP proxy 0.82 race correlation', detectedDate: '2026-02-14T08:15:00Z', slaDeadline: _iso(8, 17), status: 'remediation-in-progress', leadAssignee: 'Priya Sharma', echoMemoryId: 'echo-FIN-2026-02-14-0815-ed02' },
+      { caseId: '#FIN-0842', caseType: 'incident', modelId: 'Collections AI v1.3', severity: 'Medium', affectedCount: 56, cohortDescription: 'Neighborhood risk index drift — smaller secondary cohort', metricViolation: 'Proxy 0.48 — watch band', detectedDate: '2026-03-28T10:00:00Z', slaDeadline: _iso(45, 17), status: 'open', leadAssignee: 'Marcus Chen', echoMemoryId: 'echo-FIN-2026-04-02-1300-cx01' },
+      { caseId: '#FIN-0891', caseType: 'incident', modelId: 'Auto Loan v2.1', severity: 'High', affectedCount: 456, cohortDescription: 'Rural applicants in Midwest belt', metricViolation: 'DI 0.76 — geography employment proxy', detectedDate: '2026-03-22T11:20:00Z', slaDeadline: _iso(38, 17), status: 'shadow-deploy', leadAssignee: 'Priya Sharma', echoMemoryId: 'echo-FIN-2026-03-22-1120-eden03' },
+      { caseId: '#FIN-2340', caseType: 'incident', modelId: 'Underwriting v4.1', severity: 'Medium', affectedCount: 134, cohortDescription: 'Self-employed applicants from minority-owned businesses', metricViolation: 'Income volatility proxy 0.62', detectedDate: '2026-04-10T13:00:00Z', slaDeadline: _iso(50, 17), status: 'monitoring', leadAssignee: 'Marcus Chen', echoMemoryId: 'echo-FIN-2026-04-10-1300-eden04' }
     ],
     fraudIncidentsActive: [
-      { caseId: '#FIN-1203', modelId: 'Credit Scoring v3.4', severity: 'High', affectedCount: 47, cohortDescription: 'Synthetic identity ring at NYC ZIPs 10453, 11212', metricViolation: 'Cluster fraud + velocity anomaly', detectedDate: '2026-02-18T09:30:00Z', slaDeadline: _iso(12, 17), status: 'open', leadAssignee: 'Lisa Torres', echoMemoryId: 'echo-FIN-2026-02-15-1015-wr01' },
-      { caseId: '#FIN-2207', modelId: 'Fraud Screening v2.7', severity: 'Medium', affectedCount: 31, cohortDescription: 'Device farm velocity cluster (Chicago)', metricViolation: 'Velocity fraud pattern', detectedDate: '2026-04-03T08:00:00Z', slaDeadline: _iso(25, 17), status: 'remediation-in-progress', leadAssignee: 'Adam — Cardinal', echoMemoryId: 'echo-FIN-2026-04-25-1500-sn01' }
+      { caseId: '#FIN-1203', caseType: 'lifecycle', modelId: 'Credit Scoring v3.4', severity: 'High', affectedCount: 47, cohortDescription: 'Synthetic identity ring at NYC ZIPs 10453, 11212', metricViolation: 'Cluster fraud + velocity anomaly', detectedDate: '2026-02-18T09:30:00Z', slaDeadline: _iso(12, 17), status: 'open', leadAssignee: 'Lisa Torres', echoMemoryId: 'echo-FIN-2026-02-15-1015-wr01' },
+      { caseId: '#FIN-2207', caseType: 'incident', modelId: 'Fraud Screening v2.7', severity: 'Medium', affectedCount: 31, cohortDescription: 'Device farm velocity cluster (Chicago)', metricViolation: 'Velocity fraud pattern', detectedDate: '2026-04-03T08:00:00Z', slaDeadline: _iso(25, 17), status: 'remediation-in-progress', leadAssignee: 'Adam — Cardinal', echoMemoryId: 'echo-FIN-2026-04-25-1500-sn01' },
+      { caseId: '#FIN-3045', caseType: 'incident', modelId: 'Underwriting v4.1', severity: 'Medium', affectedCount: 19, cohortDescription: 'Shell company applications clustered in NYC', metricViolation: 'Velocity 73 — overnight submissions', detectedDate: '2026-04-12T07:30:00Z', slaDeadline: _iso(48, 17), status: 'under-investigation', leadAssignee: 'Lisa Torres', echoMemoryId: 'echo-FIN-2026-04-12-0730-obsidian03' }
     ],
     cohortIndividuals: { 'Credit Scoring v3.4': _genFinIndividuals() },
     cohortGroupSummaries: {
@@ -10083,7 +10129,7 @@ var EXT = {
         { groupId: 'g-inc-250p', groupLabel: '$250K+ household income applicants', affectedCount: 112, biasMetric: 0.84, fraudMetric: 66, representativeCases: [] }
       ]
     },
-    biasFraudStats: { biasActiveCount: 2, fraudActiveCount: 2, overlapCount: 12 },
+    biasFraudStats: { biasActiveCount: 4, fraudActiveCount: 3, overlapCount: 12 },
     edenHeroSub: 'Approaching',
     obsidianHeroSub: 'Above Threshold',
     peerPercentileLabel: '64th percentile in Finance',
@@ -10096,13 +10142,16 @@ var EXT = {
     biasMetricsByModel: BIAS_HEALTH,
     fraudMetricsByModel: FRAUD_HEALTH,
     biasIncidentsActive: [
-      { caseId: '#HS-2847', modelId: 'Claims Adjudication v1.9', severity: 'Critical', affectedCount: 2847, cohortDescription: 'Patients 65+ in specialty care — age_cost_proxy pathway', metricViolation: 'DI 0.64 — ACA Section 1557 disparity', detectedDate: '2026-03-10T09:00:00Z', slaDeadline: _iso(4, 17), status: 'remediation-in-progress', leadAssignee: 'Dr. Aisha Patel', echoMemoryId: 'echo-HS-2026-03-10-0900-ed02' },
-      { caseId: '#HS-0912', modelId: 'Diagnosis Support v2.3', severity: 'High', affectedCount: 156, cohortDescription: 'Historical cost band proxy — secondary cohort', metricViolation: 'Proxy 0.41 — disability correlation', detectedDate: '2026-02-02T10:00:00Z', slaDeadline: _iso(18, 17), status: 'open', leadAssignee: 'Priya Sharma', echoMemoryId: 'echo-HS-2026-04-28-1400-mo02' },
-      { caseId: '#HS-0441', modelId: 'Claims Adjudication v1.9', severity: 'Medium', affectedCount: 212, cohortDescription: 'Outpatient pharmacy disputes — concentrated denials', metricViolation: 'Calibration gap on pharmacy line items', detectedDate: '2026-01-15T09:00:00Z', slaDeadline: _iso(55, 17), status: 'awaiting-approval', leadAssignee: 'Linda Park', echoMemoryId: 'echo-HS-2026-04-12-1300-cx01' }
+      { caseId: '#HS-2847', caseType: 'lifecycle', modelId: 'Claims Adjudication v1.9', severity: 'Critical', affectedCount: 2847, cohortDescription: 'Patients 65+ in specialty care — age_cost_proxy pathway', metricViolation: 'DI 0.64 — ACA Section 1557 disparity', detectedDate: '2026-03-10T09:00:00Z', slaDeadline: _iso(4, 17), status: 'remediation-in-progress', leadAssignee: 'Dr. Aisha Patel', echoMemoryId: 'echo-HS-2026-03-10-0900-ed02' },
+      { caseId: '#HS-0912', caseType: 'incident', modelId: 'Diagnosis Support v2.3', severity: 'High', affectedCount: 156, cohortDescription: 'Historical cost band proxy — secondary cohort', metricViolation: 'Proxy 0.41 — disability correlation', detectedDate: '2026-02-02T10:00:00Z', slaDeadline: _iso(18, 17), status: 'open', leadAssignee: 'Priya Sharma', echoMemoryId: 'echo-HS-2026-04-28-1400-mo02' },
+      { caseId: '#HS-0441', caseType: 'incident', modelId: 'Claims Adjudication v1.9', severity: 'Medium', affectedCount: 212, cohortDescription: 'Outpatient pharmacy disputes — concentrated denials', metricViolation: 'Calibration gap on pharmacy line items', detectedDate: '2026-01-15T09:00:00Z', slaDeadline: _iso(55, 17), status: 'awaiting-approval', leadAssignee: 'Linda Park', echoMemoryId: 'echo-HS-2026-04-12-1300-cx01' },
+      { caseId: '#HS-1204', caseType: 'incident', modelId: 'Triage Priority v2.0', severity: 'High', affectedCount: 598, cohortDescription: 'Rural patients distant from major medical centers', metricViolation: 'DI 0.64 — distance as implicit treatment-delay proxy', detectedDate: '2026-03-18T10:15:00Z', slaDeadline: _iso(42, 17), status: 'shadow-test', leadAssignee: 'Dr. Amelia Green', echoMemoryId: 'echo-HS-2026-03-18-1015-eden02' },
+      { caseId: '#HS-3127', caseType: 'incident', modelId: 'Prior Auth v1.5', severity: 'Medium', affectedCount: 211, cohortDescription: 'Non-English-speaking patients lower auth approval rates', metricViolation: 'Language documentation proxy 0.58', detectedDate: '2026-04-08T14:45:00Z', slaDeadline: _iso(52, 17), status: 'monitoring', leadAssignee: 'Dr. Rajesh Patel', echoMemoryId: 'echo-HS-2026-04-08-1445-eden03' }
     ],
     fraudIncidentsActive: [
-      { caseId: '#HS-2847', modelId: 'Claims Adjudication v1.9', severity: 'High', affectedCount: 31, cohortDescription: 'Specialty upcoding ring linked to bias-blind spots', metricViolation: 'Provider cluster fraud', detectedDate: '2026-03-15T08:00:00Z', slaDeadline: _iso(20, 17), status: 'open', leadAssignee: 'Dr. Maya Osei', echoMemoryId: 'echo-HS-2026-03-12-1000-wr01' },
-      { caseId: '#HS-2104', modelId: 'Diagnosis Support v2.3', severity: 'Medium', affectedCount: 12, cohortDescription: 'Coding constellation fraud — secondary', metricViolation: 'Cluster fraud', detectedDate: '2026-03-29T12:00:00Z', slaDeadline: _iso(35, 17), status: 'remediation-in-progress', leadAssignee: 'Adam — Cardinal', echoMemoryId: 'echo-HS-2026-04-18-1000-pa01' }
+      { caseId: '#HS-2847', caseType: 'lifecycle', modelId: 'Claims Adjudication v1.9', severity: 'High', affectedCount: 31, cohortDescription: 'Specialty upcoding ring linked to bias-blind spots', metricViolation: 'Provider cluster fraud', detectedDate: '2026-03-15T08:00:00Z', slaDeadline: _iso(20, 17), status: 'open', leadAssignee: 'Dr. Maya Osei', echoMemoryId: 'echo-HS-2026-03-12-1000-wr01' },
+      { caseId: '#HS-2104', caseType: 'incident', modelId: 'Diagnosis Support v2.3', severity: 'Medium', affectedCount: 12, cohortDescription: 'Coding constellation fraud — secondary', metricViolation: 'Cluster fraud', detectedDate: '2026-03-29T12:00:00Z', slaDeadline: _iso(35, 17), status: 'remediation-in-progress', leadAssignee: 'Adam — Cardinal', echoMemoryId: 'echo-HS-2026-04-18-1000-pa01' },
+      { caseId: '#HS-2901', caseType: 'incident', modelId: 'Prior Auth v1.5', severity: 'Medium', affectedCount: 12, cohortDescription: 'Duplicate billing patterns across provider network', metricViolation: 'Cluster fraud 81 — coding variance', detectedDate: '2026-04-06T09:20:00Z', slaDeadline: _iso(54, 17), status: 'escalated-review', leadAssignee: 'Dr. Sarah Chen', echoMemoryId: 'echo-HS-2026-04-06-0920-obsidian02' }
     ],
     cohortIndividuals: { 'Claims Adjudication v1.9': _genHealthIndividuals() },
     cohortGroupSummaries: {
@@ -10125,7 +10174,7 @@ var EXT = {
         { groupId: 'g-payer-unins', groupLabel: 'Self-pay and uninsured patient cohort', affectedCount: 612, biasMetric: 0.65, fraudMetric: 86, representativeCases: [] }
       ]
     },
-    biasFraudStats: { biasActiveCount: 3, fraudActiveCount: 2, overlapCount: 9 },
+    biasFraudStats: { biasActiveCount: 5, fraudActiveCount: 3, overlapCount: 9 },
     edenHeroSub: 'Below Threshold',
     obsidianHeroSub: 'Above Threshold',
     peerPercentileLabel: '71st percentile in Healthcare',
@@ -10639,6 +10688,20 @@ function edoActiveCasePillsHtml() {
     one('critical', 'Critical', 'Critical Severity', 'Critical Severity / Highest priority — federal violation, immediate action required.') +
     one('high', 'High', 'High Severity', 'High Severity / Significant violation — remediation required within 30 days.') +
     one('medium', 'Medium', 'Medium Severity', 'Medium Severity / Approaching threshold — monitoring active.') +
+    '</div>';
+}
+function edoModelFilterPillsHtml() {
+  var cur = String(window.__edo.mdlFilt || 'all');
+  function one(filt, label, tipT, tipB) {
+    var active = cur === filt ? ' edo-case-pill--active' : '';
+    return '<button type="button" class="edo-case-pill btn-ghost' + active + '" style="font-size:10px" data-filter="' + filt + '" onclick=' + JSON.stringify('edoFilterModels(' + JSON.stringify(filt) + ')') + edoT(tipT, tipB) + '>' + label + '</button>';
+  }
+  return '<div style="display:flex;gap:6px;flex-wrap:wrap;margin:8px 0">' +
+    one('all', 'All', 'All Models', 'All Models / Show every monitored model regardless of status.') +
+    one('Critical', 'Critical', 'Critical Status', 'Critical Status / Models with critical bias issues requiring immediate remediation.') +
+    one('Watch', 'Watch', 'Watch Status', 'Watch Status / Models showing bias trends requiring monitoring.') +
+    one('Passing', 'Passing', 'Passing Status', 'Passing Status / Models passing fairness tests this quarter.') +
+    one('Highest Affected', 'Highest Affected', 'Sort by Impact', 'Sort by Impact / Models affecting the most individuals, highest-count affected cohorts.') +
     '</div>';
 }
 window.edoFilterModels = function (f) {
@@ -11726,6 +11789,7 @@ window.renderEden = function (org) {
   var sortK = window.__edo.mdlSort;
   if (sortK === 'di') biasModels.sort(function (a, b) { return a.di - b.di; });
   var cards = cases.map(function (c) {
+    // TODO Prompt 2B: Use c.caseType to route: if lifecycle, go to Genesis/Atonement; if incident, go to War Room
     var se = c.severity === 'Critical' ? 'badge-red' : c.severity === 'High' ? 'badge-amber' : 'badge-yellow';
     var sla = edoSlaDays(c.slaDeadline);
     return '<div class="edo-case-card" style="min-width:320px;height:140px;background:var(--bg3);border-radius:12px;padding:12px;border:1px solid var(--border2);flex-shrink:0;transition:transform .15s;cursor:default" onmouseenter="this.style.transform=\'translateY(-3px)\'" onmouseleave="this.style.transform=\'none\'"' + edoT('Active Bias Case', 'Open remediation case tracked in War Room.') + '>' +
@@ -11819,7 +11883,7 @@ window.renderEden = function (org) {
     '<button type="button" class="btn-ghost" style="font-size:11px;margin-top:8px" onclick="showScreen(\'warroom\',null)"' + edoT('War Room', 'Open case command center.') + '>View All in War Room \u2192</button></section>' +
     sec3b +
     '<section style="margin-bottom:20px"><h2 style="font-size:14px"' + edoT('Models Monitored for Bias', 'Coverage grid from biasMetricsByModel.') + '>Models Monitored for Bias</h2>' +
-    '<div style="display:flex;gap:6px;flex-wrap:wrap;margin:8px 0"><button type="button" class="btn-ghost" style="font-size:10px" onclick="edoFilterModels(\'all\')">All</button><button type="button" class="btn-ghost" style="font-size:10px" onclick="edoFilterModels(\'Critical\')">Critical</button><button type="button" class="btn-ghost" style="font-size:10px" onclick="edoFilterModels(\'Watch\')">Watch</button><button type="button" class="btn-ghost" style="font-size:10px" onclick="edoFilterModels(\'Passing\')">Passing</button><button type="button" class="btn-ghost" style="font-size:10px" onclick="edoFilterModels(\'Highest Affected\')">Highest Affected</button></div>' +
+    edoModelFilterPillsHtml() +
     '<div style="overflow-x:auto"><table class="data-table"><thead><tr><th onclick="edoSortModels(\'model\')"' + edoT('Model', 'Monitored model name and version.') + '>Model</th><th onclick="edoSortModels(\'di\')"' + edoT('Disparate Impact (DI)', 'Ratio of favorable rates — EEOC 0.80 floor.') + '>DI</th><th ' + edoT('Equalized Odds', 'Should be <0.10.') + '>EO</th><th ' + edoT('Proxy Variable', 'Feature correlating with protected class.') + '>Top Proxy</th><th>Affected</th><th ' + edoT('Status', 'Critical / Watch / Passing.') + '>Status</th><th ' + edoT('Trend (30d)', 'Direction of bias metric over last 30 days.') + '>Trend</th></tr></thead><tbody>' + mrows + '</tbody></table></div></section>' +
     '<section id="edo-sec-cohort" style="margin-bottom:20px"><h2 style="font-size:14px"' + edoT('Cohort Explorer', 'Search affected groups and individuals.') + '>Cohort Explorer — Affected Individuals</h2><p style="font-size:11px;color:var(--muted)">Search and filter across ' + nAff + ' affected individuals (aggregated).</p>' +
     '<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:10px 0"><span class="badge badge-blue" style="font-size:10px"' + edoT('Cohort View', 'Aggregated group-level statistics. No PII.') + '>Cohort View</span>' + (edoCanPii() ? '<span class="badge badge-green" style="font-size:10px"' + edoT('Individual View', 'PII drill-in enabled for your role.') + '>Individual View</span>' : '<span class="badge badge-amber" style="font-size:10px"' + edoT('Restricted Access', 'This view shows individual PII and requires Admin or Legal Counsel role.') + '>\ud83d\udd12 Admin Access Required</span>') +
@@ -11872,6 +11936,7 @@ window.renderObsidian = function (org) {
   else if (mf === 'Passing') fmodels = fmodels.filter(function (m) { return m.status === 'Passing'; });
   else if (mf === 'Highest Affected') fmodels.sort(function (a, b) { return (b.topFraudPattern.casesDetected || 0) - (a.topFraudPattern.casesDetected || 0); });
   var cards = cases.map(function (c) {
+    // TODO Prompt 2B: Use c.caseType to route: if lifecycle, go to Genesis/Atonement; if incident, go to War Room
     var se = c.severity === 'Critical' ? 'badge-red' : c.severity === 'High' ? 'badge-amber' : 'badge-yellow';
     var sla = edoSlaDays(c.slaDeadline);
     return '<div class="edo-case-card" style="min-width:320px;height:140px;background:var(--bg3);border-radius:12px;padding:12px;border:1px solid var(--border2);flex-shrink:0" onmouseenter="this.style.transform=\'translateY(-3px)\'" onmouseleave="this.style.transform=\'none\'">' +
@@ -11951,8 +12016,8 @@ window.renderObsidian = function (org) {
     cardsRowObs +
     '<button type="button" class="btn-ghost" style="font-size:11px;margin-top:8px" onclick="showScreen(\'warroom\',null)"' + edoT('War Room', 'Open case command center.') + '>View All in War Room \u2192</button></section>' +
     sec3f +
-    '<section style="margin-top:20px"><h2 style="font-size:14px">Models — Fraud Coverage</h2><div style="display:flex;gap:6px;flex-wrap:wrap">' +
-    '<button type="button" class="btn-ghost" style="font-size:10px" onclick="edoFilterModels(\'all\')">All</button><button type="button" class="btn-ghost" style="font-size:10px" onclick="edoFilterModels(\'Watch\')">Watch</button></div>' +
+    '<section style="margin-top:20px"><h2 style="font-size:14px">Models — Fraud Coverage</h2>' +
+    edoModelFilterPillsHtml() +
     '<div style="overflow-x:auto;margin-top:10px"><table class="data-table"><thead><tr><th ' + edoT('Model', 'Monitored model.') + '>Model</th><th ' + edoT('Synthetic Identity Rate', 'Percent caught / blocked in monitor.') + '>Syn ID</th><th ' + edoT('Behavioral Anomaly', 'Behavioral fraud detection rate.') + '>Behav</th><th ' + edoT('Cluster Fraud', 'Ring detection rate.') + '>Cluster</th><th ' + edoT('Top Pattern', 'Dominant fraud typology.') + '>Pattern</th><th ' + edoT('Bias\u2011Fraud', 'Linked cases count.') + '>B\u2011F</th><th>Status</th><th ' + edoT('Trend (30d)', '30-day trajectory.') + '>Tr</th></tr></thead><tbody>' + mrows + '</tbody></table></div></section>' +
     '<section id="edo-sec-cohort" style="margin-top:20px"><h2 style="font-size:14px">Cohort Explorer — Fraud Lens</h2><p style="font-size:11px;color:var(--muted)">' + nAff + ' individuals in monitored cohorts (aggregated).</p>' +
     '<div style="display:flex;flex-wrap:wrap;gap:8px;margin:8px 0"><span class="badge badge-blue" style="font-size:10px">Cohort View</span>' + (edoCanPii() ? '<span class="badge badge-green" style="font-size:10px">Individual View</span>' : '<span class="badge badge-amber" style="font-size:10px">\ud83d\udd12 Admin Access Required</span>') +
