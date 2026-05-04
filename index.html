@@ -4500,6 +4500,11 @@ Genesis Core
 <svg class="nav-icon" viewBox="0 0 14 14" fill="none"><path d="M2.5 7h9M7 2.5l4.5 4.5L7 11.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
 Atonement Core
 </div>
+<div class="nav-item" onclick="showScreen('sentinel',this)" title="Cardinal Sentinel — case lifecycle engine">
+<svg class="nav-icon" viewBox="0 0 14 14" fill="none"><path d="M7 1.5L2 4v4.5c0 2.5 2 4.5 5 5 3-0.5 5-2.5 5-5V4z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>
+Cardinal Sentinel
+<span class="nav-badge" style="background:rgba(34,197,94,.15);color:var(--green)">Live</span>
+</div>
 <div class="nav-item" onclick="showScreen('halo',this)">
 <svg class="nav-icon" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.4"/><circle cx="7" cy="7" r="2" fill="currentColor"/></svg>
 Halo Core
@@ -4526,17 +4531,6 @@ Compliance Exchange
 <svg class="nav-icon" viewBox="0 0 14 14" fill="none"><rect x="1.5" y="1.5" width="11" height="11" rx="2" stroke="currentColor" stroke-width="1.4"/><path d="M4 7h6M4 4.5h6M4 9.5h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
 Trust Ledger
 <span class="nav-badge" style="background:rgba(34,197,94,.15);color:var(--green)">Public</span>
-</div>
-<div class="nav-section-label" style="margin-top:6px">Command</div>
-<div class="nav-item" onclick="showScreen('warroom',this)">
-<svg class="nav-icon" viewBox="0 0 14 14" fill="none"><path d="M7 1.5L1.5 4.5v5L7 12.5l5.5-3v-5z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M7 6v2M7 9.5v.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
-Incident War Room
-<span class="nav-badge" style="background:rgba(239,68,68,.15);color:var(--red)">1 Active</span>
-</div>
-<div class="nav-item" onclick="showScreen('sentinel',this)">
-<svg class="nav-icon" viewBox="0 0 14 14" fill="none"><path d="M7 1.5L2 4v4.5c0 2.5 2 4.5 5 5 3-0.5 5-2.5 5-5V4z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>
-Cardinal Sentinel
-<span class="nav-badge" style="background:rgba(34,197,94,.15);color:var(--green)">Live</span>
 </div>
 <div class="nav-section-label" style="margin-top:6px">More</div>
 <div class="nav-item" onclick="showScreen('pipeline',this)">
@@ -4591,7 +4585,7 @@ Settings
 <button class="ind-btn" onclick="switchIndustry('fin',this)">Finance</button>
 <button class="ind-btn" onclick="switchIndustry('health',this)">Healthcare</button>
 </div>
-<div class="topbar-alert" id="topbar-critical-cases" onclick="showScreen('warroom', null)" title="Open War Room">
+<div class="topbar-alert" id="topbar-critical-cases" onclick="cardinalOpenSentinelCases('critical')" title="Open Sentinel — Critical Cases">
 <span class="alert-dot"></span>
 <span id="topbar-alert-count">2 Critical Cases</span>
 </div>
@@ -5497,22 +5491,21 @@ Halo Core
       <div style="position:absolute;top:12px;right:12px;background:rgba(239,68,68,0.2);border:1px solid rgba(239,68,68,0.4);border-radius:6px;padding:2px 8px;font-size:10px;font-weight:700;color:#ef4444;">2 WEEKS</div>
       <div id="halo-inaction-2wk-amount" style="font-size:28px;font-weight:800;color:#ef4444;margin-bottom:8px;">$2.8M</div>
       <div id="halo-inaction-2wk-text" style="font-size:11px;color:#94a3b8;line-height:1.6;margin-bottom:12px;">DoD audit deadline passes. Certification suspended. Personnel Assignment v2.4 flagged in federal contractor registry.</div>
-      <!-- // TODO Prompt 2C: Audit Fix Now buttons against caseType to route incidents to War Room instead of Atonement -->
-      <button type="button" onclick="showScreen('atonement',null)" style="width:100%;background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.3);color:#ef4444;border-radius:6px;padding:7px;font-size:11px;cursor:pointer;font-weight:600;">Fix Now — Avoid This →</button>
+      <button type="button" id="halo-fixnow-2wk" data-case-id="AD-2847" data-case-type="lifecycle" data-case-status="remediation-in-progress" onclick="cardinalRouteCase(this.dataset.caseId, this.dataset.caseType, this.dataset.caseStatus)" title="Route primary lifecycle case via Cardinal router (prototype)" style="width:100%;background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.3);color:#ef4444;border-radius:6px;padding:7px;font-size:11px;cursor:pointer;font-weight:600;">Fix Now — Avoid This →</button>
     </div>
 
     <div style="background:linear-gradient(135deg,rgba(239,68,68,0.15),rgba(239,68,68,0.06));border:1px solid rgba(239,68,68,0.3);border-radius:10px;padding:16px;position:relative;">
       <div style="position:absolute;top:12px;right:12px;background:rgba(239,68,68,0.2);border:1px solid rgba(239,68,68,0.4);border-radius:6px;padding:2px 8px;font-size:10px;font-weight:700;color:#ef4444;">Q3 2026</div>
       <div id="halo-inaction-q3-amount" style="font-size:28px;font-weight:800;color:#ef4444;margin-bottom:8px;">$43M</div>
       <div id="halo-inaction-q3-text" style="font-size:11px;color:#94a3b8;line-height:1.6;margin-bottom:12px;">Trust Score drops to 68. DoD contract renewal at risk. ITAR review triggered. Federal contractor status threatened.</div>
-      <button type="button" onclick="showScreen('atonement',null)" style="width:100%;background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.3);color:#ef4444;border-radius:6px;padding:7px;font-size:11px;cursor:pointer;font-weight:600;">Fix Now — Avoid This →</button>
+      <button type="button" id="halo-fixnow-q3" data-case-id="AD-2847" data-case-type="lifecycle" data-case-status="remediation-in-progress" onclick="cardinalRouteCase(this.dataset.caseId, this.dataset.caseType, this.dataset.caseStatus)" title="Route primary lifecycle case via Cardinal router (prototype)" style="width:100%;background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.3);color:#ef4444;border-radius:6px;padding:7px;font-size:11px;cursor:pointer;font-weight:600;">Fix Now — Avoid This →</button>
     </div>
 
     <div style="background:linear-gradient(135deg,rgba(239,68,68,0.2),rgba(239,68,68,0.08));border:1px solid rgba(239,68,68,0.35);border-radius:10px;padding:16px;position:relative;">
       <div style="position:absolute;top:12px;right:12px;background:rgba(239,68,68,0.25);border:1px solid rgba(239,68,68,0.5);border-radius:6px;padding:2px 8px;font-size:10px;font-weight:700;color:#ef4444;">Q4 2026</div>
       <div id="halo-inaction-q4-amount" style="font-size:28px;font-weight:800;color:#ef4444;margin-bottom:8px;">$67M+</div>
       <div id="halo-inaction-q4-text" style="font-size:11px;color:#94a3b8;line-height:1.6;margin-bottom:12px;">Full DoD certification revoked. Class action filed by 847 service members. Federal contractor status at risk. Estimated liability $67M+</div>
-      <button type="button" onclick="showScreen('atonement',null)" style="width:100%;background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.3);color:#ef4444;border-radius:6px;padding:7px;font-size:11px;cursor:pointer;font-weight:600;">Fix Now — Avoid This →</button>
+      <button type="button" id="halo-fixnow-q4" data-case-id="AD-2847" data-case-type="lifecycle" data-case-status="remediation-in-progress" onclick="cardinalRouteCase(this.dataset.caseId, this.dataset.caseType, this.dataset.caseStatus)" title="Route primary lifecycle case via Cardinal router (prototype)" style="width:100%;background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.3);color:#ef4444;border-radius:6px;padding:7px;font-size:11px;cursor:pointer;font-weight:600;">Fix Now — Avoid This →</button>
     </div>
   </div>
 
@@ -6523,7 +6516,7 @@ Admin access: READ ONLY · Cannot edit · Cannot delete · Regulator access: Ava
 </div>
 <div style="display:flex;justify-content:space-between;align-items:center;padding:10px;background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.18);border-radius:8px">
 <div style="font-size:10px;color:var(--muted2);line-height:1.5">5 marginal denials across 4 model versions for the same demographic pattern — systematic, not random. Sentinel auto-opened <strong style="color:var(--red)">Repeat Bias Case #2847</strong>.</div>
-<button class="btn-ghost" style="font-size:10px;white-space:nowrap;margin-left:10px" onclick="showScreen('warroom',null)">View Case #2847 →</button>
+<button class="btn-ghost" style="font-size:10px;white-space:nowrap;margin-left:10px" onclick="cardinalSentinelUiOpenCase('AD-2847')" title="Open Sentinel case detail for AD-2847">View Case #2847 →</button>
 </div>
 </div>
 </div>
@@ -7088,7 +7081,7 @@ Admin access: READ ONLY · Cannot edit · Cannot delete · Regulator access: Ava
 <div id="screen-warroom" class="screen">
 <div class="section-hdr" style="margin-bottom:14px">
 <div>
-<div style="font-size:15px;font-weight:600;color:var(--chrome2)">⚠ Incident War Room</div>
+<div style="font-size:15px;font-weight:600;color:var(--chrome2)" id="wr-screen-title">⚠ Case Channel</div>
 <div style="font-size:11px;color:var(--muted);margin-top:2px">Auto-created on Critical/High detection · Auto-assignment · Escalation timeline · One-click disclosure · Cannot close without Halo + Echo sign-off</div>
 </div>
 <div class="grid-4" style="margin-bottom:14px"><div class="stat-card"  style=";border-color:rgba(239,68,68,.25)"><div class="stat-label">Active Incidents</div><div class="stat-value" style="color:#EF4444;font-size:22px">1</div><div class="stat-change down">Case #2847 · Critical</div></div><div class="stat-card"  style=";"><div class="stat-label">Days Remaining</div><div class="stat-value" style="color:#EF4444;font-size:22px">7</div><div class="stat-change down">14-day deadline</div></div><div class="stat-card"  style=";"><div class="stat-label">Team Members</div><div class="stat-value" style="color:var(--accent);font-size:22px">4</div><div class="stat-change ">Assigned and active</div></div><div class="stat-card"  style=";"><div class="stat-label">Closed (Q1)</div><div class="stat-value" style="color:#22C55E;font-size:22px">12</div><div class="stat-change up">Avg 11 days to close</div></div></div>
@@ -7148,7 +7141,7 @@ Admin access: READ ONLY · Cannot edit · Cannot delete · Regulator access: Ava
 </div>
 </div>
 <div style="display:flex;flex-direction:column;gap:6px">
-<div style="padding:12px;background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.3);border-radius:10px;cursor:pointer" onclick="showScreen('warroom',document.querySelectorAll('.nav-item')[6])">
+<div style="padding:12px;background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.3);border-radius:10px;cursor:pointer" onclick="cardinalRouteCase('AD-2847','lifecycle','remediation-in-progress')" title="Open Sentinel — Primary remediation case">
 <div style="display:flex;justify-content:space-between;margin-bottom:4px">
 <div style="display:flex;align-items:center;gap:8px">
 <span class="badge badge-red" style="font-size:9px">Critical</span>
@@ -9208,6 +9201,15 @@ var CARDINAL_DATA = {
     auditLastEvent:'Claims Adjudication v1.9 — DI recalculated after weekly batch'
   }
 };
+window.CARDINAL_CASE_TYPES = [
+  { id: 'repeat-bias', label: 'Repeat Bias', description: 'Same bias pattern hits same cohort 3+ times in 6 months' },
+  { id: 'repeat-fraud', label: 'Repeat Fraud', description: 'Same fraud pattern reappears after a previous fix' },
+  { id: 'drift-alert', label: 'Drift Alert', description: 'Metric deviation from baseline exceeds threshold' },
+  { id: 'synthetic-threat', label: 'Synthetic Threat', description: 'Sentinel adversarial persona finds new vulnerability' },
+  { id: 'policy-violation', label: 'Policy Violation', description: 'Kernel Compiler or governance gate blocks deployment' },
+  { id: 'consumer-appeal', label: 'Consumer Appeal', description: 'End-user submits Decision Receipt review request' },
+  { id: 'systemic-risk', label: 'Systemic Risk', description: 'Halo or Compliance detects cross-model pattern' }
+];
 window.CARDINAL_DATA = CARDINAL_DATA;
 
 (function _cardinalEchoCoreSeed() {
@@ -10056,14 +10058,14 @@ var EXT = {
     biasMetricsByModel: BIAS_AD,
     fraudMetricsByModel: FRAUD_AD,
     biasIncidentsActive: [
-      { caseId: '#AD-2847', caseType: 'lifecycle', modelId: 'Personnel Assignment v2.4', severity: 'Critical', affectedCount: 847, cohortDescription: 'Hispanic technicians at Camp Pendleton — premium-base placement denials', metricViolation: 'DI 0.67 — below 0.80 EEOC floor', detectedDate: '2026-04-14T09:00:00Z', slaDeadline: _iso(9, 17), status: 'remediation-in-progress', leadAssignee: 'Sarah Chen', echoMemoryId: 'echo-AD-2026-04-14-0900-eden01' },
-      { caseId: '#AD-2889', caseType: 'incident', modelId: 'Mission Readiness v1.1', severity: 'High', affectedCount: 203, cohortDescription: 'Female officers age 40+ assignment delays', metricViolation: 'DI 0.74 — age + gender proxy', detectedDate: '2026-03-15T14:30:00Z', slaDeadline: _iso(29, 17), status: 'under-review', leadAssignee: 'Marcus Williams', echoMemoryId: 'echo-AD-2026-03-15-1430-eden02' },
-      { caseId: '#AD-2751', caseType: 'incident', modelId: 'Maintenance Routing v1.2', severity: 'Medium', affectedCount: 89, cohortDescription: 'Hispanic base maintenance staff scheduling variance', metricViolation: 'Proxy 0.51 — shift allocation bias', detectedDate: '2026-02-28T09:00:00Z', slaDeadline: _iso(58, 17), status: 'monitoring', leadAssignee: 'Eve', echoMemoryId: 'echo-AD-2026-02-28-0900-eden03' }
+      { caseId: '#AD-2847', caseType: 'lifecycle', sentinelCaseType: 'repeat-bias', modelId: 'Personnel Assignment v2.4', severity: 'Critical', affectedCount: 847, cohortDescription: 'Hispanic technicians at Camp Pendleton — premium-base placement denials', metricViolation: 'DI 0.67 — below 0.80 EEOC floor', detectedDate: '2026-04-14T09:00:00Z', slaDeadline: _iso(9, 17), status: 'remediation-in-progress', leadAssignee: 'Sarah Chen', echoMemoryId: 'echo-AD-2026-04-14-0900-eden01' },
+      { caseId: '#AD-2889', caseType: 'incident', sentinelCaseType: 'drift-alert', modelId: 'Mission Readiness v1.1', severity: 'High', affectedCount: 203, cohortDescription: 'Female officers age 40+ assignment delays', metricViolation: 'DI 0.74 — age + gender proxy', detectedDate: '2026-03-15T14:30:00Z', slaDeadline: _iso(29, 17), status: 'under-review', leadAssignee: 'Marcus Williams', echoMemoryId: 'echo-AD-2026-03-15-1430-eden02' },
+      { caseId: '#AD-2751', caseType: 'incident', sentinelCaseType: 'drift-alert', modelId: 'Maintenance Routing v1.2', severity: 'Medium', affectedCount: 89, cohortDescription: 'Hispanic base maintenance staff scheduling variance', metricViolation: 'Proxy 0.51 — shift allocation bias', detectedDate: '2026-02-28T09:00:00Z', slaDeadline: _iso(58, 17), status: 'monitoring', leadAssignee: 'Eve', echoMemoryId: 'echo-AD-2026-02-28-0900-eden03' }
     ],
     fraudIncidentsActive: [
-      { caseId: '#AD-2847', caseType: 'lifecycle', modelId: 'Personnel Assignment v2.4', severity: 'High', affectedCount: 12, cohortDescription: 'Synthetic credential ring exploiting bias-blind verification gap', metricViolation: 'Credential synthesis — 7 linked bias-fraud cases', detectedDate: '2026-04-01T14:00:00Z', slaDeadline: _iso(5, 17), status: 'open', leadAssignee: 'James Martinez', echoMemoryId: 'echo-AD-2026-04-22-0900-wr01' },
-      { caseId: '#AD-2902', caseType: 'incident', modelId: 'Maintenance Routing v1.2', severity: 'Medium', affectedCount: 2, cohortDescription: 'Fraud missed in under-flagged cohort while Bragg crews over-flagged', metricViolation: 'Identity recycling + disparity overlap', detectedDate: '2026-03-22T11:00:00Z', slaDeadline: _iso(40, 17), status: 'awaiting-approval', leadAssignee: 'Sarah Chen', echoMemoryId: 'echo-AD-2026-04-25-1400-gn01' },
-      { caseId: '#AD-2918', caseType: 'incident', modelId: 'Fraud Detection v3.2', severity: 'Medium', affectedCount: 8, cohortDescription: 'Device-fingerprint spoofing cluster at Pendleton', metricViolation: 'Behavioral anomaly 72', detectedDate: '2026-04-05T16:45:00Z', slaDeadline: _iso(55, 17), status: 'escalated', leadAssignee: 'James Martinez', echoMemoryId: 'echo-AD-2026-04-05-1645-obsidian02' }
+      { caseId: '#AD-2847', caseType: 'lifecycle', sentinelCaseType: 'repeat-fraud', modelId: 'Personnel Assignment v2.4', severity: 'High', affectedCount: 12, cohortDescription: 'Synthetic credential ring exploiting bias-blind verification gap', metricViolation: 'Credential synthesis — 7 linked bias-fraud cases', detectedDate: '2026-04-01T14:00:00Z', slaDeadline: _iso(5, 17), status: 'open', leadAssignee: 'James Martinez', echoMemoryId: 'echo-AD-2026-04-22-0900-wr01' },
+      { caseId: '#AD-2902', caseType: 'incident', sentinelCaseType: 'drift-alert', modelId: 'Maintenance Routing v1.2', severity: 'Medium', affectedCount: 2, cohortDescription: 'Fraud missed in under-flagged cohort while Bragg crews over-flagged', metricViolation: 'Identity recycling + disparity overlap', detectedDate: '2026-03-22T11:00:00Z', slaDeadline: _iso(40, 17), status: 'awaiting-approval', leadAssignee: 'Sarah Chen', echoMemoryId: 'echo-AD-2026-04-25-1400-gn01' },
+      { caseId: '#AD-2918', caseType: 'incident', sentinelCaseType: 'drift-alert', modelId: 'Fraud Detection v3.2', severity: 'Medium', affectedCount: 8, cohortDescription: 'Device-fingerprint spoofing cluster at Pendleton', metricViolation: 'Behavioral anomaly 72', detectedDate: '2026-04-05T16:45:00Z', slaDeadline: _iso(55, 17), status: 'escalated', leadAssignee: 'James Martinez', echoMemoryId: 'echo-AD-2026-04-05-1645-obsidian02' }
     ],
     cohortIndividuals: { 'Personnel Assignment v2.4': _genAdIndividuals() },
     cohortGroupSummaries: {
@@ -10101,15 +10103,15 @@ var EXT = {
     biasMetricsByModel: BIAS_FIN,
     fraudMetricsByModel: FRAUD_FIN,
     biasIncidentsActive: [
-      { caseId: '#FIN-1203', caseType: 'lifecycle', modelId: 'Credit Scoring v3.4', severity: 'Critical', affectedCount: 1203, cohortDescription: 'Black and Hispanic applicants in NYC ZIP clusters 10453 / 11212', metricViolation: 'DI 0.74 — ZIP proxy 0.82 race correlation', detectedDate: '2026-02-14T08:15:00Z', slaDeadline: _iso(8, 17), status: 'remediation-in-progress', leadAssignee: 'Priya Sharma', echoMemoryId: 'echo-FIN-2026-02-14-0815-ed02' },
-      { caseId: '#FIN-0842', caseType: 'incident', modelId: 'Collections AI v1.3', severity: 'Medium', affectedCount: 56, cohortDescription: 'Neighborhood risk index drift — smaller secondary cohort', metricViolation: 'Proxy 0.48 — watch band', detectedDate: '2026-03-28T10:00:00Z', slaDeadline: _iso(45, 17), status: 'open', leadAssignee: 'Marcus Chen', echoMemoryId: 'echo-FIN-2026-04-02-1300-cx01' },
-      { caseId: '#FIN-0891', caseType: 'incident', modelId: 'Auto Loan v2.1', severity: 'High', affectedCount: 456, cohortDescription: 'Rural applicants in Midwest belt', metricViolation: 'DI 0.76 — geography employment proxy', detectedDate: '2026-03-22T11:20:00Z', slaDeadline: _iso(38, 17), status: 'shadow-deploy', leadAssignee: 'Priya Sharma', echoMemoryId: 'echo-FIN-2026-03-22-1120-eden03' },
-      { caseId: '#FIN-2340', caseType: 'incident', modelId: 'Underwriting v4.1', severity: 'Medium', affectedCount: 134, cohortDescription: 'Self-employed applicants from minority-owned businesses', metricViolation: 'Income volatility proxy 0.62', detectedDate: '2026-04-10T13:00:00Z', slaDeadline: _iso(50, 17), status: 'monitoring', leadAssignee: 'Marcus Chen', echoMemoryId: 'echo-FIN-2026-04-10-1300-eden04' }
+      { caseId: '#FIN-1203', caseType: 'lifecycle', sentinelCaseType: 'repeat-bias', modelId: 'Credit Scoring v3.4', severity: 'Critical', affectedCount: 1203, cohortDescription: 'Black and Hispanic applicants in NYC ZIP clusters 10453 / 11212', metricViolation: 'DI 0.74 — ZIP proxy 0.82 race correlation', detectedDate: '2026-02-14T08:15:00Z', slaDeadline: _iso(8, 17), status: 'remediation-in-progress', leadAssignee: 'Priya Sharma', echoMemoryId: 'echo-FIN-2026-02-14-0815-ed02' },
+      { caseId: '#FIN-0842', caseType: 'incident', sentinelCaseType: 'drift-alert', modelId: 'Collections AI v1.3', severity: 'Medium', affectedCount: 56, cohortDescription: 'Neighborhood risk index drift — smaller secondary cohort', metricViolation: 'Proxy 0.48 — watch band', detectedDate: '2026-03-28T10:00:00Z', slaDeadline: _iso(45, 17), status: 'open', leadAssignee: 'Marcus Chen', echoMemoryId: 'echo-FIN-2026-04-02-1300-cx01' },
+      { caseId: '#FIN-0891', caseType: 'incident', sentinelCaseType: 'drift-alert', modelId: 'Auto Loan v2.1', severity: 'High', affectedCount: 456, cohortDescription: 'Rural applicants in Midwest belt', metricViolation: 'DI 0.76 — geography employment proxy', detectedDate: '2026-03-22T11:20:00Z', slaDeadline: _iso(38, 17), status: 'shadow-deploy', leadAssignee: 'Priya Sharma', echoMemoryId: 'echo-FIN-2026-03-22-1120-eden03' },
+      { caseId: '#FIN-2340', caseType: 'incident', sentinelCaseType: 'drift-alert', modelId: 'Underwriting v4.1', severity: 'Medium', affectedCount: 134, cohortDescription: 'Self-employed applicants from minority-owned businesses', metricViolation: 'Income volatility proxy 0.62', detectedDate: '2026-04-10T13:00:00Z', slaDeadline: _iso(50, 17), status: 'monitoring', leadAssignee: 'Marcus Chen', echoMemoryId: 'echo-FIN-2026-04-10-1300-eden04' }
     ],
     fraudIncidentsActive: [
-      { caseId: '#FIN-1203', caseType: 'lifecycle', modelId: 'Credit Scoring v3.4', severity: 'High', affectedCount: 47, cohortDescription: 'Synthetic identity ring at NYC ZIPs 10453, 11212', metricViolation: 'Cluster fraud + velocity anomaly', detectedDate: '2026-02-18T09:30:00Z', slaDeadline: _iso(12, 17), status: 'open', leadAssignee: 'Lisa Torres', echoMemoryId: 'echo-FIN-2026-02-15-1015-wr01' },
-      { caseId: '#FIN-2207', caseType: 'incident', modelId: 'Fraud Screening v2.7', severity: 'Medium', affectedCount: 31, cohortDescription: 'Device farm velocity cluster (Chicago)', metricViolation: 'Velocity fraud pattern', detectedDate: '2026-04-03T08:00:00Z', slaDeadline: _iso(25, 17), status: 'remediation-in-progress', leadAssignee: 'Adam — Cardinal', echoMemoryId: 'echo-FIN-2026-04-25-1500-sn01' },
-      { caseId: '#FIN-3045', caseType: 'incident', modelId: 'Underwriting v4.1', severity: 'Medium', affectedCount: 19, cohortDescription: 'Shell company applications clustered in NYC', metricViolation: 'Velocity 73 — overnight submissions', detectedDate: '2026-04-12T07:30:00Z', slaDeadline: _iso(48, 17), status: 'under-investigation', leadAssignee: 'Lisa Torres', echoMemoryId: 'echo-FIN-2026-04-12-0730-obsidian03' }
+      { caseId: '#FIN-1203', caseType: 'lifecycle', sentinelCaseType: 'repeat-fraud', modelId: 'Credit Scoring v3.4', severity: 'High', affectedCount: 47, cohortDescription: 'Synthetic identity ring at NYC ZIPs 10453, 11212', metricViolation: 'Cluster fraud + velocity anomaly', detectedDate: '2026-02-18T09:30:00Z', slaDeadline: _iso(12, 17), status: 'open', leadAssignee: 'Lisa Torres', echoMemoryId: 'echo-FIN-2026-02-15-1015-wr01' },
+      { caseId: '#FIN-2207', caseType: 'incident', sentinelCaseType: 'drift-alert', modelId: 'Fraud Screening v2.7', severity: 'Medium', affectedCount: 31, cohortDescription: 'Device farm velocity cluster (Chicago)', metricViolation: 'Velocity fraud pattern', detectedDate: '2026-04-03T08:00:00Z', slaDeadline: _iso(25, 17), status: 'remediation-in-progress', leadAssignee: 'Adam — Cardinal', echoMemoryId: 'echo-FIN-2026-04-25-1500-sn01' },
+      { caseId: '#FIN-3045', caseType: 'incident', sentinelCaseType: 'drift-alert', modelId: 'Underwriting v4.1', severity: 'Medium', affectedCount: 19, cohortDescription: 'Shell company applications clustered in NYC', metricViolation: 'Velocity 73 — overnight submissions', detectedDate: '2026-04-12T07:30:00Z', slaDeadline: _iso(48, 17), status: 'under-investigation', leadAssignee: 'Lisa Torres', echoMemoryId: 'echo-FIN-2026-04-12-0730-obsidian03' }
     ],
     cohortIndividuals: { 'Credit Scoring v3.4': _genFinIndividuals() },
     cohortGroupSummaries: {
@@ -10143,16 +10145,16 @@ var EXT = {
     biasMetricsByModel: BIAS_HEALTH,
     fraudMetricsByModel: FRAUD_HEALTH,
     biasIncidentsActive: [
-      { caseId: '#HS-2847', caseType: 'lifecycle', modelId: 'Claims Adjudication v1.9', severity: 'Critical', affectedCount: 2847, cohortDescription: 'Patients 65+ in specialty care — age_cost_proxy pathway', metricViolation: 'DI 0.64 — ACA Section 1557 disparity', detectedDate: '2026-03-10T09:00:00Z', slaDeadline: _iso(4, 17), status: 'remediation-in-progress', leadAssignee: 'Dr. Aisha Patel', echoMemoryId: 'echo-HS-2026-03-10-0900-ed02' },
-      { caseId: '#HS-0912', caseType: 'incident', modelId: 'Diagnosis Support v2.3', severity: 'High', affectedCount: 156, cohortDescription: 'Historical cost band proxy — secondary cohort', metricViolation: 'Proxy 0.41 — disability correlation', detectedDate: '2026-02-02T10:00:00Z', slaDeadline: _iso(18, 17), status: 'open', leadAssignee: 'Priya Sharma', echoMemoryId: 'echo-HS-2026-04-28-1400-mo02' },
-      { caseId: '#HS-0441', caseType: 'incident', modelId: 'Claims Adjudication v1.9', severity: 'Medium', affectedCount: 212, cohortDescription: 'Outpatient pharmacy disputes — concentrated denials', metricViolation: 'Calibration gap on pharmacy line items', detectedDate: '2026-01-15T09:00:00Z', slaDeadline: _iso(55, 17), status: 'awaiting-approval', leadAssignee: 'Linda Park', echoMemoryId: 'echo-HS-2026-04-12-1300-cx01' },
-      { caseId: '#HS-1204', caseType: 'incident', modelId: 'Triage Priority v2.0', severity: 'High', affectedCount: 598, cohortDescription: 'Rural patients distant from major medical centers', metricViolation: 'DI 0.64 — distance as implicit treatment-delay proxy', detectedDate: '2026-03-18T10:15:00Z', slaDeadline: _iso(42, 17), status: 'shadow-test', leadAssignee: 'Dr. Amelia Green', echoMemoryId: 'echo-HS-2026-03-18-1015-eden02' },
-      { caseId: '#HS-3127', caseType: 'incident', modelId: 'Prior Auth v1.5', severity: 'Medium', affectedCount: 211, cohortDescription: 'Non-English-speaking patients lower auth approval rates', metricViolation: 'Language documentation proxy 0.58', detectedDate: '2026-04-08T14:45:00Z', slaDeadline: _iso(52, 17), status: 'monitoring', leadAssignee: 'Dr. Rajesh Patel', echoMemoryId: 'echo-HS-2026-04-08-1445-eden03' }
+      { caseId: '#HS-2847', caseType: 'lifecycle', sentinelCaseType: 'repeat-bias', modelId: 'Claims Adjudication v1.9', severity: 'Critical', affectedCount: 2847, cohortDescription: 'Patients 65+ in specialty care — age_cost_proxy pathway', metricViolation: 'DI 0.64 — ACA Section 1557 disparity', detectedDate: '2026-03-10T09:00:00Z', slaDeadline: _iso(4, 17), status: 'remediation-in-progress', leadAssignee: 'Dr. Aisha Patel', echoMemoryId: 'echo-HS-2026-03-10-0900-ed02' },
+      { caseId: '#HS-0912', caseType: 'incident', sentinelCaseType: 'drift-alert', modelId: 'Diagnosis Support v2.3', severity: 'High', affectedCount: 156, cohortDescription: 'Historical cost band proxy — secondary cohort', metricViolation: 'Proxy 0.41 — disability correlation', detectedDate: '2026-02-02T10:00:00Z', slaDeadline: _iso(18, 17), status: 'open', leadAssignee: 'Priya Sharma', echoMemoryId: 'echo-HS-2026-04-28-1400-mo02' },
+      { caseId: '#HS-0441', caseType: 'incident', sentinelCaseType: 'drift-alert', modelId: 'Claims Adjudication v1.9', severity: 'Medium', affectedCount: 212, cohortDescription: 'Outpatient pharmacy disputes — concentrated denials', metricViolation: 'Calibration gap on pharmacy line items', detectedDate: '2026-01-15T09:00:00Z', slaDeadline: _iso(55, 17), status: 'awaiting-approval', leadAssignee: 'Linda Park', echoMemoryId: 'echo-HS-2026-04-12-1300-cx01' },
+      { caseId: '#HS-1204', caseType: 'incident', sentinelCaseType: 'drift-alert', modelId: 'Triage Priority v2.0', severity: 'High', affectedCount: 598, cohortDescription: 'Rural patients distant from major medical centers', metricViolation: 'DI 0.64 — distance as implicit treatment-delay proxy', detectedDate: '2026-03-18T10:15:00Z', slaDeadline: _iso(42, 17), status: 'shadow-test', leadAssignee: 'Dr. Amelia Green', echoMemoryId: 'echo-HS-2026-03-18-1015-eden02' },
+      { caseId: '#HS-3127', caseType: 'incident', sentinelCaseType: 'drift-alert', modelId: 'Prior Auth v1.5', severity: 'Medium', affectedCount: 211, cohortDescription: 'Non-English-speaking patients lower auth approval rates', metricViolation: 'Language documentation proxy 0.58', detectedDate: '2026-04-08T14:45:00Z', slaDeadline: _iso(52, 17), status: 'monitoring', leadAssignee: 'Dr. Rajesh Patel', echoMemoryId: 'echo-HS-2026-04-08-1445-eden03' }
     ],
     fraudIncidentsActive: [
-      { caseId: '#HS-2847', caseType: 'lifecycle', modelId: 'Claims Adjudication v1.9', severity: 'High', affectedCount: 31, cohortDescription: 'Specialty upcoding ring linked to bias-blind spots', metricViolation: 'Provider cluster fraud', detectedDate: '2026-03-15T08:00:00Z', slaDeadline: _iso(20, 17), status: 'open', leadAssignee: 'Dr. Maya Osei', echoMemoryId: 'echo-HS-2026-03-12-1000-wr01' },
-      { caseId: '#HS-2104', caseType: 'incident', modelId: 'Diagnosis Support v2.3', severity: 'Medium', affectedCount: 12, cohortDescription: 'Coding constellation fraud — secondary', metricViolation: 'Cluster fraud', detectedDate: '2026-03-29T12:00:00Z', slaDeadline: _iso(35, 17), status: 'remediation-in-progress', leadAssignee: 'Adam — Cardinal', echoMemoryId: 'echo-HS-2026-04-18-1000-pa01' },
-      { caseId: '#HS-2901', caseType: 'incident', modelId: 'Prior Auth v1.5', severity: 'Medium', affectedCount: 12, cohortDescription: 'Duplicate billing patterns across provider network', metricViolation: 'Cluster fraud 81 — coding variance', detectedDate: '2026-04-06T09:20:00Z', slaDeadline: _iso(54, 17), status: 'escalated-review', leadAssignee: 'Dr. Sarah Chen', echoMemoryId: 'echo-HS-2026-04-06-0920-obsidian02' }
+      { caseId: '#HS-2847', caseType: 'lifecycle', sentinelCaseType: 'repeat-fraud', modelId: 'Claims Adjudication v1.9', severity: 'High', affectedCount: 31, cohortDescription: 'Specialty upcoding ring linked to bias-blind spots', metricViolation: 'Provider cluster fraud', detectedDate: '2026-03-15T08:00:00Z', slaDeadline: _iso(20, 17), status: 'open', leadAssignee: 'Dr. Maya Osei', echoMemoryId: 'echo-HS-2026-03-12-1000-wr01' },
+      { caseId: '#HS-2104', caseType: 'incident', sentinelCaseType: 'drift-alert', modelId: 'Diagnosis Support v2.3', severity: 'Medium', affectedCount: 12, cohortDescription: 'Coding constellation fraud — secondary', metricViolation: 'Cluster fraud', detectedDate: '2026-03-29T12:00:00Z', slaDeadline: _iso(35, 17), status: 'remediation-in-progress', leadAssignee: 'Adam — Cardinal', echoMemoryId: 'echo-HS-2026-04-18-1000-pa01' },
+      { caseId: '#HS-2901', caseType: 'incident', sentinelCaseType: 'drift-alert', modelId: 'Prior Auth v1.5', severity: 'Medium', affectedCount: 12, cohortDescription: 'Duplicate billing patterns across provider network', metricViolation: 'Cluster fraud 81 — coding variance', detectedDate: '2026-04-06T09:20:00Z', slaDeadline: _iso(54, 17), status: 'escalated-review', leadAssignee: 'Dr. Sarah Chen', echoMemoryId: 'echo-HS-2026-04-06-0920-obsidian02' }
     ],
     cohortIndividuals: { 'Claims Adjudication v1.9': _genHealthIndividuals() },
     cohortGroupSummaries: {
@@ -11632,7 +11634,7 @@ function edoBuildBfVennHtml(d, org, screenIsObsidian) {
     var matched = allActive.filter(function (x) { return x.caseId === '#' + warId || x.caseId === warId || x.caseId === '#' + (c.caseId||'') || x.caseId === (c.caseId||''); })[0];
     var routeType = matched ? (matched.caseType || 'lifecycle') : 'incident';
     var routeStatus = matched ? (matched.status || 'open') : 'open';
-    var indicatorText = routeType === 'incident' ? 'Open in War Room \u2192' : (['remediation-in-progress','shadow-deploy','awaiting-approval','escalated'].indexOf(routeStatus.toLowerCase())>=0 ? 'View in Atonement \u2192' : 'View in Genesis \u2192');
+    var indicatorText = routeType === 'incident' ? 'Open in Sentinel \u2192' : (['remediation-in-progress','shadow-deploy','awaiting-approval','escalated'].indexOf(routeStatus.toLowerCase())>=0 ? 'View in Atonement \u2192' : 'View in Genesis \u2192');
     var dollarsLabel = typeof c.dollarsAtRisk === 'number' ? ('$' + (c.dollarsAtRisk >= 1000000 ? (c.dollarsAtRisk / 1000000).toFixed(1) + 'M' : c.dollarsAtRisk.toLocaleString())) : String(c.dollarsAtRisk || '');
     return '<div style="padding:14px;border-radius:12px;border:1px solid var(--border2);background:var(--bg3);margin-bottom:12px;cursor:pointer"' + edoOn('cardinalRouteCase', [warId, routeType, routeStatus]) + edoT(c.caseId, (c.summary || '') + ' ' + indicatorText) + '>' +
       '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px"><strong style="font-size:12px"' + edoT('Case', c.caseId) + '>' + c.caseId + '</strong><span style="font-size:10px;color:var(--accent)">' + indicatorText + '</span></div>' +
@@ -11803,7 +11805,7 @@ window.renderEden = function (org) {
       '<div style="font-size:10px;color:var(--muted);margin-top:4px">' + c.affectedCount + ' affected · ' + c.metricViolation + '</div>' +
       '<div style="font-size:10px;color:var(--amber);margin-top:4px"' + edoT('SLA Countdown', 'Cardinal enforces Critical 14d / High 30d / Medium 60d fix deadlines. Echo Core logs SLA events.') + '>' + sla + ' days remaining</div>' +
       '<div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px"><span style="font-size:10px"' + edoT('Lead Assignee', 'Case owner — ' + c.leadAssignee) + '>' + c.leadAssignee + '</span>' +
-      '<button type="button" class="btn-primary" style="font-size:10px;padding:4px 10px"' + edoOn('cardinalRouteCase', [edoCaseId(c.caseId), c.caseType || 'lifecycle', c.status || 'open']) + edoT(c.caseType === 'incident' ? 'Open Incident' : 'View Case', c.caseType === 'incident' ? 'Incident — opens War Room with this case focused.' : 'Lifecycle case — opens ' + (['remediation-in-progress','shadow-deploy','awaiting-approval','escalated'].indexOf(String(c.status||'').toLowerCase())>=0 ? 'Atonement Core' : 'Genesis Core') + ' filtered to this case.') + '>' + (c.caseType === 'incident' ? 'Open Incident' : 'View Case') + '</button></div></div>';
+      '<button type="button" class="btn-primary" style="font-size:10px;padding:4px 10px"' + edoOn('cardinalRouteCase', [edoCaseId(c.caseId), c.caseType || 'lifecycle', c.status || 'open']) + edoT(c.caseType === 'incident' ? 'Open Incident' : 'View Case', c.caseType === 'incident' ? 'Incident — opens Sentinel case detail with embedded channel for collaboration.' : 'Lifecycle case — opens ' + (['remediation-in-progress','shadow-deploy','awaiting-approval','escalated'].indexOf(String(c.status||'').toLowerCase())>=0 ? 'Atonement Core' : 'Genesis Core') + ' filtered to this case.') + '>' + (c.caseType === 'incident' ? 'Open Incident' : 'View Case') + '</button></div></div>';
   }).join('');
   var cardsRow = cases.length
     ? '<div style="display:flex;gap:12px;overflow-x:auto;padding-bottom:8px">' + cards + '</div>'
@@ -11948,7 +11950,7 @@ window.renderObsidian = function (org) {
       '<div style="font-size:12px;font-weight:700;margin-top:6px"' + edoT(c.caseId, 'War Room case.') + '>' + c.caseId + ' · ' + c.modelId + '</div>' +
       '<div style="font-size:10px;color:var(--muted)">' + c.metricViolation + '</div>' +
       '<div style="font-size:10px;color:var(--amber);margin-top:4px"' + edoT('SLA Countdown', 'Cardinal enforces SLA deadlines on fraud remediation.') + '>' + sla + ' days remaining</div>' +
-      '<div style="margin-top:8px"><button type="button" class="btn-primary" style="font-size:10px;padding:4px 10px"' + edoOn('cardinalRouteCase', [edoCaseId(c.caseId), c.caseType || 'lifecycle', c.status || 'open']) + edoT(c.caseType === 'incident' ? 'Open Incident' : 'View Case', c.caseType === 'incident' ? 'Incident — opens War Room with this case focused.' : 'Lifecycle case — opens ' + (['remediation-in-progress','shadow-deploy','awaiting-approval','escalated'].indexOf(String(c.status||'').toLowerCase())>=0 ? 'Atonement Core' : 'Genesis Core') + ' filtered to this case.') + '>' + (c.caseType === 'incident' ? 'Open Incident' : 'View Case') + '</button></div></div>';
+      '<div style="margin-top:8px"><button type="button" class="btn-primary" style="font-size:10px;padding:4px 10px"' + edoOn('cardinalRouteCase', [edoCaseId(c.caseId), c.caseType || 'lifecycle', c.status || 'open']) + edoT(c.caseType === 'incident' ? 'Open Incident' : 'View Case', c.caseType === 'incident' ? 'Incident — opens Sentinel case detail with embedded channel for collaboration.' : 'Lifecycle case — opens ' + (['remediation-in-progress','shadow-deploy','awaiting-approval','escalated'].indexOf(String(c.status||'').toLowerCase())>=0 ? 'Atonement Core' : 'Genesis Core') + ' filtered to this case.') + '>' + (c.caseType === 'incident' ? 'Open Incident' : 'View Case') + '</button></div></div>';
   }).join('');
   var cardsRowObs = cases.length
     ? '<div style="display:flex;gap:12px;overflow-x:auto;margin-top:10px;padding-bottom:8px">' + cards + '</div>'
@@ -12957,7 +12959,7 @@ function startDashHeatmaps() {
 
 function dashIncidentsStatCardClick(ev) {
   if (ev && ev.target && ev.target.closest && ev.target.closest('.dr-card-foot')) return;
-  try { showScreen('warroom', null); } catch(e) {}
+  try { cardinalOpenSentinelCases('critical'); } catch(e) {}
 }
 
 function dashComplianceBarHue(v) {
@@ -13505,6 +13507,7 @@ function switchIndustry(org, btn) {
  try { updateDashboardIndustry(org); } catch(e) { console.warn('updateDashboardIndustry:', e.message); }
  try { syncIndustrySidebarChrome(org); } catch(e) { console.warn('syncIndustrySidebarChrome:', e.message); }
  try { applyCardinalData(org); } catch(e) { console.warn('applyCardinalData:', e.message); }
+ try { updateHaloInaction(org); } catch (_haloFx) {}
  try { applyUserSettingsMerge(org); } catch(_um) {}
  try { window._tlwSideSearch = ''; } catch (_tsc) {}
  // If the Trust Score screen is currently visible, rebuild it so its
@@ -16996,7 +16999,7 @@ function showScreen(name, navEl) {
  document.getElementById('topbar-title').textContent = titles[name]||name;
  if(name==='halo') { try { stopHaloLive(); } catch(_h){} setTimeout(initHaloMap, 100); setTimeout(function(){ try { updateHaloIndustry(currentOrg||'ad'); updateHaloInaction((typeof currentOrg!=='undefined'&&currentOrg)?currentOrg:'ad'); } catch(_hh){} }, 110); }
  if(name==='trustloop') setTimeout(initTLChat,100);
- const _extraTitles={pipeline:'Data Pipeline — How Cardinal Works',trustloop:'Trust Loop — Team Workspace',modellibrary:'Model Library — Validated Data & Prevention Models',lucid:'✦ Lucid Layer — Adam & Eve Intelligence',echo:'◈ Echo Core — Audit Memory & Integrity'};
+ const _extraTitles={pipeline:'Data Pipeline — How Cardinal Works',trustloop:'Trust Loop — Team Workspace',modellibrary:'Model Library — Validated Data & Prevention Models',lucid:'✦ Lucid Layer — Adam & Eve Intelligence',echo:'◈ Echo Core — Audit Memory & Integrity',sentinel:'◈ Cardinal Sentinel — Case Engine'};
  if(name==='echo') buildEcho(currentOrg);
  if(name==='modellibrary') buildModelLibrary(currentOrg);
  if(name==='lucid') buildLucid(currentOrg);
@@ -17017,7 +17020,15 @@ function showScreen(name, navEl) {
  if(name==='trustscore') { buildTrustScore(currentOrg); buildScoreDims(); buildTrustScoreNew(currentOrg); }
  if(name==='eden') { setTimeout(function(){ try{ var o=currentOrg||window.currentOrg||'ad'; if(typeof renderEden==='function') renderEden(o); }catch(e){} }, 50); }
  if(name==='obsidian') { setTimeout(function(){ try{ var o2=currentOrg||window.currentOrg||'ad'; if(typeof renderObsidian==='function') renderObsidian(o2); }catch(e2){} }, 50); }
- if(name==='sentinel') buildSentinel(currentOrg);
+ if(name==='sentinel') {
+   if (navEl) {
+     window.__sentinelFocusCaseId = null;
+     window.__sentinelSeverityFilter = null;
+     window.__sentinelTypeFilter = null;
+     window.__sentinelTab = 'cases';
+   }
+   buildSentinel((typeof currentOrg !== 'undefined' && currentOrg) || window.currentOrg || 'ad');
+ }
  if(name==='trustledger') buildTrustLedger(currentOrg);
  if(name==='pmprofiles') buildPMProfiles(currentOrg);
  if(name==='warroom') buildWarRoom(currentOrg);
@@ -17580,6 +17591,19 @@ function updateHaloInaction(org) {
   safe('halo-inaction-q4-text', d.q4.text);
   safe('halo-resolution-text', d.resolution);
   safe('halo-roi-text', d.roi);
+  var fixMap = {
+    ad: { id: 'AD-2847', type: 'lifecycle', status: 'remediation-in-progress' },
+    fin: { id: 'FIN-1203', type: 'lifecycle', status: 'shadow-deploy' },
+    health: { id: 'HS-2847', type: 'lifecycle', status: 'remediation-in-progress' }
+  };
+  var fx = fixMap[org] || fixMap.ad;
+  ['halo-fixnow-2wk', 'halo-fixnow-q3', 'halo-fixnow-q4'].forEach(function (bid) {
+    var b = document.getElementById(bid);
+    if (!b) return;
+    b.dataset.caseId = fx.id;
+    b.dataset.caseType = fx.type;
+    b.dataset.caseStatus = fx.status;
+  });
 }
 
 function updateHaloIndustry(org){
@@ -19588,14 +19612,73 @@ window.edoEnsureWarRoomCaseChannel = function (org, caseId) {
     ]
   });
 };
-// Two-Flow Router — routes case clicks based on caseType (lifecycle→Genesis/Atonement, incident→War Room) and current lifecycle status. Default lifecycle if caseType missing.
+window.cardinalOpenSentinelCases = function (severityFilter) {
+  window.__sentinelTab = 'cases';
+  window.__sentinelFocusCaseId = null;
+  var map = { critical: 'Critical', high: 'High', medium: 'Medium' };
+  var sf = severityFilter != null && severityFilter !== '' ? map[String(severityFilter).toLowerCase()] || null : null;
+  window.__sentinelSeverityFilter = sf;
+  window.__sentinelTypeFilter = null;
+  try {
+    if (typeof showScreen === 'function') showScreen('sentinel', null);
+  } catch (_e) {}
+};
+window.cardinalSentinelApplyFilters = function (kind, val) {
+  if (kind === 'severity') {
+    window.__sentinelSeverityFilter = val === 'all' || val == null ? null : val;
+  } else if (kind === 'type') {
+    window.__sentinelTypeFilter = val === 'all' || val == null ? null : val;
+  }
+  buildSentinel((typeof currentOrg !== 'undefined' && currentOrg) || window.currentOrg || 'ad');
+};
+window.cardinalSentinelUiOpenCase = function (caseId) {
+  var id = String(caseId || '').replace(/^#/, '');
+  window.__sentinelFocusCaseId = id;
+  window.__sentinelTab = 'cases';
+  var org = (typeof currentOrg !== 'undefined' && currentOrg) || window.currentOrg || 'ad';
+  try {
+    if (typeof window.edoEnsureWarRoomCaseChannel === 'function') window.edoEnsureWarRoomCaseChannel(org, id);
+  } catch (_e1) {}
+  window.__wrFocusCaseId = id || null;
+  try {
+    if (typeof showScreen === 'function') showScreen('sentinel', null);
+  } catch (_e2) {}
+};
+window.cardinalSentinelUiGoBack = function () {
+  window.__sentinelFocusCaseId = null;
+  try {
+    if (typeof showScreen === 'function') showScreen('sentinel', null);
+  } catch (_e) {}
+};
+window.cardinalSentinelUiSetMainTab = function (t) {
+  window.__sentinelTab = t === 'lab' ? 'lab' : 'cases';
+  window.__sentinelFocusCaseId = null;
+  try {
+    if (typeof showScreen === 'function') showScreen('sentinel', null);
+  } catch (_e) {}
+};
+// Two-Flow Router — routes lifecycle cases to Genesis/Atonement by status; incidents → Sentinel case detail with embedded channel.
 // Dispatch: Eden bias case cards call cardinalRouteCase via edoOn.
 // Dispatch: Obsidian fraud cards and Section 7 overlap cards call cardinalRouteCase via edoOn.
 window.cardinalRouteCase = function (caseId, caseType, status) {
   var ct = String(caseType || 'lifecycle').toLowerCase();
   var st = String(status || '').toLowerCase();
   if (ct === 'incident') {
-    try { window.openWarRoomCase(caseId); } catch (_e) {}
+    var rid = caseId == null ? '' : String(caseId).replace(/^#/, '').trim();
+    var orgI = (typeof currentOrg !== 'undefined' && currentOrg) || window.currentOrg || 'ad';
+    try {
+      if (typeof window.edoEnsureWarRoomCaseChannel === 'function') window.edoEnsureWarRoomCaseChannel(orgI, rid);
+    } catch (_e0) {}
+    window.__wrFocusCaseId = rid || null;
+    window.__sentinelFocusCaseId = rid || null;
+    window.__sentinelTab = 'cases';
+    var disp = rid ? (rid.indexOf('#') === 0 ? rid : '#' + rid) : '';
+    try {
+      if (typeof showToast === 'function') showToast('Opening Sentinel case ' + disp + ' — incident response flow');
+    } catch (_eT) {}
+    try {
+      if (typeof showScreen === 'function') showScreen('sentinel', null);
+    } catch (_e1) {}
     return;
   }
   var genesisStates = ['open', 'under-review', 'under-investigation', 'monitoring', 'shadow-test', 'escalated-review'];
@@ -19617,7 +19700,7 @@ window.cardinalRouteCase = function (caseId, caseType, status) {
 };
 window.openWarRoomCase = function (caseId) {
   var id = caseId == null ? '' : String(caseId).replace(/^#/, '').trim();
-  try { if (typeof showToast === 'function') showToast('Opening War Room — incident response flow'); } catch (_eTI) {}
+  try { if (typeof showToast === 'function') showToast('Opening case channel — incident response flow'); } catch (_eTI) {}
   var org = (typeof currentOrg !== 'undefined' && currentOrg) || window.currentOrg || 'ad';
   try { window.edoEnsureWarRoomCaseChannel(org, id); } catch (_e0) {}
   window.__wrFocusCaseId = id || null;
@@ -19662,7 +19745,9 @@ window.wrCaseChannelAction = function (caseId, actionLabel) {
  window.__wrCaseRuntime[caseId] = window.__wrCaseRuntime[caseId] || [];
  window.__wrCaseRuntime[caseId].push({ id: 'sys-' + Date.now(), timestamp: new Date().toISOString(), author: 'System', content: actionLabel + ' — structured event logged to Echo Core.', attachments: [], mentions: [], isPinned: false, echoLogId: 'echo-sys-' + Date.now(), authorKind: 'human' });
  showToast('Action logged to Echo Core.');
- renderWarRoomCaseChannel((typeof currentOrg !== 'undefined' && currentOrg) || window.currentOrg || 'ad');
+ var orgW = (typeof currentOrg !== 'undefined' && currentOrg) || window.currentOrg || 'ad';
+ var hid = window.__wrLastChannelHostId || 'wr-case-channel-host';
+ renderWarRoomCaseChannel(orgW, hid === 'wr-case-channel-host' ? undefined : hid);
 };
 
 function renderTrustLoopWorkspace(org) {
@@ -19863,9 +19948,11 @@ function renderTrustLoopWorkspace(org) {
  });
 }
 
-function renderWarRoomCaseChannel(org) {
- var host = document.getElementById('wr-case-channel-host');
+function renderWarRoomCaseChannel(org, hostId) {
+ var hid = hostId || 'wr-case-channel-host';
+ var host = document.getElementById(hid);
  if (!host) return;
+ try { window.__wrLastChannelHostId = hid; } catch (_wlh) {}
  var d = cd(org);
  var list = d.caseChannels || [];
  var focus = window.__wrFocusCaseId;
@@ -19881,6 +19968,10 @@ function renderWarRoomCaseChannel(org) {
  }
  if (!cc) { host.innerHTML = ''; return; }
  window.__wrFocusCaseId = cc.caseId;
+ var composeId = hid === 'sentinel-case-channel-host' ? 'sentinel-wr-cc-compose' : 'wr-cc-compose';
+ var renderRecall = hid === 'wr-case-channel-host'
+   ? 'renderWarRoomCaseChannel(\'' + org + '\')'
+   : 'renderWarRoomCaseChannel(\'' + org + '\',\'sentinel-case-channel-host\')';
  var base = cc.messages || [];
  var extra = (window.__wrCaseRuntime && window.__wrCaseRuntime[cc.caseId]) || [];
  var all = base.slice().concat(extra.slice());
@@ -19891,12 +19982,12 @@ function renderWarRoomCaseChannel(org) {
  var lastAct = last ? tlwRelMin(last.timestamp) : '—';
  var mem = (cc.members || []).slice(0, 5).map(function (n) { return n.charAt(0); }).join('');
  var html = '<div style="display:flex;flex-direction:column;height:100%;min-height:360px;border:1px solid rgba(239,68,68,.25);border-radius:12px;overflow:hidden;background:linear-gradient(180deg,rgba(239,68,68,.08),transparent)">' +
-   '<div style="padding:10px 12px;border-bottom:1px solid rgba(239,68,68,.2);display:flex;justify-content:space-between;align-items:flex-start;gap:8px" onclick="showTooltip(\'Case Channel\',\'Real-time team coordination for this case. Every message auto-logged to Echo Core for audit trail.\',event)">' +
+   '<div style="padding:10px 12px;border-bottom:1px solid rgba(239,68,68,.2);display:flex;justify-content:space-between;align-items:flex-start;gap:8px" onclick="showTooltip(\'Case Channel\',\'Real-time team coordination for this case. Every message auto-logged to Echo Core for audit trail.\',event)" title="Case channel header">' +
    '<div><div style="display:flex;align-items:center;gap:8px"><span class="badge badge-red" style="font-size:9px">Case Channel</span>' +
    '<span style="font-size:13px;font-weight:700;color:var(--chrome2)">' + tlwEsc(cc.channelName) + '</span></div>' +
    '<div style="font-size:10px;color:var(--muted);margin-top:4px">' + (cc.members || []).length + ' members · ' + all.length + ' messages · last activity ' + lastAct + '</div></div>' +
    '<div style="font-size:10px;color:var(--muted)">' + tlwEsc(mem) + '</div></div>' +
-   '<input placeholder="Search messages…" style="margin:8px 10px;padding:6px 10px;border-radius:8px;border:1px solid var(--border2);background:var(--bg3);color:var(--text);font-size:10px;font-family:var(--sans)" oninput="(function(v,org){var q=v.trim().toLowerCase();document.querySelectorAll(\'.wr-cc-row\').forEach(function(el){var t=(el.getAttribute(\'data-t\')||\'\').toLowerCase();el.style.display=!q||t.indexOf(q)>=0?\'flex\':\'none\';});})(this.value,\'' + org + '\')"/>' ;
+   '<input placeholder="Search messages…" title="Search messages in this case channel" style="margin:8px 10px;padding:6px 10px;border-radius:8px;border:1px solid var(--border2);background:var(--bg3);color:var(--text);font-size:10px;font-family:var(--sans)" oninput="(function(v,org){var q=v.trim().toLowerCase();document.querySelectorAll(\'.wr-cc-row\').forEach(function(el){var t=(el.getAttribute(\'data-t\')||\'\').toLowerCase();el.style.display=!q||t.indexOf(q)>=0?\'flex\':\'none\';});})(this.value,\'' + org + '\')"/>' ;
  if (pins.length) {
    html += '<div style="padding:8px 10px;background:rgba(239,68,68,.06);border-bottom:1px solid rgba(239,68,68,.15)"><div style="font-size:10px;font-weight:600;color:var(--red);margin-bottom:6px">📌 Pinned</div>';
    pins.forEach(function (m) {
@@ -19922,8 +20013,8 @@ function renderWarRoomCaseChannel(org) {
  });
  html += '</div>';
  html += '<div style="padding:10px;border-top:1px solid rgba(239,68,68,.2);display:flex;gap:8px;align-items:center">' +
-   '<textarea id="wr-cc-compose" placeholder="Compose…" rows="1" style="flex:1;resize:none;background:var(--bg3);border:1px solid var(--border2);border-radius:10px;padding:8px 10px;font-size:11px;color:var(--text);font-family:var(--sans)"></textarea>' +
-   '<button type="button" class="btn-primary" style="font-size:10px;padding:8px 12px" onclick="(function(){var t=document.getElementById(\'wr-cc-compose\');var v=t&&t.value?t.value.trim():\'\';if(!v)return;window.__wrCaseRuntime=window.__wrCaseRuntime||{};window.__wrCaseRuntime[\'' + tlwEsc(cc.caseId) + '\']=window.__wrCaseRuntime[\'' + tlwEsc(cc.caseId) + '\']||[];var d=cd(\'' + org + '\');window.__wrCaseRuntime[\'' + tlwEsc(cc.caseId) + '\'].push({id:\'wrc-\'+Date.now(),timestamp:new Date().toISOString(),author:d.user||\'You\',content:v,attachments:[],mentions:[],isPinned:false,echoLogId:\'echo-wr-\'+Date.now(),authorKind:\'human\'});t.value=\'\';showToast(\'Posted — Echo logged.\');renderWarRoomCaseChannel(\'' + org + '\');})()">Send</button></div></div>';
+   '<textarea id="' + composeId + '" placeholder="Compose…" title="Compose a channel message — Echo logs on send" rows="1" style="flex:1;resize:none;background:var(--bg3);border:1px solid var(--border2);border-radius:10px;padding:8px 10px;font-size:11px;color:var(--text);font-family:var(--sans)"></textarea>' +
+   '<button type="button" class="btn-primary" style="font-size:10px;padding:8px 12px" title="Send message to case channel" onclick="(function(){var t=document.getElementById(\'' + composeId + '\');var v=t&&t.value?t.value.trim():\'\';if(!v)return;window.__wrCaseRuntime=window.__wrCaseRuntime||{};window.__wrCaseRuntime[\'' + tlwEsc(cc.caseId) + '\']=window.__wrCaseRuntime[\'' + tlwEsc(cc.caseId) + '\']||[];var d=cd(\'' + org + '\');window.__wrCaseRuntime[\'' + tlwEsc(cc.caseId) + '\'].push({id:\'wrc-\'+Date.now(),timestamp:new Date().toISOString(),author:d.user||\'You\',content:v,attachments:[],mentions:[],isPinned:false,echoLogId:\'echo-wr-\'+Date.now(),authorKind:\'human\'});t.value=\'\';showToast(\'Posted — Echo logged.\');' + renderRecall + ';})()">Send</button></div></div>';
  host.innerHTML = html;
  requestAnimationFrame(function () {
    var th = host.querySelector('[style*="overflow-y:auto"]');
@@ -23437,6 +23528,11 @@ let wrClock = null;
 function buildWarRoom(org) {
  const wr = WAR_ROOM_DATA[org]; if(!wr) return;
  const setEl=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v;};
+ var wt = document.getElementById('wr-screen-title');
+ if (wt) {
+   var wf = window.__wrFocusCaseId;
+   wt.textContent = wf ? ('Case Channel — #' + wf) : '\u26A0 Case Channel';
+ }
 
  setEl('wr-incident-title', wr.incidentTitle);
  setEl('wr-incident-body', wr.incidentBody);
@@ -23541,7 +23637,8 @@ function buildWarRoom(org) {
  <div style="margin-bottom:6px"><strong style="color:var(--chrome2)">Resolution:</strong> Fix validated in shadow deployment. All closure requirements ${closed===wr.closureChecklist.length?'met':'in progress'}.</div>
  <div><strong style="color:var(--chrome2)">Trust Ledger:</strong> ${wr.details.find(d=>d.label==='Trust Ledger hash')?.val||'—'}. Cryptographically anchored.</div>
  </div>`;
- try { renderWarRoomCaseChannel(org); } catch (_wrc) {}
+ try { window.__wrLastChannelHostId = 'wr-case-channel-host'; } catch (_wl) {}
+ renderWarRoomCaseChannel(org);
 }
 
 function renderWRLog(org) {
@@ -26368,104 +26465,357 @@ function buildSentinel(org) {
       .replace(/</g, '&lt;')
       .replace(/"/g, '&quot;');
   };
-  var sk = d.sentinelKpis || {};
-  var mar = d.modelsAtRiskList || [];
-  var caughtEl = document.getElementById('sentinel-caught-list');
-  if (caughtEl) {
-    caughtEl.innerHTML = mar.length
-      ? mar
-          .map(function (m) {
-            var st = String(m.status || m.stage || 'WARNING').toUpperCase();
-            var sev = st.indexOf('CRIT') >= 0 ? 'red' : 'amber';
-            var det = m.issue || m.detail || 'Cardinal triaged this model before it surfaced as a client dashboard alert.';
-            return (
-              '<div style="padding:12px 0;border-bottom:1px solid rgba(180,190,220,.06);">' +
-              '<div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start;">' +
-              '<span style="font-size:11px;font-weight:700;color:var(--chrome2);">' +
-              esc(m.name) +
-              '</span>' +
-              '<span class="badge badge-' +
-              sev +
-              '" style="font-size:9px;">' +
-              esc(st) +
-              '</span></div>' +
-              '<div style="font-size:10px;color:var(--muted2);margin-top:6px;line-height:1.45;">' +
-              esc(det) +
-              '</div></div>'
-            );
-          })
-          .join('')
-      : '<div style="font-size:11px;color:var(--muted);padding:12px 0;">No pre-caught issues listed for this org in CARDINAL_DATA.</div>';
+  var scr = document.getElementById('screen-sentinel');
+  var root = document.getElementById('sentinel-engine-root');
+  if (!root && scr) {
+    root = document.createElement('div');
+    root.id = 'sentinel-engine-root';
+    scr.insertBefore(root, scr.firstChild);
   }
-  var monEl = document.getElementById('sentinel-monitoring-list');
-  if (monEl) {
-    monEl.innerHTML = [
-      { k: 'Bias signals', v: d.biasDetection || '—', ok: (d.biasScore || 0) >= 80 },
-      { k: 'Fraud signals', v: d.fraudPrevention || '—', ok: (d.fraudScore || 0) >= 85 },
-      { k: 'Compliance signals', v: d.compliance || '—', ok: (d.complianceScore || 0) >= 80 }
-    ]
-      .map(function (x) {
+  if (scr) {
+    for (var hci = 0; hci < scr.children.length; hci++) {
+      var ch = scr.children[hci];
+      if (ch.id !== 'sentinel-engine-root') ch.style.display = 'none';
+    }
+  }
+  if (!root) return;
+
+  var types = window.CARDINAL_CASE_TYPES || [];
+  function typeLabel(tid) {
+    for (var ti = 0; ti < types.length; ti++) {
+      if (types[ti].id === tid) return types[ti].label;
+    }
+    return tid || '\u2014';
+  }
+  function typeDesc(tid) {
+    for (var tj = 0; tj < types.length; tj++) {
+      if (types[tj].id === tid) return types[tj].description;
+    }
+    return '';
+  }
+
+  var tab = window.__sentinelTab || 'cases';
+  var focusRaw = window.__sentinelFocusCaseId;
+  var focusId = focusRaw ? String(focusRaw).replace(/^#/, '').trim() : '';
+
+  var rawAll = (d.biasIncidentsActive || []).concat(d.fraudIncidentsActive || []);
+  var seen = {};
+  var cases = [];
+  for (var ri = 0; ri < rawAll.length; ri++) {
+    var cx = rawAll[ri];
+    var cidKey = String(cx.caseId || '').replace(/^#/, '');
+    if (!cidKey) continue;
+    if (!seen[cidKey]) {
+      seen[cidKey] = true;
+      cases.push(cx);
+    }
+  }
+
+  var total = cases.length;
+  var crit = 0;
+  for (var cxz = 0; cxz < cases.length; cxz++) {
+    if (cases[cxz].severity === 'Critical') crit++;
+  }
+  var onSla = total ? Math.max(0, Math.min(100, Math.round(((total - crit) / total) * 100))) : 100;
+
+  var channels = d.caseChannels || [];
+  function hasChannel(cid) {
+    for (var hi = 0; hi < channels.length; hi++) {
+      if (String(channels[hi].caseId) === cid) return true;
+    }
+    return false;
+  }
+
+  function sevBtn(label, val, tip, active) {
+    return (
+      '<button type="button" class="btn-ghost' +
+      (active ? ' active' : '') +
+      '" style="font-size:10px;padding:6px 10px' +
+      (active ? ';background:rgba(166,218,255,.14);border-color:rgba(166,218,255,.35)' : '') +
+      '" title="' +
+      esc(tip) +
+      '" onclick="cardinalSentinelApplyFilters(\'severity\',\'' +
+      val +
+      '\')">' +
+      esc(label) +
+      '</button>'
+    );
+  }
+
+  if (focusId) {
+    var fc = null;
+    for (var fi = 0; fi < cases.length; fi++) {
+      if (String(cases[fi].caseId || '').replace(/^#/, '') === focusId) {
+        fc = cases[fi];
+        break;
+      }
+    }
+    if (!fc) {
+      fc = {
+        caseId: '#' + focusId,
+        severity: '\u2014',
+        sentinelCaseType: 'drift-alert',
+        status: 'open',
+        modelId: '\u2014',
+        affectedCount: '\u2014',
+        slaDeadline: '',
+        leadAssignee: '\u2014',
+        metricViolation: 'Case surfaced via routing — extend CARDINAL_DATA for full narrative.',
+        caseType: 'incident'
+      };
+    }
+    var slaShort = fc.slaDeadline ? String(fc.slaDeadline).slice(0, 10) : '\u2014';
+    var sevClass = fc.severity === 'Critical' ? 'red' : fc.severity === 'High' ? 'amber' : 'yellow';
+    var hdrDisp = '#' + focusId;
+    root.innerHTML =
+      '<div style="margin-bottom:14px">' +
+      '<button type="button" class="btn-ghost" style="font-size:11px;margin-bottom:10px" title="Return to Sentinel case list" onclick="cardinalSentinelUiGoBack()">\u2190 Back to cases</button>' +
+      '<div class="card" style="padding:16px;border:1px solid rgba(166,218,255,.15)" title="Case summary header">' +
+      '<div style="display:flex;flex-wrap:wrap;gap:12px;justify-content:space-between;align-items:flex-start">' +
+      '<div><div style="font-size:16px;font-weight:700;color:var(--chrome2)">' +
+      esc(hdrDisp) +
+      '</div>' +
+      '<div style="font-size:11px;color:var(--muted);margin-top:6px">' +
+      esc(fc.modelId || '') +
+      ' \u00b7 Lead ' +
+      esc(fc.leadAssignee || '') +
+      '</div></div>' +
+      '<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center">' +
+      '<span class="badge badge-' +
+      sevClass +
+      '" style="font-size:9px" title="Case severity">' +
+      esc(fc.severity || '') +
+      '</span>' +
+      '<span class="badge badge-blue" style="font-size:9px;max-width:220px;white-space:normal;text-align:left" title="' +
+      esc(typeDesc(fc.sentinelCaseType)) +
+      '">' +
+      esc(typeLabel(fc.sentinelCaseType)) +
+      '</span>' +
+      '<span style="font-size:10px;color:var(--muted)" title="Lifecycle state">' +
+      esc(fc.status || '') +
+      '</span></div></div>' +
+      '<div style="margin-top:12px;font-size:11px;color:var(--muted2);display:flex;flex-wrap:wrap;gap:14px">' +
+      '<span title="SLA target">SLA: ' +
+      esc(slaShort) +
+      '</span>' +
+      '<span title="Affected population">Affected: ' +
+      esc(String(fc.affectedCount != null ? fc.affectedCount : '\u2014')) +
+      '</span>' +
+      '</div></div></div>' +
+      '<div class="card" style="padding:14px;margin-bottom:12px" title="Case narrative and routing context">' +
+      '<div style="font-size:12px;font-weight:700;color:var(--chrome2);margin-bottom:8px">Overview</div>' +
+      '<div style="font-size:11px;color:var(--muted2);line-height:1.55">' +
+      esc(fc.metricViolation || fc.cohortDescription || 'Case opened in Sentinel case engine.') +
+      '</div></div>' +
+      '<div class="card" style="padding:14px;margin-bottom:12px">' +
+      '<div style="font-size:12px;font-weight:700;color:var(--chrome2);margin-bottom:8px" title="Embedded collaboration pane — same channel UI as full-screen Case Channel">Channel</div>' +
+      '<div id="sentinel-case-channel-host"></div></div>' +
+      '<div class="grid-2" style="margin-bottom:12px;gap:12px">' +
+      '<div class="card" style="padding:14px" title="Jump to Genesis tests for this model">' +
+      '<div style="font-size:12px;font-weight:700;color:var(--chrome2);margin-bottom:8px">Linked Tests (Genesis)</div>' +
+      '<div style="font-size:10px;color:var(--muted);margin-bottom:10px">Prototype link — opens Genesis workspace.</div>' +
+      '<button type="button" class="btn-ghost" style="font-size:11px" onclick="showScreen(\'genesis\',null)" title="Open Genesis Core">Open Genesis \u2192</button></div>' +
+      '<div class="card" style="padding:14px" title="Jump to Atonement remediation queue">' +
+      '<div style="font-size:12px;font-weight:700;color:var(--chrome2);margin-bottom:8px">Linked Remediation (Atonement)</div>' +
+      '<div style="font-size:10px;color:var(--muted);margin-bottom:10px">Prototype link — opens Atonement Core.</div>' +
+      '<button type="button" class="btn-ghost" style="font-size:11px" onclick="showScreen(\'atonement\',null)" title="Open Atonement Core">Open Atonement \u2192</button></div></div>' +
+      '<div class="card" style="padding:14px;margin-bottom:12px" title="Decision Receipts tied to this case (placeholder)">' +
+      '<div style="font-size:12px;font-weight:700;color:var(--chrome2);margin-bottom:8px">Receipts</div>' +
+      '<div style="font-size:11px;color:var(--muted2)">Receipt bindings surface here in production. Prototype: use Trust Ledger for sealed receipts.</div>' +
+      '<button type="button" class="btn-ghost" style="font-size:11px;margin-top:10px" onclick="showScreen(\'trustledger\',null)" title="Open Trust Ledger">Trust Ledger \u2192</button></div>' +
+      '<div class="card" style="padding:14px" title="Echo Core memories referencing this case">' +
+      '<div style="font-size:12px;font-weight:700;color:var(--chrome2);margin-bottom:8px">Echo Memories</div>' +
+      '<div style="font-size:11px;color:var(--muted2)">Echo drill-down for this case is Prompt 2D. Open Echo Core to browse audit memory.</div>' +
+      '<button type="button" class="btn-ghost" style="font-size:11px;margin-top:10px" onclick="showScreen(\'echo\',null)" title="Open Echo Core">Echo Core \u2192</button></div>';
+
+    try {
+      if (typeof window.edoEnsureWarRoomCaseChannel === 'function') window.edoEnsureWarRoomCaseChannel(o, focusId);
+    } catch (_eq) {}
+    window.__wrFocusCaseId = focusId;
+    try {
+      renderWarRoomCaseChannel(o, 'sentinel-case-channel-host');
+    } catch (_rch) {}
+    return;
+  }
+
+  var sevF = window.__sentinelSeverityFilter;
+  var typF = window.__sentinelTypeFilter;
+  var filtered = cases.filter(function (c) {
+    if (sevF && c.severity !== sevF) return false;
+    if (typF && c.sentinelCaseType !== typF) return false;
+    return true;
+  });
+
+  var typeChips =
+    '<button type="button" class="btn-ghost' +
+    (!typF ? ' active' : '') +
+    '" style="font-size:10px;padding:6px 10px' +
+    (!typF ? ';background:rgba(166,218,255,.12)' : '') +
+    '" title="Clear archetype filter" onclick="cardinalSentinelApplyFilters(\'type\',\'all\')">All Types</button>' +
+    types
+      .map(function (tt) {
+        var activeT = typF === tt.id;
         return (
-          '<div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid rgba(180,190,220,.05);">' +
-          '<span style="font-size:11px;color:var(--muted2);">' +
-          esc(x.k) +
-          '</span>' +
-          '<span style="font-size:11px;font-weight:600;color:var(--' +
-          (x.ok ? 'green' : 'amber') +
-          ');">' +
-          esc(x.v) +
-          '</span></div>'
+          '<button type="button" class="btn-ghost' +
+          (activeT ? ' active' : '') +
+          '" style="font-size:10px;padding:6px 10px;white-space:nowrap' +
+          (activeT ? ';background:rgba(245,158,11,.14)' : '') +
+          '" title="' +
+          esc(tt.description) +
+          '" onclick="cardinalSentinelApplyFilters(\'type\',\'' +
+          tt.id +
+          '\')">' +
+          esc(tt.label) +
+          '</button>'
         );
       })
       .join('');
-  }
-  var tri = document.getElementById('sentinel-triage-steps');
-  if (tri) {
-    tri.innerHTML =
-      '<ol style="margin:0;padding-left:18px;font-size:11px;color:var(--muted2);line-height:1.7;">' +
-      '<li><strong style="color:var(--chrome2);">Validate</strong> — Cardinal replays the affected cohort for ' +
-      esc(d.org || o) +
-      ' and confirms the signal.</li>' +
-      '<li><strong style="color:var(--chrome2);">Notify</strong> — Routing package sent to your governance lead with remediation context.</li>' +
-      '<li><strong style="color:var(--chrome2);">Prepare</strong> — War Room draft + Echo receipts staged before the client sees a red alert.</li>' +
-      '<li><strong style="color:var(--chrome2);">Resolve</strong> — Atonement tracks the fix; Sentinel clears when CARDINAL_DATA thresholds pass.</li>' +
-      '</ol>';
-  }
-  var tl = document.getElementById('sentinel-timeline-chart');
-  if (tl) {
-    tl.innerHTML = mar.length
-      ? mar
-          .map(function (m, i) {
-            var daysEarly = Math.max(3, 9 - i * 2);
-            var pct = Math.min(100, daysEarly * 12);
-            return (
-              '<div style="margin-bottom:12px;">' +
-              '<div style="display:flex;justify-content:space-between;margin-bottom:4px;font-size:10px;color:var(--muted2);">' +
-              '<span>' +
-              esc(m.name) +
-              '</span><span>' +
-              daysEarly +
-              'd lead</span></div>' +
-              '<div style="height:8px;background:rgba(255,255,255,0.06);border-radius:4px;">' +
-              '<div style="height:100%;width:' +
-              pct +
-              '%;background:var(--accent);border-radius:4px;"></div></div></div>'
-            );
-          })
-          .join('')
-      : '<div style="font-size:11px;color:var(--muted);">No detection timeline rows in modelsAtRiskList for this org.</div>';
-  }
-  function setTxt(id, v) {
-    var el = document.getElementById(id);
-    if (el) el.textContent = v;
-  }
-  setTxt('sent-caught', String(mar.length));
-  setTxt('sent-lead', sk.leadLabel != null ? String(sk.leadLabel) : '6.2 days');
-  setTxt('sent-prevented', sk.prevented != null ? String(sk.prevented) : '23');
-  setTxt('sent-exposure', sk.exposureQ != null ? String(sk.exposureQ) : String(d.penaltyExposure || '—'));
-  try {
-    switchSentinelTab('caught', 0);
-  } catch (_sw) {}
+
+  var hero =
+    '<div class="card" style="padding:16px;margin-bottom:16px;background:linear-gradient(135deg,rgba(166,218,255,.07),transparent);border:1px solid rgba(166,218,255,.18)" title="TODO 2D — replace with full Cardinal Hero gauge when posture telemetry lands">' +
+    '<div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px">' +
+    '<div><div style="font-size:14px;font-weight:700;color:var(--chrome2)">Case Posture</div>' +
+    '<div style="font-size:10px;color:var(--muted);margin-top:4px">Preview metrics from CARDINAL_DATA active cases · Hero slider TODO 2D</div></div>' +
+    '<span class="badge badge-green" title="Approximate stable share (prototype heuristic)">Preview · ' +
+    onSla +
+    '% stable</span></div>' +
+    '<div style="margin-top:12px;display:flex;gap:16px;flex-wrap:wrap;font-size:11px;color:var(--muted2)">' +
+    '<span title="Total deduped cases">' +
+    total +
+    ' cases monitored</span>' +
+    '<span title="Critical queue depth">' +
+    crit +
+    ' critical</span>' +
+    '</div></div>';
+
+  var tabRow =
+    '<div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">' +
+    '<button type="button" class="gen-tab' +
+    (tab === 'cases' ? ' active' : '') +
+    '" style="font-size:11px;padding:8px 14px" title="Org-wide Sentinel cases with filters" onclick="cardinalSentinelUiSetMainTab(\'cases\')">Cases</button>' +
+    '<button type="button" class="gen-tab' +
+    (tab === 'lab' ? ' active' : '') +
+    '" style="font-size:11px;padding:8px 14px" title="Synthetic personas, drift monitors, stress tests (placeholder data)" onclick="cardinalSentinelUiSetMainTab(\'lab\')">Lab</button>' +
+    '</div>';
+
+  var pillsRow =
+    '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px;align-items:center">' +
+    '<span style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em" title="Severity filters">Severity</span>' +
+    sevBtn('All Cases', 'all', 'Clear severity filter', !sevF) +
+    sevBtn('Critical', 'Critical', 'Show Critical cases only', sevF === 'Critical') +
+    sevBtn('High', 'High', 'Show High cases only', sevF === 'High') +
+    sevBtn('Medium', 'Medium', 'Show Medium cases only', sevF === 'Medium') +
+    '<span style="width:1px;height:18px;background:var(--border2);margin:0 6px"></span>' +
+    '<span style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em" title="Canonical Sentinel archetypes">Types</span>' +
+    typeChips +
+    '</div>';
+
+  var tableHead =
+    '<table style="width:100%;border-collapse:collapse;font-size:11px" title="Unified Sentinel case portfolio">' +
+    '<thead><tr style="text-align:left;color:var(--muted);border-bottom:1px solid var(--border2)">' +
+    '<th style="padding:8px 6px" title="Case identifier">Case</th>' +
+    '<th style="padding:8px 6px" title="Sentinel archetype">Type</th>' +
+    '<th style="padding:8px 6px">Severity</th>' +
+    '<th style="padding:8px 6px">Model</th>' +
+    '<th style="padding:8px 6px">Affected</th>' +
+    '<th style="padding:8px 6px">Status</th>' +
+    '<th style="padding:8px 6px">SLA</th>' +
+    '<th style="padding:8px 6px">Lead</th>' +
+    '<th style="padding:8px 6px" title="Case channel provisioned">Ch</th>' +
+    '<th style="padding:8px 6px" title="Adam/Eve orchestration">AI</th>' +
+    '<th style="padding:8px 6px"></th>' +
+    '</tr></thead><tbody>';
+
+  var rows = filtered
+    .map(function (c) {
+      var cid = String(c.caseId || '').replace(/^#/, '');
+      var adamMon = /Eve|Adam|Cardinal/i.test(String(c.leadAssignee || ''));
+      var chOk = hasChannel(cid);
+      var slaCell = c.slaDeadline ? esc(String(c.slaDeadline).slice(0, 10)) : '\u2014';
+      var ty = c.sentinelCaseType || '';
+      var sevClass = c.severity === 'Critical' ? 'red' : c.severity === 'High' ? 'amber' : 'yellow';
+      return (
+        '<tr style="border-bottom:1px solid rgba(180,190,220,.06)">' +
+        '<td style="padding:8px 6px;font-weight:700;color:var(--chrome2)">' +
+        esc(c.caseId || '') +
+        '</td>' +
+        '<td style="padding:8px 6px"><span class="badge badge-blue" style="font-size:9px;white-space:normal;max-width:120px" title="' +
+        esc(typeDesc(ty)) +
+        '">' +
+        esc(typeLabel(ty)) +
+        '</span></td>' +
+        '<td style="padding:8px 6px"><span class="badge badge-' +
+        sevClass +
+        '" style="font-size:9px">' +
+        esc(c.severity || '') +
+        '</span></td>' +
+        '<td style="padding:8px 6px;color:var(--muted2)">' +
+        esc(c.modelId || '') +
+        '</td>' +
+        '<td style="padding:8px 6px">' +
+        esc(String(c.affectedCount != null ? c.affectedCount : '\u2014')) +
+        '</td>' +
+        '<td style="padding:8px 6px;color:var(--muted2)">' +
+        esc(c.status || '') +
+        '</td>' +
+        '<td style="padding:8px 6px;color:var(--muted2)">' +
+        slaCell +
+        '</td>' +
+        '<td style="padding:8px 6px;color:var(--muted2)">' +
+        esc(c.leadAssignee || '') +
+        '</td>' +
+        '<td style="padding:8px 6px;text-align:center" title="' +
+        (chOk ? 'Case channel available in Sentinel detail' : 'Channel spins up when case opens') +
+        '">' +
+        (chOk ? 'Y' : 'N') +
+        '</td>' +
+        '<td style="padding:8px 6px;text-align:center">' +
+        (adamMon
+          ? '<span title="Adam/Eve orchestration enforcing Sentinel workflow on this row (prototype)." style="cursor:help;font-size:13px">\u2699</span>'
+          : '<span style="color:var(--muted)" title="Human-led monitoring">\u2014</span>') +
+        '</td>' +
+        '<td style="padding:8px 6px"><button type="button" class="btn-primary" style="font-size:10px;padding:4px 10px" title="Open Sentinel case detail with embedded channel" onclick="cardinalSentinelUiOpenCase(' +
+        JSON.stringify(cid) +
+        ')">Open</button></td>' +
+        '</tr>'
+      );
+    })
+    .join('');
+
+  var emptyRow =
+    '<tr><td colspan="11" style="padding:22px;text-align:center;color:var(--muted)">No cases match current filters.</td></tr>';
+
+  var casesPanel =
+    '<div>' +
+    pillsRow +
+    (filtered.length ? tableHead + rows + '</tbody></table>' : tableHead + emptyRow + '</tbody></table>') +
+    '</div>';
+
+  var labPanel =
+    '<div style="display:grid;gap:14px">' +
+    '<div class="card" style="padding:14px" title="Synthetic persona harness (placeholder)">' +
+    '<div style="font-size:13px;font-weight:700;color:var(--chrome2);margin-bottom:8px">Synthetic Persona Library</div>' +
+    '<div style="font-size:11px;color:var(--muted2);margin-bottom:12px">Adversarial personas exercise models before drift hits production. No lab personas seeded in CARDINAL_DATA yet.</div>' +
+    '<div style="font-size:11px;color:var(--muted);padding:12px;border:1px dashed var(--border2);border-radius:10px;text-align:center" title="Empty sentinel lab state">No personas configured for this org in prototype data.</div></div>' +
+    '<div class="card" style="padding:14px" title="Drift monitors per model">' +
+    '<div style="font-size:13px;font-weight:700;color:var(--chrome2);margin-bottom:8px">Drift Monitors</div>' +
+    '<div style="font-size:11px;color:var(--muted2);margin-bottom:12px">Per-model baselines and thresholds will render here (Prompt 2D).</div>' +
+    '<div style="font-size:11px;color:var(--muted);padding:12px;border:1px dashed var(--border2);border-radius:10px;text-align:center">No drift monitors configured.</div></div>' +
+    '<div class="card" style="padding:14px" title="Chaos and stress drills">' +
+    '<div style="font-size:13px;font-weight:700;color:var(--chrome2);margin-bottom:8px">Stress Test Results</div>' +
+    '<div style="font-size:11px;color:var(--muted2);margin-bottom:12px">Quarterly resilience drills roll up here.</div>' +
+    '<div style="font-size:11px;color:var(--muted);padding:12px;border:1px dashed var(--border2);border-radius:10px;text-align:center">No stress tests run this period.</div></div>' +
+    '</div>';
+
+  root.innerHTML =
+    '<div style="max-width:1280px;margin:0 auto">' +
+    '<div style="margin-bottom:8px">' +
+    '<div style="font-size:15px;font-weight:700;color:var(--chrome2)" title="Sentinel case lifecycle engine">◈ Cardinal Sentinel</div>' +
+    '<div style="font-size:11px;color:var(--muted);margin-top:4px">Case engine + Lab workspace · Channels embed below when a case is opened</div></div>' +
+    hero +
+    tabRow +
+    (tab === 'lab' ? labPanel : casesPanel) +
+    '</div>';
 }
 
 // ══ SENTINEL LIVE FEED ══
