@@ -6182,9 +6182,7 @@ Template Overview
     <div class="tsv2-gauge edo-echo-gauge" id="echo-hero-gauge-wrap" style="cursor:pointer;" onclick="echoShowIntegrityExplainer()" title="Click to learn why Echo is mathematically tamper-proof">
       <div class="tsv2-gauge-pulse" style="background:radial-gradient(circle, rgba(34,197,94,0.18) 0%, rgba(34,197,94,0) 70%);"></div>
       <svg viewBox="0 0 200 200">
-        <defs>
-          <filter id="echoGaugeGlow"><feGaussianBlur stdDeviation="3" result="coloredBlur"/><feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-        </defs>
+        <defs><filter id="echoGaugeGlow"><feGaussianBlur stdDeviation="3" result="coloredBlur"/><feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
         <circle cx="100" cy="100" r="86" fill="none" stroke="rgba(166,218,255,.06)" stroke-width="14"/>
         <circle cx="100" cy="100" r="86" fill="none" stroke="#22c55e" stroke-width="14" stroke-linecap="round" stroke-dasharray="540.35" stroke-dashoffset="0" transform="rotate(-90 100 100)" filter="url(#echoGaugeGlow)" style="transition: stroke-dashoffset 1.2s ease;"/>
         <text x="100" y="108" text-anchor="middle" font-size="44" font-weight="800" fill="#22c55e" style="font-family:inherit;letter-spacing:-1.5px;">100</text>
@@ -6204,9 +6202,7 @@ Template Overview
       <div style="font-size:10px;color:var(--muted);margin-bottom:14px;">How this score is verified</div>
       <div id="echo-hero-reliability-list" style="display:flex;flex-direction:column;gap:9px;"></div>
     </div>
-    <button type="button" onclick="echoShowIntegrityExplainer()" style="margin-top:12px;padding:10px 14px;background:rgba(166,218,255,0.06);border:1px solid rgba(166,218,255,0.2);border-radius:8px;color:var(--accent);font-size:11px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;width:100%;" title="Learn why Echo is mathematically tamper-proof">
-      <span style="color:var(--green);">◆</span> Why Echo is unbreakable
-    </button>
+    <button type="button" onclick="echoShowIntegrityExplainer()" style="margin-top:12px;padding:10px 14px;background:rgba(166,218,255,0.06);border:1px solid rgba(166,218,255,0.2);border-radius:8px;color:var(--accent);font-size:11px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;width:100%;" title="Learn why Echo is mathematically tamper-proof"><span style="color:var(--green);">◆</span> Why Echo is unbreakable</button>
   </div>
 </section>
 
@@ -16817,11 +16813,12 @@ if (typeof window.buildTrustLedger === 'undefined' && typeof buildTrustLedger ==
       var div = document.createElement('div');
       div.setAttribute('data-trustledger-placeholder', 'true');
       div.style.cssText = 'padding:40px;text-align:center;background:rgba(15,23,42,0.4);border:1px solid rgba(166,218,255,0.08);border-radius:12px;margin:20px;';
-      div.innerHTML = '<div style="font-size:14px;color:var(--chrome2);font-weight:600;margin-bottom:8px;">Trust Ledger — Public Verifier Portal</div>' +
-        '<div style="font-size:11px;color:var(--muted);max-width:520px;margin:0 auto;line-height:1.6;">Public-facing cryptographic receipts and external verifier portal. Renders Decision Receipts where publicVisibility = "public-summary". Full UI deferred to Prompt 2L. Screen DOM ready, data wiring pending.</div>';
+      div.innerHTML = '<div style="font-size:14px;color:var(--chrome2);font-weight:600;margin-bottom:8px;">Trust Ledger — Public Verifier Portal</div><div style="font-size:11px;color:var(--muted);max-width:520px;margin:0 auto;line-height:1.6;">Public-facing cryptographic receipts and external verifier portal. Renders Decision Receipts where publicVisibility = "public-summary". Full UI deferred to Prompt 2L.</div>';
       screenEl.appendChild(div);
     }
   };
+  try { buildTrustLedger = window.buildTrustLedger; } catch (__tlAlias) {}
+  if (typeof globalThis !== 'undefined') globalThis.buildTrustLedger = window.buildTrustLedger;
 }
 
 function showScreen(name, navEl) {
@@ -16873,7 +16870,7 @@ function showScreen(name, navEl) {
    }
    buildSentinel((typeof currentOrg !== 'undefined' && currentOrg) || window.currentOrg || 'ad');
  }
- if(name==='trustledger') { try { if (typeof window.buildTrustLedger === 'function') window.buildTrustLedger(currentOrg); else if (typeof buildTrustLedger === 'function') buildTrustLedger(currentOrg); } catch(_tl) { console.error('buildTrustLedger error', _tl); } }
+ if(name==='trustledger') { try { if (typeof buildTrustLedger === 'function') buildTrustLedger(currentOrg); } catch(_tl) { console.error('buildTrustLedger error', _tl); } }
  if(name==='pmprofiles') { try { if (typeof buildPMProfiles === 'function') buildPMProfiles(currentOrg); } catch(_pmp) { console.error('buildPMProfiles error', _pmp); } }
  if(name==='warroom') { try { if (typeof buildWarRoom === 'function') buildWarRoom(currentOrg); } catch(_wr) { console.error('buildWarRoom error', _wr); } }
  if(name==='settings') { try { syncSettingsScreenToggles(); } catch(_set) {} }
@@ -22311,17 +22308,14 @@ function renderEchoExecSummary(org) {
   var weeklyMemories = memories.filter(function(m){ return (now - new Date(m.timestamp).getTime()) <= weekMs; });
   var criticalThisWeek = weeklyMemories.filter(function(m){ return m.severity === 'critical'; }).length;
   var deploymentsThisWeek = weeklyMemories.filter(function(m){ return m.eventType === 'remediation-started' || m.eventType === 'model-deployed'; }).length;
-
   var el = document.getElementById('echo-exec-summary-line');
   if (!el) return;
-
   var parts = [];
   parts.push('<strong style="color:var(--chrome2);">' + weeklyMemories.length + '</strong> new this week');
   if (criticalThisWeek > 0) parts.push('<strong style="color:var(--red);">' + criticalThisWeek + ' critical</strong>');
   if (deploymentsThisWeek > 0) parts.push('<strong style="color:var(--green);">' + deploymentsThisWeek + ' deployment' + (deploymentsThisWeek === 1 ? '' : 's') + '</strong>');
   parts.push('<strong style="color:var(--green);">100</strong> chain integrity');
   parts.push('<strong style="color:var(--accent);">' + receipts.length + '</strong> Decision Receipts on file');
-
   el.innerHTML = '<span style="color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;font-weight:600;font-size:10px;">This week:</span> ' + parts.join(' <span style="color:var(--muted);opacity:0.4;">·</span> ');
 }
 
@@ -22336,22 +22330,15 @@ function renderEchoCardinalHero(org) {
     return m.eventType === 'document-approved' || m.eventType === 'decision-made' || m.eventType === 'team-decision';
   }).length;
   var sealedCount = memories.filter(function(m){ return m.isSealed; }).length;
-  var pinnedCount = memories.filter(function(m){ return echoGetPinnedState(m); }).length;
+  var pinnedCount = memories.filter(function(m){ return m.isPinned; }).length;
   var addendumCount = memories.reduce(function(acc, m){ return acc + (m.addendums ? m.addendums.length : 0); }, 0);
-
-  var kpi1 = document.getElementById('echo-kpi-total-events'); if (kpi1) kpi1.textContent = totalEvents.toLocaleString();
-  var kpi2 = document.getElementById('echo-kpi-flags-ignored'); if (kpi2) kpi2.textContent = flagsIgnored.toLocaleString();
-  var kpi3 = document.getElementById('echo-kpi-active-cases'); if (kpi3) kpi3.textContent = activeCases.toLocaleString();
-  var kpi4 = document.getElementById('echo-kpi-signoffs'); if (kpi4) kpi4.textContent = signoffs.toLocaleString();
-
-  var reliabilityEl = document.getElementById('echo-hero-reliability-list');
-  if (reliabilityEl) {
-    reliabilityEl.innerHTML =
-      '<div style="display:flex;justify-content:space-between;font-size:11px;border-bottom:1px dotted rgba(180,190,220,0.1);padding-bottom:7px;"><span style="color:var(--muted);">Sealed memories</span><span style="color:var(--green);font-weight:600;">' + sealedCount + ' / ' + totalEvents + '</span></div>' +
-      '<div style="display:flex;justify-content:space-between;font-size:11px;border-bottom:1px dotted rgba(180,190,220,0.1);padding-bottom:7px;"><span style="color:var(--muted);">Pinned by you</span><span style="color:var(--chrome2);font-weight:600;">' + pinnedCount + '</span></div>' +
-      '<div style="display:flex;justify-content:space-between;font-size:11px;border-bottom:1px dotted rgba(180,190,220,0.1);padding-bottom:7px;"><span style="color:var(--muted);">Addendums</span><span style="color:var(--chrome2);font-weight:600;">' + addendumCount + '</span></div>' +
-      '<div style="display:flex;justify-content:space-between;font-size:11px;border-bottom:1px dotted rgba(180,190,220,0.1);padding-bottom:7px;"><span style="color:var(--muted);">Hash chain depth</span><span style="color:var(--chrome2);font-weight:600;">' + (totalEvents + addendumCount) + ' nodes</span></div>' +
-      '<div style="display:flex;justify-content:space-between;font-size:11px;"><span style="color:var(--muted);">Last verified</span><span style="color:var(--green);font-weight:600;">1h ago</span></div>';
+  var k1 = document.getElementById('echo-kpi-total-events'); if (k1) k1.textContent = totalEvents.toLocaleString();
+  var k2 = document.getElementById('echo-kpi-flags-ignored'); if (k2) k2.textContent = flagsIgnored.toLocaleString();
+  var k3 = document.getElementById('echo-kpi-active-cases'); if (k3) k3.textContent = activeCases.toLocaleString();
+  var k4 = document.getElementById('echo-kpi-signoffs'); if (k4) k4.textContent = signoffs.toLocaleString();
+  var rel = document.getElementById('echo-hero-reliability-list');
+  if (rel) {
+    rel.innerHTML = '<div style="display:flex;justify-content:space-between;font-size:11px;border-bottom:1px dotted rgba(180,190,220,0.1);padding-bottom:7px;"><span style="color:var(--muted);">Sealed memories</span><span style="color:var(--green);font-weight:600;">' + sealedCount + ' / ' + totalEvents + '</span></div><div style="display:flex;justify-content:space-between;font-size:11px;border-bottom:1px dotted rgba(180,190,220,0.1);padding-bottom:7px;"><span style="color:var(--muted);">Pinned by you</span><span style="color:var(--chrome2);font-weight:600;">' + pinnedCount + '</span></div><div style="display:flex;justify-content:space-between;font-size:11px;border-bottom:1px dotted rgba(180,190,220,0.1);padding-bottom:7px;"><span style="color:var(--muted);">Addendums</span><span style="color:var(--chrome2);font-weight:600;">' + addendumCount + '</span></div><div style="display:flex;justify-content:space-between;font-size:11px;border-bottom:1px dotted rgba(180,190,220,0.1);padding-bottom:7px;"><span style="color:var(--muted);">Hash chain depth</span><span style="color:var(--chrome2);font-weight:600;">' + (totalEvents + addendumCount) + ' nodes</span></div><div style="display:flex;justify-content:space-between;font-size:11px;"><span style="color:var(--muted);">Last verified</span><span style="color:var(--green);font-weight:600;">1h ago</span></div>';
   }
 }
 
@@ -22730,19 +22717,17 @@ function echoRenderMemoryDetailFullscreen(memory, memoryOrg) {
   }
 
   var vizHtml = '';
-  if (memory.modelId && memory.eventType && (memory.eventType.indexOf('deploy') !== -1 || memory.eventType === 'remediation-started' || memory.eventType === 'score-change')) {
+  if (memory.eventType && (memory.eventType.indexOf('deploy') !== -1 || memory.eventType === 'remediation-started' || memory.eventType === 'score-change')) {
     var relatedDeploys = allMemories.filter(function(m){ return m.modelId === memory.modelId && (m.content || '').match(/DI[: ]+0?\.\d+/); }).slice(0, 8);
     if (relatedDeploys.length >= 2) {
       var diPoints = relatedDeploys.map(function(m){
         var match = (m.content || '').match(/DI[: ]+(0?\.\d+)/);
         return match ? { date: new Date(m.timestamp), di: parseFloat(match[1]), label: (m.summary || '').substring(0, 30) } : null;
       }).filter(Boolean).sort(function(a,b){ return a.date.getTime() - b.date.getTime(); });
-
       if (diPoints.length >= 2) {
         var minDi = Math.min.apply(null, diPoints.map(function(p){ return p.di; })) - 0.05;
         var maxDi = Math.max.apply(null, diPoints.map(function(p){ return p.di; })) + 0.05;
-        var diSpan = maxDi - minDi;
-        if (diSpan < 1e-6) diSpan = 1;
+        var diSpan = Math.max(maxDi - minDi, 1e-9);
         var w = 600, h = 180, pad = 30;
         var xStep = (w - 2*pad) / (diPoints.length - 1);
         var pathPoints = diPoints.map(function(p, i){ return [pad + i*xStep, pad + (h - 2*pad) * (1 - (p.di - minDi) / diSpan)]; });
@@ -22750,18 +22735,7 @@ function echoRenderMemoryDetailFullscreen(memory, memoryOrg) {
         var dotsStr = pathPoints.map(function(pt, i){ return '<circle cx="' + pt[0].toFixed(1) + '" cy="' + pt[1].toFixed(1) + '" r="4" fill="' + (i === pathPoints.length - 1 ? '#22c55e' : '#3b82f6') + '" stroke="rgba(15,23,42,0.8)" stroke-width="2"/>'; }).join('');
         var labelsStr = diPoints.map(function(p, i){ return '<text x="' + pathPoints[i][0].toFixed(1) + '" y="' + (h - 8) + '" text-anchor="middle" font-size="9" fill="rgba(180,190,220,0.6)">' + echoEscapeHtml(p.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })) + '</text>'; }).join('');
         var y80 = pad + (h - 2*pad) * (1 - (0.8 - minDi) / diSpan);
-
-        vizHtml += '<div style="margin-bottom:18px;padding:20px;background:rgba(15,23,42,0.4);border:1px solid rgba(166,218,255,0.08);border-radius:12px;">' +
-          '<div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;font-weight:600;">📈 DI Trajectory · ' + echoEscapeHtml(memory.modelId) + '</div>' +
-          '<svg viewBox="0 0 ' + w + ' ' + h + '" width="100%" height="' + h + '">' +
-            '<line x1="' + pad + '" y1="' + y80.toFixed(1) + '" x2="' + (w - pad) + '" y2="' + y80.toFixed(1) + '" stroke="rgba(34,197,94,0.4)" stroke-width="1" stroke-dasharray="3 3"/>' +
-            '<text x="' + (w - pad - 5) + '" y="' + (y80 - 5).toFixed(1) + '" text-anchor="end" font-size="9" fill="rgba(34,197,94,0.6)">DI 0.80 target</text>' +
-            '<path d="' + pathStr + '" fill="none" stroke="#3b82f6" stroke-width="2"/>' +
-            dotsStr +
-            labelsStr +
-          '</svg>' +
-          '<div style="font-size:10px;color:var(--muted);margin-top:6px;">Disparate Impact ratio over time. Last reading: <strong style="color:var(--green);">' + diPoints[diPoints.length-1].di.toFixed(2) + '</strong></div>' +
-          '</div>';
+        vizHtml += '<div style="margin-bottom:18px;padding:20px;background:rgba(15,23,42,0.4);border:1px solid rgba(166,218,255,0.08);border-radius:12px;"><div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;font-weight:600;">📈 DI Trajectory · ' + echoEscapeHtml(String(memory.modelId || '')) + '</div><svg viewBox="0 0 ' + w + ' ' + h + '" width="100%" height="' + h + '"><line x1="' + pad + '" y1="' + y80 + '" x2="' + (w - pad) + '" y2="' + y80 + '" stroke="rgba(34,197,94,0.4)" stroke-width="1" stroke-dasharray="3 3"/><text x="' + (w - pad - 5) + '" y="' + (y80 - 5) + '" text-anchor="end" font-size="9" fill="rgba(34,197,94,0.6)">DI 0.80 target</text><path d="' + pathStr + '" fill="none" stroke="#3b82f6" stroke-width="2"/>' + dotsStr + labelsStr + '</svg><div style="font-size:10px;color:var(--muted);margin-top:6px;">Disparate Impact ratio over time. Last reading: <strong style="color:var(--green);">' + diPoints[diPoints.length-1].di.toFixed(2) + '</strong></div></div>';
       }
     }
   }
@@ -22772,24 +22746,16 @@ function echoRenderMemoryDetailFullscreen(memory, memoryOrg) {
     var xStep2 = (w2 - 2*pad2) / Math.max(totalNodes - 1, 1);
     var hashNodes = '';
     var hashLinks = '';
-    var yMid = h2 / 2;
     for (var k = 0; k < totalNodes; k++) {
-      var xh = pad2 + k * xStep2;
+      var x = pad2 + k * xStep2;
+      var y = h2 / 2;
       var label = k === 0 ? 'origin' : 'add ' + k;
       var hashShort = k === 0 ? (memory.hash || '').substring(2, 8) : (allAddendums[k-1].hash || '').substring(2, 8);
       var color = k === 0 ? '#3b82f6' : '#f59e0b';
-      hashNodes += '<g><circle cx="' + xh + '" cy="' + yMid + '" r="9" fill="' + color + '" stroke="rgba(15,23,42,0.8)" stroke-width="2"/>' +
-        '<text x="' + xh + '" y="' + (yMid - 16) + '" text-anchor="middle" font-size="9" fill="rgba(180,190,220,0.5)" font-family="monospace">' + echoEscapeHtml(hashShort) + '</text>' +
-        '<text x="' + xh + '" y="' + (yMid + 22) + '" text-anchor="middle" font-size="8" fill="rgba(180,190,220,0.4)">' + echoEscapeHtml(label) + '</text></g>';
-      if (k > 0) {
-        hashLinks += '<line x1="' + (pad2 + (k-1) * xStep2) + '" y1="' + yMid + '" x2="' + xh + '" y2="' + yMid + '" stroke="rgba(245,158,11,0.4)" stroke-width="2" stroke-dasharray="3 2"/>';
-      }
+      hashNodes += '<g><circle cx="' + x + '" cy="' + y + '" r="9" fill="' + color + '" stroke="rgba(15,23,42,0.8)" stroke-width="2"/><text x="' + x + '" y="' + (y - 16) + '" text-anchor="middle" font-size="9" fill="rgba(180,190,220,0.5)" font-family="monospace">' + echoEscapeHtml(hashShort) + '</text><text x="' + x + '" y="' + (y + 22) + '" text-anchor="middle" font-size="8" fill="rgba(180,190,220,0.4)">' + echoEscapeHtml(label) + '</text></g>';
+      if (k > 0) hashLinks += '<line x1="' + (pad2 + (k-1) * xStep2) + '" y1="' + y + '" x2="' + x + '" y2="' + y + '" stroke="rgba(245,158,11,0.4)" stroke-width="2" stroke-dasharray="3 2"/>';
     }
-    vizHtml += '<div style="margin-bottom:18px;padding:20px;background:rgba(15,23,42,0.4);border:1px solid rgba(245,158,11,0.15);border-radius:12px;">' +
-      '<div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;font-weight:600;">🔗 Hash Chain · ' + totalNodes + ' nodes</div>' +
-      '<svg viewBox="0 0 ' + w2 + ' ' + h2 + '" width="100%" height="' + h2 + '">' + hashLinks + hashNodes + '</svg>' +
-      '<div style="font-size:10px;color:var(--muted);margin-top:6px;">Origin memory + ' + allAddendums.length + ' sealed addendum' + (allAddendums.length === 1 ? '' : 's') + '. Each link cryptographically anchors to the previous.</div>' +
-      '</div>';
+    vizHtml += '<div style="margin-bottom:18px;padding:20px;background:rgba(15,23,42,0.4);border:1px solid rgba(245,158,11,0.15);border-radius:12px;"><div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;font-weight:600;">🔗 Hash Chain · ' + totalNodes + ' nodes</div><svg viewBox="0 0 ' + w2 + ' ' + h2 + '" width="100%" height="' + h2 + '">' + hashLinks + hashNodes + '</svg><div style="font-size:10px;color:var(--muted);margin-top:6px;">Origin memory + ' + allAddendums.length + ' sealed addendum' + (allAddendums.length === 1 ? '' : 's') + '. Each link cryptographically anchors to the previous.</div></div>';
   }
 
   var contentBodyHtml = '<div style="margin-bottom:18px;padding:20px;background:rgba(15,23,42,0.4);border:1px solid rgba(166,218,255,0.08);border-radius:12px;">' +
