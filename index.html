@@ -80,7 +80,7 @@
   ════════════════════════════════════════════════════════════════════
   ECHO CORE INTEGRATION REMINDER (do not implement in this patch; reference when Echo Core ships)
   Next Echo Core build MUST follow Master Doc Part 14 in full:
-  • THREE MEMORY LAYERS: (1) Auto-logged — every system event, immutable, cryptographically timestamped; (2) User-pinned — explicit “Send to Echo Core” actions; (3) Sealed Memories — append-only, originals never deleted/edited, addendums chained cryptographically (James Park Apr 16 dismissal = Sealed, echo-AD-2026-04-16-1422-pp01).
+  • THREE MEMORY LAYERS: (1) Auto-logged — every system event, immutable, cryptographically timestamped; (2) User-pinned — explicit “Send to Echo Core” actions; (3) Logged Events — append-only, originals never deleted/edited, addendums chained cryptographically (James Park Apr 16 dismissal = immutable logged record, echo-AD-2026-04-16-1422-pp01).
   • MULTI-AXIS FILTERS: Time × Core × Event Type × User × Severity × Linked Case × Crypto Status — stackable, save as named Views.
   • FIVE VIEW MODES: Feed / Cross-Core Timeline / By Case / By User / By Memory Type.
   • CROSS-CORE TIMELINE (Case #AD-2847): Eden (Apr 14) → Eve flag in #governance-team (Apr 16, James Park dismissal SEALED) → Sarah Chen review (Apr 17) → Eve auto-escalation (Apr 21) → James Park addendum (Apr 21) → War Room Case #AD-2847 (Apr 22) → Genesis counterfactual (Apr 25) → Atonement v2.5 shadow 5% (Apr 28) → DI 0.74 (May 1) → Atonement full rollout projected (May 8) → DoD attestation (May 21).
@@ -2169,6 +2169,20 @@ background: var(--red); flex-shrink: 0; margin-top: 3px;
 animation: pulse 2s infinite;
 }
 @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+@keyframes echoLivePulse {
+  0%, 100% { opacity: 1; box-shadow: 0 0 8px #22c55e; }
+  50% { opacity: 0.5; box-shadow: 0 0 14px #22c55e; }
+}
+@keyframes echoActivityPulse {
+  0% { background: rgba(34,197,94,0.15); transform: translateX(0); }
+  50% { background: rgba(34,197,94,0.05); }
+  100% { background: rgba(15,23,42,0.5); transform: translateX(0); }
+}
+.echo-kpi-card:hover {
+  border-color: rgba(166,218,255,0.25) !important;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05) !important;
+}
 @keyframes echoChainNodePulse {
   0%, 100% { transform: scale(1); }
   50% { transform: scale(1.15); }
@@ -6149,66 +6163,127 @@ Template Overview
 </div>
 </div>
 
-<!-- Compact subtitle line -->
-<div style="font-size:11px;color:var(--muted);margin-bottom:14px;line-height:1.6;" id="echo-exec-summary-line"></div>
-
-<!-- Compact 4-stat row -->
-<div class="grid-4" style="margin-bottom:18px;" id="echo-kpi-row">
-  <div class="stat-card">
-    <div class="stat-label">Total Audit Events</div>
-    <div class="stat-value" style="color:var(--accent)" id="echo-kpi-total-events">0</div>
-    <div class="stat-sublabel" style="font-size:10px;color:var(--muted);margin-top:3px;">Tamper-proof log</div>
-  </div>
-  <div class="stat-card">
-    <div class="stat-label">Flags Ignored</div>
-    <div class="stat-value" style="color:var(--red)" id="echo-kpi-flags-ignored">0</div>
-    <div class="stat-sublabel" style="font-size:10px;color:var(--muted);margin-top:3px;">Eve warnings dismissed</div>
-  </div>
-  <div class="stat-card">
-    <div class="stat-label">Active Cases</div>
-    <div class="stat-value" style="color:var(--accent)" id="echo-kpi-active-cases">0</div>
-    <div class="stat-sublabel" style="font-size:10px;color:var(--muted);margin-top:3px;">Linked to memories</div>
-  </div>
-  <div class="stat-card">
-    <div class="stat-label">Sign-Offs</div>
-    <div class="stat-value" style="color:var(--green)" id="echo-kpi-signoffs">0</div>
-    <div class="stat-sublabel" style="font-size:10px;color:var(--muted);margin-top:3px;">This month</div>
-  </div>
-</div>
-
-<!-- Trust Score-style hero -->
-<section id="echo-cardinal-hero" class="tsv2-section tsv2-hero" style="position:relative;overflow:hidden;">
-  <div class="tsv2-hero-left">
-    <div class="tsv2-gauge edo-echo-gauge" id="echo-hero-gauge-wrap" style="cursor:pointer;" onclick="echoShowIntegrityExplainer()" title="Click to learn why Echo is mathematically tamper-proof">
-      <div class="tsv2-gauge-pulse" style="background:radial-gradient(circle, rgba(34,197,94,0.18) 0%, rgba(34,197,94,0) 70%);"></div>
-      <svg viewBox="0 0 200 200">
-        <defs><filter id="echoGaugeGlow"><feGaussianBlur stdDeviation="3" result="coloredBlur"/><feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
-        <circle cx="100" cy="100" r="86" fill="none" stroke="rgba(166,218,255,.06)" stroke-width="14"/>
-        <circle cx="100" cy="100" r="86" fill="none" stroke="#22c55e" stroke-width="14" stroke-linecap="round" stroke-dasharray="540.35" stroke-dashoffset="0" transform="rotate(-90 100 100)" filter="url(#echoGaugeGlow)" style="transition: stroke-dashoffset 1.2s ease;"/>
-        <text x="100" y="108" text-anchor="middle" font-size="44" font-weight="800" fill="#22c55e" style="font-family:inherit;letter-spacing:-1.5px;">100</text>
-        <text x="100" y="130" text-anchor="middle" font-size="9" fill="rgba(180,190,220,0.6)" style="font-family:inherit;letter-spacing:1px;">CHAIN INTEGRITY</text>
-      </svg>
+<!-- ECHO DASHBOARD HERO — Live chain visualization + status verdict -->
+  <section id="echo-cardinal-hero" class="tsv2-section" style="position:relative;overflow:hidden;padding:28px 32px;background:linear-gradient(180deg, rgba(15,23,42,0.7) 0%, rgba(11,18,32,0.5) 100%);border:1px solid rgba(166,218,255,0.1);border-radius:16px;margin-bottom:18px;box-shadow:0 8px 32px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.04);">
+    <div style="position:absolute;top:-100px;right:-80px;width:320px;height:320px;background:radial-gradient(circle, rgba(34,197,94,0.06) 0%, rgba(34,197,94,0) 70%);pointer-events:none;"></div>
+    <div style="position:relative;z-index:1;display:grid;grid-template-columns:1fr 380px;gap:28px;align-items:start;">
+      <!-- LEFT: Status verdict + live wave + activity feed -->
+      <div>
+        <div id="echo-status-verdict" style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;"></div>
+        <div id="echo-status-headline" style="font-size:24px;font-weight:700;color:var(--chrome2);margin-bottom:18px;line-height:1.3;">Echo is monitoring your audit chain</div>
+        <!-- Live ambient wave -->
+        <div style="position:relative;height:88px;margin-bottom:20px;border-radius:12px;background:linear-gradient(180deg, rgba(34,197,94,0.04) 0%, rgba(34,197,94,0.01) 100%);overflow:hidden;border:1px solid rgba(34,197,94,0.12);">
+          <svg viewBox="0 0 800 88" preserveAspectRatio="none" width="100%" height="88" style="position:absolute;inset:0;">
+            <defs>
+              <linearGradient id="echoWaveGrad1" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stop-color="#22c55e" stop-opacity="0"/>
+                <stop offset="50%" stop-color="#22c55e" stop-opacity="0.6"/>
+                <stop offset="100%" stop-color="#22c55e" stop-opacity="0"/>
+              </linearGradient>
+              <linearGradient id="echoWaveGrad2" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stop-color="#3b82f6" stop-opacity="0"/>
+                <stop offset="50%" stop-color="#3b82f6" stop-opacity="0.4"/>
+                <stop offset="100%" stop-color="#3b82f6" stop-opacity="0"/>
+              </linearGradient>
+              <filter id="echoWaveBlur"><feGaussianBlur stdDeviation="1.5"/></filter>
+            </defs>
+            <path d="M0,44 Q100,20 200,44 T400,44 T600,44 T800,44" fill="none" stroke="url(#echoWaveGrad1)" stroke-width="2" filter="url(#echoWaveBlur)">
+              <animate attributeName="d" dur="4s" repeatCount="indefinite"
+                values="M0,44 Q100,20 200,44 T400,44 T600,44 T800,44;
+                        M0,44 Q100,68 200,44 T400,44 T600,44 T800,44;
+                        M0,44 Q100,20 200,44 T400,44 T600,44 T800,44"/>
+            </path>
+            <path d="M0,44 Q150,30 300,44 T600,44 T800,44" fill="none" stroke="url(#echoWaveGrad2)" stroke-width="1.5" opacity="0.6">
+              <animate attributeName="d" dur="6s" repeatCount="indefinite"
+                values="M0,44 Q150,30 300,44 T600,44 T800,44;
+                        M0,44 Q150,58 300,44 T600,44 T800,44;
+                        M0,44 Q150,30 300,44 T600,44 T800,44"/>
+            </path>
+          </svg>
+          <div style="position:absolute;top:8px;left:12px;display:flex;align-items:center;gap:6px;font-size:10px;color:rgba(34,197,94,0.7);font-weight:600;letter-spacing:0.5px;">
+            <span style="width:6px;height:6px;border-radius:50%;background:#22c55e;animation:echoLivePulse 1.6s infinite;box-shadow:0 0 8px #22c55e;"></span>
+            <span>LIVE</span>
+          </div>
+          <div style="position:absolute;bottom:8px;right:12px;font-size:9px;color:rgba(180,190,220,0.4);text-transform:uppercase;letter-spacing:0.5px;">Audit chain heartbeat</div>
+        </div>
+        <!-- Activity feed -->
+        <div>
+          <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;font-weight:600;margin-bottom:8px;">Latest Logged Events</div>
+          <div id="echo-activity-feed" style="display:flex;flex-direction:column;gap:6px;"></div>
+        </div>
+      </div>
+      <!-- RIGHT: Executive Summary + history link + System Health strip -->
+      <div>
+        <div style="background:rgba(15,23,42,0.5);border:1px solid rgba(166,218,255,0.1);border-radius:12px;padding:18px;box-shadow:0 4px 12px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.03);margin-bottom:14px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+            <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;font-weight:700;">Latest Update</div>
+            <button type="button" onclick="echoShowPastBriefings()" style="background:none;border:none;color:var(--accent);font-size:10px;cursor:pointer;padding:0;text-decoration:underline;" title="View past executive briefings">View past briefings</button>
+          </div>
+          <div id="echo-exec-summary-line" style="font-size:12px;color:var(--chrome2);line-height:1.65;"></div>
+          <div id="echo-exec-summary-meta" style="font-size:9px;color:var(--muted);margin-top:8px;font-style:italic;"></div>
+        </div>
+        <div style="background:rgba(15,23,42,0.4);border:1px solid rgba(166,218,255,0.06);border-radius:10px;padding:12px 14px;">
+          <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;font-weight:600;margin-bottom:8px;">System Health</div>
+          <div id="echo-system-health-strip" style="font-size:10px;color:var(--muted2);line-height:1.7;"></div>
+        </div>
+      </div>
     </div>
-    <div class="tsv2-status" style="color:var(--green);">◆ Verified Tamper-Free</div>
-    <div class="tsv2-status-sub" style="color:var(--muted);">Append-only chain · architecturally unbreakable</div>
-    <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-top:10px;font-size:10px;color:var(--muted);">
-      <span style="width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse 2s infinite;"></span>
-      <span>Last verified 1 hour ago</span>
-    </div>
-  </div>
-  <div class="tsv2-hero-right">
-    <div style="background:rgba(15,23,42,0.5);border:1px solid rgba(166,218,255,0.08);border-radius:12px;padding:18px;box-shadow:inset 0 1px 0 rgba(255,255,255,0.03);">
-      <div style="font-size:12px;font-weight:700;color:var(--chrome2);margin-bottom:4px;">Chain Integrity Detail</div>
-      <div style="font-size:10px;color:var(--muted);margin-bottom:14px;">How this score is verified</div>
-      <div id="echo-hero-reliability-list" style="display:flex;flex-direction:column;gap:9px;"></div>
-    </div>
-    <button type="button" onclick="echoShowIntegrityExplainer()" style="margin-top:12px;padding:10px 14px;background:rgba(166,218,255,0.06);border:1px solid rgba(166,218,255,0.2);border-radius:8px;color:var(--accent);font-size:11px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;width:100%;" title="Learn why Echo is mathematically tamper-proof"><span style="color:var(--green);">◆</span> Why Echo is unbreakable</button>
-  </div>
-</section>
+  </section>
 
-<section id="echo-memory-feed-section" title="Sealed Echo memories — filterable append-only audit chain" style="position:relative;padding:24px 28px;margin-bottom:20px;">
+  <!-- 7 KPI CARDS in 2 rows -->
+  <div id="echo-kpi-row-alerts" style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:12px;">
+    <div class="echo-kpi-card" data-card="critical-issues" style="position:relative;padding:16px;background:linear-gradient(180deg, rgba(15,23,42,0.6) 0%, rgba(11,18,32,0.5) 100%);border:1px solid rgba(166,218,255,0.1);border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.03);transition:all 0.2s;">
+      <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;font-weight:700;margin-bottom:8px;">Critical Issues</div>
+      <div style="font-size:32px;font-weight:800;letter-spacing:-1px;line-height:1;" id="echo-kpi-critical">0</div>
+      <div style="font-size:10px;color:var(--muted);margin-top:6px;" id="echo-kpi-critical-sub">Unresolved · need eyes now</div>
+    </div>
+    <div class="echo-kpi-card" data-card="ignored-flags" style="position:relative;padding:16px;background:linear-gradient(180deg, rgba(15,23,42,0.6) 0%, rgba(11,18,32,0.5) 100%);border:1px solid rgba(166,218,255,0.1);border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.03);transition:all 0.2s;">
+      <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;font-weight:700;margin-bottom:8px;">Ignored Flags</div>
+      <div style="font-size:32px;font-weight:800;letter-spacing:-1px;line-height:1;" id="echo-kpi-ignored">0</div>
+      <div style="font-size:10px;color:var(--muted);margin-top:6px;" id="echo-kpi-ignored-sub">Eve warnings dismissed</div>
+    </div>
+    <div class="echo-kpi-card" data-card="pending-signoffs" style="position:relative;padding:16px;background:linear-gradient(180deg, rgba(15,23,42,0.6) 0%, rgba(11,18,32,0.5) 100%);border:1px solid rgba(166,218,255,0.1);border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.03);transition:all 0.2s;">
+      <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;font-weight:700;margin-bottom:8px;">Pending Sign-Offs</div>
+      <div style="font-size:32px;font-weight:800;letter-spacing:-1px;line-height:1;" id="echo-kpi-pending">0</div>
+      <div style="font-size:10px;color:var(--muted);margin-top:6px;" id="echo-kpi-pending-sub">Awaiting human signature</div>
+    </div>
+    <div class="echo-kpi-card" data-card="whistleblower" style="position:relative;padding:16px;background:linear-gradient(180deg, rgba(15,23,42,0.6) 0%, rgba(11,18,32,0.5) 100%);border:1px solid rgba(168,85,247,0.15);border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.03);transition:all 0.2s;">
+      <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;font-weight:700;margin-bottom:8px;">🔒 Whistleblower</div>
+      <div style="font-size:32px;font-weight:800;letter-spacing:-1px;line-height:1;color:#a855f7;" id="echo-kpi-whistleblower">0</div>
+      <div style="font-size:10px;color:var(--muted);margin-top:6px;" id="echo-kpi-whistleblower-sub">Sealed submissions on file</div>
+    </div>
+  </div>
+
+  <div id="echo-kpi-row-activity" style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:18px;">
+    <div class="echo-kpi-card" data-card="days-since-critical" style="position:relative;padding:16px;background:linear-gradient(180deg, rgba(15,23,42,0.6) 0%, rgba(11,18,32,0.5) 100%);border:1px solid rgba(166,218,255,0.1);border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.03);transition:all 0.2s;">
+      <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;font-weight:700;margin-bottom:8px;">Days Since Last Critical</div>
+      <div style="font-size:32px;font-weight:800;letter-spacing:-1px;line-height:1;" id="echo-kpi-days-since">0</div>
+      <div style="font-size:10px;color:var(--muted);margin-top:6px;" id="echo-kpi-days-since-sub">Safety streak</div>
+    </div>
+    <div class="echo-kpi-card" data-card="active-investigations" style="position:relative;padding:16px;background:linear-gradient(180deg, rgba(15,23,42,0.6) 0%, rgba(11,18,32,0.5) 100%);border:1px solid rgba(166,218,255,0.1);border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.03);transition:all 0.2s;">
+      <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;font-weight:700;margin-bottom:8px;">Active Investigations</div>
+      <div style="font-size:32px;font-weight:800;letter-spacing:-1px;line-height:1;color:#3b82f6;" id="echo-kpi-active-cases">0</div>
+      <div style="font-size:10px;color:var(--muted);margin-top:6px;" id="echo-kpi-active-sub">Open cases generating memories</div>
+    </div>
+    <div class="echo-kpi-card" data-card="last-activity" style="position:relative;padding:16px;background:linear-gradient(180deg, rgba(15,23,42,0.6) 0%, rgba(11,18,32,0.5) 100%);border:1px solid rgba(166,218,255,0.1);border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.03);transition:all 0.2s;">
+      <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;font-weight:700;margin-bottom:8px;">Last Activity</div>
+      <div id="echo-kpi-last-activity" style="font-size:13px;font-weight:600;color:var(--chrome2);line-height:1.3;">—</div>
+      <div style="font-size:10px;color:var(--muted);margin-top:6px;" id="echo-kpi-last-activity-sub">—</div>
+    </div>
+  </div>
+
+  <!-- RECENT ACCESS PANEL -->
+  <div id="echo-recent-access-panel" style="margin-bottom:20px;padding:16px 20px;background:rgba(15,23,42,0.4);border:1px solid rgba(166,218,255,0.08);border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.2);">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+      <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;font-weight:700;">👥 Recent Access</div>
+      <div style="font-size:10px;color:var(--muted);">Last 5 events</div>
+    </div>
+    <div id="echo-recent-access-list" style="display:flex;flex-direction:column;gap:6px;"></div>
+  </div>
+
+<section id="echo-memory-feed-section" title="Logged Echo events — filterable append-only audit chain" style="position:relative;padding:24px 28px;margin-bottom:20px;">
 <div id="echo-feed-tabs" style="display:flex;gap:4px;margin-bottom:20px;border-bottom:1px solid rgba(166,218,255,0.1);padding-bottom:0;">
-  <button type="button" data-echo-tab="memories" onclick="echoSwitchTab('memories')" class="echo-feed-tab active" title="Sealed memories with filters and search" style="padding:10px 16px;background:rgba(166,218,255,0.06);border:1px solid rgba(166,218,255,0.2);border-bottom:none;border-radius:8px 8px 0 0;color:var(--accent);font-size:12px;font-weight:600;cursor:pointer;">📋 Sealed Memories</button>
+  <button type="button" data-echo-tab="memories" onclick="echoSwitchTab('memories')" class="echo-feed-tab active" title="Logged events with filters and search" style="padding:10px 16px;background:rgba(166,218,255,0.06);border:1px solid rgba(166,218,255,0.2);border-bottom:none;border-radius:8px 8px 0 0;color:var(--accent);font-size:12px;font-weight:600;cursor:pointer;">📋 Logged Events</button>
   <button type="button" data-echo-tab="timeline" onclick="echoSwitchTab('timeline')" class="echo-feed-tab" title="Audit timeline of every event" style="padding:10px 16px;background:transparent;border:1px solid transparent;border-bottom:none;border-radius:8px 8px 0 0;color:var(--muted);font-size:12px;font-weight:500;cursor:pointer;">⏱ Audit Timeline</button>
   <button type="button" data-echo-tab="receipts" onclick="echoSwitchTab('receipts')" class="echo-feed-tab" title="Decision receipts issued — counterfactual, deployment, governance, attestation, closure, whistleblower" style="padding:10px 16px;background:transparent;border:1px solid transparent;border-bottom:none;border-radius:8px 8px 0 0;color:var(--muted);font-size:12px;font-weight:500;cursor:pointer;">🔐 Decision Receipts</button>
   <button type="button" data-echo-tab="ignored" onclick="echoSwitchTab('ignored')" class="echo-feed-tab" title="Eve warnings flagged but dismissed" style="padding:10px 16px;background:transparent;border:1px solid transparent;border-bottom:none;border-radius:8px 8px 0 0;color:var(--muted);font-size:12px;font-weight:500;cursor:pointer;">⚠ Ignored Flags</button>
@@ -6219,8 +6294,8 @@ Template Overview
   <!-- Section header -->
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
     <div>
-      <div style="font-size:18px;font-weight:700;color:var(--chrome2);letter-spacing:0.3px;">Sealed Memories — Append-Only Audit Chain</div>
-      <div style="font-size:11px;color:var(--muted);margin-top:4px;">Every meaningful event sealed with timestamp, author, hash, signature. Tamper-evident. Court-admissible.</div>
+      <div style="font-size:18px;font-weight:700;color:var(--chrome2);letter-spacing:0.3px;">Logged Events — Append-Only Audit Chain</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:4px;">Every meaningful event logged with timestamp, author, hash, signature. Tamper-evident. Court-admissible.</div>
     </div>
     <div style="display:flex;gap:8px;">
       <button type="button" id="echo-export-btn" onclick="echoExportAuditLog()" class="btn-ghost" style="font-size:11px;padding:8px 14px;border:1px solid rgba(166,218,255,0.2);border-radius:8px;background:rgba(166,218,255,0.04);color:var(--accent);cursor:pointer;" title="Export full Echo audit log as text file">↓ Export Full Audit Log</button>
@@ -6232,19 +6307,19 @@ Template Overview
   <!-- Search bar -->
   <div style="margin-bottom:14px;">
     <div style="position:relative;">
-      <input type="text" id="echo-search-input" placeholder="Search memories by case ID, model, person, content..." oninput="echoApplyFilters()" title="Search sealed memories across summary, content, case, model, and author fields" style="width:100%;padding:12px 14px 12px 40px;background:rgba(15,23,42,0.6);border:1px solid rgba(166,218,255,0.12);border-radius:10px;font-size:13px;color:var(--chrome2);box-shadow:inset 0 1px 0 rgba(255,255,255,0.02);"/>
+      <input type="text" id="echo-search-input" placeholder="Search memories by case ID, model, person, content..." oninput="echoApplyFilters()" title="Search logged events across summary, content, case, model, and author fields" style="width:100%;padding:12px 14px 12px 40px;background:rgba(15,23,42,0.6);border:1px solid rgba(166,218,255,0.12);border-radius:10px;font-size:13px;color:var(--chrome2);box-shadow:inset 0 1px 0 rgba(255,255,255,0.02);"/>
       <span style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:14px;">⌕</span>
     </div>
   </div>
 
   <!-- Filter bar -->
-  <div id="echo-filter-bar" title="Filter sealed memories by time, core, case, model, person, event type, severity, and visibility" style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:18px;padding:14px;background:rgba(15,23,42,0.4);border:1px solid rgba(166,218,255,0.06);border-radius:10px;"></div>
+  <div id="echo-filter-bar" title="Filter logged events by time, core, case, model, person, event type, severity, and visibility" style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:18px;padding:14px;background:rgba(15,23,42,0.4);border:1px solid rgba(166,218,255,0.06);border-radius:10px;"></div>
 
   <!-- Two-column: feed + pinned sidebar -->
   <div style="display:grid;grid-template-columns:1fr 320px;gap:24px;align-items:start;">
     <!-- Memory feed -->
     <div>
-      <div id="echo-memory-count-line" title="Filtered vs total sealed memory count" style="font-size:11px;color:var(--muted);margin-bottom:10px;"></div>
+      <div id="echo-memory-count-line" title="Filtered vs total logged event count" style="font-size:11px;color:var(--muted);margin-bottom:10px;"></div>
       <div id="echo-memory-feed" title="Click a card to open full memory detail, hash, and addendum chain" style="display:flex;flex-direction:column;gap:12px;"></div>
     </div>
     <!-- Pinned sidebar -->
@@ -6269,7 +6344,7 @@ Template Overview
     <span style="color:var(--muted);">·</span>
     <span style="color:var(--muted);cursor:pointer;" onclick="echoCloseMemoryDetail()" title="Return to Echo Core">Echo Core</span>
     <span style="color:var(--muted);">/</span>
-    <span style="color:var(--muted);cursor:pointer;" onclick="echoCloseMemoryDetail()" title="Return to sealed memories feed">Sealed Memories</span>
+    <span style="color:var(--muted);cursor:pointer;" onclick="echoCloseMemoryDetail()" title="Return to logged events feed">Logged Events</span>
     <span style="color:var(--muted);">/</span>
     <span style="color:var(--chrome2);font-weight:600;" id="echo-memory-detail-breadcrumb-title">Memory Detail</span>
   </div>
@@ -6278,7 +6353,7 @@ Template Overview
 
 <!-- Memory detail modal (hidden by default) -->
 <div id="echo-memory-detail-modal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.7);backdrop-filter:blur(8px);align-items:center;justify-content:center;padding:40px;" title="Memory detail overlay — click backdrop or × to close" onclick="if(event.target===this){echoCloseMemoryDetail();}">
-  <div id="echo-memory-detail-content" title="Full sealed memory record with cryptographic anchors" style="max-width:780px;width:100%;max-height:90vh;overflow-y:auto;background:linear-gradient(180deg, rgba(15,23,42,0.98) 0%, rgba(11,18,32,0.98) 100%);border:1px solid rgba(166,218,255,0.15);border-radius:16px;padding:32px;box-shadow:0 20px 80px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.04);"></div>
+  <div id="echo-memory-detail-content" title="Full logged event record with cryptographic anchors" style="max-width:780px;width:100%;max-height:90vh;overflow-y:auto;background:linear-gradient(180deg, rgba(15,23,42,0.98) 0%, rgba(11,18,32,0.98) 100%);border:1px solid rgba(166,218,255,0.15);border-radius:16px;padding:32px;box-shadow:0 20px 80px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.04);"></div>
 </div>
 
 <!-- ECHO TABS -->
@@ -15978,7 +16053,7 @@ function showTooltip(arg1, arg2, arg3) {
 window.CARDINAL_ECHO_GLOSSARY = {
   'echo-memory': ['Echo Memory', 'Cryptographically signed governance event with timestamp, author, and full context. Cannot be deleted. Court-admissible.'],
   'pinned-memory': ['Pinned Memory', 'User-deliberately sent to Echo as permanent record. Cannot be deleted.'],
-  'sealed-memory': ['Sealed Memory', 'Append-only. Original cannot be edited or deleted. Only addendums can be added — each cryptographically chained. Legal-grade evidence.'],
+  'sealed-memory': ['Logged Memory', 'Append-only. Original cannot be edited or deleted. Only addendums can be added — each cryptographically chained. Legal-grade evidence.'],
   'add-context': ['Add Context', 'This memory cannot be edited. You can append clarification or new information; the original record remains visible.'],
   'cross-core-timeline': ['Cross-Core Timeline', 'Full lineage of an event across every Cardinal core that touched it.'],
   'cryptographic-signature': ['Cryptographic Signature', 'Verifies the memory hasn\'t been tampered with. Click to verify integrity.'],
@@ -22301,46 +22376,231 @@ function echoGetPinnedState(m) {
 }
 
 function renderEchoExecSummary(org) {
-  var memories = (window.CARDINAL_DATA && window.CARDINAL_DATA[org] && window.CARDINAL_DATA[org].echoMemories) ? window.CARDINAL_DATA[org].echoMemories : [];
-  var receipts = (window.DECISION_RECEIPTS || []).filter(function(r){ return r.industryContext === org; });
+  var memories = (window.CARDINAL_DATA && window.CARDINAL_DATA[org] && window.CARDINAL_DATA[org].echoMemories) ? window.CARDINAL_DATA[org].echoMemories.slice() : [];
+  memories.sort(function(a,b){ return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(); });
+
+  var sevWeight = { critical: 100, high: 50, medium: 20, low: 5, informational: 1 };
   var now = Date.now();
-  var weekMs = 7 * 24 * 60 * 60 * 1000;
-  var weeklyMemories = memories.filter(function(m){ return (now - new Date(m.timestamp).getTime()) <= weekMs; });
-  var criticalThisWeek = weeklyMemories.filter(function(m){ return m.severity === 'critical'; }).length;
-  var deploymentsThisWeek = weeklyMemories.filter(function(m){ return m.eventType === 'remediation-started' || m.eventType === 'model-deployed'; }).length;
+  var scored = memories.slice(0, 30).map(function(m){
+    var ageHours = (now - new Date(m.timestamp).getTime()) / 3600000;
+    var ageWeight = Math.max(0.1, 1 - (ageHours / 168));
+    return { mem: m, score: (sevWeight[m.severity] || 1) * ageWeight };
+  }).sort(function(a,b){ return b.score - a.score; });
+
+  var top = scored.slice(0, 3).map(function(s){ return s.mem; });
+
   var el = document.getElementById('echo-exec-summary-line');
+  var metaEl = document.getElementById('echo-exec-summary-meta');
   if (!el) return;
-  var parts = [];
-  parts.push('<strong style="color:var(--chrome2);">' + weeklyMemories.length + '</strong> new this week');
-  if (criticalThisWeek > 0) parts.push('<strong style="color:var(--red);">' + criticalThisWeek + ' critical</strong>');
-  if (deploymentsThisWeek > 0) parts.push('<strong style="color:var(--green);">' + deploymentsThisWeek + ' deployment' + (deploymentsThisWeek === 1 ? '' : 's') + '</strong>');
-  parts.push('<strong style="color:var(--green);">100</strong> chain integrity');
-  parts.push('<strong style="color:var(--accent);">' + receipts.length + '</strong> Decision Receipts on file');
-  el.innerHTML = '<span style="color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;font-weight:600;font-size:10px;">This week:</span> ' + parts.join(' <span style="color:var(--muted);opacity:0.4;">·</span> ');
+
+  if (top.length === 0) {
+    el.innerHTML = '<span style="color:var(--muted);font-style:italic;">No recent events to summarize.</span>';
+    if (metaEl) metaEl.textContent = '';
+    return;
+  }
+
+  var sentences = top.map(function(m){
+    var sevColor = { critical: 'var(--red)', high: 'var(--amber)', medium: 'var(--blue)', low: 'var(--green)', informational: 'var(--muted2)' }[m.severity] || 'var(--muted2)';
+    var sum = (m.summary || '');
+    var truncated = sum.substring(0, 90) + (sum.length > 90 ? '...' : '');
+    return '<span style="color:' + sevColor + ';font-weight:600;">' + echoEscapeHtml(truncated) + '</span>';
+  });
+
+  el.innerHTML = sentences.join(' <span style="color:var(--muted);">·</span> ');
+
+  if (metaEl) {
+    var latestTs = new Date(top[0].timestamp);
+    metaEl.textContent = 'Updated ' + latestTs.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) + ' · ' + latestTs.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ' · auto-refresh hourly';
+  }
+
+  if (!window.__echoExecDigests) window.__echoExecDigests = {};
+  if (!window.__echoExecDigests[org]) window.__echoExecDigests[org] = [];
+  var lastDigest = window.__echoExecDigests[org][0];
+  var lastDigestTs = lastDigest ? new Date(lastDigest.timestamp).getTime() : 0;
+  if (!lastDigest || (now - lastDigestTs) > (3 * 3600000)) {
+    window.__echoExecDigests[org].unshift({
+      timestamp: new Date().toISOString(),
+      content: top.map(function(m){ return (m.summary || ''); }).join(' · '),
+      sourceMemoryIds: top.map(function(m){ return m.id; }),
+      severityWeights: top.map(function(m){ return m.severity; })
+    });
+    if (window.__echoExecDigests[org].length > 30) window.__echoExecDigests[org] = window.__echoExecDigests[org].slice(0, 30);
+  }
+}
+
+function echoShowPastBriefings() {
+  var existing = document.getElementById('echo-past-briefings-modal');
+  if (existing) existing.remove();
+  var org = (typeof currentOrg !== 'undefined' && currentOrg) ? currentOrg : (window.currentOrg || 'ad');
+  var digests = (window.__echoExecDigests && window.__echoExecDigests[org]) || [];
+
+  var modal = document.createElement('div');
+  modal.id = 'echo-past-briefings-modal';
+  modal.style.cssText = 'display:flex;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.75);backdrop-filter:blur(8px);align-items:center;justify-content:center;padding:40px;';
+  modal.onclick = function(e) { if (e.target === modal) modal.remove(); };
+
+  var content = '<div style="max-width:760px;width:100%;max-height:88vh;overflow-y:auto;background:linear-gradient(180deg, rgba(15,23,42,0.98) 0%, rgba(11,18,32,0.98) 100%);border:1px solid rgba(166,218,255,0.15);border-radius:16px;padding:32px;box-shadow:0 20px 80px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.04);">' +
+    '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;">' +
+      '<div><h2 style="font-size:20px;font-weight:700;color:var(--chrome2);margin:0;">📋 Past Executive Briefings</h2><div style="font-size:11px;color:var(--muted);margin-top:4px;">Historical record of what mattered most at each refresh</div></div>' +
+      '<button type="button" onclick="document.getElementById(\'echo-past-briefings-modal\').remove()" style="background:none;border:none;color:var(--muted);font-size:24px;cursor:pointer;padding:0;line-height:1;" title="Close">×</button>' +
+    '</div>';
+
+  if (digests.length === 0) {
+    content += '<div style="padding:40px;text-align:center;color:var(--muted);font-style:italic;">No past briefings yet. Briefings auto-generate every few hours as new events accumulate.</div>';
+  } else {
+    content += '<div style="display:flex;flex-direction:column;gap:12px;">' + digests.map(function(d, idx){
+      var dt = new Date(d.timestamp);
+      return '<div style="padding:14px 16px;background:rgba(15,23,42,0.5);border:1px solid rgba(166,218,255,0.08);border-radius:10px;">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">' +
+          '<div style="font-size:11px;color:var(--accent);font-weight:600;">' + echoEscapeHtml(dt.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) + ' · ' + dt.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })) + '</div>' +
+          (idx === 0 ? '<span style="padding:2px 7px;background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.25);border-radius:10px;font-size:9px;color:var(--green);font-weight:600;">CURRENT</span>' : '') +
+        '</div>' +
+        '<div style="font-size:12px;color:var(--chrome2);line-height:1.6;">' + echoEscapeHtml(d.content || '') + '</div>' +
+      '</div>';
+    }).join('') + '</div>';
+  }
+
+  content += '</div>';
+  modal.innerHTML = content;
+  document.body.appendChild(modal);
 }
 
 function renderEchoCardinalHero(org) {
-  var memories = (window.CARDINAL_DATA && window.CARDINAL_DATA[org] && window.CARDINAL_DATA[org].echoMemories) ? window.CARDINAL_DATA[org].echoMemories : [];
-  var totalEvents = memories.length;
-  var flagsIgnored = memories.filter(function(m){
+  var memories = (window.CARDINAL_DATA && window.CARDINAL_DATA[org] && window.CARDINAL_DATA[org].echoMemories) ? window.CARDINAL_DATA[org].echoMemories.slice() : [];
+  memories.sort(function(a,b){ return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(); });
+  var receipts = (window.DECISION_RECEIPTS || []).filter(function(r){ return r.industryContext === org; });
+  var now = Date.now();
+
+  var criticalUnresolved = memories.filter(function(m){
+    return m.severity === 'critical' && m.eventType !== 'case-closed' && m.eventType !== 'remediation-completed';
+  }).length;
+  var ignoredFlags = memories.filter(function(m){
     return m.eventType === 'decision-reversed' || (m.summary && m.summary.toLowerCase().indexOf('dismissed') !== -1) || (m.summary && m.summary.toLowerCase().indexOf('ignored') !== -1);
   }).length;
-  var activeCases = new Set(memories.filter(function(m){ return m.caseId; }).map(function(m){ return m.caseId; })).size;
-  var signoffs = memories.filter(function(m){
-    return m.eventType === 'document-approved' || m.eventType === 'decision-made' || m.eventType === 'team-decision';
+  var pendingSignOffs = memories.filter(function(m){
+    return m.eventType === 'pending-review' || m.eventType === 'awaiting-signature' || (m.summary && m.summary.toLowerCase().indexOf('pending') !== -1) || (m.summary && m.summary.toLowerCase().indexOf('awaiting') !== -1);
   }).length;
-  var sealedCount = memories.filter(function(m){ return m.isSealed; }).length;
-  var pinnedCount = memories.filter(function(m){ return m.isPinned; }).length;
+  var whistleblowerCount = receipts.filter(function(r){ return r.receiptType === 'whistleblower-seal'; }).length;
+  var activeCases = new Set(memories.filter(function(m){ return m.caseId; }).map(function(m){ return m.caseId; })).size;
+
+  var lastCritical = memories.filter(function(m){ return m.severity === 'critical'; }).map(function(m){ return new Date(m.timestamp).getTime(); }).sort(function(a,b){ return b - a; })[0];
+  var daysSinceCritical = lastCritical ? Math.floor((now - lastCritical) / 86400000) : 999;
+
+  var lastMemory = memories[0];
+
+  var verdictEl = document.getElementById('echo-status-verdict');
+  var headlineEl = document.getElementById('echo-status-headline');
+  if (verdictEl && headlineEl) {
+    if (criticalUnresolved > 0) {
+      verdictEl.textContent = '⚠ Audit Risk Detected';
+      verdictEl.style.color = '#ef4444';
+      headlineEl.textContent = criticalUnresolved + ' critical issue' + (criticalUnresolved === 1 ? '' : 's') + ' unresolved · ' + ignoredFlags + ' flag' + (ignoredFlags === 1 ? '' : 's') + ' ignored';
+    } else if (ignoredFlags > 0 || pendingSignOffs > 0) {
+      verdictEl.textContent = '◐ Items Need Attention';
+      verdictEl.style.color = '#f59e0b';
+      headlineEl.textContent = (pendingSignOffs > 0 ? pendingSignOffs + ' pending sign-off' + (pendingSignOffs === 1 ? '' : 's') : '') + (pendingSignOffs > 0 && ignoredFlags > 0 ? ' · ' : '') + (ignoredFlags > 0 ? ignoredFlags + ' flag' + (ignoredFlags === 1 ? '' : 's') + ' awaiting review' : '');
+    } else {
+      verdictEl.textContent = '◆ All Clear';
+      verdictEl.style.color = '#22c55e';
+      headlineEl.textContent = 'Audit chain healthy · ' + memories.length + ' events logged · governance flowing normally';
+    }
+  }
+
+  var setKpi = function(id, value, color, subText) {
+    var elK = document.getElementById(id);
+    if (elK) { elK.textContent = value; if (color) elK.style.color = color; }
+    var sub = document.getElementById(id + '-sub');
+    if (sub && subText) sub.textContent = subText;
+  };
+  setKpi('echo-kpi-critical', String(criticalUnresolved), criticalUnresolved > 0 ? '#ef4444' : 'var(--muted2)', criticalUnresolved > 0 ? 'Unresolved · need eyes now' : 'No critical events open');
+  setKpi('echo-kpi-ignored', String(ignoredFlags), ignoredFlags > 0 ? '#ef4444' : 'var(--muted2)', ignoredFlags > 0 ? 'Eve warnings dismissed' : 'No flags ignored');
+  setKpi('echo-kpi-pending', String(pendingSignOffs), pendingSignOffs > 0 ? '#f59e0b' : 'var(--muted2)', pendingSignOffs > 0 ? 'Awaiting human signature' : 'Nothing pending');
+  setKpi('echo-kpi-whistleblower', String(whistleblowerCount), '#a855f7', whistleblowerCount + ' sealed submission' + (whistleblowerCount === 1 ? '' : 's'));
+  setKpi('echo-kpi-days-since', daysSinceCritical >= 999 ? '∞' : String(daysSinceCritical), daysSinceCritical >= 30 ? '#22c55e' : daysSinceCritical >= 7 ? '#f59e0b' : '#ef4444', daysSinceCritical >= 999 ? 'No critical events recorded' : 'Safety streak — last critical ' + daysSinceCritical + ' day' + (daysSinceCritical === 1 ? '' : 's') + ' ago');
+  setKpi('echo-kpi-active-cases', String(activeCases), '#3b82f6', null);
+  var subAct = document.getElementById('echo-kpi-active-sub');
+  if (subAct) subAct.textContent = activeCases + ' case' + (activeCases === 1 ? '' : 's') + ' generating memories';
+
+  var lastActEl = document.getElementById('echo-kpi-last-activity');
+  var lastActSub = document.getElementById('echo-kpi-last-activity-sub');
+  if (lastActEl) {
+    if (lastMemory) {
+      var minsAgo = Math.floor((now - new Date(lastMemory.timestamp).getTime()) / 60000);
+      var timeStr = minsAgo < 60 ? minsAgo + ' min ago' : minsAgo < 1440 ? Math.floor(minsAgo/60) + 'h ago' : Math.floor(minsAgo/1440) + 'd ago';
+      lastActEl.textContent = lastMemory.author || 'system';
+      if (lastActSub) {
+        var sm = (lastMemory.summary || '');
+        lastActSub.textContent = timeStr + ' · ' + sm.substring(0, 40) + (sm.length > 40 ? '...' : '');
+      }
+    } else {
+      lastActEl.textContent = '—';
+      if (lastActSub) lastActSub.textContent = '—';
+    }
+  }
+
+  var feedEl = document.getElementById('echo-activity-feed');
+  if (feedEl) {
+    var feedItems = memories.slice(0, 5);
+    feedEl.innerHTML = feedItems.map(function(m, idx){
+      var sevColor = { critical: '#ef4444', high: '#f59e0b', medium: '#3b82f6', low: '#22c55e', informational: '#94a3b8' }[m.severity] || '#94a3b8';
+      var minsAgo = Math.floor((now - new Date(m.timestamp).getTime()) / 60000);
+      var timeStr = minsAgo < 60 ? minsAgo + 'm' : minsAgo < 1440 ? Math.floor(minsAgo/60) + 'h' : Math.floor(minsAgo/1440) + 'd';
+      var pulseStyle = idx === 0 ? 'animation:echoActivityPulse 2s ease-in-out;' : '';
+      var mid = echoEscapeJsAttr(m.id);
+      var sumEsc = echoEscapeHtml(m.summary || '');
+      return '<div onclick="echoOpenMemoryDetail(\'' + mid + '\')" style="cursor:pointer;display:flex;align-items:center;gap:10px;padding:8px 12px;background:rgba(15,23,42,0.5);border:1px solid rgba(166,218,255,0.06);border-radius:8px;transition:all 0.15s;' + pulseStyle + '" onmouseover="this.style.borderColor=\'rgba(166,218,255,0.2)\';this.style.transform=\'translateX(2px)\';" onmouseout="this.style.borderColor=\'rgba(166,218,255,0.06)\';this.style.transform=\'translateX(0)\';">' +
+        '<span style="width:6px;height:6px;border-radius:50%;background:' + sevColor + ';box-shadow:0 0 6px ' + sevColor + ';flex-shrink:0;"></span>' +
+        '<span style="font-size:11px;color:var(--chrome2);font-weight:500;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + sumEsc + '</span>' +
+        '<span style="font-size:10px;color:var(--muted);flex-shrink:0;font-family:monospace;">' + echoEscapeHtml(timeStr) + '</span>' +
+        '</div>';
+    }).join('');
+  }
+
   var addendumCount = memories.reduce(function(acc, m){ return acc + (m.addendums ? m.addendums.length : 0); }, 0);
-  var k1 = document.getElementById('echo-kpi-total-events'); if (k1) k1.textContent = totalEvents.toLocaleString();
-  var k2 = document.getElementById('echo-kpi-flags-ignored'); if (k2) k2.textContent = flagsIgnored.toLocaleString();
-  var k3 = document.getElementById('echo-kpi-active-cases'); if (k3) k3.textContent = activeCases.toLocaleString();
-  var k4 = document.getElementById('echo-kpi-signoffs'); if (k4) k4.textContent = signoffs.toLocaleString();
-  var rel = document.getElementById('echo-hero-reliability-list');
-  if (rel) {
-    rel.innerHTML = '<div style="display:flex;justify-content:space-between;font-size:11px;border-bottom:1px dotted rgba(180,190,220,0.1);padding-bottom:7px;"><span style="color:var(--muted);">Sealed memories</span><span style="color:var(--green);font-weight:600;">' + sealedCount + ' / ' + totalEvents + '</span></div><div style="display:flex;justify-content:space-between;font-size:11px;border-bottom:1px dotted rgba(180,190,220,0.1);padding-bottom:7px;"><span style="color:var(--muted);">Pinned by you</span><span style="color:var(--chrome2);font-weight:600;">' + pinnedCount + '</span></div><div style="display:flex;justify-content:space-between;font-size:11px;border-bottom:1px dotted rgba(180,190,220,0.1);padding-bottom:7px;"><span style="color:var(--muted);">Addendums</span><span style="color:var(--chrome2);font-weight:600;">' + addendumCount + '</span></div><div style="display:flex;justify-content:space-between;font-size:11px;border-bottom:1px dotted rgba(180,190,220,0.1);padding-bottom:7px;"><span style="color:var(--muted);">Hash chain depth</span><span style="color:var(--chrome2);font-weight:600;">' + (totalEvents + addendumCount) + ' nodes</span></div><div style="display:flex;justify-content:space-between;font-size:11px;"><span style="color:var(--muted);">Last verified</span><span style="color:var(--green);font-weight:600;">1h ago</span></div>';
+  var modelCount = new Set(memories.map(function(m){ return m.modelId; }).filter(Boolean)).size;
+  var archivedCount = memories.filter(function(m){ return m.eventType === 'model-archived' || m.eventType === 'cohort-archived' || (m.summary && m.summary.toLowerCase().indexOf('archived') !== -1); }).length;
+  var thirtyDaysAgo = now - (30 * 86400000);
+  var regulatorRequests = memories.filter(function(m){
+    return new Date(m.timestamp).getTime() >= thirtyDaysAgo && (m.eventType === 'audit-packet-exported' || (m.summary && m.summary.toLowerCase().indexOf('audit packet') !== -1) || (m.summary && m.summary.toLowerCase().indexOf('regulator') !== -1));
+  }).length;
+
+  var healthEl = document.getElementById('echo-system-health-strip');
+  if (healthEl) {
+    healthEl.innerHTML =
+      '<div style="display:flex;justify-content:space-between;padding-bottom:5px;border-bottom:1px dotted rgba(180,190,220,0.08);"><span>Logged events</span><span style="color:var(--chrome2);font-weight:600;">' + memories.length + '</span></div>' +
+      '<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px dotted rgba(180,190,220,0.08);"><span>Chain depth</span><span style="color:var(--chrome2);font-weight:600;">' + (memories.length + addendumCount) + ' nodes</span></div>' +
+      '<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px dotted rgba(180,190,220,0.08);"><span>Models tracked</span><span style="color:var(--chrome2);font-weight:600;">' + modelCount + '</span></div>' +
+      '<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px dotted rgba(180,190,220,0.08);"><span>Archived items</span><span style="color:var(--chrome2);font-weight:600;">' + archivedCount + '</span></div>' +
+      '<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px dotted rgba(180,190,220,0.08);"><span>Regulator requests (30d)</span><span style="color:var(--chrome2);font-weight:600;">' + regulatorRequests + '</span></div>' +
+      '<div style="display:flex;justify-content:space-between;padding-top:5px;"><span>Last verified</span><span style="color:var(--green);font-weight:600;">1h ago</span></div>';
+  }
+
+  var accessEl = document.getElementById('echo-recent-access-list');
+  if (accessEl) {
+    var humanEvents = memories.filter(function(m){
+      var a = m.author || '';
+      return a && a !== 'system' && a !== 'Eve' && a !== 'Adam' && a.indexOf('Core') === -1 && a.indexOf('Exchange') === -1 && a.indexOf('Ledger') === -1 && a.indexOf('Loop') === -1 && a !== 'Sentinel' && a !== 'War Room';
+    }).slice(0, 5);
+    if (humanEvents.length === 0) {
+      accessEl.innerHTML = '<div style="font-size:11px;color:var(--muted);font-style:italic;padding:8px;">No recent access events.</div>';
+    } else {
+      accessEl.innerHTML = humanEvents.map(function(m){
+        var minsAgo = Math.floor((now - new Date(m.timestamp).getTime()) / 60000);
+        var timeStr = minsAgo < 60 ? minsAgo + ' min ago' : minsAgo < 1440 ? Math.floor(minsAgo/60) + 'h ago' : Math.floor(minsAgo/1440) + 'd ago';
+        var actionVerb = (m.eventType === 'note-added' || m.eventType === 'addendum-added') ? 'added note to' : (m.eventType === 'pin-added') ? 'pinned' : (m.eventType === 'memory-viewed') ? 'viewed' : (m.eventType === 'document-approved') ? 'approved' : 'logged event in';
+        var mid = echoEscapeJsAttr(m.id);
+        var authEsc = echoEscapeHtml(m.author || 'unknown');
+        var targetEsc = echoEscapeHtml(m.caseId ? '#' + m.caseId : (m.summary || '').substring(0, 50));
+        return '<div onclick="echoOpenMemoryDetail(\'' + mid + '\')" style="cursor:pointer;display:grid;grid-template-columns:160px 1fr 80px;gap:12px;padding:8px 12px;background:rgba(15,23,42,0.4);border:1px solid rgba(166,218,255,0.05);border-radius:6px;align-items:center;transition:all 0.15s;" onmouseover="this.style.borderColor=\'rgba(166,218,255,0.2)\';" onmouseout="this.style.borderColor=\'rgba(166,218,255,0.05)\';">' +
+          '<span style="font-size:11px;color:var(--chrome2);font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + authEsc + '</span>' +
+          '<span style="font-size:10px;color:var(--muted2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + echoEscapeHtml(actionVerb) + ' ' + targetEsc + '</span>' +
+          '<span style="font-size:10px;color:var(--muted);text-align:right;font-family:monospace;">' + echoEscapeHtml(timeStr) + '</span>' +
+          '</div>';
+      }).join('');
+    }
   }
 }
+
 
 function renderEchoMemoryFeed(org) {
   if (!window.__echoFilters) window.__echoFilters = { timePeriod: 'all', core: 'all', case: 'all', model: 'all', person: 'all', eventType: 'all', severity: 'all', accessTier: 'all' };
@@ -22472,7 +22732,7 @@ function renderEchoMemoryCard(m) {
   var coreColor = { eden: 'red', obsidian: 'blue', genesis: 'amber', atonement: 'green', sentinel: 'amber', halo: 'blue', echo: 'accent', compliance: 'muted2', trustledger: 'green', trustloop: 'accent', warroom: 'red' }[m.core] || 'accent';
   var addendumBadge = (m.addendums && m.addendums.length > 0) ? '<span style="display:inline-flex;align-items:center;gap:4px;padding:2px 7px;background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.25);border-radius:10px;font-size:9px;color:var(--amber);font-weight:600;" title="' + m.addendums.length + ' addendum' + (m.addendums.length === 1 ? '' : 's') + ' appended">+' + m.addendums.length + ' addendum' + (m.addendums.length === 1 ? '' : 's') + '</span>' : '';
   var pinOn = echoGetPinnedState(m);
-  var sealedBadge = m.isSealed ? '<span style="display:inline-flex;align-items:center;gap:4px;padding:2px 7px;background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.25);border-radius:10px;font-size:9px;color:var(--green);font-weight:600;" title="Permanently sealed — cannot be modified">◆ Sealed</span>' : '';
+  var sealedBadge = m.isSealed ? '<span style="display:inline-flex;align-items:center;gap:4px;padding:2px 7px;background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.25);border-radius:10px;font-size:9px;color:var(--green);font-weight:600;" title="Immutable chain entry — cannot be modified">◆ Locked</span>' : '';
   var tier = m.accessTier || 'org-wide';
   var tierBadge = tier !== 'org-wide' ? '<span style="display:inline-flex;align-items:center;gap:4px;padding:2px 7px;background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.15);border-radius:10px;font-size:9px;color:var(--red);font-weight:600;" title="Restricted access: ' + echoEscapeHtml((m.accessRoles || []).join(', ')) + '">🔒 ' + echoEscapeHtml(tier.replace(/-/g, ' ')) + '</span>' : '';
   var date = new Date(m.timestamp);
@@ -22543,13 +22803,15 @@ function echoOpenMemoryDetail(memoryId) {
 
   var heroSection = document.getElementById('echo-cardinal-hero');
   var feedSection = document.getElementById('echo-memory-feed-section');
-  var execSummary = document.getElementById('echo-exec-summary-line');
-  var kpiRow = document.getElementById('echo-kpi-row');
+  var kpiRowAlerts = document.getElementById('echo-kpi-row-alerts');
+  var kpiRowActivity = document.getElementById('echo-kpi-row-activity');
+  var recentAccess = document.getElementById('echo-recent-access-panel');
   var detailSection = document.getElementById('echo-memory-detail-fullscreen');
   if (heroSection) heroSection.style.display = 'none';
   if (feedSection) feedSection.style.display = 'none';
-  if (execSummary) execSummary.style.display = 'none';
-  if (kpiRow) kpiRow.style.display = 'none';
+  if (kpiRowAlerts) kpiRowAlerts.style.display = 'none';
+  if (kpiRowActivity) kpiRowActivity.style.display = 'none';
+  if (recentAccess) recentAccess.style.display = 'none';
   if (detailSection) detailSection.style.display = 'block';
 
   var bcTitle = document.getElementById('echo-memory-detail-breadcrumb-title');
@@ -22557,11 +22819,34 @@ function echoOpenMemoryDetail(memoryId) {
 
   echoRenderMemoryDetailFullscreen(memory, memoryOrg);
 
-  window.scrollTo(0, 0);
-  var screenEcho = document.getElementById('screen-echo');
-  if (screenEcho) screenEcho.scrollTop = 0;
-  var mainContainer = document.querySelector('.app-main, .main-content, main');
-  if (mainContainer) mainContainer.scrollTop = 0;
+  var findScrollableAncestor = function(el) {
+    var node = el;
+    while (node && node !== document.body) {
+      var style = window.getComputedStyle(node);
+      var overflowY = style.overflowY;
+      if ((overflowY === 'auto' || overflowY === 'scroll') && node.scrollHeight > node.clientHeight) {
+        return node;
+      }
+      node = node.parentElement;
+    }
+    return null;
+  };
+
+  setTimeout(function(){
+    var detailEl = document.getElementById('echo-memory-detail-fullscreen');
+    var scrollable = detailEl ? findScrollableAncestor(detailEl) : null;
+    if (scrollable) scrollable.scrollTop = 0;
+
+    window.scrollTo(0, 0);
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+    var screenEcho = document.getElementById('screen-echo');
+    if (screenEcho) screenEcho.scrollTop = 0;
+    var appMain = document.querySelector('.app-main, .main-content, main, .content-area, .main-area');
+    if (appMain) appMain.scrollTop = 0;
+
+    if (detailEl) detailEl.scrollTop = 0;
+  }, 10);
 
   var legacyModal = document.getElementById('echo-memory-detail-modal');
   if (legacyModal) legacyModal.style.display = 'none';
@@ -22570,19 +22855,23 @@ function echoOpenMemoryDetail(memoryId) {
 function echoCloseMemoryDetail() {
   var heroSection = document.getElementById('echo-cardinal-hero');
   var feedSection = document.getElementById('echo-memory-feed-section');
-  var execSummary = document.getElementById('echo-exec-summary-line');
-  var kpiRow = document.getElementById('echo-kpi-row');
+  var kpiRowAlerts = document.getElementById('echo-kpi-row-alerts');
+  var kpiRowActivity = document.getElementById('echo-kpi-row-activity');
+  var recentAccess = document.getElementById('echo-recent-access-panel');
   var detailSection = document.getElementById('echo-memory-detail-fullscreen');
   if (heroSection) heroSection.style.display = '';
   if (feedSection) feedSection.style.display = '';
-  if (execSummary) execSummary.style.display = '';
-  if (kpiRow) kpiRow.style.display = '';
+  if (kpiRowAlerts) kpiRowAlerts.style.display = '';
+  if (kpiRowActivity) kpiRowActivity.style.display = '';
+  if (recentAccess) recentAccess.style.display = '';
   if (detailSection) detailSection.style.display = 'none';
   window.__echoDetailMemoryId = null;
   window.__echoDetailMemoryOrg = null;
   var legacyModal = document.getElementById('echo-memory-detail-modal');
   if (legacyModal) legacyModal.style.display = 'none';
   window.scrollTo(0, 0);
+  document.documentElement.scrollTop = 0;
+  document.body.scrollTop = 0;
 }
 
 function echoShowIntegrityExplainer() {
@@ -22657,7 +22946,7 @@ function echoRenderMemoryDetailFullscreen(memory, memoryOrg) {
         '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;">' +
           (pinnedLive ? '<span style="padding:4px 10px;background:rgba(245,158,11,0.12);border:1px solid rgba(245,158,11,0.3);border-radius:12px;font-size:10px;color:var(--amber);font-weight:600;">📌 Pinned</span>' : '') +
           '<span style="padding:4px 12px;background:rgba(' + sevColorRgb + ',0.12);border:1px solid rgba(' + sevColorRgb + ',0.35);border-radius:12px;font-size:11px;color:var(--' + sevColor + ');font-weight:700;text-transform:uppercase;letter-spacing:0.5px;">' + echoEscapeHtml(memory.severity || '') + '</span>' +
-          (memory.isSealed ? '<span style="padding:4px 10px;background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.3);border-radius:12px;font-size:10px;color:var(--green);font-weight:600;">◆ Sealed (Immutable)</span>' : '') +
+          (memory.isSealed ? '<span style="padding:4px 10px;background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.3);border-radius:12px;font-size:10px;color:var(--green);font-weight:600;">◆ Locked</span>' : '') +
         '</div>' +
         '<h1 style="font-size:26px;font-weight:700;color:var(--chrome2);margin:0 0 4px;line-height:1.3;">' + echoEscapeHtml(memory.summary || 'Memory') + '</h1>' +
       '</div>' +
