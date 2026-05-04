@@ -6132,7 +6132,7 @@ Template Overview
 <div style="font-size:15px;font-weight:600;color:var(--chrome2)">◈ Echo Core — Audit Memory & Integrity</div>
 <div style="font-size:11px;color:var(--muted);margin-top:2px">Tamper-proof audit log · Decision receipts · Model lineage · Drift tracking · Accountability chain</div>
 </div>
-<div class="grid-4" style="margin-bottom:14px"><div class="stat-card"  style=";"><div class="stat-label">Total Audit Events</div><div class="stat-value" style="color:var(--accent);font-size:22px">12,847</div><div class="stat-change ">Tamper-proof log</div></div><div class="stat-card"  style=";border-color:rgba(239,68,68,.2)"><div class="stat-label">Flags Ignored</div><div class="stat-value" style="color:#EF4444;font-size:22px">3</div><div class="stat-change down">Eve warnings dismissed</div></div><div class="stat-card"  style=";"><div class="stat-label">Decision Receipts</div><div class="stat-value" style="color:var(--accent);font-size:22px">2,847</div><div class="stat-change ">Cryptographic proofs</div></div><div class="stat-card"  style=";"><div class="stat-label">Sign-offs Logged</div><div class="stat-value" style="color:#22C55E;font-size:22px">94</div><div class="stat-change up">This month</div></div></div>
+<div class="grid-4" style="margin-bottom:14px"><div class="stat-card"  style=";"><div class="stat-label">Total Audit Events</div><div class="stat-value" style="color:var(--accent);font-size:22px" id="echo-kpi-total-events" title="Live count from sealed Echo memories">12,847</div><div class="stat-change ">Tamper-proof log</div></div><div class="stat-card"  style=";border-color:rgba(239,68,68,.2)"><div class="stat-label">Flags Ignored</div><div class="stat-value" style="color:#EF4444;font-size:22px" id="echo-kpi-flags-ignored" title="Live count — reversed decisions or dismissed/ignored Eve warnings">3</div><div class="stat-change down">Eve warnings dismissed</div></div><div class="stat-card"  style=";"><div class="stat-label">Decision Receipts</div><div class="stat-value" style="color:var(--accent);font-size:22px" id="echo-kpi-decision-receipts" title="Live count from DECISION_RECEIPTS for this industry">2,847</div><div class="stat-change ">Cryptographic proofs</div></div><div class="stat-card"  style=";"><div class="stat-label">Sign-offs Logged</div><div class="stat-value" style="color:#22C55E;font-size:22px" id="echo-kpi-signoffs" title="Live count — approvals and team decisions sealed">94</div><div class="stat-change up">This month</div></div></div>
 
 <div style="display:flex;gap:8px">
 <button class="btn-ghost" onclick="exportAuditLog()">⬇ Export Full Audit Log</button>
@@ -6153,10 +6153,9 @@ Template Overview
       </div>
       <div id="echo-hero-submetric" title="Aggregate sealed memories and addendum counts" style="margin-top:18px;text-align:center;"></div>
     </div>
-    <!-- RIGHT: industry position + reliability panel + status pill -->
+    <!-- RIGHT: status pill + reliability panel -->
     <div class="echo-hero-right" style="display:flex;flex-direction:column;gap:14px;">
       <div id="echo-hero-pill-row" style="display:flex;justify-content:flex-end;"></div>
-      <div id="echo-hero-industry-position" class="cardinal-hero-panel" title="Peer memory volume benchmark — percentile vs industry seal rate" style="background:rgba(15,23,42,0.6);border:1px solid rgba(166,218,255,0.08);border-radius:12px;padding:16px;box-shadow:inset 0 1px 0 rgba(255,255,255,0.03);"></div>
       <div id="echo-hero-reliability" class="cardinal-hero-panel" title="Append-only chain integrity breakdown — sealed, pinned, addendum nodes" style="background:rgba(15,23,42,0.6);border:1px solid rgba(166,218,255,0.08);border-radius:12px;padding:16px;box-shadow:inset 0 1px 0 rgba(255,255,255,0.03);"></div>
     </div>
   </div>
@@ -6168,6 +6167,15 @@ Template Overview
 </section>
 
 <section id="echo-memory-feed-section" title="Sealed Echo memories — filterable append-only audit chain" style="position:relative;padding:24px 28px;margin-bottom:20px;">
+<div id="echo-feed-tabs" style="display:flex;gap:4px;margin-bottom:20px;border-bottom:1px solid rgba(166,218,255,0.1);padding-bottom:0;">
+  <button type="button" data-echo-tab="memories" onclick="echoSwitchTab('memories')" class="echo-feed-tab active" title="Sealed memories with filters and search" style="padding:10px 16px;background:rgba(166,218,255,0.06);border:1px solid rgba(166,218,255,0.2);border-bottom:none;border-radius:8px 8px 0 0;color:var(--accent);font-size:12px;font-weight:600;cursor:pointer;">📋 Sealed Memories</button>
+  <button type="button" data-echo-tab="timeline" onclick="echoSwitchTab('timeline')" class="echo-feed-tab" title="Audit timeline of every event" style="padding:10px 16px;background:transparent;border:1px solid transparent;border-bottom:none;border-radius:8px 8px 0 0;color:var(--muted);font-size:12px;font-weight:500;cursor:pointer;">⏱ Audit Timeline</button>
+  <button type="button" data-echo-tab="receipts" onclick="echoSwitchTab('receipts')" class="echo-feed-tab" title="Decision receipts issued — counterfactual, deployment, governance, attestation, closure, whistleblower" style="padding:10px 16px;background:transparent;border:1px solid transparent;border-bottom:none;border-radius:8px 8px 0 0;color:var(--muted);font-size:12px;font-weight:500;cursor:pointer;">🔐 Decision Receipts</button>
+  <button type="button" data-echo-tab="ignored" onclick="echoSwitchTab('ignored')" class="echo-feed-tab" title="Eve warnings flagged but dismissed" style="padding:10px 16px;background:transparent;border:1px solid transparent;border-bottom:none;border-radius:8px 8px 0 0;color:var(--muted);font-size:12px;font-weight:500;cursor:pointer;">⚠ Ignored Flags</button>
+  <button type="button" data-echo-tab="lineage" onclick="echoSwitchTab('lineage')" class="echo-feed-tab" title="Model ancestry — version history" style="padding:10px 16px;background:transparent;border:1px solid transparent;border-bottom:none;border-radius:8px 8px 0 0;color:var(--muted);font-size:12px;font-weight:500;cursor:pointer;">🧬 Model Lineage</button>
+  <button type="button" data-echo-tab="whistleblower" onclick="echoSwitchTab('whistleblower')" class="echo-feed-tab" title="Anonymized whistleblower submissions" style="padding:10px 16px;background:transparent;border:1px solid transparent;border-bottom:none;border-radius:8px 8px 0 0;color:var(--muted);font-size:12px;font-weight:500;cursor:pointer;">🔒 Whistleblower</button>
+  <button type="button" data-echo-tab="pmprofiles" onclick="echoSwitchTab('pmprofiles')" class="echo-feed-tab" title="Affected-person record vault — append-only personal records" style="padding:10px 16px;background:transparent;border:1px solid transparent;border-bottom:none;border-radius:8px 8px 0 0;color:var(--muted);font-size:12px;font-weight:500;cursor:pointer;">👤 PM Profiles</button>
+</div>
   <!-- Section header -->
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
     <div>
@@ -6180,6 +6188,7 @@ Template Overview
     </div>
   </div>
 
+<div id="echo-tab-content-memories">
   <!-- Search bar -->
   <div style="margin-bottom:14px;">
     <div style="position:relative;">
@@ -6205,6 +6214,13 @@ Template Overview
       <div id="echo-pinned-list" style="display:flex;flex-direction:column;gap:10px;"></div>
     </div>
   </div>
+</div>
+<div id="echo-tab-content-timeline" style="display:none;"></div>
+<div id="echo-tab-content-receipts" style="display:none;"></div>
+<div id="echo-tab-content-ignored" style="display:none;"></div>
+<div id="echo-tab-content-lineage" style="display:none;"></div>
+<div id="echo-tab-content-whistleblower" style="display:none;"></div>
+<div id="echo-tab-content-pmprofiles" style="display:none;"></div>
 </section>
 
 <!-- Memory detail modal (hidden by default) -->
@@ -17498,6 +17514,16 @@ function switchEchoTab(arg, idx) {
      }
    });
  }
+ if (document.getElementById('echo-feed-tabs')) {
+   tabIds.forEach((t)=>{
+     const el = document.getElementById('echo-tab-'+t);
+     if(el) el.style.display = 'none';
+   });
+   const idxToFeed = ['timeline','receipts','ignored','lineage','whistleblower','pmprofiles'];
+   const ft = idxToFeed[activeIdx];
+   if (ft && typeof echoSwitchTab === 'function') echoSwitchTab(ft);
+   return;
+ }
  tabIds.forEach((t,i)=>{
    const el = document.getElementById('echo-tab-'+t);
    if(el) el.style.display = i===activeIdx ? 'block' : 'none';
@@ -22592,12 +22618,43 @@ function echoEscapeJsAttr(s) {
  return String(s == null ? '' : s).replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/\r?\n/g,' ');
 }
 
+function echoGetPinnedState(m) {
+  if (!m || !m.id) return false;
+  if (window.__echoPinnedOverrides && Object.prototype.hasOwnProperty.call(window.__echoPinnedOverrides, m.id))
+    return !!window.__echoPinnedOverrides[m.id];
+  return !!m.isPinned;
+}
+
 function renderEchoCardinalHero(org) {
   var memories = (window.CARDINAL_DATA && window.CARDINAL_DATA[org] && window.CARDINAL_DATA[org].echoMemories) ? window.CARDINAL_DATA[org].echoMemories : [];
+
+  // Real-time KPI calculation from sealed memories
+  var allMemories = memories.slice();
+  var totalEvents = allMemories.length;
+  var flagsIgnored = allMemories.filter(function(m){
+    return m.eventType === 'decision-reversed' || (m.summary && m.summary.toLowerCase().indexOf('dismissed') !== -1) || (m.summary && m.summary.toLowerCase().indexOf('ignored') !== -1);
+  }).length;
+  var decisionReceiptsCount = (window.DECISION_RECEIPTS || []).filter(function(r){ return r.industryContext === org; }).length;
+  var signoffsCount = allMemories.filter(function(m){
+    return m.eventType === 'document-approved' || m.eventType === 'decision-made' || m.eventType === 'team-decision';
+  }).length;
+
+  var kpi1 = document.getElementById('echo-kpi-total-events');
+  var kpi2 = document.getElementById('echo-kpi-flags-ignored');
+  var kpi3 = document.getElementById('echo-kpi-decision-receipts');
+  var kpi4 = document.getElementById('echo-kpi-signoffs');
+  if (kpi1) kpi1.textContent = totalEvents.toLocaleString();
+  if (kpi2) kpi2.textContent = flagsIgnored.toLocaleString();
+  if (kpi3) kpi3.textContent = decisionReceiptsCount.toLocaleString();
+  if (kpi4) kpi4.textContent = signoffsCount.toLocaleString();
+
   var totalMemories = memories.length;
   var sealedCount = memories.filter(function(m){ return m.isSealed; }).length;
-  var pinnedCount = memories.filter(function(m){ return m.isPinned; }).length;
+  var pinnedCount = memories.filter(function(m){ return echoGetPinnedState(m); }).length;
   var addendumCount = memories.reduce(function(acc, m){ return acc + (m.addendums ? m.addendums.length : 0); }, 0);
+  // Chain integrity is locked at 100 by Echo's append-only architecture.
+  // Memories cannot be deleted or modified — only addendums can be appended (themselves sealed).
+  // Therefore the chain is mathematically tamper-proof by design. Gauge does not change.
   var integrityScore = 100;
   var lastVerifiedHours = 1;
 
@@ -22646,17 +22703,6 @@ function renderEchoCardinalHero(org) {
       '</div>';
   }
 
-  var ipEl = document.getElementById('echo-hero-industry-position');
-  if (ipEl) {
-    ipEl.innerHTML = '<div style="font-size:12px;font-weight:600;color:var(--chrome2);margin-bottom:6px;">Memory Volume vs Peers</div>' +
-      '<div style="font-size:10px;color:var(--muted);margin-bottom:12px;">Your seal rate: ' + totalMemories.toLocaleString() + ' · Industry avg: ' + Math.round(totalMemories * 0.7).toLocaleString() + ' · 87th percentile</div>' +
-      '<div title="Peer distribution — your organization at 87th percentile" style="position:relative;height:8px;background:linear-gradient(90deg, #ef4444 0%, #f59e0b 50%, #22c55e 100%);border-radius:4px;margin-bottom:8px;">' +
-        '<div style="position:absolute;left:87%;top:-3px;width:14px;height:14px;border-radius:50%;background:#fff;border:2px solid var(--green);box-shadow:0 0 12px rgba(34,197,94,0.6);transform:translateX(-50%);"></div>' +
-      '</div>' +
-      '<div style="display:flex;justify-content:space-between;font-size:9px;color:var(--muted);"><span>0</span><span>Industry Avg</span><span>Top decile</span></div>' +
-      '<button type="button" onclick="showScreen(\'halo\',null)" title="See peer benchmarks in Halo" style="margin-top:10px;width:100%;padding:8px;background:rgba(166,218,255,0.06);border:1px solid rgba(166,218,255,0.15);border-radius:6px;color:var(--accent);font-size:11px;cursor:pointer;">Compare in Halo →</button>';
-  }
-
   var relEl = document.getElementById('echo-hero-reliability');
   if (relEl) {
     relEl.innerHTML = '<div style="font-size:12px;font-weight:600;color:var(--chrome2);margin-bottom:6px;">Chain Integrity Detail</div>' +
@@ -22672,9 +22718,9 @@ function renderEchoCardinalHero(org) {
 
   var coEl = document.getElementById('echo-hero-callout-text');
   if (coEl) {
-    var oldestDate = memories.length > 0 ? memories.reduce(function(acc, m){ return m.timestamp < acc ? m.timestamp : acc; }, memories[0].timestamp) : new Date().toISOString();
-    var oldestYear = oldestDate.substring(0, 4);
-    coEl.innerHTML = '<strong style="color:var(--chrome2);">Tamper-proof since ' + oldestYear + '.</strong> <span style="color:var(--muted);">' + totalMemories.toLocaleString() + ' memories sealed across ' + new Set(memories.map(function(m){return m.core;})).size + ' cores. Cryptographically verifiable. Append-only — additions sealed as addendums; deletions impossible.</span>';
+    var oldestDateObj = memories.length > 0 ? new Date(memories.reduce(function(acc, m){ return m.timestamp < acc ? m.timestamp : acc; }, memories[0].timestamp)) : new Date();
+    var oldestDateStr = oldestDateObj.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+    coEl.innerHTML = '<strong style="color:var(--chrome2);">Tamper-proof since ' + oldestDateStr + '.</strong> <span style="color:var(--muted);">' + totalMemories.toLocaleString() + ' memories sealed across ' + (new Set(memories.map(function(m){return m.core;})).size) + ' cores. Architecturally append-only — no deletions or modifications possible. Addendums are themselves sealed and timestamped.</span>';
   }
 }
 
@@ -22683,6 +22729,7 @@ function renderEchoMemoryFeed(org) {
   renderEchoFilterBar(org);
   echoApplyFilters();
   renderEchoPinnedSidebar(org);
+  if (document.getElementById('echo-feed-tabs')) echoSwitchTab('memories');
 }
 
 function renderEchoFilterBar(org) {
@@ -22693,7 +22740,22 @@ function renderEchoFilterBar(org) {
   var coresSet = new Set(memories.map(function(m){return m.core;}).filter(Boolean));
   var casesSet = new Set(memories.map(function(m){return m.caseId;}).filter(Boolean));
   var modelsSet = new Set(memories.map(function(m){return m.modelId;}).filter(Boolean));
-  var personsSet = new Set(memories.map(function(m){return m.userId || m.author;}).filter(function(p){return p && p !== 'system';}));
+  var systemNames = ['Core', 'Exchange', 'Ledger', 'Loop', 'Sentinel', 'War Room', 'Trust Ledger', 'Compliance Exchange', 'Atonement Core', 'Eden Core', 'Obsidian Core', 'Genesis Core', 'Halo Core', 'Sentinel Core', 'Patient Advocacy Desk'];
+  var isSystemName = function(n) {
+    if (!n) return true;
+    if (n.toLowerCase() === 'system') return true;
+    if (n.toLowerCase() === 'eve') return true;
+    if (n.toLowerCase() === 'adam') return true;
+    for (var si = 0; si < systemNames.length; si++) {
+      if (n.indexOf(systemNames[si]) !== -1) return true;
+    }
+    return false;
+  };
+  var personsSet = new Set(memories.map(function(m){
+    var name = m.userId || m.author;
+    if (isSystemName(name)) return null;
+    return name;
+  }).filter(Boolean));
   var eventTypesSet = new Set(memories.map(function(m){return m.eventType;}).filter(Boolean));
   var severitiesSet = new Set(memories.map(function(m){return m.severity;}).filter(Boolean));
   var tiersSet = new Set(memories.map(function(m){return m.accessTier;}).filter(Boolean));
@@ -22787,7 +22849,8 @@ function renderEchoMemoryCard(m) {
   var sevColor = { critical: 'red', high: 'amber', medium: 'blue', low: 'green', informational: 'muted' }[m.severity] || 'muted';
   var coreColor = { eden: 'red', obsidian: 'blue', genesis: 'amber', atonement: 'green', sentinel: 'amber', halo: 'blue', echo: 'accent', compliance: 'muted2', trustledger: 'green', trustloop: 'accent', warroom: 'red' }[m.core] || 'accent';
   var addendumBadge = (m.addendums && m.addendums.length > 0) ? '<span style="display:inline-flex;align-items:center;gap:4px;padding:2px 7px;background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.25);border-radius:10px;font-size:9px;color:var(--amber);font-weight:600;" title="' + m.addendums.length + ' addendum' + (m.addendums.length === 1 ? '' : 's') + ' appended">+' + m.addendums.length + ' addendum' + (m.addendums.length === 1 ? '' : 's') + '</span>' : '';
-  var pinnedBadge = m.isPinned ? '<span style="font-size:11px;" title="Pinned — surfaced as consequential">📌</span>' : '';
+  var pinOn = echoGetPinnedState(m);
+  var pinnedBadge = '<span onclick="event.stopPropagation();echoTogglePin(\'' + echoEscapeJsAttr(m.id) + '\')" style="cursor:pointer;font-size:13px;opacity:' + (pinOn ? '1' : '0.3') + ';transition:opacity 0.15s;" title="' + (pinOn ? 'Click to unpin this memory' : 'Click to pin this memory for quick access') + '">📌</span>';
   var sealedBadge = m.isSealed ? '<span style="display:inline-flex;align-items:center;gap:4px;padding:2px 7px;background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.25);border-radius:10px;font-size:9px;color:var(--green);font-weight:600;" title="Permanently sealed — cannot be modified">◆ Sealed</span>' : '';
   var tier = m.accessTier || 'org-wide';
   var tierBadge = tier !== 'org-wide' ? '<span style="display:inline-flex;align-items:center;gap:4px;padding:2px 7px;background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.15);border-radius:10px;font-size:9px;color:var(--red);font-weight:600;" title="Restricted access: ' + echoEscapeHtml((m.accessRoles || []).join(', ')) + '">🔒 ' + echoEscapeHtml(tier.replace(/-/g, ' ')) + '</span>' : '';
@@ -22821,7 +22884,7 @@ function renderEchoMemoryCard(m) {
 
 function renderEchoPinnedSidebar(org) {
   var memories = (window.CARDINAL_DATA && window.CARDINAL_DATA[org] && window.CARDINAL_DATA[org].echoMemories) ? window.CARDINAL_DATA[org].echoMemories : [];
-  var pinned = memories.filter(function(m){ return m.isPinned; }).sort(function(a,b){ return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(); });
+  var pinned = memories.filter(function(m){ return echoGetPinnedState(m); }).sort(function(a,b){ return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(); });
   var listEl = document.getElementById('echo-pinned-list');
   if (!listEl) return;
   if (pinned.length === 0) {
@@ -22876,7 +22939,7 @@ function echoOpenMemoryDetail(memoryId) {
   content.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:18px;">' +
     '<div style="flex:1;">' +
       '<div style="display:flex;gap:8px;margin-bottom:10px;">' +
-        (memory.isPinned ? '<span style="font-size:13px;">📌 Pinned</span>' : '') +
+        (echoGetPinnedState(memory) ? '<span style="font-size:13px;">📌 Pinned</span>' : '') +
         (memory.isSealed ? '<span style="padding:3px 9px;background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.25);border-radius:10px;font-size:10px;color:var(--green);font-weight:600;">◆ Sealed (Immutable)</span>' : '') +
         '<span style="padding:3px 9px;background:rgba(' + (sevColor === 'red' ? '239,68,68' : sevColor === 'amber' ? '245,158,11' : sevColor === 'green' ? '34,197,94' : sevColor === 'blue' ? '59,130,246' : '148,163,184') + ',0.1);border:1px solid rgba(' + (sevColor === 'red' ? '239,68,68' : sevColor === 'amber' ? '245,158,11' : sevColor === 'green' ? '34,197,94' : sevColor === 'blue' ? '59,130,246' : '148,163,184') + ',0.25);border-radius:10px;font-size:10px;color:var(--' + sevColor + ');font-weight:600;text-transform:uppercase;">' + echoEscapeHtml(memory.severity || '') + '</span>' +
         '<span style="padding:3px 9px;background:rgba(166,218,255,0.06);border:1px solid rgba(166,218,255,0.15);border-radius:10px;font-size:10px;color:var(--accent);text-transform:uppercase;">' + echoEscapeHtml(memory.core || '') + '</span>' +
@@ -22927,6 +22990,201 @@ function echoExportAuditLog() {
 
 function echoExportPacket() {
   if (typeof showToast === 'function') showToast('Audit packet export — full implementation coming in Prompt 2D-c (consuming screens wire-up)');
+}
+
+function echoSwitchTab(tab) {
+  document.querySelectorAll('.echo-feed-tab').forEach(function(btn){
+    var isActive = btn.getAttribute('data-echo-tab') === tab;
+    btn.classList.toggle('active', isActive);
+    btn.style.background = isActive ? 'rgba(166,218,255,0.06)' : 'transparent';
+    btn.style.border = isActive ? '1px solid rgba(166,218,255,0.2)' : '1px solid transparent';
+    btn.style.borderBottom = 'none';
+    btn.style.color = isActive ? 'var(--accent)' : 'var(--muted)';
+    btn.style.fontWeight = isActive ? '600' : '500';
+  });
+  var feedToLegacyIdx = { memories: -1, timeline: 0, receipts: 1, ignored: 2, lineage: 3, whistleblower: 4, pmprofiles: 5 };
+  var legIdx = feedToLegacyIdx[tab];
+  var tabsContainer = document.getElementById('echo-tabs');
+  if (tabsContainer) {
+    var buttons = tabsContainer.querySelectorAll('.gen-tab');
+    if (legIdx >= 0) {
+      buttons.forEach(function(t, i){
+        t.classList.toggle('active', i === legIdx);
+        if (i === legIdx) {
+          t.style.background = 'var(--card)';
+          t.style.color = 'var(--text)';
+          t.style.fontWeight = '600';
+        } else {
+          t.style.background = 'transparent';
+          t.style.color = 'var(--muted)';
+          t.style.fontWeight = '400';
+        }
+      });
+    } else if (tab === 'memories') {
+      buttons.forEach(function(t){
+        t.classList.remove('active');
+        t.style.background = 'transparent';
+        t.style.color = 'var(--muted)';
+        t.style.fontWeight = '400';
+      });
+    }
+  }
+  ['memories', 'timeline', 'receipts', 'ignored', 'lineage', 'whistleblower', 'pmprofiles'].forEach(function(t){
+    var el = document.getElementById('echo-tab-content-' + t);
+    if (el) el.style.display = (t === tab) ? 'block' : 'none';
+  });
+  var org = (typeof currentOrg !== 'undefined' && currentOrg) ? currentOrg : (window.currentOrg || 'ad');
+  if (tab === 'timeline') echoRenderTimeline(org);
+  else if (tab === 'receipts') echoRenderReceipts(org);
+  else if (tab === 'ignored') echoRenderIgnoredFlags(org);
+  else if (tab === 'lineage') echoRenderModelLineage(org);
+  else if (tab === 'whistleblower') echoRenderWhistleblower(org);
+  else if (tab === 'pmprofiles') echoRenderPMProfiles(org);
+}
+
+function echoRenderTimeline(org) {
+  var el = document.getElementById('echo-tab-content-timeline');
+  if (!el) return;
+  var memories = (window.CARDINAL_DATA && window.CARDINAL_DATA[org] && window.CARDINAL_DATA[org].echoMemories) ? window.CARDINAL_DATA[org].echoMemories.slice() : [];
+  memories.sort(function(a,b){ return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(); });
+  el.innerHTML = '<div style="padding:8px 0 20px;"><div style="font-size:18px;font-weight:700;color:var(--chrome2);margin-bottom:6px;">Audit Timeline — Every Event Logged</div><div style="font-size:11px;color:var(--muted);margin-bottom:18px;">Chronological event stream with timestamps, hashes, and full context.</div>' +
+    '<div style="display:flex;flex-direction:column;gap:8px;">' +
+    memories.map(function(m){
+      var dateStr = new Date(m.timestamp).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+      var sevColor = { critical: 'red', high: 'amber', medium: 'blue', low: 'green', informational: 'muted' }[m.severity] || 'muted';
+      var hashFrag = echoEscapeHtml((m.hash || '').substring(2, 10));
+      return '<div onclick="echoOpenMemoryDetail(\'' + echoEscapeJsAttr(m.id) + '\')" style="cursor:pointer;display:grid;grid-template-columns:160px 1fr 80px;gap:14px;padding:10px 14px;background:rgba(15,23,42,0.4);border:1px solid rgba(166,218,255,0.06);border-radius:8px;align-items:center;" onmouseover="this.style.borderColor=\'rgba(166,218,255,0.2)\';" onmouseout="this.style.borderColor=\'rgba(166,218,255,0.06)\';" title="Open full memory detail">' +
+        '<div style="font-size:10px;color:var(--muted);font-family:monospace;">' + echoEscapeHtml(dateStr) + '<br/><span style="color:var(--accent);">' + hashFrag + '</span></div>' +
+        '<div><div style="font-size:12px;font-weight:600;color:var(--chrome2);">' + echoEscapeHtml(m.summary || '') + '</div><div style="font-size:10px;color:var(--muted);margin-top:2px;">' + echoEscapeHtml(m.author || 'system') + ' — ' + echoEscapeHtml(String(m.caseId != null ? m.caseId : 'no case')) + '</div></div>' +
+        '<div style="text-align:right;"><span style="padding:2px 7px;background:rgba(166,218,255,0.06);border:1px solid rgba(166,218,255,0.15);border-radius:10px;font-size:9px;color:var(--' + sevColor + ');font-weight:600;text-transform:uppercase;">' + echoEscapeHtml(m.severity || '') + '</span></div>' +
+        '</div>';
+    }).join('') + '</div></div>';
+}
+
+function echoRenderReceipts(org) {
+  var el = document.getElementById('echo-tab-content-receipts');
+  if (!el) return;
+  var receipts = (window.DECISION_RECEIPTS || []).filter(function(r){ return r.industryContext === org; });
+  receipts.sort(function(a,b){ return new Date(b.issuedDate).getTime() - new Date(a.issuedDate).getTime(); });
+  var typeColors = { 'counterfactual': 'amber', 'deployment': 'blue', 'governance': 'accent', 'attestation': 'green', 'case-closure': 'green', 'whistleblower-seal': 'red' };
+  el.innerHTML = '<div style="padding:8px 0 20px;"><div style="font-size:18px;font-weight:700;color:var(--chrome2);margin-bottom:6px;">Decision Receipts — Cryptographic Proofs</div><div style="font-size:11px;color:var(--muted);margin-bottom:18px;">' + receipts.length + ' receipts issued across six subtypes: counterfactual proofs, deployment attestations, governance decisions, regulatory filings, case closures, whistleblower seals.</div>' +
+    '<div style="display:flex;flex-direction:column;gap:10px;">' +
+    receipts.map(function(r){
+      var color = typeColors[r.receiptType] || 'muted';
+      var dateStr = new Date(r.issuedDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+      var sigCount = (r.signatures || []).length;
+      return '<div style="padding:14px 16px;background:rgba(15,23,42,0.5);border:1px solid rgba(166,218,255,0.08);border-radius:10px;">' +
+        '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">' +
+        '<div style="flex:1;"><div style="font-size:10px;color:var(--' + color + ');font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">' + echoEscapeHtml(String(r.receiptType || '').replace(/-/g, ' ')) + '</div>' +
+        '<div style="font-size:13px;font-weight:600;color:var(--chrome2);font-family:monospace;">' + echoEscapeHtml(r.receiptId || '') + '</div></div>' +
+        '<div style="text-align:right;"><div style="font-size:11px;color:var(--muted);">' + echoEscapeHtml(dateStr) + '</div><div style="font-size:10px;color:var(--accent);margin-top:2px;">' + sigCount + ' signature' + (sigCount === 1 ? '' : 's') + (r.multisigRequired ? ' (multisig)' : '') + '</div></div>' +
+        '</div>' +
+        '<div style="font-size:11px;color:var(--muted2);">Issued by: <strong style="color:var(--chrome2);">' + echoEscapeHtml(r.issuedBy || '') + '</strong>' + (r.linkedCaseId ? ' · Linked case: <strong style="color:var(--accent);font-family:monospace;">#' + echoEscapeHtml(r.linkedCaseId) + '</strong>' : '') + '</div>' +
+        '<div style="font-size:10px;color:var(--accent);font-family:monospace;margin-top:6px;">' + echoEscapeHtml(r.hashAnchor || '') + '</div>' +
+        '</div>';
+    }).join('') + '</div></div>';
+}
+
+function echoRenderIgnoredFlags(org) {
+  var el = document.getElementById('echo-tab-content-ignored');
+  if (!el) return;
+  var memories = (window.CARDINAL_DATA && window.CARDINAL_DATA[org] && window.CARDINAL_DATA[org].echoMemories) ? window.CARDINAL_DATA[org].echoMemories : [];
+  var flagged = memories.filter(function(m){
+    return m.eventType === 'decision-reversed' || (m.summary && m.summary.toLowerCase().indexOf('dismissed') !== -1) || (m.summary && m.summary.toLowerCase().indexOf('ignored') !== -1);
+  });
+  el.innerHTML = '<div style="padding:8px 0 20px;"><div style="font-size:18px;font-weight:700;color:var(--chrome2);margin-bottom:6px;">Ignored Flags — Eve Warnings Dismissed</div><div style="font-size:11px;color:var(--muted);margin-bottom:18px;">Audit trail of every Eve warning that was dismissed, by whom, and why. Sealed for accountability.</div>' +
+    (flagged.length === 0 ? '<div style="padding:30px;text-align:center;color:var(--muted);background:rgba(15,23,42,0.4);border:1px dashed rgba(166,218,255,0.1);border-radius:10px;">No flags ignored on record.</div>' :
+    '<div style="display:flex;flex-direction:column;gap:10px;">' +
+    flagged.map(function(m){ return renderEchoMemoryCard(m); }).join('') + '</div>') + '</div>';
+}
+
+function echoRenderModelLineage(org) {
+  var el = document.getElementById('echo-tab-content-lineage');
+  if (!el) return;
+  var memories = (window.CARDINAL_DATA && window.CARDINAL_DATA[org] && window.CARDINAL_DATA[org].echoMemories) ? window.CARDINAL_DATA[org].echoMemories : [];
+  var modelMap = {};
+  memories.forEach(function(m){
+    if (!m.modelId) return;
+    if (!modelMap[m.modelId]) modelMap[m.modelId] = { firstSeen: m.timestamp, lastSeen: m.timestamp, eventCount: 0, cases: new Set() };
+    if (m.timestamp < modelMap[m.modelId].firstSeen) modelMap[m.modelId].firstSeen = m.timestamp;
+    if (m.timestamp > modelMap[m.modelId].lastSeen) modelMap[m.modelId].lastSeen = m.timestamp;
+    modelMap[m.modelId].eventCount++;
+    if (m.caseId) modelMap[m.modelId].cases.add(m.caseId);
+  });
+  var models = Object.keys(modelMap).sort();
+  el.innerHTML = '<div style="padding:8px 0 20px;"><div style="font-size:18px;font-weight:700;color:var(--chrome2);margin-bottom:6px;">Model Lineage — Version Ancestry</div><div style="font-size:11px;color:var(--muted);margin-bottom:18px;">' + models.length + ' models tracked. Every version sealed, every transition logged.</div>' +
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">' +
+    models.map(function(modelId){
+      var mm = modelMap[modelId];
+      return '<div style="padding:14px;background:rgba(15,23,42,0.5);border:1px solid rgba(166,218,255,0.08);border-radius:10px;">' +
+        '<div style="font-size:13px;font-weight:600;color:var(--chrome2);margin-bottom:8px;">' + echoEscapeHtml(modelId) + '</div>' +
+        '<div style="display:flex;flex-direction:column;gap:4px;font-size:11px;">' +
+        '<div style="display:flex;justify-content:space-between;border-bottom:1px dotted rgba(180,190,220,0.1);padding-bottom:4px;"><span style="color:var(--muted);">First seen</span><span style="color:var(--chrome2);">' + echoEscapeHtml(new Date(mm.firstSeen).toLocaleDateString('en-US')) + '</span></div>' +
+        '<div style="display:flex;justify-content:space-between;border-bottom:1px dotted rgba(180,190,220,0.1);padding-bottom:4px;"><span style="color:var(--muted);">Last activity</span><span style="color:var(--chrome2);">' + echoEscapeHtml(new Date(mm.lastSeen).toLocaleDateString('en-US')) + '</span></div>' +
+        '<div style="display:flex;justify-content:space-between;border-bottom:1px dotted rgba(180,190,220,0.1);padding-bottom:4px;"><span style="color:var(--muted);">Events sealed</span><span style="color:var(--accent);font-weight:600;">' + mm.eventCount + '</span></div>' +
+        '<div style="display:flex;justify-content:space-between;"><span style="color:var(--muted);">Linked cases</span><span style="color:var(--chrome2);">' + mm.cases.size + '</span></div>' +
+        '</div></div>';
+    }).join('') + '</div></div>';
+}
+
+function echoRenderWhistleblower(org) {
+  var el = document.getElementById('echo-tab-content-whistleblower');
+  if (!el) return;
+  var memories = (window.CARDINAL_DATA && window.CARDINAL_DATA[org] && window.CARDINAL_DATA[org].echoMemories) ? window.CARDINAL_DATA[org].echoMemories : [];
+  var wb = memories.filter(function(m){ return m.eventType === 'whistleblower-submission' || (m.summary && m.summary.toLowerCase().indexOf('whistleblower') !== -1); });
+  var receipts = (window.DECISION_RECEIPTS || []).filter(function(r){ return r.industryContext === org && r.receiptType === 'whistleblower-seal'; });
+  el.innerHTML = '<div style="padding:8px 0 20px;"><div style="font-size:18px;font-weight:700;color:var(--chrome2);margin-bottom:6px;">Whistleblower — Anonymized Submissions</div><div style="font-size:11px;color:var(--muted);margin-bottom:18px;">Sealed routing audit. PII-stripped. Role-restricted access (Legal + Compliance + Admin).</div>' +
+    '<div style="background:rgba(239,68,68,0.04);border:1px solid rgba(239,68,68,0.15);border-radius:10px;padding:14px 16px;margin-bottom:14px;display:flex;align-items:center;gap:10px;">' +
+    '<span style="font-size:14px;">🔒</span><span style="font-size:11px;color:var(--muted);">' + receipts.length + ' whistleblower seal' + (receipts.length === 1 ? '' : 's') + ' on file. ' + wb.length + ' linked memory entries.</span>' +
+    '</div>' +
+    (receipts.length === 0 && wb.length === 0 ? '<div style="padding:30px;text-align:center;color:var(--muted);background:rgba(15,23,42,0.4);border:1px dashed rgba(166,218,255,0.1);border-radius:10px;">No whistleblower submissions on record.</div>' :
+    '<div style="display:flex;flex-direction:column;gap:10px;">' +
+    receipts.map(function(r){
+      var dateStr = new Date(r.issuedDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+      var accessTxt = (r.contents && r.contents.accessRoles) ? r.contents.accessRoles.join(', ') : 'restricted';
+      return '<div style="padding:14px 16px;background:rgba(15,23,42,0.6);border:1px solid rgba(239,68,68,0.2);border-radius:10px;">' +
+        '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;">' +
+        '<div style="font-size:12px;font-weight:600;color:var(--chrome2);font-family:monospace;">' + echoEscapeHtml(r.receiptId || '') + '</div>' +
+        '<div style="padding:2px 8px;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.25);border-radius:10px;font-size:9px;color:var(--red);font-weight:600;text-transform:uppercase;">SEALED</div>' +
+        '</div>' +
+        '<div style="font-size:11px;color:var(--muted);margin-bottom:6px;">' + echoEscapeHtml(dateStr) + ' · Linked case: <strong style="color:var(--accent);">#' + echoEscapeHtml(r.linkedCaseId || 'none') + '</strong></div>' +
+        '<div style="font-size:10px;color:var(--muted2);font-family:monospace;">Hash: ' + echoEscapeHtml(r.hashAnchor || '') + '</div>' +
+        '<div style="font-size:10px;color:var(--muted);margin-top:4px;">Access: ' + echoEscapeHtml(accessTxt) + '</div>' +
+        '</div>';
+    }).join('') +
+    wb.map(function(m){ return renderEchoMemoryCard(m); }).join('') +
+    '</div>') + '</div>';
+}
+
+function echoRenderPMProfiles(org) {
+  var el = document.getElementById('echo-tab-content-pmprofiles');
+  if (!el) return;
+  el.innerHTML = '<div style="padding:8px 0 20px;"><div style="font-size:18px;font-weight:700;color:var(--chrome2);margin-bottom:6px;">PM Profiles — Affected-Person Record Vault</div><div style="font-size:11px;color:var(--muted);margin-bottom:18px;">Append-only personal records for every affected individual. Cryptographic vault with explainability packet attached. Role-restricted.</div>' +
+    '<div style="background:rgba(166,218,255,0.04);border:1px solid rgba(166,218,255,0.15);border-radius:10px;padding:20px;text-align:center;">' +
+    '<div style="font-size:13px;color:var(--chrome2);margin-bottom:6px;">PM Profile vault integration coming in next prompt</div>' +
+    '<div style="font-size:11px;color:var(--muted);">PM Profiles is the integrity engine — Cardinal Search will be the investigator UX surfacing these records by name, case, or affected person. Deferred to Prompt 2K.</div>' +
+    '</div></div>';
+}
+
+function echoTogglePin(memoryId) {
+  window.__echoPinnedOverrides = window.__echoPinnedOverrides || {};
+  var memory = null;
+  var orgKeys = window.CARDINAL_DATA ? Object.keys(window.CARDINAL_DATA) : ['ad','fin','health'];
+  for (var i = 0; i < orgKeys.length; i++) {
+    var arr = (window.CARDINAL_DATA[orgKeys[i]] && window.CARDINAL_DATA[orgKeys[i]].echoMemories) || [];
+    for (var j = 0; j < arr.length; j++) {
+      if (arr[j].id === memoryId) { memory = arr[j]; break; }
+    }
+    if (memory) break;
+  }
+  if (!memory) return;
+  var cur = echoGetPinnedState(memory);
+  window.__echoPinnedOverrides[memoryId] = !cur;
+  echoApplyFilters();
+  var org = (typeof currentOrg !== 'undefined' && currentOrg) ? currentOrg : (window.currentOrg || 'ad');
+  renderEchoPinnedSidebar(org);
+  renderEchoCardinalHero(org);
+  if (typeof showToast === 'function') showToast(!cur ? 'Memory pinned' : 'Memory unpinned');
 }
 
 function buildEchoTimeline(events, filter) {
