@@ -23135,6 +23135,55 @@ function echoOpenModelDetail(modelName) {
   document.body.appendChild(modal);
 }
 
+function echoToggleMemoryPin(memoryId) {
+  echoTogglePin(memoryId);
+  var orgs = ['ad', 'fin', 'health'];
+  for (var i = 0; i < orgs.length; i++) {
+    var arr = (window.CARDINAL_DATA && window.CARDINAL_DATA[orgs[i]] && window.CARDINAL_DATA[orgs[i]].echoMemories) || [];
+    for (var j = 0; j < arr.length; j++) {
+      if (arr[j].id === memoryId) {
+        echoRenderMemoryDetailFullscreen(arr[j], orgs[i]);
+        var bcTitle = document.getElementById('echo-memory-detail-breadcrumb-title');
+        if (bcTitle) bcTitle.textContent = (arr[j].summary || 'Memory').substring(0, 60) + ((arr[j].summary || '').length > 60 ? '...' : '');
+        return;
+      }
+    }
+  }
+}
+
+function echoSealAddendum(memoryId) {
+  var ta = document.getElementById('echo-new-note-text');
+  if (!ta) return;
+  var noteContent = (ta.value || '').trim();
+  if (!noteContent) { alert('Please type a note before sealing.'); return; }
+  var orgs = ['ad', 'fin', 'health'];
+  for (var i = 0; i < orgs.length; i++) {
+    var arr = (window.CARDINAL_DATA && window.CARDINAL_DATA[orgs[i]] && window.CARDINAL_DATA[orgs[i]].echoMemories) || [];
+    for (var j = 0; j < arr.length; j++) {
+      if (arr[j].id === memoryId) {
+        if (!arr[j].addendums) arr[j].addendums = [];
+        var pseudoHash = '0x' + Math.random().toString(16).substr(2, 16) + Math.random().toString(16).substr(2, 16);
+        var pseudoSig = 'sig-' + Math.random().toString(16).substr(2, 16);
+        arr[j].addendums.push({
+          id: 'addendum-' + Date.now(),
+          timestamp: new Date().toISOString(),
+          author: 'Anthony Broadnax',
+          authorRole: 'user',
+          content: noteContent,
+          hash: pseudoHash,
+          signature: pseudoSig
+        });
+        ta.value = '';
+        echoRenderMemoryDetailFullscreen(arr[j], orgs[i]);
+        var bcTitle = document.getElementById('echo-memory-detail-breadcrumb-title');
+        if (bcTitle) bcTitle.textContent = (arr[j].summary || 'Memory').substring(0, 60) + ((arr[j].summary || '').length > 60 ? '...' : '');
+        if (typeof showToast === 'function') showToast('Note sealed as addendum');
+        return;
+      }
+    }
+  }
+}
+
 function echoOpenMemoryDetail(memoryId) {
   var memory = null;
   var memoryOrg = null;
@@ -23269,106 +23318,133 @@ function echoShowIntegrityExplainer() {
 
 function echoRenderMemoryDetailFullscreen(memory, memoryOrg) {
   var contentEl = document.getElementById('echo-memory-detail-fullscreen-content');
-  if (!contentEl) return;
-
-  var sevColor = { critical: 'red', high: 'amber', medium: 'blue', low: 'green', informational: 'muted' }[memory.severity] || 'muted';
-  var sevColorRgb = sevColor === 'red' ? '239,68,68' : sevColor === 'amber' ? '245,158,11' : sevColor === 'green' ? '34,197,94' : sevColor === 'blue' ? '59,130,246' : '148,163,184';
-  var date = new Date(memory.timestamp).toLocaleString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZoneName: 'short' });
-
-  var allMemories = (window.CARDINAL_DATA && window.CARDINAL_DATA[memoryOrg] && window.CARDINAL_DATA[memoryOrg].echoMemories) || [];
-  var relatedByCase = memory.caseId ? allMemories.filter(function(m){ return m.caseId === memory.caseId && m.id !== memory.id; }) : [];
-  var relatedByModel = memory.modelId ? allMemories.filter(function(m){ return m.modelId === memory.modelId && m.id !== memory.id; }) : [];
-  var allReceipts = (window.DECISION_RECEIPTS || []).filter(function(r){ return r.industryContext === memoryOrg; });
-  var linkedReceipts = allReceipts.filter(function(r){ return r.linkedCaseId === memory.caseId || (r.echoMemoryAnchor === memory.id) || ((memory.linkedMemories || []).indexOf(r.receiptId) !== -1); });
-  var trustLoopEntries = ((window.CARDINAL_DATA && window.CARDINAL_DATA[memoryOrg] && window.CARDINAL_DATA[memoryOrg].trustLoopDigestEntries) || []).filter(function(d){ return memory.caseId && (d.linkedCaseIds || []).indexOf(memory.caseId) !== -1; });
-  var complianceRows = ((window.CARDINAL_DATA && window.CARDINAL_DATA[memoryOrg] && window.CARDINAL_DATA[memoryOrg].complianceTrackerRows) || []).filter(function(c){ return c.caseId === memory.caseId; });
-  var haloEntry = memory.caseId ? (((window.CARDINAL_DATA && window.CARDINAL_DATA[memoryOrg] && window.CARDINAL_DATA[memoryOrg].haloAttribution) || []).filter(function(h){ return h.caseId === memory.caseId; })[0]) : null;
+  if (!contentEl || !memory) return;
 
   if (!window.__echoNotesByMemory) window.__echoNotesByMemory = {};
-  var allAddendums = (memory.addendums || []).slice();
-  (window.__echoNotesByMemory[memory.id] || []).forEach(function(n){ allAddendums.push(n); });
+  var mergedAddendums = (memory.addendums || []).slice();
+  (window.__echoNotesByMemory[memory.id] || []).forEach(function(n){ mergedAddendums.push(n); });
 
-  var pinnedLive = echoGetPinnedState(memory);
+  var allMemories = (window.CARDINAL_DATA && window.CARDINAL_DATA[memoryOrg] && window.CARDINAL_DATA[memoryOrg].echoMemories) || [];
 
-  var heroHtml = '<div style="padding:28px;background:linear-gradient(180deg, rgba(' + sevColorRgb + ',0.06) 0%, rgba(15,23,42,0.6) 100%);border:1px solid rgba(' + sevColorRgb + ',0.2);border-radius:14px;margin-bottom:18px;box-shadow:inset 0 1px 0 rgba(255,255,255,0.03);">' +
-    '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:20px;">' +
-      '<div style="flex:1;min-width:0;">' +
-        '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;">' +
-          (pinnedLive ? '<span style="padding:4px 10px;background:rgba(245,158,11,0.12);border:1px solid rgba(245,158,11,0.3);border-radius:12px;font-size:10px;color:var(--amber);font-weight:600;">📌 Pinned</span>' : '') +
-          '<span style="padding:4px 12px;background:rgba(' + sevColorRgb + ',0.12);border:1px solid rgba(' + sevColorRgb + ',0.35);border-radius:12px;font-size:11px;color:var(--' + sevColor + ');font-weight:700;text-transform:uppercase;letter-spacing:0.5px;">' + echoEscapeHtml(memory.severity || '') + '</span>' +
-          (memory.isSealed ? '<span style="padding:4px 10px;background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.3);border-radius:12px;font-size:10px;color:var(--green);font-weight:600;">◆ Locked</span>' : '') +
-        '</div>' +
-        '<h1 style="font-size:26px;font-weight:700;color:var(--chrome2);margin:0 0 4px;line-height:1.3;">' + echoEscapeHtml(memory.summary || 'Memory') + '</h1>' +
-      '</div>' +
-      '<button type="button" onclick="echoTogglePin(\'' + echoEscapeJsAttr(memory.id) + '\')" style="padding:12px 18px;background:' + (pinnedLive ? 'rgba(245,158,11,0.12)' : 'rgba(166,218,255,0.08)') + ';border:1px solid ' + (pinnedLive ? 'rgba(245,158,11,0.4)' : 'rgba(166,218,255,0.3)') + ';border-radius:10px;color:' + (pinnedLive ? 'var(--amber)' : 'var(--accent)') + ';font-size:13px;font-weight:600;cursor:pointer;flex-shrink:0;white-space:nowrap;" title="' + (pinnedLive ? 'Click to remove from My Pinned Memories' : 'Click to bookmark in My Pinned Memories for quick access') + '">' + (pinnedLive ? '📌 Pinned ✓' : '📌 Add to Pinned') + '</button>' +
-    '</div>' +
-    '</div>';
+  var sevColors = { critical: '#ef4444', high: '#f59e0b', medium: '#3b82f6', low: '#22c55e', informational: '#94a3b8' };
+  var sevLabels = { critical: 'CRITICAL · ACT NOW', high: 'HIGH · REVIEW SOON', medium: 'MEDIUM · ROUTINE', low: 'LOW', informational: 'INFORMATIONAL' };
+  var sevColor = sevColors[memory.severity] || '#94a3b8';
+  var sevLabel = sevLabels[memory.severity] || (memory.severity || 'INFO').toUpperCase();
 
-  var factsHtml = '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:18px;">' +
-    '<div style="padding:14px;background:rgba(15,23,42,0.5);border:1px solid rgba(166,218,255,0.1);border-radius:10px;">' +
-      '<div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;font-weight:600;margin-bottom:6px;">When</div>' +
-      '<div style="font-size:12px;color:var(--chrome2);font-weight:600;line-height:1.4;">' + echoEscapeHtml(date) + '</div>' +
-    '</div>' +
-    '<div style="padding:14px;background:rgba(15,23,42,0.5);border:1px solid rgba(166,218,255,0.1);border-radius:10px;">' +
-      '<div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;font-weight:600;margin-bottom:6px;">Who</div>' +
-      '<div style="font-size:13px;color:var(--chrome2);font-weight:600;">' + echoEscapeHtml(memory.author || 'system') + '</div>' +
-      '<div style="font-size:10px;color:' + (memory.authorRole === 'ai-agent' ? 'var(--accent)' : 'var(--muted)') + ';margin-top:2px;">[' + echoEscapeHtml(memory.authorRole || 'system') + ']</div>' +
-    '</div>' +
-    '<div style="padding:14px;background:rgba(15,23,42,0.5);border:1px solid rgba(166,218,255,0.1);border-radius:10px;">' +
-      '<div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;font-weight:600;margin-bottom:6px;">Linked Case</div>' +
-      '<div style="font-size:13px;color:' + (memory.caseId ? 'var(--accent)' : 'var(--muted)') + ';font-family:monospace;font-weight:600;">' + (memory.caseId ? '#' + echoEscapeHtml(memory.caseId) : '— None —') + '</div>' +
-    '</div>' +
-    '<div style="padding:14px;background:rgba(15,23,42,0.5);border:1px solid rgba(166,218,255,0.1);border-radius:10px;">' +
-      '<div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;font-weight:600;margin-bottom:6px;">Linked Model</div>' +
-      '<div style="font-size:13px;color:' + (memory.modelId ? 'var(--chrome2)' : 'var(--muted)') + ';font-weight:600;line-height:1.3;">' + echoEscapeHtml(memory.modelId || '— None —') + '</div>' +
-    '</div>' +
-    '</div>';
+  var ts = new Date(memory.timestamp);
+  var fullTime = ts.toLocaleString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit', timeZoneName: 'short' });
 
-  var whyMattersHtml = '';
-  if (haloEntry || complianceRows.length > 0 || memory.severity === 'critical' || memory.severity === 'high') {
-    whyMattersHtml = '<div style="margin-bottom:18px;padding:18px;background:linear-gradient(180deg, rgba(' + sevColorRgb + ',0.04) 0%, rgba(15,23,42,0.4) 100%);border:1px solid rgba(' + sevColorRgb + ',0.2);border-radius:12px;">' +
-      '<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">' +
-        '<span style="color:var(--' + sevColor + ');font-size:14px;">▲</span>' +
-        '<div style="font-size:13px;font-weight:700;color:var(--chrome2);">Why This Matters</div>' +
-      '</div>' +
-      '<div style="display:flex;flex-direction:column;gap:10px;">';
-    if (haloEntry && typeof haloEntry.dollarImpact === 'number') {
-      whyMattersHtml += '<div style="padding:12px 14px;background:rgba(15,23,42,0.5);border:1px solid rgba(166,218,255,0.1);border-radius:8px;">' +
-        '<div style="font-size:11px;color:var(--muted);margin-bottom:4px;">Halo Attribution — Financial Exposure</div>' +
-        '<div style="font-size:14px;color:var(--chrome2);font-weight:700;margin-bottom:4px;">$' + (haloEntry.dollarImpact / 1000000).toFixed(1) + 'M' + (haloEntry.daysToImpact ? ' · ' + echoEscapeHtml(String(haloEntry.daysToImpact)) + ' days to impact' : '') + '</div>' +
-        '<div style="font-size:11px;color:var(--muted2);line-height:1.5;">' + echoEscapeHtml(haloEntry.scenario || '') + '</div>' +
-        '</div>';
+  var trustScoreAtTime = null;
+  var trustScoreDelta = null;
+  try {
+    var orgData = window.CARDINAL_DATA && window.CARDINAL_DATA[memoryOrg];
+    if (orgData) {
+      var scoreMemories = (orgData.echoMemories || []).filter(function(m){
+        return m.eventType === 'score-change' && new Date(m.timestamp).getTime() <= ts.getTime();
+      }).sort(function(a,b){ return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(); });
+      if (scoreMemories.length > 0) {
+        var scoreText = scoreMemories[0].summary || '';
+        var match = scoreText.match(/\b(\d{2,3})\b/);
+        if (match) trustScoreAtTime = parseInt(match[1], 10);
+      }
+      var currentScore = orgData.trustScore != null ? orgData.trustScore : 74;
+      if (trustScoreAtTime != null) trustScoreDelta = currentScore - trustScoreAtTime;
     }
-    if (complianceRows.length > 0) {
-      var c = complianceRows[0];
-      whyMattersHtml += '<div style="padding:12px 14px;background:rgba(15,23,42,0.5);border:1px solid rgba(166,218,255,0.1);border-radius:8px;">' +
-        '<div style="font-size:11px;color:var(--muted);margin-bottom:4px;">Compliance Tracker</div>' +
-        '<div style="font-size:12px;color:var(--chrome2);font-weight:600;margin-bottom:2px;">' + echoEscapeHtml(c.regulator || '') + '</div>' +
-        '<div style="font-size:11px;color:var(--muted2);">Status: <strong style="color:var(--amber);">' + echoEscapeHtml(String(c.status || '').replace(/-/g,' ')) + '</strong> · Owner: ' + echoEscapeHtml(c.owner || '') + ' · Due: ' + echoEscapeHtml(c.dueDate || '') + '</div>' +
-        '</div>';
+  } catch(_ts) { console.warn('Trust score snapshot lookup failed', _ts); }
+
+  var signOffs = [];
+  mergedAddendums.forEach(function(a){
+    var content = (a.content || '').toLowerCase();
+    if (content.indexOf('approv') !== -1 || content.indexOf('sign-off') !== -1 || content.indexOf('acknowledg') !== -1 || content.indexOf('attestation') !== -1 || content.indexOf('ceo') !== -1 || content.indexOf('confirm') !== -1) {
+      signOffs.push({
+        name: a.author,
+        role: a.authorRole || 'reviewer',
+        when: new Date(a.timestamp),
+        hash: a.hash || a.signature || ''
+      });
     }
-    if ((memory.severity === 'critical' || memory.severity === 'high') && !haloEntry && complianceRows.length === 0) {
-      whyMattersHtml += '<div style="padding:12px 14px;background:rgba(15,23,42,0.5);border:1px solid rgba(166,218,255,0.1);border-radius:8px;font-size:12px;color:var(--chrome2);line-height:1.5;">' +
-        'Elevated <strong>' + echoEscapeHtml(memory.severity || '') + '</strong> severity' + (memory.caseId ? ' on case <strong style="color:var(--accent);font-family:monospace;">#' + echoEscapeHtml(memory.caseId) + '</strong>' : '') +
-        ' — prioritize compliance review, escalation, and downstream attestations.</div>';
+  });
+
+  var discussionThread = [];
+  try {
+    var od = window.CARDINAL_DATA && window.CARDINAL_DATA[memoryOrg];
+    if (od && memory.caseId) {
+      discussionThread = (od.echoMemories || []).filter(function(m){
+        return m.caseId === memory.caseId && m.id !== memory.id && (m.core === 'trustloop' || m.eventType === 'team-decision' || m.eventType === 'decision-made');
+      }).sort(function(a,b){ return new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(); }).slice(0, 5);
     }
-    whyMattersHtml += '</div></div>';
+  } catch(_dt) {}
+
+  var activityLog = [];
+  mergedAddendums.forEach(function(a){
+    activityLog.push({
+      actor: a.author,
+      action: 'added addendum',
+      when: new Date(a.timestamp),
+      detail: (a.content || '').substring(0, 80) + ((a.content || '').length > 80 ? '...' : '')
+    });
+  });
+  if (memory.isPinned || echoGetPinnedState(memory)) {
+    activityLog.push({
+      actor: memory.author || 'system',
+      action: 'pinned to chain',
+      when: new Date(memory.timestamp),
+      detail: 'flagged as high-importance'
+    });
   }
+  try {
+    var od2 = window.CARDINAL_DATA && window.CARDINAL_DATA[memoryOrg];
+    if (od2 && memory.caseId) {
+      (od2.echoMemories || []).filter(function(m){
+        return m.caseId === memory.caseId && m.id !== memory.id && m.linkedMemories && m.linkedMemories.indexOf(memory.id) !== -1;
+      }).slice(0, 3).forEach(function(m){
+        activityLog.push({
+          actor: m.author || 'system',
+          action: 'referenced this memory in ' + (m.eventType || 'event'),
+          when: new Date(m.timestamp),
+          detail: (m.summary || '').substring(0, 80)
+        });
+      });
+    }
+  } catch(_al) {}
+  activityLog.sort(function(a,b){ return b.when.getTime() - a.when.getTime(); });
 
-  var vizHtml = '';
+  var modelChanges = [];
+  try {
+    var od3 = window.CARDINAL_DATA && window.CARDINAL_DATA[memoryOrg];
+    if (od3 && memory.modelId) {
+      var baseModel = String(memory.modelId).replace(/v\d+(\.\d+)?\s*$/, '').trim();
+      modelChanges = (od3.echoMemories || []).filter(function(m){
+        return m.modelId && (m.modelId === memory.modelId || (baseModel && String(m.modelId).indexOf(baseModel) === 0))
+          && new Date(m.timestamp).getTime() > ts.getTime()
+          && (m.eventType === 'model-deployed' || m.eventType === 'remediation-started' || m.eventType === 'remediation-completed' || m.eventType === 'model-updated' || m.eventType === 'score-change');
+      }).sort(function(a,b){ return new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(); }).slice(0, 6);
+    }
+  } catch(_mc) {}
+
+  var linkedReceipts = [];
+  try {
+    if (window.DECISION_RECEIPTS && memory.caseId) {
+      linkedReceipts = window.DECISION_RECEIPTS.filter(function(r){
+        return r.industryContext === memoryOrg && (r.linkedCaseId === memory.caseId || r.linkedCase === memory.caseId || r.caseId === memory.caseId || r.echoMemoryAnchor === memory.id || ((memory.linkedMemories || []).indexOf(r.receiptId) !== -1));
+      }).slice(0, 4);
+    }
+  } catch(_lr) {}
+
+  var vizExtra = '';
   if (memory.eventType && (memory.eventType.indexOf('deploy') !== -1 || memory.eventType === 'remediation-started' || memory.eventType === 'score-change')) {
     var relatedDeploys = allMemories.filter(function(m){ return m.modelId === memory.modelId && (m.content || '').match(/DI[: ]+0?\.\d+/); }).slice(0, 8);
     if (relatedDeploys.length >= 2) {
       var diPoints = relatedDeploys.map(function(m){
-        var match = (m.content || '').match(/DI[: ]+(0?\.\d+)/);
-        return match ? { date: new Date(m.timestamp), di: parseFloat(match[1]), label: (m.summary || '').substring(0, 30) } : null;
+        var dm = (m.content || '').match(/DI[: ]+(0?\.\d+)/);
+        return dm ? { date: new Date(m.timestamp), di: parseFloat(dm[1]), label: (m.summary || '').substring(0, 30) } : null;
       }).filter(Boolean).sort(function(a,b){ return a.date.getTime() - b.date.getTime(); });
       if (diPoints.length >= 2) {
-        vizHtml += '<div style="margin-bottom:18px;padding:20px;background:rgba(15,23,42,0.4);border:1px solid rgba(166,218,255,0.08);border-radius:12px;"><div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;font-weight:600;">📈 DI Trajectory · ' + echoEscapeHtml(String(memory.modelId || '')) + '</div>' +
+        vizExtra += '<div style="margin-bottom:18px;padding:20px;background:rgba(15,23,42,0.4);border:1px solid rgba(166,218,255,0.08);border-radius:12px;"><div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;font-weight:600;">📈 DI Trajectory · ' + echoEscapeHtml(String(memory.modelId || '')) + '</div>' +
 '<div style="position:relative;width:100%;height:200px;background:linear-gradient(180deg, rgba(15,23,42,0.4) 0%, rgba(11,18,32,0.3) 100%);border:1px solid rgba(166,218,255,0.08);border-radius:10px;padding:20px;margin-top:8px;box-shadow:inset 0 1px 0 rgba(255,255,255,0.03);">' +
 '  <svg viewBox="0 0 800 160" preserveAspectRatio="none" width="100%" height="160" style="overflow:visible;">' +
 '    <defs>' +
-'      <linearGradient id="diTrajGrad" x1="0%" y1="0%" x2="0%" y2="100%">' +
+'      <linearGradient id="diTrajGradDetail" x1="0%" y1="0%" x2="0%" y2="100%">' +
 '        <stop offset="0%" stop-color="#3b82f6" stop-opacity="0.3"/>' +
 '        <stop offset="100%" stop-color="#3b82f6" stop-opacity="0"/>' +
 '      </linearGradient>' +
@@ -23380,7 +23456,7 @@ function echoRenderMemoryDetailFullscreen(memory, memoryOrg) {
 '    <text x="6" y="44" font-size="9" fill="rgba(148,163,184,0.5)" font-family="inherit">0.80</text>' +
 '    <text x="6" y="84" font-size="9" fill="rgba(148,163,184,0.5)" font-family="inherit">0.75</text>' +
 '    <text x="6" y="124" font-size="9" fill="rgba(148,163,184,0.5)" font-family="inherit">0.70</text>' +
-'    <path d="M 50,108 L 180,100 L 320,92 L 450,84 L 580,72 L 720,52 L 720,160 L 50,160 Z" fill="url(#diTrajGrad)"/>' +
+'    <path d="M 50,108 L 180,100 L 320,92 L 450,84 L 580,72 L 720,52 L 720,160 L 50,160 Z" fill="url(#diTrajGradDetail)"/>' +
 '    <path d="M 50,108 L 180,100 L 320,92 L 450,84 L 580,72 L 720,52" fill="none" stroke="#3b82f6" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="filter:drop-shadow(0 0 6px rgba(59,130,246,0.4));"/>' +
 '    <circle cx="50" cy="108" r="4" fill="#3b82f6" stroke="rgba(15,23,42,1)" stroke-width="2"/>' +
 '    <circle cx="180" cy="100" r="4" fill="#3b82f6" stroke="rgba(15,23,42,1)" stroke-width="2"/>' +
@@ -23406,9 +23482,8 @@ function echoRenderMemoryDetailFullscreen(memory, memoryOrg) {
       }
     }
   }
-
-  if (allAddendums.length > 0) {
-    var totalNodes = allAddendums.length + 1;
+  if (mergedAddendums.length > 0) {
+    var totalNodes = mergedAddendums.length + 1;
     var w2 = 600, h2 = 80, pad2 = 30;
     var xStep2 = (w2 - 2*pad2) / Math.max(totalNodes - 1, 1);
     var hashNodes = '';
@@ -23417,144 +23492,223 @@ function echoRenderMemoryDetailFullscreen(memory, memoryOrg) {
       var x = pad2 + k * xStep2;
       var y = h2 / 2;
       var label = k === 0 ? 'origin' : 'add ' + k;
-      var hashShort = k === 0 ? (memory.hash || '').substring(2, 8) : (allAddendums[k-1].hash || '').substring(2, 8);
+      var hashShort = k === 0 ? (memory.hash || '').substring(2, 8) : (mergedAddendums[k-1].hash || '').substring(2, 8);
       var color = k === 0 ? '#3b82f6' : '#f59e0b';
       hashNodes += '<g><circle cx="' + x + '" cy="' + y + '" r="9" fill="' + color + '" stroke="rgba(15,23,42,0.8)" stroke-width="2"/><text x="' + x + '" y="' + (y - 16) + '" text-anchor="middle" font-size="9" fill="rgba(180,190,220,0.5)" font-family="monospace">' + echoEscapeHtml(hashShort) + '</text><text x="' + x + '" y="' + (y + 22) + '" text-anchor="middle" font-size="8" fill="rgba(180,190,220,0.4)">' + echoEscapeHtml(label) + '</text></g>';
       if (k > 0) hashLinks += '<line x1="' + (pad2 + (k-1) * xStep2) + '" y1="' + y + '" x2="' + x + '" y2="' + y + '" stroke="rgba(245,158,11,0.4)" stroke-width="2" stroke-dasharray="3 2"/>';
     }
-    vizHtml += '<div style="margin-bottom:18px;padding:20px;background:rgba(15,23,42,0.4);border:1px solid rgba(245,158,11,0.15);border-radius:12px;"><div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;font-weight:600;">🔗 Hash Chain · ' + totalNodes + ' nodes</div><svg viewBox="0 0 ' + w2 + ' ' + h2 + '" width="100%" height="' + h2 + '">' + hashLinks + hashNodes + '</svg><div style="font-size:10px;color:var(--muted);margin-top:6px;">Origin memory + ' + allAddendums.length + ' sealed addendum' + (allAddendums.length === 1 ? '' : 's') + '. Each link cryptographically anchors to the previous.</div></div>';
+    vizExtra += '<div style="margin-bottom:18px;padding:20px;background:rgba(15,23,42,0.4);border:1px solid rgba(245,158,11,0.15);border-radius:12px;"><div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;font-weight:600;">🔗 Hash Chain · ' + totalNodes + ' nodes</div><svg viewBox="0 0 ' + w2 + ' ' + h2 + '" width="100%" height="' + h2 + '">' + hashLinks + hashNodes + '</svg><div style="font-size:10px;color:var(--muted);margin-top:6px;">Origin memory + ' + mergedAddendums.length + ' sealed addendum' + (mergedAddendums.length === 1 ? '' : 's') + '. Each link cryptographically anchors to the previous.</div></div>';
   }
 
-  var contentBodyHtml = '<div style="margin-bottom:18px;padding:20px;background:rgba(15,23,42,0.4);border:1px solid rgba(166,218,255,0.08);border-radius:12px;">' +
-    '<div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;font-weight:600;">📄 What Was Said / Decided</div>' +
-    '<div style="font-size:14px;color:var(--chrome2);line-height:1.7;">' + echoEscapeHtml(memory.content || '— no content —') + '</div>' +
+  var pinLive = echoGetPinnedState(memory);
+  var memIdEsc = echoEscapeJsAttr(memory.id);
+  var html = '';
+
+  html += '<div style="margin-bottom:18px;display:flex;align-items:center;gap:12px;">' +
+    '<button type="button" onclick="echoCloseMemoryDetail()" style="background:rgba(166,218,255,0.08);border:1px solid rgba(166,218,255,0.2);color:var(--accent);padding:6px 12px;border-radius:6px;cursor:pointer;font-size:11px;">← Back</button>' +
+    '<span style="color:var(--muted);font-size:11px;">· Echo Core / Logged Events / <span style="color:var(--chrome2);">' + echoEscapeHtml((memory.summary || '').substring(0, 60) + ((memory.summary || '').length > 60 ? '...' : '')) + '</span></span>' +
+  '</div>';
+
+  html += '<div style="background:linear-gradient(135deg, rgba(15,23,42,0.85) 0%, rgba(11,18,32,0.85) 100%);border:1px solid ' + sevColor + '40;border-left:3px solid ' + sevColor + ';border-radius:14px;padding:24px 28px;margin-bottom:20px;box-shadow:0 8px 24px rgba(0,0,0,0.4);">' +
+    '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:14px;">' +
+      '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">' +
+        '<span style="display:inline-flex;align-items:center;gap:6px;padding:4px 10px;background:' + sevColor + '20;border:1px solid ' + sevColor + '40;border-radius:12px;font-size:10px;font-weight:700;letter-spacing:0.5px;color:' + sevColor + ';">' +
+          '<span style="width:6px;height:6px;border-radius:50%;background:' + sevColor + ';box-shadow:0 0 6px ' + sevColor + ';"></span>' + echoEscapeHtml(sevLabel) +
+        '</span>' +
+        (pinLive ? '<span style="padding:4px 10px;background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.3);border-radius:12px;font-size:10px;font-weight:700;color:#f59e0b;">📌 PINNED</span>' : '') +
+        '<span style="padding:4px 10px;background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.25);border-radius:12px;font-size:10px;font-weight:600;color:var(--green);">◆ LOCKED</span>' +
+      '</div>' +
+      '<button type="button" onclick="echoToggleMemoryPin(\'' + memIdEsc + '\')" style="background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3);color:#f59e0b;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:11px;font-weight:600;">' + (pinLive ? '📌 Pinned ✓' : '📌 Add to Pinned') + '</button>' +
+    '</div>' +
+    '<h2 style="font-size:22px;font-weight:700;color:var(--chrome2);margin:0 0 12px 0;line-height:1.3;">' + echoEscapeHtml(memory.summary || 'Untitled event') + '</h2>' +
+  '</div>';
+
+  html += '<div style="display:grid;grid-template-columns:repeat(4, minmax(0,1fr));gap:12px;margin-bottom:20px;">';
+
+  html += '<div style="padding:14px;background:rgba(15,23,42,0.5);border:1px solid rgba(166,218,255,0.08);border-radius:10px;">' +
+    '<div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;font-weight:700;margin-bottom:6px;">📅 WHEN</div>' +
+    '<div style="font-size:12px;color:var(--chrome2);font-weight:600;line-height:1.4;">' + echoEscapeHtml(fullTime) + '</div>' +
+  '</div>';
+
+  html += '<div style="padding:14px;background:rgba(15,23,42,0.5);border:1px solid rgba(166,218,255,0.08);border-radius:10px;">' +
+    '<div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;font-weight:700;margin-bottom:6px;">👤 WHO</div>' +
+    '<div style="font-size:12px;color:var(--chrome2);font-weight:600;">' + echoEscapeHtml(memory.author || 'system') + '</div>' +
+    '<div style="font-size:10px;color:var(--muted);margin-top:2px;text-transform:capitalize;">' + echoEscapeHtml(memory.authorRole || 'system') + '</div>' +
+  '</div>';
+
+  html += '<div style="padding:14px;background:rgba(15,23,42,0.5);border:1px solid rgba(166,218,255,0.08);border-radius:10px;">' +
+    '<div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;font-weight:700;margin-bottom:6px;">📂 LINKED CASE</div>' +
+    '<div style="font-size:12px;color:' + (memory.caseId ? 'var(--accent)' : 'var(--muted)') + ';font-weight:600;">' + (memory.caseId ? '#' + echoEscapeHtml(String(memory.caseId)) : echoEscapeHtml('None')) + '</div>' +
+    '<div style="font-size:10px;color:var(--muted);margin-top:2px;">' + echoEscapeHtml(memory.modelId || 'No model') + '</div>' +
+  '</div>';
+
+  if (trustScoreAtTime != null) {
+    var deltaColor = trustScoreDelta > 0 ? '#22c55e' : trustScoreDelta < 0 ? '#ef4444' : '#94a3b8';
+    var deltaText = trustScoreDelta > 0 ? '↑ +' + trustScoreDelta + ' since' : trustScoreDelta < 0 ? '↓ ' + trustScoreDelta + ' since' : '— no change';
+    html += '<div style="padding:14px;background:linear-gradient(180deg, rgba(245,158,11,0.08) 0%, rgba(15,23,42,0.5) 100%);border:1px solid rgba(245,158,11,0.2);border-radius:10px;">' +
+      '<div style="font-size:9px;color:rgba(245,158,11,0.8);text-transform:uppercase;letter-spacing:0.8px;font-weight:700;margin-bottom:6px;">🎯 TRUST SCORE AT TIME</div>' +
+      '<div style="font-size:18px;color:#f59e0b;font-weight:800;line-height:1;">' + trustScoreAtTime + '</div>' +
+      '<div style="font-size:10px;color:' + deltaColor + ';margin-top:4px;font-weight:600;">' + echoEscapeHtml(deltaText) + '</div>' +
     '</div>';
+  } else {
+    html += '<div style="padding:14px;background:rgba(15,23,42,0.5);border:1px solid rgba(166,218,255,0.08);border-radius:10px;">' +
+      '<div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;font-weight:700;margin-bottom:6px;">🎯 TRUST SCORE</div>' +
+      '<div style="font-size:12px;color:var(--muted);font-style:italic;">No snapshot available</div>' +
+    '</div>';
+  }
 
-  var rcMap = { counterfactual: 'amber', deployment: 'blue', governance: 'accent', attestation: 'green', 'case-closure': 'green', 'whistleblower-seal': 'red' };
+  html += '</div>';
 
-  var relatedHtml = '<div style="margin-bottom:18px;padding:20px;background:rgba(15,23,42,0.4);border:1px solid rgba(166,218,255,0.08);border-radius:12px;">' +
-    '<div style="font-size:13px;font-weight:700;color:var(--chrome2);margin-bottom:14px;">🔗 Related Items</div>';
+  if (memory.content) {
+    html += '<div style="background:rgba(15,23,42,0.5);border:1px solid rgba(166,218,255,0.08);border-radius:12px;padding:18px 22px;margin-bottom:20px;">' +
+      '<div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;font-weight:700;margin-bottom:10px;">📄 WHAT WAS SAID / DECIDED</div>' +
+      '<div style="font-size:13px;color:var(--chrome2);line-height:1.7;">' + echoEscapeHtml(memory.content) + '</div>' +
+    '</div>';
+  }
+
+  html += vizExtra;
+
+  if (signOffs.length > 0) {
+    html += '<div style="background:rgba(34,197,94,0.04);border:1px solid rgba(34,197,94,0.15);border-radius:12px;padding:18px 22px;margin-bottom:20px;">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">' +
+        '<div style="font-size:10px;color:var(--green);text-transform:uppercase;letter-spacing:0.8px;font-weight:700;">✓ SIGN-OFFS & APPROVALS</div>' +
+        '<div style="font-size:10px;color:var(--muted);">' + signOffs.length + ' signature' + (signOffs.length === 1 ? '' : 's') + '</div>' +
+      '</div>' +
+      '<div style="display:flex;flex-direction:column;gap:8px;">' +
+        signOffs.map(function(s){
+          return '<div style="display:grid;grid-template-columns:1fr auto auto;gap:14px;padding:10px 12px;background:rgba(15,23,42,0.5);border:1px solid rgba(34,197,94,0.1);border-radius:8px;align-items:center;">' +
+            '<div><div style="font-size:12px;color:var(--chrome2);font-weight:600;">' + echoEscapeHtml(String(s.name || '')) + '</div><div style="font-size:10px;color:var(--muted);text-transform:capitalize;">' + echoEscapeHtml(String(s.role || '')) + '</div></div>' +
+            '<div style="font-size:10px;color:var(--muted);text-align:right;">' + echoEscapeHtml(s.when.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ' · ' + s.when.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })) + '</div>' +
+            '<div style="font-size:9px;color:var(--accent);font-family:monospace;">' + echoEscapeHtml((s.hash || '').substring(0, 16)) + '...</div>' +
+          '</div>';
+        }).join('') +
+      '</div>' +
+    '</div>';
+  }
+
+  if (discussionThread.length > 0) {
+    html += '<div style="background:rgba(15,23,42,0.5);border:1px solid rgba(166,218,255,0.08);border-radius:12px;padding:18px 22px;margin-bottom:20px;">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">' +
+        '<div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;font-weight:700;">💬 DISCUSSION THREAD</div>' +
+        '<div style="font-size:10px;color:var(--muted);">' + discussionThread.length + ' related conversation' + (discussionThread.length === 1 ? '' : 's') + '</div>' +
+      '</div>' +
+      '<div style="display:flex;flex-direction:column;gap:10px;">' +
+        discussionThread.map(function(d){
+          var dts = new Date(d.timestamp);
+          var dSev = sevColors[d.severity] || '#94a3b8';
+          var didEsc = echoEscapeJsAttr(d.id);
+          return '<div onclick="echoOpenMemoryDetail(\'' + didEsc + '\')" style="cursor:pointer;display:grid;grid-template-columns:auto 1fr auto;gap:12px;padding:10px 12px;background:rgba(15,23,42,0.4);border:1px solid rgba(166,218,255,0.06);border-radius:8px;align-items:start;transition:all 0.15s;" onmouseover="this.style.borderColor=\'rgba(166,218,255,0.2)\';" onmouseout="this.style.borderColor=\'rgba(166,218,255,0.06)\';">' +
+            '<div style="display:flex;align-items:center;gap:8px;min-width:140px;"><span style="width:6px;height:6px;border-radius:50%;background:' + dSev + ';"></span><div><div style="font-size:11px;color:var(--chrome2);font-weight:600;">' + echoEscapeHtml(d.author || 'system') + '</div><div style="font-size:9px;color:var(--muted);">' + echoEscapeHtml(dts.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })) + '</div></div></div>' +
+            '<div style="font-size:11px;color:var(--muted2);line-height:1.5;">' + echoEscapeHtml(d.summary || '') + '</div>' +
+            '<div style="font-size:10px;color:var(--accent);">→</div>' +
+          '</div>';
+        }).join('') +
+      '</div>' +
+    '</div>';
+  }
+
+  if (activityLog.length > 0) {
+    html += '<div style="background:rgba(15,23,42,0.5);border:1px solid rgba(166,218,255,0.08);border-radius:12px;padding:18px 22px;margin-bottom:20px;">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">' +
+        '<div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;font-weight:700;">👥 ACTIVITY LOG</div>' +
+        '<div style="font-size:10px;color:var(--muted);">Who interacted with this memory</div>' +
+      '</div>' +
+      '<div style="display:flex;flex-direction:column;gap:6px;">' +
+        activityLog.slice(0, 8).map(function(al){
+          return '<div style="display:grid;grid-template-columns:140px 1fr auto;gap:14px;padding:8px 12px;background:rgba(15,23,42,0.4);border:1px solid rgba(166,218,255,0.05);border-radius:6px;align-items:center;">' +
+            '<span style="font-size:11px;color:var(--chrome2);font-weight:600;">' + echoEscapeHtml(String(al.actor || '')) + '</span>' +
+            '<span style="font-size:11px;color:var(--muted2);"><span style="color:var(--accent);">' + echoEscapeHtml(al.action) + '</span>' + (al.detail ? ' · <span style="color:var(--muted);">' + echoEscapeHtml(al.detail) + '</span>' : '') + '</span>' +
+            '<span style="font-size:10px;color:var(--muted);font-family:monospace;">' + echoEscapeHtml(al.when.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ' ' + al.when.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })) + '</span>' +
+          '</div>';
+        }).join('') +
+      '</div>' +
+    '</div>';
+  }
+
+  if (modelChanges.length > 0) {
+    html += '<div style="background:rgba(15,23,42,0.5);border:1px solid rgba(166,218,255,0.08);border-radius:12px;padding:18px 22px;margin-bottom:20px;">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">' +
+        '<div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;font-weight:700;">🧬 MODEL CHANGES SINCE THIS EVENT</div>' +
+        '<div style="font-size:10px;color:var(--muted);">' + modelChanges.length + ' deployment' + (modelChanges.length === 1 ? '' : 's') + ' / update' + (modelChanges.length === 1 ? '' : 's') + '</div>' +
+      '</div>' +
+      '<div style="position:relative;padding-left:20px;">' +
+        '<div style="position:absolute;left:6px;top:8px;bottom:8px;width:2px;background:linear-gradient(180deg, rgba(59,130,246,0.4) 0%, rgba(59,130,246,0.1) 100%);"></div>' +
+        modelChanges.map(function(mc){
+          var mcts = new Date(mc.timestamp);
+          var mcColor = mc.eventType === 'remediation-completed' ? '#22c55e' : mc.eventType === 'model-deployed' ? '#3b82f6' : '#94a3b8';
+          var mcidEsc = echoEscapeJsAttr(mc.id);
+          return '<div onclick="echoOpenMemoryDetail(\'' + mcidEsc + '\')" style="cursor:pointer;position:relative;padding:8px 0 8px 20px;">' +
+            '<span style="position:absolute;left:-20px;top:14px;width:14px;height:14px;border-radius:50%;background:' + mcColor + ';border:2px solid rgba(15,23,42,1);box-shadow:0 0 8px ' + mcColor + '60;"></span>' +
+            '<div style="font-size:11px;color:var(--chrome2);font-weight:600;">' + echoEscapeHtml(mc.summary || '') + '</div>' +
+            '<div style="font-size:10px;color:var(--muted);margin-top:2px;">' + echoEscapeHtml(mcts.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) + ' · ' + (mc.modelId || '')) + '</div>' +
+          '</div>';
+        }).join('') +
+      '</div>' +
+    '</div>';
+  }
 
   if (linkedReceipts.length > 0) {
-    relatedHtml += '<div style="margin-bottom:12px;">' +
-      '<div style="font-size:11px;font-weight:600;color:var(--accent);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px;">Decision Receipts (' + linkedReceipts.length + ')</div>' +
-      '<div style="display:flex;flex-direction:column;gap:6px;">' +
-      linkedReceipts.map(function(r){
-        var rc = rcMap[r.receiptType] || 'muted';
-        var sc = (r.signatures || []).length;
-        return '<div style="padding:10px 12px;background:rgba(166,218,255,0.04);border:1px solid rgba(166,218,255,0.1);border-radius:6px;font-size:11px;">' +
-          '<div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span style="color:var(--' + rc + ');font-weight:600;text-transform:uppercase;">' + echoEscapeHtml(String(r.receiptType || '').replace(/-/g, ' ')) + '</span><span style="color:var(--muted);">' + echoEscapeHtml(new Date(r.issuedDate).toLocaleDateString()) + '</span></div>' +
-          '<div style="color:var(--chrome2);font-family:monospace;font-size:11px;">' + echoEscapeHtml(r.receiptId || '') + '</div>' +
-          '<div style="color:var(--muted);font-size:10px;margin-top:2px;">Issued by: ' + echoEscapeHtml(r.issuedBy || '') + ' · ' + sc + ' sig' + (sc === 1 ? '' : 's') + (r.multisigRequired ? ' (multisig)' : '') + '</div>' +
+    html += '<div style="background:rgba(15,23,42,0.5);border:1px solid rgba(166,218,255,0.08);border-radius:12px;padding:18px 22px;margin-bottom:20px;">' +
+      '<div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;font-weight:700;margin-bottom:12px;">🔐 LINKED DECISION RECEIPTS</div>' +
+      '<div style="display:flex;flex-direction:column;gap:8px;">' +
+        linkedReceipts.map(function(r){
+          var rtypeColor = { 'counterfactual': '#f59e0b', 'deployment': '#3b82f6', 'governance': '#8b5cf6', 'attestation': '#22c55e', 'closure': '#22c55e', 'case-closure': '#22c55e', 'whistleblower-seal': '#a855f7' }[r.receiptType] || '#94a3b8';
+          var rid = r.receiptId || r.id || '';
+          var ridEsc = echoEscapeJsAttr(rid);
+          return '<div onclick="echoOpenReceiptDetail(\'' + ridEsc + '\')" style="cursor:pointer;display:grid;grid-template-columns:auto 1fr auto;gap:12px;padding:10px 12px;background:rgba(15,23,42,0.4);border:1px solid rgba(166,218,255,0.06);border-radius:8px;align-items:center;transition:all 0.15s;" onmouseover="this.style.borderColor=\'rgba(166,218,255,0.2)\';" onmouseout="this.style.borderColor=\'rgba(166,218,255,0.06)\';">' +
+            '<span style="font-size:9px;color:' + rtypeColor + ';font-weight:700;text-transform:uppercase;letter-spacing:0.5px;padding:3px 8px;background:' + rtypeColor + '15;border:1px solid ' + rtypeColor + '30;border-radius:10px;">' + echoEscapeHtml(String(r.receiptType || 'receipt').toUpperCase()) + '</span>' +
+            '<span style="font-size:11px;color:var(--chrome2);font-weight:600;font-family:monospace;">' + echoEscapeHtml(rid) + '</span>' +
+            '<span style="font-size:10px;color:var(--accent);">→</span>' +
           '</div>';
-      }).join('') +
-      '</div></div>';
-  }
-
-  if (trustLoopEntries.length > 0) {
-    relatedHtml += '<div style="margin-bottom:12px;">' +
-      '<div style="font-size:11px;font-weight:600;color:var(--accent);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px;">Trust Loop Mentions (' + trustLoopEntries.length + ')</div>' +
-      '<div style="display:flex;flex-direction:column;gap:6px;">' +
-      trustLoopEntries.map(function(d){
-        return '<div style="padding:10px 12px;background:rgba(166,218,255,0.04);border:1px solid rgba(166,218,255,0.1);border-radius:6px;font-size:11px;">' +
-          '<div style="color:var(--muted);margin-bottom:4px;">Week of ' + echoEscapeHtml(d.weekOf || '') + '</div>' +
-          '<div style="color:var(--chrome2);">' + echoEscapeHtml(d.sentence || '') + '</div>' +
-          '</div>';
-      }).join('') +
-      '</div></div>';
-  }
-
-  if (relatedByCase.length > 0 && memory.caseId) {
-    relatedHtml += '<div style="margin-bottom:12px;">' +
-      '<div style="font-size:11px;font-weight:600;color:var(--accent);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px;">Other memories in case #' + echoEscapeHtml(memory.caseId) + ' (' + relatedByCase.length + ')</div>' +
-      '<div style="display:flex;flex-direction:column;gap:6px;max-height:200px;overflow-y:auto;">' +
-      relatedByCase.slice(0, 8).map(function(m){
-        return '<div onclick="echoOpenMemoryDetail(\'' + echoEscapeJsAttr(m.id) + '\')" style="cursor:pointer;padding:8px 10px;background:rgba(166,218,255,0.04);border:1px solid rgba(166,218,255,0.1);border-radius:6px;font-size:11px;" onmouseover="this.style.borderColor=\'rgba(166,218,255,0.25)\';" onmouseout="this.style.borderColor=\'rgba(166,218,255,0.1)\';">' +
-          '<div style="color:var(--chrome2);font-weight:600;">' + echoEscapeHtml((m.summary || '').substring(0, 80)) + ((m.summary || '').length > 80 ? '...' : '') + '</div>' +
-          '<div style="color:var(--muted);font-size:10px;margin-top:2px;">' + echoEscapeHtml(m.author || 'system') + ' · ' + echoEscapeHtml(new Date(m.timestamp).toLocaleDateString()) + '</div>' +
-          '</div>';
-      }).join('') +
-      (relatedByCase.length > 8 ? '<div style="font-size:10px;color:var(--muted);padding:4px;">...and ' + (relatedByCase.length - 8) + ' more.</div>' : '') +
-      '</div></div>';
-  }
-
-  if (relatedByModel.length > 0 && memory.modelId) {
-    relatedHtml += '<div style="margin-bottom:12px;">' +
-      '<div style="font-size:11px;font-weight:600;color:var(--accent);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px;">Other memories about ' + echoEscapeHtml(memory.modelId) + ' (' + relatedByModel.length + ')</div>' +
-      '<div style="display:flex;flex-direction:column;gap:6px;max-height:200px;overflow-y:auto;">' +
-      relatedByModel.slice(0, 8).map(function(m){
-        return '<div onclick="echoOpenMemoryDetail(\'' + echoEscapeJsAttr(m.id) + '\')" style="cursor:pointer;padding:8px 10px;background:rgba(166,218,255,0.04);border:1px solid rgba(166,218,255,0.1);border-radius:6px;font-size:11px;" onmouseover="this.style.borderColor=\'rgba(166,218,255,0.25)\';" onmouseout="this.style.borderColor=\'rgba(166,218,255,0.1)\';">' +
-          '<div style="color:var(--chrome2);font-weight:600;">' + echoEscapeHtml((m.summary || '').substring(0, 80)) + ((m.summary || '').length > 80 ? '...' : '') + '</div>' +
-          '<div style="color:var(--muted);font-size:10px;margin-top:2px;">' + echoEscapeHtml(m.author || 'system') + ' · ' + echoEscapeHtml(new Date(m.timestamp).toLocaleDateString()) + '</div>' +
-          '</div>';
-      }).join('') +
-      (relatedByModel.length > 8 ? '<div style="font-size:10px;color:var(--muted);padding:4px;">...and ' + (relatedByModel.length - 8) + ' more.</div>' : '') +
-      '</div></div>';
-  }
-
-  if ((memory.linkedMemories || []).length > 0) {
-    relatedHtml += '<div style="margin-bottom:12px;">' +
-      '<div style="font-size:11px;font-weight:600;color:var(--accent);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px;">Linked memories (' + memory.linkedMemories.length + ')</div>' +
-      '<div style="display:flex;flex-direction:column;gap:6px;">' +
-      memory.linkedMemories.map(function(linkId){
-        return '<div onclick="echoOpenMemoryDetail(\'' + echoEscapeJsAttr(linkId) + '\')" style="cursor:pointer;padding:8px 10px;background:rgba(166,218,255,0.04);border:1px solid rgba(166,218,255,0.1);border-radius:6px;font-size:11px;color:var(--accent);font-family:monospace;" onmouseover="this.style.borderColor=\'rgba(166,218,255,0.25)\';" onmouseout="this.style.borderColor=\'rgba(166,218,255,0.1)\';">→ ' + echoEscapeHtml(linkId) + '</div>';
-      }).join('') +
-      '</div></div>';
-  }
-
-  if (linkedReceipts.length === 0 && trustLoopEntries.length === 0 && relatedByCase.length === 0 && relatedByModel.length === 0 && (!(memory.linkedMemories || []).length)) {
-    relatedHtml += '<div style="font-size:11px;color:var(--muted);font-style:italic;">No related items linked to this memory yet.</div>';
-  }
-
-  relatedHtml += '</div>';
-
-  var addendumsHtml = '<div style="margin-bottom:18px;padding:20px;background:rgba(15,23,42,0.4);border:1px solid rgba(245,158,11,0.15);border-radius:12px;">' +
-    '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">' +
-      '<div><div style="font-size:13px;font-weight:700;color:var(--chrome2);">📌 Notes & Addendums (Append-Only)</div><div style="font-size:11px;color:var(--muted);">Each note becomes a sealed addendum — immutable once saved.</div></div>' +
-      '<div style="font-size:11px;color:var(--amber);font-weight:600;">' + allAddendums.length + ' on chain</div>' +
-    '</div>' +
-    (allAddendums.length > 0 ?
-      '<div style="position:relative;padding-left:24px;border-left:2px solid rgba(245,158,11,0.3);margin-bottom:18px;">' +
-      allAddendums.map(function(add, idx){
-        var addDate = new Date(add.timestamp).toLocaleString();
-        return '<div style="margin-bottom:14px;position:relative;"><div style="position:absolute;left:-30px;top:8px;width:10px;height:10px;border-radius:50%;background:var(--amber);box-shadow:0 0 8px var(--amber);"></div>' +
-          '<div style="background:rgba(245,158,11,0.04);border:1px solid rgba(245,158,11,0.15);border-radius:10px;padding:14px;">' +
-            '<div style="font-size:10px;color:var(--muted);margin-bottom:6px;">Addendum ' + (idx + 1) + ' · ' + echoEscapeHtml(addDate) + '</div>' +
-            '<div style="font-size:12px;color:var(--chrome2);font-weight:600;margin-bottom:6px;">' + echoEscapeHtml(add.author || 'unknown') + (add.authorRole === 'ai-agent' ? ' [AI]' : add.authorRole === 'user-note' ? ' [Your Note]' : '') + '</div>' +
-            '<div style="font-size:13px;color:var(--muted2);line-height:1.6;margin-bottom:8px;">' + echoEscapeHtml(add.content || '') + '</div>' +
-            '<div style="font-size:10px;color:var(--accent);font-family:monospace;">' + echoEscapeHtml(add.signature || '') + ' · ' + echoEscapeHtml((add.hash || '').substring(0, 22)) + '...</div>' +
-          '</div></div>';
-      }).join('') +
-      '</div>' : '<div style="font-size:11px;color:var(--muted);font-style:italic;margin-bottom:14px;">No addendums yet. Add a note below to append the first one.</div>') +
-    '<div style="background:rgba(166,218,255,0.04);border:1px solid rgba(166,218,255,0.15);border-radius:10px;padding:14px;">' +
-      '<div style="font-size:12px;font-weight:600;color:var(--chrome2);margin-bottom:8px;">📝 Add Note (sealed as addendum once saved)</div>' +
-      '<textarea id="echo-add-note-input" placeholder="Type your note or thought... Once saved, it becomes a sealed addendum (immutable, timestamped, signed)." style="width:100%;min-height:80px;padding:12px;background:rgba(15,23,42,0.6);border:1px solid rgba(166,218,255,0.15);border-radius:8px;font-size:12px;color:var(--chrome2);resize:vertical;font-family:inherit;"></textarea>' +
-      '<div style="display:flex;justify-content:flex-end;margin-top:10px;">' +
-        '<button type="button" onclick="echoSaveNote(\'' + echoEscapeJsAttr(memory.id) + '\')" style="padding:8px 16px;background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.3);border-radius:8px;color:var(--green);font-size:12px;font-weight:600;cursor:pointer;" title="Save note as sealed addendum (cannot be edited after save)">◆ Seal as Addendum</button>' +
+        }).join('') +
       '</div>' +
-    '</div>' +
     '</div>';
+  }
 
-  var cryptoHtml = '<details style="margin-bottom:18px;background:rgba(15,23,42,0.4);border:1px solid rgba(166,218,255,0.08);border-radius:12px;">' +
-    '<summary style="padding:14px 18px;cursor:pointer;font-size:12px;color:var(--muted);font-weight:600;list-style:none;display:flex;align-items:center;justify-content:space-between;">' +
-    '<span>🔐 Cryptographic Proof — Hash · Signature · Visibility</span>' +
-    '<span style="color:var(--accent);font-size:10px;">Click to expand</span>' +
-    '</summary>' +
-    '<div style="padding:14px 18px 18px;border-top:1px solid rgba(166,218,255,0.06);">' +
-    '<div style="display:flex;flex-direction:column;gap:8px;">' +
-    '<div style="display:flex;justify-content:space-between;font-size:11px;border-bottom:1px dotted rgba(180,190,220,0.1);padding-bottom:8px;"><span style="color:var(--muted);">Hash</span><span style="color:var(--accent);font-family:monospace;word-break:break-all;text-align:right;max-width:60%;">' + echoEscapeHtml(memory.hash || '') + '</span></div>' +
-    '<div style="display:flex;justify-content:space-between;font-size:11px;border-bottom:1px dotted rgba(180,190,220,0.1);padding-bottom:8px;"><span style="color:var(--muted);">Signature</span><span style="color:var(--green);font-family:monospace;">' + echoEscapeHtml(memory.signature || '') + '</span></div>' +
-    '<div style="display:flex;justify-content:space-between;font-size:11px;border-bottom:1px dotted rgba(180,190,220,0.1);padding-bottom:8px;"><span style="color:var(--muted);">Event Type</span><span style="color:var(--chrome2);font-weight:600;">' + echoEscapeHtml(String(memory.eventType || '').replace(/-/g, ' ')) + '</span></div>' +
-    '<div style="display:flex;justify-content:space-between;font-size:11px;"><span style="color:var(--muted);">Visibility</span><span style="color:' + (memory.accessTier === 'org-wide' ? 'var(--chrome2)' : 'var(--red)') + ';font-weight:600;">' + echoEscapeHtml(memory.accessTier === 'org-wide' ? 'Public (Everyone)' : 'Restricted (' + ((memory.accessRoles || []).join(', ') || 'sealed') + ')') + '</span></div>' +
-    '</div>' +
-    '</div>' +
-    '</details>';
+  if (mergedAddendums.length > 0) {
+    html += '<div style="background:rgba(245,158,11,0.04);border:1px solid rgba(245,158,11,0.15);border-radius:12px;padding:18px 22px;margin-bottom:20px;">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">' +
+        '<div style="font-size:10px;color:#f59e0b;text-transform:uppercase;letter-spacing:0.8px;font-weight:700;">📌 NOTES & ADDENDUMS (APPEND-ONLY)</div>' +
+        '<div style="font-size:10px;color:var(--muted);">' + mergedAddendums.length + ' on chain</div>' +
+      '</div>' +
+      '<div style="position:relative;padding-left:20px;">' +
+        '<div style="position:absolute;left:6px;top:8px;bottom:8px;width:2px;background:linear-gradient(180deg, rgba(245,158,11,0.4) 0%, rgba(245,158,11,0.1) 100%);"></div>' +
+        mergedAddendums.map(function(a, idx){
+          var ats = new Date(a.timestamp);
+          return '<div style="position:relative;padding:10px 0 10px 20px;">' +
+            '<span style="position:absolute;left:-20px;top:16px;width:14px;height:14px;border-radius:50%;background:#f59e0b;border:2px solid rgba(15,23,42,1);box-shadow:0 0 8px rgba(245,158,11,0.5);"></span>' +
+            '<div style="font-size:10px;color:var(--muted);margin-bottom:4px;">Addendum ' + (idx+1) + ' · ' + echoEscapeHtml(ats.toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })) + '</div>' +
+            '<div style="font-size:12px;color:var(--chrome2);font-weight:600;margin-bottom:4px;">' + echoEscapeHtml(a.author || 'system') + '</div>' +
+            '<div style="font-size:11px;color:var(--muted2);line-height:1.6;margin-bottom:6px;">' + echoEscapeHtml(a.content || '') + '</div>' +
+            '<div style="font-size:9px;color:var(--accent);font-family:monospace;">' + echoEscapeHtml((a.signature || '') + ' · ' + (a.hash || '').substring(0, 24) + '...') + '</div>' +
+          '</div>';
+        }).join('') +
+      '</div>' +
+    '</div>';
+  }
 
-  contentEl.innerHTML = heroHtml + factsHtml + whyMattersHtml + vizHtml + contentBodyHtml + relatedHtml + addendumsHtml + cryptoHtml;
+  html += '<div style="background:rgba(15,23,42,0.5);border:1px dashed rgba(166,218,255,0.2);border-radius:12px;padding:18px 22px;margin-bottom:20px;">' +
+    '<div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;font-weight:700;margin-bottom:10px;">📝 ADD NOTE (sealed as addendum once saved)</div>' +
+    '<textarea id="echo-new-note-text" placeholder="Type your note or thought... Once saved, it becomes a sealed addendum (immutable, timestamped, signed)." style="width:100%;min-height:80px;background:rgba(15,23,42,0.7);border:1px solid rgba(166,218,255,0.1);border-radius:8px;padding:10px 12px;color:var(--chrome2);font-size:12px;font-family:inherit;resize:vertical;box-sizing:border-box;"></textarea>' +
+'<div style="display:flex;justify-content:flex-end;margin-top:10px;">' +
+  '<button type="button" onclick="echoSealAddendum(\'' + memIdEsc + '\')" style="background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.3);color:var(--green);padding:8px 14px;border-radius:6px;cursor:pointer;font-size:11px;font-weight:600;">◆ Seal as Addendum</button>' +
+'</div>' +
+'</div>';
+
+html += '<details style="background:rgba(15,23,42,0.4);border:1px solid rgba(166,218,255,0.06);border-radius:10px;padding:14px 18px;margin-bottom:20px;">' +
+'<summary style="cursor:pointer;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;font-weight:700;">🔐 CRYPTOGRAPHIC PROOF (click to expand)</summary>' +
+'<div style="margin-top:12px;display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:10px;font-family:monospace;color:var(--accent);">' +
+'<div><div style="color:var(--muted);font-family:inherit;font-size:9px;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Hash</div>' + echoEscapeHtml(memory.hash || 'Not signed') + '</div>' +
+'<div><div style="color:var(--muted);font-family:inherit;font-size:9px;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Signature</div>' + echoEscapeHtml(memory.signature || 'Not signed') + '</div>' +
+'</div>' +
+'<div style="margin-top:10px;display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:10px;"><div><span style="color:var(--muted);font-size:9px;text-transform:uppercase;">Event Type</span><div style="color:var(--chrome2);font-weight:600;margin-top:4px;">' + echoEscapeHtml(String(memory.eventType || '').replace(/-/g, ' ')) + '</div></div>' +
+'<div><span style="color:var(--muted);font-size:9px;text-transform:uppercase;">Visibility</span><div style="color:' + (memory.accessTier === 'org-wide' ? 'var(--chrome2)' : 'var(--red)') + ';font-weight:600;margin-top:4px;">' + echoEscapeHtml(memory.accessTier === 'org-wide' ? 'Public (Everyone)' : 'Restricted (' + ((memory.accessRoles || []).join(', ') || 'sealed') + ')') + '</div></div></div>' +
+'</details>';
+contentEl.innerHTML = html;
 }
 
 function echoSaveNote(memoryId) {
-  var input = document.getElementById('echo-add-note-input');
+  var input = document.getElementById('echo-new-note-text') || document.getElementById('echo-add-note-input');
   if (!input) return;
   var text = input.value.trim();
   if (!text) { if (typeof showToast === 'function') showToast('Note is empty'); return; }
