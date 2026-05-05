@@ -723,6 +723,56 @@ box-shadow: 0 0 12px rgba(166,218,255,0.18);
 /* ── SCREENS ── */
 .screen { display: none; }
 .screen.active { display: block; }
+
+/* ════════════════════════════════════════════════════════════════
+   2D-d-23 — POLISH + DEAD SPACE CLEANUP
+   Safety rules for empty containers, consistent spacing,
+   loading shimmer, and section header normalization.
+   ════════════════════════════════════════════════════════════════ */
+
+.cardinal-collapse-if-empty:empty { display: none !important; }
+
+.screen .section-hdr { margin-bottom: 14px; }
+.screen > .section-hdr + div:not(.section-hdr) { margin-top: 0; }
+
+@keyframes cardinalShimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.cardinal-skeleton {
+  background: linear-gradient(90deg, rgba(166,218,255,0.04) 0%, rgba(166,218,255,0.10) 50%, rgba(166,218,255,0.04) 100%);
+  background-size: 200% 100%;
+  animation: cardinalShimmer 1.6s ease-in-out infinite;
+  border-radius: 8px;
+}
+
+.industry-switcher { display: flex; gap: 4px; align-items: center; flex-wrap: wrap; }
+.industry-switcher .ind-btn {
+  padding: 6px 14px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  line-height: 1.4;
+}
+
+.cardinal-empty-state {
+  padding: 40px 24px;
+  text-align: center;
+  background: linear-gradient(135deg, rgba(166,218,255,0.03) 0%, rgba(15,23,42,0.4) 100%);
+  border: 1px dashed rgba(166,218,255,0.18);
+  border-radius: 12px;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.6;
+}
+.cardinal-empty-state .empty-icon { font-size: 28px; margin-bottom: 10px; opacity: 0.6; }
+.cardinal-empty-state .empty-title { font-size: 13px; color: var(--chrome2); font-weight: 600; margin-bottom: 6px; }
+
+[id^="echo-tab-content-"]:empty { display: none !important; }
+
+.screen .section-hdr + .grid-4 { margin-top: 0; }
+.screen .grid-4 + .section-hdr { margin-top: 18px; }
+
 /* ── CARDS ── */
 .card {
 background: var(--card); border: 1px solid var(--border2);
@@ -4899,7 +4949,7 @@ Settings
 </div><!-- /screen-dashboard -->
 
 <div id="screen-eden" class="screen">
-<div id="eden-core-pins" style="margin-bottom:14px;"></div>
+<div id="eden-core-pins" class="cardinal-collapse-if-empty" style="margin-bottom:14px;"></div>
 <div id="eden-core-root" style="min-height:200px"></div>
 <div style="display:none" aria-hidden="true">
 <canvas id="eden-di-chart" height="1" width="1"></canvas>
@@ -5525,7 +5575,7 @@ Settings
 </div>
 <!-- ══ HALO CORE ══ -->
 <div id="screen-halo" class="screen">
-<div id="halo-core-pins" style="margin-bottom:14px;"></div>
+<div id="halo-core-pins" class="cardinal-collapse-if-empty" style="margin-bottom:14px;"></div>
 <div class="halo-shell">
 <div class="halo-head">
 <div>
@@ -5546,8 +5596,8 @@ Halo Core
 </div>
 </div>
 
-<div id="halo-cardinal-hero" style="margin-bottom:16px;"></div>
-<div id="halo-attribution-cards" style="margin-bottom:16px;"></div>
+<div id="halo-cardinal-hero" class="cardinal-collapse-if-empty" style="margin-bottom:16px;"></div>
+<div id="halo-attribution-cards" class="cardinal-collapse-if-empty" style="margin-bottom:16px;"></div>
 
 <div class="halo-map-shell" style="position:relative" onclick="haloBackdropClick(event)">
 <div id="halo-map-container" style="width:100%;height:380px;background:#080c14;border-radius:12px;border:1px solid rgba(166,218,255,0.1);position:relative;overflow:hidden;">
@@ -5726,7 +5776,7 @@ Halo Core
 </div>
 </div>
 
-<div id="compliance-core-pins" style="margin-bottom:14px;"></div>
+<div id="compliance-core-pins" class="cardinal-collapse-if-empty" style="margin-bottom:14px;"></div>
 
 <div id="comp-dualview-shell" style="margin-bottom:18px;background:linear-gradient(135deg, rgba(166,218,255,0.04) 0%, rgba(15,23,42,0.4) 100%);border:1px solid rgba(166,218,255,0.15);border-radius:14px;padding:18px 20px;">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:12px;">
@@ -6452,7 +6502,7 @@ Template Overview
   <div id="echo-memory-detail-content" title="Full logged event record with cryptographic anchors" style="max-width:780px;width:100%;max-height:90vh;overflow-y:auto;background:linear-gradient(180deg, rgba(15,23,42,0.98) 0%, rgba(11,18,32,0.98) 100%);border:1px solid rgba(166,218,255,0.15);border-radius:16px;padding:32px;box-shadow:0 20px 80px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.04);"></div>
 </div>
 
-<!-- ECHO TABS -->
+<!-- ECHO TABS · LEGACY · hidden, kept for backwards-compat -->
 <div style="display:none;gap:2px;margin-bottom:14px;background:var(--bg2);border-radius:8px;padding:3px;width:fit-content" id="echo-tabs-legacy-1">
 <button class="gen-tab active" onclick="switchEchoTab('receipts',0)">Decision Receipts</button>
 <button class="gen-tab" onclick="switchEchoTab('ignored',1)">Ignored Flags</button>
@@ -7217,9 +7267,9 @@ Template Overview
 </div>
 <!-- ══ CARDINAL SENTINEL ══ -->
 <div id="screen-sentinel" class="screen">
-<div id="sentinel-core-pins" style="margin-bottom:14px;"></div>
-<div id="sentinel-weekly-digest" style="margin-bottom:18px;"></div>
-<div id="sentinel-unified-case-detail" style="display:none;margin-bottom:18px;"></div>
+<div id="sentinel-core-pins" class="cardinal-collapse-if-empty" style="margin-bottom:14px;"></div>
+<div id="sentinel-weekly-digest" class="cardinal-collapse-if-empty" style="margin-bottom:18px;"></div>
+<div id="sentinel-unified-case-detail" class="cardinal-collapse-if-empty" style="display:none;margin-bottom:18px;"></div>
 <div class="section-hdr" style="margin-bottom:14px">
 <div>
 <div style="font-size:15px;font-weight:600;color:var(--chrome2)">◈ Cardinal Sentinel — Proactive Support Triage</div>
@@ -7295,7 +7345,20 @@ Template Overview
 </div>
 </div>
 <!-- ══ AI TOWN HALL ══ -->
-<div id="screen-townhall" class="screen"></div>
+<div id="screen-townhall" class="screen">
+  <div class="section-hdr" style="margin-bottom:14px">
+    <div>
+      <div style="font-size:15px;font-weight:600;color:var(--chrome2)">🏛 Town Hall — Public Trust Disclosures</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:2px">Public-facing trust statements · regulator briefings · stakeholder transparency</div>
+    </div>
+  </div>
+  <div style="padding:60px 40px;text-align:center;background:linear-gradient(135deg, rgba(166,218,255,0.04) 0%, rgba(15,23,42,0.4) 100%);border:1px dashed rgba(166,218,255,0.2);border-radius:14px;">
+    <div style="font-size:36px;margin-bottom:14px;">🏛</div>
+    <div style="font-size:16px;color:var(--chrome2);font-weight:700;margin-bottom:8px;">Town Hall — Coming in Phase 2</div>
+    <div style="font-size:12px;color:var(--muted);line-height:1.7;max-width:520px;margin:0 auto;">Town Hall will be Cardinal's public-facing trust layer — where organizations publish redacted Trust Score summaries, public attestations, and stakeholder-facing transparency reports. Designed to mirror SEC EDGAR for AI governance.</div>
+    <div style="margin-top:18px;padding:10px 14px;display:inline-block;background:rgba(168,85,247,0.06);border:1px solid rgba(168,85,247,0.25);border-radius:8px;font-size:10px;color:#a855f7;font-weight:600;text-transform:uppercase;letter-spacing:0.6px;">📋 Roadmap · Phase 2 · 2026 Q4</div>
+  </div>
+</div>
 <!-- PIPELINE -->
 <div id="screen-pipeline" class="screen">
 <div class="section-hdr" style="margin-bottom:18px">
@@ -7874,7 +7937,15 @@ Access Control
 </div>
 
 <!-- ══ PM-PROFILES ══ -->
-<div id="screen-pmprofiles" class="screen"></div>
+<div id="screen-pmprofiles" class="screen">
+  <div class="section-hdr" style="margin-bottom:14px">
+    <div>
+      <div style="font-size:15px;font-weight:600;color:var(--chrome2)">👥 PM Profiles — People & Governance Roles</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:2px">View and manage PM personas, roles, and governance assignments across Cardinal</div>
+    </div>
+  </div>
+  <div id="pmprofiles-content"></div>
+</div>
 
 <!-- ══ LUCID LAYER ══ -->
 <div id="screen-lucid" class="screen">
@@ -14582,7 +14653,42 @@ function switchIndustry(org, btn) {
      echoRenderScoreHistoryTab();
    }
  } catch (_esh) {}
+ try { if (typeof updateTopbarCriticalCount === 'function') updateTopbarCriticalCount(); } catch (_tbc) {}
 }
+
+window.updateTopbarCriticalCount = function updateTopbarCriticalCount() {
+  var alertEl = document.getElementById('topbar-critical-cases');
+  var countEl = document.getElementById('topbar-alert-count');
+  if (!alertEl || !countEl) return;
+
+  var org = window.currentOrg || 'ad';
+  var orgData = window.CARDINAL_DATA && window.CARDINAL_DATA[org];
+  var allMems = (orgData && orgData.echoMemories) || [];
+
+  var criticalCases = {};
+  allMems.forEach(function(m){
+    if (m.severity === 'critical' && m.caseId) {
+      criticalCases[m.caseId] = true;
+    }
+  });
+  allMems.forEach(function(m){
+    if ((m.eventType === 'case-closed' || m.eventType === 'closure-attestation') && m.caseId) {
+      delete criticalCases[m.caseId];
+    }
+  });
+  var count = Object.keys(criticalCases).length;
+
+  if (count === 0) {
+    alertEl.style.display = 'none';
+  } else {
+    alertEl.style.display = '';
+    countEl.textContent = count + ' Critical Case' + (count === 1 ? '' : 's');
+  }
+};
+
+document.addEventListener('DOMContentLoaded', function(){
+  setTimeout(function(){ try { updateTopbarCriticalCount(); } catch(_e) {} }, 300);
+});
 
 // ─────────────────────────────────────────────────────────────────────────
 // Global Trust Score panel — tier color & navigation
@@ -18444,7 +18550,13 @@ function showScreen(name, navEl) {
    buildSentinel((typeof currentOrg !== 'undefined' && currentOrg) || window.currentOrg || 'ad');
  }
  if(name==='trustledger') { try { if (typeof buildTrustLedger === 'function') buildTrustLedger(currentOrg); } catch(_tl) { console.error('buildTrustLedger error', _tl); } }
- if(name==='pmprofiles') { try { if (typeof buildPMProfiles === 'function') buildPMProfiles(currentOrg); } catch(_pmp) { console.error('buildPMProfiles error', _pmp); } }
+ if(name==='pmprofiles') {
+    try { renderPMProfilesPage(); } catch(e) { console.error('[PMProfiles] render failed:', e); }
+    var ttPM = document.getElementById('topbar-title');
+    if (ttPM) ttPM.textContent = 'PM Profiles — People & Governance Roles';
+    var subPM = document.getElementById('topbar-sub');
+    if (subPM) subPM.textContent = 'Click any persona card to switch your active view. Your active persona controls what you can see across Cardinal.';
+  }
  if(name==='warroom') { try { if (typeof buildWarRoom === 'function') buildWarRoom(currentOrg); } catch(_wr) { console.error('buildWarRoom error', _wr); } }
  if(name==='settings') { try { syncSettingsScreenToggles(); } catch(_set) {} }
  if(name==='echo') setTimeout(function(){ try { if (typeof buildForensicsAndGuardrails === 'function') buildForensicsAndGuardrails(currentOrg); } catch(_fag) {} }, 100);
@@ -24735,6 +24847,7 @@ function echoApplyFilters() {
     if (!fedStripEl) {
       fedStripEl = document.createElement('div');
       fedStripEl.id = 'echo-fedlens-strip';
+      fedStripEl.className = 'cardinal-collapse-if-empty';
       fedStripEl.style.cssText = 'margin-bottom:12px;';
       if (feedEl && feedEl.parentNode) feedEl.parentNode.insertBefore(fedStripEl, feedEl);
     }
@@ -25395,6 +25508,55 @@ function updateMyWsNavBadge() {
   var notes = (window.__userNotes[notesKey] || []).length;
   badgeEl.textContent = String(pins + notes);
 }
+
+window.renderPMProfilesPage = function() {
+  var container = document.getElementById('pmprofiles-content');
+  if (!container) return;
+
+  var esc = typeof echoEscapeHtml === 'function' ? echoEscapeHtml : function(t){ return String(t == null ? '' : t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); };
+  var escJs = typeof echoEscapeJsAttr === 'function' ? echoEscapeJsAttr : function(t){ return String(t == null ? '' : t).replace(/\\/g,'\\\\').replace(/'/g,"\\'"); };
+
+  var personas = window.CARDINAL_PERSONAS || [];
+  if (personas.length === 0) {
+    container.innerHTML = '<div style="padding:40px;text-align:center;color:var(--muted);font-size:12px;">No personas configured.</div>';
+    return;
+  }
+
+  var activePersona = null;
+  try { if (window.getActivePersona) activePersona = window.getActivePersona(); } catch(_ap) {}
+
+  var html = '<div style="display:grid;grid-template-columns:repeat(auto-fill, minmax(300px, 1fr));gap:14px;">';
+
+  personas.forEach(function(p){
+    var color = p.color || '#94a3b8';
+    var permissions = p.permissions || {};
+    var permBadges = [];
+    if (permissions.whistleblower || p.canSeeWhistleblower) permBadges.push('🔒 Whistleblower');
+    if (permissions.sealedLegal || p.canSeeSealedLegal) permBadges.push('⚖️ Sealed Legal');
+    var canDollars = permissions.dollarValues || p.scope === 'all' || p.scope === 'org' || (p.role && (String(p.role).indexOf('CEO') !== -1 || String(p.role).indexOf('Founder') !== -1 || String(p.role).indexOf('Compliance') !== -1));
+    if (canDollars) permBadges.push('💰 $ Values');
+
+    var isActive = activePersona && activePersona.id === p.id;
+    var pidJs = escJs(p.id);
+
+    html += '<div onclick="typeof setActivePersona===\'function\'&&setActivePersona(\'' + pidJs + '\');if(typeof renderPMProfilesPage===\'function\')renderPMProfilesPage();" style="cursor:pointer;padding:18px 20px;background:linear-gradient(135deg, ' + color + (isActive ? '20' : '08') + ' 0%, rgba(15,23,42,0.5) 100%);border:' + (isActive ? '2' : '1') + 'px solid ' + color + (isActive ? '60' : '30') + ';border-radius:14px;transition:all 0.15s;" onmouseover="this.style.borderColor=\'' + color + '60\';this.style.transform=\'translateY(-2px)\';" onmouseout="this.style.borderColor=\'' + color + (isActive ? '60' : '30') + '\';this.style.transform=\'translateY(0)\';">' +
+      '<div style="display:flex;align-items:center;gap:14px;margin-bottom:12px;">' +
+        '<div style="width:48px;height:48px;border-radius:50%;background:' + color + '30;border:2px solid ' + color + ';display:flex;align-items:center;justify-content:center;font-size:16px;color:' + color + ';font-weight:800;flex-shrink:0;">' + esc(p.initials || '?') + '</div>' +
+        '<div style="flex:1;min-width:0;">' +
+          '<div style="font-size:14px;color:var(--chrome2);font-weight:700;line-height:1.2;">' + esc(p.name || 'Unknown') + '</div>' +
+          '<div style="font-size:10px;color:' + color + ';font-weight:600;margin-top:3px;">' + esc(p.role || '') + '</div>' +
+        '</div>' +
+        (isActive ? '<span style="font-size:9px;color:#22c55e;background:rgba(34,197,94,0.12);border:1px solid rgba(34,197,94,0.4);padding:3px 8px;border-radius:8px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;">ACTIVE</span>' : '') +
+      '</div>' +
+      (p.org ? '<div style="font-size:10px;color:var(--muted);margin-bottom:8px;">' + esc(p.org) + '</div>' : '') +
+      (p.summary ? '<div style="font-size:11px;color:var(--muted2);line-height:1.6;margin-bottom:12px;">' + esc(p.summary) + '</div>' : '') +
+      (permBadges.length > 0 ? '<div style="display:flex;flex-wrap:wrap;gap:4px;">' + permBadges.map(function(b){ return '<span style="font-size:9px;color:var(--accent);background:rgba(166,218,255,0.06);border:1px solid rgba(166,218,255,0.2);padding:2px 7px;border-radius:6px;font-weight:600;">' + esc(b) + '</span>'; }).join('') + '</div>' : '<div style="font-size:9px;color:var(--muted);font-style:italic;">Standard permissions only</div>') +
+    '</div>';
+  });
+
+  html += '</div>';
+  container.innerHTML = html;
+};
 
 window.renderBigWorkspacePage = function() {
   var container = document.getElementById('myworkspace-content');
@@ -26711,6 +26873,180 @@ function echoShowIntegrityExplainer() {
   if (btn) btn.onclick = function() { modal.remove(); };
 }
 
+window.echoRenderEventTypeEnrichment = function(memory, memoryOrg) {
+  if (!memory || !memory.eventType) return '';
+
+  var esc = function(t) {
+    return typeof echoEscapeHtml === 'function' ? echoEscapeHtml(t) : String(t == null ? '' : t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  };
+
+  var allMems = (window.CARDINAL_DATA && window.CARDINAL_DATA[memoryOrg] && window.CARDINAL_DATA[memoryOrg].echoMemories) || [];
+  var et = memory.eventType;
+  var sevColor = { critical: '#ef4444', high: '#f59e0b', medium: '#3b82f6', low: '#22c55e', informational: '#94a3b8' }[memory.severity] || '#94a3b8';
+
+  if (et === 'bias-detected') {
+    var diMatch = (memory.content || '').match(/(?:DI|Disparate Impact|disparate impact|disparate-impact|impact)\s*(?:ratio|of|=|:)?\s*([0-9.]+)/i);
+    var di = diMatch ? parseFloat(diMatch[1]) : null;
+    var corrMatch = (memory.content || '').match(/correlation\s+([0-9.]+)/i);
+    var corr = corrMatch ? parseFloat(corrMatch[1]) : null;
+    var affectedMatch = (memory.content || '').match(/(\d{1,3}(?:,\d{3})+|\d{2,4})\s+(applicants?|service members?|filers?|patients?|records?|cases?|technicians?)/i);
+    var affected = affectedMatch ? affectedMatch[0] : null;
+    var threshold = 0.80;
+
+    return '<div style="margin-top:18px;padding:18px 20px;background:linear-gradient(135deg, rgba(239,68,68,0.06) 0%, rgba(15,23,42,0.5) 100%);border:1px solid rgba(239,68,68,0.3);border-radius:12px;">' +
+      '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;flex-wrap:wrap;gap:10px;">' +
+        '<div>' +
+          '<div style="font-size:10px;color:#ef4444;text-transform:uppercase;letter-spacing:1px;font-weight:800;margin-bottom:4px;">⚠ BIAS DETECTION — METRIC BREAKDOWN</div>' +
+          '<div style="font-size:13px;color:var(--chrome2);font-weight:600;">' + esc(memory.modelId || 'Model') + '</div>' +
+        '</div>' +
+        '<span style="font-size:9px;color:' + sevColor + ';background:' + sevColor + '15;border:1px solid ' + sevColor + '40;padding:3px 9px;border-radius:8px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;">' + esc((memory.severity || 'unknown').toUpperCase()) + '</span>' +
+      '</div>' +
+
+      '<div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(140px, 1fr));gap:10px;margin-bottom:14px;">' +
+        (di !== null ? '<div style="padding:12px 14px;background:rgba(15,23,42,0.6);border:1px solid ' + (di < threshold ? 'rgba(239,68,68,0.3)' : 'rgba(34,197,94,0.3)') + ';border-radius:10px;"><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;font-weight:700;margin-bottom:6px;">DISPARATE IMPACT</div><div style="font-size:24px;color:' + (di < threshold ? '#ef4444' : '#22c55e') + ';font-weight:800;line-height:1;">' + di.toFixed(2) + '</div><div style="font-size:9px;color:var(--muted);margin-top:4px;">vs ' + threshold.toFixed(2) + ' threshold</div></div>' : '') +
+        (corr !== null ? '<div style="padding:12px 14px;background:rgba(15,23,42,0.6);border:1px solid rgba(245,158,11,0.3);border-radius:10px;"><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;font-weight:700;margin-bottom:6px;">PROXY CORRELATION</div><div style="font-size:24px;color:#f59e0b;font-weight:800;line-height:1;">' + corr.toFixed(2) + '</div><div style="font-size:9px;color:var(--muted);margin-top:4px;">protected-class proxy</div></div>' : '') +
+        (affected ? '<div style="padding:12px 14px;background:rgba(15,23,42,0.6);border:1px solid rgba(166,218,255,0.15);border-radius:10px;"><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;font-weight:700;margin-bottom:6px;">AFFECTED</div><div style="font-size:18px;color:var(--accent);font-weight:800;line-height:1.2;">' + esc(affected) + '</div></div>' : '') +
+      '</div>' +
+
+      (di !== null ? '<div style="padding:10px 12px;background:rgba(15,23,42,0.5);border:1px solid rgba(166,218,255,0.08);border-radius:8px;margin-bottom:10px;">' +
+        '<div style="display:flex;justify-content:space-between;font-size:9px;color:var(--muted);font-family:monospace;margin-bottom:6px;"><span>0.00</span><span style="color:#22c55e;">↑ ' + threshold.toFixed(2) + ' threshold</span><span>1.00</span></div>' +
+        '<div style="position:relative;height:8px;background:linear-gradient(90deg, #ef4444 0%, #f59e0b 50%, #22c55e 100%);border-radius:4px;">' +
+          '<div style="position:absolute;left:' + (threshold * 100) + '%;top:-4px;bottom:-4px;width:2px;background:#22c55e;"></div>' +
+          '<div style="position:absolute;left:' + (di * 100) + '%;top:-3px;width:14px;height:14px;border-radius:50%;background:' + (di < threshold ? '#ef4444' : '#22c55e') + ';border:2px solid var(--bg);transform:translateX(-7px);"></div>' +
+        '</div>' +
+      '</div>' : '') +
+
+      '<div style="font-size:11px;color:var(--muted);line-height:1.6;font-style:italic;">' + (di !== null && di < threshold ? '🔴 Below ' + threshold.toFixed(2) + ' threshold — automatic case opening triggered.' : '⚠ Within tolerance band — monitoring posture maintained.') + '</div>' +
+    '</div>';
+  }
+
+  if (et === 'fraud-detected') {
+    var anomalyMatch = (memory.content || '').match(/anomaly score\s+([0-9.]+)/i);
+    var anomaly = anomalyMatch ? parseFloat(anomalyMatch[1]) : null;
+    var clusterMatch = (memory.content || '').match(/cluster\s+(of\s+)?(\d+)/i);
+    var clusterSize = clusterMatch ? parseInt(clusterMatch[2], 10) : null;
+
+    return '<div style="margin-top:18px;padding:18px 20px;background:linear-gradient(135deg, rgba(245,158,11,0.06) 0%, rgba(15,23,42,0.5) 100%);border:1px solid rgba(245,158,11,0.3);border-radius:12px;">' +
+      '<div style="font-size:10px;color:#f59e0b;text-transform:uppercase;letter-spacing:1px;font-weight:800;margin-bottom:12px;">🔍 FRAUD DETECTION — CLUSTER ANALYSIS</div>' +
+      '<div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(140px, 1fr));gap:10px;">' +
+        (anomaly !== null ? '<div style="padding:12px 14px;background:rgba(15,23,42,0.6);border:1px solid rgba(245,158,11,0.3);border-radius:10px;"><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;font-weight:700;margin-bottom:6px;">ANOMALY SCORE</div><div style="font-size:24px;color:#f59e0b;font-weight:800;line-height:1;">' + anomaly + '</div></div>' : '') +
+        (clusterSize !== null ? '<div style="padding:12px 14px;background:rgba(15,23,42,0.6);border:1px solid rgba(166,218,255,0.15);border-radius:10px;"><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;font-weight:700;margin-bottom:6px;">CLUSTER SIZE</div><div style="font-size:24px;color:var(--accent);font-weight:800;line-height:1;">' + clusterSize + '</div></div>' : '') +
+        '<div style="padding:12px 14px;background:rgba(15,23,42,0.6);border:1px solid rgba(168,85,247,0.2);border-radius:10px;"><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;font-weight:700;margin-bottom:6px;">DETECTOR</div><div style="font-size:13px;color:#a855f7;font-weight:700;line-height:1.3;">' + esc(memory.author || 'Obsidian') + '</div></div>' +
+      '</div>' +
+    '</div>';
+  }
+
+  if (et === 'case-opened') {
+    var leadMatch = (memory.content || '').match(/Lead(?:\s+DS)?:\s*([^.,;\n]+)/i);
+    var lead = leadMatch ? leadMatch[1].trim() : null;
+    var slaMatch = (memory.content || '').match(/SLA:?\s*(\d+\s*(?:days?|hrs?|hours?))/i);
+    var sla = slaMatch ? slaMatch[1] : null;
+    var compMatch = (memory.content || '').match(/Compliance:\s*([^.,;\n]+)/i);
+    var comp = compMatch ? compMatch[1].trim() : null;
+
+    return '<div style="margin-top:18px;padding:18px 20px;background:linear-gradient(135deg, rgba(239,68,68,0.06) 0%, rgba(15,23,42,0.5) 100%);border:1px solid rgba(239,68,68,0.3);border-radius:12px;">' +
+      '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;flex-wrap:wrap;gap:10px;">' +
+        '<div>' +
+          '<div style="font-size:10px;color:#ef4444;text-transform:uppercase;letter-spacing:1px;font-weight:800;margin-bottom:4px;">🚨 WAR ROOM INTAKE</div>' +
+          '<div style="font-size:13px;color:var(--chrome2);font-weight:600;">Case ' + (memory.caseId ? '#' + esc(String(memory.caseId)) : 'opened') + '</div>' +
+        '</div>' +
+      '</div>' +
+      '<div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(160px, 1fr));gap:10px;">' +
+        (lead ? '<div style="padding:11px 13px;background:rgba(15,23,42,0.6);border:1px solid rgba(166,218,255,0.15);border-radius:10px;"><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;font-weight:700;margin-bottom:4px;">LEAD</div><div style="font-size:12px;color:var(--chrome2);font-weight:700;">' + esc(lead) + '</div></div>' : '') +
+        (comp ? '<div style="padding:11px 13px;background:rgba(15,23,42,0.6);border:1px solid rgba(166,218,255,0.15);border-radius:10px;"><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;font-weight:700;margin-bottom:4px;">COMPLIANCE</div><div style="font-size:12px;color:var(--chrome2);font-weight:700;">' + esc(comp) + '</div></div>' : '') +
+        (sla ? '<div style="padding:11px 13px;background:rgba(245,158,11,0.06);border:1px solid rgba(245,158,11,0.3);border-radius:10px;"><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;font-weight:700;margin-bottom:4px;">SLA</div><div style="font-size:12px;color:#f59e0b;font-weight:700;">' + esc(sla) + '</div></div>' : '') +
+        (memory.modelId ? '<div style="padding:11px 13px;background:rgba(15,23,42,0.6);border:1px solid rgba(166,218,255,0.15);border-radius:10px;"><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;font-weight:700;margin-bottom:4px;">MODEL</div><div style="font-size:12px;color:var(--chrome2);font-weight:700;font-family:monospace;">' + esc(String(memory.modelId)) + '</div></div>' : '') +
+      '</div>' +
+    '</div>';
+  }
+
+  if (et === 'case-closed' || et === 'closure-attestation') {
+    var openedMem = allMems.filter(function(m){ return m.caseId === memory.caseId && m.eventType === 'case-opened'; })[0];
+    var caseDuration = null;
+    if (openedMem) {
+      var ms = new Date(memory.timestamp).getTime() - new Date(openedMem.timestamp).getTime();
+      caseDuration = Math.floor(ms / (1000 * 60 * 60 * 24));
+    }
+    var caseMems = allMems.filter(function(m){ return m.caseId === memory.caseId; });
+
+    return '<div style="margin-top:18px;padding:18px 20px;background:linear-gradient(135deg, rgba(34,197,94,0.06) 0%, rgba(15,23,42,0.5) 100%);border:1px solid rgba(34,197,94,0.3);border-radius:12px;">' +
+      '<div style="font-size:10px;color:#22c55e;text-transform:uppercase;letter-spacing:1px;font-weight:800;margin-bottom:12px;">✓ CASE RESOLUTION — CLOSURE ATTESTATION</div>' +
+      '<div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(140px, 1fr));gap:10px;margin-bottom:12px;">' +
+        (caseDuration !== null ? '<div style="padding:11px 13px;background:rgba(15,23,42,0.6);border:1px solid rgba(34,197,94,0.25);border-radius:10px;"><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;font-weight:700;margin-bottom:4px;">CASE DURATION</div><div style="font-size:18px;color:#22c55e;font-weight:800;line-height:1;">' + caseDuration + ' days</div></div>' : '') +
+        '<div style="padding:11px 13px;background:rgba(15,23,42,0.6);border:1px solid rgba(166,218,255,0.15);border-radius:10px;"><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;font-weight:700;margin-bottom:4px;">EVENTS LOGGED</div><div style="font-size:18px;color:var(--accent);font-weight:800;line-height:1;">' + caseMems.length + '</div></div>' +
+        '<div style="padding:11px 13px;background:rgba(15,23,42,0.6);border:1px solid rgba(34,197,94,0.25);border-radius:10px;"><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;font-weight:700;margin-bottom:4px;">SIGNED BY</div><div style="font-size:12px;color:var(--chrome2);font-weight:700;">' + esc(memory.author || 'system') + '</div></div>' +
+      '</div>' +
+      '<div style="padding:10px 12px;background:rgba(15,23,42,0.5);border:1px solid rgba(166,218,255,0.08);border-radius:8px;font-size:11px;color:var(--muted);line-height:1.6;font-style:italic;">All case events sealed to Trust Ledger. Cohort restoration verified. Regulator-grade audit packet available for export.</div>' +
+    '</div>';
+  }
+
+  if (et === 'score-change') {
+    var scText = String(memory.summary || '') + ' ' + String(memory.content || '');
+    var deltaMatch = scText.match(/(?:from|was)\s+(\d{2,3})\s+(?:to|now)\s+(\d{2,3})/i);
+    var diMatch2 = scText.match(/(?:DI|disparate impact)\s*(?:to|=|:)?\s*([0-9.]+)/i);
+    var prevScore = deltaMatch ? parseInt(deltaMatch[1], 10) : null;
+    var newScore = deltaMatch ? parseInt(deltaMatch[2], 10) : null;
+    var delta = (prevScore !== null && newScore !== null) ? newScore - prevScore : null;
+    var di2 = diMatch2 ? parseFloat(diMatch2[1]) : null;
+
+    return '<div style="margin-top:18px;padding:18px 20px;background:linear-gradient(135deg, rgba(168,85,247,0.06) 0%, rgba(15,23,42,0.5) 100%);border:1px solid rgba(168,85,247,0.3);border-radius:12px;">' +
+      '<div style="font-size:10px;color:#a855f7;text-transform:uppercase;letter-spacing:1px;font-weight:800;margin-bottom:12px;">📊 SCORE CHANGE — TRAJECTORY DELTA</div>' +
+      (delta !== null ? '<div style="display:flex;align-items:center;gap:18px;flex-wrap:wrap;margin-bottom:12px;">' +
+        '<div style="text-align:center;"><div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;font-weight:700;margin-bottom:4px;">BEFORE</div><div style="font-size:30px;color:var(--muted);font-weight:800;line-height:1;">' + prevScore + '</div></div>' +
+        '<div style="font-size:24px;color:' + (delta >= 0 ? '#22c55e' : '#ef4444') + ';font-weight:700;">' + (delta >= 0 ? '↑' : '↓') + '</div>' +
+        '<div style="text-align:center;"><div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;font-weight:700;margin-bottom:4px;">AFTER</div><div style="font-size:30px;color:var(--chrome2);font-weight:800;line-height:1;">' + newScore + '</div></div>' +
+        '<div style="text-align:center;"><div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;font-weight:700;margin-bottom:4px;">DELTA</div><div style="font-size:24px;color:' + (delta >= 0 ? '#22c55e' : '#ef4444') + ';font-weight:800;line-height:1;">' + (delta > 0 ? '+' : '') + delta + '</div></div>' +
+      '</div>' : '') +
+      (di2 !== null ? '<div style="padding:10px 12px;background:rgba(15,23,42,0.5);border:1px solid rgba(166,218,255,0.08);border-radius:8px;"><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;font-weight:700;margin-bottom:4px;">CURRENT DI</div><div style="font-size:18px;color:' + (di2 >= 0.80 ? '#22c55e' : '#f59e0b') + ';font-weight:800;line-height:1;">' + di2.toFixed(2) + '</div></div>' : '') +
+    '</div>';
+  }
+
+  if (et === 'remediation-started') {
+    var trafficMatch = (memory.content || '').match(/(\d+)%\s*(?:of\s+)?(?:live\s+)?(?:traffic|shadow)/i);
+    var trafficPct = trafficMatch ? parseInt(trafficMatch[1], 10) : null;
+    var diMatch3 = (memory.content || '').match(/(?:DI|shadow DI|production):?\s*([0-9.]+)/i);
+    var di3 = diMatch3 ? parseFloat(diMatch3[1]) : null;
+
+    return '<div style="margin-top:18px;padding:18px 20px;background:linear-gradient(135deg, rgba(59,130,246,0.06) 0%, rgba(15,23,42,0.5) 100%);border:1px solid rgba(59,130,246,0.3);border-radius:12px;">' +
+      '<div style="font-size:10px;color:#3b82f6;text-transform:uppercase;letter-spacing:1px;font-weight:800;margin-bottom:12px;">🛠 REMEDIATION DEPLOYMENT — SHADOW SLICE</div>' +
+      '<div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(140px, 1fr));gap:10px;margin-bottom:12px;">' +
+        (trafficPct !== null ? '<div style="padding:12px 14px;background:rgba(15,23,42,0.6);border:1px solid rgba(59,130,246,0.3);border-radius:10px;"><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;font-weight:700;margin-bottom:6px;">SHADOW TRAFFIC</div><div style="font-size:24px;color:#3b82f6;font-weight:800;line-height:1;">' + trafficPct + '%</div><div style="font-size:9px;color:var(--muted);margin-top:4px;">of live traffic</div></div>' : '') +
+        (di3 !== null ? '<div style="padding:12px 14px;background:rgba(15,23,42,0.6);border:1px solid rgba(34,197,94,0.3);border-radius:10px;"><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;font-weight:700;margin-bottom:6px;">SHADOW DI</div><div style="font-size:24px;color:' + (di3 >= 0.80 ? '#22c55e' : '#f59e0b') + ';font-weight:800;line-height:1;">' + di3.toFixed(2) + '</div></div>' : '') +
+        (memory.modelId ? '<div style="padding:12px 14px;background:rgba(15,23,42,0.6);border:1px solid rgba(166,218,255,0.15);border-radius:10px;"><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;font-weight:700;margin-bottom:6px;">CANDIDATE</div><div style="font-size:13px;color:var(--accent);font-weight:700;font-family:monospace;line-height:1.3;">' + esc(String(memory.modelId)) + '</div></div>' : '') +
+      '</div>' +
+      '<div style="padding:10px 12px;background:rgba(15,23,42,0.5);border:1px solid rgba(166,218,255,0.08);border-radius:8px;font-size:11px;color:var(--muted);line-height:1.6;font-style:italic;">⚠ Promotion gated on consecutive batches above 0.80 DI threshold. Atonement Core will auto-pause if DI regresses.</div>' +
+    '</div>';
+  }
+
+  if (et === 'remediation-completed' || et === 'model-deployed' || et === 'model-updated') {
+    var rampMatch = (memory.content || '').match(/(\d+)%\s*(?:ramp|rollout|traffic|production)/i);
+    var rampPct = rampMatch ? parseInt(rampMatch[1], 10) : null;
+    var diDeploy = (memory.content || '').match(/DI[: ]+([0-9.]+)/i);
+    var diD = diDeploy ? parseFloat(diDeploy[1]) : null;
+
+    return '<div style="margin-top:18px;padding:18px 20px;background:linear-gradient(135deg, rgba(34,197,94,0.06) 0%, rgba(15,23,42,0.5) 100%);border:1px solid rgba(34,197,94,0.3);border-radius:12px;">' +
+      '<div style="font-size:10px;color:#22c55e;text-transform:uppercase;letter-spacing:1px;font-weight:800;margin-bottom:12px;">🚀 ' + (et === 'model-updated' ? 'MODEL UPDATE' : et === 'model-deployed' ? 'MODEL PROMOTION' : 'REMEDIATION COMPLETE') + '</div>' +
+      '<div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(140px, 1fr));gap:10px;">' +
+        (memory.modelId ? '<div style="padding:11px 13px;background:rgba(15,23,42,0.6);border:1px solid rgba(34,197,94,0.25);border-radius:10px;"><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;font-weight:700;margin-bottom:4px;">MODEL</div><div style="font-size:12px;color:var(--chrome2);font-weight:700;font-family:monospace;">' + esc(String(memory.modelId)) + '</div></div>' : '') +
+        (rampPct !== null ? '<div style="padding:11px 13px;background:rgba(15,23,42,0.6);border:1px solid rgba(59,130,246,0.25);border-radius:10px;"><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;font-weight:700;margin-bottom:4px;">RAMP</div><div style="font-size:18px;color:#3b82f6;font-weight:800;line-height:1;">' + rampPct + '%</div></div>' : '') +
+        (diD !== null ? '<div style="padding:11px 13px;background:rgba(15,23,42,0.6);border:1px solid rgba(34,197,94,0.25);border-radius:10px;"><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;font-weight:700;margin-bottom:4px;">DI</div><div style="font-size:18px;color:' + (diD >= 0.80 ? '#22c55e' : '#f59e0b') + ';font-weight:800;line-height:1;">' + diD.toFixed(2) + '</div></div>' : '') +
+        '<div style="padding:11px 13px;background:rgba(15,23,42,0.6);border:1px solid rgba(166,218,255,0.15);border-radius:10px;"><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;font-weight:700;margin-bottom:4px;">CORE</div><div style="font-size:12px;color:var(--accent);font-weight:700;text-transform:capitalize;">' + esc(memory.core || 'system') + '</div></div>' +
+        '<div style="padding:11px 13px;background:rgba(15,23,42,0.6);border:1px solid rgba(34,197,94,0.25);border-radius:10px;"><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;font-weight:700;margin-bottom:4px;">STATUS</div><div style="font-size:12px;color:#22c55e;font-weight:700;">✓ Sealed to Ledger</div></div>' +
+      '</div>' +
+    '</div>';
+  }
+
+  return '<div style="margin-top:18px;padding:14px 16px;background:rgba(15,23,42,0.5);border:1px solid rgba(166,218,255,0.1);border-radius:10px;">' +
+    '<div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;font-weight:700;margin-bottom:10px;">EVENT METADATA · ' + esc(String(et).toUpperCase().replace(/-/g, ' ')) + '</div>' +
+    '<div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(140px, 1fr));gap:10px;font-size:11px;">' +
+      '<div><span style="color:var(--muted);">Source:</span> <span style="color:var(--chrome2);font-weight:600;">' + esc(memory.author || '—') + '</span></div>' +
+      '<div><span style="color:var(--muted);">Core:</span> <span style="color:var(--accent);font-weight:600;text-transform:capitalize;">' + esc(memory.core || '—') + '</span></div>' +
+      (memory.modelId ? '<div><span style="color:var(--muted);">Model:</span> <span style="color:var(--chrome2);font-weight:600;font-family:monospace;">' + esc(String(memory.modelId)) + '</span></div>' : '') +
+      (memory.caseId ? '<div><span style="color:var(--muted);">Case:</span> <span style="color:var(--accent);font-weight:600;font-family:monospace;">#' + esc(String(memory.caseId)) + '</span></div>' : '') +
+    '</div>' +
+  '</div>';
+};
+
 function echoRenderMemoryDetailFullscreen(memory, memoryOrg) {
   var contentEl = document.getElementById('echo-memory-detail-fullscreen-content');
   if (!contentEl || !memory) return;
@@ -26921,6 +27257,8 @@ function echoRenderMemoryDetailFullscreen(memory, memoryOrg) {
     '<h2 style="font-size:22px;font-weight:700;color:var(--chrome2);margin:0 0 12px 0;line-height:1.3;">' + echoEscapeHtml(memory.summary || 'Untitled event') + '</h2>' +
     (typeof renderStatuteBadgesForMemory === 'function' ? '<div style="margin-top:10px;">' + renderStatuteBadgesForMemory(memory) + '</div>' : '') +
   '</div>';
+
+  html += (typeof echoRenderEventTypeEnrichment === 'function' ? echoRenderEventTypeEnrichment(memory, memoryOrg) : '');
 
   html += '<div style="display:grid;grid-template-columns:repeat(4, minmax(0,1fr));gap:12px;margin-bottom:20px;">';
 
