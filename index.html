@@ -5708,7 +5708,6 @@ Halo Core
 </div>
 
 <div id="screen-compliance" class="screen"><span id="reg-calendar" style="display:none"></span><span id="comp-ledger-cert" style="display:none"></span><div id="reg-heatmap" style="display:none"></div>
-<div id="compliance-core-pins" style="margin-bottom:14px;"></div>
 <div class="screen-header">
 <div>
 <div class="screen-title">Compliance Exchange</div>
@@ -5718,6 +5717,22 @@ Halo Core
 <button class="btn-ghost" style="font-size:11px" onclick="compPushToLedger()">Push to Trust Ledger</button>
 <button class="btn-primary" style="font-size:11px" onclick="switchCompTab('reporting')">Generate Report</button>
 </div>
+</div>
+
+<div id="compliance-core-pins" style="margin-bottom:14px;"></div>
+
+<div id="comp-dualview-shell" style="margin-bottom:18px;background:linear-gradient(135deg, rgba(166,218,255,0.04) 0%, rgba(15,23,42,0.4) 100%);border:1px solid rgba(166,218,255,0.15);border-radius:14px;padding:18px 20px;">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:12px;">
+    <div>
+      <div style="font-size:10px;color:var(--accent);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:4px;">⚖️ DUAL-VIEW LENS</div>
+      <div style="font-size:14px;color:var(--chrome2);font-weight:700;">View Compliance By</div>
+    </div>
+    <div style="display:flex;gap:6px;background:rgba(15,23,42,0.5);padding:4px;border:1px solid rgba(166,218,255,0.1);border-radius:10px;">
+      <button type="button" id="comp-lens-jurisdiction-btn" onclick="setComplianceLens('jurisdiction')" class="comp-lens-btn-active" style="padding:8px 14px;background:rgba(166,218,255,0.15);border:1px solid rgba(166,218,255,0.3);color:var(--accent);border-radius:7px;cursor:pointer;font-size:11px;font-weight:600;">🌐 Jurisdiction</button>
+      <button type="button" id="comp-lens-statute-btn" onclick="setComplianceLens('statute')" style="padding:8px 14px;background:transparent;border:1px solid transparent;color:var(--muted);border-radius:7px;cursor:pointer;font-size:11px;font-weight:600;">📜 Statute (Federal Lens)</button>
+    </div>
+  </div>
+  <div id="comp-dualview-content"></div>
 </div>
 
 <!-- AT A GLANCE BOXES -->
@@ -8873,6 +8888,411 @@ window.MASTER_TAG_LIBRARY = {
   ]
 };
 
+window.CARDINAL_STATUTES = [
+  {
+    id: 'ecoa', name: 'ECOA', fullName: 'Equal Credit Opportunity Act', authority: 'CFPB / Federal Reserve',
+    industries: ['fin'], scope: 'US Federal',
+    keyProvisions: '15 USC §1691 — prohibits credit discrimination on basis of race, color, religion, national origin, sex, marital status, age',
+    cardinalCases: ['FIN-1203', 'FIN-0891'],
+    cardinalReceipts: ['FIN-CF-2026-02-20-V34', 'FIN-CF-2026-03-30-V21'],
+    crossRefs: ['18 USC §1512 (anti-tampering)', '18 USC §1513 (anti-retaliation)'],
+    enforcementClimate: 'High — 2026 CFPB enforcement priorities include disparate-impact lending'
+  },
+  {
+    id: 'fcra', name: 'FCRA', fullName: 'Fair Credit Reporting Act', authority: 'FTC / CFPB',
+    industries: ['fin'], scope: 'US Federal',
+    keyProvisions: '15 USC §1681 — adverse action notice + credit data accuracy + dispute rights',
+    cardinalCases: ['FIN-1203'],
+    cardinalReceipts: [],
+    crossRefs: ['ECOA', 'CFPB UDAAP'],
+    enforcementClimate: 'Active — adverse action AI documentation gaps in regulator focus'
+  },
+  {
+    id: 'aca-1557', name: 'ACA §1557', fullName: 'Affordable Care Act Section 1557 (Nondiscrimination)', authority: 'HHS Office for Civil Rights',
+    industries: ['health'], scope: 'US Federal',
+    keyProvisions: '42 USC §18116 — prohibits discrimination in health programs receiving federal funds, including AI-driven claims/coverage/triage',
+    cardinalCases: ['HS-2847', 'HS-1204', 'HS-0912'],
+    cardinalReceipts: ['HS-ATTEST-2026-04-01-ACA1557', 'HS-CF-2026-03-15-V19'],
+    crossRefs: ['EMTALA', 'state medical board oversight'],
+    enforcementClimate: 'Elevated — April 2026 HHS guidance on AI in coverage decisions'
+  },
+  {
+    id: 'dod-ai-ethics', name: 'DoD AI Ethics', fullName: 'DoD AI Ethics Principles + Adoption Policy', authority: 'DoD AI Ethics Board / DCSA',
+    industries: ['ad', 'fed'], scope: 'US Federal',
+    keyProvisions: 'DoD Directive 3000.09 + 2020 AI Ethics Principles — responsible, equitable, traceable, reliable, governable AI for DoD use',
+    cardinalCases: ['AD-2847', 'AD-2889'],
+    cardinalReceipts: ['CHASE-AUTO-2026-05-14-000187', 'AD-DEPLOY-2026-04-28-V25-SHADOW', 'AD-ATTEST-2025-05-15-DODAI'],
+    crossRefs: ['Title VII (employment)', 'OFCCP', 'EEOC'],
+    enforcementClimate: 'Critical — May 2026 Trump EO on Federal AI Pre-Deployment Vetting tightens contractor obligations'
+  },
+  {
+    id: 'nyc-ll144', name: 'NYC Local Law 144', fullName: 'NYC Automated Employment Decision Tools Law', authority: 'NYC DCWP',
+    industries: ['fin'], scope: 'NYC Municipal',
+    keyProvisions: 'Annual independent bias audit + candidate notice + public results posting for AEDTs in employment decisions',
+    cardinalCases: ['FIN-1203'],
+    cardinalReceipts: ['FIN-ATTEST-2025-12-01-NYCLL144'],
+    crossRefs: ['CO AI Act', 'IL HRA', 'EEOC AI guidance'],
+    enforcementClimate: 'Active — first enforcement actions filed Q1 2026'
+  },
+  {
+    id: 'co-ai-act', name: 'CO AI Act', fullName: 'Colorado Artificial Intelligence Act (SB 24-205)', authority: 'CO Attorney General',
+    industries: ['fin', 'health', 'ad'], scope: 'Colorado',
+    keyProvisions: 'Comprehensive AI bias law — risk management program, impact assessments, consumer disclosures for high-risk AI',
+    cardinalCases: ['FIN-1203'],
+    cardinalReceipts: [],
+    crossRefs: ['NYC LL144', 'IL HRA', 'CFPB rules'],
+    enforcementClimate: 'Pre-enforcement — effective Feb 2026; first agency rulemaking underway'
+  },
+  {
+    id: 'ftc-uddap', name: 'FTC §5 (UDAP)', fullName: 'FTC Act Section 5 — Unfair or Deceptive Acts & Practices', authority: 'FTC',
+    industries: ['fin', 'health'], scope: 'US Federal',
+    keyProvisions: '15 USC §45 — March 2026 FTC ruling: failing to mitigate known AI bias is deceptive trade practice',
+    cardinalCases: ['FIN-1203', 'HS-2847'],
+    cardinalReceipts: [],
+    crossRefs: ['CFPB UDAAP', 'state UDAP statutes'],
+    enforcementClimate: 'Active — March 2026 FTC bias-mitigation deceptive trade practice ruling sets new standard'
+  },
+  {
+    id: 'title-vii', name: 'Title VII', fullName: 'Civil Rights Act Title VII (Employment Discrimination)', authority: 'EEOC',
+    industries: ['ad', 'fed'], scope: 'US Federal',
+    keyProvisions: '42 USC §2000e — prohibits employment discrimination on basis of race, color, religion, sex, national origin',
+    cardinalCases: ['AD-2847', 'AD-2889'],
+    cardinalReceipts: [],
+    crossRefs: ['EEOC AI guidance (2023)', 'OFCCP', 'state employment laws'],
+    enforcementClimate: 'Active — EEOC AI enforcement initiative ongoing'
+  },
+  {
+    id: '18-usc-1512', name: '18 USC §1512', fullName: 'Federal Anti-Tampering Statute (Witnesses, Evidence)', authority: 'DOJ',
+    industries: ['fin', 'health', 'ad', 'fed'], scope: 'US Federal',
+    keyProvisions: 'Criminalizes obstruction / tampering with witnesses, victims, or evidence in federal proceedings — applies to AI audit chain integrity',
+    cardinalCases: [],
+    cardinalReceipts: [],
+    crossRefs: ['18 USC §1513 (retaliation)', 'Sarbanes-Oxley §1107'],
+    enforcementClimate: 'Critical — DOJ AI Litigation Task Force has signaled audit-trail tampering as priority'
+  },
+  {
+    id: '18-usc-1513', name: '18 USC §1513', fullName: 'Federal Anti-Retaliation (Whistleblowers)', authority: 'DOJ',
+    industries: ['fin', 'health', 'ad', 'fed'], scope: 'US Federal',
+    keyProvisions: 'Criminalizes retaliation against whistleblowers / informants in federal investigations — applies to AI bias whistleblowers',
+    cardinalCases: ['AD-2847', 'HS-2847'],
+    cardinalReceipts: ['WB-2026-0315-1023-4f7a9c', 'WB-2026-0418-1000-pa01'],
+    crossRefs: ['18 USC §1512', 'Dodd-Frank §922', 'Sarbanes-Oxley §806'],
+    enforcementClimate: 'Active — Cardinal\'s sealed whistleblower routing designed for §1513 compliance'
+  },
+  {
+    id: 'omb-ai', name: 'OMB Unbiased AI', fullName: 'OMB Memorandum on Unbiased AI Principles (federal use)', authority: 'OMB / OIRA',
+    industries: ['fed', 'ad'], scope: 'US Federal',
+    keyProvisions: 'Mandates federal agency AI systems meet bias audit + transparency + human-oversight + recourse standards',
+    cardinalCases: [],
+    cardinalReceipts: [],
+    crossRefs: ['Trump May 2026 AI EO', 'GSA FedRAMP AI'],
+    enforcementClimate: 'Implementation phase — agency-by-agency rollouts through 2026-2027'
+  },
+  {
+    id: 'trump-eo-2026', name: 'EO May 2026', fullName: 'Executive Order on Federal AI Pre-Deployment Vetting (May 2026)', authority: 'Executive Office',
+    industries: ['fed', 'ad'], scope: 'US Federal',
+    keyProvisions: 'Requires pre-deployment vetting + ongoing audit of AI systems used in federal decision-making with adverse-action recourse',
+    cardinalCases: [],
+    cardinalReceipts: [],
+    crossRefs: ['OMB Unbiased AI', 'Trump Dec 2025 EO', 'BEAD funding ($42B tied to state AI compliance)'],
+    enforcementClimate: 'Critical — sets new federal-contractor compliance bar; Cardinal positioned as default vetting layer'
+  }
+];
+
+window.getStatutesByIndustry = function(industryId) {
+  return window.CARDINAL_STATUTES.filter(function(s){ return s.industries.indexOf(industryId) !== -1; });
+};
+
+window.__complianceLens = window.__complianceLens || 'jurisdiction';
+
+window.setComplianceLens = function(lens) {
+  window.__complianceLens = lens;
+  var jBtn = document.getElementById('comp-lens-jurisdiction-btn');
+  var sBtn = document.getElementById('comp-lens-statute-btn');
+  if (jBtn && sBtn) {
+    if (lens === 'jurisdiction') {
+      jBtn.style.background = 'rgba(166,218,255,0.15)';
+      jBtn.style.borderColor = 'rgba(166,218,255,0.3)';
+      jBtn.style.color = 'var(--accent)';
+      sBtn.style.background = 'transparent';
+      sBtn.style.borderColor = 'transparent';
+      sBtn.style.color = 'var(--muted)';
+      jBtn.classList.add('comp-lens-btn-active');
+      sBtn.classList.remove('comp-lens-btn-active');
+    } else {
+      sBtn.style.background = 'rgba(168,85,247,0.15)';
+      sBtn.style.borderColor = 'rgba(168,85,247,0.4)';
+      sBtn.style.color = '#a855f7';
+      jBtn.style.background = 'transparent';
+      jBtn.style.borderColor = 'transparent';
+      jBtn.style.color = 'var(--muted)';
+      sBtn.classList.add('comp-lens-btn-active');
+      jBtn.classList.remove('comp-lens-btn-active');
+    }
+  }
+  if (lens === 'jurisdiction') {
+    if (typeof renderComplianceJurisdictionView === 'function') renderComplianceJurisdictionView();
+  } else {
+    if (typeof renderComplianceStatuteView === 'function') renderComplianceStatuteView();
+  }
+};
+
+window.canExportFederalAuditPack = function(persona) {
+  var p = persona || (window.getActivePersona ? window.getActivePersona() : null);
+  return !!(p && p.role && (
+    p.role.indexOf('Compliance') !== -1 ||
+    p.role.indexOf('Legal') !== -1 ||
+    p.role.indexOf('CEO') !== -1 ||
+    p.role.indexOf('Founder') !== -1
+  ));
+};
+
+window.renderComplianceJurisdictionView = function() {
+  var container = document.getElementById('comp-dualview-content');
+  if (!container) return;
+  var org = window.currentOrg || 'ad';
+  var orgData = window.CARDINAL_DATA && window.CARDINAL_DATA[org];
+  var rows = (orgData && orgData.complianceTrackerRows) || [];
+
+  var escHtml = function(t) {
+    return typeof echoEscapeHtml === 'function' ? echoEscapeHtml(t) : String(t == null ? '' : t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  };
+  var escJs = function(t) {
+    return typeof echoEscapeJsAttr === 'function' ? echoEscapeJsAttr(t) : String(t == null ? '' : t).replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/\r?\n/g,' ');
+  };
+
+  var byJur = {};
+  rows.forEach(function(r){
+    var j = r.jurisdiction || 'Unspecified';
+    if (!byJur[j]) byJur[j] = [];
+    byJur[j].push(r);
+  });
+
+  var jurKeys = Object.keys(byJur).sort();
+
+  if (jurKeys.length === 0) {
+    container.innerHTML = '<div style="padding:24px;text-align:center;color:var(--muted);font-size:11px;font-style:italic;">No active compliance items in this view.</div>';
+    return;
+  }
+
+  var html = '<div style="display:grid;grid-template-columns:repeat(auto-fill, minmax(360px, 1fr));gap:12px;">';
+  jurKeys.forEach(function(j){
+    var jurRows = byJur[j];
+
+    html += '<div style="padding:14px 16px;background:rgba(15,23,42,0.5);border:1px solid rgba(166,218,255,0.1);border-radius:10px;">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">' +
+        '<div style="font-size:13px;color:var(--chrome2);font-weight:700;">🌐 ' + escHtml(j) + '</div>' +
+        '<span style="font-size:10px;color:var(--accent);background:rgba(166,218,255,0.06);padding:2px 8px;border-radius:8px;">' + jurRows.length + ' item' + (jurRows.length === 1 ? '' : 's') + '</span>' +
+      '</div>' +
+      '<div style="display:flex;flex-direction:column;gap:5px;">' +
+        jurRows.slice(0, 4).map(function(r){
+          var statusColor = (r.status || '').indexOf('flight') !== -1 ? '#f59e0b' : (r.status || '').indexOf('addendum') !== -1 ? '#3b82f6' : '#22c55e';
+          var cidJs = escJs(r.caseId || '');
+          var lblJs = escJs('#' + (r.caseId || ''));
+          return '<div oncontextmenu="cardinalShowContextMenu(event, \'case\', \'' + cidJs + '\', \'' + lblJs + '\')" style="display:grid;grid-template-columns:auto 1fr auto;gap:10px;padding:8px 10px;background:rgba(15,23,42,0.4);border:1px solid rgba(166,218,255,0.06);border-radius:6px;align-items:center;">' +
+            '<span style="width:6px;height:6px;border-radius:50%;background:' + statusColor + ';"></span>' +
+            '<div><div style="font-size:11px;color:var(--chrome2);font-weight:600;">' + escHtml(r.regulator || '') + '</div><div style="font-size:9px;color:var(--muted);font-family:monospace;">#' + escHtml(r.caseId || '') + ' · ' + escHtml(r.packetId || '') + '</div></div>' +
+            '<span style="font-size:10px;color:var(--muted);font-family:monospace;">' + escHtml(r.dueDate || '') + '</span>' +
+          '</div>';
+        }).join('') +
+      '</div>' +
+    '</div>';
+  });
+  html += '</div>';
+  container.innerHTML = html;
+};
+
+window.renderComplianceStatuteView = function() {
+  var container = document.getElementById('comp-dualview-content');
+  if (!container) return;
+  var org = window.currentOrg || 'ad';
+  var statutes = window.getStatutesByIndustry(org);
+
+  var persona = window.getActivePersona ? window.getActivePersona() : null;
+  var canExportAuditPack = window.canExportFederalAuditPack(persona);
+
+  var escHtml = function(t) {
+    return typeof echoEscapeHtml === 'function' ? echoEscapeHtml(t) : String(t == null ? '' : t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  };
+  var escJs = function(t) {
+    return typeof echoEscapeJsAttr === 'function' ? echoEscapeJsAttr(t) : String(t == null ? '' : t).replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/\r?\n/g,' ');
+  };
+
+  if (statutes.length === 0) {
+    container.innerHTML = '<div style="padding:24px;text-align:center;color:var(--muted);font-size:11px;font-style:italic;">No statutes mapped to this industry yet.</div>';
+    return;
+  }
+
+  var html = '<div style="font-size:11px;color:var(--muted);margin-bottom:12px;line-height:1.6;">📜 Federal Lens — every law / regulation Cardinal tracks for this industry, with linked cases, receipts, and cross-references. Click any statute for full detail.</div>';
+
+  html += '<div style="display:flex;flex-direction:column;gap:10px;">';
+  statutes.forEach(function(s){
+    var clim = s.enforcementClimate || '';
+    var climColor = clim.toLowerCase().indexOf('critical') !== -1 ? '#ef4444' : clim.toLowerCase().indexOf('active') !== -1 || clim.toLowerCase().indexOf('elevated') !== -1 ? '#f59e0b' : clim.toLowerCase().indexOf('high') !== -1 ? '#f59e0b' : '#22c55e';
+    var climShort = (clim.split(/\u2014|—/)[0] || '').trim();
+    var sidJs = escJs(s.id);
+
+    html += '<div onclick="openStatuteDetail(\'' + sidJs + '\')" oncontextmenu="cardinalShowContextMenu(event, \'memory\', \'' + sidJs + '\', \'' + escJs(s.name) + '\')" style="cursor:pointer;padding:14px 16px;background:rgba(15,23,42,0.5);border:1px solid rgba(168,85,247,0.15);border-left:3px solid ' + climColor + ';border-radius:10px;transition:all 0.15s;" onmouseover="this.style.borderColor=\'rgba(168,85,247,0.4)\';" onmouseout="this.style.borderColor=\'rgba(168,85,247,0.15)\';">' +
+      '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:14px;flex-wrap:wrap;margin-bottom:8px;">' +
+        '<div style="flex:1;min-width:0;">' +
+          '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap;">' +
+            '<span style="font-size:14px;color:var(--chrome2);font-weight:700;">📜 ' + escHtml(s.name) + '</span>' +
+            '<span style="font-size:9px;color:var(--accent);background:rgba(166,218,255,0.06);padding:2px 7px;border-radius:8px;">' + escHtml(s.scope) + '</span>' +
+            '<span style="font-size:9px;color:' + climColor + ';background:' + climColor + '15;border:1px solid ' + climColor + '40;padding:2px 7px;border-radius:8px;font-weight:700;text-transform:uppercase;letter-spacing:0.4px;">' + escHtml(climShort) + '</span>' +
+          '</div>' +
+          '<div style="font-size:11px;color:var(--muted2);line-height:1.5;">' + escHtml(s.fullName) + '</div>' +
+          '<div style="font-size:10px;color:var(--muted);margin-top:4px;">Authority: <span style="color:var(--chrome2);">' + escHtml(s.authority) + '</span></div>' +
+        '</div>' +
+        '<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">' +
+          (s.cardinalCases.length > 0 ? '<span style="font-size:9px;color:var(--accent);background:rgba(166,218,255,0.05);padding:3px 8px;border-radius:8px;font-weight:600;">' + s.cardinalCases.length + ' case' + (s.cardinalCases.length === 1 ? '' : 's') + '</span>' : '') +
+          (s.cardinalReceipts.length > 0 ? '<span style="font-size:9px;color:#22c55e;background:rgba(34,197,94,0.06);padding:3px 8px;border-radius:8px;font-weight:600;">' + s.cardinalReceipts.length + ' receipt' + (s.cardinalReceipts.length === 1 ? '' : 's') + '</span>' : '') +
+          (canExportAuditPack ? '<button type="button" onclick="event.stopPropagation();exportFederalAuditPack(\'' + sidJs + '\');" style="background:rgba(168,85,247,0.1);border:1px solid rgba(168,85,247,0.3);color:#a855f7;padding:4px 10px;border-radius:5px;cursor:pointer;font-size:10px;font-weight:600;">📦 Export Audit Pack</button>' : '') +
+        '</div>' +
+      '</div>' +
+      '<div style="padding:8px 10px;background:rgba(15,23,42,0.6);border:1px solid rgba(166,218,255,0.06);border-radius:6px;font-size:10px;color:var(--muted2);line-height:1.5;font-style:italic;">' + escHtml(s.keyProvisions || '') + '</div>' +
+    '</div>';
+  });
+  html += '</div>';
+  container.innerHTML = html;
+};
+
+window.openStatuteDetail = function(statuteId) {
+  var s = window.CARDINAL_STATUTES.filter(function(x){ return x.id === statuteId; })[0];
+  if (!s) return;
+
+  var existing = document.getElementById('statute-detail-modal');
+  if (existing) existing.remove();
+
+  var canExportAuditPack = window.canExportFederalAuditPack();
+
+  var escHtml = function(t) {
+    return typeof echoEscapeHtml === 'function' ? echoEscapeHtml(t) : String(t == null ? '' : t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  };
+  var escJs = function(t) {
+    return typeof echoEscapeJsAttr === 'function' ? echoEscapeJsAttr(t) : String(t == null ? '' : t).replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/\r?\n/g,' ');
+  };
+
+  var modal = document.createElement('div');
+  modal.id = 'statute-detail-modal';
+  modal.style.cssText = 'display:flex;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.78);backdrop-filter:blur(8px);align-items:flex-start;justify-content:center;padding:40px;overflow-y:auto;';
+  modal.onclick = function(e) { if (e.target === modal) modal.remove(); };
+
+  var sidJs = escJs(s.id);
+  var casesHtml = (s.cardinalCases.length > 0 ? '<div style="margin-bottom:14px;">' +
+      '<div style="font-size:10px;color:var(--accent);text-transform:uppercase;letter-spacing:0.8px;font-weight:700;margin-bottom:8px;">📂 LINKED CASES (' + s.cardinalCases.length + ')</div>' +
+      '<div style="display:flex;gap:6px;flex-wrap:wrap;">' +
+        s.cardinalCases.map(function(c){
+          var cj = escJs(c);
+          var clbl = escJs('#' + c);
+          return '<span onclick="typeof cardinalNavigateToCase===\'function\'&&cardinalNavigateToCase(\'' + cj + '\')" style="cursor:pointer;font-size:11px;color:var(--accent);background:rgba(166,218,255,0.06);border:1px solid rgba(166,218,255,0.2);padding:4px 10px;border-radius:8px;font-family:monospace;font-weight:600;" oncontextmenu="cardinalShowContextMenu(event, \'case\', \'' + cj + '\', \'' + clbl + '\')">#' + escHtml(c) + '</span>';
+        }).join('') +
+      '</div>' +
+    '</div>' : '');
+
+  var receiptsHtml = (s.cardinalReceipts.length > 0 ? '<div style="margin-bottom:14px;">' +
+      '<div style="font-size:10px;color:#22c55e;text-transform:uppercase;letter-spacing:0.8px;font-weight:700;margin-bottom:8px;">🔐 LINKED RECEIPTS (' + s.cardinalReceipts.length + ')</div>' +
+      '<div style="display:flex;flex-direction:column;gap:5px;">' +
+        s.cardinalReceipts.map(function(rid){
+          var rj = escJs(rid);
+          return '<div onclick="typeof echoOpenReceiptDetail===\'function\'&&echoOpenReceiptDetail(\'' + rj + '\')" style="cursor:pointer;padding:6px 10px;background:rgba(15,23,42,0.5);border:1px solid rgba(34,197,94,0.15);border-radius:6px;font-size:10px;color:#22c55e;font-family:monospace;">→ ' + escHtml(rid) + '</div>';
+        }).join('') +
+      '</div>' +
+    '</div>' : '');
+
+  var crossHtml = (s.crossRefs.length > 0 ? '<div style="margin-bottom:14px;">' +
+      '<div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;font-weight:700;margin-bottom:8px;">🔗 CROSS-REFERENCES</div>' +
+      '<div style="display:flex;gap:6px;flex-wrap:wrap;">' +
+        s.crossRefs.map(function(cr){ return '<span style="font-size:10px;color:var(--muted2);background:rgba(15,23,42,0.5);border:1px solid rgba(166,218,255,0.08);padding:3px 9px;border-radius:8px;">' + escHtml(cr) + '</span>'; }).join('') +
+      '</div>' +
+    '</div>' : '');
+
+  var exportHtml = (canExportAuditPack ? '<div style="margin-top:18px;padding:14px;background:rgba(168,85,247,0.08);border:1px solid rgba(168,85,247,0.4);border-radius:10px;text-align:center;">' +
+      '<button type="button" onclick="exportFederalAuditPack(\'' + sidJs + '\')" style="background:linear-gradient(135deg, #a855f7 0%, #6366f1 100%);border:none;color:white;padding:10px 22px;border-radius:8px;cursor:pointer;font-size:12px;font-weight:700;box-shadow:0 4px 12px rgba(168,85,247,0.3);">📦 Export Federal Audit Pack for ' + escHtml(s.name) + '</button>' +
+      '<div style="font-size:10px;color:var(--muted);margin-top:8px;">Bundles every linked case, memory, receipt, and filing into a sealed packet for regulator submission.</div>' +
+    '</div>' : '<div style="margin-top:18px;padding:12px;background:rgba(15,23,42,0.5);border:1px dashed rgba(166,218,255,0.15);border-radius:10px;text-align:center;font-size:10px;color:var(--muted);">🔒 Federal Audit Pack export requires Compliance / Legal / CEO role.</div>');
+
+  var html = '<div style="max-width:780px;width:100%;background:linear-gradient(180deg, rgba(15,23,42,0.98) 0%, rgba(11,18,32,0.98) 100%);border:1px solid rgba(168,85,247,0.3);border-radius:14px;padding:28px;box-shadow:0 20px 80px rgba(0,0,0,0.7);margin-top:20px;">' +
+    '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:18px;gap:14px;">' +
+      '<div>' +
+        '<div style="font-size:10px;color:#a855f7;text-transform:uppercase;letter-spacing:1px;font-weight:800;margin-bottom:6px;">📜 STATUTE · FEDERAL LENS</div>' +
+        '<h2 style="font-size:22px;font-weight:700;color:var(--chrome2);margin:0 0 6px 0;">' + escHtml(s.name) + '</h2>' +
+        '<div style="font-size:13px;color:var(--muted2);">' + escHtml(s.fullName) + '</div>' +
+        '<div style="font-size:11px;color:var(--muted);margin-top:6px;">Authority: <span style="color:var(--chrome2);font-weight:600;">' + escHtml(s.authority) + '</span> · Scope: <span style="color:var(--chrome2);font-weight:600;">' + escHtml(s.scope) + '</span></div>' +
+      '</div>' +
+      '<button type="button" onclick="document.getElementById(\'statute-detail-modal\').remove()" style="background:none;border:none;color:var(--muted);font-size:24px;cursor:pointer;line-height:1;">×</button>' +
+    '</div>' +
+    '<div style="padding:14px 16px;background:rgba(168,85,247,0.06);border:1px solid rgba(168,85,247,0.25);border-radius:10px;margin-bottom:14px;">' +
+      '<div style="font-size:9px;color:#a855f7;text-transform:uppercase;letter-spacing:0.8px;font-weight:700;margin-bottom:6px;">KEY PROVISIONS</div>' +
+      '<div style="font-size:12px;color:var(--chrome2);line-height:1.7;">' + escHtml(s.keyProvisions) + '</div>' +
+    '</div>' +
+    '<div style="padding:14px 16px;background:rgba(245,158,11,0.04);border:1px solid rgba(245,158,11,0.2);border-radius:10px;margin-bottom:14px;">' +
+      '<div style="font-size:9px;color:#f59e0b;text-transform:uppercase;letter-spacing:0.8px;font-weight:700;margin-bottom:6px;">⚡ ENFORCEMENT CLIMATE</div>' +
+      '<div style="font-size:12px;color:var(--chrome2);line-height:1.6;">' + escHtml(s.enforcementClimate) + '</div>' +
+    '</div>' +
+    casesHtml +
+    receiptsHtml +
+    crossHtml +
+    exportHtml +
+  '</div>';
+
+  modal.innerHTML = html;
+  document.body.appendChild(modal);
+};
+
+window.exportFederalAuditPack = function(statuteId) {
+  var s = window.CARDINAL_STATUTES.filter(function(x){ return x.id === statuteId; })[0];
+  if (!s) return;
+  if (!window.canExportFederalAuditPack()) {
+    if (typeof cardinalShowToast === 'function') cardinalShowToast('🔒 Audit Pack export requires Compliance / Legal / CEO / Founder role.');
+    return;
+  }
+
+  var persona = window.getActivePersona ? window.getActivePersona() : null;
+
+  var existing = document.getElementById('audit-pack-modal');
+  if (existing) existing.remove();
+
+  var modal = document.createElement('div');
+  modal.id = 'audit-pack-modal';
+  modal.style.cssText = 'display:flex;position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,0.85);backdrop-filter:blur(10px);align-items:center;justify-content:center;padding:40px;';
+  modal.onclick = function(e) { if (e.target === modal) modal.remove(); };
+
+  var hash = (Math.random().toString(16).substr(2, 16) + Math.random().toString(16).substr(2, 16));
+
+  var html = '<div style="max-width:560px;width:100%;background:linear-gradient(180deg, rgba(15,23,42,0.98) 0%, rgba(11,18,32,0.98) 100%);border:2px solid #a855f7;border-radius:14px;padding:28px;box-shadow:0 20px 80px rgba(168,85,247,0.5);">' +
+    '<div style="text-align:center;margin-bottom:20px;">' +
+      '<div style="display:inline-flex;width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg, #a855f7 0%, #6366f1 100%);align-items:center;justify-content:center;font-size:32px;margin-bottom:12px;">📦</div>' +
+      '<div style="font-size:10px;color:#a855f7;text-transform:uppercase;letter-spacing:1px;font-weight:800;margin-bottom:4px;">FEDERAL AUDIT PACK ASSEMBLED</div>' +
+      '<h2 style="font-size:18px;font-weight:700;color:var(--chrome2);margin:0;">' + (typeof echoEscapeHtml === 'function' ? echoEscapeHtml(s.name) : s.name) + ' — Sealed Packet</h2>' +
+      '<div style="font-size:11px;color:var(--muted);margin-top:6px;">Generated for: ' + (persona ? (typeof echoEscapeHtml === 'function' ? echoEscapeHtml(persona.name) : persona.name) + ' · ' + (typeof echoEscapeHtml === 'function' ? echoEscapeHtml(persona.role) : persona.role) : 'Cardinal user') + '</div>' +
+    '</div>' +
+    '<div style="background:rgba(15,23,42,0.6);border:1px solid rgba(166,218,255,0.1);border-radius:10px;padding:14px 16px;margin-bottom:14px;">' +
+      '<div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;font-weight:700;margin-bottom:10px;">PACK CONTENTS</div>' +
+      '<div style="display:flex;flex-direction:column;gap:6px;font-size:11px;color:var(--chrome2);line-height:1.6;">' +
+        '<div>✓ ' + s.cardinalCases.length + ' linked case file' + (s.cardinalCases.length === 1 ? '' : 's') + ' (full timelines)</div>' +
+        '<div>✓ ' + s.cardinalReceipts.length + ' Decision Receipt' + (s.cardinalReceipts.length === 1 ? '' : 's') + ' with cryptographic hashes</div>' +
+        '<div>✓ Echo memories tied to ' + (typeof echoEscapeHtml === 'function' ? echoEscapeHtml(s.name) : s.name) + ' (sealed audit chain)</div>' +
+        '<div>✓ Sign-off chain + addendums (immutable)</div>' +
+        '<div>✓ ' + s.crossRefs.length + ' cross-reference(s) to related statutes</div>' +
+        '<div>✓ Statute-specific cover letter + table of contents</div>' +
+      '</div>' +
+    '</div>' +
+    '<div style="background:rgba(34,197,94,0.06);border:1px solid rgba(34,197,94,0.25);border-radius:10px;padding:14px 16px;margin-bottom:14px;">' +
+      '<div style="font-size:10px;color:#22c55e;text-transform:uppercase;letter-spacing:0.8px;font-weight:700;margin-bottom:6px;">PACKET HASH</div>' +
+      '<div style="font-size:10px;color:#22c55e;font-family:monospace;word-break:break-all;">' + hash + '</div>' +
+      '<div style="font-size:10px;color:var(--muted);margin-top:6px;">✓ Verified · Tamper-evident · Court-admissible · Trust Ledger anchored</div>' +
+    '</div>' +
+    '<div style="font-size:11px;color:var(--muted);line-height:1.6;margin-bottom:18px;text-align:center;font-style:italic;">In production, this packet downloads as a ZIP containing PDFs + JSON manifests + signed hash chain. For demo: hash logged to Trust Ledger.</div>' +
+    '<div style="display:flex;justify-content:center;gap:10px;">' +
+      '<button type="button" onclick="document.getElementById(\'audit-pack-modal\').remove()" style="background:rgba(166,218,255,0.05);border:1px solid rgba(166,218,255,0.2);color:var(--muted);padding:9px 18px;border-radius:8px;cursor:pointer;font-size:11px;font-weight:600;">Close</button>' +
+      '<button type="button" onclick="typeof cardinalShowToast===\'function\'&&cardinalShowToast(\'📦 Audit Pack hash anchored to Trust Ledger\');document.getElementById(\'audit-pack-modal\').remove();" style="background:linear-gradient(135deg, #a855f7 0%, #6366f1 100%);border:none;color:white;padding:9px 18px;border-radius:8px;cursor:pointer;font-size:11px;font-weight:700;">Download + Anchor to Ledger</button>' +
+    '</div>' +
+  '</div>';
+
+  modal.innerHTML = html;
+  document.body.appendChild(modal);
+};
+
 window.getTagsByStatus = function(status) {
   var out = [];
   window.MASTER_TAG_LIBRARY.industries.forEach(function(ind){
@@ -8961,6 +9381,15 @@ window.setActivePersona = function(personaId) {
       if (typeof cardinalRenderCorePinsPanel === 'function') cardinalRenderCorePinsPanel('halo', 'halo-core-pins');
     }
   } catch(_rh) {}
+
+  try {
+    var complianceScreen = document.getElementById('screen-compliance');
+    if (complianceScreen && complianceScreen.classList.contains('active')) {
+      var co = window.currentOrg || 'ad';
+      if (typeof cardinalRenderCorePinsPanel === 'function') cardinalRenderCorePinsPanel('compliance', 'compliance-core-pins');
+      if (typeof setComplianceLens === 'function') setComplianceLens(window.__complianceLens || 'jurisdiction');
+    }
+  } catch(_rc) {}
 
   // Persist
   try { localStorage.setItem('cardinal-active-persona', personaId); } catch(_ls) {}
@@ -13791,6 +14220,10 @@ function switchIndustry(org, btn) {
    var sentScr = document.getElementById('screen-sentinel');
    if (sentScr && sentScr.classList.contains('active') && typeof buildSentinel === 'function') buildSentinel(org);
  } catch (_sentSw) {}
+ try {
+   var compScr = document.getElementById('screen-compliance');
+   if (compScr && compScr.classList.contains('active') && typeof buildCompliance === 'function') buildCompliance(org);
+ } catch (_compSw) {}
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -26363,7 +26796,9 @@ const MARKETING_SCAN = {
 };
 
 function buildCompliance(org) {
- try { if (typeof cardinalRenderCorePinsPanel === 'function') cardinalRenderCorePinsPanel('compliance', 'compliance-core-pins'); } catch(_e) {}
+  // Render Cardinal pin panel + dual-view
+  try { if (typeof cardinalRenderCorePinsPanel === 'function') cardinalRenderCorePinsPanel('compliance', 'compliance-core-pins'); } catch(_e1) {}
+  try { if (typeof setComplianceLens === 'function') setComplianceLens(window.__complianceLens || 'jurisdiction'); } catch(_e2) {}
  const c = COMPLIANCE_DATA[org];
  if(!c) return;
  const d = DATA[org];
