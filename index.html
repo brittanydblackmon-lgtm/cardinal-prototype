@@ -4608,12 +4608,13 @@ Trust Loop
 <svg class="nav-icon" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="2" stroke="currentColor" stroke-width="1.4"/><path d="M7 1v1M7 12v1M1 7h1M12 7h1M2.9 2.9l.7.7M10.4 10.4l.7.7M2.9 11.1l.7-.7M10.4 3.6l.7-.7" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
 Settings
 </div>
-<div class="sidebar-user-card" id="sidebar-user-card">
+<div class="sidebar-user-card" id="sidebar-user-card" onclick="openPersonaSwitcher()" style="cursor:pointer;position:relative;" title="Switch persona view">
 <div class="sidebar-user-avatar" id="sidebar-avatar">AB</div>
 <div class="sidebar-user-info">
 <div class="sidebar-user-name" id="sidebar-user-name">Anthony Broadnax</div>
-<div class="sidebar-user-org" id="sidebar-user-org">Atlas Defense Systems</div>
+<div class="sidebar-user-org" id="sidebar-user-org">CEO · Atlas Defense Systems</div>
 </div>
+<div style="position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:10px;color:var(--muted);">▼</div>
 </div>
 </div>
 </div>
@@ -8730,6 +8731,142 @@ function syncSettingsScreenToggles() {
 let dimScores = { ...INDUSTRY_SCORES.ad };
 let scoreChart, demoChart, haloChart, haloPenaltyChart, haloForecastChart;
 
+// ════════════════════════════════════════════════════════════════
+// PERSONAS & RBAC — role-based view matrix
+// Switching persona reshapes what data the user sees across screens.
+// ════════════════════════════════════════════════════════════════
+window.CARDINAL_PERSONAS = [
+  { id: 'brittany',  name: 'Brittany Blackmon',  role: 'Founder/CEO',         org: 'Project Cardinal',     initials: 'BB', color: '#a855f7', canSeeWhistleblower: true,  canSeeSealedLegal: true,  canSubmitWhistleblower: true,  scope: 'all',           summary: 'Founder & CEO. Cross-org visibility. Sees every Cardinal pilot, every case, every receipt.' },
+  { id: 'anthony',   name: 'Anthony Broadnax',   role: 'CEO',                 org: 'Atlas Defense Systems', initials: 'AB', color: '#3b82f6', canSeeWhistleblower: true,  canSeeSealedLegal: true,  canSubmitWhistleblower: true,  scope: 'org',           summary: 'CEO of Atlas Defense. Full org visibility. Final approval gate on case openings + remediations.' },
+  { id: 'james-m',   name: 'James Martinez',     role: 'Compliance Lead',     org: 'Atlas Defense Systems', initials: 'JM', color: '#22c55e', canSeeWhistleblower: true,  canSeeSealedLegal: true,  canSubmitWhistleblower: true,  scope: 'org',           summary: 'Compliance Lead. Owns regulatory filings, FCRA/ECOA/DoD attestations, whistleblower routing.' },
+  { id: 'sarah',     name: 'Sarah Chen',         role: 'Lead Data Science',   org: 'Atlas Defense Systems', initials: 'SC', color: '#f59e0b', canSeeWhistleblower: false, canSeeSealedLegal: false, canSubmitWhistleblower: true,  scope: 'org-technical', summary: 'Lead DS. Technical detail across models, cases, Eden flags. No whistleblower or sealed legal.' },
+  { id: 'james-p',   name: 'James Park',         role: 'Product Manager',     org: 'Atlas Defense Systems', initials: 'JP', color: '#06b6d4', canSeeWhistleblower: false, canSeeSealedLegal: false, canSubmitWhistleblower: true,  scope: 'org-public',    summary: 'Product Manager. View-only on most governance items. Can flag concerns + submit whistleblower.' },
+  { id: 'marcus',    name: 'Marcus Williams',    role: 'Senior Engineer',     org: 'Atlas Defense Systems', initials: 'MW', color: '#94a3b8', canSeeWhistleblower: false, canSeeSealedLegal: false, canSubmitWhistleblower: true,  scope: 'org-public',    summary: 'Senior Engineer. Public-only access. Can submit whistleblower reports anonymously.' }
+];
+
+// Active persona — default to Anthony (preserves existing demo behavior)
+window.__activePersonaId = window.__activePersonaId || 'anthony';
+
+window.getActivePersona = function() {
+  var id = window.__activePersonaId || 'anthony';
+  return window.CARDINAL_PERSONAS.filter(function(p){ return p.id === id; })[0] || window.CARDINAL_PERSONAS[1];
+};
+
+window.setActivePersona = function(personaId) {
+  window.__activePersonaId = personaId;
+  var p = window.getActivePersona();
+  if (!p) return;
+
+  // Update sidebar user card
+  var avatarEl = document.getElementById('sidebar-avatar');
+  var nameEl = document.getElementById('sidebar-user-name');
+  var orgEl = document.getElementById('sidebar-user-org');
+  if (avatarEl) {
+    avatarEl.textContent = p.initials;
+    avatarEl.style.background = p.color + '40';
+    avatarEl.style.color = p.color;
+    avatarEl.style.border = '1px solid ' + p.color;
+  }
+  if (nameEl) nameEl.textContent = p.name;
+  if (orgEl) orgEl.textContent = p.role + ' · ' + p.org;
+
+  // Update window.currentUserName so existing user-aware code uses the new persona
+  window.currentUserName = p.name;
+
+  // Hide/show whistleblower tab based on persona
+  var wbTab = document.querySelector('[data-echo-tab="whistleblower"]');
+  if (wbTab) {
+    wbTab.style.display = p.canSeeWhistleblower ? '' : 'none';
+  }
+
+  // Show whistleblower KPI card or replace with placeholder for non-authorized roles
+  var wbKpi = document.querySelector('.echo-kpi-card[data-card="whistleblower"]');
+  if (wbKpi) {
+    if (p.canSeeWhistleblower) {
+      wbKpi.style.opacity = '1';
+      wbKpi.style.pointerEvents = '';
+      wbKpi.title = '';
+    } else {
+      wbKpi.style.opacity = '0.35';
+      wbKpi.style.pointerEvents = 'none';
+      wbKpi.title = 'Whistleblower data is restricted to Legal, Compliance, and CEO roles.';
+    }
+  }
+
+  // Refresh Echo screen if active
+  try {
+    var echoScreen = document.getElementById('screen-echo');
+    if (echoScreen && echoScreen.classList.contains('active')) {
+      if (typeof renderEchoCardinalHero === 'function') renderEchoCardinalHero(window.currentOrg || 'ad');
+      if (typeof echoApplyFilters === 'function') echoApplyFilters();
+    }
+  } catch(_re) {}
+
+  // Persist
+  try { localStorage.setItem('cardinal-active-persona', personaId); } catch(_ls) {}
+
+  console.log('[Persona] switched to', p.name, '(' + p.role + ')');
+};
+
+// Restore persona on load
+try {
+  var savedPersona = localStorage.getItem('cardinal-active-persona');
+  if (savedPersona) window.__activePersonaId = savedPersona;
+} catch(_lse) {}
+
+window.openPersonaSwitcher = function() {
+  var existing = document.getElementById('persona-switcher-modal');
+  if (existing) { existing.remove(); return; }
+
+  var modal = document.createElement('div');
+  modal.id = 'persona-switcher-modal';
+  modal.style.cssText = 'display:flex;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.78);backdrop-filter:blur(8px);align-items:center;justify-content:center;padding:40px;';
+  modal.onclick = function(e) { if (e.target === modal) modal.remove(); };
+
+  var activeId = window.__activePersonaId;
+
+  var html = '<div style="max-width:680px;width:100%;max-height:88vh;overflow-y:auto;background:linear-gradient(180deg, rgba(15,23,42,0.98) 0%, rgba(11,18,32,0.98) 100%);border:1px solid rgba(166,218,255,0.15);border-radius:16px;padding:28px;box-shadow:0 20px 80px rgba(0,0,0,0.7);">' +
+    '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;">' +
+      '<div>' +
+        '<div style="font-size:10px;color:var(--accent);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:6px;">VIEW AS</div>' +
+        '<h2 style="font-size:18px;font-weight:700;color:var(--chrome2);margin:0;">Switch Persona</h2>' +
+        '<div style="font-size:11px;color:var(--muted);margin-top:6px;">Each role has different visibility into Cardinal\'s governance layer. Switch to see the platform through their eyes.</div>' +
+      '</div>' +
+      '<button type="button" onclick="document.getElementById(\'persona-switcher-modal\').remove()" style="background:none;border:none;color:var(--muted);font-size:24px;cursor:pointer;line-height:1;">×</button>' +
+    '</div>' +
+    '<div style="display:flex;flex-direction:column;gap:8px;">';
+
+  window.CARDINAL_PERSONAS.forEach(function(p){
+    var isActive = p.id === activeId;
+    html += '<div onclick="setActivePersona(\'' + p.id + '\'); document.getElementById(\'persona-switcher-modal\').remove();" style="cursor:pointer;display:grid;grid-template-columns:auto 1fr auto;gap:14px;padding:14px 16px;background:' + (isActive ? 'rgba(166,218,255,0.08)' : 'rgba(15,23,42,0.5)') + ';border:1px solid ' + (isActive ? 'rgba(166,218,255,0.3)' : 'rgba(166,218,255,0.08)') + ';border-radius:10px;align-items:center;transition:all 0.15s;" onmouseover="this.style.borderColor=\'rgba(166,218,255,0.4)\';this.style.background=\'rgba(166,218,255,0.08)\';" onmouseout="this.style.borderColor=\'' + (isActive ? 'rgba(166,218,255,0.3)' : 'rgba(166,218,255,0.08)') + '\';this.style.background=\'' + (isActive ? 'rgba(166,218,255,0.08)' : 'rgba(15,23,42,0.5)') + '\';">' +
+      '<div style="width:44px;height:44px;border-radius:50%;background:' + p.color + '30;border:1px solid ' + p.color + ';display:flex;align-items:center;justify-content:center;font-size:14px;color:' + p.color + ';font-weight:700;flex-shrink:0;">' + p.initials + '</div>' +
+      '<div style="min-width:0;">' +
+        '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">' +
+          '<span style="font-size:14px;color:var(--chrome2);font-weight:700;">' + p.name + '</span>' +
+          (isActive ? '<span style="font-size:9px;color:var(--green);background:rgba(34,197,94,0.1);padding:2px 7px;border-radius:8px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;">Active</span>' : '') +
+        '</div>' +
+        '<div style="font-size:11px;color:' + p.color + ';font-weight:600;margin-bottom:4px;">' + p.role + ' · ' + p.org + '</div>' +
+        '<div style="font-size:11px;color:var(--muted2);line-height:1.4;">' + p.summary + '</div>' +
+        '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;">' +
+          (p.canSeeWhistleblower ? '<span style="font-size:9px;color:#a855f7;background:rgba(168,85,247,0.1);border:1px solid rgba(168,85,247,0.25);padding:2px 7px;border-radius:8px;font-weight:600;">🔒 Whistleblower</span>' : '') +
+          (p.canSeeSealedLegal ? '<span style="font-size:9px;color:var(--green);background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.2);padding:2px 7px;border-radius:8px;font-weight:600;">⚖️ Sealed Legal</span>' : '') +
+          '<span style="font-size:9px;color:var(--accent);background:rgba(166,218,255,0.05);border:1px solid rgba(166,218,255,0.15);padding:2px 7px;border-radius:8px;font-weight:600;">' + p.scope + '</span>' +
+        '</div>' +
+      '</div>' +
+      '<div style="font-size:14px;color:var(--accent);">' + (isActive ? '✓' : '→') + '</div>' +
+    '</div>';
+  });
+
+  html += '</div>' +
+    '<div style="margin-top:16px;padding:12px 14px;background:rgba(15,23,42,0.5);border:1px solid rgba(166,218,255,0.08);border-radius:8px;font-size:11px;color:var(--muted);line-height:1.5;">' +
+      '<strong style="color:var(--accent);">Note:</strong> Switching persona changes what you see across Echo, Trust Score, and Compliance. This is a demo — in production, persona is determined by SSO/auth.' +
+    '</div>' +
+  '</div>';
+
+  modal.innerHTML = html;
+  document.body.appendChild(modal);
+};
+
 // ══════════════════════════════════════════════════════
 // CARDINAL_DATA — single source of truth for the dashboard
 // (also referenced by Trust Score screen, sidebar, topbar)
@@ -12829,8 +12966,12 @@ function applyCardinalData(org) {
   }
   // Keep Eve's quick-action score chip in sync with the active org
   try { if (typeof refreshEveQuickChipScore === 'function') refreshEveQuickChipScore(); } catch (_eqc) {}
+  try {
+    if (typeof window.setActivePersona === 'function' && window.__activePersonaId) {
+      window.setActivePersona(window.__activePersonaId);
+    }
+  } catch (_spa) {}
 }
-window.applyCardinalData = applyCardinalData;
 
 function selectOrg(el, org) {
  document.querySelectorAll('.industry-btn').forEach(b => b.classList.remove('active'));
@@ -16626,6 +16767,11 @@ function syncIndustrySidebarChrome(org) {
  };
  var subEl = document.getElementById('topbar-sub');
  if(subEl) subEl.textContent = subMap[org] || '';
+ try {
+   if (typeof window.setActivePersona === 'function' && window.__activePersonaId) {
+     window.setActivePersona(window.__activePersonaId);
+   }
+ } catch (_spc) {}
 }
 
 
@@ -22859,12 +23005,89 @@ function renderEchoCardinalHero(org) {
       '<div style="display:flex;justify-content:space-between;padding-top:5px;"><span>Last verified</span><span style="color:var(--green);font-weight:600;">1h ago</span></div>';
   }
 
+  // === YOUR ACTIVITY TODAY — personalized to active persona ===
+  try {
+    var activePersona = (typeof window.getActivePersona === 'function') ? window.getActivePersona() : null;
+    if (activePersona) {
+      var todayMs = 24 * 3600 * 1000;
+      var personaActivity = memories.filter(function(m){
+        if (!m.author) return false;
+        if (m.author !== activePersona.name) return false;
+        return (now - new Date(m.timestamp).getTime()) <= todayMs * 7; // last 7 days as "your activity"
+      }).slice(0, 5);
+
+      // Cases the persona is involved in
+      var personaCases = new Set();
+      memories.forEach(function(m){
+        if (m.author === activePersona.name && m.caseId) personaCases.add(m.caseId);
+      });
+
+      // Pending sign-offs that mention this persona's role
+      var pendingForPersona = memories.filter(function(m){
+        var content = ((m.summary || '') + ' ' + (m.content || '')).toLowerCase();
+        var firstName = activePersona.name.split(' ')[0].toLowerCase();
+        return content.indexOf(firstName) !== -1 && (content.indexOf('pending') !== -1 || content.indexOf('await') !== -1);
+      }).slice(0, 3);
+
+      var youHTML = '<div style="background:linear-gradient(135deg, ' + activePersona.color + '0d 0%, rgba(15,23,42,0.5) 100%);border:1px solid ' + activePersona.color + '30;border-radius:12px;padding:16px 18px;margin-bottom:14px;">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">' +
+          '<div style="display:flex;align-items:center;gap:10px;">' +
+            '<div style="width:32px;height:32px;border-radius:50%;background:' + activePersona.color + '30;border:1px solid ' + activePersona.color + ';display:flex;align-items:center;justify-content:center;font-size:12px;color:' + activePersona.color + ';font-weight:700;">' + activePersona.initials + '</div>' +
+            '<div>' +
+              '<div style="font-size:13px;color:var(--chrome2);font-weight:700;">' + activePersona.name.split(' ')[0] + '\'s view</div>' +
+              '<div style="font-size:10px;color:var(--muted);">' + activePersona.role + '</div>' +
+            '</div>' +
+          '</div>' +
+          '<div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;font-weight:700;">YOUR LAST 7 DAYS</div>' +
+        '</div>' +
+        '<div style="display:grid;grid-template-columns:repeat(3, minmax(0,1fr));gap:10px;margin-bottom:' + (personaActivity.length > 0 ? '12' : '0') + 'px;">' +
+          '<div style="padding:10px;background:rgba(15,23,42,0.5);border:1px solid rgba(166,218,255,0.06);border-radius:8px;text-align:center;"><div style="font-size:18px;color:' + activePersona.color + ';font-weight:800;line-height:1;">' + personaActivity.length + '</div><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-top:6px;">Events Logged</div></div>' +
+          '<div style="padding:10px;background:rgba(15,23,42,0.5);border:1px solid rgba(166,218,255,0.06);border-radius:8px;text-align:center;"><div style="font-size:18px;color:var(--accent);font-weight:800;line-height:1;">' + personaCases.size + '</div><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-top:6px;">Cases Touched</div></div>' +
+          '<div style="padding:10px;background:rgba(15,23,42,0.5);border:1px solid rgba(245,158,11,0.15);border-radius:8px;text-align:center;"><div style="font-size:18px;color:#f59e0b;font-weight:800;line-height:1;">' + pendingForPersona.length + '</div><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-top:6px;">Pending On You</div></div>' +
+        '</div>';
+
+      if (personaActivity.length > 0) {
+        youHTML += '<div style="display:flex;flex-direction:column;gap:6px;margin-top:10px;">' +
+          personaActivity.slice(0, 3).map(function(m){
+            var mts = new Date(m.timestamp);
+            var midPv = typeof echoEscapeJsAttr === 'function' ? echoEscapeJsAttr(m.id) : String(m.id || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+            return '<div onclick="echoOpenMemoryDetail(\'' + midPv + '\')" style="cursor:pointer;display:grid;grid-template-columns:1fr auto;gap:12px;padding:8px 12px;background:rgba(15,23,42,0.4);border:1px solid rgba(166,218,255,0.05);border-radius:6px;align-items:center;font-size:11px;">' +
+              '<span style="color:var(--muted2);line-height:1.3;">' + (m.summary || '').substring(0, 80) + ((m.summary || '').length > 80 ? '...' : '') + '</span>' +
+              '<span style="color:var(--muted);font-family:monospace;font-size:10px;white-space:nowrap;">' + mts.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + '</span>' +
+            '</div>';
+          }).join('') +
+        '</div>';
+      } else {
+        youHTML += '<div style="padding:10px 12px;font-size:11px;color:var(--muted);font-style:italic;text-align:center;">No activity logged for ' + activePersona.name.split(' ')[0] + ' in the last 7 days.</div>';
+      }
+
+      youHTML += '</div>';
+
+      // Insert into the recent-access-panel container if it exists
+      var recentAccessPanel = document.getElementById('echo-recent-access-panel');
+      if (recentAccessPanel) {
+        // Remove old "your view" if exists
+        var oldYou = document.getElementById('echo-your-view-panel');
+        if (oldYou) oldYou.remove();
+        var youDiv = document.createElement('div');
+        youDiv.id = 'echo-your-view-panel';
+        youDiv.innerHTML = youHTML;
+        recentAccessPanel.parentNode.insertBefore(youDiv, recentAccessPanel);
+      }
+    }
+  } catch(_yvE) { console.warn('[Echo] persona view panel failed', _yvE); }
+
   var accessEl = document.getElementById('echo-recent-access-list');
   if (accessEl) {
     var humanEvents = memories.filter(function(m){
       var a = m.author || '';
       return a && a !== 'system' && a !== 'Eve' && a !== 'Adam' && a.indexOf('Core') === -1 && a.indexOf('Exchange') === -1 && a.indexOf('Ledger') === -1 && a.indexOf('Loop') === -1 && a !== 'Sentinel' && a !== 'War Room';
-    }).slice(0, 5);
+    });
+    var __apRecent = typeof window.getActivePersona === 'function' ? window.getActivePersona() : null;
+    if (__apRecent && __apRecent.id !== 'brittany' && __apRecent.id !== 'anthony' && __apRecent.id !== 'james-m') {
+      humanEvents = humanEvents.filter(function(m){ return (m.author || '') === __apRecent.name; });
+    }
+    humanEvents = humanEvents.slice(0, 5);
     if (humanEvents.length === 0) {
       accessEl.innerHTML = '<div style="font-size:11px;color:var(--muted);font-style:italic;padding:8px;">No recent person-driven updates.</div>';
     } else {
@@ -23093,6 +23316,25 @@ function echoApplyFilters() {
     if (f.eventType !== 'all' && m.eventType !== f.eventType) return false;
     if (f.severity !== 'all' && m.severity !== f.severity) return false;
     if (f.accessTier !== 'all' && m.accessTier !== f.accessTier) return false;
+    // Persona-based access filter
+    var __persona = (typeof window.getActivePersona === 'function') ? window.getActivePersona() : null;
+    if (__persona) {
+      // Whistleblower memories only visible to authorized roles
+      if (m.eventType === 'whistleblower-submission' && !__persona.canSeeWhistleblower) return false;
+      if (m.accessTier === 'role-restricted' && m.accessRoles && m.accessRoles.length) {
+        var allowed = false;
+        var personaRole = __persona.role.toLowerCase();
+        for (var ar = 0; ar < m.accessRoles.length; ar++) {
+          var role = m.accessRoles[ar].toLowerCase();
+          if (role === 'admin' && (personaRole.indexOf('ceo') !== -1 || personaRole.indexOf('founder') !== -1)) allowed = true;
+          if (role === 'legal' && personaRole.indexOf('legal') !== -1) allowed = true;
+          if (role === 'compliance' && personaRole.indexOf('compliance') !== -1) allowed = true;
+        }
+        // CEO/Founder always sees role-restricted
+        if (personaRole.indexOf('ceo') !== -1 || personaRole.indexOf('founder') !== -1) allowed = true;
+        if (!allowed) return false;
+      }
+    }
     if (customRange) {
       var mTs = new Date(m.timestamp).getTime();
       if (mTs < customRange.from || mTs > customRange.to) return false;
@@ -23876,6 +24118,8 @@ function echoOpenMemoryDetail(memoryId) {
   if (kpiRowAlerts) kpiRowAlerts.style.display = 'none';
   if (kpiRowActivity) kpiRowActivity.style.display = 'none';
   if (recentAccess) recentAccess.style.display = 'none';
+  var youViewPanel = document.getElementById('echo-your-view-panel');
+  if (youViewPanel) youViewPanel.style.display = 'none';
   if (detailSection) detailSection.style.display = 'block';
 
   var bcTitle = document.getElementById('echo-memory-detail-breadcrumb-title');
@@ -23928,6 +24172,8 @@ function echoCloseMemoryDetail() {
   if (kpiRowAlerts) kpiRowAlerts.style.display = '';
   if (kpiRowActivity) kpiRowActivity.style.display = '';
   if (recentAccess) recentAccess.style.display = '';
+  var youViewPanel2 = document.getElementById('echo-your-view-panel');
+  if (youViewPanel2) youViewPanel2.style.display = '';
   if (detailSection) detailSection.style.display = 'none';
   window.__echoDetailMemoryId = null;
   window.__echoDetailMemoryOrg = null;
@@ -30436,6 +30682,12 @@ window.openModelDetail = openModelDetail;
         if (dashNav) dashNav.classList.add('active');
       }
     } catch(_e) { console.error('default screen guard failed', _e); }
+    // Apply active persona on load
+    try {
+      if (typeof window.setActivePersona === 'function' && window.__activePersonaId) {
+        window.setActivePersona(window.__activePersonaId);
+      }
+    } catch(_pe) {}
     const sb = document.querySelector('.sidebar');
     if(!sb) return;
     setupNavTooltips();
