@@ -2177,6 +2177,15 @@ animation: pulse 2s infinite;
   from { transform: translateX(0); }
   to { transform: translateX(-50%); }
 }
+.echo-ticker-wrap, #echo-event-ticker {
+  overflow: hidden !important;
+  position: relative;
+  mask-image: linear-gradient(to right, transparent 0%, black 4%, black 96%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to right, transparent 0%, black 4%, black 96%, transparent 100%);
+}
+.echo-ticker-track {
+  padding-left: 40px !important;
+}
 @keyframes echoActivityPulse {
   0% { background: rgba(34,197,94,0.15); transform: translateX(0); }
   50% { background: rgba(34,197,94,0.05); }
@@ -6193,8 +6202,8 @@ Template Overview
             </div>
             <span style="font-size:10px;color:rgba(180,190,220,0.5);font-style:italic;">hover to pause · click any item to open</span>
           </div>
-          <div id="echo-ticker-window" style="position:relative;height:32px;overflow:hidden;background:linear-gradient(180deg, rgba(0,0,0,0.25) 0%, rgba(0,0,0,0.15) 100%);border-radius:8px;border:0.5px solid rgba(166,218,255,0.06);display:flex;align-items:center;box-shadow:inset 0 2px 4px rgba(0,0,0,0.3);" onmouseover="var t=document.getElementById('echo-ticker-track'); if(t) t.style.animationPlayState='paused';" onmouseout="var t=document.getElementById('echo-ticker-track'); if(t) t.style.animationPlayState='running';">
-            <div id="echo-ticker-track" style="display:inline-flex;gap:40px;white-space:nowrap;animation:echoTickerScroll 70s linear infinite;font-size:12px;padding:0 16px;"></div>
+          <div id="echo-event-ticker" class="echo-ticker-wrap" style="position:relative;height:32px;overflow:hidden;background:linear-gradient(180deg, rgba(0,0,0,0.25) 0%, rgba(0,0,0,0.15) 100%);border-radius:8px;border:0.5px solid rgba(166,218,255,0.06);display:flex;align-items:center;box-shadow:inset 0 2px 4px rgba(0,0,0,0.3);" onmouseover="var t=document.getElementById('echo-ticker-track'); if(t) t.style.animationPlayState='paused';" onmouseout="var t=document.getElementById('echo-ticker-track'); if(t) t.style.animationPlayState='running';">
+            <div id="echo-ticker-track" class="echo-ticker-track" style="display:inline-flex;gap:40px;white-space:nowrap;animation:echoTickerScroll 70s linear infinite;font-size:12px;padding:0 16px;"></div>
           </div>
         </div>
 
@@ -16940,7 +16949,48 @@ function showScreen(name, navEl) {
   }
  if(name==='compliance') buildCompliance(currentOrg);
  if(name==='genesis') { setTimeout(()=>initGenesisLog(currentOrg),100); setTimeout(()=>buildPMProfiles(currentOrg),150); }
- if(name==='trustscore') { buildTrustScore(currentOrg); buildScoreDims(); buildTrustScoreNew(currentOrg); }
+ if(name==='trustscore') {
+    console.log('[TrustScore] click fired, currentOrg=', currentOrg);
+    var tsScreenEl = document.getElementById('screen-trustscore');
+    console.log('[TrustScore] screen element:', tsScreenEl, 'has active:', tsScreenEl && tsScreenEl.classList.contains('active'));
+    var tsRootEl = document.getElementById('ts-v2-root');
+    console.log('[TrustScore] ts-v2-root:', tsRootEl, 'children:', tsRootEl && tsRootEl.children.length);
+    // Force the screen visible defensively
+    if (tsScreenEl) {
+      tsScreenEl.style.display = 'block';
+      tsScreenEl.style.visibility = 'visible';
+      tsScreenEl.style.opacity = '1';
+    }
+    if (tsRootEl) {
+      tsRootEl.style.display = 'block';
+      tsRootEl.style.visibility = 'visible';
+      tsRootEl.style.opacity = '1';
+    }
+    // Update topbar title
+    var ttEl = document.getElementById('topbar-title');
+    if (ttEl) ttEl.textContent = 'Trust Score — Cardinal AI Trust Index';
+    // Try render path with full error capture
+    try { buildTrustScore(currentOrg); console.log('[TrustScore] buildTrustScore OK'); } catch(e1) { console.error('[TrustScore] buildTrustScore FAILED:', e1); }
+    try { buildScoreDims(); console.log('[TrustScore] buildScoreDims OK'); } catch(e2) { console.error('[TrustScore] buildScoreDims FAILED:', e2); }
+    try { buildTrustScoreNew(currentOrg); console.log('[TrustScore] buildTrustScoreNew OK'); } catch(e3) { console.error('[TrustScore] buildTrustScoreNew FAILED:', e3); }
+    // Sanity check: if ts-v2-root has < 3 children OR is empty, something is broken — show fallback
+    setTimeout(function(){
+      var rootCheck = document.getElementById('ts-v2-root');
+      if (rootCheck && rootCheck.offsetHeight < 50) {
+        console.error('[TrustScore] FALLBACK: ts-v2-root height is', rootCheck.offsetHeight, '— rendering emergency static view');
+        rootCheck.innerHTML = '<div style="padding:40px;background:rgba(15,23,42,0.5);border:1px solid rgba(245,158,11,0.3);border-radius:12px;margin:20px;">' +
+          '<div style="font-size:11px;color:#f59e0b;text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:10px;">⚠ TRUST SCORE — RENDER FALLBACK</div>' +
+          '<div style="font-size:42px;color:#f59e0b;font-weight:800;line-height:1;margin-bottom:8px;">74</div>' +
+          '<div style="font-size:13px;color:var(--chrome2);margin-bottom:20px;">Below Threshold — Not Certified</div>' +
+          '<div style="font-size:11px;color:var(--muted);">Atlas Defense Systems · A&D Pilot</div>' +
+          '<div style="margin-top:20px;padding:12px;background:rgba(239,68,68,0.05);border:1px solid rgba(239,68,68,0.2);border-radius:8px;font-size:11px;color:var(--muted2);line-height:1.6;">' +
+          'The dynamic Trust Score render did not complete. This fallback view confirms the screen is reachable. Open DevTools console for the exact error trace.' +
+          '</div></div>';
+      } else if (rootCheck) {
+        console.log('[TrustScore] ts-v2-root rendered OK, height=', rootCheck.offsetHeight);
+      }
+    }, 200);
+  }
  if(name==='eden') { setTimeout(function(){ try{ var o=currentOrg||window.currentOrg||'ad'; if(typeof renderEden==='function') renderEden(o); }catch(e){} }, 50); }
  if(name==='obsidian') { setTimeout(function(){ try{ var o2=currentOrg||window.currentOrg||'ad'; if(typeof renderObsidian==='function') renderObsidian(o2); }catch(e2){} }, 50); }
  if(name==='sentinel') {
@@ -22673,7 +22723,22 @@ function renderEchoCardinalHero(org) {
           }
         },
         scales: {
-          x: { stacked: true, grid: { display: false }, ticks: { font: { size: 9 }, color: 'rgba(148,163,184,0.5)', autoSkip: true, maxTicksLimit: 12 }, border: { color: 'rgba(166,218,255,0.08)' } },
+          x: {
+            stacked: true,
+            grid: { display: false },
+            ticks: {
+              color: 'rgba(180,190,220,0.55)',
+              font: { size: 9, family: 'inherit' },
+              autoSkip: false,
+              maxRotation: 0,
+              minRotation: 0,
+              callback: function(value, index, values) {
+                // Show every 3rd label to avoid crowding (8 labels across 24 hours)
+                return (index % 3 === 0) ? this.getLabelForValue(value) : '';
+              }
+            },
+            border: { color: 'rgba(166,218,255,0.08)' }
+          },
           y: { stacked: true, beginAtZero: true, grid: { color: 'rgba(166,218,255,0.04)' }, ticks: { font: { size: 9 }, color: 'rgba(148,163,184,0.5)', precision: 0 }, border: { display: false } }
         }
       }
