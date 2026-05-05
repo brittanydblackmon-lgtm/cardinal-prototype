@@ -22844,7 +22844,7 @@ function renderEchoFilterBar(org) {
 
   var f = window.__echoFilters;
   var html = '';
-  html += echoFilterChip('Time', 'timePeriod', f.timePeriod, [['all','All time'],['day','Last 24h'],['week','Last 7 days'],['month','Last 30 days'],['quarter','Last 90 days'],['year','Last year']]);
+  html += echoFilterChip('Time', 'timePeriod', f.timePeriod, [['all','All time'],['day','Last 24h'],['week','Last 7 days'],['month','Last 30 days'],['quarter','Last 90 days'],['year','Last year'],['custom','Custom range...']]);
   html += echoFilterChip('Core', 'core', f.core, [['all','All cores']].concat(Array.from(coresSet).sort().map(function(c){return [c, c.charAt(0).toUpperCase() + c.slice(1)];})));
   html += echoFilterChip('Case', 'case', f.case, [['all','All cases']].concat(Array.from(casesSet).sort().map(function(c){return [c, c];})));
   html += echoFilterChip('Model', 'model', f.model, [['all','All models']].concat(Array.from(modelsSet).sort().map(function(m){return [m, m];})));
@@ -22876,7 +22876,11 @@ function echoFilterChip(label, key, currentValue, options) {
     '</div>';
 }
 
-function echoSetFilter(key, value) {
+function echoSetFilter(key, value, opts) {
+  if (value === 'custom' && key === 'timePeriod' && !(opts && opts.skipModal)) {
+    echoOpenCustomDateRange('main', key);
+    return;
+  }
   if (!window.__echoFilters) window.__echoFilters = {};
   window.__echoFilters[key] = value;
   echoApplyFilters();
@@ -23083,6 +23087,48 @@ function echoClearFilter() {
   if (banner) banner.remove();
 }
 
+function echoOpenCustomDateRange(scope, filterKey) {
+  var existing = document.getElementById('echo-custom-date-modal');
+  if (existing) existing.remove();
+  var todayStr = new Date().toISOString().substr(0, 10);
+  var weekAgoStr = new Date(Date.now() - 7*24*3600*1000).toISOString().substr(0, 10);
+  var modal = document.createElement('div');
+  modal.id = 'echo-custom-date-modal';
+  modal.style.cssText = 'display:flex;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.75);backdrop-filter:blur(8px);align-items:center;justify-content:center;padding:40px;';
+  modal.onclick = function(e) { if (e.target === modal) modal.remove(); };
+  modal.innerHTML = '<div style="max-width:480px;width:100%;background:linear-gradient(180deg, rgba(15,23,42,0.98) 0%, rgba(11,18,32,0.98) 100%);border:1px solid rgba(166,218,255,0.15);border-radius:16px;padding:28px;box-shadow:0 20px 80px rgba(0,0,0,0.6);">' +
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">' +
+      '<h3 style="font-size:14px;font-weight:700;color:var(--chrome2);margin:0;">Custom Date Range</h3>' +
+      '<button type="button" onclick="document.getElementById(\'echo-custom-date-modal\').remove()" style="background:none;border:none;color:var(--muted);font-size:22px;cursor:pointer;line-height:1;">×</button>' +
+    '</div>' +
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:18px;">' +
+      '<div><label style="display:block;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;font-weight:700;margin-bottom:6px;">From</label><input type="date" id="echo-custom-date-from" value="' + weekAgoStr + '" style="width:100%;background:rgba(15,23,42,0.7);border:1px solid rgba(166,218,255,0.15);border-radius:8px;padding:8px 12px;color:var(--chrome2);font-size:12px;font-family:inherit;box-sizing:border-box;color-scheme:dark;"></div>' +
+      '<div><label style="display:block;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;font-weight:700;margin-bottom:6px;">To</label><input type="date" id="echo-custom-date-to" value="' + todayStr + '" style="width:100%;background:rgba(15,23,42,0.7);border:1px solid rgba(166,218,255,0.15);border-radius:8px;padding:8px 12px;color:var(--chrome2);font-size:12px;font-family:inherit;box-sizing:border-box;color-scheme:dark;"></div>' +
+    '</div>' +
+    '<div style="display:flex;justify-content:flex-end;gap:8px;">' +
+      '<button type="button" onclick="document.getElementById(\'echo-custom-date-modal\').remove()" style="background:rgba(166,218,255,0.05);border:1px solid rgba(166,218,255,0.15);color:var(--muted);padding:8px 14px;border-radius:6px;cursor:pointer;font-size:11px;font-weight:600;">Cancel</button>' +
+      '<button type="button" onclick="echoApplyCustomDateRange(\'' + scope + '\', \'' + filterKey + '\')" style="background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.3);color:var(--green);padding:8px 14px;border-radius:6px;cursor:pointer;font-size:11px;font-weight:600;">Apply Range</button>' +
+    '</div>' +
+  '</div>';
+  document.body.appendChild(modal);
+}
+
+function echoApplyCustomDateRange(scope, filterKey) {
+  var fromEl = document.getElementById('echo-custom-date-from');
+  var toEl = document.getElementById('echo-custom-date-to');
+  if (!fromEl || !toEl || !fromEl.value || !toEl.value) { alert('Please select both From and To dates.'); return; }
+  window.__echoCustomDateRange = window.__echoCustomDateRange || {};
+  window.__echoCustomDateRange[scope + ':' + filterKey] = { from: fromEl.value, to: toEl.value };
+  try {
+    if (scope === 'main') {
+      if (typeof echoSetFilter === 'function') echoSetFilter(filterKey, 'custom', { skipModal: true });
+    } else {
+      if (typeof echoSetTabFilter === 'function') echoSetTabFilter(scope, filterKey, 'custom', { skipModal: true });
+    }
+  } catch (_e) {}
+  document.getElementById('echo-custom-date-modal').remove();
+}
+
 function echoOpenReceiptDetail(receiptId) {
   var receipts = window.DECISION_RECEIPTS || [];
   var r = receipts.filter(function(x){ return x.receiptId === receiptId || x.id === receiptId; })[0];
@@ -23091,49 +23137,158 @@ function echoOpenReceiptDetail(receiptId) {
   var existing = document.getElementById('echo-receipt-detail-modal');
   if (existing) existing.remove();
 
+  // Type metadata
+  var TYPE_META = {
+    'counterfactual': { color: '#f59e0b', icon: '🔬', label: 'COUNTERFACTUAL', desc: 'Bias hypothesis test sealed — outcome swap rate measured against control cohort' },
+    'deployment': { color: '#3b82f6', icon: '🚀', label: 'DEPLOYMENT', desc: 'Model rollout sealed — shadow/ramp/prod transition with multisig approval' },
+    'governance': { color: '#8b5cf6', icon: '🏛️', label: 'GOVERNANCE', desc: 'Executive decision sealed — case open/escalation/closure with SLA commitments' },
+    'attestation': { color: '#22c55e', icon: '📋', label: 'ATTESTATION', desc: 'Regulatory filing sealed — submission to oversight authority with acceptance status' },
+    'case-closure': { color: '#22c55e', icon: '✓', label: 'CASE CLOSURE', desc: 'Case resolution sealed — references prior receipts, cohort resolution metrics' },
+    'whistleblower-seal': { color: '#a855f7', icon: '🔒', label: 'WHISTLEBLOWER SEAL', desc: 'Sealed envelope — PII stripped, role-restricted access only' }
+  };
+  var meta = TYPE_META[r.receiptType] || { color: '#94a3b8', icon: '📄', label: 'RECEIPT', desc: 'Decision receipt' };
+
+  var ts = r.issuedDate ? new Date(r.issuedDate) : (r.timestamp ? new Date(r.timestamp) : new Date());
+  var fullTime = ts.toLocaleString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit', timeZoneName: 'short' });
+
   var modal = document.createElement('div');
   modal.id = 'echo-receipt-detail-modal';
-  modal.style.cssText = 'display:flex;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.75);backdrop-filter:blur(8px);align-items:center;justify-content:center;padding:40px;';
+  modal.style.cssText = 'display:flex;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.78);backdrop-filter:blur(8px);align-items:flex-start;justify-content:center;padding:40px;overflow-y:auto;';
   modal.onclick = function(e) { if (e.target === modal) modal.remove(); };
 
-  var tsSrc = r.issuedDate || r.timestamp;
-  var ts = tsSrc ? new Date(tsSrc) : new Date();
-  var typeColor = { 'counterfactual': '#f59e0b', 'deployment': '#3b82f6', 'governance': '#8b5cf6', 'attestation': '#22c55e', 'closure': '#22c55e', 'case-closure': '#22c55e', 'whistleblower-seal': '#a855f7' }[r.receiptType] || '#94a3b8';
+  // ── HERO ──
+  var heroHTML = '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;gap:16px;">' +
+    '<div style="flex:1;">' +
+      '<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">' +
+        '<span style="font-size:11px;color:' + meta.color + ';font-weight:800;text-transform:uppercase;letter-spacing:1.2px;padding:4px 10px;background:' + meta.color + '15;border:1px solid ' + meta.color + '40;border-radius:12px;">' + meta.icon + ' ' + meta.label + '</span>' +
+        (r.multisigRequired ? '<span style="font-size:9px;color:#22c55e;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;padding:3px 8px;background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.3);border-radius:10px;">MULTISIG REQUIRED</span>' : '') +
+        (r.publicVisibility === 'role-restricted' ? '<span style="font-size:9px;color:#a855f7;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;padding:3px 8px;background:rgba(168,85,247,0.1);border:1px solid rgba(168,85,247,0.3);border-radius:10px;">🔒 ROLE-RESTRICTED</span>' : '') +
+      '</div>' +
+      '<h2 style="font-size:18px;font-weight:700;color:var(--chrome2);margin:0 0 6px 0;font-family:monospace;word-break:break-all;">' + (r.receiptId || 'Unknown') + '</h2>' +
+      '<div style="font-size:11px;color:var(--muted);margin-bottom:6px;">' + fullTime + '</div>' +
+      '<div style="font-size:11px;color:var(--muted2);font-style:italic;">' + meta.desc + '</div>' +
+    '</div>' +
+    '<button type="button" onclick="document.getElementById(\'echo-receipt-detail-modal\').remove()" style="background:none;border:none;color:var(--muted);font-size:24px;cursor:pointer;line-height:1;padding:0 4px;">×</button>' +
+  '</div>';
 
-  var sigList = r.signatures || [];
-  var sigCount = sigList.length;
-  var sigLine = (sigCount ? sigCount : 1) + ' signature' + (sigCount === 1 ? '' : 's') + (r.multisigRequired && sigCount > 1 ? ' (multisig)' : '');
-  var summ = r.summary || (r.contents && (r.contents.narrative || r.contents.decisionText)) || r.description || '';
+  // ── KEY FACTS GRID ──
+  var keyFactsHTML = '<div style="display:grid;grid-template-columns:repeat(3, minmax(0,1fr));gap:10px;margin-bottom:18px;">';
+  keyFactsHTML += '<div style="padding:12px 14px;background:rgba(15,23,42,0.5);border:1px solid rgba(166,218,255,0.08);border-radius:10px;">' +
+    '<div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;font-weight:700;margin-bottom:4px;">ISSUED BY</div>' +
+    '<div style="font-size:12px;color:var(--chrome2);font-weight:600;">' + (r.issuedBy || 'Unknown') + '</div>' +
+  '</div>';
+  keyFactsHTML += '<div style="padding:12px 14px;background:rgba(15,23,42,0.5);border:1px solid rgba(166,218,255,0.08);border-radius:10px;">' +
+    '<div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;font-weight:700;margin-bottom:4px;">LINKED CASE</div>' +
+    '<div style="font-size:12px;color:' + (r.linkedCaseId ? 'var(--accent)' : 'var(--muted)') + ';font-weight:600;">' + (r.linkedCaseId ? '#' + r.linkedCaseId : 'None') + '</div>' +
+  '</div>';
+  keyFactsHTML += '<div style="padding:12px 14px;background:rgba(15,23,42,0.5);border:1px solid rgba(166,218,255,0.08);border-radius:10px;">' +
+    '<div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;font-weight:700;margin-bottom:4px;">LINKED MODEL</div>' +
+    '<div style="font-size:12px;color:' + (r.linkedModelId ? 'var(--chrome2)' : 'var(--muted)') + ';font-weight:600;">' + (r.linkedModelId || 'N/A') + '</div>' +
+  '</div>';
+  keyFactsHTML += '</div>';
 
-  var content = '<div style="max-width:760px;width:100%;max-height:88vh;overflow-y:auto;background:linear-gradient(180deg, rgba(15,23,42,0.98) 0%, rgba(11,18,32,0.98) 100%);border:1px solid rgba(166,218,255,0.15);border-radius:16px;padding:32px;box-shadow:0 20px 80px rgba(0,0,0,0.6);">' +
-    '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;">' +
-      '<div>' +
-        '<div style="font-size:10px;color:' + typeColor + ';font-weight:700;text-transform:uppercase;letter-spacing:1.2px;margin-bottom:6px;">' + echoEscapeHtml(String(r.receiptType || 'receipt').toUpperCase()) + '</div>' +
-        '<h2 style="font-size:18px;font-weight:700;color:var(--chrome2);margin:0;font-family:monospace;">' + echoEscapeHtml(String(r.receiptId || r.id || 'Unknown')) + '</h2>' +
-        '<div style="font-size:11px;color:var(--muted);margin-top:6px;">' + echoEscapeHtml(ts.toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit', timeZoneName: 'short' })) + '</div>' +
+  // ── TYPE-SPECIFIC CONTENTS BLOCK ──
+  var c = r.contents || {};
+  var contentsHTML = '<div style="background:linear-gradient(180deg, ' + meta.color + '08 0%, rgba(15,23,42,0.5) 100%);border:1px solid ' + meta.color + '25;border-radius:12px;padding:18px 22px;margin-bottom:18px;">' +
+    '<div style="font-size:10px;color:' + meta.color + ';text-transform:uppercase;letter-spacing:0.8px;font-weight:700;margin-bottom:14px;">' + meta.icon + ' ' + meta.label + ' DETAILS</div>';
+
+  if (r.receiptType === 'counterfactual') {
+    contentsHTML += '<div style="display:grid;grid-template-columns:repeat(3, minmax(0,1fr));gap:10px;margin-bottom:14px;">' +
+      '<div><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Outcome Swap Rate</div><div style="font-size:18px;color:#f59e0b;font-weight:800;">' + (c.outcomeSwapRatePct != null ? c.outcomeSwapRatePct + '%' : '—') + '</div></div>' +
+      '<div><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Sample Size</div><div style="font-size:18px;color:var(--chrome2);font-weight:700;">' + (c.sampleSize != null ? c.sampleSize.toLocaleString() : '—') + '</div></div>' +
+      '<div><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Model Version</div><div style="font-size:13px;color:var(--chrome2);font-weight:600;line-height:1.4;">' + (c.modelVersion || '—') + '</div></div>' +
+    '</div>' +
+    (c.hypothesis ? '<div style="padding:12px;background:rgba(15,23,42,0.6);border:1px solid rgba(166,218,255,0.08);border-radius:8px;margin-bottom:10px;"><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;font-weight:600;margin-bottom:6px;">HYPOTHESIS</div><div style="font-size:12px;color:var(--chrome2);line-height:1.6;font-style:italic;">' + c.hypothesis + '</div></div>' : '') +
+    (c.validationNotes ? '<div style="padding:12px;background:rgba(15,23,42,0.6);border:1px solid rgba(166,218,255,0.08);border-radius:8px;"><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;font-weight:600;margin-bottom:6px;">VALIDATION NOTES</div><div style="font-size:12px;color:var(--chrome2);line-height:1.6;">' + c.validationNotes + '</div></div>' : '');
+  }
+  else if (r.receiptType === 'deployment') {
+    var stagePct = c.shadowTrafficPct != null ? c.shadowTrafficPct : (c.rampTrafficPct != null ? c.rampTrafficPct : null);
+    var stageLabel = c.shadowTrafficPct != null ? 'Shadow Traffic' : (c.rampTrafficPct != null ? 'Ramp Traffic' : 'Traffic');
+    var diBefore = c.prodDI;
+    var diAfter = c.shadowDI != null ? c.shadowDI : c.rampDI;
+    contentsHTML += '<div style="display:grid;grid-template-columns:repeat(3, minmax(0,1fr));gap:10px;margin-bottom:14px;">' +
+      '<div><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">' + stageLabel + '</div><div style="font-size:18px;color:#3b82f6;font-weight:800;">' + (stagePct != null ? stagePct + '%' : '—') + '</div></div>' +
+      '<div><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">DI Before → After</div><div style="font-size:14px;color:var(--chrome2);font-weight:700;line-height:1.4;">' + (diBefore != null ? diBefore : '—') + ' → <span style="color:#22c55e;">' + (diAfter != null ? diAfter : '—') + '</span></div></div>' +
+      '<div><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Model Version</div><div style="font-size:13px;color:var(--chrome2);font-weight:600;line-height:1.4;">' + (c.modelVersion || '—') + '</div></div>' +
+    '</div>' +
+    (c.validationNotes ? '<div style="padding:12px;background:rgba(15,23,42,0.6);border:1px solid rgba(166,218,255,0.08);border-radius:8px;"><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;font-weight:600;margin-bottom:6px;">VALIDATION NOTES</div><div style="font-size:12px;color:var(--chrome2);line-height:1.6;">' + c.validationNotes + '</div></div>' : '');
+  }
+  else if (r.receiptType === 'governance') {
+    contentsHTML += (c.decisionText ? '<div style="padding:14px;background:rgba(15,23,42,0.6);border:1px solid rgba(139,92,246,0.2);border-radius:8px;margin-bottom:12px;"><div style="font-size:9px;color:rgba(168,85,247,0.85);text-transform:uppercase;letter-spacing:0.5px;font-weight:700;margin-bottom:8px;">EXECUTIVE DECISION</div><div style="font-size:13px;color:var(--chrome2);line-height:1.7;font-weight:500;">' + c.decisionText + '</div></div>' : '') +
+      (c.slaDays ? '<div style="display:inline-block;padding:8px 14px;background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3);border-radius:8px;margin-bottom:12px;margin-right:10px;"><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px;">SLA COMMITMENT</div><div style="font-size:14px;color:#f59e0b;font-weight:700;">' + c.slaDays + ' days</div></div>' : '') +
+      (c.executiveActions && c.executiveActions.length ? '<div style="padding:12px;background:rgba(15,23,42,0.5);border:1px solid rgba(166,218,255,0.08);border-radius:8px;"><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;font-weight:600;margin-bottom:8px;">EXECUTIVE ACTIONS</div>' + c.executiveActions.map(function(a){ return '<div style="font-size:12px;color:var(--chrome2);padding:4px 0;">→ ' + a + '</div>'; }).join('') + '</div>' : '');
+  }
+  else if (r.receiptType === 'attestation') {
+    contentsHTML += '<div style="display:grid;grid-template-columns:repeat(3, minmax(0,1fr));gap:10px;margin-bottom:14px;">' +
+      '<div><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Filing</div><div style="font-size:13px;color:var(--chrome2);font-weight:700;line-height:1.4;">' + (c.filingKind || '—') + '</div></div>' +
+      '<div><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Filing Year</div><div style="font-size:18px;color:var(--chrome2);font-weight:700;">' + (c.filingYear || '—') + '</div></div>' +
+      '<div><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Acceptance</div><div style="font-size:13px;color:#22c55e;font-weight:700;text-transform:capitalize;line-height:1.4;">' + (c.acceptanceStatus || '—').replace(/-/g, ' ') + '</div></div>' +
+    '</div>' +
+    (c.acceptanceAuthority ? '<div style="padding:10px 14px;background:rgba(34,197,94,0.06);border:1px solid rgba(34,197,94,0.2);border-radius:8px;margin-bottom:10px;"><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">ACCEPTANCE AUTHORITY</div><div style="font-size:12px;color:var(--green);font-weight:600;">' + c.acceptanceAuthority + (c.acceptanceDate ? ' · ' + c.acceptanceDate : '') + '</div></div>' : '') +
+    (c.narrative ? '<div style="padding:12px;background:rgba(15,23,42,0.6);border:1px solid rgba(166,218,255,0.08);border-radius:8px;"><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;font-weight:600;margin-bottom:6px;">NARRATIVE</div><div style="font-size:12px;color:var(--chrome2);line-height:1.6;">' + c.narrative + '</div></div>' : '');
+  }
+  else if (r.receiptType === 'case-closure') {
+    contentsHTML += '<div style="display:grid;grid-template-columns:repeat(3, minmax(0,1fr));gap:10px;margin-bottom:14px;">' +
+      '<div><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Cohort Resolved</div><div style="font-size:18px;color:#22c55e;font-weight:800;">' + (c.cohortPatientsResolved != null ? c.cohortPatientsResolved.toLocaleString() : '—') + '</div></div>' +
+      '<div><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Resolution Rate</div><div style="font-size:18px;color:#22c55e;font-weight:800;">' + (c.resolutionPct != null ? c.resolutionPct + '%' : '—') + '</div></div>' +
+      '<div><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Final Model</div><div style="font-size:12px;color:var(--chrome2);font-weight:600;line-height:1.4;">' + (c.modelVersion || '—') + '</div></div>' +
+    '</div>' +
+    (c.closureRationale ? '<div style="padding:12px;background:rgba(15,23,42,0.6);border:1px solid rgba(166,218,255,0.08);border-radius:8px;margin-bottom:10px;"><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;font-weight:600;margin-bottom:6px;">CLOSURE RATIONALE</div><div style="font-size:12px;color:var(--chrome2);line-height:1.6;">' + c.closureRationale + '</div></div>' : '') +
+    (c.regulatoryTags && c.regulatoryTags.length ? '<div style="margin-bottom:10px;"><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;font-weight:600;margin-bottom:6px;">REGULATORY TAGS</div><div style="display:flex;gap:6px;flex-wrap:wrap;">' + c.regulatoryTags.map(function(t){ return '<span style="padding:3px 8px;background:rgba(166,218,255,0.08);border:1px solid rgba(166,218,255,0.2);border-radius:10px;font-size:10px;color:var(--accent);font-family:monospace;">' + t + '</span>'; }).join('') + '</div></div>' : '') +
+    (c.referencedReceiptIds && c.referencedReceiptIds.length ? '<div><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;font-weight:600;margin-bottom:6px;">REFERENCED RECEIPTS (' + c.referencedReceiptIds.length + ')</div><div style="display:flex;flex-direction:column;gap:4px;">' + c.referencedReceiptIds.map(function(rid){ return '<div onclick="document.getElementById(\'echo-receipt-detail-modal\').remove(); echoOpenReceiptDetail(\'' + rid + '\');" style="cursor:pointer;font-size:10px;color:var(--accent);font-family:monospace;padding:4px 8px;background:rgba(15,23,42,0.5);border:1px solid rgba(166,218,255,0.08);border-radius:6px;transition:all 0.15s;" onmouseover="this.style.borderColor=\'rgba(166,218,255,0.3)\';" onmouseout="this.style.borderColor=\'rgba(166,218,255,0.08)\';">→ ' + rid + '</div>'; }).join('') + '</div></div>' : '');
+  }
+  else if (r.receiptType === 'whistleblower-seal') {
+    contentsHTML += '<div style="padding:14px;background:rgba(168,85,247,0.06);border:1px solid rgba(168,85,247,0.25);border-radius:8px;margin-bottom:12px;">' +
+      '<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">' +
+        '<span style="font-size:24px;">🔒</span>' +
+        '<div><div style="font-size:13px;color:#a855f7;font-weight:700;">SEALED ENVELOPE</div><div style="font-size:10px;color:var(--muted);margin-top:2px;">PII stripped · contents not displayed</div></div>' +
       '</div>' +
-      '<button type="button" onclick="document.getElementById(\'echo-receipt-detail-modal\').remove()" style="background:none;border:none;color:var(--muted);font-size:24px;cursor:pointer;line-height:1;">×</button>' +
-    '</div>' +
-    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;">' +
-      '<div style="padding:14px;background:rgba(15,23,42,0.5);border:1px solid rgba(166,218,255,0.08);border-radius:10px;">' +
-        '<div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;font-weight:600;margin-bottom:6px;">Issued by</div>' +
-        '<div style="font-size:13px;color:var(--chrome2);font-weight:500;">' + echoEscapeHtml(String(r.issuedBy || 'Unknown')) + '</div>' +
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px;">' +
+        '<div><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">ACCESS TIER</div><div style="font-size:12px;color:var(--chrome2);font-weight:600;text-transform:capitalize;">' + ((c.accessTier || 'role-restricted').replace(/-/g, ' ')) + '</div></div>' +
+        '<div><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">PII STATUS</div><div style="font-size:12px;color:#22c55e;font-weight:600;">' + (c.piiStripped ? '✓ Stripped' : '✗ Present') + '</div></div>' +
       '</div>' +
-      '<div style="padding:14px;background:rgba(15,23,42,0.5);border:1px solid rgba(166,218,255,0.08);border-radius:10px;">' +
-        '<div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;font-weight:600;margin-bottom:6px;">Linked Case</div>' +
-        '<div style="font-size:13px;color:var(--accent);font-weight:500;">' + echoEscapeHtml(String(r.linkedCaseId || r.caseId || 'None')) + '</div>' +
-      '</div>' +
+      (c.eligibleRoles && c.eligibleRoles.length ? '<div style="margin-top:10px;"><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">ELIGIBLE ROLES</div><div style="display:flex;gap:6px;flex-wrap:wrap;">' + c.eligibleRoles.map(function(role){ return '<span style="padding:3px 8px;background:rgba(168,85,247,0.1);border:1px solid rgba(168,85,247,0.3);border-radius:10px;font-size:10px;color:#a855f7;text-transform:capitalize;font-weight:600;">' + role + '</span>'; }).join('') + '</div></div>' : '') +
     '</div>' +
-    '<div style="padding:14px;background:rgba(15,23,42,0.5);border:1px solid rgba(166,218,255,0.08);border-radius:10px;margin-bottom:20px;">' +
-      '<div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;font-weight:600;margin-bottom:6px;">Cryptographic Hash</div>' +
-      '<div style="font-size:11px;color:var(--accent);font-family:monospace;word-break:break-all;">' + echoEscapeHtml(String(r.hashAnchor || r.cryptoHash || 'No hash recorded')) + '</div>' +
-    '</div>' +
-    '<div style="padding:14px;background:rgba(15,23,42,0.5);border:1px solid rgba(166,218,255,0.08);border-radius:10px;margin-bottom:20px;">' +
-      '<div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;font-weight:600;margin-bottom:8px;">Signatures</div>' +
-      '<div style="font-size:12px;color:var(--chrome2);">' + echoEscapeHtml(sigLine) + '</div>' +
-    '</div>' +
-    (summ ? '<div style="padding:14px;background:rgba(15,23,42,0.5);border:1px solid rgba(166,218,255,0.08);border-radius:10px;margin-bottom:16px;"><div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;font-weight:600;margin-bottom:8px;">Description</div><div style="font-size:12px;color:var(--chrome2);line-height:1.6;">' + echoEscapeHtml(String(summ)) + '</div></div>' : '') +
-    '<div style="padding:12px;background:rgba(34,197,94,0.06);border:1px solid rgba(34,197,94,0.2);border-radius:8px;font-size:11px;color:var(--green);text-align:center;">✓ Verified · Tamper-evident · Court-admissible</div>' +
+    (c.narrative ? '<div style="padding:12px;background:rgba(15,23,42,0.6);border:1px solid rgba(166,218,255,0.08);border-radius:8px;"><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;font-weight:600;margin-bottom:6px;">PUBLIC METADATA</div><div style="font-size:12px;color:var(--chrome2);line-height:1.6;font-style:italic;">' + c.narrative + '</div></div>' : '');
+  }
+  else {
+    // Generic fallback
+    contentsHTML += '<div style="font-size:11px;color:var(--muted);font-family:monospace;background:rgba(15,23,42,0.6);padding:12px;border-radius:8px;white-space:pre-wrap;word-break:break-word;">' + JSON.stringify(c, null, 2) + '</div>';
+  }
+  contentsHTML += '</div>';
+
+  // ── SIGNATURES (always shown) ──
+  var sigsHTML = '<div style="background:rgba(15,23,42,0.5);border:1px solid rgba(166,218,255,0.08);border-radius:12px;padding:18px 22px;margin-bottom:18px;">' +
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">' +
+      '<div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;font-weight:700;">✍️ SIGNATURES</div>' +
+      '<div style="font-size:10px;color:var(--muted);">' + (r.signatures ? r.signatures.length : 0) + ' signer' + (r.signatures && r.signatures.length === 1 ? '' : 's') + (r.multisigRequired ? ' · multisig required' : '') + '</div>' +
+    '</div>';
+  if (r.signatures && r.signatures.length) {
+    sigsHTML += '<div style="display:flex;flex-direction:column;gap:6px;">';
+    r.signatures.forEach(function(s) {
+      var sts = s.timestamp ? new Date(s.timestamp) : null;
+      sigsHTML += '<div style="display:grid;grid-template-columns:1fr auto auto;gap:14px;padding:8px 12px;background:rgba(15,23,42,0.4);border:1px solid rgba(166,218,255,0.06);border-radius:6px;align-items:center;">' +
+        '<span style="font-size:12px;color:var(--chrome2);font-weight:600;">' + (s.signer || 'Unknown') + '</span>' +
+        '<span style="font-size:10px;color:var(--accent);font-family:monospace;">' + (s.sigHash || '').substring(0, 16) + '</span>' +
+        '<span style="font-size:10px;color:var(--muted);font-family:monospace;">' + (sts ? sts.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : '—') + '</span>' +
+      '</div>';
+    });
+    sigsHTML += '</div>';
+  }
+  sigsHTML += '</div>';
+
+  // ── HASH ANCHOR ──
+  var hashHTML = '<div style="background:rgba(15,23,42,0.5);border:1px solid rgba(166,218,255,0.08);border-radius:12px;padding:14px 22px;margin-bottom:18px;">' +
+    '<div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;font-weight:700;margin-bottom:6px;">🔐 HASH ANCHOR</div>' +
+    '<div style="font-size:11px;color:var(--accent);font-family:monospace;word-break:break-all;">' + (r.hashAnchor || 'No hash recorded') + '</div>' +
+    (r.echoMemoryAnchor ? '<div style="font-size:10px;color:var(--muted);margin-top:8px;font-family:monospace;">Echo memory: <span style="color:var(--chrome2);">' + r.echoMemoryAnchor + '</span></div>' : '') +
+  '</div>';
+
+  // ── VERIFICATION FOOTER ──
+  var footerHTML = '<div style="padding:12px;background:rgba(34,197,94,0.06);border:1px solid rgba(34,197,94,0.2);border-radius:8px;text-align:center;font-size:11px;color:var(--green);font-weight:600;">✓ Verified · Tamper-evident · Court-admissible</div>';
+
+  var content = '<div style="max-width:840px;width:100%;background:linear-gradient(180deg, rgba(15,23,42,0.98) 0%, rgba(11,18,32,0.98) 100%);border:1px solid ' + meta.color + '30;border-radius:16px;padding:32px;box-shadow:0 20px 80px rgba(0,0,0,0.7);margin-top:20px;">' +
+    heroHTML + keyFactsHTML + contentsHTML + sigsHTML + hashHTML + footerHTML +
   '</div>';
 
   modal.innerHTML = content;
@@ -23875,7 +24030,11 @@ function echoTabFilterChip(label, tab, key, currentValue, options) {
     '</div>';
 }
 
-function echoSetTabFilter(tab, key, value) {
+function echoSetTabFilter(tab, key, value, opts) {
+  if (value === 'custom' && !(opts && opts.skipModal)) {
+    echoOpenCustomDateRange(tab, key);
+    return;
+  }
   if (!window.__echoTabFilters) window.__echoTabFilters = {};
   if (!window.__echoTabFilters[tab]) window.__echoTabFilters[tab] = {};
   window.__echoTabFilters[tab][key] = value;
@@ -24017,7 +24176,7 @@ function echoRenderTimeline(org) {
       '<span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:13px;">⌕</span>' +
     '</div>' +
     '<div style="display:flex;gap:10px;margin-bottom:14px;padding:12px;background:rgba(15,23,42,0.4);border:1px solid rgba(166,218,255,0.06);border-radius:8px;flex-wrap:wrap;">' +
-      echoTabFilterChip('Time', 'timeline', 'time', f.time, [['all','All time'],['day','Last 24h'],['week','Last 7 days'],['month','Last 30 days'],['quarter','Last 90 days']]) +
+      echoTabFilterChip('Time', 'timeline', 'time', f.time, [['all','All time'],['day','Last 24h'],['week','Last 7 days'],['month','Last 30 days'],['quarter','Last 90 days'],['custom','Custom range...']]) +
       echoTabFilterChip('Person', 'timeline', 'person', f.person, [['all','All people']].concat(Array.from(personsSet).sort().map(function(p){ return [p, p]; }))) +
       echoTabFilterChip('Event Type', 'timeline', 'eventType', f.eventType, [['all','All events']].concat(Array.from(eventTypesSet).sort().map(function(e){ return [e, e.replace(/-/g,' ')]; }))) +
     '</div>' +
@@ -24046,7 +24205,7 @@ function echoRenderReceipts(org) {
     '<div style="display:flex;gap:10px;margin-bottom:14px;padding:12px;background:rgba(15,23,42,0.4);border:1px solid rgba(166,218,255,0.06);border-radius:8px;flex-wrap:wrap;">' +
       echoTabFilterChip('Type', 'receipts', 'type', f.type, [['all','All types']].concat(Array.from(typesSet).sort().map(function(t){ return [t, t.replace(/-/g,' ')]; }))) +
       echoTabFilterChip('Signer', 'receipts', 'signer', f.signer, [['all','All signers']].concat(Array.from(signersSet).sort().map(function(s){ return [s, s]; }))) +
-      echoTabFilterChip('Date', 'receipts', 'date', f.date, [['all','All dates'],['week','Last 7 days'],['month','Last 30 days'],['quarter','Last 90 days']]) +
+      echoTabFilterChip('Date', 'receipts', 'date', f.date, [['all','All dates'],['week','Last 7 days'],['month','Last 30 days'],['quarter','Last 90 days'],['custom','Custom range...']]) +
     '</div>' +
     '<div id="echo-tab-results-receipts"></div></div>';
   echoFilterTabResults('receipts', '');
@@ -24071,7 +24230,7 @@ function echoRenderIgnoredFlags(org) {
       '<span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:13px;">⌕</span>' +
     '</div>' +
     '<div style="display:flex;gap:10px;margin-bottom:14px;padding:12px;background:rgba(15,23,42,0.4);border:1px solid rgba(166,218,255,0.06);border-radius:8px;flex-wrap:wrap;">' +
-      echoTabFilterChip('Time', 'ignored', 'time', f.time, [['all','All time'],['week','Last 7 days'],['month','Last 30 days'],['quarter','Last 90 days']]) +
+      echoTabFilterChip('Time', 'ignored', 'time', f.time, [['all','All time'],['week','Last 7 days'],['month','Last 30 days'],['quarter','Last 90 days'],['custom','Custom range...']]) +
       echoTabFilterChip('Dismissed By', 'ignored', 'person', f.person, [['all','All people']].concat(Array.from(personsSet).sort().map(function(p){ return [p, p]; }))) +
       echoTabFilterChip('Severity', 'ignored', 'severity', f.severity, [['all','All severities']].concat(Array.from(sevSet).sort().map(function(s){ return [s, s.charAt(0).toUpperCase() + s.slice(1)]; }))) +
     '</div>' +
@@ -24123,7 +24282,7 @@ function echoRenderWhistleblower(org) {
       '<span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:13px;">⌕</span>' +
     '</div>' +
     '<div style="display:flex;gap:10px;margin-bottom:14px;padding:12px;background:rgba(15,23,42,0.4);border:1px solid rgba(166,218,255,0.06);border-radius:8px;flex-wrap:wrap;">' +
-      echoTabFilterChip('Time', 'whistleblower', 'time', f.time, [['all','All time'],['week','Last 7 days'],['month','Last 30 days'],['quarter','Last 90 days']]) +
+      echoTabFilterChip('Time', 'whistleblower', 'time', f.time, [['all','All time'],['week','Last 7 days'],['month','Last 30 days'],['quarter','Last 90 days'],['custom','Custom range...']]) +
       echoTabFilterChip('Linked Case', 'whistleblower', 'case', f.case, [['all','All cases']].concat(Array.from(casesSet).sort().map(function(c){ return [String(c), '#' + String(c)]; }))) +
     '</div>' +
     '<div id="echo-tab-results-whistleblower"></div></div>';
