@@ -4586,6 +4586,12 @@ Cardinal Sentinel
 <svg class="nav-icon" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.4"/><circle cx="7" cy="7" r="2" fill="currentColor"/></svg>
 Halo Core
 </div>
+<div class="nav-section-label" style="margin-top:6px">PERSONAL</div>
+<div class="nav-item" onclick="showScreen('myworkspace', this)" title="Your personal workspace — pinned items, notes, things you've worked on">
+<svg class="nav-icon" viewBox="0 0 14 14" fill="none"><path d="M7 1 L8.5 5 L13 5.5 L9.5 8.5 L10.5 13 L7 10.5 L3.5 13 L4.5 8.5 L1 5.5 L5.5 5 Z" stroke="currentColor" stroke-width="1.2" fill="none"/></svg>
+My Workspace
+<span class="nav-badge" id="myws-nav-badge" style="background:rgba(245,158,11,0.15);color:#f59e0b;border:1px solid rgba(245,158,11,0.3);">0</span>
+</div>
 <div class="nav-section-label" style="margin-top:6px">DISCOVER</div>
 <div class="nav-item" onclick="showScreen('usecases', this)" title="Browse all 95 AI use cases Cardinal can govern across Finance, Healthcare, A&D, and Federal">
 <svg class="nav-icon" viewBox="0 0 14 14" fill="none"><rect x="1" y="1" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.4"/><rect x="8" y="1" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.4"/><rect x="1" y="8" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.4"/><rect x="8" y="8" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.4"/></svg>
@@ -6369,6 +6375,7 @@ Template Overview
   <button type="button" data-echo-tab="ignored" onclick="echoSwitchTab('ignored')" class="echo-feed-tab" title="Eve warnings flagged but dismissed" style="padding:10px 16px;background:transparent;border:1px solid transparent;border-bottom:none;border-radius:8px 8px 0 0;color:var(--muted);font-size:12px;font-weight:500;cursor:pointer;">⚠ Ignored Flags</button>
   <button type="button" data-echo-tab="lineage" onclick="echoSwitchTab('lineage')" class="echo-feed-tab" title="Model ancestry — version history" style="padding:10px 16px;background:transparent;border:1px solid transparent;border-bottom:none;border-radius:8px 8px 0 0;color:var(--muted);font-size:12px;font-weight:500;cursor:pointer;">🧬 Model Lineage</button>
   <button type="button" data-echo-tab="whistleblower" onclick="echoSwitchTab('whistleblower')" class="echo-feed-tab" title="Anonymized whistleblower submissions" style="padding:10px 16px;background:transparent;border:1px solid transparent;border-bottom:none;border-radius:8px 8px 0 0;color:var(--muted);font-size:12px;font-weight:500;cursor:pointer;">🔒 Whistleblower</button>
+  <button type="button" data-echo-tab="scorehistory" onclick="echoSwitchTab('scorehistory')" class="echo-feed-tab" title="Trust Score lookback — see how the score has trended over time" style="padding:10px 16px;background:transparent;border:1px solid transparent;border-bottom:none;border-radius:8px 8px 0 0;color:var(--muted);font-size:12px;font-weight:500;cursor:pointer;">📊 Score History</button>
   <button type="button" data-echo-tab="myworkspace" onclick="echoSwitchTab('myworkspace')" class="echo-feed-tab" title="Your personal workspace — your memories, notes, pins, and recent activity" style="padding:10px 16px;background:transparent;border:1px solid transparent;border-bottom:none;border-radius:8px 8px 0 0;color:var(--muted);font-size:12px;font-weight:500;cursor:pointer;">🌟 My Workspace</button>
   <button type="button" data-echo-tab="conversations" onclick="echoSwitchTab('conversations')" class="echo-feed-tab" title="Trust Loop conversations grouped by case" style="padding:10px 16px;background:transparent;border:1px solid transparent;border-bottom:none;border-radius:8px 8px 0 0;color:var(--muted);font-size:12px;font-weight:500;cursor:pointer;">💬 Conversations</button>
   <button type="button" data-echo-tab="peoplelog" onclick="echoSwitchTab('peoplelog')" class="echo-feed-tab" title="Per-person activity log — filter by day, person, action" style="padding:10px 16px;background:transparent;border:1px solid transparent;border-bottom:none;border-radius:8px 8px 0 0;color:var(--muted);font-size:12px;font-weight:500;cursor:pointer;">👥 People Log</button>
@@ -6417,6 +6424,7 @@ Template Overview
 <div id="echo-tab-content-ignored" style="display:none;"></div>
 <div id="echo-tab-content-lineage" style="display:none;"></div>
 <div id="echo-tab-content-whistleblower" style="display:none;"></div>
+<div id="echo-tab-content-scorehistory" style="display:none;"></div>
 <div id="echo-tab-content-myworkspace" style="display:none;"></div>
 <div id="echo-tab-content-conversations" style="display:none;"></div>
 <div id="echo-tab-content-peoplelog" style="display:none;"></div>
@@ -6449,8 +6457,12 @@ Template Overview
 <button class="gen-tab" onclick="switchEchoTab('whistleblower',3)">Whistleblower</button>
 <button class="gen-tab" onclick="switchEchoTab('pmprofiles',4)">PM Profiles</button>
 </div>
+</div><!-- /screen-echo : explicit close to un-nest sibling screens -->
 <div id="screen-usecases" class="screen">
 <div id="usecases-content"></div>
+</div>
+<div id="screen-myworkspace" class="screen">
+  <div id="myworkspace-content"></div>
 </div>
 <div id="screen-trustscore" class="screen">
 <div class="section-hdr" style="margin-bottom:14px">
@@ -9402,6 +9414,12 @@ window.setActivePersona = function(personaId) {
 
   // Persist
   try { localStorage.setItem('cardinal-active-persona', personaId); } catch(_ls) {}
+
+  try { updateMyWsNavBadge(); } catch(_nb) {}
+  try {
+    var mwScr = document.getElementById('screen-myworkspace');
+    if (mwScr && mwScr.classList.contains('active') && typeof renderBigWorkspacePage === 'function') renderBigWorkspacePage();
+  } catch(_mw) {}
 
   console.log('[Persona] switched to', p.name, '(' + p.role + ')');
 };
@@ -14233,6 +14251,13 @@ function switchIndustry(org, btn) {
    var compScr = document.getElementById('screen-compliance');
    if (compScr && compScr.classList.contains('active') && typeof buildCompliance === 'function') buildCompliance(org);
  } catch (_compSw) {}
+ try {
+   var echoScr = document.getElementById('screen-echo');
+   var shTab = document.getElementById('echo-tab-content-scorehistory');
+   if (echoScr && echoScr.classList.contains('active') && shTab && shTab.style.display !== 'none' && typeof echoRenderScoreHistoryTab === 'function') {
+     echoRenderScoreHistoryTab();
+   }
+ } catch (_esh) {}
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -17733,6 +17758,13 @@ function showScreen(name, navEl) {
   }
  if(name==='compliance') buildCompliance(currentOrg);
  if(name==='genesis') { setTimeout(()=>initGenesisLog(currentOrg),100); setTimeout(()=>buildPMProfiles(currentOrg),150); }
+ if(name==='myworkspace') {
+    try { renderBigWorkspacePage(); } catch(e) { console.error('[BigWorkspace] render failed:', e); }
+    var ttMW = document.getElementById('topbar-title');
+    if (ttMW) ttMW.textContent = 'My Workspace — Personal Notes, Pins & Activity';
+    var subMW = document.getElementById('topbar-sub');
+    if (subMW) subMW.textContent = 'Your private space. Bigger notes, organized pins, full activity timeline. Persists across sessions.';
+  }
  if(name==='usecases') {
     try { renderUseCasesPage(); } catch(e) { console.error('[UseCases] render failed:', e); }
     var ttUC = document.getElementById('topbar-title');
@@ -24276,6 +24308,188 @@ window.cardinalQuickAddFromCurrentView = function() {
   if (typeof cardinalOpenContextNote === 'function') cardinalOpenContextNote('view', screenName + ': ' + viewLabel);
 };
 
+function echoRenderScoreHistoryTab() {
+  var container = document.getElementById('echo-tab-content-scorehistory');
+  if (!container) return;
+  var org = window.currentOrg || 'ad';
+
+  var TRAJECTORIES = {
+    ad: {
+      orgName: 'Atlas Defense Systems',
+      currentScore: 74, certThreshold: 80, certified: false,
+      months: [
+        { m: '2025-06', score: 78, event: 'Baseline · pre-Sentinel deployment' },
+        { m: '2025-07', score: 79, event: 'Sentinel Core deployed · monitoring uplift' },
+        { m: '2025-08', score: 81, event: '🟢 Crossed cert threshold · DoD AI attestation filed' },
+        { m: '2025-09', score: 82, event: 'Stable · routine governance' },
+        { m: '2025-10', score: 83, event: 'Personnel Assignment v2.3 monotone constraints added' },
+        { m: '2025-11', score: 82, event: 'Q3 attestation accepted by DoD' },
+        { m: '2025-12', score: 81, event: 'Watch flag on credential synthesis ring (AD-2847 precursor)' },
+        { m: '2026-01', score: 80, event: 'Cert renewed · 2026-01-14 · score at threshold' },
+        { m: '2026-02', score: 78, event: 'Sentinel detection on v2.4 candidate · DI 0.71 watch' },
+        { m: '2026-03', score: 76, event: 'v2.4 production · DI dropped to 0.67 (below 0.80)' },
+        { m: '2026-04', score: 74, event: '🔴 Below threshold · Cert at risk · Atonement queued v2.5 fix' },
+        { m: '2026-05', score: 74, event: 'Current · v2.5 shadow at 5% · projected +4 pts on full ramp' }
+      ],
+      keyEvents: [
+        { date: '2025-08-15', label: 'CERT EARNED', color: '#22c55e', score: 81 },
+        { date: '2026-01-14', label: 'CERT RENEWED', color: '#22c55e', score: 80 },
+        { date: '2026-03-10', label: 'BIAS DETECTED', color: '#ef4444', score: 76 },
+        { date: '2026-04-03', label: 'CERT AT RISK', color: '#f59e0b', score: 74 }
+      ]
+    },
+    fin: {
+      orgName: 'First National Bank',
+      currentScore: 81, certThreshold: 80, certified: true,
+      months: [
+        { m: '2025-06', score: 76, event: 'Baseline · pre-remediation' },
+        { m: '2025-07', score: 77, event: 'Credit v3.2 ECOA flag opened (FIN-PRE1203)' },
+        { m: '2025-08', score: 78, event: 'Whitmore team decision · v3.3 build authorized' },
+        { m: '2025-09', score: 80, event: 'v3.3 promoted · ECOA flag closed' },
+        { m: '2025-10', score: 81, event: '🟢 Cert earned · steady-state monitoring' },
+        { m: '2025-11', score: 82, event: 'NYC LL144 audit accepted' },
+        { m: '2025-12', score: 82, event: 'Year-end stability' },
+        { m: '2026-01', score: 81, event: 'Cert renewed · 2026-01-20' },
+        { m: '2026-02', score: 79, event: 'Eden flagged Credit v3.4 zip→race correlation 0.82' },
+        { m: '2026-03', score: 78, event: 'Genesis counterfactual · 19.8% swap (FIN-1203)' },
+        { m: '2026-04', score: 80, event: 'v3.5 shadow at 5% · 687/1203 cohort re-approved' },
+        { m: '2026-05', score: 81, event: 'Current · ramp checkpoint · LL144 audit packet drafting' }
+      ],
+      keyEvents: [
+        { date: '2025-10-12', label: 'CERT EARNED', color: '#22c55e', score: 81 },
+        { date: '2026-02-14', label: 'BIAS DETECTED', color: '#ef4444', score: 79 },
+        { date: '2026-03-30', label: 'GENESIS RECEIPT', color: '#a855f7', score: 78 },
+        { date: '2026-05-01', label: 'RECOVERING', color: '#22c55e', score: 81 }
+      ]
+    },
+    health: {
+      orgName: 'Mercy Health Network',
+      currentScore: 83, certThreshold: 80, certified: true,
+      months: [
+        { m: '2025-06', score: 79, event: 'Baseline · pre-ACA §1557 attestation' },
+        { m: '2025-07', score: 80, event: 'Triage v1.8 deployed · monitoring uplift' },
+        { m: '2025-08', score: 82, event: '🟢 ACA §1557 attestation filed and accepted' },
+        { m: '2025-09', score: 83, event: 'Cert earned · cohort metrics improved' },
+        { m: '2025-10', score: 83, event: 'Q3 stability' },
+        { m: '2025-11', score: 84, event: 'Mental health screening pilot governance setup' },
+        { m: '2025-12', score: 83, event: 'Year-end · steady' },
+        { m: '2026-01', score: 82, event: 'HS-2847 claims auto-denial flag opened' },
+        { m: '2026-02', score: 81, event: 'Triage v2.0 watch on rural cohort' },
+        { m: '2026-03', score: 82, event: 'HS-2847 remediation · cohort restored' },
+        { m: '2026-04', score: 83, event: 'ACA §1557 attestation reaffirmed (HS-ATTEST-2026-04-01)' },
+        { m: '2026-05', score: 83, event: 'Current · stable · cert renewal scheduled August' }
+      ],
+      keyEvents: [
+        { date: '2025-08-22', label: 'CERT EARNED', color: '#22c55e', score: 82 },
+        { date: '2026-01-12', label: 'CASE OPENED', color: '#f59e0b', score: 82 },
+        { date: '2026-04-01', label: 'ATTEST RENEWED', color: '#22c55e', score: 83 }
+      ]
+    }
+  };
+
+  var d = TRAJECTORIES[org];
+  if (!d) { container.innerHTML = '<div style="padding:40px;text-align:center;color:var(--muted);">No history data for this org.</div>'; return; }
+
+  var scores = d.months.map(function(m){ return m.score; });
+  var minScore = Math.min.apply(null, scores) - 2;
+  var maxScore = Math.max.apply(null, scores) + 2;
+  var scoreRange = maxScore - minScore;
+
+  var firstScore = d.months[0].score;
+  var lastScore = d.months[d.months.length - 1].score;
+  var delta = lastScore - firstScore;
+  var deltaSign = delta > 0 ? '+' : '';
+  var deltaColor = delta > 0 ? '#22c55e' : delta < 0 ? '#ef4444' : '#94a3b8';
+
+  var html = '';
+
+  html += '<div style="padding:20px 24px;background:linear-gradient(135deg, rgba(166,218,255,0.04) 0%, rgba(15,23,42,0.5) 100%);border:1px solid rgba(166,218,255,0.15);border-radius:14px;margin-bottom:18px;">' +
+    '<div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:14px;">' +
+      '<div>' +
+        '<div style="font-size:10px;color:var(--accent);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:6px;">📊 12-MONTH TRUST SCORE LOOKBACK</div>' +
+        '<div style="font-size:13px;color:var(--muted);margin-bottom:8px;">' + d.orgName + ' · how the score has trended and what moved it</div>' +
+        '<div style="display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;">' +
+          '<div><span style="font-size:36px;color:var(--chrome2);font-weight:800;">' + d.currentScore + '</span><span style="font-size:14px;color:var(--muted);"> / 100</span></div>' +
+          '<div style="font-size:13px;color:' + deltaColor + ';font-weight:700;">' + deltaSign + delta + ' pts vs 12 mo ago</div>' +
+          '<div style="font-size:10px;color:' + (d.certified ? '#22c55e' : '#f59e0b') + ';background:' + (d.certified ? 'rgba(34,197,94,0.1)' : 'rgba(245,158,11,0.1)') + ';border:1px solid ' + (d.certified ? 'rgba(34,197,94,0.3)' : 'rgba(245,158,11,0.3)') + ';padding:3px 10px;border-radius:8px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;">' + (d.certified ? '✓ CERTIFIED' : '⚠ BELOW CERT THRESHOLD') + '</div>' +
+        '</div>' +
+      '</div>' +
+    '</div>' +
+  '</div>';
+
+  var chartW = 720, chartH = 220, padL = 40, padR = 20, padT = 20, padB = 40;
+  var plotW = chartW - padL - padR, plotH = chartH - padT - padB;
+
+  var nMonths = d.months.length;
+  var xDenom = nMonths > 1 ? (nMonths - 1) : 1;
+  var pointsSvg = d.months.map(function(m, i){
+    var x = padL + (i / xDenom) * plotW;
+    var y = padT + ((maxScore - m.score) / scoreRange) * plotH;
+    return { x: x, y: y, m: m, idx: i };
+  });
+
+  var pathStr = pointsSvg.map(function(p, i){ return (i === 0 ? 'M' : 'L') + p.x.toFixed(1) + ',' + p.y.toFixed(1); }).join(' ');
+  var areaStr = pathStr + ' L' + pointsSvg[pointsSvg.length-1].x.toFixed(1) + ',' + (padT + plotH) + ' L' + pointsSvg[0].x.toFixed(1) + ',' + (padT + plotH) + ' Z';
+
+  var threshY = padT + ((maxScore - d.certThreshold) / scoreRange) * plotH;
+
+  html += '<div style="padding:18px 20px;background:rgba(15,23,42,0.5);border:1px solid rgba(166,218,255,0.1);border-radius:12px;margin-bottom:18px;overflow-x:auto;">' +
+    '<div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;font-weight:700;margin-bottom:14px;">SCORE TRAJECTORY</div>' +
+    '<svg viewBox="0 0 ' + chartW + ' ' + chartH + '" style="width:100%;max-width:100%;height:auto;">' +
+      '<defs><linearGradient id="trustGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#a6daff" stop-opacity="0.6"/><stop offset="100%" stop-color="#a6daff" stop-opacity="0"/></linearGradient></defs>' +
+      '<line x1="' + padL + '" y1="' + threshY.toFixed(1) + '" x2="' + (padL + plotW) + '" y2="' + threshY.toFixed(1) + '" stroke="#22c55e" stroke-width="1" stroke-dasharray="4,4" opacity="0.5"/>' +
+      '<text x="' + (padL + plotW - 4) + '" y="' + (threshY - 4).toFixed(1) + '" text-anchor="end" fill="#22c55e" font-size="9" font-family="monospace">cert threshold ' + d.certThreshold + '</text>' +
+      '<text x="' + (padL - 6) + '" y="' + (padT + 4) + '" text-anchor="end" fill="#94a3b8" font-size="9" font-family="monospace">' + maxScore + '</text>' +
+      '<text x="' + (padL - 6) + '" y="' + (padT + plotH) + '" text-anchor="end" fill="#94a3b8" font-size="9" font-family="monospace">' + minScore + '</text>' +
+      '<path d="' + areaStr + '" fill="url(#trustGrad)" opacity="0.25"/>' +
+      '<path d="' + pathStr + '" fill="none" stroke="#a6daff" stroke-width="2"/>' +
+      pointsSvg.map(function(p){
+        var pColor = p.m.score >= d.certThreshold ? '#22c55e' : '#f59e0b';
+        return '<circle cx="' + p.x.toFixed(1) + '" cy="' + p.y.toFixed(1) + '" r="4" fill="' + pColor + '" stroke="rgba(15,23,42,0.9)" stroke-width="2"><title>' + p.m.m + ' · ' + p.m.score + '\n' + p.m.event + '</title></circle>';
+      }).join('') +
+      pointsSvg.filter(function(p, i){ return i % 2 === 0 || i === pointsSvg.length - 1; }).map(function(p){
+        return '<text x="' + p.x.toFixed(1) + '" y="' + (padT + plotH + 16) + '" text-anchor="middle" fill="#94a3b8" font-size="9" font-family="monospace">' + p.m.m.split('-')[1] + '/' + p.m.m.split('-')[0].slice(2) + '</text>';
+      }).join('') +
+    '</svg>' +
+  '</div>';
+
+  html += '<div style="margin-bottom:18px;">' +
+    '<div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;font-weight:700;margin-bottom:10px;">📍 KEY EVENTS THAT MOVED THE SCORE</div>' +
+    '<div style="display:grid;grid-template-columns:repeat(auto-fill, minmax(220px, 1fr));gap:10px;">' +
+      d.keyEvents.map(function(ev){
+        return '<div style="padding:11px 13px;background:rgba(15,23,42,0.5);border:1px solid ' + ev.color + '30;border-left:3px solid ' + ev.color + ';border-radius:8px;">' +
+          '<div style="font-size:9px;color:' + ev.color + ';text-transform:uppercase;letter-spacing:0.6px;font-weight:700;margin-bottom:4px;">' + ev.label + '</div>' +
+          '<div style="font-size:11px;color:var(--chrome2);font-family:monospace;margin-bottom:2px;">' + ev.date + '</div>' +
+          '<div style="font-size:10px;color:var(--muted);">Score: <span style="color:var(--chrome2);font-weight:600;">' + ev.score + '</span></div>' +
+        '</div>';
+      }).join('') +
+    '</div>' +
+  '</div>';
+
+  html += '<div>' +
+    '<div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;font-weight:700;margin-bottom:10px;">📜 MONTH-BY-MONTH AUDIT LOG</div>' +
+    '<div style="display:flex;flex-direction:column;gap:5px;">' +
+      d.months.slice().reverse().map(function(m, idx){
+        var sParsed = parseInt(m.score, 10);
+        var sColor = sParsed >= d.certThreshold ? '#22c55e' : '#f59e0b';
+        var prevScore = idx < d.months.length - 1 ? d.months[d.months.length - 2 - idx].score : m.score;
+        var change = sParsed - prevScore;
+        var changeStr = change > 0 ? '+' + change : change === 0 ? '—' : '' + change;
+        var changeColor = change > 0 ? '#22c55e' : change < 0 ? '#ef4444' : '#94a3b8';
+
+        return '<div style="display:grid;grid-template-columns:90px 60px 50px 1fr;gap:14px;padding:10px 14px;background:rgba(15,23,42,0.5);border:1px solid rgba(166,218,255,0.06);border-radius:6px;align-items:center;">' +
+          '<span style="font-size:10px;color:var(--muted);font-family:monospace;">' + m.m + '</span>' +
+          '<span style="font-size:14px;color:' + sColor + ';font-weight:800;font-family:monospace;">' + m.score + '</span>' +
+          '<span style="font-size:10px;color:' + changeColor + ';font-weight:700;font-family:monospace;">' + changeStr + '</span>' +
+          '<span style="font-size:11px;color:var(--chrome2);line-height:1.5;">' + m.event + '</span>' +
+        '</div>';
+      }).join('') +
+    '</div>' +
+  '</div>';
+
+  container.innerHTML = html;
+}
+
 function echoRenderMyWorkspaceTab() {
   var container = document.getElementById('echo-tab-content-myworkspace');
   if (!container) return;
@@ -24426,6 +24640,7 @@ function echoAddPersonalNote() {
   try { localStorage.setItem('cardinal-notes-' + persona.id, JSON.stringify(window.__userNotes[key])); } catch(_e) {}
   ta.value = '';
   echoRenderMyWorkspaceTab();
+  try { updateMyWsNavBadge(); } catch(_nw) {}
 }
 
 function echoDeletePersonalNote(idx) {
@@ -24436,7 +24651,190 @@ function echoDeletePersonalNote(idx) {
   window.__userNotes[key].splice(idx, 1);
   try { localStorage.setItem('cardinal-notes-' + persona.id, JSON.stringify(window.__userNotes[key])); } catch(_e) {}
   echoRenderMyWorkspaceTab();
+  try { updateMyWsNavBadge(); } catch(_nw) {}
 }
+
+function updateMyWsNavBadge() {
+  var badgeEl = document.getElementById('myws-nav-badge');
+  if (!badgeEl) return;
+  var persona = window.getActivePersona ? window.getActivePersona() : null;
+  if (!persona) {
+    badgeEl.textContent = '0';
+    return;
+  }
+  window.__userPins = window.__userPins || {};
+  window.__userNotes = window.__userNotes || {};
+  var pinKey = 'pins:' + persona.id;
+  var notesKey = 'notes:' + persona.id;
+  var pins = (window.__userPins[pinKey] || []).length;
+  var notes = (window.__userNotes[notesKey] || []).length;
+  badgeEl.textContent = String(pins + notes);
+}
+
+window.renderBigWorkspacePage = function() {
+  var container = document.getElementById('myworkspace-content');
+  if (!container) return;
+
+  var persona = window.getActivePersona ? window.getActivePersona() : null;
+  if (!persona) {
+    container.innerHTML = '<div style="padding:60px 40px;text-align:center;background:rgba(168,85,247,0.04);border:1px dashed rgba(168,85,247,0.25);border-radius:14px;">' +
+      '<div style="font-size:32px;margin-bottom:12px;">🌟</div>' +
+      '<div style="font-size:16px;color:var(--chrome2);font-weight:700;margin-bottom:6px;">No active persona</div>' +
+      '<div style="font-size:12px;color:var(--muted);">Click your user card in the bottom-left to switch persona.</div>' +
+    '</div>';
+    updateMyWsNavBadge();
+    return;
+  }
+
+  window.__userPins = window.__userPins || {};
+  window.__userNotes = window.__userNotes || {};
+  var pinKey = 'pins:' + persona.id;
+  var notesKey = 'notes:' + persona.id;
+  var myPinIds = window.__userPins[pinKey] || [];
+  var myNotes = window.__userNotes[notesKey] || [];
+
+  var allMems = [];
+  ['ad', 'fin', 'health'].forEach(function(o){
+    var arr = (window.CARDINAL_DATA && window.CARDINAL_DATA[o] && window.CARDINAL_DATA[o].echoMemories) || [];
+    arr.forEach(function(m){ allMems.push(Object.assign({}, m, { __org: o })); });
+  });
+  var myPinnedMems = allMems.filter(function(m){ return myPinIds.indexOf(m.id) !== -1; });
+
+  var myMems = allMems.filter(function(m){ return m.author === persona.name; });
+
+  var escJs = function(s){ return String(s == null ? '' : s).replace(/\\/g, '\\\\').replace(/'/g, "\\'"); };
+
+  var html = '<div style="display:grid;grid-template-columns:300px 1fr;gap:18px;align-items:start;">';
+
+  html += '<div style="display:flex;flex-direction:column;gap:14px;position:sticky;top:12px;">';
+
+  html += '<div style="background:linear-gradient(135deg, ' + persona.color + '15 0%, rgba(15,23,42,0.6) 100%);border:1px solid ' + persona.color + '40;border-radius:14px;padding:18px;text-align:center;">' +
+    '<div style="width:64px;height:64px;border-radius:50%;background:' + persona.color + '30;border:3px solid ' + persona.color + ';display:flex;align-items:center;justify-content:center;font-size:22px;color:' + persona.color + ';font-weight:800;margin:0 auto 10px;">' + persona.initials + '</div>' +
+    '<div style="font-size:15px;color:var(--chrome2);font-weight:700;margin-bottom:4px;">' + persona.name + '</div>' +
+    '<div style="font-size:10px;color:' + persona.color + ';font-weight:600;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px;">' + persona.role + '</div>' +
+    '<div style="font-size:10px;color:var(--muted);line-height:1.5;">' + (persona.summary || persona.org || '') + '</div>' +
+  '</div>';
+
+  html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">' +
+    '<div style="padding:12px;background:rgba(245,158,11,0.06);border:1px solid rgba(245,158,11,0.2);border-radius:10px;text-align:center;"><div style="font-size:22px;color:#f59e0b;font-weight:800;line-height:1;">' + myPinnedMems.length + '</div><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.6px;font-weight:700;margin-top:6px;">📌 Pins</div></div>' +
+    '<div style="padding:12px;background:rgba(168,85,247,0.06);border:1px solid rgba(168,85,247,0.2);border-radius:10px;text-align:center;"><div style="font-size:22px;color:#a855f7;font-weight:800;line-height:1;">' + myNotes.length + '</div><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.6px;font-weight:700;margin-top:6px;">📝 Notes</div></div>' +
+    '<div style="padding:12px;background:rgba(166,218,255,0.06);border:1px solid rgba(166,218,255,0.15);border-radius:10px;text-align:center;"><div style="font-size:22px;color:var(--accent);font-weight:800;line-height:1;">' + myMems.length + '</div><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.6px;font-weight:700;margin-top:6px;">📋 Events</div></div>' +
+    '<div style="padding:12px;background:rgba(34,197,94,0.06);border:1px solid rgba(34,197,94,0.2);border-radius:10px;text-align:center;"><div style="font-size:22px;color:#22c55e;font-weight:800;line-height:1;">' + Array.from(new Set(myMems.map(function(m){ return m.caseId; }).filter(Boolean))).length + '</div><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.6px;font-weight:700;margin-top:6px;">📂 Cases</div></div>' +
+  '</div>';
+
+  html += '<div style="background:rgba(15,23,42,0.5);border:1px solid rgba(166,218,255,0.1);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:6px;">' +
+    '<div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;font-weight:700;margin-bottom:4px;">QUICK ACTIONS</div>' +
+    '<button type="button" onclick="cardinalQuickAddFromCurrentView && cardinalQuickAddFromCurrentView()" style="background:rgba(168,85,247,0.1);border:1px solid rgba(168,85,247,0.3);color:#a855f7;padding:8px 12px;border-radius:6px;cursor:pointer;font-size:11px;font-weight:600;text-align:left;">📝 Add Note from Anywhere</button>' +
+    '<button type="button" onclick="cardinalShowToast && cardinalShowToast(\'📦 Workspace export coming soon\')" style="background:rgba(166,218,255,0.06);border:1px solid rgba(166,218,255,0.15);color:var(--accent);padding:8px 12px;border-radius:6px;cursor:pointer;font-size:11px;font-weight:600;text-align:left;">📦 Export Workspace</button>' +
+    '<button type="button" onclick="if(confirm(\'Clear all your pins and notes? This cannot be undone.\')) { window.__userPins[' + JSON.stringify(pinKey) + ']=[]; window.__userNotes[' + JSON.stringify(notesKey) + ']=[]; try{localStorage.setItem(' + JSON.stringify('cardinal-pins-' + persona.id) + ',\'[]\');localStorage.setItem(' + JSON.stringify('cardinal-notes-' + persona.id) + ',\'[]\');}catch(e){} renderBigWorkspacePage();}" style="background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.2);color:#ef4444;padding:8px 12px;border-radius:6px;cursor:pointer;font-size:11px;font-weight:600;text-align:left;">🗑 Clear All</button>' +
+  '</div>';
+
+  html += '</div>';
+
+  html += '<div style="display:flex;flex-direction:column;gap:18px;">';
+
+  html += '<div style="background:rgba(168,85,247,0.04);border:1px solid rgba(168,85,247,0.25);border-radius:14px;padding:18px 20px;">' +
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">' +
+      '<div style="font-size:11px;color:#a855f7;text-transform:uppercase;letter-spacing:0.8px;font-weight:700;">📝 Compose a Note</div>' +
+      '<div style="font-size:9px;color:var(--muted);">Private to ' + persona.name + ' · saved locally</div>' +
+    '</div>' +
+    '<input type="text" id="big-note-title" placeholder="Title (optional)" style="width:100%;padding:10px 12px;background:rgba(15,23,42,0.7);border:1px solid rgba(168,85,247,0.2);border-radius:8px;color:var(--chrome2);font-size:13px;font-family:inherit;font-weight:600;margin-bottom:8px;box-sizing:border-box;">' +
+    '<textarea id="big-note-body" placeholder="Type a longer note here. Multi-paragraph welcome. Use this for: meeting prep, follow-ups, observations, regulator briefings, anything that\'s yours alone." style="width:100%;min-height:160px;background:rgba(15,23,42,0.7);border:1px solid rgba(168,85,247,0.2);border-radius:8px;padding:12px;color:var(--chrome2);font-size:12px;font-family:inherit;line-height:1.7;resize:vertical;box-sizing:border-box;"></textarea>' +
+    '<div style="display:flex;justify-content:flex-end;margin-top:10px;">' +
+      '<button type="button" onclick="saveBigNote()" style="background:linear-gradient(135deg, #a855f7 0%, #6366f1 100%);border:none;color:white;padding:10px 22px;border-radius:8px;cursor:pointer;font-size:12px;font-weight:700;">Save Note</button>' +
+    '</div>' +
+  '</div>';
+
+  html += '<div>' +
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">' +
+      '<div style="font-size:12px;color:#f59e0b;text-transform:uppercase;letter-spacing:0.8px;font-weight:700;">📌 My Pinned Items (' + myPinnedMems.length + ')</div>' +
+    '</div>';
+  if (myPinnedMems.length === 0) {
+    html += '<div style="padding:24px;background:rgba(15,23,42,0.4);border:1px dashed rgba(245,158,11,0.2);border-radius:10px;text-align:center;color:var(--muted);font-size:11px;">No pins yet. Right-click any case ID, model, or memory anywhere in Cardinal to pin it. Or click 📌 on memory cards in Echo.</div>';
+  } else {
+    html += '<div style="display:flex;flex-direction:column;gap:6px;">' +
+      myPinnedMems.map(function(m){
+        var sevColor = { critical: '#ef4444', high: '#f59e0b', medium: '#3b82f6', low: '#22c55e', informational: '#94a3b8' }[m.severity] || '#94a3b8';
+        var mid = escJs(m.id);
+        return '<div onclick="echoOpenMemoryDetail && echoOpenMemoryDetail(\'' + mid + '\')" style="cursor:pointer;display:grid;grid-template-columns:auto 1fr auto auto auto;gap:10px;padding:10px 14px;background:rgba(245,158,11,0.04);border:1px solid rgba(245,158,11,0.2);border-radius:8px;align-items:center;">' +
+          '<span style="width:7px;height:7px;border-radius:50%;background:' + sevColor + ';"></span>' +
+          '<span style="font-size:11px;color:var(--chrome2);">' + (m.summary || '').substring(0, 110) + ((m.summary || '').length > 110 ? '...' : '') + '</span>' +
+          (m.caseId ? '<span style="font-size:9px;color:var(--accent);font-family:monospace;">#' + m.caseId + '</span>' : '<span></span>') +
+          '<span style="font-size:9px;color:var(--muted);font-family:monospace;">' + new Date(m.timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + '</span>' +
+          '<button type="button" onclick="event.stopPropagation();echoTogglePersonalPin(\'' + mid + '\');renderBigWorkspacePage();" style="background:none;border:none;color:#f59e0b;cursor:pointer;font-size:13px;line-height:1;" title="Unpin">×</button>' +
+        '</div>';
+      }).join('') +
+    '</div>';
+  }
+  html += '</div>';
+
+  html += '<div>' +
+    '<div style="font-size:12px;color:#a855f7;text-transform:uppercase;letter-spacing:0.8px;font-weight:700;margin-bottom:10px;">📝 My Notes (' + myNotes.length + ')</div>';
+  if (myNotes.length === 0) {
+    html += '<div style="padding:24px;background:rgba(15,23,42,0.4);border:1px dashed rgba(168,85,247,0.2);border-radius:10px;text-align:center;color:var(--muted);font-size:11px;">No notes yet. Use the composer above, or right-click anywhere in Cardinal to add a contextual note.</div>';
+  } else {
+    html += '<div style="display:flex;flex-direction:column;gap:8px;">' +
+      myNotes.slice().reverse().map(function(n, idx){
+        var nts = new Date(n.timestamp);
+        var realIdx = myNotes.length - 1 - idx;
+        var escTitle = (n.title || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        var escText = (n.text || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        var linkMem = n.linkedMemoryId ? escJs(n.linkedMemoryId) : '';
+        var ctxLine = (n.contextType ? '<div style="margin-top:8px;font-size:9px;color:var(--muted);background:rgba(166,218,255,0.04);padding:4px 8px;border-radius:6px;display:inline-block;">context: ' + String(n.contextType) + ' · ' + String(n.contextValue || '') + '</div>' : '');
+        var linkBlock = n.linkedMemoryId ? '<div onclick="echoOpenMemoryDetail && echoOpenMemoryDetail(\'' + linkMem + '\')" style="cursor:pointer;margin-top:8px;font-size:9px;color:var(--accent);background:rgba(166,218,255,0.05);padding:4px 8px;border-radius:6px;display:inline-block;">→ linked memory</div>' : '';
+        return '<div style="padding:14px 16px;background:rgba(168,85,247,0.04);border:1px solid rgba(168,85,247,0.25);border-radius:10px;">' +
+          '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;gap:8px;">' +
+            '<div>' +
+              (n.title ? '<div style="font-size:13px;color:var(--chrome2);font-weight:700;line-height:1.3;">' + escTitle + '</div>' : '') +
+              '<div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.6px;font-weight:600;font-family:monospace;margin-top:' + (n.title ? '4px' : '0') + ';">' + nts.toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' }) + '</div>' +
+            '</div>' +
+            '<button type="button" onclick="deleteBigNote(' + realIdx + ')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;line-height:1;" title="Delete note">×</button>' +
+          '</div>' +
+          '<div style="font-size:12px;color:var(--chrome2);line-height:1.7;white-space:pre-wrap;">' + escText + '</div>' +
+          linkBlock +
+          ctxLine +
+        '</div>';
+      }).join('') +
+    '</div>';
+  }
+  html += '</div>';
+
+  html += '</div>';
+  html += '</div>';
+
+  container.innerHTML = html;
+  updateMyWsNavBadge();
+};
+
+window.saveBigNote = function() {
+  var titleEl = document.getElementById('big-note-title');
+  var bodyEl = document.getElementById('big-note-body');
+  if (!bodyEl) return;
+  var title = titleEl ? (titleEl.value || '').trim() : '';
+  var body = (bodyEl.value || '').trim();
+  if (!body) { bodyEl.focus(); return; }
+  var persona = window.getActivePersona ? window.getActivePersona() : null;
+  if (!persona) return;
+  window.__userNotes = window.__userNotes || {};
+  var key = 'notes:' + persona.id;
+  if (!window.__userNotes[key]) window.__userNotes[key] = [];
+  window.__userNotes[key].push({ title: title || null, text: body, timestamp: new Date().toISOString() });
+  try { localStorage.setItem('cardinal-notes-' + persona.id, JSON.stringify(window.__userNotes[key])); } catch(_e) {}
+  if (titleEl) titleEl.value = '';
+  bodyEl.value = '';
+  cardinalShowToast && cardinalShowToast('✓ Note saved');
+  renderBigWorkspacePage();
+};
+
+window.deleteBigNote = function(idx) {
+  var persona = window.getActivePersona ? window.getActivePersona() : null;
+  if (!persona) return;
+  var key = 'notes:' + persona.id;
+  if (!window.__userNotes || !window.__userNotes[key]) return;
+  window.__userNotes[key].splice(idx, 1);
+  try { localStorage.setItem('cardinal-notes-' + persona.id, JSON.stringify(window.__userNotes[key])); } catch(_e) {}
+  renderBigWorkspacePage();
+};
 
 function echoTogglePersonalPinDetail(memoryId) {
   echoTogglePersonalPin(memoryId);
@@ -24788,6 +25186,7 @@ function echoTogglePersonalPin(memoryId) {
   try { localStorage.setItem('cardinal-pins-' + persona.id, JSON.stringify(window.__userPins[key])); } catch(_e) {}
   var mwTab = document.getElementById('echo-tab-content-myworkspace');
   if (mwTab && mwTab.style.display !== 'none') echoRenderMyWorkspaceTab();
+  try { updateMyWsNavBadge(); } catch(_nw) {}
 }
 
 try {
@@ -24804,6 +25203,7 @@ try {
     });
   }
 } catch(_e) {}
+try { updateMyWsNavBadge(); } catch(_bw) {}
 
 function echoRenderConversationsTab() {
   var container = document.getElementById('echo-tab-content-conversations');
@@ -26203,7 +26603,8 @@ function echoSwitchTab(tab) {
     'conversations': { title: 'Conversations — Trust Loop Logs', sub: 'Every chat thread preserved. Grouped by case. Searchable. Sealed to the audit chain.' },
     'myworkspace': { title: 'My Workspace — Your Memories, Notes & Pins', sub: 'Personal view scoped to the active persona — everything you\'ve touched, pinned, or noted, in one place.' },
     'peoplelog': { title: 'People Log — Per-Person Activity', sub: 'Filter by day or person. Click any name to see their full Echo footprint.' },
-    'timeline': { title: 'Logged Events — Append-Only Audit Chain', sub: 'Every meaningful event logged with timestamp, author, hash, signature. Tamper-evident. Court-admissible.' }
+    'timeline': { title: 'Logged Events — Append-Only Audit Chain', sub: 'Every meaningful event logged with timestamp, author, hash, signature. Tamper-evident. Court-admissible.' },
+    'scorehistory': { title: 'Trust Score History — 12-Month Lookback', sub: 'Score trajectory · cert windows · what moved the score and when. Echo as the audit memory of Trust Score itself.' }
   };
   var hdr = TAB_HEADERS[tab] || TAB_HEADERS['memories'];
   var hdrTitleEl = document.getElementById('echo-section-header-title');
@@ -26238,7 +26639,7 @@ function echoSwitchTab(tab) {
           t.style.fontWeight = '400';
         }
       });
-    } else if (tab === 'memories' || tab === 'conversations' || tab === 'peoplelog' || tab === 'myworkspace') {
+    } else if (tab === 'memories' || tab === 'conversations' || tab === 'peoplelog' || tab === 'myworkspace' || tab === 'scorehistory') {
       buttons.forEach(function(t){
         t.classList.remove('active');
         t.style.background = 'transparent';
@@ -26247,7 +26648,7 @@ function echoSwitchTab(tab) {
       });
     }
   }
-  ['memories', 'receipts', 'ignored', 'lineage', 'whistleblower', 'myworkspace', 'conversations', 'peoplelog', 'pmprofiles'].forEach(function(t){
+  ['memories', 'receipts', 'ignored', 'lineage', 'whistleblower', 'scorehistory', 'myworkspace', 'conversations', 'peoplelog', 'pmprofiles'].forEach(function(t){
     var el = document.getElementById('echo-tab-content-' + t);
     if (el) el.style.display = (t === tab) ? 'block' : 'none';
   });
@@ -26258,6 +26659,9 @@ function echoSwitchTab(tab) {
   else if (tab === 'whistleblower') echoRenderWhistleblower(org);
   else if (tab === 'pmprofiles') echoRenderPMProfiles(org);
 
+  if (tab === 'scorehistory') {
+    try { echoRenderScoreHistoryTab(); } catch(e) { console.error('[ScoreHistory] render failed:', e); }
+  }
   if (tab === 'myworkspace') {
     try { echoRenderMyWorkspaceTab(); } catch(e) { console.error('[MyWorkspace] render failed:', e); }
   }
