@@ -6312,8 +6312,8 @@ Template Overview
   <!-- Section header -->
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
     <div>
-      <div style="font-size:18px;font-weight:700;color:var(--chrome2);letter-spacing:0.3px;">Logged Events — Append-Only Audit Chain</div>
-      <div style="font-size:11px;color:var(--muted);margin-top:4px;">Every meaningful event logged with timestamp, author, hash, signature. Tamper-evident. Court-admissible.</div>
+      <div id="echo-section-header-title" style="font-size:18px;font-weight:700;color:var(--chrome2);letter-spacing:0.3px;">Logged Events — Append-Only Audit Chain</div>
+      <div id="echo-section-header-sub" style="font-size:11px;color:var(--muted);margin-top:4px;">Every meaningful event logged with timestamp, author, hash, signature. Tamper-evident. Court-admissible.</div>
     </div>
     <div style="display:flex;gap:8px;">
       <button type="button" id="echo-export-btn" onclick="echoExportAuditLog()" class="btn-ghost" style="font-size:11px;padding:8px 14px;border:1px solid rgba(166,218,255,0.2);border-radius:8px;background:rgba(166,218,255,0.04);color:var(--accent);cursor:pointer;" title="Export full Echo audit log as text file">↓ Export Full Audit Log</button>
@@ -23788,6 +23788,175 @@ function echoRenderMemoryDetailFullscreen(memory, memoryOrg) {
 
   html += vizExtra;
 
+  // === IGNORED FLAG DIMENSIONS — only renders if this memory is a dismissal/ignored event ===
+  var isIgnoredFlag = false;
+  var summaryLower = (memory.summary || '').toLowerCase();
+  var contentLower = (memory.content || '').toLowerCase();
+  if (summaryLower.indexOf('dismiss') !== -1 || summaryLower.indexOf('ignored') !== -1 || summaryLower.indexOf('false positive') !== -1 || summaryLower.indexOf('not-applicable') !== -1 || summaryLower.indexOf('not applicable') !== -1 || contentLower.indexOf('dismiss') !== -1 || contentLower.indexOf('false positive') !== -1) {
+    isIgnoredFlag = true;
+  }
+
+  if (isIgnoredFlag) {
+    // Find ALL prior flags on the same model BEFORE this dismissal
+    var priorFlags = [];
+    var subsequentEscalations = [];
+    var affectedPeople = new Set();
+    var modelChangesAfter = [];
+    var downstreamCases = new Set();
+
+    try {
+      var orgDataIF = window.CARDINAL_DATA && window.CARDINAL_DATA[memoryOrg];
+      if (orgDataIF) {
+        var allMems = orgDataIF.echoMemories || [];
+        var memTs = ts.getTime();
+
+        // PRIOR FLAGS: same modelId, eventType=bias-detected/fraud-detected/score-change-negative, BEFORE this dismissal
+        priorFlags = allMems.filter(function(m){
+          if (!memory.modelId || m.modelId !== memory.modelId) return false;
+          if (new Date(m.timestamp).getTime() >= memTs) return false;
+          return m.eventType === 'bias-detected' || m.eventType === 'fraud-detected' || (m.severity === 'high' || m.severity === 'critical') && m.author && (m.author.indexOf('Eve') !== -1 || m.author.indexOf('Eden') !== -1 || m.author.indexOf('Obsidian') !== -1);
+        }).sort(function(a,b){ return new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(); });
+
+        // SUBSEQUENT ESCALATIONS: events on same case AFTER this dismissal that show escalation/reversal/case-opening
+        if (memory.caseId) {
+          subsequentEscalations = allMems.filter(function(m){
+            if (m.caseId !== memory.caseId || m.id === memory.id) return false;
+            if (new Date(m.timestamp).getTime() <= memTs) return false;
+            return m.eventType === 'case-opened' || m.eventType === 'decision-reversed' || m.eventType === 'remediation-started' || m.eventType === 'team-decision' || (m.severity === 'critical' || m.severity === 'high');
+          }).sort(function(a,b){ return new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(); }).slice(0, 8);
+
+          // Collect people who got involved AFTER the dismissal
+          subsequentEscalations.forEach(function(m){
+            if (m.author && m.authorRole === 'user') affectedPeople.add(m.author);
+            if (m.userId) affectedPeople.add(m.userId);
+          });
+
+          // Model changes after this dismissal on the same case
+          modelChangesAfter = allMems.filter(function(m){
+            if (m.caseId !== memory.caseId || m.id === memory.id) return false;
+            if (new Date(m.timestamp).getTime() <= memTs) return false;
+            return m.eventType === 'model-deployed' || m.eventType === 'remediation-started' || m.eventType === 'remediation-completed';
+          }).sort(function(a,b){ return new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(); }).slice(0, 6);
+
+          // Downstream cases — any case opened that references this memory
+          allMems.forEach(function(m){
+            if (m.caseId && m.caseId !== memory.caseId && m.linkedMemories && m.linkedMemories.indexOf(memory.id) !== -1) {
+              downstreamCases.add(m.caseId);
+            }
+          });
+        }
+      }
+    } catch(_iff) { console.warn('Ignored flag enrichment failed', _iff); }
+
+    // Estimate "people affected" from any memory content mentioning record counts
+    var recordsAffected = null;
+    var allContent = (memory.content || '') + ' ' + priorFlags.map(function(p){ return p.content || ''; }).join(' ') + ' ' + subsequentEscalations.map(function(s){ return s.content || ''; }).join(' ');
+    var recordMatch = allContent.match(/(\d{1,3}(?:,\d{3})*|\d+)\s*(?:affected\s+records|service\s+members|patients|applications|individuals|customers)/i);
+    if (recordMatch) recordsAffected = recordMatch[0];
+
+    // === RENDER IGNORED-FLAG IMPACT BLOCK ===
+    html += '<div style="background:linear-gradient(180deg, rgba(239,68,68,0.06) 0%, rgba(15,23,42,0.5) 100%);border:1px solid rgba(239,68,68,0.25);border-radius:12px;padding:18px 22px;margin-bottom:20px;">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">' +
+        '<div style="font-size:10px;color:#ef4444;text-transform:uppercase;letter-spacing:0.8px;font-weight:700;">⚠ FLAG DISMISSAL — IMPACT CHAIN</div>' +
+        '<div style="font-size:10px;color:var(--muted);">Why this dismissal mattered</div>' +
+      '</div>';
+
+    // Top-level impact stats
+    html += '<div style="display:grid;grid-template-columns:repeat(4, minmax(0,1fr));gap:10px;margin-bottom:16px;">' +
+      '<div style="padding:12px;background:rgba(15,23,42,0.6);border:1px solid rgba(239,68,68,0.2);border-radius:8px;text-align:center;"><div style="font-size:22px;color:#ef4444;font-weight:800;line-height:1;">' + priorFlags.length + '</div><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-top:6px;">Prior Flags Before Dismissal</div></div>' +
+      '<div style="padding:12px;background:rgba(15,23,42,0.6);border:1px solid rgba(245,158,11,0.2);border-radius:8px;text-align:center;"><div style="font-size:22px;color:#f59e0b;font-weight:800;line-height:1;">' + subsequentEscalations.length + '</div><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-top:6px;">Escalations After Dismissal</div></div>' +
+      '<div style="padding:12px;background:rgba(15,23,42,0.6);border:1px solid rgba(166,218,255,0.15);border-radius:8px;text-align:center;"><div style="font-size:22px;color:var(--accent);font-weight:800;line-height:1;">' + affectedPeople.size + '</div><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-top:6px;">People Pulled In Since</div></div>' +
+      '<div style="padding:12px;background:rgba(15,23,42,0.6);border:1px solid rgba(168,85,247,0.2);border-radius:8px;text-align:center;"><div style="font-size:14px;color:#a855f7;font-weight:700;line-height:1.3;">' + (recordsAffected || 'N/A') + '</div><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-top:6px;">Records / People Affected</div></div>' +
+    '</div>';
+
+    // Prior flags timeline
+    if (priorFlags.length > 0) {
+      html += '<div style="margin-bottom:14px;">' +
+        '<div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;font-weight:600;margin-bottom:8px;">📍 PRIOR FLAGS — same model, before this dismissal</div>' +
+        '<div style="display:flex;flex-direction:column;gap:6px;">' +
+          priorFlags.slice(-6).map(function(pf){
+            var pts = new Date(pf.timestamp);
+            var pSev = { critical: '#ef4444', high: '#f59e0b', medium: '#3b82f6', low: '#22c55e', informational: '#94a3b8' }[pf.severity] || '#94a3b8';
+            return '<div onclick="echoOpenMemoryDetail(\'' + pf.id + '\')" style="cursor:pointer;display:grid;grid-template-columns:auto 1fr auto;gap:12px;padding:10px 12px;background:rgba(15,23,42,0.4);border:1px solid rgba(166,218,255,0.06);border-radius:6px;align-items:center;transition:all 0.15s;" onmouseover="this.style.borderColor=\'rgba(166,218,255,0.2)\';" onmouseout="this.style.borderColor=\'rgba(166,218,255,0.06)\';">' +
+              '<span style="width:8px;height:8px;border-radius:50%;background:' + pSev + ';box-shadow:0 0 6px ' + pSev + ';"></span>' +
+              '<div><div style="font-size:11px;color:var(--chrome2);font-weight:600;line-height:1.3;">' + (pf.summary || '') + '</div><div style="font-size:9px;color:var(--muted);margin-top:2px;">' + (pf.author || 'system') + '</div></div>' +
+              '<span style="font-size:10px;color:var(--muted);font-family:monospace;white-space:nowrap;">' + pts.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ' ' + pts.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) + '</span>' +
+            '</div>';
+          }).join('') +
+        '</div>' +
+      '</div>';
+    }
+
+    // Subsequent escalations — what happened SINCE the dismissal
+    if (subsequentEscalations.length > 0) {
+      html += '<div style="margin-bottom:14px;">' +
+        '<div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;font-weight:600;margin-bottom:8px;">⚡ WHAT HAPPENED AFTER THE DISMISSAL</div>' +
+        '<div style="position:relative;padding-left:20px;">' +
+          '<div style="position:absolute;left:6px;top:8px;bottom:8px;width:2px;background:linear-gradient(180deg, rgba(239,68,68,0.5) 0%, rgba(245,158,11,0.4) 50%, rgba(34,197,94,0.3) 100%);"></div>' +
+          subsequentEscalations.map(function(se, idx){
+            var sts = new Date(se.timestamp);
+            var sSev = { critical: '#ef4444', high: '#f59e0b', medium: '#3b82f6', low: '#22c55e', informational: '#94a3b8' }[se.severity] || '#94a3b8';
+            var dotSize = se.eventType === 'case-opened' ? 16 : 12;
+            return '<div onclick="echoOpenMemoryDetail(\'' + se.id + '\')" style="cursor:pointer;position:relative;padding:8px 0 8px 20px;">' +
+              '<span style="position:absolute;left:' + (-(20 + (dotSize - 12)/2)) + 'px;top:14px;width:' + dotSize + 'px;height:' + dotSize + 'px;border-radius:50%;background:' + sSev + ';border:2px solid rgba(15,23,42,1);box-shadow:0 0 8px ' + sSev + '60;"></span>' +
+              '<div style="font-size:11px;color:var(--chrome2);font-weight:600;line-height:1.3;">' + (se.summary || '') + '</div>' +
+              '<div style="font-size:10px;color:var(--muted);margin-top:2px;">' + (se.author || 'system') + ' · ' + sts.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) + ' ' + sts.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) + '</div>' +
+            '</div>';
+          }).join('') +
+        '</div>' +
+      '</div>';
+    }
+
+    // People pulled in
+    if (affectedPeople.size > 0) {
+      html += '<div style="margin-bottom:14px;">' +
+        '<div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;font-weight:600;margin-bottom:8px;">👥 PEOPLE PULLED IN AFTER THE DISMISSAL</div>' +
+        '<div style="display:flex;gap:6px;flex-wrap:wrap;">' +
+          Array.from(affectedPeople).map(function(p){ return '<span style="padding:4px 10px;background:rgba(166,218,255,0.08);border:1px solid rgba(166,218,255,0.2);border-radius:14px;font-size:11px;color:var(--accent);font-weight:600;">' + p + '</span>'; }).join('') +
+        '</div>' +
+      '</div>';
+    }
+
+    // Model changes after dismissal
+    if (modelChangesAfter.length > 0) {
+      html += '<div style="margin-bottom:14px;">' +
+        '<div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;font-weight:600;margin-bottom:8px;">🧬 MODEL CHANGES TRIGGERED BY THIS DISMISSAL</div>' +
+        '<div style="display:flex;flex-direction:column;gap:6px;">' +
+          modelChangesAfter.map(function(mc){
+            var mts = new Date(mc.timestamp);
+            var mcColor = mc.eventType === 'remediation-completed' ? '#22c55e' : '#3b82f6';
+            return '<div onclick="echoOpenMemoryDetail(\'' + mc.id + '\')" style="cursor:pointer;display:grid;grid-template-columns:auto 1fr auto;gap:12px;padding:8px 12px;background:rgba(15,23,42,0.4);border:1px solid rgba(166,218,255,0.06);border-radius:6px;align-items:center;">' +
+              '<span style="width:7px;height:7px;border-radius:50%;background:' + mcColor + ';box-shadow:0 0 5px ' + mcColor + ';"></span>' +
+              '<div><div style="font-size:11px;color:var(--chrome2);font-weight:600;">' + (mc.summary || '') + '</div><div style="font-size:9px;color:var(--muted);margin-top:2px;">' + (mc.modelId || '') + '</div></div>' +
+              '<span style="font-size:10px;color:var(--muted);font-family:monospace;white-space:nowrap;">' + mts.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + '</span>' +
+            '</div>';
+          }).join('') +
+        '</div>' +
+      '</div>';
+    }
+
+    // Downstream cases
+    if (downstreamCases.size > 0) {
+      html += '<div>' +
+        '<div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;font-weight:600;margin-bottom:8px;">🔗 DOWNSTREAM CASES OPENED</div>' +
+        '<div style="display:flex;gap:6px;flex-wrap:wrap;">' +
+          Array.from(downstreamCases).map(function(cid){ return '<span style="padding:4px 10px;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.25);border-radius:14px;font-size:11px;color:#f59e0b;font-weight:600;font-family:monospace;">#' + cid + '</span>'; }).join('') +
+        '</div>' +
+      '</div>';
+    }
+
+    // Bottom note: takeaway
+    var takeaway = priorFlags.length >= 2 && subsequentEscalations.length >= 3
+      ? 'This dismissal cost real time and pulled in ' + affectedPeople.size + ' people. Cardinal preserved every signal — the chain shows exactly when the system tried to warn, when it was overruled, and what it took to recover.'
+      : priorFlags.length >= 1 || subsequentEscalations.length >= 1
+      ? 'A flag was dismissed. Cardinal preserved the dismissal alongside everything that followed — so the audit trail shows judgment, not just outcomes.'
+      : 'Dismissal logged. No prior flags or downstream events found in the same model/case window.';
+
+    html += '<div style="margin-top:14px;padding:12px;background:rgba(15,23,42,0.6);border:1px dashed rgba(239,68,68,0.3);border-radius:8px;font-size:11px;color:var(--muted2);font-style:italic;line-height:1.5;">' + takeaway + '</div>';
+
+    html += '</div>';
+  }
+
   if (signOffs.length > 0) {
     html += '<div style="background:rgba(34,197,94,0.04);border:1px solid rgba(34,197,94,0.15);border-radius:12px;padding:18px 22px;margin-bottom:20px;">' +
       '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">' +
@@ -23970,6 +24139,22 @@ function echoExportPacket() {
 }
 
 function echoSwitchTab(tab) {
+  // Update tab-aware section header
+  var TAB_HEADERS = {
+    'memories': { title: 'Logged Events — Append-Only Audit Chain', sub: 'Every meaningful event logged with timestamp, author, hash, signature. Tamper-evident. Court-admissible.' },
+    'receipts': { title: 'Decision Receipts — Cryptographic Proofs', sub: '6 receipt subtypes: counterfactual · deployment · governance · attestation · case-closure · whistleblower-seal' },
+    'ignored':  { title: 'Ignored Flags — Dismissed Warnings', sub: 'Eve warnings flagged but dismissed by reviewers. Each dismissal preserved with downstream impact tracking.' },
+    'lineage':  { title: 'Model Lineage — Version Ancestry', sub: 'Every model version sealed. Every transition logged. Click any model to see full event timeline.' },
+    'whistleblower': { title: 'Whistleblower — Sealed Submissions', sub: 'Anonymized whistleblower envelopes. PII stripped. Role-restricted access (Legal, Compliance, Admin only).' },
+    'pmprofiles': { title: 'PM Profiles — Person × Activity', sub: 'Per-person activity profiles. Click a person to see their full Echo footprint.' },
+    'timeline': { title: 'Logged Events — Append-Only Audit Chain', sub: 'Every meaningful event logged with timestamp, author, hash, signature. Tamper-evident. Court-admissible.' }
+  };
+  var hdr = TAB_HEADERS[tab] || TAB_HEADERS['memories'];
+  var hdrTitleEl = document.getElementById('echo-section-header-title');
+  var hdrSubEl = document.getElementById('echo-section-header-sub');
+  if (hdrTitleEl) hdrTitleEl.textContent = hdr.title;
+  if (hdrSubEl) hdrSubEl.textContent = hdr.sub;
+
   document.querySelectorAll('.echo-feed-tab').forEach(function(btn){
     var isActive = btn.getAttribute('data-echo-tab') === tab;
     btn.classList.toggle('active', isActive);
