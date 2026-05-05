@@ -6239,13 +6239,15 @@ Template Overview
 </div><!-- /screen-compliance -->
 
 <div id="screen-echo" class="screen"><span id="echo-timeline" style="display:none"></span><span id="echo-lineage-list" style="display:none"></span><span id="echo-defense-summary" style="display:none"></span>
+<!-- echo-fedlens-toggle + toggleFederalLens: Federal Lens (2D-d-21) -->
 <div class="section-hdr" style="margin-bottom:14px">
 <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px">
 <div>
 <div style="font-size:15px;font-weight:600;color:var(--chrome2)">◈ Echo Core — Audit Memory & Integrity</div>
 <div style="font-size:11px;color:var(--muted);margin-top:2px">Tamper-proof audit log · Decision receipts · Model lineage · Drift tracking · Accountability chain</div>
 </div>
-<div style="display:flex;gap:8px;flex-wrap:wrap">
+<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+<button type="button" id="echo-fedlens-toggle" onclick="toggleFederalLens()" title="Federal Lens — highlight memories tied to federal statutes (DoD AI Ethics, Title VII, OMB, EO May 2026, 18 USC §1512/§1513, ACA §1557, ECOA, FCRA, FTC §5)" style="background:rgba(168,85,247,0.06);border:1px solid rgba(168,85,247,0.25);color:#a855f7;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:11px;font-weight:600;">🏛 Federal Lens: OFF</button>
 <button class="btn-ghost" onclick="exportAuditLog()">⬇ Export Full Audit Log</button>
 </div>
 </div>
@@ -9068,6 +9070,84 @@ window.CARDINAL_STATUTES = [
     enforcementClimate: 'Critical — sets new federal-contractor compliance bar; Cardinal positioned as default vetting layer'
   }
 ];
+
+window.getStatutesForCase = function(caseId) {
+  if (!caseId || !window.CARDINAL_STATUTES) return [];
+  var clean = String(caseId).replace(/^#/, '').trim();
+  return window.CARDINAL_STATUTES.filter(function(s){
+    return (s.cardinalCases || []).indexOf(clean) !== -1;
+  });
+};
+
+window.isStatuteFederal = function(statuteId) {
+  return ['dod-ai-ethics', 'title-vii', '18-usc-1512', '18-usc-1513', 'omb-ai', 'trump-eo-2026', 'aca-1557', 'ecoa', 'fcra', 'ftc-uddap'].indexOf(statuteId) !== -1;
+};
+
+window.renderStatuteBadgesForMemory = function(memory) {
+  if (!memory || !memory.caseId) return '';
+  var statutes = window.getStatutesForCase(memory.caseId);
+  if (!statutes.length) return '';
+
+  function climateColor(climate) {
+    var c = (climate || '').toLowerCase();
+    if (c.indexOf('critical') !== -1) return '#ef4444';
+    if (c.indexOf('elevated') !== -1 || c.indexOf('high') !== -1) return '#f59e0b';
+    if (c.indexOf('active') !== -1) return '#f59e0b';
+    return '#22c55e';
+  }
+
+  var escJs = function(t) {
+    return typeof echoEscapeJsAttr === 'function' ? echoEscapeJsAttr(t) : String(t == null ? '' : t).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+  };
+
+  var visible = statutes.slice(0, 3);
+  var overflow = statutes.length - visible.length;
+
+  var html = '<div class="echo-statute-badges" style="display:flex;gap:4px;flex-wrap:wrap;align-items:center;margin-top:6px;">';
+
+  visible.forEach(function(s){
+    var col = climateColor(s.enforcementClimate);
+    var fedFlag = window.isStatuteFederal(s.id) ? '🏛 ' : '📜 ';
+    var sidJs = escJs(s.id);
+    var nmJs = escJs(s.name || '');
+    var titClimate = (s.enforcementClimate || '').split('—')[0].trim();
+    var titRaw = (s.fullName || '') + ' · ' + titClimate;
+    var tit = (typeof echoEscapeHtml === 'function' ? echoEscapeHtml(titRaw) : String(titRaw).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;'));
+    var nameEsc = typeof echoEscapeHtml === 'function' ? echoEscapeHtml(s.name || '') : String(s.name || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
+    html += '<span onclick="event.stopPropagation();typeof openStatuteDetail===\'function\'&&openStatuteDetail(\'' + sidJs + '\');" oncontextmenu="typeof cardinalShowContextMenu===\'function\'&&cardinalShowContextMenu(event, \'memory\', \'' + sidJs + '\', \'' + nmJs + '\')" title="' + tit + '" style="cursor:pointer;font-size:9px;color:' + col + ';background:' + col + '12;border:1px solid ' + col + '40;padding:2px 7px;border-radius:6px;font-weight:600;white-space:nowrap;">' + fedFlag + nameEsc + '</span>';
+  });
+
+  if (overflow > 0) {
+    html += '<span style="font-size:9px;color:var(--muted);font-weight:600;padding:2px 6px;">+' + overflow + ' more</span>';
+  }
+
+  html += '</div>';
+  return html;
+};
+
+window.__federalLensOn = false;
+
+/** Echo header control — exposed as window.toggleFederalLens for onclick="toggleFederalLens()". */
+window.toggleFederalLens = function() {
+  window.__federalLensOn = !window.__federalLensOn;
+  var btn = document.getElementById('echo-fedlens-toggle');
+  if (btn) {
+    if (window.__federalLensOn) {
+      btn.style.background = 'rgba(168,85,247,0.2)';
+      btn.style.borderColor = 'rgba(168,85,247,0.5)';
+      btn.style.boxShadow = '0 0 0 3px rgba(168,85,247,0.1)';
+      btn.textContent = '🏛 Federal Lens: ON';
+    } else {
+      btn.style.background = 'rgba(168,85,247,0.06)';
+      btn.style.borderColor = 'rgba(168,85,247,0.25)';
+      btn.style.boxShadow = '';
+      btn.textContent = '🏛 Federal Lens: OFF';
+    }
+  }
+  if (typeof echoApplyFilters === 'function') {
+    try { echoApplyFilters(); } catch(_e) {}
+  }
+};
 
 window.getStatutesByIndustry = function(industryId) {
   return window.CARDINAL_STATUTES.filter(function(s){ return s.industries.indexOf(industryId) !== -1; });
@@ -24644,6 +24724,38 @@ function echoApplyFilters() {
 
   var feedEl = document.getElementById('echo-memory-feed');
   if (!feedEl) return;
+
+  if (window.__federalLensOn) {
+    var fedMems = filtered.filter(function(m){
+      if (!m.caseId || typeof getStatutesForCase !== 'function') return false;
+      return getStatutesForCase(m.caseId).some(function(s){ return window.isStatuteFederal && window.isStatuteFederal(s.id); });
+    });
+    var fedCases = Array.from(new Set(fedMems.map(function(m){ return m.caseId; }).filter(Boolean)));
+    var fedStripEl = document.getElementById('echo-fedlens-strip');
+    if (!fedStripEl) {
+      fedStripEl = document.createElement('div');
+      fedStripEl.id = 'echo-fedlens-strip';
+      fedStripEl.style.cssText = 'margin-bottom:12px;';
+      if (feedEl && feedEl.parentNode) feedEl.parentNode.insertBefore(fedStripEl, feedEl);
+    }
+    fedStripEl.style.display = 'block';
+    fedStripEl.innerHTML = '<div style="padding:14px 16px;background:linear-gradient(135deg, rgba(168,85,247,0.08) 0%, rgba(15,23,42,0.5) 100%);border:1px solid rgba(168,85,247,0.3);border-radius:10px;">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">' +
+        '<div>' +
+          '<div style="font-size:10px;color:#a855f7;text-transform:uppercase;letter-spacing:0.8px;font-weight:800;margin-bottom:4px;">🏛 FEDERAL LENS — ACTIVE</div>' +
+          '<div style="font-size:12px;color:var(--chrome2);line-height:1.5;">Showing only memories tied to federal statutes. Non-federal memories are dimmed but visible.</div>' +
+        '</div>' +
+        '<div style="display:flex;gap:14px;">' +
+          '<div style="text-align:center;"><div style="font-size:20px;color:#a855f7;font-weight:800;line-height:1;">' + fedMems.length + '</div><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-top:3px;">Federal Memories</div></div>' +
+          '<div style="text-align:center;"><div style="font-size:20px;color:#a855f7;font-weight:800;line-height:1;">' + fedCases.length + '</div><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-top:3px;">Federal Cases</div></div>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+  } else {
+    var existingStrip = document.getElementById('echo-fedlens-strip');
+    if (existingStrip) existingStrip.style.display = 'none';
+  }
+
   if (filtered.length === 0) {
     feedEl.innerHTML = '<div style="padding:40px;text-align:center;color:var(--muted);background:rgba(15,23,42,0.4);border:1px dashed rgba(166,218,255,0.1);border-radius:10px;">No memories match current filters. <a href="#" onclick="event.preventDefault();echoResetFilters();" title="Clear filters and show all memories" style="color:var(--accent);">Reset filters</a></div>';
     try { window.__echoActiveFilter = null; var _bn = document.getElementById('echo-filter-banner'); if (_bn) _bn.remove(); } catch(_bf) {}
@@ -24675,6 +24787,16 @@ function echoMemoryCardActions(memoryId) {
 }
 
 function renderEchoMemoryCard(m) {
+  var __fedHighlight = '';
+  if (window.__federalLensOn && m && m.caseId && typeof getStatutesForCase === 'function') {
+    var __fedStats = getStatutesForCase(m.caseId).filter(function(s){ return window.isStatuteFederal && window.isStatuteFederal(s.id); });
+    if (__fedStats.length > 0) {
+      __fedHighlight = 'box-shadow:0 0 0 1px rgba(168,85,247,0.5), 0 0 18px rgba(168,85,247,0.18);border-color:rgba(168,85,247,0.5) !important;';
+    } else {
+      __fedHighlight = 'opacity:0.45;';
+    }
+  }
+
   var sevColor = { critical: 'red', high: 'amber', medium: 'blue', low: 'green', informational: 'muted' }[m.severity] || 'muted';
   var coreColor = { eden: 'red', obsidian: 'blue', genesis: 'amber', atonement: 'green', sentinel: 'amber', halo: 'blue', echo: 'accent', compliance: 'muted2', trustledger: 'green', trustloop: 'accent', warroom: 'red' }[m.core] || 'accent';
   var addendumBadge = (m.addendums && m.addendums.length > 0) ? '<span style="display:inline-flex;align-items:center;gap:4px;padding:2px 7px;background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.25);border-radius:10px;font-size:9px;color:var(--amber);font-weight:600;" title="' + m.addendums.length + ' addendum' + (m.addendums.length === 1 ? '' : 's') + ' appended">+' + m.addendums.length + ' addendum' + (m.addendums.length === 1 ? '' : 's') + '</span>' : '';
@@ -24688,7 +24810,7 @@ function renderEchoMemoryCard(m) {
   var contentPrev = (m.content || '');
   var contentSnippet = contentPrev.length > 220 ? contentPrev.substring(0, 220) + '...' : contentPrev;
 
-  return '<div data-memory-id="' + echoEscapeHtml(m.id) + '" style="position:relative;padding:14px 16px;background:linear-gradient(180deg, rgba(15,23,42,0.6) 0%, rgba(11,18,32,0.6) 100%);border:1px solid rgba(166,218,255,0.08);border-radius:10px;display:flex;gap:14px;align-items:flex-start;transition:all 0.15s;box-shadow:inset 0 1px 0 rgba(255,255,255,0.02);" onmouseover="this.style.borderColor=\'rgba(166,218,255,0.2)\';this.style.transform=\'translateY(-1px)\';" onmouseout="this.style.borderColor=\'rgba(166,218,255,0.08)\';this.style.transform=\'translateY(0)\';">' +
+  return '<div data-memory-id="' + echoEscapeHtml(m.id) + '" data-fed-highlight="' + (__fedHighlight ? '1' : '') + '" style="position:relative;padding:14px 16px;background:linear-gradient(180deg, rgba(15,23,42,0.6) 0%, rgba(11,18,32,0.6) 100%);border:1px solid rgba(166,218,255,0.08);border-radius:10px;display:flex;gap:14px;align-items:flex-start;transition:all 0.15s;box-shadow:inset 0 1px 0 rgba(255,255,255,0.02);' + __fedHighlight + '" onmouseover="this.style.borderColor=\'rgba(166,218,255,0.2)\';this.style.transform=\'translateY(-1px)\';" onmouseout="this.style.borderColor=\'rgba(166,218,255,0.08)\';this.style.transform=\'translateY(0)\';">' +
     '<div onclick="echoOpenMemoryDetail(\'' + echoEscapeJsAttr(m.id) + '\')" style="cursor:pointer;flex:1;display:flex;gap:14px;align-items:flex-start;min-width:0;" title="Click to open full memory detail">' +
     '<div style="flex-shrink:0;width:8px;height:8px;border-radius:50%;background:var(--' + sevColor + ');margin-top:6px;box-shadow:0 0 8px var(--' + sevColor + ');"></div>' +
     '<div style="flex:1;min-width:0;">' +
@@ -24706,7 +24828,11 @@ function renderEchoMemoryCard(m) {
         (m.modelId ? '<span style="color:var(--muted2);">' + echoEscapeHtml(m.modelId) + '</span>' : '') +
         '<span style="color:var(--accent);font-family:monospace;">0x' + echoEscapeHtml(hashShort) + '...</span>' +
       '</div>' +
-      '<div style="display:flex;justify-content:flex-end;gap:6px;margin-top:8px;padding-top:8px;border-top:1px solid rgba(166,218,255,0.05);">' + echoMemoryCardActions(m.id) + '</div>' +
+      (typeof renderStatuteBadgesForMemory === 'function' ? renderStatuteBadgesForMemory(m) : '') +
+      '<div style="display:flex;justify-content:space-between;align-items:center;gap:6px;margin-top:8px;padding-top:8px;border-top:1px solid rgba(166,218,255,0.05);">' +
+        '<div style="font-size:9px;color:var(--muted);">' + (m.caseId ? '#' + echoEscapeHtml(m.caseId) : '') + '</div>' +
+        echoMemoryCardActions(m.id) +
+      '</div>' +
     '</div>' +
     '</div>' +
     '<button type="button" onclick="event.stopPropagation();echoTogglePin(\'' + echoEscapeJsAttr(m.id) + '\')" style="flex-shrink:0;align-self:flex-start;padding:6px 12px;background:' + (pinOn ? 'rgba(245,158,11,0.1)' : 'rgba(166,218,255,0.04)') + ';border:1px solid ' + (pinOn ? 'rgba(245,158,11,0.3)' : 'rgba(166,218,255,0.15)') + ';border-radius:6px;color:' + (pinOn ? 'var(--amber)' : 'var(--accent)') + ';font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap;transition:all 0.15s;" title="' + (pinOn ? 'Unpin from My Pinned Memories' : 'Add to My Pinned Memories') + '">' + (pinOn ? '📌 Pinned ✓' : '📌 Pin') + '</button>' +
@@ -26793,6 +26919,7 @@ function echoRenderMemoryDetailFullscreen(memory, memoryOrg) {
       '</div>' +
     '</div>' +
     '<h2 style="font-size:22px;font-weight:700;color:var(--chrome2);margin:0 0 12px 0;line-height:1.3;">' + echoEscapeHtml(memory.summary || 'Untitled event') + '</h2>' +
+    (typeof renderStatuteBadgesForMemory === 'function' ? '<div style="margin-top:10px;">' + renderStatuteBadgesForMemory(memory) + '</div>' : '') +
   '</div>';
 
   html += '<div style="display:grid;grid-template-columns:repeat(4, minmax(0,1fr));gap:12px;margin-bottom:20px;">';
