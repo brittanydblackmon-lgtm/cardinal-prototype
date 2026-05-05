@@ -10577,6 +10577,13 @@ window.edoCrossLensDemographic = function (fromLens, org, cohortToken, tierLabel
   window.__edo.highlightTierLabel = tierLabel || null;
   try { if (typeof currentOrg !== 'undefined') currentOrg = org; } catch (_c) {}
   try { window.currentOrg = org; } catch (_d) {}
+  // Re-render Trust Score if it's the active screen
+  try {
+    var tsActive = document.getElementById('screen-trustscore');
+    if (tsActive && tsActive.classList.contains('active') && typeof renderTrustScoreStandalone === 'function') {
+      renderTrustScoreStandalone(currentOrg);
+    }
+  } catch(_re) {}
   var fl = String(fromLens || 'bias').toLowerCase();
   if (fl === 'bias') {
     window.__edo.screen = 'obsidian';
@@ -13387,6 +13394,13 @@ function doLogin() {
   try {
     currentOrg = selectedOrg || 'ad';
     window.currentOrg = currentOrg;
+    // Re-render Trust Score if it's the active screen
+    try {
+      var tsActive = document.getElementById('screen-trustscore');
+      if (tsActive && tsActive.classList.contains('active') && typeof renderTrustScoreStandalone === 'function') {
+        renderTrustScoreStandalone(currentOrg);
+      }
+    } catch(_re) {}
     var loginEl = document.getElementById('login-screen');
     var appEl = document.getElementById('app');
     if(loginEl) { loginEl.style.display = 'none'; loginEl.style.opacity = '0'; loginEl.style.pointerEvents = 'none'; }
@@ -13439,14 +13453,13 @@ function switchIndustry(org, btn) {
  try { updateHaloInaction(org); } catch (_haloFx) {}
  try { applyUserSettingsMerge(org); } catch(_um) {}
  try { window._tlwSideSearch = ''; } catch (_tsc) {}
- // If the Trust Score screen is currently visible, rebuild it so its
- // numbers stay in sync with the dashboard / CARDINAL_DATA.
+ // Re-render Trust Score if it's the active screen
  try {
-   var tsScreen = document.getElementById('screen-trustscore');
-   if (tsScreen && tsScreen.classList.contains('active')) {
-     buildTrustScore(org); buildScoreDims(); buildTrustScoreNew(org);
+   var tsActive = document.getElementById('screen-trustscore');
+   if (tsActive && tsActive.classList.contains('active') && typeof renderTrustScoreStandalone === 'function') {
+     renderTrustScoreStandalone(currentOrg);
    }
- } catch(_tsr) {}
+ } catch(_re) {}
  try {
    var tlScr = document.getElementById('screen-trustloop');
    if (tlScr && tlScr.classList.contains('active')) renderTrustLoopWorkspace(org);
@@ -16964,46 +16977,34 @@ function showScreen(name, navEl) {
  if(name==='compliance') buildCompliance(currentOrg);
  if(name==='genesis') { setTimeout(()=>initGenesisLog(currentOrg),100); setTimeout(()=>buildPMProfiles(currentOrg),150); }
  if(name==='trustscore') {
-    console.log('[TrustScore] click fired, currentOrg=', currentOrg);
+    console.log('[TrustScore-v3] click fired, currentOrg=', currentOrg);
     var tsScreenEl = document.getElementById('screen-trustscore');
-    console.log('[TrustScore] screen element:', tsScreenEl, 'has active:', tsScreenEl && tsScreenEl.classList.contains('active'));
-    var tsRootEl = document.getElementById('ts-v2-root');
-    console.log('[TrustScore] ts-v2-root:', tsRootEl, 'children:', tsRootEl && tsRootEl.children.length);
-    // Force the screen visible defensively
     if (tsScreenEl) {
       tsScreenEl.style.display = 'block';
       tsScreenEl.style.visibility = 'visible';
       tsScreenEl.style.opacity = '1';
     }
+    var tsRootEl = document.getElementById('ts-v2-root');
     if (tsRootEl) {
       tsRootEl.style.display = 'block';
       tsRootEl.style.visibility = 'visible';
       tsRootEl.style.opacity = '1';
     }
-    // Update topbar title
     var ttEl = document.getElementById('topbar-title');
     if (ttEl) ttEl.textContent = 'Trust Score — Cardinal AI Trust Index';
-    // Try render path with full error capture
-    try { buildTrustScore(currentOrg); console.log('[TrustScore] buildTrustScore OK'); } catch(e1) { console.error('[TrustScore] buildTrustScore FAILED:', e1); }
-    try { buildScoreDims(); console.log('[TrustScore] buildScoreDims OK'); } catch(e2) { console.error('[TrustScore] buildScoreDims FAILED:', e2); }
-    try { buildTrustScoreNew(currentOrg); console.log('[TrustScore] buildTrustScoreNew OK'); } catch(e3) { console.error('[TrustScore] buildTrustScoreNew FAILED:', e3); }
-    // Sanity check: if ts-v2-root has < 3 children OR is empty, something is broken — show fallback
-    setTimeout(function(){
-      var rootCheck = document.getElementById('ts-v2-root');
-      if (rootCheck && rootCheck.offsetHeight < 50) {
-        console.error('[TrustScore] FALLBACK: ts-v2-root height is', rootCheck.offsetHeight, '— rendering emergency static view');
-        rootCheck.innerHTML = '<div style="padding:40px;background:rgba(15,23,42,0.5);border:1px solid rgba(245,158,11,0.3);border-radius:12px;margin:20px;">' +
-          '<div style="font-size:11px;color:#f59e0b;text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:10px;">⚠ TRUST SCORE — RENDER FALLBACK</div>' +
-          '<div style="font-size:42px;color:#f59e0b;font-weight:800;line-height:1;margin-bottom:8px;">74</div>' +
-          '<div style="font-size:13px;color:var(--chrome2);margin-bottom:20px;">Below Threshold — Not Certified</div>' +
-          '<div style="font-size:11px;color:var(--muted);">Atlas Defense Systems · A&D Pilot</div>' +
-          '<div style="margin-top:20px;padding:12px;background:rgba(239,68,68,0.05);border:1px solid rgba(239,68,68,0.2);border-radius:8px;font-size:11px;color:var(--muted2);line-height:1.6;">' +
-          'The dynamic Trust Score render did not complete. This fallback view confirms the screen is reachable. Open DevTools console for the exact error trace.' +
-          '</div></div>';
-      } else if (rootCheck) {
-        console.log('[TrustScore] ts-v2-root rendered OK, height=', rootCheck.offsetHeight);
-      }
-    }, 200);
+
+    // Render standalone (self-contained, doesn't depend on V1/V2 build functions)
+    try {
+      renderTrustScoreStandalone(currentOrg);
+      console.log('[TrustScore-v3] standalone render complete');
+    } catch (e) {
+      console.error('[TrustScore-v3] standalone render FAILED:', e);
+    }
+
+    // Best-effort: also try the legacy renderers in case they wire up additional features
+    try { if (typeof buildTrustScore === 'function') buildTrustScore(currentOrg); } catch(_e1) {}
+    try { if (typeof buildScoreDims === 'function') buildScoreDims(); } catch(_e2) {}
+    try { if (typeof buildTrustScoreNew === 'function') buildTrustScoreNew(currentOrg); } catch(_e3) {}
   }
  if(name==='eden') { setTimeout(function(){ try{ var o=currentOrg||window.currentOrg||'ad'; if(typeof renderEden==='function') renderEden(o); }catch(e){} }, 50); }
  if(name==='obsidian') { setTimeout(function(){ try{ var o2=currentOrg||window.currentOrg||'ad'; if(typeof renderObsidian==='function') renderObsidian(o2); }catch(e2){} }, 50); }
@@ -26830,6 +26831,281 @@ function tsv2Data(org) {
   var o = org || (typeof currentOrg !== 'undefined' && currentOrg) || 'ad';
   return (window.CARDINAL_DATA && window.CARDINAL_DATA[o]) || (window.CARDINAL_DATA && window.CARDINAL_DATA.ad) || null;
 }
+
+
+function renderTrustScoreStandalone(org) {
+  var o = org || (typeof currentOrg !== 'undefined' && currentOrg) || 'ad';
+  var rootEl = document.getElementById('ts-v2-root');
+  if (!rootEl) {
+    console.error('[TrustScore-v3] ts-v2-root not found in DOM');
+    return;
+  }
+
+  // Gather data from multiple sources
+  var DATA_BY_ORG = {
+    ad: {
+      orgName: 'Atlas Defense Systems', industry: 'Aerospace & Defense', pilot: 'A&D Pilot',
+      global: 74, trend: -2, certified: false,
+      lastCert: '2026-01-14', renewal: '2026-04-14',
+      dims: { fairness: 67, fraud: 91, transparency: 78, privacy: 82, governance: 72, monitoring: 68 },
+      reasons: [
+        { text: 'Personnel Assignment v2.4 — Disparate Impact 0.67', sub: 'Below 0.80 threshold · 847 affected records', target: 'eden' },
+        { text: 'ZIP code proxy correlation 0.82', sub: 'Affects bias scoring AND fraud integrity', target: 'obsidian' },
+        { text: 'ECOA renewal overdue 8 days', sub: 'Auto-flagged · blocks recertification', target: 'compliance' },
+        { text: 'Post-deployment monitoring at 68%', sub: 'Below 85% governance threshold', target: 'sentinel' }
+      ],
+      raises: [
+        { text: 'Fix Case #2847 (Personnel bias)', gain: 4.2, target: 'atonement' },
+        { text: 'Complete ECOA renewal', gain: 1.8, target: 'compliance' },
+        { text: 'Improve monitoring coverage to 85%', gain: 1.1, target: 'sentinel' },
+        { text: 'Deploy shadow fix to 100%', gain: 0.8, target: 'atonement' }
+      ],
+      watch: [
+        { text: 'New bias pattern in Logistics model', risk: -3.5 },
+        { text: 'Miss ECOA deadline (8 days)', risk: -2.0 },
+        { text: 'Adversarial drift on Personnel v2.4', risk: -1.4 }
+      ],
+      models: [
+        { name: 'Personnel Assignment v2.4', score: 67, di: '0.67', status: 'Critical', c: '#ef4444', weight: '35%' },
+        { name: 'Mission Readiness v1.1', score: 82, di: '0.91', status: 'Watch', c: '#f59e0b', weight: '25%' },
+        { name: 'Fraud Detection v3.2', score: 91, di: '0.97', status: 'Passing', c: '#22c55e', weight: '25%' },
+        { name: 'Maintenance Routing v1.2', score: 78, di: '0.78', status: 'Watch', c: '#f59e0b', weight: '15%' }
+      ],
+      monthly: 'April saw a 2-point drop, driven entirely by Personnel Assignment v2.4. The model crossed the disparate-impact threshold on April 3. Sentinel flagged it within hours; Atonement has the fix queued. We expect a 4-point rebound when the patch deploys to 100%.',
+      year: [62, 64, 66, 68, 70, 72, 73, 74, 76, 75, 74, 74]
+    },
+    fin: {
+      orgName: 'First National Bank', industry: 'Finance', pilot: 'Finance Pilot',
+      global: 79, trend: 1, certified: false,
+      lastCert: '2026-02-01', renewal: '2026-05-01',
+      dims: { fairness: 74, fraud: 88, transparency: 84, privacy: 86, governance: 80, monitoring: 77 },
+      reasons: [
+        { text: 'Credit Scoring v3.4 — Hispanic disparity 3.1×', sub: 'Above 2.0× regulatory threshold', target: 'eden' },
+        { text: 'ZIP code correlates 0.82 with race in Auto Loan', sub: 'Proxy variable detected', target: 'obsidian' },
+        { text: 'FCRA documentation gaps in 3 models', sub: 'Missing methodology disclosures', target: 'compliance' }
+      ],
+      raises: [
+        { text: 'Fix Credit Scoring ZIP proxy', gain: 3.1, target: 'atonement' },
+        { text: 'Update FCRA documentation', gain: 1.4, target: 'compliance' },
+        { text: 'Deploy explainability layer', gain: 0.9, target: 'sentinel' }
+      ],
+      watch: [
+        { text: 'CFPB enforcement action escalation', risk: -4.0 },
+        { text: 'Adverse action notice gap', risk: -2.3 }
+      ],
+      models: [
+        { name: 'Credit Scoring v3.4', score: 72, di: '0.71', status: 'High Risk', c: '#ef4444', weight: '40%' },
+        { name: 'Auto Loan v2.1', score: 81, di: '0.88', status: 'Watch', c: '#f59e0b', weight: '30%' },
+        { name: 'Fraud Ring Detector v4.0', score: 94, di: '0.98', status: 'Passing', c: '#22c55e', weight: '30%' }
+      ],
+      monthly: 'April moved the score +1 to 79 — one point shy of certification. The Credit Scoring ZIP-proxy fix was deployed to 25% shadow traffic with no fairness regression. If the rollout completes on schedule, May should clear 80 and qualify for FCRA recert.',
+      year: [68, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 79]
+    },
+    health: {
+      orgName: 'Mercy Health Network', industry: 'Healthcare', pilot: 'Healthcare Pilot',
+      global: 83, trend: 3, certified: true,
+      lastCert: '2026-01-07', renewal: '2026-07-07',
+      dims: { fairness: 81, fraud: 89, transparency: 79, privacy: 88, governance: 85, monitoring: 80 },
+      reasons: [
+        { text: 'Claims Adjudication v1.9 age bias partial', sub: 'Remediation in progress', target: 'eden' },
+        { text: 'Patient-facing explainability missing', sub: 'Required for HIPAA transparency rule', target: 'compliance' },
+        { text: 'Monitoring coverage 80% vs 85% target', sub: '2 models below threshold', target: 'sentinel' }
+      ],
+      raises: [
+        { text: 'Complete v1.10 deployment', gain: 2.4, target: 'atonement' },
+        { text: 'Add patient explainability layer', gain: 1.2, target: 'compliance' },
+        { text: 'Lift monitoring to 85%', gain: 0.6, target: 'sentinel' }
+      ],
+      watch: [
+        { text: 'CMS audit window opens June', risk: -1.5 },
+        { text: 'New ACA Section 1557 guidance', risk: -1.0 }
+      ],
+      models: [
+        { name: 'Claims Adjudication v1.9', score: 78, di: '0.79', status: 'Watch', c: '#f59e0b', weight: '40%' },
+        { name: 'Triage Priority v2.0', score: 86, di: '0.88', status: 'Passing', c: '#22c55e', weight: '30%' },
+        { name: 'Diagnosis Support v2.4', score: 91, di: '0.95', status: 'Passing', c: '#22c55e', weight: '30%' }
+      ],
+      monthly: 'May continues healthcare\'s upward trajectory — Claims v1.10 promotion held DI improvements through full production. Mercy Health remains the only certified Cardinal pilot. Next certification renewal: July 7.',
+      year: [76, 77, 78, 79, 80, 80, 81, 82, 82, 83, 83, 83]
+    }
+  };
+
+  var d = DATA_BY_ORG[o] || DATA_BY_ORG.ad;
+  var scoreColor = d.global >= 80 ? '#22c55e' : d.global >= 70 ? '#f59e0b' : '#ef4444';
+  var statusLabel = d.certified ? 'Certified' : (d.global >= 80 ? 'Certifiable' : 'Below Threshold — Not Certified');
+  var trendArrow = d.trend > 0 ? '↑' : d.trend < 0 ? '↓' : '→';
+  var trendColor = d.trend > 0 ? '#22c55e' : d.trend < 0 ? '#ef4444' : '#94a3b8';
+
+  // Build the page
+  var html = '';
+
+  // ── PAGE HEADER ──
+  html += '<div style="margin-bottom:18px;">' +
+    '<div style="font-size:18px;font-weight:700;color:var(--chrome2);">Trust Score — Cardinal AI Trust Index</div>' +
+    '<div style="font-size:11px;color:var(--muted);margin-top:4px;">The FICO score for ethical AI · 0–100 · 80+ certified · ' + d.orgName + ' · ' + d.pilot + '</div>' +
+  '</div>';
+
+  // ── SECTION 1: HERO (gauge + status) ──
+  var dashOffset = 540 - (d.global / 100 * 540);
+  html += '<div style="display:grid;grid-template-columns:auto 1fr;gap:24px;padding:24px;background:linear-gradient(135deg, rgba(15,23,42,0.7) 0%, rgba(11,18,32,0.7) 100%);border:1px solid rgba(166,218,255,0.15);border-radius:14px;margin-bottom:18px;align-items:center;">' +
+    '<div style="position:relative;width:200px;height:200px;flex-shrink:0;">' +
+      '<svg viewBox="0 0 200 200" style="width:100%;height:100%;">' +
+        '<circle cx="100" cy="100" r="86" fill="none" stroke="rgba(166,218,255,0.06)" stroke-width="14"/>' +
+        '<circle cx="100" cy="100" r="86" fill="none" stroke="' + scoreColor + '" stroke-width="14" stroke-linecap="round" stroke-dasharray="540" stroke-dashoffset="' + dashOffset + '" transform="rotate(-90 100 100)" style="filter:drop-shadow(0 0 12px ' + scoreColor + '60);"/>' +
+        '<text x="100" y="105" text-anchor="middle" dominant-baseline="middle" fill="' + scoreColor + '" font-size="64" font-weight="800" font-family="inherit">' + d.global + '</text>' +
+        '<text x="100" y="138" text-anchor="middle" font-size="11" fill="rgba(180,190,220,0.55)" font-family="inherit">/ 100</text>' +
+      '</svg>' +
+    '</div>' +
+    '<div>' +
+      '<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap;">' +
+        '<span style="font-size:11px;color:' + scoreColor + ';font-weight:700;text-transform:uppercase;letter-spacing:1px;padding:4px 10px;background:' + scoreColor + '15;border:1px solid ' + scoreColor + '40;border-radius:12px;">' + statusLabel + '</span>' +
+        '<span style="font-size:12px;color:' + trendColor + ';font-weight:600;">' + trendArrow + ' ' + Math.abs(d.trend) + ' pts vs last month</span>' +
+      '</div>' +
+      '<div style="font-size:13px;color:var(--chrome2);line-height:1.6;margin-bottom:14px;">' + d.monthly + '</div>' +
+      '<div style="display:flex;gap:14px;font-size:11px;color:var(--muted);">' +
+        '<span>Last cert: <span style="color:var(--chrome2);font-weight:600;">' + d.lastCert + '</span></span>' +
+        '<span>·</span>' +
+        '<span>Renewal: <span style="color:var(--chrome2);font-weight:600;">' + d.renewal + '</span></span>' +
+      '</div>' +
+    '</div>' +
+  '</div>';
+
+  // ── SECTION 2: 6-DIMENSION COMPOSITION ──
+  var dimMeta = [
+    { id: 'fairness', label: 'Bias / Fairness', weight: '25%' },
+    { id: 'fraud', label: 'Fraud Prevention', weight: '20%' },
+    { id: 'transparency', label: 'Transparency', weight: '15%' },
+    { id: 'privacy', label: 'Privacy', weight: '15%' },
+    { id: 'governance', label: 'Governance', weight: '15%' },
+    { id: 'monitoring', label: 'Monitoring', weight: '10%' }
+  ];
+  html += '<div style="background:rgba(15,23,42,0.5);border:1px solid rgba(166,218,255,0.1);border-radius:12px;padding:18px 22px;margin-bottom:18px;">' +
+    '<div style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;font-weight:700;margin-bottom:14px;">📊 6-Dimension Composition</div>' +
+    '<div style="display:grid;grid-template-columns:repeat(2, minmax(0,1fr));gap:12px;">' +
+      dimMeta.map(function(dim){
+        var v = d.dims[dim.id] || 0;
+        var c = v >= 80 ? '#22c55e' : v >= 70 ? '#f59e0b' : '#ef4444';
+        return '<div style="padding:12px 14px;background:rgba(15,23,42,0.4);border:1px solid rgba(166,218,255,0.06);border-radius:8px;">' +
+          '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">' +
+            '<span style="font-size:11px;color:var(--chrome2);font-weight:600;">' + dim.label + '</span>' +
+            '<span style="font-size:10px;color:var(--muted);">weight ' + dim.weight + '</span>' +
+          '</div>' +
+          '<div style="display:flex;align-items:baseline;gap:8px;margin-bottom:6px;">' +
+            '<span style="font-size:22px;font-weight:800;color:' + c + ';line-height:1;">' + v + '</span>' +
+            '<span style="font-size:10px;color:var(--muted);">/100</span>' +
+          '</div>' +
+          '<div style="height:5px;background:rgba(166,218,255,0.08);border-radius:3px;overflow:hidden;">' +
+            '<div style="height:100%;width:' + v + '%;background:' + c + ';border-radius:3px;box-shadow:0 0 6px ' + c + '60;"></div>' +
+          '</div>' +
+        '</div>';
+      }).join('') +
+    '</div>' +
+  '</div>';
+
+  // ── SECTION 3: WHY (reasons) ──
+  html += '<div style="background:rgba(239,68,68,0.04);border:1px solid rgba(239,68,68,0.15);border-radius:12px;padding:18px 22px;margin-bottom:14px;">' +
+    '<div style="font-size:12px;color:#ef4444;text-transform:uppercase;letter-spacing:0.8px;font-weight:700;margin-bottom:12px;">⚠ Why the score is at ' + d.global + '</div>' +
+    '<div style="display:flex;flex-direction:column;gap:8px;">' +
+      d.reasons.map(function(r){
+        return '<div onclick="showScreen(\'' + r.target + '\', null)" style="cursor:pointer;display:grid;grid-template-columns:1fr auto;gap:14px;padding:10px 14px;background:rgba(15,23,42,0.5);border:1px solid rgba(239,68,68,0.15);border-radius:8px;align-items:center;transition:all 0.15s;" onmouseover="this.style.borderColor=\'rgba(239,68,68,0.4)\';" onmouseout="this.style.borderColor=\'rgba(239,68,68,0.15)\';">' +
+          '<div><div style="font-size:12px;color:var(--chrome2);font-weight:600;line-height:1.3;">' + r.text + '</div><div style="font-size:10px;color:var(--muted);margin-top:3px;">' + r.sub + '</div></div>' +
+          '<span style="font-size:11px;color:var(--accent);">→</span>' +
+        '</div>';
+      }).join('') +
+    '</div>' +
+  '</div>';
+
+  // ── SECTION 4: HOW TO RAISE (actions) ──
+  html += '<div style="background:rgba(34,197,94,0.04);border:1px solid rgba(34,197,94,0.15);border-radius:12px;padding:18px 22px;margin-bottom:14px;">' +
+    '<div style="font-size:12px;color:#22c55e;text-transform:uppercase;letter-spacing:0.8px;font-weight:700;margin-bottom:12px;">↑ Actions that raise the score</div>' +
+    '<div style="display:flex;flex-direction:column;gap:8px;">' +
+      d.raises.map(function(r){
+        return '<div onclick="showScreen(\'' + r.target + '\', null)" style="cursor:pointer;display:grid;grid-template-columns:1fr auto auto;gap:14px;padding:10px 14px;background:rgba(15,23,42,0.5);border:1px solid rgba(34,197,94,0.15);border-radius:8px;align-items:center;transition:all 0.15s;" onmouseover="this.style.borderColor=\'rgba(34,197,94,0.4)\';" onmouseout="this.style.borderColor=\'rgba(34,197,94,0.15)\';">' +
+          '<span style="font-size:12px;color:var(--chrome2);font-weight:600;">' + r.text + '</span>' +
+          '<span style="font-size:13px;color:#22c55e;font-weight:700;">+' + r.gain + ' pts</span>' +
+          '<span style="font-size:11px;color:var(--accent);">→</span>' +
+        '</div>';
+      }).join('') +
+    '</div>' +
+  '</div>';
+
+  // ── SECTION 5: WATCH LIST ──
+  html += '<div style="background:rgba(245,158,11,0.04);border:1px solid rgba(245,158,11,0.15);border-radius:12px;padding:18px 22px;margin-bottom:14px;">' +
+    '<div style="font-size:12px;color:#f59e0b;text-transform:uppercase;letter-spacing:0.8px;font-weight:700;margin-bottom:12px;">👁 Watch list — risks that could lower the score</div>' +
+    '<div style="display:flex;flex-direction:column;gap:6px;">' +
+      d.watch.map(function(w){
+        return '<div style="display:grid;grid-template-columns:1fr auto;gap:14px;padding:8px 14px;background:rgba(15,23,42,0.4);border:1px solid rgba(245,158,11,0.1);border-radius:6px;align-items:center;">' +
+          '<span style="font-size:11px;color:var(--chrome2);">' + w.text + '</span>' +
+          '<span style="font-size:12px;color:#ef4444;font-weight:700;">' + w.risk + ' pts</span>' +
+        '</div>';
+      }).join('') +
+    '</div>' +
+  '</div>';
+
+  // ── SECTION 6: MODEL-LEVEL BREAKDOWN ──
+  html += '<div style="background:rgba(15,23,42,0.5);border:1px solid rgba(166,218,255,0.1);border-radius:12px;padding:18px 22px;margin-bottom:14px;">' +
+    '<div style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;font-weight:700;margin-bottom:12px;">🧬 Model-level scores</div>' +
+    '<div style="display:flex;flex-direction:column;gap:8px;">' +
+      d.models.map(function(m){
+        return '<div style="display:grid;grid-template-columns:1fr auto auto auto auto;gap:14px;padding:10px 14px;background:rgba(15,23,42,0.4);border-left:3px solid ' + m.c + ';border-radius:6px;align-items:center;">' +
+          '<div><div style="font-size:12px;color:var(--chrome2);font-weight:600;">' + m.name + '</div><div style="font-size:10px;color:var(--muted);margin-top:2px;">DI ratio: ' + m.di + ' · weight ' + m.weight + '</div></div>' +
+          '<span style="font-size:18px;color:' + m.c + ';font-weight:800;">' + m.score + '</span>' +
+          '<span style="font-size:10px;color:' + m.c + ';font-weight:700;text-transform:uppercase;letter-spacing:0.5px;padding:3px 8px;background:' + m.c + '15;border:1px solid ' + m.c + '40;border-radius:10px;">' + m.status + '</span>' +
+          '<div style="width:80px;height:5px;background:rgba(166,218,255,0.08);border-radius:3px;overflow:hidden;">' +
+            '<div style="height:100%;width:' + m.score + '%;background:' + m.c + ';"></div>' +
+          '</div>' +
+          '<span style="font-size:11px;color:var(--accent);">→</span>' +
+        '</div>';
+      }).join('') +
+    '</div>' +
+  '</div>';
+
+  // ── SECTION 7: 12-MONTH TRAJECTORY ──
+  var maxScore = Math.max.apply(null, d.year);
+  var minScore = Math.min.apply(null, d.year);
+  var rangeScore = Math.max(maxScore - minScore, 5);
+  var pathPoints = d.year.map(function(v, i){
+    var x = 60 + (i * (680 / 11));
+    var y = 130 - ((v - minScore) / rangeScore * 90);
+    return x + ',' + y;
+  }).join(' ');
+  var lastPt = pathPoints.split(' ').pop().split(',');
+
+  html += '<div style="background:rgba(15,23,42,0.5);border:1px solid rgba(166,218,255,0.1);border-radius:12px;padding:18px 22px;">' +
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">' +
+      '<div style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;font-weight:700;">📈 12-month trajectory</div>' +
+      '<div style="font-size:11px;color:var(--muted);">Min ' + minScore + ' · Max ' + maxScore + ' · Current ' + d.global + '</div>' +
+    '</div>' +
+    '<svg viewBox="0 0 760 160" style="width:100%;height:160px;">' +
+      '<defs><linearGradient id="tsTrajGrad-' + o + '" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="' + scoreColor + '" stop-opacity="0.3"/><stop offset="100%" stop-color="' + scoreColor + '" stop-opacity="0"/></linearGradient></defs>' +
+      // 80-line target
+      '<line x1="60" y1="' + (130 - ((80 - minScore) / rangeScore * 90)) + '" x2="740" y2="' + (130 - ((80 - minScore) / rangeScore * 90)) + '" stroke="rgba(34,197,94,0.4)" stroke-width="1" stroke-dasharray="4,4"/>' +
+      '<text x="734" y="' + (130 - ((80 - minScore) / rangeScore * 90) - 4) + '" text-anchor="end" font-size="9" fill="rgba(34,197,94,0.6)">Cert. threshold (80)</text>' +
+      // Area
+      '<polyline points="' + pathPoints + ' ' + lastPt[0] + ',160 60,160" fill="url(#tsTrajGrad-' + o + ')"/>' +
+      // Line
+      '<polyline points="' + pathPoints + '" fill="none" stroke="' + scoreColor + '" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="filter:drop-shadow(0 0 6px ' + scoreColor + '40);"/>' +
+      // Points
+      d.year.map(function(v, i){
+        var x = 60 + (i * (680 / 11));
+        var y = 130 - ((v - minScore) / rangeScore * 90);
+        return '<circle cx="' + x + '" cy="' + y + '" r="3" fill="' + scoreColor + '" stroke="rgba(15,23,42,1)" stroke-width="1.5"/>';
+      }).join('') +
+      // Final glowing point
+      '<circle cx="' + lastPt[0] + '" cy="' + lastPt[1] + '" r="6" fill="' + scoreColor + '" stroke="rgba(15,23,42,1)" stroke-width="2" style="filter:drop-shadow(0 0 10px ' + scoreColor + '90);"/>' +
+      // Month labels
+      ['M-11','M-10','M-9','M-8','M-7','M-6','M-5','M-4','M-3','M-2','M-1','Now'].map(function(lbl, i){
+        return '<text x="' + (60 + (i * (680 / 11))) + '" y="155" text-anchor="middle" font-size="9" fill="rgba(148,163,184,0.6)">' + lbl + '</text>';
+      }).join('') +
+    '</svg>' +
+  '</div>';
+
+  rootEl.innerHTML = html;
+  console.log('[TrustScore-v3] rendered ' + html.length + ' bytes for org=' + o);
+}
+
+window.renderTrustScoreStandalone = renderTrustScoreStandalone;
+
 
 function tsv2HexA(hex, a) {
   var h = (hex || '#a6daff').replace('#','');
