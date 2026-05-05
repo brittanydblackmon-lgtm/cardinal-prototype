@@ -2173,10 +2173,19 @@ animation: pulse 2s infinite;
   0%, 100% { opacity: 1; box-shadow: 0 0 8px #22c55e; }
   50% { opacity: 0.5; box-shadow: 0 0 14px #22c55e; }
 }
+@keyframes echoTickerScroll {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
 @keyframes echoActivityPulse {
   0% { background: rgba(34,197,94,0.15); transform: translateX(0); }
   50% { background: rgba(34,197,94,0.05); }
   100% { background: rgba(15,23,42,0.5); transform: translateX(0); }
+}
+.echo-kpi-card { min-width: 0; cursor: pointer; }
+@media (max-width: 1100px) {
+  #echo-kpi-row-alerts { grid-template-columns: repeat(2, minmax(0,1fr)) !important; }
+  #echo-kpi-row-activity { grid-template-columns: repeat(2, minmax(0,1fr)) !important; }
 }
 .echo-kpi-card:hover {
   border-color: rgba(166,218,255,0.25) !important;
@@ -6167,49 +6176,48 @@ Template Overview
   <section id="echo-cardinal-hero" class="tsv2-section" style="position:relative;overflow:hidden;padding:28px 32px;background:linear-gradient(180deg, rgba(15,23,42,0.7) 0%, rgba(11,18,32,0.5) 100%);border:1px solid rgba(166,218,255,0.1);border-radius:16px;margin-bottom:18px;box-shadow:0 8px 32px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.04);">
     <div style="position:absolute;top:-100px;right:-80px;width:320px;height:320px;background:radial-gradient(circle, rgba(34,197,94,0.06) 0%, rgba(34,197,94,0) 70%);pointer-events:none;"></div>
     <div style="position:relative;z-index:1;display:grid;grid-template-columns:1fr 380px;gap:28px;align-items:start;">
-      <!-- LEFT: Status verdict + live wave + activity feed -->
+      <!-- LEFT: Status verdict + live ticker + 24h chart -->
       <div>
         <div id="echo-status-verdict" style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;"></div>
         <div id="echo-status-headline" style="font-size:24px;font-weight:700;color:var(--chrome2);margin-bottom:18px;line-height:1.3;">Echo is monitoring your audit chain</div>
-        <!-- Live ambient wave -->
-        <div style="position:relative;height:88px;margin-bottom:20px;border-radius:12px;background:linear-gradient(180deg, rgba(34,197,94,0.04) 0%, rgba(34,197,94,0.01) 100%);overflow:hidden;border:1px solid rgba(34,197,94,0.12);">
-          <svg viewBox="0 0 800 88" preserveAspectRatio="none" width="100%" height="88" style="position:absolute;inset:0;">
-            <defs>
-              <linearGradient id="echoWaveGrad1" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stop-color="#22c55e" stop-opacity="0"/>
-                <stop offset="50%" stop-color="#22c55e" stop-opacity="0.6"/>
-                <stop offset="100%" stop-color="#22c55e" stop-opacity="0"/>
-              </linearGradient>
-              <linearGradient id="echoWaveGrad2" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stop-color="#3b82f6" stop-opacity="0"/>
-                <stop offset="50%" stop-color="#3b82f6" stop-opacity="0.4"/>
-                <stop offset="100%" stop-color="#3b82f6" stop-opacity="0"/>
-              </linearGradient>
-              <filter id="echoWaveBlur"><feGaussianBlur stdDeviation="1.5"/></filter>
-            </defs>
-            <path d="M0,44 Q100,20 200,44 T400,44 T600,44 T800,44" fill="none" stroke="url(#echoWaveGrad1)" stroke-width="2" filter="url(#echoWaveBlur)">
-              <animate attributeName="d" dur="4s" repeatCount="indefinite"
-                values="M0,44 Q100,20 200,44 T400,44 T600,44 T800,44;
-                        M0,44 Q100,68 200,44 T400,44 T600,44 T800,44;
-                        M0,44 Q100,20 200,44 T400,44 T600,44 T800,44"/>
-            </path>
-            <path d="M0,44 Q150,30 300,44 T600,44 T800,44" fill="none" stroke="url(#echoWaveGrad2)" stroke-width="1.5" opacity="0.6">
-              <animate attributeName="d" dur="6s" repeatCount="indefinite"
-                values="M0,44 Q150,30 300,44 T600,44 T800,44;
-                        M0,44 Q150,58 300,44 T600,44 T800,44;
-                        M0,44 Q150,30 300,44 T600,44 T800,44"/>
-            </path>
-          </svg>
-          <div style="position:absolute;top:8px;left:12px;display:flex;align-items:center;gap:6px;font-size:10px;color:rgba(34,197,94,0.7);font-weight:600;letter-spacing:0.5px;">
-            <span style="width:6px;height:6px;border-radius:50%;background:#22c55e;animation:echoLivePulse 1.6s infinite;box-shadow:0 0 8px #22c55e;"></span>
-            <span>LIVE</span>
+        <!-- LIVE EVENT TICKER -->
+        <div style="position:relative;background:linear-gradient(135deg, rgba(15,23,42,0.98) 0%, rgba(11,18,32,0.98) 50%, rgba(15,23,42,0.98) 100%);border:1px solid rgba(34,197,94,0.18);border-radius:14px;padding:14px 18px;box-shadow:0 8px 24px rgba(0,0,0,0.45), 0 2px 6px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.04);overflow:hidden;margin-bottom:14px;">
+          <div style="position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg, transparent, rgba(34,197,94,0.3), transparent);"></div>
+          <div style="position:absolute;top:-50px;right:-50px;width:180px;height:180px;background:radial-gradient(circle, rgba(34,197,94,0.08) 0%, rgba(34,197,94,0) 70%);pointer-events:none;"></div>
+          <div style="position:relative;display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span style="width:7px;height:7px;border-radius:50%;background:#22c55e;animation:echoLivePulse 1.8s infinite;"></span>
+              <span style="font-size:10px;color:#22c55e;font-weight:600;letter-spacing:1.2px;">LIVE EVENT STREAM</span>
+            </div>
+            <span style="font-size:10px;color:rgba(180,190,220,0.5);font-style:italic;">hover to pause · click any item to open</span>
           </div>
-          <div style="position:absolute;bottom:8px;right:12px;font-size:9px;color:rgba(180,190,220,0.4);text-transform:uppercase;letter-spacing:0.5px;">Audit chain heartbeat</div>
+          <div id="echo-ticker-window" style="position:relative;height:32px;overflow:hidden;background:linear-gradient(180deg, rgba(0,0,0,0.25) 0%, rgba(0,0,0,0.15) 100%);border-radius:8px;border:0.5px solid rgba(166,218,255,0.06);display:flex;align-items:center;box-shadow:inset 0 2px 4px rgba(0,0,0,0.3);" onmouseover="var t=document.getElementById('echo-ticker-track'); if(t) t.style.animationPlayState='paused';" onmouseout="var t=document.getElementById('echo-ticker-track'); if(t) t.style.animationPlayState='running';">
+            <div id="echo-ticker-track" style="display:inline-flex;gap:40px;white-space:nowrap;animation:echoTickerScroll 70s linear infinite;font-size:12px;padding:0 16px;"></div>
+          </div>
         </div>
-        <!-- Activity feed -->
-        <div>
-          <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;font-weight:600;margin-bottom:8px;">Latest Logged Events</div>
-          <div id="echo-activity-feed" style="display:flex;flex-direction:column;gap:6px;"></div>
+
+        <!-- 24-HOUR ACTIVITY BAR CHART -->
+        <div style="position:relative;background:linear-gradient(135deg, rgba(15,23,42,0.96) 0%, rgba(11,18,32,0.96) 50%, rgba(15,23,42,0.96) 100%);border:1px solid rgba(166,218,255,0.12);border-radius:14px;padding:18px 20px;box-shadow:0 8px 24px rgba(0,0,0,0.45), 0 2px 6px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.04);overflow:hidden;">
+          <div style="position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg, transparent, rgba(166,218,255,0.15), transparent);"></div>
+          <div style="position:absolute;bottom:-80px;left:-60px;width:240px;height:240px;background:radial-gradient(circle, rgba(59,130,246,0.06) 0%, rgba(59,130,246,0) 70%);pointer-events:none;"></div>
+          <div style="position:relative;display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px;">
+            <div>
+              <div style="font-size:10px;color:rgba(148,163,184,0.7);text-transform:uppercase;letter-spacing:1.2px;font-weight:600;margin-bottom:4px;">ACTIVITY · LAST 24 HOURS</div>
+              <div id="echo-activity-headline" style="font-size:14px;color:#e2e8f0;font-weight:600;">—</div>
+            </div>
+            <div style="display:flex;gap:14px;font-size:10px;color:rgba(148,163,184,0.7);">
+              <span style="display:flex;align-items:center;gap:5px;"><span style="width:8px;height:8px;border-radius:2px;background:#ef4444;box-shadow:0 0 6px rgba(239,68,68,0.5);"></span>critical</span>
+              <span style="display:flex;align-items:center;gap:5px;"><span style="width:8px;height:8px;border-radius:2px;background:#f59e0b;box-shadow:0 0 6px rgba(245,158,11,0.5);"></span>high</span>
+              <span style="display:flex;align-items:center;gap:5px;"><span style="width:8px;height:8px;border-radius:2px;background:#3b82f6;box-shadow:0 0 6px rgba(59,130,246,0.5);"></span>medium</span>
+              <span style="display:flex;align-items:center;gap:5px;"><span style="width:8px;height:8px;border-radius:2px;background:#94a3b8;"></span>info</span>
+            </div>
+          </div>
+          <div style="position:relative;font-size:10px;color:rgba(148,163,184,0.55);margin-bottom:10px;font-style:italic;">
+            <span style="color:#ef4444;">critical</span> = act now &nbsp;·&nbsp; <span style="color:#f59e0b;">high</span> = review soon &nbsp;·&nbsp; <span style="color:#3b82f6;">medium</span> = routine governance &nbsp;·&nbsp; <span style="color:#94a3b8;">info</span> = background activity
+          </div>
+          <div style="position:relative;width:100%;height:130px;">
+            <canvas id="echoVolumeChart" role="img" aria-label="Stacked bar chart of event volume by hour over last 24 hours">Hourly event volume.</canvas>
+          </div>
         </div>
       </div>
       <!-- RIGHT: Executive Summary + history link + System Health strip -->
@@ -6231,41 +6239,41 @@ Template Overview
   </section>
 
   <!-- 7 KPI CARDS in 2 rows -->
-  <div id="echo-kpi-row-alerts" style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:12px;">
-    <div class="echo-kpi-card" data-card="critical-issues" style="position:relative;padding:16px;background:linear-gradient(180deg, rgba(15,23,42,0.6) 0%, rgba(11,18,32,0.5) 100%);border:1px solid rgba(166,218,255,0.1);border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.03);transition:all 0.2s;">
+  <div id="echo-kpi-row-alerts" style="display:grid !important;grid-template-columns:repeat(4, minmax(0,1fr)) !important;gap:12px;margin-bottom:12px;width:100%;box-sizing:border-box;">
+    <div class="echo-kpi-card" data-card="critical-issues" onclick="echoOpenKpiFilter('critical-issues')" style="position:relative;padding:16px;background:linear-gradient(180deg, rgba(15,23,42,0.6) 0%, rgba(11,18,32,0.5) 100%);border:1px solid rgba(166,218,255,0.1);border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.03);transition:all 0.2s;">
       <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;font-weight:700;margin-bottom:8px;">Critical Issues</div>
       <div style="font-size:32px;font-weight:800;letter-spacing:-1px;line-height:1;" id="echo-kpi-critical">0</div>
       <div style="font-size:10px;color:var(--muted);margin-top:6px;" id="echo-kpi-critical-sub">Unresolved · need eyes now</div>
     </div>
-    <div class="echo-kpi-card" data-card="ignored-flags" style="position:relative;padding:16px;background:linear-gradient(180deg, rgba(15,23,42,0.6) 0%, rgba(11,18,32,0.5) 100%);border:1px solid rgba(166,218,255,0.1);border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.03);transition:all 0.2s;">
+    <div class="echo-kpi-card" data-card="ignored-flags" onclick="echoOpenKpiFilter('ignored-flags')" style="position:relative;padding:16px;background:linear-gradient(180deg, rgba(15,23,42,0.6) 0%, rgba(11,18,32,0.5) 100%);border:1px solid rgba(166,218,255,0.1);border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.03);transition:all 0.2s;">
       <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;font-weight:700;margin-bottom:8px;">Ignored Flags</div>
       <div style="font-size:32px;font-weight:800;letter-spacing:-1px;line-height:1;" id="echo-kpi-ignored">0</div>
       <div style="font-size:10px;color:var(--muted);margin-top:6px;" id="echo-kpi-ignored-sub">Eve warnings dismissed</div>
     </div>
-    <div class="echo-kpi-card" data-card="pending-signoffs" style="position:relative;padding:16px;background:linear-gradient(180deg, rgba(15,23,42,0.6) 0%, rgba(11,18,32,0.5) 100%);border:1px solid rgba(166,218,255,0.1);border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.03);transition:all 0.2s;">
+    <div class="echo-kpi-card" data-card="pending-signoffs" onclick="echoOpenKpiFilter('pending-signoffs')" style="position:relative;padding:16px;background:linear-gradient(180deg, rgba(15,23,42,0.6) 0%, rgba(11,18,32,0.5) 100%);border:1px solid rgba(166,218,255,0.1);border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.03);transition:all 0.2s;">
       <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;font-weight:700;margin-bottom:8px;">Pending Sign-Offs</div>
       <div style="font-size:32px;font-weight:800;letter-spacing:-1px;line-height:1;" id="echo-kpi-pending">0</div>
       <div style="font-size:10px;color:var(--muted);margin-top:6px;" id="echo-kpi-pending-sub">Awaiting human signature</div>
     </div>
-    <div class="echo-kpi-card" data-card="whistleblower" style="position:relative;padding:16px;background:linear-gradient(180deg, rgba(15,23,42,0.6) 0%, rgba(11,18,32,0.5) 100%);border:1px solid rgba(168,85,247,0.15);border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.03);transition:all 0.2s;">
+    <div class="echo-kpi-card" data-card="whistleblower" onclick="echoOpenKpiFilter('whistleblower')" style="position:relative;padding:16px;background:linear-gradient(180deg, rgba(15,23,42,0.6) 0%, rgba(11,18,32,0.5) 100%);border:1px solid rgba(168,85,247,0.15);border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.03);transition:all 0.2s;">
       <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;font-weight:700;margin-bottom:8px;">🔒 Whistleblower</div>
       <div style="font-size:32px;font-weight:800;letter-spacing:-1px;line-height:1;color:#a855f7;" id="echo-kpi-whistleblower">0</div>
       <div style="font-size:10px;color:var(--muted);margin-top:6px;" id="echo-kpi-whistleblower-sub">Sealed submissions on file</div>
     </div>
   </div>
 
-  <div id="echo-kpi-row-activity" style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:18px;">
-    <div class="echo-kpi-card" data-card="days-since-critical" style="position:relative;padding:16px;background:linear-gradient(180deg, rgba(15,23,42,0.6) 0%, rgba(11,18,32,0.5) 100%);border:1px solid rgba(166,218,255,0.1);border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.03);transition:all 0.2s;">
+  <div id="echo-kpi-row-activity" style="display:grid !important;grid-template-columns:repeat(3, minmax(0,1fr)) !important;gap:12px;margin-bottom:18px;width:100%;box-sizing:border-box;">
+    <div class="echo-kpi-card" data-card="days-since-critical" onclick="echoOpenKpiFilter('days-since-critical')" style="position:relative;padding:16px;background:linear-gradient(180deg, rgba(15,23,42,0.6) 0%, rgba(11,18,32,0.5) 100%);border:1px solid rgba(166,218,255,0.1);border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.03);transition:all 0.2s;">
       <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;font-weight:700;margin-bottom:8px;">Days Since Last Critical</div>
       <div style="font-size:32px;font-weight:800;letter-spacing:-1px;line-height:1;" id="echo-kpi-days-since">0</div>
       <div style="font-size:10px;color:var(--muted);margin-top:6px;" id="echo-kpi-days-since-sub">Safety streak</div>
     </div>
-    <div class="echo-kpi-card" data-card="active-investigations" style="position:relative;padding:16px;background:linear-gradient(180deg, rgba(15,23,42,0.6) 0%, rgba(11,18,32,0.5) 100%);border:1px solid rgba(166,218,255,0.1);border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.03);transition:all 0.2s;">
+    <div class="echo-kpi-card" data-card="active-investigations" onclick="echoOpenKpiFilter('active-investigations')" style="position:relative;padding:16px;background:linear-gradient(180deg, rgba(15,23,42,0.6) 0%, rgba(11,18,32,0.5) 100%);border:1px solid rgba(166,218,255,0.1);border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.03);transition:all 0.2s;">
       <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;font-weight:700;margin-bottom:8px;">Active Investigations</div>
       <div style="font-size:32px;font-weight:800;letter-spacing:-1px;line-height:1;color:#3b82f6;" id="echo-kpi-active-cases">0</div>
       <div style="font-size:10px;color:var(--muted);margin-top:6px;" id="echo-kpi-active-sub">Open cases generating memories</div>
     </div>
-    <div class="echo-kpi-card" data-card="last-activity" style="position:relative;padding:16px;background:linear-gradient(180deg, rgba(15,23,42,0.6) 0%, rgba(11,18,32,0.5) 100%);border:1px solid rgba(166,218,255,0.1);border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.03);transition:all 0.2s;">
+    <div class="echo-kpi-card" data-card="last-activity" onclick="echoOpenKpiFilter('last-activity')" style="position:relative;padding:16px;background:linear-gradient(180deg, rgba(15,23,42,0.6) 0%, rgba(11,18,32,0.5) 100%);border:1px solid rgba(166,218,255,0.1);border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.03);transition:all 0.2s;">
       <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;font-weight:700;margin-bottom:8px;">Last Activity</div>
       <div id="echo-kpi-last-activity" style="font-size:13px;font-weight:600;color:var(--chrome2);line-height:1.3;">—</div>
       <div style="font-size:10px;color:var(--muted);margin-top:6px;" id="echo-kpi-last-activity-sub">—</div>
@@ -22468,6 +22476,7 @@ function echoShowPastBriefings() {
 function renderEchoCardinalHero(org) {
   var memories = (window.CARDINAL_DATA && window.CARDINAL_DATA[org] && window.CARDINAL_DATA[org].echoMemories) ? window.CARDINAL_DATA[org].echoMemories.slice() : [];
   memories.sort(function(a,b){ return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(); });
+  window.__echoCurrentOrg = org;
   var receipts = (window.DECISION_RECEIPTS || []).filter(function(r){ return r.industryContext === org; });
   var now = Date.now();
 
@@ -22538,22 +22547,141 @@ function renderEchoCardinalHero(org) {
     }
   }
 
-  var feedEl = document.getElementById('echo-activity-feed');
-  if (feedEl) {
-    var feedItems = memories.slice(0, 5);
-    feedEl.innerHTML = feedItems.map(function(m, idx){
-      var sevColor = { critical: '#ef4444', high: '#f59e0b', medium: '#3b82f6', low: '#22c55e', informational: '#94a3b8' }[m.severity] || '#94a3b8';
+  // LIVE TICKER — populate from latest 14 memories, doubled for seamless scroll
+  var tickerTrack = document.getElementById('echo-ticker-track');
+  if (tickerTrack) {
+    var tickerItems = memories.slice(0, 14);
+    var sevColorMap = { critical: '#ef4444', high: '#f59e0b', medium: '#3b82f6', low: '#22c55e', informational: '#94a3b8' };
+    var renderTickerItem = function(m) {
+      var sevColor = sevColorMap[m.severity] || '#94a3b8';
       var minsAgo = Math.floor((now - new Date(m.timestamp).getTime()) / 60000);
       var timeStr = minsAgo < 60 ? minsAgo + 'm' : minsAgo < 1440 ? Math.floor(minsAgo/60) + 'h' : Math.floor(minsAgo/1440) + 'd';
-      var pulseStyle = idx === 0 ? 'animation:echoActivityPulse 2s ease-in-out;' : '';
       var mid = echoEscapeJsAttr(m.id);
       var sumEsc = echoEscapeHtml(m.summary || '');
-      return '<div onclick="echoOpenMemoryDetail(\'' + mid + '\')" style="cursor:pointer;display:flex;align-items:center;gap:10px;padding:8px 12px;background:rgba(15,23,42,0.5);border:1px solid rgba(166,218,255,0.06);border-radius:8px;transition:all 0.15s;' + pulseStyle + '" onmouseover="this.style.borderColor=\'rgba(166,218,255,0.2)\';this.style.transform=\'translateX(2px)\';" onmouseout="this.style.borderColor=\'rgba(166,218,255,0.06)\';this.style.transform=\'translateX(0)\';">' +
-        '<span style="width:6px;height:6px;border-radius:50%;background:' + sevColor + ';box-shadow:0 0 6px ' + sevColor + ';flex-shrink:0;"></span>' +
-        '<span style="font-size:11px;color:var(--chrome2);font-weight:500;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + sumEsc + '</span>' +
-        '<span style="font-size:10px;color:var(--muted);flex-shrink:0;font-family:monospace;">' + echoEscapeHtml(timeStr) + '</span>' +
-        '</div>';
-    }).join('');
+      var timeEsc = echoEscapeHtml(timeStr);
+      return '<span onclick="echoOpenMemoryDetail(\'' + mid + '\')" style="cursor:pointer;display:inline-flex;align-items:center;">' +
+        '<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:' + sevColor + ';margin-right:10px;vertical-align:middle;box-shadow:0 0 8px ' + sevColor + ';"></span>' +
+        '<span style="color:#e2e8f0;font-weight:500;">' + sumEsc + '</span>' +
+        '<span style="color:rgba(148,163,184,0.6);margin-left:10px;">· ' + timeEsc + '</span>' +
+        '</span>';
+    };
+    var tickerHtml = tickerItems.map(renderTickerItem).join('');
+    tickerTrack.innerHTML = tickerHtml + tickerHtml;
+  }
+
+  // 24-HOUR BAR CHART — bucket memories into hourly bins by severity
+  var chartCanvas = document.getElementById('echoVolumeChart');
+  var ChartLib = window.Chart;
+  if (chartCanvas && ChartLib && typeof ChartLib === 'function' && ChartLib.version) {
+    var hourBins = [];
+    var hourLabels = [];
+    var hourEventLists = [];
+    for (var bi = 23; bi >= 0; bi--) {
+      var binStart = new Date(now - bi * 3600000);
+      binStart.setMinutes(0, 0, 0);
+      hourBins.push({ critical: 0, high: 0, medium: 0, info: 0, ts: binStart.getTime() });
+      var h = binStart.getHours();
+      var label = h === 0 ? '12am' : h < 12 ? h + 'am' : h === 12 ? '12pm' : (h - 12) + 'pm';
+      hourLabels.push(label);
+      hourEventLists.push([]);
+    }
+    memories.forEach(function(m){
+      var ts = new Date(m.timestamp).getTime();
+      var hoursAgo = Math.floor((now - ts) / 3600000);
+      if (hoursAgo < 0 || hoursAgo > 23) return;
+      var idx = 23 - hoursAgo;
+      if (idx < 0 || idx >= hourBins.length) return;
+      var bin = hourBins[idx];
+      var sev = m.severity || 'informational';
+      if (sev === 'critical') bin.critical++;
+      else if (sev === 'high') bin.high++;
+      else if (sev === 'medium') bin.medium++;
+      else bin.info++;
+      hourEventLists[idx].push(m);
+    });
+    var totalReal = hourBins.reduce(function(a,b){ return a + b.critical + b.high + b.medium + b.info; }, 0);
+    if (totalReal === 0) {
+      var demoCrit  = [0,0,0,0,0,0,0,0,1,0,0,2,1,0,3,1,0,0,0,0,0,1,0,0];
+      var demoHigh  = [0,0,0,0,0,0,1,0,2,1,1,1,2,1,2,2,1,0,1,0,0,0,1,0];
+      var demoMed   = [0,1,0,0,1,0,2,1,2,2,1,1,3,1,2,2,1,1,1,1,0,1,1,0];
+      var demoInfo  = [0,0,1,0,0,0,1,1,1,1,1,1,2,1,1,1,1,1,1,1,0,0,0,0];
+      for (var di = 0; di < 24; di++) {
+        hourBins[di].critical = demoCrit[di];
+        hourBins[di].high = demoHigh[di];
+        hourBins[di].medium = demoMed[di];
+        hourBins[di].info = demoInfo[di];
+      }
+    }
+    var totalEvents = hourBins.reduce(function(a,b){ return a + b.critical + b.high + b.medium + b.info; }, 0);
+    var peakIdx = 0;
+    var peakVal = 0;
+    hourBins.forEach(function(b, i){ var v = b.critical+b.high+b.medium+b.info; if (v > peakVal) { peakVal = v; peakIdx = i; } });
+    var headlineEl2 = document.getElementById('echo-activity-headline');
+    if (headlineEl2) headlineEl2.textContent = totalEvents + ' events logged · peak ' + hourLabels[peakIdx] + ' (' + peakVal + ' event' + (peakVal === 1 ? '' : 's') + ')';
+
+    if (window.__echoChart) { try { window.__echoChart.destroy(); } catch(_) {} window.__echoChart = null; }
+    var ctx = chartCanvas.getContext('2d');
+    var redGrad = ctx.createLinearGradient(0, 0, 0, 130);
+    redGrad.addColorStop(0, '#ef4444'); redGrad.addColorStop(1, '#991b1b');
+    var amberGrad = ctx.createLinearGradient(0, 0, 0, 130);
+    amberGrad.addColorStop(0, '#f59e0b'); amberGrad.addColorStop(1, '#92400e');
+    var blueGrad = ctx.createLinearGradient(0, 0, 0, 130);
+    blueGrad.addColorStop(0, '#3b82f6'); blueGrad.addColorStop(1, '#1e3a8a');
+    var grayGrad = ctx.createLinearGradient(0, 0, 0, 130);
+    grayGrad.addColorStop(0, '#94a3b8'); grayGrad.addColorStop(1, '#475569');
+
+    window.__echoHourEventLists = hourEventLists;
+    window.__echoHourLabels = hourLabels;
+
+    window.__echoChart = new ChartLib(chartCanvas, {
+      type: 'bar',
+      data: {
+        labels: hourLabels,
+        datasets: [
+          { label: 'Critical', data: hourBins.map(function(b){return b.critical;}), backgroundColor: redGrad,   stack: 's', borderRadius: 2, borderSkipped: false },
+          { label: 'High',     data: hourBins.map(function(b){return b.high;}),     backgroundColor: amberGrad, stack: 's', borderRadius: 2, borderSkipped: false },
+          { label: 'Medium',   data: hourBins.map(function(b){return b.medium;}),   backgroundColor: blueGrad,  stack: 's', borderRadius: 2, borderSkipped: false },
+          { label: 'Info',     data: hourBins.map(function(b){return b.info;}),     backgroundColor: grayGrad,  stack: 's', borderRadius: 2, borderSkipped: false }
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        onClick: function(evt, elements) {
+          if (elements && elements.length > 0) {
+            var hourIdx = elements[0].index;
+            try { echoOpenHourFilter(hourIdx); } catch(_e) { console.error('echoOpenHourFilter failed', _e); }
+          }
+        },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            mode: 'index',
+            backgroundColor: 'rgba(15,23,42,0.95)', titleColor: '#e2e8f0', bodyColor: '#cbd5e1',
+            borderColor: 'rgba(166,218,255,0.2)', borderWidth: 1, padding: 10, cornerRadius: 8,
+            callbacks: {
+              afterBody: function(items) {
+                if (!items || !items.length) return '';
+                var idx = items[0].dataIndex;
+                var evts = (window.__echoHourEventLists || [])[idx] || [];
+                if (evts.length === 0) return '';
+                var lines = ['', '— Events this hour —'];
+                evts.slice(0, 4).forEach(function(m){
+                  var s = (m.summary || '').substring(0, 60) + ((m.summary || '').length > 60 ? '...' : '');
+                  lines.push('• ' + s);
+                });
+                if (evts.length > 4) lines.push('+ ' + (evts.length - 4) + ' more');
+                lines.push('(click bar to open)');
+                return lines;
+              }
+            }
+          }
+        },
+        scales: {
+          x: { stacked: true, grid: { display: false }, ticks: { font: { size: 9 }, color: 'rgba(148,163,184,0.5)', autoSkip: true, maxTicksLimit: 12 }, border: { color: 'rgba(166,218,255,0.08)' } },
+          y: { stacked: true, beginAtZero: true, grid: { color: 'rgba(166,218,255,0.04)' }, ticks: { font: { size: 9 }, color: 'rgba(148,163,184,0.5)', precision: 0 }, border: { display: false } }
+        }
+      }
+    });
   }
 
   var addendumCount = memories.reduce(function(acc, m){ return acc + (m.addendums ? m.addendums.length : 0); }, 0);
@@ -22678,6 +22806,7 @@ function echoSetFilter(key, value) {
 }
 
 function echoResetFilters() {
+  try { if (typeof echoClearFilter === 'function') echoClearFilter(); } catch(_ec) {}
   window.__echoFilters = { timePeriod: 'all', core: 'all', case: 'all', model: 'all', person: 'all', eventType: 'all', severity: 'all', accessTier: 'all' };
   var search = document.getElementById('echo-search-input');
   if (search) search.value = '';
@@ -22722,9 +22851,13 @@ function echoApplyFilters() {
   if (!feedEl) return;
   if (filtered.length === 0) {
     feedEl.innerHTML = '<div style="padding:40px;text-align:center;color:var(--muted);background:rgba(15,23,42,0.4);border:1px dashed rgba(166,218,255,0.1);border-radius:10px;">No memories match current filters. <a href="#" onclick="event.preventDefault();echoResetFilters();" title="Clear filters and show all memories" style="color:var(--accent);">Reset filters</a></div>';
+    try { window.__echoActiveFilter = null; var _bn = document.getElementById('echo-filter-banner'); if (_bn) _bn.remove(); } catch(_bf) {}
     return;
   }
   feedEl.innerHTML = filtered.map(function(m){ return renderEchoMemoryCard(m); }).join('');
+  if (window.__echoActiveFilter && window.__echoActiveFilter.ids && typeof echoApplyFilterToMemories === 'function') {
+    try { echoApplyFilterToMemories(); } catch(_ef) {}
+  }
 }
 
 function renderEchoMemoryCard(m) {
@@ -22783,6 +22916,94 @@ function renderEchoPinnedSidebar(org) {
       '<div style="font-size:9px;color:var(--muted);">' + echoEscapeHtml(m.author || 'system') + ' · ' + echoEscapeHtml(dateStr) + '</div>' +
     '</div>';
   }).join('');
+}
+
+function echoOpenHourFilter(hourIdx) {
+  var evts = (window.__echoHourEventLists || [])[hourIdx] || [];
+  var label = (window.__echoHourLabels || [])[hourIdx] || '';
+  if (!evts.length) return;
+  window.__echoActiveFilter = { type: 'hour', hourIdx: hourIdx, label: label, ids: evts.map(function(m){ return m.id; }) };
+  if (typeof echoSwitchTab === 'function') {
+    try { echoSwitchTab('memories'); } catch(_e) {}
+  }
+  setTimeout(function(){
+    if (typeof echoApplyFilterToMemories === 'function') {
+      try { echoApplyFilterToMemories(); } catch(_e) {}
+    }
+    var tabSection = document.getElementById('echo-memory-feed-section');
+    if (tabSection) tabSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, 50);
+}
+
+function echoOpenKpiFilter(cardType) {
+  var org = window.__echoCurrentOrg || (typeof currentOrg !== 'undefined' ? currentOrg : null) || (window.currentOrg || 'ad');
+  var memories = (window.CARDINAL_DATA && window.CARDINAL_DATA[org] && window.CARDINAL_DATA[org].echoMemories) ? window.CARDINAL_DATA[org].echoMemories : [];
+  var matching = [];
+  if (cardType === 'critical-issues') {
+    matching = memories.filter(function(m){ return m.severity === 'critical' && m.eventType !== 'case-closed' && m.eventType !== 'remediation-completed'; });
+  } else if (cardType === 'ignored-flags') {
+    matching = memories.filter(function(m){ return m.eventType === 'decision-reversed' || (m.summary && /dismissed|ignored/i.test(m.summary)); });
+  } else if (cardType === 'pending-signoffs') {
+    matching = memories.filter(function(m){ return m.eventType === 'pending-review' || m.eventType === 'awaiting-signature' || (m.summary && /pending|awaiting/i.test(m.summary)); });
+  } else if (cardType === 'whistleblower') {
+    try { if (typeof echoClearFilter === 'function') echoClearFilter(); } catch(_w) {}
+    if (typeof echoSwitchTab === 'function') { try { echoSwitchTab('whistleblower'); } catch(_e) {} }
+    var tabSection = document.getElementById('echo-memory-feed-section');
+    if (tabSection) tabSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    return;
+  } else if (cardType === 'days-since-critical') {
+    matching = memories.filter(function(m){ return m.severity === 'critical'; });
+  } else if (cardType === 'active-investigations') {
+    matching = memories.filter(function(m){ return m.caseId; });
+  } else if (cardType === 'last-activity') {
+    var sorted = memories.slice().sort(function(a,b){ return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(); });
+    matching = sorted.slice(0, 10);
+  }
+  window.__echoActiveFilter = { type: 'kpi', cardType: cardType, ids: matching.map(function(m){ return m.id; }) };
+  if (typeof echoSwitchTab === 'function') { try { echoSwitchTab('memories'); } catch(_e) {} }
+  setTimeout(function(){
+    if (typeof echoApplyFilterToMemories === 'function') {
+      try { echoApplyFilterToMemories(); } catch(_e) {}
+    }
+    var tabSection = document.getElementById('echo-memory-feed-section');
+    if (tabSection) tabSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, 50);
+}
+
+function echoApplyFilterToMemories() {
+  var filter = window.__echoActiveFilter;
+  if (!filter || !filter.ids) return;
+  var memCards = document.querySelectorAll('#echo-memory-feed-section [data-memory-id]');
+  var visibleCount = 0;
+  memCards.forEach(function(el){
+    var mid = el.getAttribute('data-memory-id');
+    if (filter.ids.indexOf(mid) !== -1) { el.style.display = ''; visibleCount++; }
+    else { el.style.display = 'none'; }
+  });
+  var existingBanner = document.getElementById('echo-filter-banner');
+  if (existingBanner) existingBanner.remove();
+  var banner = document.createElement('div');
+  banner.id = 'echo-filter-banner';
+  banner.style.cssText = 'background:rgba(166,218,255,0.08);border:1px solid rgba(166,218,255,0.2);border-radius:10px;padding:10px 14px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;font-size:12px;color:#a6daff;';
+  var filterDesc = filter.type === 'hour' ? ('Showing ' + visibleCount + ' event' + (visibleCount === 1 ? '' : 's') + ' from ' + filter.label) :
+    filter.type === 'kpi'  ? ('Showing ' + visibleCount + ' event' + (visibleCount === 1 ? '' : 's') + ' matching: ' + (filter.cardType || '').replace(/-/g,' ')) :
+    ('Showing ' + visibleCount + ' filtered events');
+  banner.innerHTML = '<span><span style="color:rgba(166,218,255,0.6);font-size:10px;text-transform:uppercase;letter-spacing:0.8px;margin-right:8px;">FILTERED</span>' + echoEscapeHtml(filterDesc) + '</span>' +
+    '<button type="button" onclick="echoClearFilter()" style="background:rgba(166,218,255,0.1);border:1px solid rgba(166,218,255,0.3);color:#a6daff;padding:4px 10px;border-radius:6px;cursor:pointer;font-size:11px;">Clear filter ×</button>';
+  var feedSection = document.getElementById('echo-memory-feed-section');
+  if (feedSection) {
+    var anchorEl = feedSection.querySelector('#echo-feed-tabs');
+    if (anchorEl) feedSection.insertBefore(banner, anchorEl);
+    else feedSection.insertBefore(banner, feedSection.firstChild);
+  }
+}
+
+function echoClearFilter() {
+  window.__echoActiveFilter = null;
+  var memCards = document.querySelectorAll('#echo-memory-feed-section [data-memory-id]');
+  memCards.forEach(function(el){ el.style.display = ''; });
+  var banner = document.getElementById('echo-filter-banner');
+  if (banner) banner.remove();
 }
 
 function echoOpenMemoryDetail(memoryId) {
@@ -28770,6 +28991,17 @@ window.openModelDetail = openModelDetail;
   };
 
   function applyInitial() {
+    try {
+      var hasActive = document.querySelector('.screen.active');
+      var dashEl = document.getElementById('screen-dashboard');
+      if (dashEl && (!hasActive || hasActive.id !== 'screen-dashboard')) {
+        document.querySelectorAll('.screen').forEach(function(s){ s.classList.remove('active'); });
+        dashEl.classList.add('active');
+        document.querySelectorAll('.nav-item').forEach(function(n){ n.classList.remove('active'); });
+        var dashNav = document.querySelector('.nav-item[onclick*="dashboard"]');
+        if (dashNav) dashNav.classList.add('active');
+      }
+    } catch(_e) { console.error('default screen guard failed', _e); }
     const sb = document.querySelector('.sidebar');
     if(!sb) return;
     setupNavTooltips();
@@ -28897,5 +29129,6 @@ window.openModelDetail = openModelDetail;
     <div id="echo-memory-modal-body" style="min-height:40px"></div>
   </div>
 </div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 </body>
 </html>
