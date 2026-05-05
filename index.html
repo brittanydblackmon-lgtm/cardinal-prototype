@@ -7203,6 +7203,8 @@ Template Overview
 <!-- ══ CARDINAL SENTINEL ══ -->
 <div id="screen-sentinel" class="screen">
 <div id="sentinel-core-pins" style="margin-bottom:14px;"></div>
+<div id="sentinel-weekly-digest" style="margin-bottom:18px;"></div>
+<div id="sentinel-unified-case-detail" style="display:none;margin-bottom:18px;"></div>
 <div class="section-hdr" style="margin-bottom:14px">
 <div>
 <div style="font-size:15px;font-weight:600;color:var(--chrome2)">◈ Cardinal Sentinel — Proactive Support Triage</div>
@@ -9390,6 +9392,13 @@ window.setActivePersona = function(personaId) {
       if (typeof setComplianceLens === 'function') setComplianceLens(window.__complianceLens || 'jurisdiction');
     }
   } catch(_rc) {}
+
+  try {
+    var sentinelScr = document.getElementById('screen-sentinel');
+    if (sentinelScr && sentinelScr.classList.contains('active') && typeof buildSentinel === 'function') {
+      buildSentinel(window.currentOrg || 'ad');
+    }
+  } catch(_rs) {}
 
   // Persist
   try { localStorage.setItem('cardinal-active-persona', personaId); } catch(_ls) {}
@@ -31020,9 +31029,312 @@ function switchSentinelTab(name, idx) {
 }
 window.switchSentinelTab = switchSentinelTab;
 
+window.renderSentinelUnifiedCaseDetail = function(caseId) {
+  var detailEl = document.getElementById('sentinel-unified-case-detail');
+  if (!detailEl) return;
+
+  if (!caseId) {
+    detailEl.style.display = 'none';
+    detailEl.innerHTML = '';
+    return;
+  }
+
+  var cleanCaseId = String(caseId).replace(/^#/, '').trim();
+  detailEl.style.display = 'block';
+
+  var escHtml = function(t) {
+    return typeof echoEscapeHtml === 'function' ? echoEscapeHtml(t) : String(t == null ? '' : t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  };
+  var escJs = function(t) {
+    return typeof echoEscapeJsAttr === 'function' ? echoEscapeJsAttr(t) : String(t == null ? '' : t).replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/\r?\n/g,' ');
+  };
+
+  var org = window.currentOrg || 'ad';
+  var orgData = window.CARDINAL_DATA && window.CARDINAL_DATA[org];
+  if (!orgData) { detailEl.innerHTML = ''; return; }
+
+  var allMems = orgData.echoMemories || [];
+  var caseMems = allMems.filter(function(m){
+    var mc = m.caseId == null ? '' : String(m.caseId).replace(/^#/, '').trim();
+    return mc === cleanCaseId;
+  }).sort(function(a, b){ return new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(); });
+
+  if (caseMems.length === 0) {
+    detailEl.innerHTML = '<div style="padding:20px;background:rgba(15,23,42,0.5);border:1px solid rgba(166,218,255,0.1);border-radius:10px;color:var(--muted);font-size:11px;text-align:center;">No memories logged for #' + escHtml(cleanCaseId) + '.</div>';
+    return;
+  }
+
+  var firstMem = caseMems[0];
+  var lastMem = caseMems[caseMems.length - 1];
+  var isClosed = caseMems.some(function(m){ return m.eventType === 'case-closed' || m.eventType === 'closure-attestation'; });
+  var maxSeverity = 'low';
+  var sevRank = { critical: 4, high: 3, medium: 2, low: 1, informational: 0 };
+  caseMems.forEach(function(m){
+    var sv = String(m.severity || 'informational').toLowerCase();
+    if (sevRank[sv] > sevRank[maxSeverity]) maxSeverity = sv;
+  });
+
+  var attribution = (orgData.haloAttribution || []).filter(function(a){ return String(a.caseId || '').replace(/^#/, '') === cleanCaseId; })[0];
+
+  var linkedStatutes = (window.CARDINAL_STATUTES || []).filter(function(s){ return s.cardinalCases.indexOf(cleanCaseId) !== -1; });
+
+  var linkedReceipts = [];
+  caseMems.forEach(function(m){
+    (m.linkedMemories || []).forEach(function(lm){
+      if (lm && String(lm).indexOf('echo-') !== 0) linkedReceipts.push(lm);
+    });
+  });
+  linkedReceipts = Array.from(new Set(linkedReceipts));
+  if (window.DECISION_RECEIPTS && Array.isArray(window.DECISION_RECEIPTS)) {
+    window.DECISION_RECEIPTS.forEach(function(r){
+      var lid = String(r.linkedCaseId || '').replace(/^#/, '').trim();
+      if (lid === cleanCaseId && r.receiptId) linkedReceipts.push(r.receiptId);
+    });
+    linkedReceipts = Array.from(new Set(linkedReceipts));
+  }
+
+  var persona = window.getActivePersona ? window.getActivePersona() : null;
+  var canSeeDollars = !persona || persona.scope === 'all' || persona.scope === 'org' || (persona.role && (persona.role.indexOf('CEO') !== -1 || persona.role.indexOf('Founder') !== -1 || persona.role.indexOf('Compliance') !== -1));
+
+  function formatM(amount) {
+    if (amount >= 1e9) return '$' + (amount / 1e9).toFixed(1) + 'B';
+    if (amount >= 1e6) return '$' + (amount / 1e6).toFixed(1) + 'M';
+    if (amount >= 1e3) return '$' + (amount / 1e3).toFixed(0) + 'K';
+    return '$' + amount;
+  }
+
+  var sevColor = { critical: '#ef4444', high: '#f59e0b', medium: '#3b82f6', low: '#22c55e', informational: '#94a3b8' }[maxSeverity] || '#94a3b8';
+  var headerColor = isClosed ? '#22c55e' : sevColor;
+
+  var owner = caseMems.slice().reverse().filter(function(m){ return m.authorRole === 'user'; })[0];
+  var ownerName = owner ? owner.author : 'unassigned';
+
+  var daysLeft = attribution ? attribution.daysToImpact : null;
+
+  var cidJs = escJs(cleanCaseId);
+  var toastPinJs = escJs('📌 Pinned #' + cleanCaseId);
+
+  var html = '<div style="background:linear-gradient(135deg, ' + headerColor + '0d 0%, rgba(15,23,42,0.6) 100%);border:2px solid ' + headerColor + '40;border-radius:14px;padding:20px 24px;box-shadow:0 8px 24px rgba(0,0,0,0.3);">';
+
+  html += '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;flex-wrap:wrap;gap:14px;">' +
+    '<div>' +
+      '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px;">' +
+        '<button type="button" onclick="typeof cardinalSentinelUiGoBack===\'function\'&&cardinalSentinelUiGoBack();" style="background:rgba(166,218,255,0.06);border:1px solid rgba(166,218,255,0.15);color:var(--muted);padding:4px 10px;border-radius:5px;cursor:pointer;font-size:10px;font-weight:600;">← All cases</button>' +
+        '<span style="font-size:18px;color:var(--chrome2);font-weight:800;font-family:monospace;">#' + escHtml(cleanCaseId) + '</span>' +
+        '<span style="font-size:10px;color:' + headerColor + ';background:' + headerColor + '15;border:1px solid ' + headerColor + '40;padding:3px 9px;border-radius:8px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;">' + (isClosed ? 'CLOSED' : maxSeverity.toUpperCase()) + '</span>' +
+      '</div>' +
+      '<div style="font-size:13px;color:var(--chrome2);font-weight:600;line-height:1.5;">' + escHtml(firstMem.summary || '') + '</div>' +
+      '<div style="font-size:10px;color:var(--muted);margin-top:6px;display:flex;gap:14px;flex-wrap:wrap;">' +
+        '<span>Owner: <span style="color:var(--chrome2);font-weight:600;">' + escHtml(ownerName) + '</span></span>' +
+        '<span>· Opened: <span style="color:var(--chrome2);">' + escHtml(new Date(firstMem.timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })) + '</span></span>' +
+        '<span>· Last update: <span style="color:var(--chrome2);">' + escHtml(new Date(lastMem.timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })) + '</span></span>' +
+        '<span>· Memories: <span style="color:var(--accent);font-weight:600;">' + caseMems.length + '</span></span>' +
+      '</div>' +
+    '</div>' +
+    '<div style="display:flex;gap:6px;flex-wrap:wrap;">' +
+      (typeof echoTogglePersonalPin === 'function' ? '<button type="button" onclick="echoTogglePersonalPin(\'ctx:case:' + cidJs + '\');typeof cardinalShowToast===\'function\'&&cardinalShowToast(\'' + toastPinJs + '\');" style="background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3);color:#f59e0b;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:11px;font-weight:600;">📌 Pin</button>' : '') +
+      '<button type="button" onclick="typeof cardinalOpenContextNote===\'function\'&&cardinalOpenContextNote(\'case\', \'' + cidJs + '\');" style="background:rgba(168,85,247,0.1);border:1px solid rgba(168,85,247,0.3);color:#a855f7;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:11px;font-weight:600;">📝 Note</button>' +
+      '<button type="button" onclick="typeof cardinalShowToast===\'function\'&&cardinalShowToast(\'📦 Case packet prepared for export (demo)\');" style="background:rgba(15,23,42,0.5);border:1px solid rgba(166,218,255,0.15);color:var(--chrome2);padding:6px 12px;border-radius:6px;cursor:pointer;font-size:11px;font-weight:600;">📦 Export packet</button>' +
+      '<button type="button" onclick="showScreen(\'compliance\', null);" style="background:rgba(166,218,255,0.06);border:1px solid rgba(166,218,255,0.2);color:var(--accent);padding:6px 12px;border-radius:6px;cursor:pointer;font-size:11px;font-weight:600;">⚖️ Compliance →</button>' +
+    '</div>' +
+  '</div>';
+
+  if (attribution && !isClosed) {
+    html += '<div style="display:grid;grid-template-columns:repeat(3, minmax(0,1fr));gap:10px;margin-bottom:14px;">' +
+      '<div style="padding:12px 14px;background:rgba(239,68,68,0.05);border:1px solid rgba(239,68,68,0.2);border-radius:10px;"><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;font-weight:700;margin-bottom:6px;">$ EXPOSURE</div><div style="font-size:22px;color:#ef4444;font-weight:800;line-height:1;">' + (canSeeDollars ? escHtml(formatM(attribution.dollarImpact)) : '••••••') + '</div></div>' +
+      '<div style="padding:12px 14px;background:rgba(245,158,11,0.05);border:1px solid rgba(245,158,11,0.2);border-radius:10px;"><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;font-weight:700;margin-bottom:6px;">⏱ DAYS TO IMPACT</div><div style="font-size:22px;color:#f59e0b;font-weight:800;line-height:1;">' + (daysLeft !== null ? escHtml(String(daysLeft)) : '—') + '</div></div>' +
+      '<div style="padding:12px 14px;background:rgba(168,85,247,0.04);border:1px solid rgba(168,85,247,0.2);border-radius:10px;"><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;font-weight:700;margin-bottom:6px;">📜 STATUTES</div><div style="font-size:22px;color:#a855f7;font-weight:800;line-height:1;">' + linkedStatutes.length + '</div></div>' +
+    '</div>';
+  }
+
+  if (attribution) {
+    html += '<div style="padding:12px 14px;background:rgba(15,23,42,0.5);border:1px solid rgba(166,218,255,0.08);border-left:3px solid ' + headerColor + ';border-radius:8px;margin-bottom:14px;">' +
+      '<div style="font-size:9px;color:' + headerColor + ';text-transform:uppercase;letter-spacing:0.8px;font-weight:700;margin-bottom:6px;">SCENARIO</div>' +
+      '<div style="font-size:11px;color:var(--chrome2);line-height:1.7;">' + escHtml(attribution.scenario || '') + '</div>' +
+    '</div>';
+  }
+
+  if (linkedStatutes.length > 0) {
+    html += '<div style="padding:12px 14px;background:rgba(168,85,247,0.04);border:1px solid rgba(168,85,247,0.2);border-radius:10px;margin-bottom:14px;">' +
+      '<div style="font-size:10px;color:#a855f7;text-transform:uppercase;letter-spacing:0.8px;font-weight:700;margin-bottom:8px;">📜 LINKED STATUTES (FEDERAL LENS)</div>' +
+      '<div style="display:flex;gap:6px;flex-wrap:wrap;">' +
+        linkedStatutes.map(function(s){
+          var sidJs = escJs(s.id);
+          return '<span onclick="typeof openStatuteDetail===\'function\'&&openStatuteDetail(\'' + sidJs + '\')" style="cursor:pointer;font-size:10px;color:#a855f7;background:rgba(168,85,247,0.08);border:1px solid rgba(168,85,247,0.3);padding:4px 10px;border-radius:8px;font-weight:600;" title="' + escHtml(s.fullName || '') + '">📜 ' + escHtml(s.name) + '</span>';
+        }).join('') +
+      '</div>' +
+    '</div>';
+  }
+
+  if (linkedReceipts.length > 0) {
+    html += '<div style="padding:12px 14px;background:rgba(34,197,94,0.04);border:1px solid rgba(34,197,94,0.2);border-radius:10px;margin-bottom:14px;">' +
+      '<div style="font-size:10px;color:#22c55e;text-transform:uppercase;letter-spacing:0.8px;font-weight:700;margin-bottom:8px;">🔐 DECISION RECEIPTS (' + linkedReceipts.length + ')</div>' +
+      '<div style="display:flex;flex-direction:column;gap:5px;">' +
+        linkedReceipts.map(function(rid){
+          var rj = escJs(rid);
+          return '<div onclick="typeof echoOpenReceiptDetail===\'function\'&&echoOpenReceiptDetail(\'' + rj + '\')" style="cursor:pointer;padding:7px 12px;background:rgba(15,23,42,0.5);border:1px solid rgba(34,197,94,0.15);border-radius:6px;font-size:10px;color:#22c55e;font-family:monospace;">→ ' + escHtml(rid) + '</div>';
+        }).join('') +
+      '</div>' +
+    '</div>';
+  }
+
+  html += '<div style="padding:12px 14px;background:rgba(15,23,42,0.5);border:1px solid rgba(166,218,255,0.08);border-radius:10px;">' +
+    '<div style="font-size:10px;color:var(--accent);text-transform:uppercase;letter-spacing:0.8px;font-weight:700;margin-bottom:12px;">⏱ CASE TIMELINE (' + caseMems.length + ' EVENTS)</div>' +
+    '<div style="position:relative;padding-left:18px;">';
+
+  html += '<div style="position:absolute;left:5px;top:4px;bottom:4px;width:1px;background:rgba(166,218,255,0.15);"></div>';
+
+  caseMems.forEach(function(m){
+    var mts = new Date(m.timestamp);
+    var mSev = String(m.severity || 'informational').toLowerCase();
+    var mColor = { critical: '#ef4444', high: '#f59e0b', medium: '#3b82f6', low: '#22c55e', informational: '#94a3b8' }[mSev] || '#94a3b8';
+    var coreKey = String(m.core || '').toLowerCase();
+    var sourceIcon = { eden: '🔬', genesis: '⚙️', atonement: '🛠', sentinel: '⚖️', halo: '🛡', warroom: '🚨', trustloop: '💬', compliance: '⚖️', trustledger: '📒', obsidian: '🔍' }[coreKey] || '◈';
+    var midJs = escJs(m.id);
+    var ctxLbl = escJs(String(m.summary || '').replace(/['"]/g, '').substring(0, 40));
+
+    html += '<div onclick="typeof echoOpenMemoryDetail===\'function\'&&echoOpenMemoryDetail(\'' + midJs + '\')" oncontextmenu="typeof cardinalShowContextMenu===\'function\'&&cardinalShowContextMenu(event, \'memory\', \'' + midJs + '\', \'' + ctxLbl + '\')" style="cursor:pointer;position:relative;margin-bottom:12px;padding:10px 12px;background:rgba(15,23,42,0.6);border:1px solid rgba(166,218,255,0.06);border-left:2px solid ' + mColor + ';border-radius:6px;transition:all 0.15s;" onmouseover="this.style.borderColor=\'' + mColor + '60\';" onmouseout="this.style.borderColor=\'rgba(166,218,255,0.06)\';this.style.borderLeftColor=\'' + mColor + '\';">' +
+      '<div style="position:absolute;left:-19px;top:14px;width:9px;height:9px;border-radius:50%;background:' + mColor + ';border:2px solid var(--bg);"></div>' +
+      '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:4px;flex-wrap:wrap;">' +
+        '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">' +
+          '<span style="font-size:11px;">' + sourceIcon + '</span>' +
+          '<span style="font-size:10px;color:var(--chrome2);font-weight:700;">' + escHtml(m.author || 'system') + '</span>' +
+          '<span style="font-size:9px;color:var(--muted);background:rgba(166,218,255,0.05);padding:1px 6px;border-radius:4px;">' + escHtml(m.eventType || '') + '</span>' +
+          (m.isSealed ? '<span style="font-size:9px;color:#22c55e;background:rgba(34,197,94,0.08);padding:1px 6px;border-radius:4px;font-weight:600;">🔐 SEALED</span>' : '') +
+        '</div>' +
+        '<span style="font-size:9px;color:var(--muted);font-family:monospace;">' + escHtml(mts.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })) + '</span>' +
+      '</div>' +
+      '<div style="font-size:11px;color:var(--chrome2);line-height:1.5;">' + escHtml(m.summary || '') + '</div>' +
+    '</div>';
+  });
+
+  html += '</div></div></div>';
+
+  detailEl.innerHTML = html;
+};
+
+window.renderTrustLoopWeeklyDigest = function() {
+  var digestEl = document.getElementById('sentinel-weekly-digest');
+  if (!digestEl) return;
+
+  var focused = window.__sentinelFocusCaseId;
+  if (focused) { digestEl.style.display = 'none'; digestEl.innerHTML = ''; return; }
+  digestEl.style.display = 'block';
+
+  var escHtml = function(t) {
+    return typeof echoEscapeHtml === 'function' ? echoEscapeHtml(t) : String(t == null ? '' : t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  };
+  var escJs = function(t) {
+    return typeof echoEscapeJsAttr === 'function' ? echoEscapeJsAttr(t) : String(t == null ? '' : t).replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/\r?\n/g,' ');
+  };
+
+  var org = window.currentOrg || 'ad';
+  var orgData = window.CARDINAL_DATA && window.CARDINAL_DATA[org];
+  if (!orgData) return;
+
+  var allMems = orgData.echoMemories || [];
+  var attribution = orgData.haloAttribution || [];
+
+  var sevenDays = 7 * 24 * 3600 * 1000;
+  var now = Date.now();
+  var recentMems = allMems.filter(function(m){ return (now - new Date(m.timestamp).getTime()) <= sevenDays; });
+
+  var sealedCount = recentMems.filter(function(m){ return m.isSealed; }).length;
+  var biasDetected = recentMems.filter(function(m){ return m.eventType === 'bias-detected'; }).length;
+  var deploymentEvents = recentMems.filter(function(m){ return m.eventType === 'remediation-started' || m.eventType === 'model-deployed'; }).length;
+  var caseOpened = recentMems.filter(function(m){ return m.eventType === 'case-opened'; }).length;
+  var caseClosed = recentMems.filter(function(m){ return m.eventType === 'case-closed' || m.eventType === 'closure-attestation'; }).length;
+
+  var atRiskCases = attribution.filter(function(a){ return a.daysToImpact !== null && a.daysToImpact <= 30 && a.dollarImpact > 0; });
+
+  var cohortMems = recentMems.filter(function(m){
+    var auth = String(m.author || '');
+    var eveLike = /^Eve\b/.test(auth) || auth.indexOf('Eve') === 0;
+    return m.eventType === 'score-change' && eveLike && (m.summary || '').match(/\d+\s*(of|\/)\s*\d+/);
+  });
+
+  var html = '<div style="background:linear-gradient(135deg, rgba(168,85,247,0.06) 0%, rgba(15,23,42,0.5) 100%);border:1px solid rgba(168,85,247,0.25);border-radius:14px;padding:20px 24px;">' +
+    '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;flex-wrap:wrap;gap:10px;">' +
+      '<div>' +
+        '<div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;">' +
+          '<span style="font-size:11px;color:#a855f7;text-transform:uppercase;letter-spacing:1px;font-weight:800;">✦ EVE\'S WEEKLY DIGEST</span>' +
+          '<span style="font-size:9px;color:var(--muted);background:rgba(166,218,255,0.05);padding:2px 7px;border-radius:8px;font-family:monospace;">last 7 days</span>' +
+        '</div>' +
+        '<div style="font-size:18px;color:var(--chrome2);font-weight:700;letter-spacing:-0.3px;">Trust Loop Activity Summary</div>' +
+      '</div>' +
+      '<button type="button" onclick="typeof cardinalShowToast===\'function\'&&cardinalShowToast(\'📦 Digest exported to Trust Ledger\');" style="background:rgba(168,85,247,0.1);border:1px solid rgba(168,85,247,0.3);color:#a855f7;padding:7px 14px;border-radius:6px;cursor:pointer;font-size:10px;font-weight:600;">📦 Export Digest</button>' +
+    '</div>' +
+    '<div style="display:grid;grid-template-columns:repeat(5, minmax(0,1fr));gap:10px;margin-bottom:14px;">' +
+      '<div style="padding:11px 13px;background:rgba(15,23,42,0.6);border:1px solid rgba(34,197,94,0.2);border-radius:8px;"><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;font-weight:700;margin-bottom:4px;">SEALED</div><div style="font-size:20px;color:#22c55e;font-weight:800;line-height:1;">' + sealedCount + '</div></div>' +
+      '<div style="padding:11px 13px;background:rgba(15,23,42,0.6);border:1px solid rgba(239,68,68,0.2);border-radius:8px;"><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;font-weight:700;margin-bottom:4px;">BIAS FLAGS</div><div style="font-size:20px;color:#ef4444;font-weight:800;line-height:1;">' + biasDetected + '</div></div>' +
+      '<div style="padding:11px 13px;background:rgba(15,23,42,0.6);border:1px solid rgba(245,158,11,0.2);border-radius:8px;"><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;font-weight:700;margin-bottom:4px;">DEPLOYMENTS</div><div style="font-size:20px;color:#f59e0b;font-weight:800;line-height:1;">' + deploymentEvents + '</div></div>' +
+      '<div style="padding:11px 13px;background:rgba(15,23,42,0.6);border:1px solid rgba(166,218,255,0.15);border-radius:8px;"><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;font-weight:700;margin-bottom:4px;">CASES OPENED</div><div style="font-size:20px;color:var(--accent);font-weight:800;line-height:1;">' + caseOpened + '</div></div>' +
+      '<div style="padding:11px 13px;background:rgba(15,23,42,0.6);border:1px solid rgba(34,197,94,0.2);border-radius:8px;"><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;font-weight:700;margin-bottom:4px;">CASES CLOSED</div><div style="font-size:20px;color:#22c55e;font-weight:800;line-height:1;">' + caseClosed + '</div></div>' +
+    '</div>';
+
+  if (atRiskCases.length > 0) {
+    html += '<div style="padding:12px 14px;background:rgba(245,158,11,0.05);border:1px solid rgba(245,158,11,0.25);border-radius:10px;margin-bottom:12px;">' +
+      '<div style="font-size:10px;color:#f59e0b;text-transform:uppercase;letter-spacing:0.8px;font-weight:700;margin-bottom:8px;">⚠ AT-RISK — DEADLINE WITHIN 30 DAYS</div>' +
+      '<div style="display:flex;flex-direction:column;gap:5px;">' +
+        atRiskCases.sort(function(a,b){ return a.daysToImpact - b.daysToImpact; }).map(function(a){
+          var aidJs = escJs(String(a.caseId || '').replace(/^#/, ''));
+          return '<div onclick="typeof cardinalNavigateToCase===\'function\'&&cardinalNavigateToCase(\'' + aidJs + '\')" style="cursor:pointer;display:grid;grid-template-columns:auto 1fr auto;gap:10px;padding:7px 11px;background:rgba(15,23,42,0.5);border:1px solid rgba(245,158,11,0.15);border-radius:6px;align-items:center;">' +
+            '<span style="font-size:11px;color:var(--accent);font-family:monospace;font-weight:700;">#' + escHtml(String(a.caseId || '').replace(/^#/, '')) + '</span>' +
+            '<span style="font-size:11px;color:var(--chrome2);">' + escHtml((a.scenario || '').substring(0, 90)) + ((a.scenario || '').length > 90 ? '...' : '') + '</span>' +
+            '<span style="font-size:11px;color:#f59e0b;font-weight:700;white-space:nowrap;">⏱ ' + escHtml(String(a.daysToImpact)) + 'd</span>' +
+          '</div>';
+        }).join('') +
+      '</div>' +
+    '</div>';
+  }
+
+  if (cohortMems.length > 0) {
+    html += '<div style="padding:12px 14px;background:rgba(166,218,255,0.04);border:1px solid rgba(166,218,255,0.15);border-radius:10px;">' +
+      '<div style="font-size:10px;color:var(--accent);text-transform:uppercase;letter-spacing:0.8px;font-weight:700;margin-bottom:8px;">📊 COHORT REMEDIATION PROGRESS</div>' +
+      '<div style="display:flex;flex-direction:column;gap:5px;">' +
+        cohortMems.slice(0, 4).map(function(m){
+          var midJs = escJs(m.id);
+          var cidDisp = m.caseId ? String(m.caseId).replace(/^#/, '') : '—';
+          return '<div onclick="typeof echoOpenMemoryDetail===\'function\'&&echoOpenMemoryDetail(\'' + midJs + '\')" style="cursor:pointer;display:grid;grid-template-columns:auto 1fr auto;gap:10px;padding:7px 11px;background:rgba(15,23,42,0.5);border:1px solid rgba(166,218,255,0.08);border-radius:6px;align-items:center;font-size:11px;">' +
+            '<span style="color:var(--accent);font-family:monospace;">#' + escHtml(cidDisp) + '</span>' +
+            '<span style="color:var(--chrome2);">' + escHtml((m.summary || '').substring(0, 100)) + ((m.summary || '').length > 100 ? '...' : '') + '</span>' +
+            '<span style="color:var(--muted);font-family:monospace;font-size:10px;">' + escHtml(new Date(m.timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })) + '</span>' +
+          '</div>';
+        }).join('') +
+      '</div>' +
+    '</div>';
+  } else if ((orgData.trustLoopDigestEntries || []).length > 0) {
+    var tEntries = orgData.trustLoopDigestEntries.slice(-4).reverse();
+    html += '<div style="padding:12px 14px;background:rgba(166,218,255,0.04);border:1px solid rgba(166,218,255,0.15);border-radius:10px;">' +
+      '<div style="font-size:10px;color:var(--accent);text-transform:uppercase;letter-spacing:0.8px;font-weight:700;margin-bottom:8px;">📊 COHORT REMEDIATION PROGRESS</div>' +
+      '<div style="display:flex;flex-direction:column;gap:5px;font-size:11px;color:var(--chrome2);">' +
+      tEntries.map(function(ent){
+        var ids = (ent.linkedCaseIds || []).slice(0, 2).map(function(id){ return '#' + escHtml(String(id).replace(/^#/, '')); }).join(' ');
+        return '<div style="padding:7px 11px;background:rgba(15,23,42,0.5);border:1px solid rgba(166,218,255,0.08);border-radius:6px;line-height:1.45;">' +
+          '<span style="color:var(--muted);font-size:10px;font-family:monospace;">' + escHtml(ent.weekOf || '') + '</span> ' +
+          ids +
+          '<div style="margin-top:4px;">' + escHtml(ent.sentence || '') + '</div></div>';
+      }).join('') +
+      '</div></div>';
+  }
+
+  html += '</div>';
+  digestEl.innerHTML = html;
+};
+
 function buildSentinel(org) {
-  try { if (typeof cardinalRenderCorePinsPanel === 'function') cardinalRenderCorePinsPanel('sentinel', 'sentinel-core-pins'); } catch(_e) {}
   var o = org || currentOrg || window.currentOrg || 'ad';
+  try { if (typeof cardinalRenderCorePinsPanel === 'function') cardinalRenderCorePinsPanel('sentinel', 'sentinel-core-pins'); } catch(_e1) {}
+  try { if (typeof renderTrustLoopWeeklyDigest === 'function') renderTrustLoopWeeklyDigest(); } catch(_e2) {}
+  try {
+    var fId = window.__sentinelFocusCaseId;
+    if (fId && typeof renderSentinelUnifiedCaseDetail === 'function') {
+      renderSentinelUnifiedCaseDetail(fId);
+    } else {
+      var dEl = document.getElementById('sentinel-unified-case-detail');
+      if (dEl) { dEl.style.display = 'none'; dEl.innerHTML = ''; }
+    }
+  } catch(_e3) {}
   var d = typeof cd === 'function' ? cd(o) : null;
   if (!d) return;
   var esc = function (s) {
@@ -31037,13 +31349,16 @@ function buildSentinel(org) {
   if (!root && scr) {
     root = document.createElement('div');
     root.id = 'sentinel-engine-root';
-    if (pinsSent && pinsSent.nextSibling) scr.insertBefore(root, pinsSent.nextSibling);
+    var hdrAnchor = scr.querySelector('.section-hdr');
+    if (hdrAnchor) scr.insertBefore(root, hdrAnchor);
+    else if (pinsSent && pinsSent.nextSibling) scr.insertBefore(root, pinsSent.nextSibling);
     else if (pinsSent) scr.appendChild(root);
     else scr.insertBefore(root, scr.firstChild);
   }
   if (scr) {
     for (var hci = 0; hci < scr.children.length; hci++) {
       var ch = scr.children[hci];
+      if (ch.id === 'sentinel-unified-case-detail' || ch.id === 'sentinel-weekly-digest') continue;
       if (ch.id !== 'sentinel-engine-root' && ch.id !== 'sentinel-core-pins') ch.style.display = 'none';
       else ch.style.display = '';
     }
@@ -31113,100 +31428,11 @@ function buildSentinel(org) {
   }
 
   if (focusId) {
-    var fc = null;
-    for (var fi = 0; fi < cases.length; fi++) {
-      if (String(cases[fi].caseId || '').replace(/^#/, '') === focusId) {
-        fc = cases[fi];
-        break;
-      }
-    }
-    if (!fc) {
-      fc = {
-        caseId: '#' + focusId,
-        severity: '\u2014',
-        sentinelCaseType: 'drift-alert',
-        status: 'open',
-        modelId: '\u2014',
-        affectedCount: '\u2014',
-        slaDeadline: '',
-        leadAssignee: '\u2014',
-        metricViolation: 'Case surfaced via routing — extend CARDINAL_DATA for full narrative.',
-        caseType: 'incident'
-      };
-    }
-    var slaShort = fc.slaDeadline ? String(fc.slaDeadline).slice(0, 10) : '\u2014';
-    var sevClass = fc.severity === 'Critical' ? 'red' : fc.severity === 'High' ? 'amber' : 'yellow';
-    var hdrDisp = '#' + focusId;
-    root.innerHTML =
-      '<div style="margin-bottom:14px">' +
-      '<button type="button" class="btn-ghost" style="font-size:11px;margin-bottom:10px" title="Return to Sentinel case list" onclick="cardinalSentinelUiGoBack()">\u2190 Back to cases</button>' +
-      '<div class="card" style="padding:16px;border:1px solid rgba(166,218,255,.15)" title="Case summary header">' +
-      '<div style="display:flex;flex-wrap:wrap;gap:12px;justify-content:space-between;align-items:flex-start">' +
-      '<div><div style="font-size:16px;font-weight:700;color:var(--chrome2)">' +
-      esc(hdrDisp) +
-      '</div>' +
-      '<div style="font-size:11px;color:var(--muted);margin-top:6px">' +
-      esc(fc.modelId || '') +
-      ' \u00b7 Lead ' +
-      esc(fc.leadAssignee || '') +
-      '</div></div>' +
-      '<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center">' +
-      '<span class="badge badge-' +
-      sevClass +
-      '" style="font-size:9px" title="Case severity">' +
-      esc(fc.severity || '') +
-      '</span>' +
-      '<span class="badge badge-blue" style="font-size:9px;max-width:220px;white-space:normal;text-align:left" title="' +
-      esc(typeDesc(fc.sentinelCaseType)) +
-      '">' +
-      esc(typeLabel(fc.sentinelCaseType)) +
-      '</span>' +
-      '<span style="font-size:10px;color:var(--muted)" title="Lifecycle state">' +
-      esc(fc.status || '') +
-      '</span></div></div>' +
-      '<div style="margin-top:12px;font-size:11px;color:var(--muted2);display:flex;flex-wrap:wrap;gap:14px">' +
-      '<span title="SLA target">SLA: ' +
-      esc(slaShort) +
-      '</span>' +
-      '<span title="Affected population">Affected: ' +
-      esc(String(fc.affectedCount != null ? fc.affectedCount : '\u2014')) +
-      '</span>' +
-      '</div></div></div>' +
-      '<div class="card" style="padding:14px;margin-bottom:12px" title="Case narrative and routing context">' +
-      '<div style="font-size:12px;font-weight:700;color:var(--chrome2);margin-bottom:8px">Overview</div>' +
-      '<div style="font-size:11px;color:var(--muted2);line-height:1.55">' +
-      esc(fc.metricViolation || fc.cohortDescription || 'Case opened in Sentinel case engine.') +
-      '</div></div>' +
-      '<div class="card" style="padding:14px;margin-bottom:12px">' +
-      '<div style="font-size:12px;font-weight:700;color:var(--chrome2);margin-bottom:8px" title="Embedded collaboration pane — same channel UI as full-screen Case Channel">Channel</div>' +
-      '<div id="sentinel-case-channel-host"></div></div>' +
-      '<div class="grid-2" style="margin-bottom:12px;gap:12px">' +
-      '<div class="card" style="padding:14px" title="Jump to Genesis tests for this model">' +
-      '<div style="font-size:12px;font-weight:700;color:var(--chrome2);margin-bottom:8px">Linked Tests (Genesis)</div>' +
-      '<div style="font-size:10px;color:var(--muted);margin-bottom:10px">Prototype link — opens Genesis workspace.</div>' +
-      '<button type="button" class="btn-ghost" style="font-size:11px" onclick="showScreen(\'genesis\',null)" title="Open Genesis Core">Open Genesis \u2192</button></div>' +
-      '<div class="card" style="padding:14px" title="Jump to Atonement remediation queue">' +
-      '<div style="font-size:12px;font-weight:700;color:var(--chrome2);margin-bottom:8px">Linked Remediation (Atonement)</div>' +
-      '<div style="font-size:10px;color:var(--muted);margin-bottom:10px">Prototype link — opens Atonement Core.</div>' +
-      '<button type="button" class="btn-ghost" style="font-size:11px" onclick="showScreen(\'atonement\',null)" title="Open Atonement Core">Open Atonement \u2192</button></div></div>' +
-      '<div class="card" style="padding:14px;margin-bottom:12px" title="Decision Receipts tied to this case (placeholder)">' +
-      '<div style="font-size:12px;font-weight:700;color:var(--chrome2);margin-bottom:8px">Receipts</div>' +
-      '<div style="font-size:11px;color:var(--muted2)">Receipt bindings surface here in production. Prototype: use Trust Ledger for sealed receipts.</div>' +
-      '<button type="button" class="btn-ghost" style="font-size:11px;margin-top:10px" onclick="showScreen(\'trustledger\',null)" title="Open Trust Ledger">Trust Ledger \u2192</button></div>' +
-      '<div class="card" style="padding:14px" title="Echo Core memories referencing this case">' +
-      '<div style="font-size:12px;font-weight:700;color:var(--chrome2);margin-bottom:8px">Echo Memories</div>' +
-      '<div style="font-size:11px;color:var(--muted2)">Echo drill-down for this case is Prompt 2D. Open Echo Core to browse audit memory.</div>' +
-      '<button type="button" class="btn-ghost" style="font-size:11px;margin-top:10px" onclick="showScreen(\'echo\',null)" title="Open Echo Core">Echo Core \u2192</button></div>';
-
-    try {
-      if (typeof window.edoEnsureWarRoomCaseChannel === 'function') window.edoEnsureWarRoomCaseChannel(o, focusId);
-    } catch (_eq) {}
-    window.__wrFocusCaseId = focusId;
-    try {
-      renderWarRoomCaseChannel(o, 'sentinel-case-channel-host');
-    } catch (_rch) {}
+    root.style.display = 'none';
+    root.innerHTML = '';
     return;
   }
+  root.style.display = '';
 
   var sevF = window.__sentinelSeverityFilter;
   var typF = window.__sentinelTypeFilter;
