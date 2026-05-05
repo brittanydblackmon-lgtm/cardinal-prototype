@@ -4674,6 +4674,7 @@ Settings
 <button class="ind-btn active" onclick="switchIndustry('ad',this)">A&D</button>
 <button class="ind-btn" onclick="switchIndustry('fin',this)">Finance</button>
 <button class="ind-btn" onclick="switchIndustry('health',this)">Healthcare</button>
+<button class="ind-btn" onclick="switchIndustry('fed',this)" title="Federal Civilian — pre-deployment vetting under May 2026 EO">🏛️ Federal</button>
 </div>
 <div class="topbar-alert" id="topbar-critical-cases" onclick="cardinalOpenSentinelCases('critical')" title="Open Sentinel — Critical Cases">
 <span class="alert-dot"></span>
@@ -8262,6 +8263,14 @@ const INDUSTRY_DIMENSIONS = {
  {id:'governance', label:'Governance & Change Control', weight:0.05, rationale:'Clinical validation requirements for model changes'},
  {id:'monitoring', label:'Post-Deployment Monitoring', weight:0.10, rationale:'Claims denials have direct patient harm — detect bias quickly'},
  ],
+ fed:[
+ {id:'fairness', label:'Fairness (Eden Core)', weight:0.22, rationale:'OMB Unbiased AI · EO May 2026 — disparate impact on taxpayer cohorts'},
+ {id:'fraud', label:'Fraud Integrity (Obsidian)', weight:0.22, rationale:'Tax fraud rings · synthetic returns · refund velocity'},
+ {id:'transparency',label:'Transparency', weight:0.18, rationale:'FOIA-adjacent accountability · adverse-action explainability'},
+ {id:'privacy', label:'Privacy & Data Rights', weight:0.16, rationale:'Privacy Act · taxpayer confidentiality · IRS Publication 1075'},
+ {id:'governance', label:'Governance & Security Compliance', weight:0.14, rationale:'OMB/OIRA packets · agency legal review · procurement gates'},
+ {id:'monitoring', label:'Post-Deployment Monitoring', weight:0.08, rationale:'Continuous vetting after activation · EO May 2026'},
+ ],
  gov:[
  {id:'fairness', label:'Fairness (Eden Core)', weight:0.20, rationale:'Civil rights in government services, Title VI'},
  {id:'fraud', label:'Fraud Integrity (Obsidian)', weight:0.15, rationale:'Benefits fraud, identity fraud in government programs'},
@@ -8290,6 +8299,7 @@ const INDUSTRY_SCORES = {
  ad: { fairness:67, fraud:91, transparency:78, privacy:82, governance:72, monitoring:68 },
  fin: { fairness:74, fraud:88, transparency:84, privacy:86, governance:80, monitoring:77 },
  health: { fairness:64, fraud:84, transparency:72, privacy:79, governance:70, monitoring:65 },
+ fed: { fairness:64, fraud:78, transparency:72, privacy:84, governance:68, monitoring:60 },
 };
 
 function computeTrustScore(scores, org) {
@@ -8408,7 +8418,40 @@ const DATA = {
  haloScenarios:[{label:'Do Nothing',val:'$65M',sub:'ACA violation + CMS audit',c:'red'},{label:'Optimal Fix ✓',val:'$13M',sub:'80% reduction · 14 days',c:'green'},{label:'Partial Fix',val:'$32M',sub:'50% reduction · 7 days',c:'amber'}],
  regs:[{name:'ACA Section 1557 Non-Discrimination',status:'Critical Violation',deadline:'Immediate',c:'red'},{name:'CMS AI Oversight',status:'Audit Initiated',deadline:'30 days',c:'red'},{name:'HIPAA Privacy Rule',status:'Compliant',deadline:'Annual',c:'green'},{name:'State Medical Board AI Policy',status:'Review Needed',deadline:'90 days',c:'amber'}],
  cases:[{id:'#HS-2847',title:'Claims AI — Age Discrimination (65+)',sev:'Critical',age:'Day 2 of 14',status:'Investigating'},{id:'#HS-2848',title:'Diagnostic Triage — Income Proxy',sev:'High',age:'Day 8 of 30',status:'Fix Development'},{id:'#HS-2849',title:'CMS Audit Response — 30 Days',sev:'Critical',age:'Day 1 of 30',status:'Evidence Gathering'},{id:'#HS-2850',title:'ACA 1557 Compliance Review',sev:'High',age:'Day 3 of 30',status:'Investigating'}],
- threats:[{type:'Fraudulent Age Manipulation',date:'Apr 2, 2026',amt:'$320K'},{type:'Synthetic Patient Identity',date:'Mar 18, 2026',amt:'$780K'},{type:'Prescription Fraud Ring',date:'Mar 5, 2026',amt:'$1.1M'}],
+ threats:[{type:'Shell return syndicate',date:'Apr 2, 2026',amt:'$410K'},{type:'Synthetic TIN clustering',date:'Mar 18, 2026',amt:'$290K'}],
+ }
+, fed: {
+ orgName:'IRS Tax Compliance Division', industry:'Federal Civilian',
+ activeCases:1,
+ alertTitle:'EO May 2026 — IRS Tax Fraud Detection v3.1 blocked at Eden checkpoint',
+ alertBody:'1.84x disparate fraud-flag rate on self-employed filers · 1,200 cohort · pre-deployment vetting in flight.',
+ edenSub:'Disparate impact analysis — federal AI pre-deployment vetting',
+ edenAlertTitle:'High: Disparate flag rate — Schedule C / metro ZIP clusters',
+ edenAlertBody:'DI 0.54 · EO May 2026 requires bias audit + recourse mechanism before activation. Deployment paused.',
+ demographics:['Self-employed','Metro ZIP clusters','Schedule C filers','Refund velocity band','Prior audit history'],
+ demoRates:[58,52,61,74,69],
+ biasCategories:[{name:'Self-employed cohort',score:64,status:'Critical'},{name:'ZIP-correlated proxies',score:62,status:'Critical'},{name:'Refund timing',score:78,status:'Watch'},{name:'Income documentation',score:81,status:'Passing'},{name:'Entity type',score:76,status:'Watch'}],
+ edenRows:[['IRS Tax Fraud Detection v3.1','0.54','1,200','ZIP + Schedule C volatility proxies','Critical']],
+ modelTable:[['IRS Tax Fraud Detection v3.1','64','red']],
+ demoBreakdown:[{label:'Self-employed / Schedule C',score:'0.54',status:'Critical',c:'red'},{label:'Metro ZIP clusters',score:'0.62',status:'Critical',c:'red'}],
+ bfTitle:'⚡ Proxy corridor: fairness risk + fraud blind spots',
+ bfBody:'ZIP-correlated proxies inflate flags on legitimate self-employed filers while sophisticated syndicates mimic "clean" geography profiles.',
+ bfBias:'$6.2M est.', bfFraud:'$4.1M est.', bfTotal:'$10.3M est.',
+ bfRoi:'✓ EO-compliant remediation ROI modeled at 120x vs cost-of-delay scenarios.',
+ cfTitle:'Genesis counterfactual — neutralized proxies',
+ cfDesc:'21.3% outcome swap when ZIP-correlated and Schedule C volatility proxies held neutral — sealed receipt FED-CF-2026-04-29-V31.',
+ cfVar:'ZIP-correlated proxies → neutral hold',
+ gaps:[{group:'Gig-economy Schedule C filers',train:'9.1%',pop:'14.8%',ratio:'1.6x underrepresented'},
+{group:'Metro multi-job filers',train:'6.2%',pop:'11.3%',ratio:'1.8x underrepresented'}],
+ fixId:'Fix #FED-PDV-001', fixTitle:'Recourse mechanism + parity constraints before activation',
+ fixDesc:'OMB packet v0.6 documents Eden narrative, Genesis receipt, filer notice + appeal channel, post-deployment monitoring.',
+ cohortPeriod:'Exposure window: Apr 2026 – May 2026', cohortCount:1200, cohortLabel:'self-employed filers in vetting cohort',
+ haloP:'$18M', haloA:'3,400',
+ haloRec:'Optimal: Hold activation until OMB Unbiased AI attestation + EO §3(b) recourse live · avoids $18M cost-of-delay scenarios in Q4.',
+ haloScenarios:[{label:'Deploy without vetting',val:'$18M+',sub:'EO + appropriations risk',c:'red'},{label:'Complete OMB packet ✓',val:'$3M',sub:'Recourse + monitoring plan',c:'green'},{label:'Partial mitigation',val:'$9M',sub:'50% exposure reduction',c:'amber'}],
+ regs:[{name:'EO May 2026 — Federal AI Pre-Deployment Vetting',status:'In Flight',deadline:'May 28, 2026',c:'amber'},{name:'OMB Unbiased AI Principles',status:'Packet drafting',deadline:'May 22, 2026',c:'amber'},{name:'IRS Publication 1075',status:'Compliant',deadline:'Annual',c:'green'}],
+ cases:[{id:'#FED-PDV-001',title:'IRS Tax Fraud Detection v3.1 — pre-deployment vetting',sev:'Critical',age:'Day 14 of 30',status:'Blocked — agency review'}],
+ threats:[{type:'Refund fraud syndicate (shadow)',date:'Apr 2, 2026',amt:'$410K'},{type:'Synthetic Schedule C ring',date:'Mar 18, 2026',amt:'$290K'}],
  }
 };
 
@@ -8446,6 +8489,18 @@ EDEN_INDUSTRY.health = {
  blocked:'$1.1M', expose:'$340K'};
 EDEN_INDUSTRY.ad.activeCasesHtml = '<tr><td>#AD-2847</td><td>Personnel Assignment v2.4</td><td>847 personnel records</td><td>2.3x</td><td style="font-size:10px;color:var(--muted)">demographic_classification (0.81)</td><td><span class="badge badge-red">CRITICAL</span></td><td><button type="button" class="btn-ghost" style="font-size:10px;padding:4px 8px" onclick="showScreen(\'atonement\',null)">View Fix →</button></td></tr><tr><td>#AD-1203</td><td>Mission Readiness v1.1</td><td>203 personnel</td><td>1.4x</td><td style="font-size:10px;color:var(--muted)">base_location proxy (0.74)</td><td><span class="badge badge-amber">WARNING</span></td><td><button type="button" class="btn-ghost" style="font-size:10px;padding:4px 8px" onclick="showScreen(\'atonement\',null)">View Fix →</button></td></tr>';
 EDEN_INDUSTRY.fin.activeCasesHtml = '<tr><td>#FIN-1203</td><td>Credit Scoring v3.4</td><td>1,203 applicants</td><td>2.1x</td><td style="font-size:10px;color:var(--muted)">zip_code proxy (0.82)</td><td><span class="badge badge-red">CRITICAL</span></td><td><button type="button" class="btn-ghost" style="font-size:10px;padding:4px 8px" onclick="showScreen(\'atonement\',null)">View Fix →</button></td></tr><tr><td>#FIN-0891</td><td>Auto Loan v2.1</td><td>891 applicants</td><td>1.6x</td><td style="font-size:10px;color:var(--muted)">employment_type proxy (0.71)</td><td><span class="badge badge-amber">WARNING</span></td><td><button type="button" class="btn-ghost" style="font-size:10px;padding:4px 8px" onclick="showScreen(\'atonement\',null)">View Fix →</button></td></tr>';
+EDEN_INDUSTRY.fed = {
+ subtitle:'Federal tax fraud bias detection — IRS Tax Compliance Division',
+ badgeCount:'1 Active Flag',
+ diGroups:[{l:'Self-employed Schedule C',v:0.54},{l:'Metro ZIP clusters',v:0.52},{l:'Refund velocity',v:0.78},{l:'Prior audit band',v:0.81},{l:'Entity type',v:0.76}],
+ impacted:{worstFmt:'Self-employed Schedule C — 0.54',worstClr:'#fca5a5',total:'1,200',root:'schedule_c_volatility_zip',corr:'0.76',reg:'EO May 2026 · OMB Unbiased AI'},
+ features:[
+   {n:'metro_zip_cluster',v:0.76,k:'proxyR'},{n:'schedule_c_volatility',v:0.71,k:'proxyR'},{n:'refund_velocity',v:0.44,k:'valid'},{n:'wage_withholding_ratio',v:0.29,k:'valid'},
+   {n:'entity_structure_score',v:0.33,k:'valid'}],
+ obsidianText:'ZIP-cluster concentration correlates with legitimate self-employment density; synthetic rings spoof "clean" geography to slip fraud checks when bias corrections over-flag Schedule C filers.',
+ blocked:'$890K', expose:'$410K'};
+EDEN_INDUSTRY.fed.activeCasesHtml = '<tr><td>#FED-PDV-001</td><td>IRS Tax Fraud Detection v3.1</td><td>1,200 self-employed filers</td><td>1.84x</td><td style="font-size:10px;color:var(--muted)">metro_zip_cluster + schedule_c_volatility (0.76)</td><td><span class="badge badge-red">BLOCKED</span></td><td><button type="button" class="btn-ghost" style="font-size:10px;padding:4px 8px" onclick="showScreen(\'compliance\',null)">View Packet →</button></td></tr>';
+EDEN_INDUSTRY.fed.coverageHtml = '<tr><td>Self-employed — NYC metro ZIP band</td><td>6.1%</td><td>11.4%</td><td>-5.3%</td><td><span class="badge badge-red">HIGH</span></td></tr><tr><td>Self-employed — Miami metro ZIP band</td><td>5.4%</td><td>9.8%</td><td>-4.4%</td><td><span class="badge badge-red">HIGH</span></td></tr>';
 EDEN_INDUSTRY.health.activeCasesHtml = '<tr><td>#HS-2847</td><td>Claims Adjudication v1.9</td><td>2,847 patient claims</td><td>2.3x</td><td style="font-size:10px;color:var(--muted)">age_cost_proxy (0.81)</td><td><span class="badge badge-red">CRITICAL</span></td><td><button type="button" class="btn-ghost" style="font-size:10px;padding:4px 8px" onclick="showScreen(\'atonement\',null)">View Fix →</button></td></tr><tr><td>#HS-1204</td><td>Triage Priority v2.0</td><td>1,204 patients</td><td>1.9x</td><td style="font-size:10px;color:var(--muted)">rural_distance proxy (0.76)</td><td><span class="badge badge-amber">WARNING</span></td><td><button type="button" class="btn-ghost" style="font-size:10px;padding:4px 8px" onclick="showScreen(\'atonement\',null)">View Fix →</button></td></tr>';
 EDEN_INDUSTRY.ad.coverageHtml = '<tr><td>Native American Technicians</td><td>0.3%</td><td>1.2%</td><td>-0.9%</td><td><span class="badge badge-red">HIGH</span></td></tr><tr><td>Women in Combat Roles</td><td>4.1%</td><td>8.3%</td><td>-4.2%</td><td><span class="badge badge-amber">MEDIUM</span></td></tr><tr><td>Disability Status</td><td>1.2%</td><td>4.7%</td><td>-3.5%</td><td><span class="badge badge-red">HIGH</span></td></tr>';
 EDEN_INDUSTRY.fin.coverageHtml = '<tr><td>Pacific Islander</td><td>0.02%</td><td>0.4%</td><td>-0.38%</td><td><span class="badge badge-red">HIGH</span></td></tr><tr><td>Rural Applicants</td><td>8.1%</td><td>19.3%</td><td>-11.2%</td><td><span class="badge badge-red">HIGH</span></td></tr><tr><td>Age 70+ Applicants</td><td>1.3%</td><td>6.8%</td><td>-5.5%</td><td><span class="badge badge-red">HIGH</span></td></tr>';
@@ -8812,7 +8867,8 @@ window.CARDINAL_PERSONAS = [
   { id: 'james-m',   name: 'James Martinez',     role: 'Compliance Lead',     org: 'Atlas Defense Systems', initials: 'JM', color: '#22c55e', canSeeWhistleblower: true,  canSeeSealedLegal: true,  canSubmitWhistleblower: true,  scope: 'org',           summary: 'Compliance Lead. Owns regulatory filings, FCRA/ECOA/DoD attestations, whistleblower routing.' },
   { id: 'sarah',     name: 'Sarah Chen',         role: 'Lead Data Science',   org: 'Atlas Defense Systems', initials: 'SC', color: '#f59e0b', canSeeWhistleblower: false, canSeeSealedLegal: false, canSubmitWhistleblower: true,  scope: 'org-technical', summary: 'Lead DS. Technical detail across models, cases, Eden flags. No whistleblower or sealed legal.' },
   { id: 'james-p',   name: 'James Park',         role: 'Product Manager',     org: 'Atlas Defense Systems', initials: 'JP', color: '#06b6d4', canSeeWhistleblower: false, canSeeSealedLegal: false, canSubmitWhistleblower: true,  scope: 'org-public',    summary: 'Product Manager. View-only on most governance items. Can flag concerns + submit whistleblower.' },
-  { id: 'marcus',    name: 'Marcus Williams',    role: 'Senior Engineer',     org: 'Atlas Defense Systems', initials: 'MW', color: '#94a3b8', canSeeWhistleblower: false, canSeeSealedLegal: false, canSubmitWhistleblower: true,  scope: 'org-public',    summary: 'Senior Engineer. Public-only access. Can submit whistleblower reports anonymously.' }
+  { id: 'marcus',    name: 'Marcus Williams',    role: 'Senior Engineer',     org: 'Atlas Defense Systems', initials: 'MW', color: '#94a3b8', canSeeWhistleblower: false, canSeeSealedLegal: false, canSubmitWhistleblower: true,  scope: 'org-public',    summary: 'Senior Engineer. Public-only access. Can submit whistleblower reports anonymously.' },
+  { id: 'patricia-alvarez', name: 'Patricia Alvarez', initials: 'PA', role: 'IRS Chief Privacy Officer', org: 'IRS Tax Compliance Division', color: '#3b82f6', scope: 'org', summary: 'Federal CPO leading pre-deployment vetting for IRS AI under EO May 2026. Owns FED-PDV-001 vetting case.', canSeeWhistleblower: true, canSeeSealedLegal: true, canSubmitWhistleblower: true }
 ];
 
 
@@ -8889,14 +8945,14 @@ window.MASTER_TAG_LIBRARY = {
       buyers: 'IRS · SSA · ICE · CBP · VA · USDA · HUD · DOE · DOL · USCIS · EPA · GSA · OMB',
       regulators: 'OMB Unbiased AI · GSA (FedRAMP) · agency IGs · GAO · OIRA · Congressional oversight',
       tags: [
-        { name: 'Tax Fraud Detection (IRS)', status: 'placeholder', demoCases: [], regs: 'IRC · IRS audit standards · due process for taxpayers' },
+        { name: 'Tax Fraud Detection (IRS)', status: 'active', demoCases: ['FED-PDV-001'], regs: 'IRC · IRS audit standards · due process for taxpayers' },
         { name: 'Benefits Determination (SSA, VA)', status: 'placeholder', demoCases: [], regs: 'SSA appeals · VA appeals reform act · due process' },
         { name: 'Immigration Risk Scoring', status: 'placeholder', demoCases: [], regs: 'INA · due process · civil liberties oversight' },
         { name: 'Healthcare Eligibility (Medicaid, VA)', status: 'placeholder', demoCases: [], regs: 'ACA §1557 · Medicaid rules · VA Title 38' },
         { name: 'Housing Assistance (HUD)', status: 'placeholder', demoCases: [], regs: 'Fair Housing Act · HUD §504 · ADA' },
         { name: 'Federal Hiring AI (OPM)', status: 'placeholder', demoCases: [], regs: 'Title VII · USERRA · OPM rules · MSPB review' },
         { name: 'Federal Procurement', status: 'placeholder', demoCases: [], regs: 'FAR · GAO bid protests · OMB Unbiased AI Principles' },
-        { name: 'Federal Pre-Deployment Vetting', status: 'placeholder', demoCases: [], regs: 'Trump May 2026 EO · OMB AI memos · agency-specific guidance' }
+        { name: 'Federal Pre-Deployment Vetting', status: 'active', demoCases: ['FED-PDV-001'], regs: 'Trump May 2026 EO · OMB AI memos · agency-specific guidance' }
       ]
     }
   ]
@@ -8997,7 +9053,7 @@ window.CARDINAL_STATUTES = [
     id: 'omb-ai', name: 'OMB Unbiased AI', fullName: 'OMB Memorandum on Unbiased AI Principles (federal use)', authority: 'OMB / OIRA',
     industries: ['fed', 'ad'], scope: 'US Federal',
     keyProvisions: 'Mandates federal agency AI systems meet bias audit + transparency + human-oversight + recourse standards',
-    cardinalCases: [],
+    cardinalCases: ['FED-PDV-001'],
     cardinalReceipts: [],
     crossRefs: ['Trump May 2026 AI EO', 'GSA FedRAMP AI'],
     enforcementClimate: 'Implementation phase — agency-by-agency rollouts through 2026-2027'
@@ -9006,8 +9062,8 @@ window.CARDINAL_STATUTES = [
     id: 'trump-eo-2026', name: 'EO May 2026', fullName: 'Executive Order on Federal AI Pre-Deployment Vetting (May 2026)', authority: 'Executive Office',
     industries: ['fed', 'ad'], scope: 'US Federal',
     keyProvisions: 'Requires pre-deployment vetting + ongoing audit of AI systems used in federal decision-making with adverse-action recourse',
-    cardinalCases: [],
-    cardinalReceipts: [],
+    cardinalCases: ['FED-PDV-001'],
+    cardinalReceipts: ['FED-CF-2026-04-29-V31'],
     crossRefs: ['OMB Unbiased AI', 'Trump Dec 2025 EO', 'BEAD funding ($42B tied to state AI compliance)'],
     enforcementClimate: 'Critical — sets new federal-contractor compliance bar; Cardinal positioned as default vetting layer'
   }
@@ -9811,6 +9867,112 @@ var CARDINAL_DATA = {
     },
     auditTimestamp:'2 minutes ago',
     auditLastEvent:'Claims Adjudication v1.9 — DI recalculated after weekly batch'
+  },
+  fed: {
+    org: 'IRS Tax Compliance Division', user: 'Patricia Alvarez', initials: 'PA',
+    trustScore: 0.71, trustScoreDisplay: '71', trustColor: '#f59e0b',
+    trustStatus: 'Below Threshold — Not Certified',
+    certStatus: 'Below Cardinal certification floor (80+ required) · EO May 2026 vetting in flight',
+    sentinelKpis: { leadLabel: '8.4 days', prevented: '12', exposureQ: '$18M' },
+    biasScore: 64, fraudScore: 78, complianceScore: 68,
+    biasDetection: '64%', fraudPrevention: '78%', compliance: '68%',
+    activeIncidents: 1, criticalCases: 1,
+    penaltyExposure: '$18M',
+    penaltyBreakdown: 'Federal cost-of-delay: $12M + oversight escalation: $6M',
+    penaltyBasis: 'IRS Tax Fraud Detection v3.1 pre-deployment block · DI 0.54 · 1,200 self-employed filers · OMB packet deadline May 28',
+    remediationPct: 45,
+    remediationLabel: 'IRS Tax Fraud Detection v3.1 — EO May 2026 vetting gate (OMB packet v0.6)',
+    remediationCalc: 'Genesis counterfactual sealed · recourse mechanism drafted · awaiting IRS CPO + Compliance sign-off',
+    remediationNext: 'Submit OMB packet + IRS agency attestation after Legal review',
+    remediationETA: 'Target gate: May 28, 2026 (OMB) · Jun 12 recourse pilot',
+    modelsAtRisk: '1 of 2',
+    modelsAtRiskList: [
+      {name:'IRS Tax Fraud Detection v3.1', issue:'DI 0.54 · blocked-deployment', status:'CRITICAL', stage:'eden'}
+    ],
+    primaryCase: '#FED-PDV-001', primaryModel: 'IRS Tax Fraud Detection v3.1',
+    affectedCount: '1,200 self-employed filers', affectedNumber: 1200,
+    rootCause: 'metro_zip_cluster + schedule_c_volatility (corr 0.76)',
+    disparity: '1.84x',
+    regulation: 'EO May 2026 §3 — pre-deployment bias audit + recourse required',
+    certBlockers: [
+      {text:'IRS Tax Fraud Detection v3.1 — deployment blocked pending OMB attestation', fixScreen:'compliance'},
+      {text:'Recourse mechanism must be live before activation (EO §3(b))', fixScreen:'atonement'}
+    ],
+    certProjected: null,
+    peerComparison: 'Federal civilian median: 74 · Your score: 71 · 41st percentile',
+    peerPercentile: 41,
+    industryMedian: 79,
+    certRenewal: '2026-05-28',
+    /* === Trust Score deep-dive (May 1, 2026) === */
+    history12mo: {
+      labels: ['May 25','Jun 25','Jul 25','Aug 25','Sep 25','Oct 25','Nov 25','Dec 25','Jan 26','Feb 26','Mar 26','Apr 26'],
+      score:      [73,73,73,72,72,72,72,71,71,71,71,71],
+      bias:       [68,68,67,67,66,66,65,65,64,64,64,64],
+      fraud:      [78,78,78,78,78,78,78,78,78,78,78,78],
+      compliance: [72,72,71,71,70,70,70,69,69,68,68,68]
+    },
+    historyAnnotations: [
+      {monthIdx:3, label:'OMB framework', text:'OMB Unbiased AI Principles adopted agency-wide', color:'#a855f7'},
+      {monthIdx:9, label:'EO effective', text:'EO May 2026 finalized — pre-deployment audit mandatory', color:'#3b82f6'},
+      {monthIdx:10, label:'v3.1 blocked', text:'Eden checkpoint blocked IRS Tax Fraud Detection v3.1 — DI 0.54', color:'#ef4444'}
+    ],
+    scoreComposition: {
+      bias: { weight:40, score:64, headline:'Bias Detection',
+        factors:[
+          {label:'metro_zip_cluster + schedule_c_volatility', sub:'DI 0.54 · 1.84x flag rate vs baseline', impact:'-12 pts'},
+          {label:'Self-employed filers — 5 metro clusters', sub:'NYC · Chicago · Atlanta · Miami · LA', impact:'-6 pts'},
+          {label:'Pre-deployment posture', sub:'No production traffic — Eden gate only', impact:'-2 pts'}
+        ], coreScreen:'eden' },
+      fraud: { weight:30, score:78, headline:'Fraud Prevention',
+        factors:[
+          {label:'Refund velocity anomalies', sub:'82% catch rate', impact:'-1 pt'},
+          {label:'Synthetic TIN clustering', sub:'79% catch rate', impact:'-2 pts'},
+          {label:'Schedule C inconsistency patterns', sub:'81% catch rate', impact:'-1 pt'}
+        ], biasFraudConnection:'Pilot window shows fairness corrections must not thin fraud checks on syndicates spoofing clean-ZIP profiles', coreScreen:'obsidian' },
+      compliance: { weight:30, score:68, headline:'Regulatory Compliance',
+        regulations:[
+          {name:'EO May 2026 — Pre-Deployment Vetting', pct:62.0, key:'eo2026', issue:'OMB packet v0.6 in agency review'},
+          {name:'OMB Unbiased AI Principles', pct:58.5, key:'ombai', issue:'Attestation pending · recourse design attached'},
+          {name:'IRS Pub 1075', pct:91.0, key:'pub1075', issue:'Within tolerance — taxpayer data safeguards'},
+          {name:'Privacy Act', pct:84.0, key:'privacyact', issue:'Documentation complete · Legal routing active'}
+        ] }
+    },
+    pathToCertBlockers: [
+      { title:'IRS Tax Fraud Detection v3.1 — EO May 2026 deployment block', severity:'Critical',
+        explanation:'Disparate flag rate 1.84x on self-employed filers across five metro ZIP clusters. Genesis counterfactual shows 21.3% outcome swap when proxies neutralized — receipt sealed.',
+        scoreImpact:'+6 points to Trust Score', fixCore:'Compliance Exchange', fixScreen:'compliance', eta:'OMB deadline May 28 · agency review May 22', model:'IRS Tax Fraud Detection v3.1' },
+      { title:'Recourse mechanism §3(b)', severity:'High',
+        explanation:'EO requires taxpayer-facing notice + appeal channel design before activation. Packet section drafted; Legal + CPO sign-off outstanding.',
+        scoreImpact:'+4 points to Trust Score', fixCore:'Atonement Core', fixScreen:'atonement', eta:'Jun 12 pilot target', regKey:'eo2026' }
+    ],
+    projectedScore: 84,
+    quarterlySummary: {
+      quarter:'Q1 2026',
+      paragraphs:[
+        'IRS Tax Compliance Division sits at 71 — below Cardinal\'s 80-point certification floor while IRS Tax Fraud Detection v3.1 remains in pre-deployment vetting under EO May 2026. Eden flagged a 1.84x disparate fraud-flag rate for self-employed filers concentrated in five metro ZIP clusters; DI is 0.54 against the federal fairness gate.',
+        'Genesis sealed counterfactual receipt FED-CF-2026-04-29-V31 showing a 21.3% outcome swap when ZIP-correlated and Schedule C volatility proxies are neutralized. Compliance Exchange assembled OMB packet v0.6 covering Eden narrative, Genesis receipt, §3(b) recourse design, and monitoring plan — James Martinez approved; Patricia Alvarez agency review May 22.',
+        'What leadership needs to know: activation remains appropriately blocked until OMB Unbiased AI attestation lands; modeled cost-of-delay scenarios reach ~$18M if the vetting clock slips through fiscal Q4. Maintain ramp-blocked posture until countersigned agency filing.'
+      ]
+    },
+    disparityHeatmap: {
+      title:'Metro ZIP × Filing Archetype — Flag-rate uplift',
+      xLabels:['Schedule C heavy','Mixed income','W-2 dominant','Entity filings'],
+      yLabels:['NYC cluster','Chicago cluster','Atlanta cluster','Miami cluster','LA cluster'],
+      cells:[
+        [1.84, 1.62, 1.41, 1.22],
+        [1.71, 1.55, 1.38, 1.19],
+        [1.58, 1.48, 1.31, 1.15],
+        [1.52, 1.41, 1.28, 1.12],
+        [1.79, 1.59, 1.44, 1.21]
+      ],
+      drillCore:'eden'
+    },
+    peerSet: {
+      yourScore:71, percentile:41, median:74,
+      peers:[62,65,68,70,72,73,74,76,78,81]
+    },
+    auditTimestamp:'2 minutes ago',
+    auditLastEvent:'IRS Tax Fraud Detection v3.1 — OMB packet v0.6 advanced to agency review'
   }
 };
 window.CARDINAL_CASE_TYPES = [
@@ -9820,7 +9982,8 @@ window.CARDINAL_CASE_TYPES = [
   { id: 'synthetic-threat', label: 'Synthetic Threat', description: 'Sentinel adversarial persona finds new vulnerability' },
   { id: 'policy-violation', label: 'Policy Violation', description: 'Kernel Compiler or governance gate blocks deployment' },
   { id: 'consumer-appeal', label: 'Consumer Appeal', description: 'End-user submits Decision Receipt review request' },
-  { id: 'systemic-risk', label: 'Systemic Risk', description: 'Halo or Compliance detects cross-model pattern' }
+  { id: 'systemic-risk', label: 'Systemic Risk', description: 'Halo or Compliance detects cross-model pattern' },
+  { id: 'pre-deployment-vetting', label: 'Pre-Deployment Vetting', description: 'Federal EO May 2026 gate — bias audit + recourse before activation' }
 ];
 CARDINAL_DATA.ad.haloAttribution = [
   { caseId: 'AD-2847', dollarImpact: 67000000, daysToImpact: 16, scenario: 'DoD AI Ethics attestation deadline May 21 — incomplete remediation narrative or counterfactual gap could delay packet acceptance and trigger contract review', severity: 'Critical' },
@@ -9834,6 +9997,36 @@ CARDINAL_DATA.health.haloAttribution = [
   { caseId: 'HS-2847', dollarImpact: 150000000, daysToImpact: 27, scenario: 'CMS audit + ACA 1557 enforcement — CMO bottleneck blocking v1.10 promotion creates 2,847-patient open exposure window during audit period', severity: 'Critical' },
   { caseId: 'HS-1204', dollarImpact: 12000000, daysToImpact: 60, scenario: 'Triage harm scenario — rural elderly under-prioritization, if not resolved before next CMS spot-audit cycle, triggers state-level patient advocacy escalation', severity: 'High' },
   { caseId: 'HS-0912', dollarImpact: 0, daysToImpact: null, scenario: 'CLOSED — Diagnosis Support v2.4 promoted to production March 22; ACA 1557 attestation filed and accepted April 18; exposure resolved', severity: 'High' }
+];
+CARDINAL_DATA.fed.haloAttribution = [
+  {
+    caseId: 'FED-PDV-001',
+    severity: 'High',
+    dollarImpact: 18000000,
+    daysToImpact: 23,
+    scenario: 'IRS Tax Fraud Detection AI v3.1 pre-deployment vetting under Trump May 2026 Executive Order. Eden flagged disparate flag-rate of 1.84x against self-employed filers in 5 metro ZIP clusters. EO requires pre-deployment bias audit + recourse mechanism before activation. Deployment blocked pending Genesis counterfactual proof and OMB Unbiased AI Principles attestation. $18M projected federal cost-of-delay if blocked through fiscal Q4.'
+  }
+];
+CARDINAL_DATA.fed.complianceTrackerRows = [
+  {
+    caseId: 'FED-PDV-001',
+    packetId: 'FED-PKT-2026-05-EO',
+    regulator: 'OMB / OIRA',
+    jurisdiction: 'US Federal',
+    status: 'in-flight',
+    dueDate: '2026-05-28'
+  },
+  {
+    caseId: 'FED-PDV-001',
+    packetId: 'FED-PKT-2026-05-AGENCY',
+    regulator: 'IRS Office of the Chief Privacy Officer',
+    jurisdiction: 'US Federal',
+    status: 'in-flight',
+    dueDate: '2026-05-22'
+  }
+];
+CARDINAL_DATA.fed.trustLoopDigestEntries = [
+  { weekOf: '2026-05-05', industry: 'fed', sentence: 'FED-PDV-001: IRS Tax Fraud Detection v3.1 paused at Eden checkpoint — 1.84x disparate flag rate triggers EO May 2026 mandatory audit. OMB packet v0.6 with Genesis receipt + §3(b) recourse design in agency review.', severity: 'high', linkedCaseIds: ['FED-PDV-001'] }
 ];
 CARDINAL_DATA.ad.complianceTrackerRows = [
   { rowId: 'CT-AD-001', caseId: 'AD-2847', regulator: 'DoD AI Ethics Board', jurisdiction: 'US Federal', packetId: 'DOD-AI-ETHICS-2026-AD', status: 'in-flight-73pct-complete', owner: 'James Martinez', dueDate: '2026-05-21' },
@@ -9887,6 +10080,7 @@ window.DECISION_RECEIPTS = [
   {receiptId:"FIN-DEPLOY-2026-04-12-AL22-SHADOW",receiptType: 'deployment',issuedDate:"2026-04-12T09:35:00Z",issuedBy:"Atonement Core",signatures:[{signer:"Atonement Core",sigHash:"de5a0f58f606bf45",timestamp:"2026-04-12T09:35:01Z"},{signer:"Marcus Chen",sigHash:"606a8704e9d56ba1",timestamp:"2026-04-12T09:36:22Z"}],multisigRequired:true,contents:{caseLabel:"FIN-0891",modelVersion:"Auto Loan v2.2",shadowTrafficPct:5,shadowDI:0.83,prodDI:0.76,validationNotes:"Geography re-weight with on-time-payment composite."},linkedCaseId:"FIN-0891",linkedModelId:"Auto Loan v2.2",echoMemoryAnchor:"echo-FIN-2026-04-12-0930-at03",publicVisibility: 'public-summary',hashAnchor:"ca43d1802b58d29ef525c744e50439c0",industryContext: 'fin'},
   {receiptId:"FIN-DEPLOY-2026-04-28-AL22-RAMP25",receiptType: 'deployment',issuedDate:"2026-04-28T13:05:00Z",issuedBy:"Atonement Core",signatures:[{signer:"Atonement Core",sigHash:"e1c1bda2eba28082",timestamp:"2026-04-28T13:05:09Z"},{signer:"Marcus Chen",sigHash:"c5b75461e96f27dd",timestamp:"2026-04-28T13:06:01Z"}],multisigRequired:true,contents:{caseLabel:"FIN-0891",modelVersion:"Auto Loan v2.2",rampTrafficPct:25,rampDI:0.84,validationNotes:"Ramp checkpoint approved Marcus Chen + Riley Whitmore."},linkedCaseId:"FIN-0891",linkedModelId:"Auto Loan v2.2",echoMemoryAnchor:"echo-FIN-2026-04-28-1300-at04",publicVisibility: 'public-summary',hashAnchor:"9068afe2e9d7fde887320dc6221d7c1c",industryContext: 'fin'},
   {receiptId:"HS-CF-2026-04-20-TR20",receiptType: 'counterfactual',issuedDate:"2026-04-20T15:05:00Z",issuedBy:"Genesis Core",signatures:[{signer:"Genesis Core",sigHash:"6b9ae272e7729e6b",timestamp:"2026-04-20T15:05:41Z"}],multisigRequired:false,contents:{caseLabel:"HS-1204",modelVersion:"Triage Priority v2.0",outcomeSwapRatePct:21.1,sampleSize:1100,hypothesis:"distance_to_facility acts as implicit treatment-delay proxy for rural elderly.",validationNotes:"Clinical safety reviewers flagged distance feature tradeoffs."},linkedCaseId:"HS-1204",linkedModelId:"Triage Priority v2.0",echoMemoryAnchor:"echo-HS-2026-04-20-1500-gn02",publicVisibility: 'public-summary',hashAnchor:"c28565213330efb0960b00954f1db2a9",industryContext: 'health'},
+  {receiptId:"FED-CF-2026-04-29-V31",receiptType: 'counterfactual',issuedDate:"2026-04-29T09:35:12Z",issuedBy:"Genesis Core",signatures:[{signer:"Genesis Core",sigHash:"fed05g29095b4a9d",timestamp:"2026-04-29T09:35:44Z"}],multisigRequired:false,contents:{caseLabel:"FED-PDV-001",modelVersion:"IRS Tax Fraud Detection v3.1",outcomeSwapRatePct:21.3,sampleSize:1200,hypothesis:"ZIP-correlated and Schedule C volatility proxies concentrate flags on legitimate self-employed filers.",validationNotes:"Single-sig Genesis seal; legal-grade packet cross-linked to OMB submission."},linkedCaseId:"FED-PDV-001",linkedModelId:"IRS Tax Fraud Detection v3.1",echoMemoryAnchor:"echo-FED-2026-04-29-0930-gn01",publicVisibility: 'public-summary',hashAnchor:"fed05g29095b4a9d24ff0e51e8b3c215fed05",industryContext: 'fed'},
   {receiptId:"HS-CF-2026-02-08-DS23",receiptType: 'counterfactual',issuedDate:"2026-02-08T10:08:00Z",issuedBy:"Genesis Core",signatures:[{signer:"Genesis Core",sigHash:"5e7ac046fed2dbd2",timestamp:"2026-02-08T10:08:22Z"}],multisigRequired:false,contents:{caseLabel:"HS-0912",modelVersion:"Diagnosis Support v2.3",outcomeSwapRatePct:14.2,sampleSize:900,hypothesis:"Feature interaction age \u00d7 condition_count skews risk scoring for older female multi-condition patients.",validationNotes:"Single-sig Genesis; decomposition plan queued for v2.4."},linkedCaseId:"HS-0912",linkedModelId:"Diagnosis Support v2.3",echoMemoryAnchor:"echo-HS-2026-02-08-1000-gn03",publicVisibility: 'public-summary',hashAnchor:"56380e9dde3a9681740d8787e2c1bb75",industryContext: 'health'},
   {receiptId:"HS-DEPLOY-2026-02-22-DS24-SHADOW",receiptType: 'deployment',issuedDate:"2026-02-22T11:05:00Z",issuedBy:"Atonement Core",signatures:[{signer:"Atonement Core",sigHash:"86a2ccbcb2757e10",timestamp:"2026-02-22T11:05:03Z"},{signer:"Linda Park",sigHash:"d20eb17cb4efebb1",timestamp:"2026-02-22T11:06:50Z"}],multisigRequired:true,contents:{caseLabel:"HS-0912",modelVersion:"Diagnosis Support v2.4",shadowTrafficPct:5,shadowDI:0.86,validationNotes:"Multisig Atonement + Linda Park; interaction-term decomposition live in shadow."},linkedCaseId:"HS-0912",linkedModelId:"Diagnosis Support v2.4",echoMemoryAnchor:"echo-HS-2026-02-22-1100-at02",publicVisibility: 'public-summary',hashAnchor:"552af07419df7af1a5298ff943f09d34",industryContext: 'health'},
   {receiptId:"HS-DEPLOY-2026-03-08-DS24-RAMP25",receiptType: 'deployment',issuedDate:"2026-03-08T14:05:00Z",issuedBy:"Atonement Core",signatures:[{signer:"Atonement Core",sigHash:"d2d3ded3220fbc38",timestamp:"2026-03-08T14:05:01Z"},{signer:"Linda Park",sigHash:"39812bea917ec912",timestamp:"2026-03-08T14:07:12Z"}],multisigRequired:true,contents:{caseLabel:"HS-0912",modelVersion:"Diagnosis Support v2.4",rampTrafficPct:25,rampDI:0.87,validationNotes:"Multisig quorum; promotion gate cleared post shadow stability."},linkedCaseId:"HS-0912",linkedModelId:"Diagnosis Support v2.4",echoMemoryAnchor:"echo-HS-2026-03-08-1400-at03",publicVisibility: 'public-summary',hashAnchor:"1fa6a41d8e17d7069d01a04c13bca547",industryContext: 'health'},
@@ -9913,6 +10107,9 @@ CD.ad.echoSavedViews = [];
 CD.fin.echoMemories = [{"id":"echo-FIN-2025-08-05-0910-ed01","timestamp":"2025-08-05T09:10:00Z","author":"Eden Core","authorRole":"system","eventType":"bias-detected","core":"eden","severity":"high","summary":"Credit Scoring v3.2 \u2014 ECOA disparate treatment signal on co-applicant feature","content":"Eden flagged correlation 0.79 between legacy co_applicant_income_band and protected-class proxies in Credit Scoring v3.2. CFPB ECOA lens applied; 412 applicants in exposure window. Initial incident opened for review.","hash":"0x683342952cf70659e0bbca1da47f8ed1683342952cf70659e0bbca1da47f8ed1","signature":"sig-4453a63d08176af1","isPinned":false,"isSealed":false,"addendums":[],"linkedMemories":[],"comments":[],"accessTier":"org-wide","accessRoles":[],"caseId":"FIN-PRE1203","modelId":"Credit Scoring v3.2","userId":null,"industryContext":"fin"},{"id":"echo-FIN-2025-08-22-1400-rw01","timestamp":"2025-08-22T14:00:00Z","author":"Riley Whitmore","authorRole":"user","eventType":"team-decision","core":"trustloop","severity":"high","summary":"Whitmore team decision \u2014 remediate Credit v3.2; freeze promotion until patch validated","content":"Executive steer: we do not ship around ECOA signals. Data Science + Compliance authorized to build v3.3 with feature removal and re-weighting; Legal to inform supervisory desk. Decision sealed as governance record.","hash":"0x683342952cf70659e0bbca1da47f8ed1683342952cf70659e0bbca1da47f8ed1","signature":"sig-4453a63d08176af1","isPinned":true,"isSealed":true,"addendums":[{"id":"add-fin-rw-01","timestamp":"2025-08-22T14:45:00Z","author":"Marcus Chen","authorRole":"user","content":"Compliance concurs. Monitoring plan attached for 90-day cohort.","hash":"0x4444444444444444444444444444444444444444444444444444444444444444","signature":"sig-mc-fin-01"}],"linkedMemories":["echo-FIN-2025-08-05-0910-ed01"],"comments":[],"accessTier":"org-wide","accessRoles":[],"caseId":"FIN-PRE1203","modelId":"Credit Scoring v3.2","userId":"Riley Whitmore","industryContext":"fin"},{"id":"echo-FIN-2025-09-30-1000-at01","timestamp":"2025-09-30T10:00:00Z","author":"Atonement Core","authorRole":"system","eventType":"model-deployed","core":"atonement","severity":"informational","summary":"Credit Scoring v3.3 promoted to production \u2014 ECOA flag closed","content":"v3.3 validated: co_applicant_income_band removed; monotone constraints recertified. Eden regression green; Legal closed FIN-PRE1203 with regulator-style narrative archived.","hash":"0xfd40d7a2b1049b6675c85f2a398c13eefd40d7a2b1049b6675c85f2a398c13ee","signature":"sig-4453a63d08176af1","isPinned":false,"isSealed":false,"addendums":[],"linkedMemories":["echo-FIN-2025-08-22-1400-rw01"],"comments":[],"accessTier":"org-wide","accessRoles":[],"caseId":"FIN-PRE1203","modelId":"Credit Scoring v3.3","userId":null,"industryContext":"fin"},{"id":"echo-FIN-2026-02-14-0815-ed02","timestamp":"2026-02-14T08:15:00Z","author":"Eden Core","authorRole":"system","eventType":"bias-detected","core":"eden","severity":"critical","summary":"Credit Scoring v3.4 \u2014 zip_code correlates 0.82 with race in adverse action tail","content":"Disparate impact 0.74 on v3.4 with strongest proxy path through zip_code \u2192 race correlation 0.82. 1,203 applicants affected in rolling window. Auto-routed to War Room intake.","hash":"0x825d6cbf461120730ad5e437ce99a8fb825d6cbf461120730ad5e437ce99a8fb","signature":"sig-4453a63d08176af1","isPinned":false,"isSealed":false,"addendums":[],"linkedMemories":[],"comments":[],"accessTier":"org-wide","accessRoles":[],"caseId":"FIN-1203","modelId":"Credit Scoring v3.4","userId":null,"industryContext":"fin"},{"id":"echo-FIN-2026-02-15-1015-wr01","timestamp":"2026-02-15T10:15:00Z","author":"War Room","authorRole":"system","eventType":"case-opened","core":"warroom","severity":"critical","summary":"War Room Case #FIN-1203 opened \u2014 NYC Law 144 audit clock running","content":"Case #FIN-1203 opened. Lead DS: Priya Sharma. Compliance: Marcus Chen. Legal: Kevin O'Brien. CFO David Park notified. Channel #case-FIN-1203 linked. Priority: shadow fix before audit packet.","hash":"0xd326bd8897ea714c5bae35001f62f9c4d326bd8897ea714c5bae35001f62f9c4","signature":"sig-4453a63d08176af1","isPinned":false,"isSealed":false,"addendums":[],"linkedMemories":["echo-FIN-2026-02-14-0815-ed02"],"comments":[],"accessTier":"org-wide","accessRoles":[],"caseId":"FIN-1203","modelId":"Credit Scoring v3.4","userId":null,"industryContext":"fin"},{"id":"echo-FIN-2026-02-20-1100-gn01","timestamp":"2026-02-20T11:00:00Z","author":"Genesis Core","authorRole":"system","eventType":"decision-made","core":"genesis","severity":"high","summary":"Genesis counterfactual proof \u2014 disparate impact confirmed on v3.4 (sealed)","content":"Legal-grade counterfactual evidence package: outcome swap rate 19.8% when zip proxies neutralized under fixed income. Receipt cross-linked to Trust Ledger batch.","hash":"0x31841be6f548dfaab90c936e7dc0572231841be6f548dfaab90c936e7dc05722","signature":"sig-4453a63d08176af1","isPinned":true,"isSealed":true,"addendums":[],"linkedMemories":["echo-FIN-2026-02-15-1015-wr01"],"comments":[],"accessTier":"org-wide","accessRoles":[],"caseId":"FIN-1203","modelId":"Credit Scoring v3.4","userId":null,"industryContext":"fin"},{"id":"echo-FIN-2026-03-08-0905-at02","timestamp":"2026-03-08T09:05:00Z","author":"Atonement Core","authorRole":"system","eventType":"remediation-started","core":"atonement","severity":"medium","summary":"Credit v3.5 shadow at 5% \u2014 proxy stripping and cohort re-score begun","content":"Shadow deployment live. Re-score queue seeded; monitoring DI trajectory vs v3.4 production.","hash":"0xd326bd8897ea714c5bae35001f62f9c4d326bd8897ea714c5bae35001f62f9c4","signature":"sig-4453a63d08176af1","isPinned":false,"isSealed":false,"addendums":[],"linkedMemories":["echo-FIN-2026-02-20-1100-gn01"],"comments":[],"accessTier":"org-wide","accessRoles":[],"caseId":"FIN-1203","modelId":"Credit Scoring v3.5","userId":null,"industryContext":"fin"},{"id":"echo-FIN-2026-03-15-0830-ev01","timestamp":"2026-03-15T08:30:00Z","author":"Eve","authorRole":"ai-agent","eventType":"score-change","core":"trustloop","severity":"informational","summary":"Remediation cohort progress \u2014 687 of 1,203 applicants re-approved under v3.5 policy","content":"Automated Trust Loop digest: 687/1203 adverse-action cohort cleared or re-approved with explainability packet. ETA to full cohort completion: May 8 if promotion holds.","hash":"0xc691a0f38a5564b74e19287b02ddec3fc691a0f38a5564b74e19287b02ddec3f","signature":"sig-4453a63d08176af1","isPinned":false,"isSealed":false,"addendums":[],"linkedMemories":["echo-FIN-2026-03-08-0905-at02"],"comments":[],"accessTier":"org-wide","accessRoles":[],"caseId":"FIN-1203","modelId":"Credit Scoring v3.5","userId":null,"industryContext":"fin"},{"id":"echo-FIN-2026-04-02-1300-cx01","timestamp":"2026-04-02T13:00:00Z","author":"Compliance Exchange","authorRole":"system","eventType":"audit-filed","core":"compliance","severity":"medium","summary":"NYC Local Law 144 audit packet preparation started \u2014 bias audit narrative v0.7","content":"Compliance Exchange workspace opened for NYC LL144 bias audit. Appendices: model cards, cohort stats, Genesis receipt, shadow metrics.","hash":"0xd326bd8897ea714c5bae35001f62f9c4d326bd8897ea714c5bae35001f62f9c4","signature":"sig-4453a63d08176af1","isPinned":false,"isSealed":false,"addendums":[],"linkedMemories":["echo-FIN-2026-02-15-1015-wr01"],"comments":[],"accessTier":"org-wide","accessRoles":[],"caseId":"FIN-1203","modelId":"Credit Scoring v3.4","userId":null,"industryContext":"fin"},{"id":"echo-FIN-2026-04-20-1000-tl01","timestamp":"2026-04-20T10:00:00Z","author":"Trust Ledger","authorRole":"system","eventType":"document-approved","core":"trustledger","severity":"informational","summary":"Trust Ledger Decision Receipt batch issuance \u2014 FIN-1203 remediation binding steps","content":"Batch CHASE-AUTO-2026-04-20-FIN9 issued with multisig anchors for counterfactual + cohort remediation milestones.","hash":"0x75c85f2a398c13eefd40d7a2b1049b6675c85f2a398c13eefd40d7a2b1049b66","signature":"sig-4453a63d08176af1","isPinned":false,"isSealed":false,"addendums":[],"linkedMemories":["echo-FIN-2026-02-20-1100-gn01"],"comments":[],"accessTier":"org-wide","accessRoles":[],"caseId":"FIN-1203","modelId":"Credit Scoring v3.5","userId":null,"industryContext":"fin"},{"id":"echo-FIN-2026-04-25-1500-sn01","timestamp":"2026-04-25T15:00:00Z","author":"Sentinel","authorRole":"system","eventType":"model-updated","core":"sentinel","severity":"low","summary":"Sentinel stress test on Credit v3.5 shadow path \u2014 PASS","content":"Chaos test: ingress spike + explainability flood. No attestation drift; hash chain verified end-to-end.","hash":"0xd326bd8897ea714c5bae35001f62f9c4d326bd8897ea714c5bae35001f62f9c4","signature":"sig-4453a63d08176af1","isPinned":false,"isSealed":false,"addendums":[],"linkedMemories":["echo-FIN-2026-03-08-0905-at02"],"comments":[],"accessTier":"org-wide","accessRoles":[],"caseId":"FIN-1203","modelId":"Credit Scoring v3.5","userId":null,"industryContext":"fin"},{"id":"echo-FIN-2026-05-01-1130-at03","timestamp":"2026-05-01T11:30:00Z","author":"Atonement Core","authorRole":"system","eventType":"score-change","core":"atonement","severity":"informational","summary":"Shadow DI improved to 0.79 \u2014 promotion checkpoint approaching","content":"Latest shadow batch DI 0.79 \u00b10.02. Priya Sharma + Marcus Chen approved go/no-go review May 3 for phased ramp.","hash":"0x683342952cf70659e0bbca1da47f8ed1683342952cf70659e0bbca1da47f8ed1","signature":"sig-4453a63d08176af1","isPinned":false,"isSealed":false,"addendums":[],"linkedMemories":["echo-FIN-2026-04-25-1500-sn01"],"comments":[],"accessTier":"org-wide","accessRoles":[],"caseId":"FIN-1203","modelId":"Credit Scoring v3.5","userId":null,"industryContext":"fin"},{"id":"echo-FIN-2026-03-22-1120-eden03","timestamp":"2026-03-22T11:20:00Z","author":"Eden Core","authorRole":"system","eventType":"bias-detected","core":"eden","severity":"high","summary":"Eden detection on Auto Loan v2.1 DI 0.76 rural Midwest","content":"Disparate impact 0.76 with geography_employment proxy elevated against rural Midwest cohort.","hash":"0x8cba415d6a28d037cb00ca74afb01630271a22167e058fb082e972e3ceaf102d","signature":"sig-be5b8077eac09056","isPinned":false,"isSealed":false,"addendums":[],"linkedMemories":[],"comments":[],"accessTier":"org-wide","accessRoles":[],"caseId":"FIN-0891","modelId":"Auto Loan v2.1","userId":null,"industryContext":"fin"},{"id":"echo-FIN-2026-03-22-1500-ab01","timestamp":"2026-03-22T15:00:00Z","author":"Ashley Brennan","authorRole":"user","eventType":"team-decision","core":"trustloop","severity":"medium","summary":"Ashley Brennan opens analysis \u2014 geography_employment proxy correlation 0.68","content":"Lead analyst memo documents proxy correlation 0.68 vs adverse decision lift.","hash":"0xbae882e51fcf13442cd0fad5ddd5f8b853d97b258334d3dcb869be18d49c0ba2","signature":"sig-e11846212ee6b411","isPinned":false,"isSealed":false,"addendums":[],"linkedMemories":[],"comments":[],"accessTier":"org-wide","accessRoles":[],"caseId":"FIN-0891","modelId":"Auto Loan v2.1","userId":"Ashley Brennan","industryContext":"fin"},{"id":"echo-FIN-2026-03-25-0900-ab02","timestamp":"2026-03-25T09:00:00Z","author":"Ashley Brennan","authorRole":"user","eventType":"team-decision","core":"trustloop","severity":"medium","summary":"Ashley Brennan escalates to Marcus Chen","content":"Escalation references ECOA exposure draft for state AG correspondence.","hash":"0x2cc5832e09927ffb92833139bb52edbd1c3b00138f6c1a5dad62e249cccc0562","signature":"sig-6e2581c374c9475d","isPinned":false,"isSealed":false,"addendums":[],"linkedMemories":[],"comments":[],"accessTier":"org-wide","accessRoles":[],"caseId":"FIN-0891","modelId":"Auto Loan v2.1","userId":"Ashley Brennan","industryContext":"fin"},{"id":"echo-FIN-2026-03-26-1100-mc01","timestamp":"2026-03-26T11:00:00Z","author":"Marcus Chen","authorRole":"user","eventType":"document-approved","core":"compliance","severity":"high","summary":"Marcus Chen confirms ECOA exposure; opens state AG correspondence draft","content":"Compliance confirms ECOA framing and preserves regulator correspondence draft.","hash":"0x4f61865ceafaae2e63f50d43ea63eb09612f9d7ced04f93c41b1a0790dcfafc0","signature":"sig-c981559535147b31","isPinned":false,"isSealed":false,"addendums":[],"linkedMemories":[],"comments":[],"accessTier":"org-wide","accessRoles":[],"caseId":"FIN-0891","modelId":"Auto Loan v2.1","userId":"Marcus Chen","industryContext":"fin"},{"id":"echo-FIN-2026-03-28-1400-wr03","timestamp":"2026-03-28T14:00:00Z","author":"War Room","authorRole":"system","eventType":"case-opened","core":"warroom","severity":"high","summary":"Case FIN-0891 formally opened","content":"War Room intake binds Auto Loan v2.1 remediation owners and SLA checkpoints.","hash":"0xd6afe0fb1a75fa90dc353eeab519a76eeab3f24f7a60a495527685bafee3049e","signature":"sig-b41e9804b8a6d944","isPinned":true,"isSealed":false,"addendums":[],"linkedMemories":[],"comments":[],"accessTier":"org-wide","accessRoles":[],"caseId":"FIN-0891","modelId":"Auto Loan v2.1","userId":null,"industryContext":"fin"},{"id":"echo-FIN-2026-03-30-1000-gn03","timestamp":"2026-03-30T10:00:00Z","author":"Genesis Core","authorRole":"system","eventType":"decision-made","core":"genesis","severity":"high","summary":"Genesis counterfactual \u2014 17.6% swap","content":"Outcome swap 17.6% sealed to FIN-CF-2026-03-30-V21 on n=950.","hash":"0x0b174319a653cb96d7027b72e97bdfd90525faf07b6607fcf7a0a65d2dbdbd1a","signature":"sig-4664283da9ed83f6","isPinned":true,"isSealed":false,"addendums":[],"linkedMemories":["FIN-CF-2026-03-30-V21"],"comments":[],"accessTier":"org-wide","accessRoles":[],"caseId":"FIN-0891","modelId":"Auto Loan v2.1","userId":null,"industryContext":"fin"},{"id":"echo-FIN-2026-04-02-1100-ab03","timestamp":"2026-04-02T11:00:00Z","author":"Ashley Brennan","authorRole":"user","eventType":"team-decision","core":"atonement","severity":"medium","summary":"Ashley Brennan + team design v2.2 fix \u2014 geography re-weighted with on-time-payment composite","content":"Fix narrative attaches monotone constraints and cohort rebalance plan.","hash":"0x8ff264490a9bb22c2063425a4c35fadd7bd25f0cd3fe0975895a65c49ec1b62a","signature":"sig-21449b29bb8e63e8","isPinned":false,"isSealed":false,"addendums":[],"linkedMemories":[],"comments":[],"accessTier":"org-wide","accessRoles":[],"caseId":"FIN-0891","modelId":"Auto Loan v2.2","userId":"Ashley Brennan","industryContext":"fin"},{"id":"echo-FIN-2026-04-08-1400-ab04","timestamp":"2026-04-08T14:00:00Z","author":"Ashley Brennan","authorRole":"user","eventType":"document-approved","core":"atonement","severity":"medium","summary":"v2.2 ready for shadow; Marcus Chen sign-off","content":"Compliance sign-off recorded on shadow readiness checklist.","hash":"0x65de21adf873c2489c2a97372957bfa72a91138df7db6c1dd3357c20a1b9a53b","signature":"sig-477c0af3a0f5d8af","isPinned":false,"isSealed":false,"addendums":[],"linkedMemories":[],"comments":[],"accessTier":"org-wide","accessRoles":[],"caseId":"FIN-0891","modelId":"Auto Loan v2.2","userId":"Ashley Brennan","industryContext":"fin"},{"id":"echo-FIN-2026-04-12-0930-at03","timestamp":"2026-04-12T09:30:00Z","author":"Atonement Core","authorRole":"system","eventType":"remediation-started","core":"atonement","severity":"medium","summary":"Atonement deploys v2.2 to 5% shadow","content":"Shadow receipt FIN-DEPLOY-2026-04-12-AL22-SHADOW anchored; DI 0.83 \u00b10.02 opening batch.","hash":"0x3e7d5d2f4958872a2bac8eea4bd58228a8db2b30e2fce5bda45c92699b416c2f","signature":"sig-8947f14482437439","isPinned":true,"isSealed":false,"addendums":[],"linkedMemories":["FIN-DEPLOY-2026-04-12-AL22-SHADOW"],"comments":[],"accessTier":"org-wide","accessRoles":[],"caseId":"FIN-0891","modelId":"Auto Loan v2.2","userId":null,"industryContext":"fin"},{"id":"echo-FIN-2026-04-19-1500-at03b","timestamp":"2026-04-19T15:00:00Z","author":"Atonement Core","authorRole":"system","eventType":"score-change","core":"atonement","severity":"informational","summary":"Shadow batch DI 0.83 \u00b10.02","content":"Shadow stability window holds DI inside \u00b10.02 band.","hash":"0x79b24ac27458ac3ec3c73a75619575924057b610727651d792f82346ade5e8e2","signature":"sig-ff7f7d7675793ac3","isPinned":false,"isSealed":false,"addendums":[],"linkedMemories":[],"comments":[],"accessTier":"org-wide","accessRoles":[],"caseId":"FIN-0891","modelId":"Auto Loan v2.2","userId":null,"industryContext":"fin"},{"id":"echo-FIN-2026-04-25-1100-ab05","timestamp":"2026-04-25T11:00:00Z","author":"Ashley Brennan","authorRole":"user","eventType":"team-decision","core":"trustloop","severity":"medium","summary":"Ramp checkpoint approved by Marcus Chen + Riley Whitmore","content":"Executive checkpoint clears 25% ramp gate contingent on batch telemetry.","hash":"0xf8b7beeca20f6e1453593c0c9e45865534eca41fa6c77c78a4f034505947c5e2","signature":"sig-8c5542f666e0d545","isPinned":false,"isSealed":false,"addendums":[],"linkedMemories":[],"comments":[],"accessTier":"org-wide","accessRoles":[],"caseId":"FIN-0891","modelId":"Auto Loan v2.2","userId":"Ashley Brennan","industryContext":"fin"},{"id":"echo-FIN-2026-04-28-1300-at04","timestamp":"2026-04-28T13:00:00Z","author":"Atonement Core","authorRole":"system","eventType":"remediation-started","core":"atonement","severity":"high","summary":"Atonement ramps to 25%","content":"Ramp receipt FIN-DEPLOY-2026-04-28-AL22-RAMP25 sealed; rampDI 0.84 logged.","hash":"0xbff70ea31887be9fe9b80745fa0f199f15546923ca25f63373029234829fd582","signature":"sig-c81f1d03cf7fc3f4","isPinned":true,"isSealed":false,"addendums":[],"linkedMemories":["FIN-DEPLOY-2026-04-28-AL22-RAMP25"],"comments":[],"accessTier":"org-wide","accessRoles":[],"caseId":"FIN-0891","modelId":"Auto Loan v2.2","userId":null,"industryContext":"fin"},{"id":"echo-FIN-2026-04-30-1500-at04b","timestamp":"2026-04-30T15:00:00Z","author":"Atonement Core","authorRole":"system","eventType":"score-change","core":"atonement","severity":"informational","summary":"Ramp 25% batch DI 0.84; next checkpoint May 5","content":"Ramp telemetry meets promotion criteria pending May 5 checkpoint.","hash":"0xb4df4c935250274e5e1c18c510f67917c397aef86159f7e9fc05b23371b4d234","signature":"sig-4603dda6617229fc","isPinned":false,"isSealed":false,"addendums":[],"linkedMemories":[],"comments":[],"accessTier":"org-wide","accessRoles":[],"caseId":"FIN-0891","modelId":"Auto Loan v2.2","userId":null,"industryContext":"fin"},{"id":"echo-FIN-2026-05-02-0900-eve08","timestamp":"2026-05-02T09:00:00Z","author":"Eve","authorRole":"ai-agent","eventType":"score-change","core":"trustloop","severity":"informational","summary":"Eve digest \u2014 FIN-0891 ramp stable; cohort progress 312/456","content":"Digest attaches cohort remediation counter and variance monitor.","hash":"0x6e99bfde94cc520f42dc5777c191a23980b56b97a7c896bf925cec82d54a34fe","signature":"sig-1d948569019b1b14","isPinned":false,"isSealed":false,"addendums":[],"linkedMemories":[],"comments":[],"accessTier":"org-wide","accessRoles":[],"caseId":"FIN-0891","modelId":"Auto Loan v2.2","userId":null,"industryContext":"fin"},{"id":"echo-FIN-2026-03-28-1000-eden04","timestamp":"2026-03-28T10:00:00Z","author":"Eden Core","authorRole":"system","eventType":"bias-detected","core":"eden","severity":"medium","summary":"Eden detection on Collections AI v1.3 proxy 0.48 (watch band)","content":"Neighborhood risk index drift flagged in watch band without breach.","hash":"0x2dfcc85f373dd3e48ea6373bc91e605fe9befb70a8574228baa972c1ffad0de8","signature":"sig-28ce7db59afad40c","isPinned":false,"isSealed":false,"addendums":[],"linkedMemories":[],"comments":[],"accessTier":"org-wide","accessRoles":[],"caseId":"FIN-0842","modelId":"Collections AI v1.3","userId":null,"industryContext":"fin"},{"id":"echo-FIN-2026-03-28-1400-mc02","timestamp":"2026-03-28T14:00:00Z","author":"Marcus Chen","authorRole":"user","eventType":"team-decision","core":"trustloop","severity":"medium","summary":"Marcus Chen flags for monitoring","content":"Compliance retains monthly sampling on Collections cohort.","hash":"0x688ea33ff4b125a50379f133ca826b446e2d16d7d825448c1c30ad35048f2af5","signature":"sig-8de1421136fb2598","isPinned":false,"isSealed":false,"addendums":[],"linkedMemories":[],"comments":[],"accessTier":"org-wide","accessRoles":[],"caseId":"FIN-0842","modelId":"Collections AI v1.3","userId":"Marcus Chen","industryContext":"fin"},{"id":"echo-FIN-2026-04-02-1300-cx02","timestamp":"2026-04-02T13:00:00Z","author":"Compliance Exchange","authorRole":"system","eventType":"audit-filed","core":"compliance","severity":"low","summary":"Compliance Exchange opens watch entry","content":"Watch entry logged with regulator-style narrative stub.","hash":"0xffaa0d44dd85c0e7225b2e464bc1f1468265911095bc723badf2ee1d4d1e7d19","signature":"sig-1021659203d23d4c","isPinned":false,"isSealed":false,"addendums":[],"linkedMemories":[],"comments":[],"accessTier":"org-wide","accessRoles":[],"caseId":"FIN-0842","modelId":"Collections AI v1.3","userId":null,"industryContext":"fin"},{"id":"echo-FIN-2026-04-15-1000-mc03","timestamp":"2026-04-15T10:00:00Z","author":"Marcus Chen","authorRole":"user","eventType":"team-decision","core":"trustloop","severity":"informational","summary":"Marcus Chen monthly review","content":"Monthly review shows stable proxy band without escalation trigger.","hash":"0xdab2bfb3aba21fa013a1d7533e416f17aebcbaff8b191ceb64644be41b34e6c1","signature":"sig-bbba31a66fdfb16b","isPinned":false,"isSealed":false,"addendums":[],"linkedMemories":[],"comments":[],"accessTier":"org-wide","accessRoles":[],"caseId":"FIN-0842","modelId":"Collections AI v1.3","userId":"Marcus Chen","industryContext":"fin"},{"id":"echo-FIN-2026-05-01-1100-eve09","timestamp":"2026-05-01T11:00:00Z","author":"Eve","authorRole":"ai-agent","eventType":"score-change","core":"trustloop","severity":"informational","summary":"May digest \u2014 stable in monitoring","content":"May digest retains FIN-0842 in passive monitoring posture.","hash":"0xe03ba1a2ebd4dd1e75ee3a3308cd53e2a1328a8228b8dcc290a49b5e5d64a95c","signature":"sig-b1963c2a2ef6a694","isPinned":false,"isSealed":false,"addendums":[],"linkedMemories":[],"comments":[],"accessTier":"org-wide","accessRoles":[],"caseId":"FIN-0842","modelId":"Collections AI v1.3","userId":null,"industryContext":"fin"},{"id":"echo-FIN-2026-04-10-1300-eden04","timestamp":"2026-04-10T13:00:00Z","author":"Eden Core","authorRole":"system","eventType":"bias-detected","core":"eden","severity":"medium","summary":"Eden detection on Underwriting v4.1 income volatility proxy 0.62 self-employed minority business owners","content":"Proxy correlation 0.62 against adverse decisions for self-employed minority-owned business cohort.","hash":"0x15e1bf3ab498a85d09ee3ccc6120c45aadcb871c8a93ce5c9f0f4b9426a34c26","signature":"sig-49af1342f1a73ea3","isPinned":false,"isSealed":false,"addendums":[],"linkedMemories":[],"comments":[],"accessTier":"org-wide","accessRoles":[],"caseId":"FIN-2340","modelId":"Underwriting v4.1","userId":null,"industryContext":"fin"},{"id":"echo-FIN-2026-04-10-1500-dw01","timestamp":"2026-04-10T15:00:00Z","author":"Daniel Whitfield","authorRole":"user","eventType":"team-decision","core":"trustloop","severity":"medium","summary":"Daniel Whitfield opens analysis \u2014 small cohort, watching","content":"Analyst opens notebook with cohort guards and paired-watch annotation.","hash":"0x7e18f4dc8c3f6561ea99525135b85ff1b08e95e00d400435f1fcc97be430f3c4","signature":"sig-bedc3a020069ee7c","isPinned":false,"isSealed":false,"addendums":[],"linkedMemories":[],"comments":[],"accessTier":"org-wide","accessRoles":[],"caseId":"FIN-2340","modelId":"Underwriting v4.1","userId":"Daniel Whitfield","industryContext":"fin"},{"id":"echo-FIN-2026-04-13-1100-dw02","timestamp":"2026-04-13T11:00:00Z","author":"Daniel Whitfield","authorRole":"user","eventType":"team-decision","core":"trustloop","severity":"medium","summary":"Daniel Whitfield notes pattern repeating across two Underwriting cases","content":"Pattern similarity flagged versus FIN-3045 cohort slice.","hash":"0xeace1eb521256114048749413d170628ba84193ccca9998b71d90f7565a7abeb","signature":"sig-a98081c030c2de7b","isPinned":false,"isSealed":false,"addendums":[],"linkedMemories":[],"comments":[],"accessTier":"org-wide","accessRoles":[],"caseId":"FIN-2340","modelId":"Underwriting v4.1","userId":"Daniel Whitfield","industryContext":"fin"},{"id":"echo-FIN-2026-04-20-1400-mc04","timestamp":"2026-04-20T14:00:00Z","author":"Marcus Chen","authorRole":"user","eventType":"team-decision","core":"trustloop","severity":"medium","summary":"Marcus Chen flags as paired with FIN-3045","content":"Compliance pairs FIN-2340 with FIN-3045 for unified governance reporting.","hash":"0x990d28e1facae05af4d3f9065da588d4d87d38136ace823d2e3cb03ef37e1386","signature":"sig-5f700dde155d850f","isPinned":false,"isSealed":false,"addendums":[],"linkedMemories":[],"comments":[],"accessTier":"org-wide","accessRoles":[],"caseId":"FIN-2340","modelId":"Underwriting v4.1","userId":"Marcus Chen","industryContext":"fin"},{"id":"echo-FIN-2026-04-28-1000-dw03","timestamp":"2026-04-28T10:00:00Z","author":"Daniel Whitfield","authorRole":"user","eventType":"document-approved","core":"atonement","severity":"medium","summary":"Daniel Whitfield + team draft preliminary remediation","content":"Preliminary remediation memo outlines income volatility feature constraints.","hash":"0x7428f1737afe74721b2918ddc027ffbadad77ed888fe0746a4976c6b12e2b2e9","signature":"sig-9b835d8d1a4ea3a2","isPinned":false,"isSealed":false,"addendums":[],"linkedMemories":[],"comments":[],"accessTier":"org-wide","accessRoles":[],"caseId":"FIN-2340","modelId":"Underwriting v4.1","userId":"Daniel Whitfield","industryContext":"fin"},{"id":"echo-FIN-2026-05-02-1100-eve10","timestamp":"2026-05-02T11:00:00Z","author":"Eve","authorRole":"ai-agent","eventType":"score-change","core":"trustloop","severity":"informational","summary":"Digest paired-watch with FIN-3045","content":"Automated digest maintains paired-watch linkage across Underwriting cases.","hash":"0x7dadd3bbc2948fa0e51fc2b82c312eac322495f97ff01b9087e7b814eced8fe3","signature":"sig-6076d65f153591fa","isPinned":false,"isSealed":false,"addendums":[],"linkedMemories":[],"comments":[],"accessTier":"org-wide","accessRoles":[],"caseId":"FIN-2340","modelId":"Underwriting v4.1","userId":null,"industryContext":"fin"},{"id":"echo-FIN-2026-04-12-1100-eden05","timestamp":"2026-04-12T11:00:00Z","author":"Eden Core","authorRole":"system","eventType":"bias-detected","core":"eden","severity":"medium","summary":"Eden detection on Underwriting v4.1 different cohort, similar pattern","content":"Alternate cohort shows parallel volatility-proxy excursion versus FIN-2340.","hash":"0x2b00635d9f9c9e608446960b25f4702ef8acb8dbbdbf94766d183a29f0a0d519","signature":"sig-a24d8930d7ffb507","isPinned":false,"isSealed":false,"addendums":[],"linkedMemories":[],"comments":[],"accessTier":"org-wide","accessRoles":[],"caseId":"FIN-3045","modelId":"Underwriting v4.1","userId":null,"industryContext":"fin"},{"id":"echo-FIN-2026-04-12-1400-dw04","timestamp":"2026-04-12T14:00:00Z","author":"Daniel Whitfield","authorRole":"user","eventType":"team-decision","core":"trustloop","severity":"medium","summary":"Daniel Whitfield flags as related to FIN-2340","content":"Analyst links cohort pathology to shared root cause hypothesis.","hash":"0x175ae9e1451f35f8f00cacd88cd9f3622b154d64b6fa9eee009198b8edbaddbd","signature":"sig-6222d46e0970f98d","isPinned":false,"isSealed":false,"addendums":[],"linkedMemories":[],"comments":[],"accessTier":"org-wide","accessRoles":[],"caseId":"FIN-3045","modelId":"Underwriting v4.1","userId":"Daniel Whitfield","industryContext":"fin"},{"id":"echo-FIN-2026-04-20-1000-dw05","timestamp":"2026-04-20T10:00:00Z","author":"Daniel Whitfield","authorRole":"user","eventType":"team-decision","core":"trustloop","severity":"medium","summary":"Daniel Whitfield consolidates analysis \u2014 same root cause, different cohort","content":"Joint memo consolidates paired-watch evidence for Compliance.","hash":"0xdc0ae90d867de7e5730444c7be557823058cb6ec148b44e4af2b4852c925e946","signature":"sig-380b6e9a4b542d6e","isPinned":false,"isSealed":false,"addendums":[],"linkedMemories":[],"comments":[],"accessTier":"org-wide","accessRoles":[],"caseId":"FIN-3045","modelId":"Underwriting v4.1","userId":"Daniel Whitfield","industryContext":"fin"},{"id":"echo-FIN-2026-04-28-1500-mc05","timestamp":"2026-04-28T15:00:00Z","author":"Marcus Chen","authorRole":"user","eventType":"team-decision","core":"trustloop","severity":"informational","summary":"Marcus Chen \u2014 paired-watch posture","content":"Compliance acknowledges paired-watch without immediate intake escalation.","hash":"0x3ec417956dc690958720a99eeaa0b5bea035e7d6491cfb399d130cdcc0e691f0","signature":"sig-500d8053afcecdce","isPinned":false,"isSealed":false,"addendums":[],"linkedMemories":[],"comments":[],"accessTier":"org-wide","accessRoles":[],"caseId":"FIN-3045","modelId":"Underwriting v4.1","userId":"Marcus Chen","industryContext":"fin"},{"id":"echo-FIN-2026-05-02-1100-eve11","timestamp":"2026-05-02T11:00:00Z","author":"Eve","authorRole":"ai-agent","eventType":"score-change","core":"trustloop","severity":"informational","summary":"Digest paired-watch with FIN-2340","content":"Digest references mirrored monitors across FIN-3045 and FIN-2340.","hash":"0x32827f63bd90efa8a2d8db21c904cd83d0881b77486980b4ffa9c3ae96cc3b94","signature":"sig-55329d8ed249eee6","isPinned":false,"isSealed":false,"addendums":[],"linkedMemories":[],"comments":[],"accessTier":"org-wide","accessRoles":[],"caseId":"FIN-3045","modelId":"Underwriting v4.1","userId":null,"industryContext":"fin"},{"id":"echo-FIN-2026-04-08-1500-obsidian02","timestamp":"2026-04-08T15:00:00Z","author":"Obsidian Core","authorRole":"system","eventType":"fraud-detected","core":"obsidian","severity":"medium","summary":"Obsidian detection on Fraud Screening v2.7 false-positive cluster","content":"False-positive cluster exceeds tolerance versus target FPR band.","hash":"0x0c657768b99be2b7808f4424d2fdc004df639efbb78d1832524fe15d72a98321","signature":"sig-3f647b2c531bc250","isPinned":false,"isSealed":false,"addendums":[],"linkedMemories":[],"comments":[],"accessTier":"org-wide","accessRoles":[],"caseId":"FIN-2207","modelId":"Fraud Screening v2.7","userId":null,"industryContext":"fin"},{"id":"echo-FIN-2026-04-08-1700-ja01","timestamp":"2026-04-08T17:00:00Z","author":"Jordan Avery","authorRole":"user","eventType":"team-decision","core":"trustloop","severity":"medium","summary":"Jordan Avery opens analysis \u2014 v2.7 over-flagging at 4.2% FPR vs target 2%","content":"Initial calibration memo proposes threshold rollback experiment.","hash":"0x6fd08226b487cfd56e991a794744ec34993b5a65f223861da15bdfe05f6338cd","signature":"sig-09ba140ca0e51893","isPinned":false,"isSealed":false,"addendums":[],"linkedMemories":[],"comments":[],"accessTier":"org-wide","accessRoles":[],"caseId":"FIN-2207","modelId":"Fraud Screening v2.7","userId":"Jordan Avery","industryContext":"fin"},{"id":"echo-FIN-2026-04-15-1100-ja02","timestamp":"2026-04-15T11:00:00Z","author":"Jordan Avery","authorRole":"user","eventType":"team-decision","core":"atonement","severity":"medium","summary":"Jordan Avery + team design recalibration plan","content":"Recalibration plan staged for shadow replay against labeled negatives.","hash":"0x3bede0b0a8316cf7fa162abd45762e95c78df7243572d7ada278734cea72c06b","signature":"sig-741af076da4e7007","isPinned":false,"isSealed":false,"addendums":[],"linkedMemories":[],"comments":[],"accessTier":"org-wide","accessRoles":[],"caseId":"FIN-2207","modelId":"Fraud Screening v2.7","userId":"Jordan Avery","industryContext":"fin"},{"id":"echo-FIN-2026-04-25-1300-mc06","timestamp":"2026-04-25T13:00:00Z","author":"Marcus Chen","authorRole":"user","eventType":"team-decision","core":"trustloop","severity":"informational","summary":"Marcus Chen routine review","content":"Compliance weekly touchpoint notes continued remediation design.","hash":"0x94d012f74aea7c61242cab6b5bc84d84c88b9d5fa2fd64dc4f836f6751f01101","signature":"sig-2cf8b942c3ba2c55","isPinned":false,"isSealed":false,"addendums":[],"linkedMemories":[],"comments":[],"accessTier":"org-wide","accessRoles":[],"caseId":"FIN-2207","modelId":"Fraud Screening v2.7","userId":"Marcus Chen","industryContext":"fin"},{"id":"echo-FIN-2026-05-02-0900-eve12","timestamp":"2026-05-02T09:00:00Z","author":"Eve","authorRole":"ai-agent","eventType":"score-change","core":"trustloop","severity":"informational","summary":"Digest \u2014 in remediation design phase","content":"Digest retains FIN-2207 in active remediation design status.","hash":"0x31f58ecf1b985ec2a3863c990066725af4216635151ba865911682f423fdeae8","signature":"sig-fbeedbf97ad7c16a","isPinned":false,"isSealed":false,"addendums":[],"linkedMemories":[],"comments":[],"accessTier":"org-wide","accessRoles":[],"caseId":"FIN-2207","modelId":"Fraud Screening v2.7","userId":null,"industryContext":"fin"}];
 CD.fin.echoSavedViews = [];
 CD.health.echoMemories = [{"id":"echo-HS-2025-11-08-0900-ed01","timestamp":"2025-11-08T09:00:00Z","author":"Eden Core","authorRole":"system","eventType":"bias-detected","core":"eden","severity":"high","summary":"Claims Adjudication v1.8 \u2014 ACA Section 1557 disparity in prior auth denials","content":"65+ cohort shows 1.9x denial concentration vs under-50 in specialist prior-auth pathway. Flag opened for clinical governance.","hash":"0xac7786d9603b4a9d24ff0e51e8b3c215ac7786d9603b4a9d24ff0e51e8b3c215","signature":"sig-bf461120730ad5e4","isPinned":false,"isSealed":false,"addendums":[],"linkedMemories":["echo-HS-2025-11-10-1000-wr00"],"comments":[],"accessTier":"org-wide","accessRoles":[],"caseId":"HS-PRE2847","modelId":"Claims Adjudication v1.8","userId":null,"industryContext":"health"},{"id":"echo-HS-2025-11-10-1000-wr00","timestamp":"2025-11-10T10:00:00Z","author":"War Room","authorRole":"system","eventType":"case-opened","core":"warroom","severity":"high","summary":"War Room incident opened for Claims v1.8 ACA 1557 \u2014 awaiting CMO remediation plan","content":"Incident HS-PRE2847 opened. Clinical AI, Compliance, and Legal assigned. CMO Dr. Stephen Walsh to approve remediation charter.","hash":"0x825d6cbf461120730ad5e437ce99a8fb825d6cbf461120730ad5e437ce99a8fb","signature":"sig-bf461120730ad5e4","isPinned":false,"isSealed":false,"addendums":[],"linkedMemories":["echo-HS-2025-11-08-0900-ed01"],"comments":[],"accessTier":"org-wide","accessRoles":[],"caseId":"HS-PRE2847","modelId":"Claims Adjudication v1.8","userId":null,"industryContext":"health"},{"id":"echo-HS-2025-11-12-1000-sw01","timestamp":"2025-11-12T10:00:00Z","author":"Dr. Stephen Walsh","authorRole":"user","eventType":"decision-made","core":"warroom","severity":"high","summary":"CMO approval \u2014 v1.8 remediation authorized (sealed governance record)","content":"CMO sign-off: immediate patch to age-binned calibration; Clinical AI + Compliance to verify.","hash":"0xac7786d9603b4a9d24ff0e51e8b3c215ac7786d9603b4a9d24ff0e51e8b3c215","signature":"sig-bf461120730ad5e4","isPinned":true,"isSealed":true,"addendums":[{"id":"add-hs-cmo1","timestamp":"2025-11-12T10:20:00Z","author":"Dr. Aisha Patel","authorRole":"user","content":"Clinical AI validates plan; will monitor DI nightly.","hash":"0x5555555555555555555555555555555555555555555555555555555555555555","signature":"sig-ap-hs-01"}],"linkedMemories":["echo-HS-2025-11-10-1000-wr00","echo-HS-2025-11-08-0900-ed01"],"comments":[],"accessTier":"org-wide","accessRoles":[],"caseId":"HS-PRE2847","modelId":"Claims Adjudication v1.8","userId":"Dr. Stephen Walsh","industryContext":"health"},{"id":"echo-HS-2025-12-15-1100-at01","timestamp":"2025-12-15T11:00:00Z","author":"Atonement Core","authorRole":"system","eventType":"remediation-completed","core":"atonement","severity":"informational","summary":"Claims v1.8 fix deployed \u2014 ACA 1557 flag cleared for prior pathway","content":"Production v1.8 calibrated; Eden confirms DI back above 0.80 on monitored cohort; incident HS-PRE2847 closed.","hash":"0x24ff0e51e8b3c215ac7786d9603b4a9d24ff0e51e8b3c215ac7786d9603b4a9d","signature":"sig-bf461120730ad5e4","isPinned":false,"isSealed":false,"addendums":[],"linkedMemories":["echo-HS-2025-11-12-1000-sw01"],"comments":[],"accessTier":"org-wide","accessRoles":[],"caseId":"HS-PRE2847","modelId":"Claims Adjudication v1.8","userId":null,"industryContext":"health"},{"id":"echo-HS-2026-03-10-0900-ed02","timestamp":"2026-03-10T09:00:00Z","author":"Eden Core","authorRole":"system","eventType":"bias-detected","core":"eden","severity":"critical","summary":"Claims v1.9 \u2014 age_cost_proxy correlation 0.81 with patient age","content":"Regression surfaced age_cost_proxy as dominant driver correlated 0.81 with age in pharmacy benefit disputes. 2,847 claims in exposure set.","hash":"0x4e19287b02ddec3fc691a0f38a5564b74e19287b02ddec3fc691a0f38a5564b7","signature":"sig-bf461120730ad5e4","isPinned":false,"isSealed":false,"addendums":[],"linkedMemories":[],"comments":[],"accessTier":"org-wide","accessRoles":[],"caseId":"HS-2847","modelId":"Claims Adjudication v1.9","userId":null,"industryContext":"health"},{"id":"echo-HS-2026-03-12-1000-wr01","timestamp":"2026-03-12T10:00:00Z","author":"War Room","authorRole":"system","eventType":"case-opened","core":"warroom","severity":"critical","summary":"War Room Case #HS-2847 opened \u2014 CMS audit timeline engaged","content":"Leads: Dr. Aisha Patel (Clinical AI), Linda Park (Compliance), Robert Chen (Legal). CMIO Dr. Maya Osei coordinating model governance narrative.","hash":"0x4e19287b02ddec3fc691a0f38a5564b74e19287b02ddec3fc691a0f38a5564b7","signature":"sig-bf461120730ad5e4","isPinned":false,"isSealed":false,"addendums":[],"linkedMemories":["echo-HS-2026-03-10-0900-ed02"],"comments":[],"accessTier":"org-wide","accessRoles":[],"caseId":"HS-2847","modelId":"Claims Adjudication v1.9","userId":null,"industryContext":"health"},{"id":"echo-HS-2026-03-15-1100-gn01","timestamp":"2026-03-15T11:00:00Z","author":"Genesis Core","authorRole":"system","eventType":"decision-made","core":"genesis","severity":"high","summary":"Genesis counterfactual \u2014 bias on v1.9 confirmed (sealed, pinned)","content":"Legal-grade counterfactual: neutralizing age_cost_proxy reduces denial gap by 62% in 65+ pharmacy disputes. Evidence locker hash anchored.","hash":"0xac7786d9603b4a9d24ff0e51e8b3c215ac7786d9603b4a9d24ff0e51e8b3c215","signature":"sig-bf461120730ad5e4","isPinned":true,"isSealed":true,"addendums":[],"linkedMemories":["echo-HS-2026-03-12-1000-wr01"],"comments":[],"accessTier":"org-wide","accessRoles":[],"caseId":"HS-2847","modelId":"Claims Adjudication v1.9","userId":null,"industryContext":"health"},{"id":"echo-HS-2026-03-18-1500-mo01","timestamp":"2026-03-18T15:00:00Z","author":"Dr. Maya Osei","authorRole":"user","eventType":"team-decision","core":"trustloop","severity":"high","summary":"KEY SEALED: CMIO requests CMO sign-off for Claims v1.10 shadow \u2014 no response yet (audit gap driver)","content":"Formal request to CMO Dr. Stephen Walsh: approve Claims v1.10 shadow deploy (proxy stripped). Pending CMO signature blocks Atonement promotion; Legal notes export control on narrative.","hash":"0xac7786d9603b4a9d24ff0e51e8b3c215ac7786d9603b4a9d24ff0e51e8b3c215","signature":"sig-bf461120730ad5e4","isPinned":true,"isSealed":true,"addendums":[],"linkedMemories":["echo-HS-2026-03-15-1100-gn01"],"comments":[],"accessTier":"org-wide","accessRoles":[],"caseId":"HS-2847","modelId":"Claims Adjudication v1.10","userId":"Dr. Maya Osei","industryContext":"health"},{"id":"echo-HS-2026-04-02-0700-ev01","timestamp":"2026-04-02T07:00:00Z","author":"Eve","authorRole":"ai-agent","eventType":"decision-made","core":"trustloop","severity":"high","summary":"Eve escalation reminder \u2014 CMO non-response; severity rising vs CMS deadline","content":"Automated Trust Loop ping #3 to CMO office with SLA tracker. Recommends board visibility if no answer by Apr 5.","hash":"0xc691a0f38a5564b74e19287b02ddec3fc691a0f38a5564b74e19287b02ddec3f","signature":"sig-bf461120730ad5e4","isPinned":false,"isSealed":false,"addendums":[],"linkedMemories":["echo-HS-2026-03-18-1500-mo01"],"comments":[],"accessTier":"org-wide","accessRoles":[],"caseId":"HS-2847","modelId":"Claims Adjudication v1.10","userId":null,"industryContext":"health"},{"id":"echo-HS-2026-04-05-1200-sn01","timestamp":"2026-04-05T12:00:00Z","author":"Sentinel","authorRole":"system","eventType":"permission-changed","core":"sentinel","severity":"medium","summary":"Sentinel reminders dispatched \u2014 CMO inbox; no acknowledgement recorded","content":"Delivery receipts OK; read-state not confirmed per policy. Incident ribbon on executive dashboard.","hash":"0x825d6cbf461120730ad5e437ce99a8fb825d6cbf461120730ad5e437ce99a8fb","signature":"sig-bf461120730ad5e4","isPinned":false,"isSealed":false,"addendums":[],"linkedMemories":["echo-HS-2026-04-02-0700-ev01"],"comments":[],"accessTier":"org-wide","accessRoles":[],"caseId":"HS-2847","modelId":null,"userId":"Dr. Stephen Walsh","industryContext":"health"},{"id":"echo-HS-2026-04-12-1300-cx01","timestamp":"2026-04-12T13:00:00Z","author":"Compliance Exchange","authorRole":"system","eventType":"audit-filed","core":"compliance","severity":"medium","summary":"CMS audit packet prep \u2014 ACA 1557 AI annex draft 65%","content":"Linda Park: intake forms + Eden diagrams attached; awaiting v1.10 status page from Atonement.","hash":"0x825d6cbf461120730ad5e437ce99a8fb825d6cbf461120730ad5e437ce99a8fb","signature":"sig-bf461120730ad5e4","isPinned":false,"isSealed":false,"addendums":[],"linkedMemories":["echo-HS-2026-03-12-1000-wr01"],"comments":[],"accessTier":"org-wide","accessRoles":[],"caseId":"HS-2847","modelId":"Claims Adjudication v1.9","userId":null,"industryContext":"health"},{"id":"echo-HS-2026-04-18-1000-pa01","timestamp":"2026-04-18T10:00:00Z","author":"Patient Advocacy Desk","authorRole":"system","eventType":"whistleblower-submission","core":"trustledger","severity":"medium","summary":"Patient advocacy group inquiry logged (anonymized) \u2014 cites pharmacy dispute backlog","content":"Inbound concern references undisclosed automated denials tied to age-banded features. Routed to Robert Chen + Trust Ledger with PII scrub. Cross-ref HS-2847.","hash":"0x9fe2794453a63d08176af1ccdb2eb5809fe2794453a63d08176af1ccdb2eb580","signature":"sig-bf461120730ad5e4","isPinned":false,"isSealed":false,"addendums":[],"linkedMemories":["echo-HS-2026-03-10-0900-ed02"],"comments":[],"accessTier":"role-restricted","accessRoles":["legal","compliance"],"caseId":"HS-2847","modelId":"Claims Adjudication v1.9","userId":null,"industryContext":"health"},{"id":"echo-HS-2026-04-28-1400-mo02","timestamp":"2026-04-28T14:00:00Z","author":"Dr. Maya Osei","authorRole":"user","eventType":"team-decision","core":"trustloop","severity":"high","summary":"Maya Osei escalation note in #governance-team \u2014 CMO bottleneck cited","content":"Posted escalation: 'We cannot enter shadow without CMO attestation. Clinical risk and audit risk are both climbing.' Thread locked after Legal review.","hash":"0x825d6cbf461120730ad5e437ce99a8fb825d6cbf461120730ad5e437ce99a8fb","signature":"sig-bf461120730ad5e4","isPinned":false,"isSealed":false,"addendums":[],"linkedMemories":["echo-HS-2026-03-18-1500-mo01","echo-HS-2026-04-02-0700-ev01"],"comments":[],"accessTier":"org-wide","accessRoles":[],"caseId":"HS-2847","modelId":"Claims Adjudication v1.10","userId":"Dr. Maya Osei","industryContext":"health"},{"id":"echo-HS-2026-05-01-1200-st01","timestamp":"2026-05-01T12:00:00Z","author":"Adam","authorRole":"ai-agent","eventType":"score-change","core":"echo","severity":"critical","summary":"Status: 0 of 2,847 affected claims re-evaluated \u2014 CMO approval still pending","content":"Daily reconciliation: cohort remediation at 0% for v1.10 pathway; production remains v1.9 with active disparity. Executive risk: CMS audit May 31.","hash":"0xe0bbca1da47f8ed1683342952cf70659e0bbca1da47f8ed1683342952cf70659","signature":"sig-bf461120730ad5e4","isPinned":false,"isSealed":false,"addendums":[],"linkedMemories":["echo-HS-2026-04-28-1400-mo02","echo-HS-2026-03-18-1500-mo01"],"comments":[],"accessTier":"org-wide","accessRoles":[],"caseId":"HS-2847","modelId":"Claims Adjudication v1.10","userId":"Dr. Stephen Walsh","industryContext":"health"},{"id":"echo-HS-2026-04-08-1100-eden04","timestamp":"2026-04-08T11:00:00Z","author":"Eden Core","authorRole":"system","eventType":"bias-detected","core":"eden","severity":"high","summary":"Eden detection on Triage Priority v2.0 DI 0.66 rural elderly","content":"Disparate impact 0.66 against rural elderly cohort with facility-distance skew.","hash":"0x16b8d270192c1ad448740b40e6f4aa26465af1309db3ee740716f8e13b935583","signature":"sig-4b029fbe982b3b14","isPinned":false,"isSealed":false,"addendums":[],"linkedMemories":[],"comments":[],"accessTier":"org-wide","accessRoles":[],"caseId":"HS-1204","modelId":"Triage Priority v2.0","userId":null,"industryContext":"health"},{"id":"echo-HS-2026-04-08-1400-nb01","timestamp":"2026-04-08T14:00:00Z","author":"Dr. Naomi Bell","authorRole":"user","eventType":"team-decision","core":"trustloop","severity":"high","summary":"Dr. Naomi Bell opens analysis \u2014 distance_to_facility proxy correlation 0.79","content":"Lead DS documents correlation 0.79 between facility distance and de-prioritization risk.","hash":"0xd21ec8b22b2eb21521b2d5f0239ae3eda184d0f87e3f53c0d40cde1db7a8dac4","signature":"sig-bbf5c93cb7dd17da","isPinned":false,"isSealed":false,"addendums":[],"linkedMemories":[],"comments":[],"accessTier":"org-wide","accessRoles":[],"caseId":"HS-1204","modelId":"Triage Priority v2.0","userId":"Dr. Naomi Bell","industryContext":"health"},{"id":"echo-HS-2026-04-12-1000-nb02","timestamp":"2026-04-12T10:00:00Z","author":"Dr. Naomi Bell","authorRole":"user","eventType":"team-decision","core":"trustloop","severity":"medium","summary":"Dr. Naomi Bell escalates to Linda Park","content":"Escalation cites ACA 1557 exposure framing for Compliance intake.","hash":"0x2393588ba4df31d2bf334b41be9d7f31d3c966d957a5a3f9d89148d405a881db","signature":"sig-e2471b086813a515","isPinned":false,"isSealed":false,"addendums":[],"linkedMemories":[],"comments":[],"accessTier":"org-wide","accessRoles":[],"caseId":"HS-1204","modelId":"Triage Priority v2.0","userId":"Dr. Naomi Bell","industryContext":"health"},{"id":"echo-HS-2026-04-13-1400-lp01","timestamp":"2026-04-13T14:00:00Z","author":"Linda Park","authorRole":"user","eventType":"document-approved","core":"compliance","severity":"high","summary":"Linda Park confirms ACA 1557 exposure","content":"Compliance confirms regulatory exposure pathway and requests Genesis packet.","hash":"0x806cf5feaabe6a1770c27f1c67d7827b8f028d41a002643bb01f23927a942480","signature":"sig-752f920b1f117f7a","isPinned":false,"isSealed":false,"addendums":[],"linkedMemories":[],"comments":[],"accessTier":"org-wide","accessRoles":[],"caseId":"HS-1204","modelId":"Triage Priority v2.0","userId":"Linda Park","industryContext":"health"},{"id":"echo-HS-2026-04-15-1500-mo03","timestamp":"2026-04-15T15:00:00Z","author":"Dr. Maya Osei","authorRole":"user","eventType":"team-decision","core":"trustloop","severity":"high","summary":"Dr. Maya Osei reviews \u2014 recommends Genesis dispatch despite clinical-priority debate","content":"CMIO memo acknowledges clinical triage tension yet recommends sealed counterfactual.","hash":"0xd021365f9a932b62e1680d4147d1ef5b1b87e1a8c79ec3ac9dc3f6fa6d5efbc1","signature":"sig-357553097bcec4c7","isPinned":false,"isSealed":false,"addendums":[],"linkedMemories":[],"comments":[],"accessTier":"org-wide","accessRoles":[],"caseId":"HS-1204","modelId":"Triage Priority v2.0","userId":"Dr. Maya Osei","industryContext":"health"},{"id":"echo-HS-2026-04-16-0900-wr04","timestamp":"2026-04-16T09:00:00Z","author":"War Room","authorRole":"system","eventType":"case-opened","core":"warroom","severity":"high","summary":"Case HS-1204 formally opened","content":"War Room intake binds triage governance owners and clinical safety reviewers.","hash":"0x0f591318853db0560a1d128b52ee1b5cc74a4a27212f05595cc651d4195325c8","signature":"sig-fb982ab9c5a9c2cf","isPinned":true,"isSealed":false,"addendums":[],"linkedMemories":[],"comments":[],"accessTier":"org-wide","accessRoles":[],"caseId":"HS-1204","modelId":"Triage Priority v2.0","userId":null,"industryContext":"health"},{"id":"echo-HS-2026-04-20-1500-gn02","timestamp":"2026-04-20T15:00:00Z","author":"Genesis Core","authorRole":"system","eventType":"decision-made","core":"genesis","severity":"high","summary":"Genesis counterfactual 21.1% swap","content":"Outcome swap 21.1% anchored to HS-CF-2026-04-20-TR20 with clinical reviewer notes.","hash":"0xc97c1daef6f6be926a41e4da3fc9fa6f056ad78366f1f995c1e04cad477b24b2","signature":"sig-54ecf49efbb5343b","isPinned":true,"isSealed":false,"addendums":[],"linkedMemories":["HS-CF-2026-04-20-TR20"],"comments":[],"accessTier":"org-wide","accessRoles":[],"caseId":"HS-1204","modelId":"Triage Priority v2.0","userId":null,"industryContext":"health"},{"id":"echo-HS-2026-04-23-1100-nb03","timestamp":"2026-04-23T11:00:00Z","author":"Dr. Naomi Bell","authorRole":"user","eventType":"team-decision","core":"trustloop","severity":"medium","summary":"Dr. Naomi Bell + Dr. Maya Osei discuss v2.1 fix scope","content":"Working session captures clinical safety counter-argument on distance feature retention.","hash":"0x92c231b3ce77399fc630f42242d99b6654699d08ef9ab15a7a2a6f7a65de8da3","signature":"sig-0954797f3b41493d","isPinned":false,"isSealed":false,"addendums":[],"linkedMemories":[],"comments":[],"accessTier":"org-wide","accessRoles":[],"caseId":"HS-1204","modelId":"Triage Priority v2.1","userId":"Dr. Naomi Bell","industryContext":"health"},{"id":"echo-HS-2026-04-30-1000-nb04","timestamp":"2026-04-30T10:00:00Z","author":"Dr. Naomi Bell","authorRole":"user","eventType":"team-decision","core":"atonement","severity":"medium","summary":"Fix design ongoing; complex tradeoff; remediation paused pending CMO + Legal alignment","content":"Pause memo filed pending joint CMO + Legal decision on distance surrogates.","hash":"0xb8f6556e7ebeb84a738f67fa4223ae84b9865e35ba98934e040a2cf3da00ea25","signature":"sig-7bfd6ea763f5ca39","isPinned":false,"isSealed":false,"addendums":[],"linkedMemories":[],"comments":[],"accessTier":"org-wide","accessRoles":[],"caseId":"HS-1204","modelId":"Triage Priority v2.1","userId":"Dr. Naomi Bell","industryContext":"health"},{"id":"echo-HS-2026-05-02-1500-eve13","timestamp":"2026-05-02T15:00:00Z","author":"Eve","authorRole":"ai-agent","eventType":"score-change","core":"trustloop","severity":"informational","summary":"Digest \u2014 in pre-deployment design with v2.1 alternatives","content":"Digest reflects paused remediation while alternatives are evaluated.","hash":"0x1d2901867f0b40b9c02cdf3e4e8661c35854f5668fd34e2420f870d9bf260023","signature":"sig-8b8c3fe99d37a56b","isPinned":false,"isSealed":false,"addendums":[],"linkedMemories":[],"comments":[],"accessTier":"org-wide","accessRoles":[],"caseId":"HS-1204","modelId":"Triage Priority v2.1","userId":null,"industryContext":"health"},{"id":"echo-HS-2026-01-28-0930-eden05","timestamp":"2026-01-28T09:30:00Z","author":"Eden Core","authorRole":"system","eventType":"bias-detected","core":"eden","severity":"high","summary":"Eden detection on Diagnosis Support v2.3 DI 0.72 older female multi-condition","content":"DI 0.72 with intersectional concentration on older female multi-condition patients.","hash":"0x75a762735fea3545bec8e1c99625d869fa12bc97a8ee00f77b4ed7ac955b3a7f","signature":"sig-3f72ca12548fc2b0","isPinned":false,"isSealed":false,"addendums":[],"linkedMemories":[],"comments":[],"accessTier":"org-wide","accessRoles":[],"caseId":"HS-0912","modelId":"Diagnosis Support v2.3","userId":null,"industryContext":"health"},{"id":"echo-HS-2026-01-28-1400-hl01","timestamp":"2026-01-28T14:00:00Z","author":"Dr. Henrik Larson","authorRole":"user","eventType":"team-decision","core":"trustloop","severity":"high","summary":"Dr. Henrik Larson opens analysis \u2014 feature_interaction (age \u00d7 condition_count)","content":"Interaction term decomposition drafted for counterfactual harness.","hash":"0x0256e7bee2a33dadc6d46e5a00aca3ea0320b2ac94530469b6625c9279543b0e","signature":"sig-96e18e3110b98b3b","isPinned":false,"isSealed":false,"addendums":[],"linkedMemories":[],"comments":[],"accessTier":"org-wide","accessRoles":[],"caseId":"HS-0912","modelId":"Diagnosis Support v2.3","userId":"Dr. Henrik Larson","industryContext":"health"},{"id":"echo-HS-2026-02-02-1100-hl02","timestamp":"2026-02-02T11:00:00Z","author":"Dr. Henrik Larson","authorRole":"user","eventType":"team-decision","core":"trustloop","severity":"medium","summary":"Dr. Henrik Larson designs counterfactual with Dr. Aisha Patel","content":"Clinical AI pair signs off on synthetic cohort constraints.","hash":"0xf02926a95e6981fcf35d326b32427a07ec024922b8192149f6b46cd90496de33","signature":"sig-145fe2b410ae223f","isPinned":false,"isSealed":false,"addendums":[],"linkedMemories":[],"comments":[],"accessTier":"org-wide","accessRoles":[],"caseId":"HS-0912","modelId":"Diagnosis Support v2.3","userId":"Dr. Henrik Larson","industryContext":"health"},{"id":"echo-HS-2026-02-05-1000-wr05","timestamp":"2026-02-05T10:00:00Z","author":"War Room","authorRole":"system","eventType":"case-opened","core":"warroom","severity":"high","summary":"Case HS-0912 formally opened","content":"War Room formal intake with Clinical AI + Compliance leads assigned.","hash":"0x1267299ee3188b9d9fc1881f742cd496e2e318921b02587a1ed524d49465d14e","signature":"sig-4fbda8ebb4878ce2","isPinned":true,"isSealed":false,"addendums":[],"linkedMemories":[],"comments":[],"accessTier":"org-wide","accessRoles":[],"caseId":"HS-0912","modelId":"Diagnosis Support v2.3","userId":null,"industryContext":"health"},{"id":"echo-HS-2026-02-08-1000-gn03","timestamp":"2026-02-08T10:00:00Z","author":"Genesis Core","authorRole":"system","eventType":"decision-made","core":"genesis","severity":"high","summary":"Genesis counterfactual 14.2% swap","content":"Swap rate 14.2% sealed to HS-CF-2026-02-08-DS23.","hash":"0x4052c1c2823cd8bcd6ee905fa8858d1476d6aaab7b6c8ac7b488aada25da65ed","signature":"sig-6ae165b28b87c84c","isPinned":true,"isSealed":false,"addendums":[],"linkedMemories":["HS-CF-2026-02-08-DS23"],"comments":[],"accessTier":"org-wide","accessRoles":[],"caseId":"HS-0912","modelId":"Diagnosis Support v2.3","userId":null,"industryContext":"health"},{"id":"echo-HS-2026-02-12-1400-hl03","timestamp":"2026-02-12T14:00:00Z","author":"Dr. Henrik Larson","authorRole":"user","eventType":"team-decision","core":"atonement","severity":"medium","summary":"Dr. Henrik Larson + team design v2.4 fix (interaction term decomposition)","content":"v2.4 plan splits interaction term with clinically bounded surrogates.","hash":"0x46b5b4e0ab5d5f257474df24d1aa5995dd6b0b76b033185fdb60d1b62995751f","signature":"sig-45e3fa2530d53144","isPinned":false,"isSealed":false,"addendums":[],"linkedMemories":[],"comments":[],"accessTier":"org-wide","accessRoles":[],"caseId":"HS-0912","modelId":"Diagnosis Support v2.4","userId":"Dr. Henrik Larson","industryContext":"health"},{"id":"echo-HS-2026-02-15-1100-mo04","timestamp":"2026-02-15T11:00:00Z","author":"Dr. Maya Osei","authorRole":"user","eventType":"document-approved","core":"warroom","severity":"medium","summary":"Dr. Maya Osei + Dr. Stephen Walsh approve fix design","content":"CMIO + CMO approvals logged for shadow pathway.","hash":"0x6172c64521c9909daf33fe6f448d915c7550b30e666220dc125d60d197f2ede2","signature":"sig-d1cfe7934a43c403","isPinned":false,"isSealed":false,"addendums":[],"linkedMemories":[],"comments":[],"accessTier":"org-wide","accessRoles":[],"caseId":"HS-0912","modelId":"Diagnosis Support v2.4","userId":"Dr. Maya Osei","industryContext":"health"},{"id":"echo-HS-2026-02-22-1100-at02","timestamp":"2026-02-22T11:00:00Z","author":"Atonement Core","authorRole":"system","eventType":"remediation-started","core":"atonement","severity":"medium","summary":"Atonement deploys v2.4 to 5% shadow","content":"Shadow receipt HS-DEPLOY-2026-02-22-DS24-SHADOW anchored; DI opening 0.86.","hash":"0x7983fb7c04ac4ea8071f32a70b8884d6201e03c3dbc8680c7fa1c5cee585397b","signature":"sig-87bc61a7fc247809","isPinned":true,"isSealed":false,"addendums":[],"linkedMemories":["HS-DEPLOY-2026-02-22-DS24-SHADOW"],"comments":[],"accessTier":"org-wide","accessRoles":[],"caseId":"HS-0912","modelId":"Diagnosis Support v2.4","userId":null,"industryContext":"health"},{"id":"echo-HS-2026-03-01-1500-at02b","timestamp":"2026-03-01T15:00:00Z","author":"Atonement Core","authorRole":"system","eventType":"score-change","core":"atonement","severity":"informational","summary":"Shadow batch DI 0.86 \u00b10.02","content":"Shadow telemetry stable within \u00b10.02 tolerance.","hash":"0x922629a15b826ffef4591cb7800c9dc195fb770ac1ea4f4f94c408023a8fffd5","signature":"sig-86037fb252c9bf50","isPinned":false,"isSealed":false,"addendums":[],"linkedMemories":[],"comments":[],"accessTier":"org-wide","accessRoles":[],"caseId":"HS-0912","modelId":"Diagnosis Support v2.4","userId":null,"industryContext":"health"},{"id":"echo-HS-2026-03-08-1400-at03","timestamp":"2026-03-08T14:00:00Z","author":"Atonement Core","authorRole":"system","eventType":"remediation-started","core":"atonement","severity":"high","summary":"Atonement ramps v2.4 to 25%","content":"Ramp receipt HS-DEPLOY-2026-03-08-DS24-RAMP25 sealed; rampDI 0.87.","hash":"0x5352b7de2e7cddbbdb3d23935e1150bcc4fff8e8b15047ad850b02dfc30a5c41","signature":"sig-d986f83c7de9b0d0","isPinned":true,"isSealed":false,"addendums":[],"linkedMemories":["HS-DEPLOY-2026-03-08-DS24-RAMP25"],"comments":[],"accessTier":"org-wide","accessRoles":[],"caseId":"HS-0912","modelId":"Diagnosis Support v2.4","userId":null,"industryContext":"health"},{"id":"echo-HS-2026-03-15-1500-at03b","timestamp":"2026-03-15T15:00:00Z","author":"Atonement Core","authorRole":"system","eventType":"score-change","core":"atonement","severity":"informational","summary":"Ramp 25% batch DI 0.87; promotion approved","content":"Promotion readiness checklist satisfied pending production push.","hash":"0x0f476ebb51d51c6b8aeedcc6090baa18dc934a4d9dcccbdcb068b152c3adb44a","signature":"sig-9fa790b3d846cab2","isPinned":false,"isSealed":false,"addendums":[],"linkedMemories":[],"comments":[],"accessTier":"org-wide","accessRoles":[],"caseId":"HS-0912","modelId":"Diagnosis Support v2.4","userId":null,"industryContext":"health"},{"id":"echo-HS-2026-03-22-1000-at04","timestamp":"2026-03-22T10:00:00Z","author":"Atonement Core","authorRole":"system","eventType":"model-deployed","core":"atonement","severity":"high","summary":"Atonement promotes v2.4 to production 100%","content":"Production receipt HS-DEPLOY-2026-03-22-DS24-PROD100 sealed; productionDI 0.88.","hash":"0x90f45c9b51f28065baf73e0d377ce7e34514b7694a652603f56e22c075e521c0","signature":"sig-c0a77ef8eb26a66c","isPinned":true,"isSealed":false,"addendums":[],"linkedMemories":["HS-DEPLOY-2026-03-22-DS24-PROD100"],"comments":[],"accessTier":"org-wide","accessRoles":[],"caseId":"HS-0912","modelId":"Diagnosis Support v2.4","userId":null,"industryContext":"health"},{"id":"echo-HS-2026-03-25-1600-cl01","timestamp":"2026-03-25T16:00:00Z","author":"Sentinel","authorRole":"system","eventType":"case-closed","core":"sentinel","severity":"informational","summary":"Sentinel case-closure validated","content":"Closure binds HS-CLOSURE-2026-03-25-CASE0912 with cohort resolution narrative.","hash":"0x2d02dcefeddb8768c7b84c6bce60d7b634157c389cc96894cd3252691d3ee324","signature":"sig-0eb29245b95713cb","isPinned":true,"isSealed":false,"addendums":[],"linkedMemories":["HS-CLOSURE-2026-03-25-CASE0912"],"comments":[],"accessTier":"org-wide","accessRoles":[],"caseId":"HS-0912","modelId":"Diagnosis Support v2.4","userId":null,"industryContext":"health"},{"id":"echo-HS-2026-04-01-1000-cx02","timestamp":"2026-04-01T10:00:00Z","author":"Compliance Exchange","authorRole":"system","eventType":"audit-filed","core":"compliance","severity":"medium","summary":"Compliance Exchange files ACA 1557 closure attestation","content":"Attestation cross-ref HS-ATTEST-2026-04-01-ACA1557 filed for OCR intake.","hash":"0x295e3678597ab3608f0141037658e33d24a729a7a4b90b427f1224a5f7d33149","signature":"sig-21fe2c8586e5c2f8","isPinned":false,"isSealed":false,"addendums":[],"linkedMemories":["HS-ATTEST-2026-04-01-ACA1557"],"comments":[],"accessTier":"org-wide","accessRoles":[],"caseId":"HS-0912","modelId":"Diagnosis Support v2.4","userId":null,"industryContext":"health"},{"id":"echo-HS-2026-04-18-0900-eve14","timestamp":"2026-04-18T09:00:00Z","author":"Eve","authorRole":"ai-agent","eventType":"score-change","core":"trustloop","severity":"informational","summary":"Eve closure digest \u2014 fully resolved; 287 patients re-evaluated under v2.4","content":"Closure digest confirms cohort completion under production v2.4 pathway.","hash":"0x852e8d4716e1a2ab79f806370a450c4742454e87a02b43081cf18faae312e097","signature":"sig-41480a83c9b359a0","isPinned":false,"isSealed":false,"addendums":[],"linkedMemories":[],"comments":[],"accessTier":"org-wide","accessRoles":[],"caseId":"HS-0912","modelId":"Diagnosis Support v2.4","userId":null,"industryContext":"health"},{"id":"echo-HS-2026-04-02-1100-eden06","timestamp":"2026-04-02T11:00:00Z","author":"Eden Core","authorRole":"system","eventType":"bias-detected","core":"eden","severity":"medium","summary":"Eden detection on Diagnosis Support v2.3 secondary cohort drift in rural patients","content":"Secondary cohort drift flagged separately from HS-0912 closure lineage.","hash":"0x9ef180b0253c6b5f1126ff840380f56e7d19b783b522fcda457c76cc908e4c8a","signature":"sig-38d73d7a7a1395b2","isPinned":false,"isSealed":false,"addendums":[],"linkedMemories":[],"comments":[],"accessTier":"org-wide","accessRoles":[],"caseId":"HS-2104","modelId":"Diagnosis Support v2.3","userId":null,"industryContext":"health"},{"id":"echo-HS-2026-04-02-1400-hl04","timestamp":"2026-04-02T14:00:00Z","author":"Dr. Henrik Larson","authorRole":"user","eventType":"team-decision","core":"trustloop","severity":"medium","summary":"Dr. Henrik Larson reviews \u2014 different cohort manifestation; not same as HS-0912","content":"Clinical AI confirms distinct manifestation versus closed HS-0912 cohort.","hash":"0x6ff5d4aba9aabb3dac782aaa09ecd2e08e0241d9261ef5544957ef0df9ffe54c","signature":"sig-e1aad2db7ce14bf6","isPinned":false,"isSealed":false,"addendums":[],"linkedMemories":[],"comments":[],"accessTier":"org-wide","accessRoles":[],"caseId":"HS-2104","modelId":"Diagnosis Support v2.3","userId":"Dr. Henrik Larson","industryContext":"health"},{"id":"echo-HS-2026-04-08-1000-hl05","timestamp":"2026-04-08T10:00:00Z","author":"Dr. Henrik Larson","authorRole":"user","eventType":"team-decision","core":"trustloop","severity":"informational","summary":"Dr. Henrik Larson recommends monitoring without case opening","content":"Monitoring recommendation accepted pending broader drift proof.","hash":"0xc9db81e5de87b3e822c0f52459d5f1ed9abc5328c8e18947c99fc72ffe591a45","signature":"sig-79a3fa6a39a0db34","isPinned":false,"isSealed":false,"addendums":[],"linkedMemories":[],"comments":[],"accessTier":"org-wide","accessRoles":[],"caseId":"HS-2104","modelId":"Diagnosis Support v2.3","userId":"Dr. Henrik Larson","industryContext":"health"},{"id":"echo-HS-2026-04-15-1100-lp02","timestamp":"2026-04-15T11:00:00Z","author":"Linda Park","authorRole":"user","eventType":"team-decision","core":"trustloop","severity":"informational","summary":"Linda Park concurs","content":"Compliance concurs with monitoring posture and quarterly sampling.","hash":"0xe42d2068af00ee8aa9907877ba29bbd6f08b83d5ff181eb5a265cfb4c1e7773d","signature":"sig-cc36d024880daab8","isPinned":false,"isSealed":false,"addendums":[],"linkedMemories":[],"comments":[],"accessTier":"org-wide","accessRoles":[],"caseId":"HS-2104","modelId":"Diagnosis Support v2.3","userId":"Linda Park","industryContext":"health"},{"id":"echo-HS-2026-04-28-0900-hl06","timestamp":"2026-04-28T09:00:00Z","author":"Dr. Henrik Larson","authorRole":"user","eventType":"score-change","core":"trustloop","severity":"informational","summary":"Dr. Henrik Larson monthly review \u2014 stable","content":"Monthly review shows no breach of monitoring thresholds.","hash":"0xe0f7f0cb9ad4ea15383721763a52afbf982262bca140c9f8efcc475d3891b7a9","signature":"sig-4fa247065674056e","isPinned":false,"isSealed":false,"addendums":[],"linkedMemories":[],"comments":[],"accessTier":"org-wide","accessRoles":[],"caseId":"HS-2104","modelId":"Diagnosis Support v2.3","userId":"Dr. Henrik Larson","industryContext":"health"},{"id":"echo-HS-2026-05-02-1500-eve15","timestamp":"2026-05-02T15:00:00Z","author":"Eve","authorRole":"ai-agent","eventType":"score-change","core":"trustloop","severity":"informational","summary":"Digest \u2014 stable in monitoring","content":"Digest retains HS-2104 in passive monitoring bucket.","hash":"0x1adfc17203e106f3032ac528e0e69404644208bba4ea64584e5b4d842a6ce3e0","signature":"sig-8f8a37438e8f0fbc","isPinned":false,"isSealed":false,"addendums":[],"linkedMemories":[],"comments":[],"accessTier":"org-wide","accessRoles":[],"caseId":"HS-2104","modelId":"Diagnosis Support v2.3","userId":null,"industryContext":"health"},{"id":"echo-HS-2026-04-05-1100-eden07","timestamp":"2026-04-05T11:00:00Z","author":"Eden Core","authorRole":"system","eventType":"bias-detected","core":"eden","severity":"medium","summary":"Eden detection on Claims Adjudication v1.9 minor disparity in pediatric pharmacy claims","content":"Pediatric pharmacy line shows minor disparity versus HS-2847 primary cohort.","hash":"0x915f2f7c381e48ab252318576d2879a4fd019dba84e9b251d0871accbe8fa4b6","signature":"sig-918b2c38b7eeb34f","isPinned":false,"isSealed":false,"addendums":[],"linkedMemories":[],"comments":[],"accessTier":"org-wide","accessRoles":[],"caseId":"HS-0441","modelId":"Claims Adjudication v1.9","userId":null,"industryContext":"health"},{"id":"echo-HS-2026-04-05-1400-ap01","timestamp":"2026-04-05T14:00:00Z","author":"Dr. Aisha Patel","authorRole":"user","eventType":"team-decision","core":"trustloop","severity":"medium","summary":"Dr. Aisha Patel reviews \u2014 smaller pattern than HS-2847 but related","content":"Clinical AI tags familial relationship to HS-2847 remediation pathway.","hash":"0xbf0cbbc5d2d9395b3a94050b990ef4c41186f1c2e7e298b357eb6d3fbc92ef72","signature":"sig-d0c7ca8cbd6bf596","isPinned":false,"isSealed":false,"addendums":[],"linkedMemories":[],"comments":[],"accessTier":"org-wide","accessRoles":[],"caseId":"HS-0441","modelId":"Claims Adjudication v1.9","userId":"Dr. Aisha Patel","industryContext":"health"},{"id":"echo-HS-2026-04-08-1100-ap02","timestamp":"2026-04-08T11:00:00Z","author":"Dr. Aisha Patel","authorRole":"user","eventType":"team-decision","core":"trustloop","severity":"medium","summary":"Dr. Aisha Patel + Linda Park agree on under-review status","content":"Statuses aligned as under-review pending HS-2847 fix propagation.","hash":"0xddccfd028b14eab96cd937723f732a07f37d0e1ff24a6965d1de8521beae4d4c","signature":"sig-2c8a9fb6e9f5af8d","isPinned":false,"isSealed":false,"addendums":[],"linkedMemories":[],"comments":[],"accessTier":"org-wide","accessRoles":[],"caseId":"HS-0441","modelId":"Claims Adjudication v1.9","userId":"Dr. Aisha Patel","industryContext":"health"},{"id":"echo-HS-2026-04-15-1300-lp03","timestamp":"2026-04-15T13:00:00Z","author":"Linda Park","authorRole":"user","eventType":"document-approved","core":"compliance","severity":"informational","summary":"Compliance review \u2014 addressed via HS-2847 remediation","content":"Compliance notes linkage to active HS-2847 remediation bundle.","hash":"0xe969cfa6f496bc0456329afae27fb86952f483f6328a3cbd8eb42268d720e131","signature":"sig-4109fbad5fa588e3","isPinned":false,"isSealed":false,"addendums":[],"linkedMemories":[],"comments":[],"accessTier":"org-wide","accessRoles":[],"caseId":"HS-0441","modelId":"Claims Adjudication v1.9","userId":"Linda Park","industryContext":"health"},{"id":"echo-HS-2026-04-25-1000-ap03","timestamp":"2026-04-25T10:00:00Z","author":"Dr. Aisha Patel","authorRole":"user","eventType":"team-decision","core":"trustloop","severity":"informational","summary":"Dr. Aisha Patel notes paired root cause with HS-2847","content":"Paired root cause hypothesis documented for Sentinel systemic risk watch.","hash":"0xc5084cd6f8d6bc90a03d3b5ced0f4742eee85ca0e9aeb614669bc8d745077464","signature":"sig-ae95439da604f006","isPinned":false,"isSealed":false,"addendums":[],"linkedMemories":[],"comments":[],"accessTier":"org-wide","accessRoles":[],"caseId":"HS-0441","modelId":"Claims Adjudication v1.9","userId":"Dr. Aisha Patel","industryContext":"health"},{"id":"echo-HS-2026-05-02-1500-eve16","timestamp":"2026-05-02T15:00:00Z","author":"Eve","authorRole":"ai-agent","eventType":"score-change","core":"trustloop","severity":"informational","summary":"Digest paired-watch with HS-2847","content":"Digest references HS-0441 as paired-watch satellite of HS-2847.","hash":"0xd4c89af54d6ab62ec9f428c65a395e655c4c08d9c13a0d562ec5fcad549618b3","signature":"sig-fe9ad7319e9c4bba","isPinned":false,"isSealed":false,"addendums":[],"linkedMemories":[],"comments":[],"accessTier":"org-wide","accessRoles":[],"caseId":"HS-0441","modelId":"Claims Adjudication v1.9","userId":null,"industryContext":"health"},{"id":"echo-HS-2026-04-12-1300-eden08","timestamp":"2026-04-12T13:00:00Z","author":"Eden Core","authorRole":"system","eventType":"bias-detected","core":"eden","severity":"medium","summary":"Eden detection on Prior Auth v1.5 drift on chronic-condition patients","content":"Drift surfaced on chronic-condition documentation completeness pathway.","hash":"0xce2c568c9d1ab4029f580da0491eab33b23e13aa2a4a3cb938d0dfbb131031f5","signature":"sig-0ef955a24f128795","isPinned":false,"isSealed":false,"addendums":[],"linkedMemories":[],"comments":[],"accessTier":"org-wide","accessRoles":[],"caseId":"HS-2901","modelId":"Prior Auth v1.5","userId":null,"industryContext":"health"},{"id":"echo-HS-2026-04-12-1500-sh01","timestamp":"2026-04-12T15:00:00Z","author":"Dr. Sofia Hayes","authorRole":"user","eventType":"team-decision","core":"trustloop","severity":"medium","summary":"Dr. Sofia Hayes opens analysis","content":"Initial cohort segmentation attaches language-documentation covariates.","hash":"0x1e4d4d25e246d27df8eba7666b23f17c6aee395c93cb84ca47e932854f606a2a","signature":"sig-ec895b97b08f9191","isPinned":false,"isSealed":false,"addendums":[],"linkedMemories":[],"comments":[],"accessTier":"org-wide","accessRoles":[],"caseId":"HS-2901","modelId":"Prior Auth v1.5","userId":"Dr. Sofia Hayes","industryContext":"health"},{"id":"echo-HS-2026-04-18-1100-sh02","timestamp":"2026-04-18T11:00:00Z","author":"Dr. Sofia Hayes","authorRole":"user","eventType":"team-decision","core":"trustloop","severity":"medium","summary":"Dr. Sofia Hayes flags as paired pattern with HS-3127","content":"Paired pattern flagged for unified monitoring narrative.","hash":"0x484c0f592aa5a44f9ed82c7847daa6ff0c6b37d3a5ca2afe918b9da6890c1080","signature":"sig-aae675dd2cf90ea5","isPinned":false,"isSealed":false,"addendums":[],"linkedMemories":[],"comments":[],"accessTier":"org-wide","accessRoles":[],"caseId":"HS-2901","modelId":"Prior Auth v1.5","userId":"Dr. Sofia Hayes","industryContext":"health"},{"id":"echo-HS-2026-04-28-1100-lp04","timestamp":"2026-04-28T11:00:00Z","author":"Linda Park","authorRole":"user","eventType":"team-decision","core":"trustloop","severity":"informational","summary":"Linda Park reviews paired-watch posture","content":"Compliance acknowledges paired-watch without new intake.","hash":"0x8fc936d07f15162c5167a2fd5e79f7b4a625e7b523a22c85f576bd1a341176ba","signature":"sig-421c7242b811fe27","isPinned":false,"isSealed":false,"addendums":[],"linkedMemories":[],"comments":[],"accessTier":"org-wide","accessRoles":[],"caseId":"HS-2901","modelId":"Prior Auth v1.5","userId":"Linda Park","industryContext":"health"},{"id":"echo-HS-2026-05-02-1500-eve17","timestamp":"2026-05-02T15:00:00Z","author":"Eve","authorRole":"ai-agent","eventType":"score-change","core":"trustloop","severity":"informational","summary":"Digest paired-watch with HS-3127","content":"Digest links HS-2901 monitoring bucket with HS-3127.","hash":"0x1f616ad1baf373720b06c0ea05ffe002920c421eafc9d45e23f65dfd85dbc921","signature":"sig-1e6be2a56f83054b","isPinned":false,"isSealed":false,"addendums":[],"linkedMemories":[],"comments":[],"accessTier":"org-wide","accessRoles":[],"caseId":"HS-2901","modelId":"Prior Auth v1.5","userId":null,"industryContext":"health"},{"id":"echo-HS-2026-04-15-1100-eden09","timestamp":"2026-04-15T11:00:00Z","author":"Eden Core","authorRole":"system","eventType":"bias-detected","core":"eden","severity":"medium","summary":"Eden detection on Prior Auth v1.5 different cohort","content":"Alternate cohort shows aligned drift signature versus HS-2901 slice.","hash":"0x9cf1e584df8ac4d1c38232b3091809b23084bb71b2cfeff3237ade546a0bfa74","signature":"sig-f4263c142fb4cb09","isPinned":false,"isSealed":false,"addendums":[],"linkedMemories":[],"comments":[],"accessTier":"org-wide","accessRoles":[],"caseId":"HS-3127","modelId":"Prior Auth v1.5","userId":null,"industryContext":"health"},{"id":"echo-HS-2026-04-15-1400-sh03","timestamp":"2026-04-15T14:00:00Z","author":"Dr. Sofia Hayes","authorRole":"user","eventType":"team-decision","core":"trustloop","severity":"medium","summary":"Dr. Sofia Hayes consolidates with HS-2901","content":"Joint cohort framing filed for Compliance visibility.","hash":"0x1f8d283969a042719f5a36d3e7d1e35e7af126e916ba35677cd5ec1506bd8123","signature":"sig-5baf1e1d8ec67a5f","isPinned":false,"isSealed":false,"addendums":[],"linkedMemories":[],"comments":[],"accessTier":"org-wide","accessRoles":[],"caseId":"HS-3127","modelId":"Prior Auth v1.5","userId":"Dr. Sofia Hayes","industryContext":"health"},{"id":"echo-HS-2026-04-22-1000-sh04","timestamp":"2026-04-22T10:00:00Z","author":"Dr. Sofia Hayes","authorRole":"user","eventType":"team-decision","core":"trustloop","severity":"medium","summary":"Joint analysis with HS-2901 \u2014 same root cause","content":"Root cause memo aligns documentation completeness pathway.","hash":"0x6a76101163d8e7c6bb7be4d19d2751f0cd5cd1137148b319ad9ff69dea57b8dd","signature":"sig-71079d6d434e2b1a","isPinned":false,"isSealed":false,"addendums":[],"linkedMemories":[],"comments":[],"accessTier":"org-wide","accessRoles":[],"caseId":"HS-3127","modelId":"Prior Auth v1.5","userId":"Dr. Sofia Hayes","industryContext":"health"},{"id":"echo-HS-2026-04-30-1100-lp05","timestamp":"2026-04-30T11:00:00Z","author":"Linda Park","authorRole":"user","eventType":"team-decision","core":"trustloop","severity":"informational","summary":"Compliance review paired-watch","content":"Compliance affirms paired-watch cadence without escalation.","hash":"0x620ffceb4c683a6c3da2671f096785c2763e138aa85a51d82d9ac4e8724fcef6","signature":"sig-136ea3d723821064","isPinned":false,"isSealed":false,"addendums":[],"linkedMemories":[],"comments":[],"accessTier":"org-wide","accessRoles":[],"caseId":"HS-3127","modelId":"Prior Auth v1.5","userId":"Linda Park","industryContext":"health"},{"id":"echo-HS-2026-05-02-1500-eve18","timestamp":"2026-05-02T15:00:00Z","author":"Eve","authorRole":"ai-agent","eventType":"score-change","core":"trustloop","severity":"informational","summary":"Digest paired-watch with HS-2901","content":"Digest mirrors HS-3127 linkage back to HS-2901 monitors.","hash":"0xe71ea2cc24431011290dfc6d2b9599b892985d40f7b1ecfb7bfc1d5ba9e048fd","signature":"sig-9e62f390840645f6","isPinned":false,"isSealed":false,"addendums":[],"linkedMemories":[],"comments":[],"accessTier":"org-wide","accessRoles":[],"caseId":"HS-3127","modelId":"Prior Auth v1.5","userId":null,"industryContext":"health"}];
+CD.fed = CD.fed || {};
+CD.fed.echoMemories = [{"id":"echo-FED-2026-04-18-0900-eden01","timestamp":"2026-04-18T09:00:00Z","author":"Eden Core","authorRole":"system","eventType":"bias-detected","core":"eden","severity":"high","summary":"IRS Tax Fraud Detection v3.1 — 1.84x disparate flag rate on self-employed filers (5 metro ZIP clusters)","content":"Eden pre-deployment scan flagged disparate impact on IRS Tax Fraud Detection v3.1. Schedule C filers in 5 metro ZIP clusters (NYC, Chicago, Atlanta, Miami, LA) flagged at 1.84x rate vs baseline. EO May 2026 requires pre-deployment bias audit before activation. Deployment auto-paused.","hash":"0xfed01a18095b4a9d24ff0e51e8b3c215fed01a18095b4a9d24ff0e51e8b3c215","signature":"sig-fed01eden","isPinned":false,"isSealed":false,"addendums":[],"linkedMemories":[],"comments":[],"accessTier":"org-wide","accessRoles":[],"caseId":"FED-PDV-001","modelId":"IRS Tax Fraud Detection v3.1","userId":null,"industryContext":"fed"},{"id":"echo-FED-2026-04-19-1000-eve01","timestamp":"2026-04-19T10:00:00Z","author":"Eve","authorRole":"ai-agent","eventType":"decision-made","core":"trustloop","severity":"high","summary":"Eve auto-routed to OMB Unbiased AI + EO May 2026 lens — pre-deployment vetting required","content":"Auto-routing classified the bias signal under OMB Unbiased AI Principles + EO May 2026 (federal AI pre-deployment vetting). Recourse mechanism required before activation. Genesis counterfactual queued. Agency briefing scheduled with IRS Office of the Chief Privacy Officer.","hash":"0xfed02e19105b4a9d24ff0e51e8b3c215fed02e19105b4a9d24ff0e51e8b3c215","signature":"sig-fed02eve","isPinned":false,"isSealed":false,"addendums":[],"linkedMemories":["echo-FED-2026-04-18-0900-eden01"],"comments":[],"accessTier":"org-wide","accessRoles":[],"caseId":"FED-PDV-001","modelId":"IRS Tax Fraud Detection v3.1","userId":null,"industryContext":"fed"},{"id":"echo-FED-2026-04-22-1100-pa01","timestamp":"2026-04-22T11:00:00Z","author":"Patricia Alvarez","authorRole":"user","eventType":"team-decision","core":"trustloop","severity":"high","summary":"Patricia Alvarez (IRS CPO) opens federal vetting case FED-PDV-001","content":"Federal pre-deployment vetting case opened. Lead: Patricia Alvarez (IRS Chief Privacy Officer). Compliance: James Martinez (Cardinal). Legal: Office of Chief Counsel. Status: blocked-deployment pending audit. EO May 2026 section 3(b) recourse mechanism required.","hash":"0xfed03p22115b4a9d24ff0e51e8b3c215fed03p22115b4a9d24ff0e51e8b3c215","signature":"sig-fed03pa","isPinned":true,"isSealed":false,"addendums":[],"linkedMemories":["echo-FED-2026-04-19-1000-eve01"],"comments":[],"accessTier":"org-wide","accessRoles":[],"caseId":"FED-PDV-001","modelId":"IRS Tax Fraud Detection v3.1","userId":"Patricia Alvarez","industryContext":"fed"},{"id":"echo-FED-2026-04-26-1400-wr01","timestamp":"2026-04-26T14:00:00Z","author":"War Room","authorRole":"system","eventType":"case-opened","core":"warroom","severity":"high","summary":"War Room Case #FED-PDV-001 opened — EO May 2026 audit clock at 30 days","content":"Case #FED-PDV-001 formally opened. Lead: Patricia Alvarez (IRS CPO). Compliance: James Martinez. Legal: IRS Office of Chief Counsel. OMB review packet drafting underway. EO May 2026 section 3(c) gives 30-day window for vetting completion before agency must publicly disclose deployment status.","hash":"0xfed04w26145b4a9d24ff0e51e8b3c215fed04w26145b4a9d24ff0e51e8b3c215","signature":"sig-fed04wr","isPinned":false,"isSealed":false,"addendums":[],"linkedMemories":["echo-FED-2026-04-22-1100-pa01"],"comments":[],"accessTier":"org-wide","accessRoles":[],"caseId":"FED-PDV-001","modelId":"IRS Tax Fraud Detection v3.1","userId":null,"industryContext":"fed"},{"id":"echo-FED-2026-04-29-0930-gn01","timestamp":"2026-04-29T09:30:00Z","author":"Genesis Core","authorRole":"system","eventType":"decision-made","core":"genesis","severity":"high","summary":"Genesis counterfactual — 21.3% outcome swap when ZIP-correlated proxies neutralized (sealed)","content":"Counterfactual A/B test on 1,200 self-employed filer applications. When ZIP-correlated and Schedule C volatility proxies held neutral, fraud-flag outcome flipped in 21.3% of cases. Legal-grade evidence packet sealed to receipt FED-CF-2026-04-29-V31. Cross-linked to OMB submission packet.","hash":"0xfed05g29095b4a9d24ff0e51e8b3c215fed05g29095b4a9d24ff0e51e8b3c215","signature":"sig-fed05gn","isPinned":true,"isSealed":true,"addendums":[],"linkedMemories":["echo-FED-2026-04-26-1400-wr01","FED-CF-2026-04-29-V31"],"comments":[],"accessTier":"org-wide","accessRoles":[],"caseId":"FED-PDV-001","modelId":"IRS Tax Fraud Detection v3.1","userId":null,"industryContext":"fed"},{"id":"echo-FED-2026-05-01-1100-cx01","timestamp":"2026-05-01T11:00:00Z","author":"Compliance Exchange","authorRole":"system","eventType":"audit-filed","core":"compliance","severity":"medium","summary":"OMB packet draft v0.6 — EO May 2026 section 3(b) recourse mechanism documented","content":"Compliance Exchange workspace assembled OMB packet v0.6 covering: (1) Eden detection narrative, (2) Genesis counterfactual receipt, (3) recourse mechanism design (filer notice + appeal channel), (4) post-deployment monitoring plan. Awaiting James Martinez Compliance review and Patricia Alvarez agency sign-off.","hash":"0xfed06c01115b4a9d24ff0e51e8b3c215fed06c01115b4a9d24ff0e51e8b3c215","signature":"sig-fed06cx","isPinned":false,"isSealed":false,"addendums":[],"linkedMemories":["echo-FED-2026-04-29-0930-gn01"],"comments":[],"accessTier":"org-wide","accessRoles":[],"caseId":"FED-PDV-001","modelId":"IRS Tax Fraud Detection v3.1","userId":null,"industryContext":"fed"},{"id":"echo-FED-2026-05-02-0900-jm01","timestamp":"2026-05-02T09:00:00Z","author":"James Martinez","authorRole":"user","eventType":"document-approved","core":"compliance","severity":"medium","summary":"Compliance approves OMB packet draft v0.6 — proceeding to agency review","content":"OMB packet v0.6 reviewed. Recourse mechanism design meets EO section 3(b) standard; counterfactual evidence is regulator-grade. Proceeding to IRS agency review with Patricia Alvarez. Recommend ramp-blocked posture maintained until OMB Unbiased AI attestation accepted.","hash":"0xfed07j02095b4a9d24ff0e51e8b3c215fed07j02095b4a9d24ff0e51e8b3c215","signature":"sig-fed07jm","isPinned":false,"isSealed":false,"addendums":[],"linkedMemories":["echo-FED-2026-05-01-1100-cx01"],"comments":[],"accessTier":"org-wide","accessRoles":[],"caseId":"FED-PDV-001","modelId":"IRS Tax Fraud Detection v3.1","userId":"James Martinez","industryContext":"fed"}];
+CD.fed.echoSavedViews = [];
 CD.health.echoSavedViews = [];
 })();
 
@@ -9923,7 +10120,7 @@ window.closeEchoMemoryModal = function () {
 window.openEchoMemory = function (memoryId) {
   if (!memoryId) return;
   console.log('openEchoMemory', memoryId);
-  var orgs = ['ad', 'fin', 'health'];
+  var orgs = ['ad', 'fin', 'health', 'fed'];
   var hit = null;
   var CD = window.CARDINAL_DATA;
   if (!CD) return;
@@ -10003,6 +10200,13 @@ var BIAS_HEALTH = [
   { modelId: 'Diagnosis Support v2.3', di: 0.89, equalizedOdds: 0.08, demographicParity: 0.93, calibration: 0.93, topProxyVariable: { name: 'historical_cost_band', correlation: 0.41, correlatesWith: 'disability' }, affectedCohort: { totalCount: 156, breakdownByDemo: { '65+': 48, '50-64': 52, 'Under 50': 56 } }, status: 'Watch', trend30d: 'up' },
   { modelId: 'Prior Auth v1.5', di: 0.94, equalizedOdds: 0.05, demographicParity: 0.97, calibration: 0.95, topProxyVariable: { name: 'provider_tier_score', correlation: 0.29, correlatesWith: 'network' }, affectedCohort: { totalCount: 0, breakdownByDemo: {} }, status: 'Passing', trend30d: 'flat' }
 ];
+var BIAS_FED = [
+  { modelId: 'IRS Tax Fraud Detection v3.1', di: 0.54, equalizedOdds: 0.21, demographicParity: 0.71, calibration: 0.86, topProxyVariable: { name: 'metro_zip_cluster', correlation: 0.76, correlatesWith: 'self_employment_geography' }, affectedCohort: { totalCount: 1200, breakdownByDemo: { 'Self-employed metro': 1200 } }, status: 'Critical', trend30d: 'up' }
+];
+var FRAUD_FED = [
+  { modelId: 'IRS Tax Fraud Detection v3.1', syntheticIdentityRate: 80, behavioralAnomalyRate: 78, clusterFraudRate: 82, velocityFraudRate: 79, topFraudPattern: { type: 'Synthetic Schedule C ring', casesDetected: 14, dollarsBlocked: 890000 }, biasFraudConnection: { caseCount: 0, summary: 'No quantified overlap in pilot window — bias gate blocking activation first' }, status: 'Watch', trend30d: 'flat' }
+];
+
 var FRAUD_HEALTH = [
   { modelId: 'Claims Adjudication v1.9', syntheticIdentityRate: 88, behavioralAnomalyRate: 85, clusterFraudRate: 87, velocityFraudRate: 86, topFraudPattern: { type: 'Provider ring — specialty upcoding', casesDetected: 31, dollarsBlocked: 1100000 }, biasFraudConnection: { caseCount: 9, summary: 'Age-bias blind spots in automated denials masked provider-collusion patterns — 9 patient-linked fraud cases' }, status: 'Watch', trend30d: 'flat' },
   { modelId: 'Diagnosis Support v2.3', syntheticIdentityRate: 90, behavioralAnomalyRate: 87, clusterFraudRate: 88, velocityFraudRate: 85, topFraudPattern: { type: 'Coding constellation fraud', casesDetected: 12, dollarsBlocked: 280000 }, biasFraudConnection: { caseCount: 3, summary: 'Documentation bias corridors reduced fraud signal for 3 clusters' }, status: 'Watch', trend30d: 'up' },
@@ -10022,13 +10226,13 @@ function _overlapCases(org, fraudArr, biasArr) {
     var bc = fm.biasFraudConnection && fm.biasFraudConnection.caseCount;
     if (!bc) continue;
     var bid = fm.modelId;
-    var fraudCase = org === 'ad' ? 'AD-2847' : org === 'fin' ? 'FIN-1203' : 'HS-2847';
+    var fraudCase = org === 'ad' ? 'AD-2847' : org === 'fin' ? 'FIN-1203' : org === 'fed' ? 'FED-PDV-001' : 'HS-2847';
     if (org === 'ad' && bid === 'Maintenance Routing v1.2') fraudCase = 'AD-2902';
     cases.push({
       caseId: fraudCase,
       modelId: bid,
       summary: fm.biasFraudConnection.summary,
-      exposureNote: org === 'ad' ? ('Combined exposure: $340K blocked + $67M regulatory penalty risk.') : org === 'fin' ? ('Combined exposure: $2.3M blocked + ECOA penalty risk.') : ('Combined exposure: $1.1M blocked + CMS audit exposure.')
+      exposureNote: org === 'ad' ? ('Combined exposure: $340K blocked + $67M regulatory penalty risk.') : org === 'fin' ? ('Combined exposure: $2.3M blocked + ECOA penalty risk.') : org === 'fed' ? ('Combined exposure: $890K blocked + $18M federal cost-of-delay risk.') : ('Combined exposure: $1.1M blocked + CMS audit exposure.')
     });
   }
   return cases;
@@ -10211,7 +10415,7 @@ function _overlapCasesListFromOrg(ok, nOverlap, primaryCase) {
 
 function _edoAssignEveHist(dst, ok) {
   var months = ['May 2025', 'Jun 2025', 'Jul 2025', 'Aug 2025', 'Sep 2025', 'Oct 2025', 'Nov 2025', 'Dec 2025', 'Jan 2026', 'Feb 2026', 'Mar 2026', 'Apr 2026'];
-  var orgLabel = ok === 'ad' ? 'Atlas Defense Systems' : ok === 'fin' ? 'Blackmoor Wealth Group' : 'Sterling Health';
+  var orgLabel = ok === 'ad' ? 'Atlas Defense Systems' : ok === 'fin' ? 'Blackmoor Wealth Group' : ok === 'fed' ? 'IRS Tax Compliance Division' : 'Sterling Health';
   if (ok === 'ad') {
     var biasScore = [78, 79, 80, 81, 82, 80, 78, 75, 67, 68, 70, 67];
     var annEden = [null, null, null, null, null, null, null, { severity: 'high', summary: 'DI ratio dropped below 0.75 — model degradation accelerating. Eve flagged for review.', echoMemoryId: 'echo-AD-2025-12-01-di', linkedModelId: 'Personnel Assignment v2.4' }, { severity: 'critical', summary: 'DI 0.67. Hispanic technician denial 2.3x baseline. James Park dismissed Eve flag (April 16 dismissal preserved as Sealed Memory).', echoMemoryId: 'echo-AD-2026-04-16-1422-pp01', linkedModelId: 'Personnel Assignment v2.4' }, null, { severity: 'high', summary: 'Eve auto-escalated, Case #AD-2847 opened. Sarah Chen lead. Genesis counterfactual proof confirmed.', echoMemoryId: 'echo-AD-2026-04-21-cef', linkedModelId: 'Personnel Assignment v2.4' }, null];
@@ -10875,6 +11079,46 @@ var EXT = {
     statVulnerableIntersection: 'Women patients 75+ requesting Specialty care: 3.1x denial rate vs baseline',
     obsidianTargetCohort: 'Elderly patients in Specialty Care: 2.1x targeted by claims fraud',
     obsidianMostTargeted: 'Patients 75+ in Specialty Care networks: 2.3x targeted by provider-collusion fraud'
+  },
+  fed: {
+    biasMetricsByModel: BIAS_FED,
+    fraudMetricsByModel: FRAUD_FED,
+    biasIncidentsActive: [
+      {
+        caseId: '#FED-PDV-001',
+        caseType: 'pre-deployment',
+        sentinelCaseType: 'pre-deployment-vetting',
+        modelId: 'IRS Tax Fraud Detection v3.1',
+        severity: 'High',
+        affectedCount: 1200,
+        cohortDescription: 'Self-employed filers in 5 metro ZIP clusters (NYC, Chicago, Atlanta, Miami, LA)',
+        metricViolation: '1.84x disparate flag rate vs baseline · DI 0.54',
+        detectedDate: '2026-04-18T09:00:00Z',
+        slaDeadline: '2026-05-26T17:00:00Z',
+        status: 'open',
+        leadAssignee: 'Patricia Alvarez',
+        echoMemoryId: 'echo-FED-2026-04-26-1400-wr01'
+      }
+    ],
+    fraudIncidentsActive: [],
+    cohortIndividuals: { 'IRS Tax Fraud Detection v3.1': [] },
+    cohortGroupSummaries: {
+      'IRS Tax Fraud Detection v3.1': [
+        { groupId: 'g-fed-nyc', groupLabel: 'NYC metro Schedule C cohort', affectedCount: 240, biasMetric: 0.54, fraudMetric: 81, representativeCases: [] },
+        { groupId: 'g-fed-chi', groupLabel: 'Chicago metro Schedule C cohort', affectedCount: 228, biasMetric: 0.55, fraudMetric: 80, representativeCases: [] },
+        { groupId: 'g-fed-atl', groupLabel: 'Atlanta metro Schedule C cohort', affectedCount: 215, biasMetric: 0.56, fraudMetric: 79, representativeCases: [] },
+        { groupId: 'g-fed-mia', groupLabel: 'Miami metro Schedule C cohort', affectedCount: 260, biasMetric: 0.53, fraudMetric: 82, representativeCases: [] },
+        { groupId: 'g-fed-la', groupLabel: 'LA metro Schedule C cohort', affectedCount: 257, biasMetric: 0.54, fraudMetric: 81, representativeCases: [] }
+      ]
+    },
+    biasFraudStats: { biasActiveCount: 1, fraudActiveCount: 0, overlapCount: 0 },
+    edenHeroSub: 'Below Threshold',
+    obsidianHeroSub: 'Above Threshold',
+    peerPercentileLabel: '41st percentile in Federal Civilian',
+    statBiasCallout: 'Self-employed filers in 5 metro ZIP clusters: 1.84x fraud-flag rate vs baseline',
+    statVulnerableIntersection: 'Gig-economy Schedule C filers with volatile monthly income: highest flag uplift',
+    obsidianTargetCohort: 'Synthetic Schedule C rings spoofing clean-ZIP profiles',
+    obsidianMostTargeted: 'Metro multi-job filers incorrectly surfaced as fraud due to proxy drift'
   }
 };
 
@@ -10915,7 +11159,7 @@ function _cardinalBuildModelDetailDrillInRegistry(CD) {
     }
     return out;
   }
-  ['ad', 'fin', 'health'].forEach(function (ok) {
+  ['ad', 'fin', 'health', 'fed'].forEach(function (ok) {
     var d = CD[ok];
     if (!d) return;
     var mids = {};
@@ -10984,7 +11228,7 @@ function _cardinalBuildModelDetailDrillInRegistry(CD) {
   return reg;
 }
 
-['ad', 'fin', 'health'].forEach(function (ok) {
+['ad', 'fin', 'health', 'fed'].forEach(function (ok) {
   var dst = CD[ok];
   if (!dst) return;
   var src = EXT[ok];
@@ -11755,7 +11999,7 @@ window.edoClearHistModelFilter = function (lens, org) {
   window.edoRefreshHistoryUI(lens, org);
 };
 function edoHistSubscoreContextBlurb(lens, seriesKey, org) {
-  var orgNm = org === 'ad' ? 'Atlas Defense' : org === 'fin' ? 'Blackmoor' : 'Sterling Health';
+  var orgNm = org === 'ad' ? 'Atlas Defense' : org === 'fin' ? 'Blackmoor' : org === 'fed' ? 'IRS Tax Compliance' : 'Sterling Health';
   if (lens === 'eden') {
     var m = {
       biasScore: { h: 'Bias Score', b: 'Composite bias posture across monitored cohorts. 70 is Eden\u2019s EEOC-aligned violation floor; sustained reads above 80 indicate healthier parity.', e: orgNm + ' — watch the DI and equalized-odds sub-scores when headline bias is below 80.' },
@@ -13602,7 +13846,7 @@ function selectOrg(el, org) {
  document.querySelectorAll('.industry-btn').forEach(b => b.classList.remove('active'));
  el.classList.add('active');
  selectedOrg = org;
- const emails = { ad:'anthony.broadnax@atlasdefense.com', fin:'riley.whitmore@blackmoorwealth.com', health:'dr.maya.osei@sterlinghealth.com' };
+ const emails = { ad:'anthony.broadnax@atlasdefense.com', fin:'riley.whitmore@blackmoorwealth.com', health:'dr.maya.osei@sterlinghealth.com', fed:'patricia.alvarez@irs.gov' };
  document.getElementById('login-email').value = emails[org];
 }
 
@@ -15864,6 +16108,311 @@ const DASH_INDUSTRY = {
         }
       ]
     }
+  },
+  fed: {
+    dashExec: {
+      models: {
+        countLine: '1 of 2',
+        countColor: '#ef4444',
+        segments: [
+          {
+            title: 'Federal',
+            rows: [
+              { name: 'IRS Tax Fraud Detection v3.1', detail: 'DI 0.64', level: 'critical' },
+              { name: 'Legacy rules engine v2.0', detail: 'Proxy 0.76', level: 'warning' }
+            ]
+          }
+        ]
+      },
+      penalty: {
+        amount: '$18M',
+        amountColor: '#ef4444',
+        subnote: 'if no action taken by Q4 2026',
+        breakdown: [
+          { label: 'Cost-of-delay', val: '$12M' },
+          { label: 'Oversight escalation', val: '$6M' }
+        ],
+        roi: 'Fix cost: $45K — ROI: 1,489x'
+      },
+      certification: {
+        certified: true,
+        bigCert: 'Certified \u2713',
+        compliantLine: 'Cardinal ACA 1557 Compliant',
+        maintainLine: 'Maintaining certification — 1 active warning',
+        renewal: 'Jan 21, 2027'
+      },
+      remediation: {
+        pct: 12,
+        body: 'Awaiting CMO approval — 0 claims re-evaluated yet',
+        next: 'Get CMO sign-off to begin shadow deployment',
+        eta: 'Est. complete: Jun 1, 2026'
+      }
+    },
+    trustUx: {
+      sparkline: { values: [80, 81, 82, 83, 83, 83, 83], color: '#22c55e' },
+      blocking: {
+        title: 'Maintaining certification:',
+        titleColor: '#22c55e',
+        rows: [
+          { text: 'Claims adjudication monitored under ACA 1557 surveillance protocol', fixScreen: 'eden' },
+          { text: 'CMS-required equity attestations filed and acknowledged', fixScreen: 'compliance' }
+        ]
+      },
+      peer: { industryAvg: 79, yourScore: 83, percentile: 71 }
+    },
+    demoImpactGroups: [
+      { line: 'Patients 65+: -49% claims approval vs patients 18-34', tag: 'VIOLATION' },
+      { line: 'Black women 65+: most severely impacted group', tag: 'WARNING' },
+      { line: 'Rural elderly: -33% approval vs urban patients', tag: 'WARNING' }
+    ],
+    demoGenderBars: { male: 78, female: 71, other: 68, threshold: 72 },
+    demoGenderInterpret: {
+      text: 'Female patients receive 0.91x approval rate vs male patients \u26a0',
+      color: '#f59e0b'
+    },
+    demoRaceBars: {
+      baselinePct: 82.1,
+      rows: [
+        { label: 'White', pct: 82.1, isBaseline: true, barColor: '#60a5fa' },
+        {
+          label: 'Asian',
+          pct: 76.2,
+          delta: '-6% \u26a0',
+          deltaColor: '#f59e0b',
+          barColor: '#f59e0b'
+        },
+        {
+          label: 'Black/AA',
+          pct: 71.4,
+          delta: '-11% \u2717',
+          deltaColor: '#ef4444',
+          barColor: '#ef4444'
+        },
+        {
+          label: 'Hispanic',
+          pct: 68.3,
+          delta: '-14% \u2717',
+          deltaColor: '#ef4444',
+          barColor: '#dc2626'
+        },
+        {
+          label: 'Other',
+          pct: 64.1,
+          delta: '-18% \u2717',
+          deltaColor: '#dc2626',
+          barColor: '#dc2626'
+        }
+      ]
+    },
+    demoGeo: {
+      subtitle: 'Approval rates by state / region for your patients.',
+      states: [
+        {
+          abbr: 'GA',
+          level: 'critical',
+          delta: '-43%',
+          tag: 'CRITICAL',
+          countText: '412 patients in this state',
+          approvalText: '56% approval rate',
+          note: 'Case #FED-PDV-001'
+        },
+        {
+          abbr: 'TX',
+          level: 'high',
+          delta: '-27%',
+          tag: 'HIGH',
+          countText: '511 patients in this state',
+          approvalText: '64% approval rate'
+        },
+        {
+          abbr: 'LA',
+          level: 'high',
+          delta: '-31%',
+          tag: 'HIGH',
+          countText: '288 patients in this state',
+          approvalText: '61% approval rate'
+        },
+        {
+          abbr: 'MS',
+          level: 'high',
+          delta: '-34%',
+          tag: 'HIGH',
+          countText: '142 patients in this state',
+          approvalText: '58% approval rate'
+        },
+        {
+          abbr: 'CA',
+          level: 'medium',
+          delta: '-21%',
+          tag: 'MEDIUM',
+          countText: '367 patients in this state',
+          approvalText: '69% approval rate'
+        }
+      ]
+    },
+    demoIntersection: {
+      title: 'Most Vulnerable Intersection',
+      body:
+        'Black women age 75+ \u2014 lowest claims approval rate: 34.1% \u2014 56% below baseline \u2014 highest priority for remediation'
+    },
+    biasNum: 64, biasColor: '#ef4444',
+    trustNum: '0.71', trustWidth: 71,
+    trustLabel: 'Below Threshold',
+    monitoredAtRiskLine: '4 monitored · 1 at risk',
+    criticalCaseCount: 1,
+    protectedDots: [
+      { cap: 'Race', st: 'warn' },
+      { cap: 'Gender', st: 'good' },
+      { cap: 'Age', st: 'bad' },
+      { cap: 'Disability', st: 'warn' },
+      { cap: 'Religion', st: 'good' },
+      { cap: 'National Origin', st: 'good' },
+      { cap: 'Veteran Status', st: 'good' },
+      { cap: 'Income', st: 'good' }
+    ],
+    biasDet: 81, biasDetColor: '#22c55e',
+    fraud:   84, fraudColor:   '#22c55e',
+    comp:    77, compColor:    '#f59e0b',
+    fr: {
+      di: { val: '0.64', badge: 'Violation', badgeClass: 'dr-badge dr-badge-red',   barColor: '#ef4444', pct: 64 },
+      eo: { val: '0.21', badge: 'Warning',   badgeClass: 'dr-badge dr-badge-amber', barColor: '#f59e0b', pct: 88 },
+      dp: { val: '0.81', badge: 'Pass',      badgeClass: 'dr-badge dr-badge-green', barColor: '#22c55e', pct: 81 },
+      cal: { val: '0.88', badge: 'Pass',      badgeClass: 'dr-badge dr-badge-green', barColor: '#22c55e', pct: 88 }
+    },
+    frDiCtx: '0.64 — Patients 65+ denied claims at 2.3x rate of younger patients. 2,847 claims affected.',
+    frDiRule: 'Must be > 0.80 for ACA 1557 compliance',
+    frEoCtx: 'Disability patients have 0.21 higher denial rate than non-disability patients with same diagnosis.',
+    frEoRule: 'Should be < 0.10 per ACA 1557 clinical equity standards',
+    frDpCtx: 'Ratio of claims approval rates across all patient demographic groups.',
+    frCalCtx: 'Claims risk prediction accuracy consistent across all patient demographic groups.',
+    demoSecGender: 'Gender Distribution & Claims Approval Rates',
+    demoSecAge: 'Age Group Claims Approval Rates — ACA 1557 Focus',
+    demoSecEthnic: 'Racial/Ethnic Claims Analysis',
+    dashAgeChart: {
+      labels: ['18-34', '35-49', '50-64', '65-74', '75-84', '85+'],
+      values: [88, 85, 81, 62, 47, 39],
+      barColors: ['#818cf8', '#818cf8', '#818cf8', '#ef4444', '#dc2626', '#991b1b']
+    },
+    rem1Impact: '• This fix returns 2,847 patient claims to fair adjudication.',
+    rem2Impact: '• 1,204 rural patients affected by distance proxy.',
+    rem1Title: 'Age Discrimination in Claims',
+    rem1Action: 'Remove age-cost proxy',
+    rem1PrioTxt: 'High Priority',
+    rem1Timeline: '~2 weeks',
+    rem2Title: 'Rural Patient Coverage Gap',
+    rem2PrioTxt: 'Medium Priority',
+    rem2BadgeClass: 'dr-badge dr-badge-amber',
+    rem2Action: 'Augment rural network and telehealth routing data',
+    rem3Title: 'Disability Coverage Gap',
+    rem3PrioTxt: 'Medium Priority',
+    rem3BadgeClass: 'dr-badge dr-badge-amber',
+    rem3Action: 'Recalibrate ADA-sensitive coverage rules',
+    rem4Title: 'Income Proxy in Triage',
+    rem4PrioTxt: 'Low Priority',
+    rem4BadgeClass: 'dr-badge dr-badge-yellow',
+    rem4Action: 'Detangle income signals from clinical triage priority',
+    demoPanelSub:
+      'Statistical disparity analysis across 2,847 patients processed by IRS Tax Fraud Detection v3.1 and Legacy rules engine v2.0 \u2014 identifying groups experiencing AI discrimination',
+    demoAgeInsight: {
+      text:
+        '\u2198 Patients 85+ approved at 39% vs 88% for 18-34 \u2014 56% disparity \u2014 ACA 1557 violation',
+      color: '#ef4444'
+    },
+    eth: {
+      white: ['82.1%', '847 claims'],
+      black: ['71.4%', '412 claims'],
+      hisp:  ['68.3%', '387 claims'],
+      asian: ['76.2%', '214 claims'],
+      other: ['64.1%', '187 claims']
+    },
+    biasGender: 'Female patients 65+ receive 0.81x claims approval rate vs male patients with same diagnosis codes.',
+    biasRace: 'Patients of color denied claims at 1.8x baseline rate. Black and Hispanic patients most impacted.',
+    biasIncome: 'Coverage-tier-based decisions within acceptable parameters for income-related claims processing.',
+    biasAge: {
+      ctx: 'Patients 65+ denied claims at 2.3x rate of patients 18-64 for identical diagnosis codes.',
+      score: '52/100',
+      scoreColor: '#ef4444',
+      barPct: 52,
+      barColor: '#ef4444',
+      pillClass: 'dr-badge dr-pill-red',
+      pillTxt: 'High Impact',
+      rec: 'Recommendation: Prioritize age-cost proxy removal and CMS remediation sign-off for Claims v2.0.'
+    },
+    reg: [
+      { label: 'ACA 1557',         val: '64.8%', color: '#ef4444' },
+      { label: 'CMS Oversight',    val: '71.3%', color: '#f59e0b' },
+      { label: 'HIPAA Compliance', val: '91.2%', color: '#22c55e' },
+      { label: 'CA SB 53',         val: '78.4%', color: '#f59e0b' }
+    ],
+    alerts: 4, alertsColor: '#ef4444',
+    dashCharts: {
+      biasTrend: '▼ 2.3% this month',
+      protUnitSuffix: 'patient cohorts monitored',
+      parityAvgPct: '77%',
+      parityAvgColor: '#f59e0b',
+      parityLabels: ['ACA', 'CMS', 'HIPAA', 'SB53', 'ISO'],
+      parityValues: [65, 71, 91, 78, 80],
+      incidents: [
+        { lvl: 'critical', headline: 'Case #FED-PDV-001', desc: 'Pre-deployment vetting — 1,200 cohort', urgent: '', urgClass: 'red' }
+      ]
+    },
+    regulatoryPanel: {
+      action: [
+        {
+          title: 'ACA 1557 Violation — Active',
+          detail: 'Active violation · CMO sign-off required · 2,847 claims affected',
+          dateLine: 'Clinical equity · age proxy in claims adjudication',
+          badge: 'VIOLATION',
+          badgeTone: 'red',
+          btnLabel: 'Fix →',
+          screen: 'atonement'
+        },
+        {
+          title: 'ACA Remediation Deadline — May 2, 2026',
+          detail: 'Fix must be initiated before May 2 · 4 days remaining',
+          dateLine: 'CMS mitigation plan submission',
+          badge: '4 DAYS',
+          badgeTone: 'red',
+          btnLabel: 'View →',
+          screen: 'compliance'
+        },
+        {
+          title: 'CMS AI Oversight Audit — May 28, 2026',
+          detail: 'Full AI oversight audit · IRS Tax Fraud Detection v3.1 under review',
+          dateLine: 'Model inventory · decision logs · bias testing artifacts',
+          badge: '30 DAYS',
+          badgeTone: 'amber',
+          btnLabel: 'View →',
+          screen: 'compliance'
+        }
+      ],
+      coming: [
+        {
+          title: 'Joint Commission AI',
+          sub: 'Jun 20, 2026 · accreditation readiness review',
+          pill: '51 days',
+          detail: 'Accreditation readiness review · survey prep required'
+        },
+        {
+          title: 'HIPAA Annual Review',
+          sub: 'Jul 1, 2026 · privacy & minimum necessary attestations',
+          pill: '62 days',
+          detail: 'Privacy program attestation · BA agreement renewals'
+        }
+      ],
+      active: [
+        {
+          title: 'HIPAA Privacy — Certified ✓',
+          sub: '',
+          detail: 'Valid through Jul 2026 · Covers PHI access logging and BA controls'
+        },
+        {
+          title: 'CA SB 53 Frontier Inventory ✓',
+          sub: '',
+          detail: 'Current · Frontier-model inventory and frontier coverage documented'
+        }
+      ]
+    }
   }
 };
 
@@ -17232,8 +17781,8 @@ function dashFormatCriticalCasesTopbar(count) {
 function refreshDashboard(ev) {
   if (ev) { ev.preventDefault(); ev.stopPropagation(); }
   var org = window.currentOrg || 'ad';
-  var scoreMap = { ad: 0.74, fin: 0.81, health: 0.83 };
-  var colorMap = { ad: '#f59e0b', fin: '#22c55e', health: '#22c55e' };
+  var scoreMap = { ad: 0.74, fin: 0.81, health: 0.83, fed: 0.71 };
+  var colorMap = { ad: '#f59e0b', fin: '#22c55e', health: '#22c55e', fed: '#f59e0b' };
   var cfgX = typeof DASH_INDUSTRY !== 'undefined' ? (DASH_INDUSTRY[org] || DASH_INDUSTRY.ad) : null;
   var pctRefresh = cfgX ? cfgX.trustWidth : 74;
   animateTrustScore(scoreMap[org], colorMap[org]);
@@ -17289,7 +17838,7 @@ function updateDashboardIndustry(org) {
     safeSet('topbar-alert-count', dashFormatCriticalCasesTopbar(cfg.criticalCaseCount));
   }
 
-  var animColorMap = { ad: '#f59e0b', fin: '#22c55e', health: '#22c55e' };
+  var animColorMap = { ad: '#f59e0b', fin: '#22c55e', health: '#22c55e', fed: '#f59e0b' };
   var animCol = animColorMap[org] || '#f59e0b';
   var tgtScore = parseFloat(cfg.trustNum);
   animateTrustScore(tgtScore, animCol);
@@ -17376,9 +17925,9 @@ function safeHTML(id, html) {
 }
 
 function syncIndustrySidebarChrome(org) {
- var userMap = {ad:'Anthony Broadnax', fin:'Riley Whitmore', health:'Dr. Maya Osei'};
- var orgMap = {ad:'Atlas Defense Systems', fin:'Blackmoor Wealth Group', health:'Sterling Health'};
- var initialsMap = {ad:'AB', fin:'RW', health:'MO'};
+ var userMap = {ad:'Anthony Broadnax', fin:'Riley Whitmore', health:'Dr. Maya Osei', fed:'Patricia Alvarez'};
+ var orgMap = {ad:'Atlas Defense Systems', fin:'Blackmoor Wealth Group', health:'Sterling Health', fed:'IRS Tax Compliance Division'};
+ var initialsMap = {ad:'AB', fin:'RW', health:'MO', fed:'PA'};
 
  var nameEl = document.getElementById('sidebar-user-name');
  var orgEl = document.getElementById('sidebar-user-org');
@@ -17389,8 +17938,8 @@ function syncIndustrySidebarChrome(org) {
  if(avatarEl) avatarEl.textContent = initialsMap[org] || 'U';
  window.currentUserName = userMap[org] || '';
 
- var scoreMap = {ad:74, fin:81, health:83};
- var scoreColorMap = {ad:'#F59E0B', fin:'#22C55E', health:'#22C55E'};
+ var scoreMap = {ad:74, fin:81, health:83, fed:71};
+ var scoreColorMap = {ad:'#F59E0B', fin:'#22C55E', health:'#22C55E', fed:'#F59E0B'};
 
  var scoreEl = document.getElementById('sidebar-score');
 
@@ -17399,7 +17948,8 @@ function syncIndustrySidebarChrome(org) {
  var subMap = {
   ad: 'Atlas Defense Systems · A&D Pilot',
   fin: 'Blackmoor Wealth Group · Finance Pilot',
-  health: 'Sterling Health · Healthcare Pilot'
+  health: 'Sterling Health · Healthcare Pilot',
+  fed: 'IRS Tax Compliance Division · Federal Pilot'
  };
  var subEl = document.getElementById('topbar-sub');
  if(subEl) subEl.textContent = subMap[org] || '';
@@ -18312,6 +18862,15 @@ var HALO_CFG = {
    exposureQ4:'$150M',
    roiText:'Fix cost: $45K — Exposure avoided: $150M — ROI: 3,333x',
    forecast:{ start:83, none:[83,81,79,77], partial:[83,83,84,84], full:[83,86,89,91] }
+  },
+ fed: {
+   subtitle:'Federal Exposure Forecasting — IRS Tax Compliance Division',
+   peerPct:'Ahead of 41% of federal civilian peers',
+   sentinelLbl:'1 risk flagged — pre-deployment vetting',
+   penalties:[6,12,18],
+   exposureQ4:'$18M',
+   roiText:'Fix cost: $120K — Exposure avoided: $18M — ROI: 150x',
+   forecast:{ start:71, none:[71,70,69,68], partial:[71,72,73,74], full:[71,76,80,84] }
  }
 };
 
@@ -18344,6 +18903,13 @@ function haloDeadlineHtml(org) {
       haloDd('Joint Commission AI','Jun 20, 2026','amber','62 days'),
  dd90:haloDd('NIST AI RMF Annual Review','Jul 1, 2026','gray','Scheduled')
  };
+ if(org==='fed') return {
+ dd30:haloDd('IRS agency briefing — OMB packet','May 22, 2026','red','23 days')+
+      haloDd('OMB / OIRA submission target','May 28, 2026','red','29 days'),
+ dd60:haloDd('EO section 3(c) disclosure checkpoint','May 26, 2026','amber','27 days')+
+      haloDd('Recourse mechanism pilot readiness','Jun 12, 2026','amber','44 days'),
+ dd90:haloDd('NIST AI RMF Annual Review','Jul 1, 2026','gray','Scheduled')
+ };
  return {
  dd30:haloDd('DoD Annual AI Ethics Review','Apr 30, 2026','red','2 days')+
       haloDd('ITAR Compliance Audit','May 8, 2026','red','10 days'),
@@ -18374,8 +18940,16 @@ function updateHaloInaction(org) {
       q4: {amount:'$150M+', text:'CMS program exclusion. $150M+ revenue impact. Joint Commission review. State AG investigation launched.'},
       resolution: '$0 penalty exposure · Trust Score 91+ · ACA 1557 Compliant',
       roi: 'ROI: 3,333x'
+    },
+    fed: {
+      wk2: {amount:'$2.1M', text:'OMB briefing slip risks public disclosure clock under EO section 3(c) without approved recourse narrative.'},
+      q3: {amount:'$9M', text:'Appropriations committees flag stalled AI modernization · contingency audits expand to adjacent IRS models.'},
+      q4: {amount:'$18M+', text:'Full activation blocked through Q4 · manual review surge · oversight hearings · contractor penalties modeled at $18M+.'},
+      resolution: '$0 delay exposure · Trust Score 80+ · EO May 2026 attestation accepted',
+      roi: 'ROI: 150x'
     }
   };
+
   var d = data[org] || data.ad;
   var safe = function(id, val) { var el = document.getElementById(id); if (el) el.textContent = val; };
   safe('halo-inaction-2wk-amount', d.wk2.amount);
@@ -18389,7 +18963,8 @@ function updateHaloInaction(org) {
   var fixMap = {
     ad: { id: 'AD-2847', type: 'lifecycle', status: 'remediation-in-progress' },
     fin: { id: 'FIN-1203', type: 'lifecycle', status: 'shadow-deploy' },
-    health: { id: 'HS-2847', type: 'lifecycle', status: 'remediation-in-progress' }
+    health: { id: 'HS-2847', type: 'lifecycle', status: 'remediation-in-progress' },
+    fed: { id: 'FED-PDV-001', type: 'pre-deployment', status: 'open' }
   };
   var fx = fixMap[org] || fixMap.ad;
   ['halo-fixnow-2wk', 'halo-fixnow-q3', 'halo-fixnow-q4'].forEach(function (bid) {
@@ -19424,7 +19999,7 @@ const EVE_DEFAULTS_ROTATION = {
  ]
 };
 
-const EVE_ROTATION_INDEX = { ad:0, fin:0, health:0 };
+const EVE_ROTATION_INDEX = { ad:0, fin:0, health:0, fed:0 };
 
 function getRotatingEveResponse(org) {
  const arr = EVE_DEFAULTS_ROTATION[org] || EVE_DEFAULTS_ROTATION.ad;
@@ -24256,7 +24831,7 @@ window.cardinalRenderCorePinsPanel = function(coreName, containerId) {
   var allPins = window.__userPins[key] || [];
   if (allPins.length === 0) { container.innerHTML = ''; return; }
   var relevantPins = [];
-  var orgs = ['ad', 'fin', 'health'];
+  var orgs = ['ad', 'fin', 'health', 'fed'];
   for (var i = 0; i < orgs.length; i++) {
     var arr = (window.CARDINAL_DATA && window.CARDINAL_DATA[orgs[i]] && window.CARDINAL_DATA[orgs[i]].echoMemories) || [];
     for (var j = 0; j < arr.length; j++) {
@@ -24383,6 +24958,30 @@ function echoRenderScoreHistoryTab() {
         { date: '2025-08-22', label: 'CERT EARNED', color: '#22c55e', score: 82 },
         { date: '2026-01-12', label: 'CASE OPENED', color: '#f59e0b', score: 82 },
         { date: '2026-04-01', label: 'ATTEST RENEWED', color: '#22c55e', score: 83 }
+      ]
+    },
+    fed: {
+      orgName: 'IRS Tax Compliance Division',
+      currentScore: 71, certThreshold: 80, certified: false,
+      months: [
+        { m: '2025-06', score: 73, event: 'Baseline · pre-EO May 2026 framework' },
+        { m: '2025-07', score: 73, event: 'Steady · monitoring-only posture' },
+        { m: '2025-08', score: 74, event: 'Cardinal pilot onboarded for federal AI vetting' },
+        { m: '2025-09', score: 74, event: 'OMB Unbiased AI Principles framework adopted' },
+        { m: '2025-10', score: 73, event: 'First model intake — Tax Fraud Detection v2.9' },
+        { m: '2025-11', score: 73, event: 'v2.9 deployed under prior framework' },
+        { m: '2025-12', score: 72, event: 'Trump May 2026 EO drafted · framework tightening' },
+        { m: '2026-01', score: 73, event: 'Cardinal vetting protocol updated for EO compliance' },
+        { m: '2026-02', score: 72, event: 'v3.1 candidate submitted for vetting' },
+        { m: '2026-03', score: 72, event: 'EO May 2026 finalized · pre-deployment audit mandatory' },
+        { m: '2026-04', score: 71, event: '🔴 v3.1 blocked at Eden checkpoint · DI 0.54' },
+        { m: '2026-05', score: 71, event: 'Current · OMB packet in agency review · ramp blocked' }
+      ],
+      keyEvents: [
+        { date: '2025-08-15', label: 'CARDINAL ONBOARDED', color: '#a855f7', score: 74 },
+        { date: '2026-03-20', label: 'EO MAY 2026 EFFECTIVE', color: '#3b82f6', score: 72 },
+        { date: '2026-04-18', label: 'V3.1 BLOCKED', color: '#ef4444', score: 71 },
+        { date: '2026-05-28', label: 'OMB DEADLINE', color: '#f59e0b', score: 71 }
       ]
     }
   };
@@ -24577,7 +25176,7 @@ function echoRenderMyWorkspaceTab() {
         var nts = new Date(n.timestamp);
         var linkedMem = null;
         if (n.linkedMemoryId) {
-          var orgsL = ['ad', 'fin', 'health'];
+          var orgsL = ['ad', 'fin', 'health', 'fed'];
           for (var oi = 0; oi < orgsL.length; oi++) {
             var arrL = (window.CARDINAL_DATA && window.CARDINAL_DATA[orgsL[oi]] && window.CARDINAL_DATA[orgsL[oi]].echoMemories) || [];
             for (var ii = 0; ii < arrL.length; ii++) {
@@ -24694,7 +25293,7 @@ window.renderBigWorkspacePage = function() {
   var myNotes = window.__userNotes[notesKey] || [];
 
   var allMems = [];
-  ['ad', 'fin', 'health'].forEach(function(o){
+  ['ad', 'fin', 'health', 'fed'].forEach(function(o){
     var arr = (window.CARDINAL_DATA && window.CARDINAL_DATA[o] && window.CARDINAL_DATA[o].echoMemories) || [];
     arr.forEach(function(m){ allMems.push(Object.assign({}, m, { __org: o })); });
   });
@@ -24838,7 +25437,7 @@ window.deleteBigNote = function(idx) {
 
 function echoTogglePersonalPinDetail(memoryId) {
   echoTogglePersonalPin(memoryId);
-  var orgs = ['ad', 'fin', 'health'];
+  var orgs = ['ad', 'fin', 'health', 'fed'];
   for (var i = 0; i < orgs.length; i++) {
     var arr = (window.CARDINAL_DATA && window.CARDINAL_DATA[orgs[i]] && window.CARDINAL_DATA[orgs[i]].echoMemories) || [];
     for (var j = 0; j < arr.length; j++) {
@@ -24860,7 +25459,7 @@ function echoOpenQuickNote(memoryId) {
   if (existing) existing.remove();
 
   var memory = null;
-  var orgsLm = ['ad', 'fin', 'health'];
+  var orgsLm = ['ad', 'fin', 'health', 'fed'];
   for (var li = 0; li < orgsLm.length; li++) {
     var arrLm = (window.CARDINAL_DATA && window.CARDINAL_DATA[orgsLm[li]] && window.CARDINAL_DATA[orgsLm[li]].echoMemories) || [];
     for (var lj = 0; lj < arrLm.length; lj++) {
@@ -24946,7 +25545,7 @@ function echoSaveQuickNote(memoryId) {
     try { echoApplyFilters(); } catch(_e3) {}
   }
   if (window.__echoDetailMemoryId === memoryId) {
-    var orgsD = ['ad', 'fin', 'health'];
+    var orgsD = ['ad', 'fin', 'health', 'fed'];
     for (var di = 0; di < orgsD.length; di++) {
       var arrD = (window.CARDINAL_DATA && window.CARDINAL_DATA[orgsD[di]] && window.CARDINAL_DATA[orgsD[di]].echoMemories) || [];
       for (var dj = 0; dj < arrD.length; dj++) {
@@ -25097,7 +25696,7 @@ function cardinalContextAction(action, contextType, contextValue) {
 }
 
 function cardinalFindMemoryByContext(contextType, contextValue) {
-  var orgs = ['ad', 'fin', 'health'];
+  var orgs = ['ad', 'fin', 'health', 'fed'];
   for (var i = 0; i < orgs.length; i++) {
     var arr = (window.CARDINAL_DATA && window.CARDINAL_DATA[orgs[i]] && window.CARDINAL_DATA[orgs[i]].echoMemories) || [];
     for (var j = 0; j < arr.length; j++) {
@@ -25803,7 +26402,7 @@ function echoOpenModelDetail(modelName) {
 
 function echoToggleMemoryPin(memoryId) {
   echoTogglePin(memoryId);
-  var orgs = ['ad', 'fin', 'health'];
+  var orgs = ['ad', 'fin', 'health', 'fed'];
   for (var i = 0; i < orgs.length; i++) {
     var arr = (window.CARDINAL_DATA && window.CARDINAL_DATA[orgs[i]] && window.CARDINAL_DATA[orgs[i]].echoMemories) || [];
     for (var j = 0; j < arr.length; j++) {
@@ -25822,7 +26421,7 @@ function echoSealAddendum(memoryId) {
   if (!ta) return;
   var noteContent = (ta.value || '').trim();
   if (!noteContent) { alert('Please type a note before sealing.'); return; }
-  var orgs = ['ad', 'fin', 'health'];
+  var orgs = ['ad', 'fin', 'health', 'fed'];
   for (var i = 0; i < orgs.length; i++) {
     var arr = (window.CARDINAL_DATA && window.CARDINAL_DATA[orgs[i]] && window.CARDINAL_DATA[orgs[i]].echoMemories) || [];
     for (var j = 0; j < arr.length; j++) {
@@ -25853,7 +26452,7 @@ function echoSealAddendum(memoryId) {
 function echoOpenMemoryDetail(memoryId) {
   var memory = null;
   var memoryOrg = null;
-  var orgs = ['ad', 'fin', 'health'];
+  var orgs = ['ad', 'fin', 'health', 'fed'];
   for (var i = 0; i < orgs.length; i++) {
     var arr = (window.CARDINAL_DATA && window.CARDINAL_DATA[orgs[i]] && window.CARDINAL_DATA[orgs[i]].echoMemories) || [];
     for (var j = 0; j < arr.length; j++) {
@@ -26569,7 +27168,7 @@ function echoSaveNote(memoryId) {
     signature: sigHex
   });
   if (typeof showToast === 'function') showToast('Note sealed as addendum');
-  var orgs = ['ad', 'fin', 'health'];
+  var orgs = ['ad', 'fin', 'health', 'fed'];
   for (var i = 0; i < orgs.length; i++) {
     var arr = (window.CARDINAL_DATA && window.CARDINAL_DATA[orgs[i]] && window.CARDINAL_DATA[orgs[i]].echoMemories) || [];
     for (var j = 0; j < arr.length; j++) {
@@ -28082,7 +28681,7 @@ const WAR_ROOM_DATA = {
  }
 };
 
-let wrNotes = {ad:[], fin:[], health:[]};
+let wrNotes = {ad:[], fin:[], health:[], fed:[]};
 let wrClock = null;
 
 function buildWarRoom(org) {
@@ -29086,6 +29685,30 @@ function renderTrustScoreStandalone(org) {
       ],
       monthly: 'May continues healthcare\'s upward trajectory — Claims v1.10 promotion held DI improvements through full production. Mercy Health remains the only certified Cardinal pilot. Next certification renewal: July 7.',
       year: [76, 77, 78, 79, 80, 80, 81, 82, 82, 83, 83, 83]
+    },
+    fed: {
+      orgName: 'IRS Tax Compliance Division', industry: 'Federal Civilian', pilot: 'Federal Pilot',
+      global: 71, trend: 0, certified: false,
+      lastCert: 'None', renewal: '2026-05-28',
+      dims: { fairness: 64, fraud: 78, transparency: 72, privacy: 84, governance: 68, monitoring: 60 },
+      reasons: [
+        { text: 'IRS Tax Fraud Detection v3.1 — DI 0.54', sub: 'EO May 2026 vetting in flight · 1,200 affected', target: 'eden' },
+        { text: 'Pre-deployment status — not yet activated', sub: 'OMB packet v0.6 in agency review', target: 'compliance' },
+        { text: 'Recourse mechanism documented', sub: '+8 pts pending OMB attestation acceptance', target: 'compliance' }
+      ],
+      raises: [
+        { text: 'OMB attestation acceptance', gain: 8, target: 'compliance' },
+        { text: 'IRS agency sign-off + ramp gate', gain: 5, target: 'compliance' },
+        { text: 'Recourse mechanism live', gain: 3, target: 'atonement' }
+      ],
+      watch: [
+        { text: 'EO May 2026 section 3(c) 30-day disclosure clock', risk: 4.5 }
+      ],
+      models: [
+        { name: 'IRS Tax Fraud Detection v3.1', score: 64, di: '0.54', status: 'Blocked', c: '#ef4444', weight: '100%' }
+      ],
+      monthly: 'May holds IRS Tax Compliance at 71 while v3.1 remains ramp-blocked. OMB packet v0.6 is with the IRS CPO for May 22 review; Genesis receipt FED-CF-2026-04-29-V31 is attached. Clearing OMB attestation is the fastest path back toward certification.',
+      year: [73, 73, 73, 72, 72, 72, 72, 71, 71, 71, 71, 71]
     }
   };
 
@@ -30826,7 +31449,7 @@ function sendTownHallMessage() {
   const msgs = document.getElementById('townhall-messages');
   if(!input || !input.value.trim() || !msgs) return;
   const text = input.value.trim();
-  const userName = {ad:'Anthony Broadnax', fin:'Riley Whitmore', health:'Dr. Maya Osei'}[currentOrg] || 'You';
+  const userName = {ad:'Anthony Broadnax', fin:'Riley Whitmore', health:'Dr. Maya Osei', fed:'Patricia Alvarez'}[currentOrg] || 'You';
   const initials = userName.split(' ').map(n=>n[0]).join('').substring(0,2);
   input.value = '';
   const now = new Date();
@@ -30837,7 +31460,7 @@ function sendTownHallMessage() {
     const r = text.toLowerCase().includes('approve') || text.toLowerCase().includes('sign') ? 
       'Decision logged to Echo Core memory. Case #2847 sign-off recorded. Trust Ledger hash generated: 0x'+Math.random().toString(16).substr(2,8) :
       text.toLowerCase().includes('score') || text.toLowerCase().includes('trust') ?
-      'Current Trust Score is '+({ad:74,fin:79,health:83}[currentOrg]||74)+'. With the pending fixes, we project reaching '+({ad:80,fin:82,health:86}[currentOrg]||80)+' within 14 days.' :
+      'Current Trust Score is '+({ad:74,fin:79,health:83,fed:71}[currentOrg]||74)+'. With the pending fixes, we project reaching '+({ad:80,fin:82,health:86,fed:80}[currentOrg]||80)+' within 14 days.' :
       'Noted. I have logged this to Echo Core. Is there a specific action item or decision you would like to formalize?';
     msgs.innerHTML += '<div style="display:flex;gap:8px"><div style="width:26px;height:26px;background:linear-gradient(135deg,#1e3a5f,#0d2137);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--accent);flex-shrink:0">✦</div><div><div style="font-size:9px;color:var(--muted);margin-bottom:3px">Eve · '+timeStr+'</div><div style="background:rgba(166,218,255,.07);border:1px solid rgba(166,218,255,.1);border-radius:10px;border-bottom-left-radius:3px;padding:9px 12px;font-size:11px;color:var(--text);max-width:340px">'+r+'</div></div></div>';
     msgs.scrollTop = msgs.scrollHeight;
@@ -32167,8 +32790,8 @@ function showDeploySuccess() {
   document.getElementById('deploy-step-2').style.display = 'none';
   document.getElementById('deploy-step-3').style.display = 'block';
   var org = currentOrg || 'ad';
-  var modelNames = {ad:'Personnel Assignment v2.5',fin:'Credit Scoring v3.5',health:'Claims Adjudication v2.0'};
-  var newScores = {ad:82,fin:83,health:86};
+  var modelNames = {ad:'Personnel Assignment v2.5',fin:'Credit Scoring v3.5',health:'Claims Adjudication v2.0',fed:'IRS Tax Fraud Detection v3.1'};
+  var newScores = {ad:82,fin:83,health:86,fed:80};
   var m = document.getElementById('deploy-success-body');
   if(m) m.textContent = (modelNames[org]||'Fixed model') + ' is now live for 100% of traffic. Trust Score updated to ' + (newScores[org]||82) + '.';
   var sm = document.getElementById('deploy-success-metrics');
