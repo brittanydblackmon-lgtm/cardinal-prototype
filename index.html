@@ -23419,6 +23419,25 @@ function echoApplyFilters() {
   }
 }
 
+function echoMemoryCardActions(memoryId) {
+  var persona = (typeof window.getActivePersona === 'function') ? window.getActivePersona() : null;
+  var isPinned = false;
+  if (persona && window.__userPins) {
+    var key = 'pins:' + persona.id;
+    if (window.__userPins[key] && window.__userPins[key].indexOf(memoryId) !== -1) isPinned = true;
+  }
+  var pinIcon = isPinned ? '📌' : '📍';
+  var pinLabel = isPinned ? 'Pinned' : 'Pin';
+  var pinColor = isPinned ? '#f59e0b' : '#94a3b8';
+  var pinBg = isPinned ? 'rgba(245,158,11,0.15)' : 'rgba(166,218,255,0.04)';
+  var pinBorder = isPinned ? 'rgba(245,158,11,0.4)' : 'rgba(166,218,255,0.15)';
+  var midJs = typeof echoEscapeJsAttr === 'function' ? echoEscapeJsAttr(memoryId) : String(memoryId || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+  return '<div class="echo-card-actions" style="display:flex;gap:6px;align-items:center;" onclick="event.stopPropagation();">' +
+    '<button type="button" onclick="event.stopPropagation();echoTogglePersonalPin(\'' + midJs + '\');if(typeof echoApplyFilters===\'function\'){try{echoApplyFilters();}catch(_e){}}" title="Pin to My Workspace" style="background:' + pinBg + ';border:1px solid ' + pinBorder + ';color:' + pinColor + ';padding:4px 8px;border-radius:5px;cursor:pointer;font-size:10px;font-weight:600;display:inline-flex;align-items:center;gap:4px;">' + pinIcon + ' <span>' + pinLabel + '</span></button>' +
+    '<button type="button" onclick="event.stopPropagation();echoOpenQuickNote(\'' + midJs + '\');" title="Add a personal note about this memory" style="background:rgba(168,85,247,0.06);border:1px solid rgba(168,85,247,0.25);color:#a855f7;padding:4px 8px;border-radius:5px;cursor:pointer;font-size:10px;font-weight:600;display:inline-flex;align-items:center;gap:4px;">📝 <span>Note</span></button>' +
+  '</div>';
+}
+
 function renderEchoMemoryCard(m) {
   var sevColor = { critical: 'red', high: 'amber', medium: 'blue', low: 'green', informational: 'muted' }[m.severity] || 'muted';
   var coreColor = { eden: 'red', obsidian: 'blue', genesis: 'amber', atonement: 'green', sentinel: 'amber', halo: 'blue', echo: 'accent', compliance: 'muted2', trustledger: 'green', trustloop: 'accent', warroom: 'red' }[m.core] || 'accent';
@@ -23451,6 +23470,7 @@ function renderEchoMemoryCard(m) {
         (m.modelId ? '<span style="color:var(--muted2);">' + echoEscapeHtml(m.modelId) + '</span>' : '') +
         '<span style="color:var(--accent);font-family:monospace;">0x' + echoEscapeHtml(hashShort) + '...</span>' +
       '</div>' +
+      '<div style="display:flex;justify-content:flex-end;gap:6px;margin-top:8px;padding-top:8px;border-top:1px solid rgba(166,218,255,0.05);">' + echoMemoryCardActions(m.id) + '</div>' +
     '</div>' +
     '</div>' +
     '<button type="button" onclick="event.stopPropagation();echoTogglePin(\'' + echoEscapeJsAttr(m.id) + '\')" style="flex-shrink:0;align-self:flex-start;padding:6px 12px;background:' + (pinOn ? 'rgba(245,158,11,0.1)' : 'rgba(166,218,255,0.04)') + ';border:1px solid ' + (pinOn ? 'rgba(245,158,11,0.3)' : 'rgba(166,218,255,0.15)') + ';border-radius:6px;color:' + (pinOn ? 'var(--amber)' : 'var(--accent)') + ';font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap;transition:all 0.15s;" title="' + (pinOn ? 'Unpin from My Pinned Memories' : 'Add to My Pinned Memories') + '">' + (pinOn ? '📌 Pinned ✓' : '📌 Pin') + '</button>' +
@@ -23650,13 +23670,29 @@ function echoRenderMyWorkspaceTab() {
       '<div style="display:flex;flex-direction:column;gap:6px;">' +
       myNotes.slice().reverse().map(function(n, idx){
         var nts = new Date(n.timestamp);
+        var linkedMem = null;
+        if (n.linkedMemoryId) {
+          var orgsL = ['ad', 'fin', 'health'];
+          for (var oi = 0; oi < orgsL.length; oi++) {
+            var arrL = (window.CARDINAL_DATA && window.CARDINAL_DATA[orgsL[oi]] && window.CARDINAL_DATA[orgsL[oi]].echoMemories) || [];
+            for (var ii = 0; ii < arrL.length; ii++) {
+              if (arrL[ii].id === n.linkedMemoryId) { linkedMem = arrL[ii]; break; }
+            }
+            if (linkedMem) break;
+          }
+        }
         var delIdx = myNotes.length - 1 - idx;
+        var sumLinked = linkedMem ? ((linkedMem.summary || '').substring(0, 80) + ((linkedMem.summary || '').length > 80 ? '...' : '')) : '';
+        var memContext = linkedMem
+          ? '<div onclick="echoOpenMemoryDetail(\'' + escJs(linkedMem.id) + '\')" style="cursor:pointer;padding:8px 10px;background:rgba(15,23,42,0.5);border:1px solid rgba(166,218,255,0.1);border-radius:6px;margin-bottom:8px;font-size:10px;"><span style="color:var(--muted);">Linked to: </span><span style="color:var(--accent);">' + esc(sumLinked) + '</span>' + (linkedMem.caseId ? '<span style="margin-left:8px;color:var(--accent);font-family:monospace;">#' + esc(String(linkedMem.caseId)) + '</span>' : '') + '</div>'
+          : '';
         return '<div style="padding:10px 14px;background:rgba(168,85,247,0.04);border:1px solid rgba(168,85,247,0.2);border-radius:8px;">' +
-          '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">' +
+          '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">' +
             '<span style="font-size:9px;color:#a855f7;text-transform:uppercase;letter-spacing:0.8px;font-weight:700;">Note · ' + esc(nts.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })) + '</span>' +
-            '<button type="button" onclick="echoDeletePersonalNote(' + delIdx + ')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:11px;">×</button>' +
+            '<button type="button" onclick="echoDeletePersonalNote(' + delIdx + ')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:13px;line-height:1;">×</button>' +
           '</div>' +
-          '<div style="font-size:12px;color:var(--chrome2);line-height:1.5;">' + esc(n.text) + '</div>' +
+          memContext +
+          '<div style="font-size:12px;color:var(--chrome2);line-height:1.6;">' + esc(n.text) + '</div>' +
         '</div>';
       }).join('') +
       '</div>' +
@@ -23709,6 +23745,129 @@ function echoDeletePersonalNote(idx) {
   window.__userNotes[key].splice(idx, 1);
   try { localStorage.setItem('cardinal-notes-' + persona.id, JSON.stringify(window.__userNotes[key])); } catch(_e) {}
   echoRenderMyWorkspaceTab();
+}
+
+function echoTogglePersonalPinDetail(memoryId) {
+  echoTogglePersonalPin(memoryId);
+  var orgs = ['ad', 'fin', 'health'];
+  for (var i = 0; i < orgs.length; i++) {
+    var arr = (window.CARDINAL_DATA && window.CARDINAL_DATA[orgs[i]] && window.CARDINAL_DATA[orgs[i]].echoMemories) || [];
+    for (var j = 0; j < arr.length; j++) {
+      if (arr[j].id === memoryId) {
+        echoRenderMemoryDetailFullscreen(arr[j], orgs[i]);
+        var bcTitle = document.getElementById('echo-memory-detail-breadcrumb-title');
+        if (bcTitle) bcTitle.textContent = (arr[j].summary || 'Memory').substring(0, 60) + ((arr[j].summary || '').length > 60 ? '...' : '');
+        return;
+      }
+    }
+  }
+}
+
+function echoOpenQuickNote(memoryId) {
+  var persona = (typeof window.getActivePersona === 'function') ? window.getActivePersona() : null;
+  if (!persona) { alert('No active persona — switch persona via the sidebar user card first.'); return; }
+
+  var existing = document.getElementById('echo-quick-note-modal');
+  if (existing) existing.remove();
+
+  var memory = null;
+  var orgsLm = ['ad', 'fin', 'health'];
+  for (var li = 0; li < orgsLm.length; li++) {
+    var arrLm = (window.CARDINAL_DATA && window.CARDINAL_DATA[orgsLm[li]] && window.CARDINAL_DATA[orgsLm[li]].echoMemories) || [];
+    for (var lj = 0; lj < arrLm.length; lj++) {
+      if (arrLm[lj].id === memoryId) { memory = arrLm[lj]; break; }
+    }
+    if (memory) break;
+  }
+
+  var esc = typeof echoEscapeHtml === 'function' ? echoEscapeHtml : function(s){ return String(s == null ? '' : s); };
+  var midJs = typeof echoEscapeJsAttr === 'function' ? echoEscapeJsAttr(memoryId) : String(memoryId || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+
+  var modal = document.createElement('div');
+  modal.id = 'echo-quick-note-modal';
+  modal.style.cssText = 'display:flex;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.78);backdrop-filter:blur(8px);align-items:center;justify-content:center;padding:40px;';
+  modal.onclick = function(e) { if (e.target === modal) modal.remove(); };
+
+  var ctxHTML = memory
+    ? '<div style="padding:12px 14px;background:rgba(15,23,42,0.6);border:1px solid rgba(166,218,255,0.1);border-radius:8px;margin-bottom:14px;"><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;font-weight:700;margin-bottom:6px;">CONTEXT</div><div style="font-size:11px;color:var(--chrome2);line-height:1.5;font-weight:500;">' + esc(memory.summary || '') + '</div>' + (memory.caseId ? '<div style="font-size:10px;color:var(--accent);margin-top:4px;font-family:monospace;">#' + esc(String(memory.caseId)) + (memory.modelId ? ' · ' + esc(String(memory.modelId)) : '') + '</div>' : '') + '</div>'
+    : '';
+
+  modal.innerHTML = '<div onclick="event.stopPropagation();" style="max-width:520px;width:100%;background:linear-gradient(180deg, rgba(15,23,42,0.98) 0%, rgba(11,18,32,0.98) 100%);border:1px solid rgba(168,85,247,0.3);border-radius:14px;padding:24px;box-shadow:0 20px 80px rgba(0,0,0,0.7);">' +
+    '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;">' +
+      '<div>' +
+        '<div style="font-size:10px;color:#a855f7;text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:4px;">📝 ADD PERSONAL NOTE</div>' +
+        '<h3 style="font-size:15px;font-weight:700;color:var(--chrome2);margin:0;">Save to ' + esc(persona.name) + '\'s Workspace</h3>' +
+        '<div style="font-size:10px;color:var(--muted);margin-top:4px;">Only you (' + esc(persona.role) + ') can see this note.</div>' +
+      '</div>' +
+      '<button type="button" onclick="document.getElementById(\'echo-quick-note-modal\').remove()" style="background:none;border:none;color:var(--muted);font-size:22px;cursor:pointer;line-height:1;">×</button>' +
+    '</div>' +
+    ctxHTML +
+    '<textarea id="echo-quick-note-text" placeholder="Type your note here..." style="width:100%;min-height:120px;background:rgba(15,23,42,0.7);border:1px solid rgba(168,85,247,0.25);border-radius:8px;padding:12px 14px;color:var(--chrome2);font-size:12px;font-family:inherit;resize:vertical;box-sizing:border-box;line-height:1.6;"></textarea>' +
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px;gap:10px;">' +
+      '<label style="display:flex;align-items:center;gap:6px;font-size:10px;color:var(--muted);cursor:pointer;"><input type="checkbox" id="echo-quick-note-pin" checked style="cursor:pointer;"/> Also pin this memory to My Workspace</label>' +
+      '<div style="display:flex;gap:8px;">' +
+        '<button type="button" onclick="document.getElementById(\'echo-quick-note-modal\').remove()" style="background:rgba(166,218,255,0.05);border:1px solid rgba(166,218,255,0.15);color:var(--muted);padding:8px 14px;border-radius:6px;cursor:pointer;font-size:11px;font-weight:600;">Cancel</button>' +
+        '<button type="button" onclick="echoSaveQuickNote(\'' + midJs + '\')" style="background:rgba(168,85,247,0.15);border:1px solid rgba(168,85,247,0.4);color:#a855f7;padding:8px 14px;border-radius:6px;cursor:pointer;font-size:11px;font-weight:700;">Save Note</button>' +
+      '</div>' +
+    '</div>' +
+  '</div>';
+
+  document.body.appendChild(modal);
+  setTimeout(function(){ var ta = document.getElementById('echo-quick-note-text'); if (ta) ta.focus(); }, 50);
+}
+
+function echoSaveQuickNote(memoryId) {
+  var ta = document.getElementById('echo-quick-note-text');
+  var pinChk = document.getElementById('echo-quick-note-pin');
+  if (!ta) return;
+  var text = (ta.value || '').trim();
+  if (!text) { ta.focus(); return; }
+  var persona = window.getActivePersona ? window.getActivePersona() : null;
+  if (!persona) return;
+  window.__userNotes = window.__userNotes || {};
+  var nKey = 'notes:' + persona.id;
+  if (!window.__userNotes[nKey]) window.__userNotes[nKey] = [];
+  window.__userNotes[nKey].push({
+    text: text,
+    timestamp: new Date().toISOString(),
+    linkedMemoryId: memoryId
+  });
+  try { localStorage.setItem('cardinal-notes-' + persona.id, JSON.stringify(window.__userNotes[nKey])); } catch(_e) {}
+  if (pinChk && pinChk.checked) {
+    window.__userPins = window.__userPins || {};
+    var pKey = 'pins:' + persona.id;
+    if (!window.__userPins[pKey]) window.__userPins[pKey] = [];
+    if (window.__userPins[pKey].indexOf(memoryId) === -1) {
+      window.__userPins[pKey].push(memoryId);
+      try { localStorage.setItem('cardinal-pins-' + persona.id, JSON.stringify(window.__userPins[pKey])); } catch(_e2) {}
+    }
+  }
+  var toast = document.createElement('div');
+  toast.style.cssText = 'position:fixed;bottom:30px;left:50%;transform:translateX(-50%);z-index:10000;background:rgba(168,85,247,0.95);color:white;padding:10px 18px;border-radius:8px;font-size:12px;font-weight:600;box-shadow:0 8px 24px rgba(0,0,0,0.4);';
+  toast.textContent = '✓ Saved to ' + persona.name + '\'s Workspace' + (pinChk && pinChk.checked ? ' + pinned' : '');
+  document.body.appendChild(toast);
+  setTimeout(function(){ toast.style.transition = 'opacity 0.4s'; toast.style.opacity = '0'; setTimeout(function(){ toast.remove(); }, 400); }, 1800);
+  var qm = document.getElementById('echo-quick-note-modal');
+  if (qm) qm.remove();
+  var mwTab = document.getElementById('echo-tab-content-myworkspace');
+  if (mwTab && mwTab.style.display !== 'none' && typeof echoRenderMyWorkspaceTab === 'function') {
+    echoRenderMyWorkspaceTab();
+  }
+  if (typeof echoApplyFilters === 'function') {
+    try { echoApplyFilters(); } catch(_e3) {}
+  }
+  if (window.__echoDetailMemoryId === memoryId) {
+    var orgsD = ['ad', 'fin', 'health'];
+    for (var di = 0; di < orgsD.length; di++) {
+      var arrD = (window.CARDINAL_DATA && window.CARDINAL_DATA[orgsD[di]] && window.CARDINAL_DATA[orgsD[di]].echoMemories) || [];
+      for (var dj = 0; dj < arrD.length; dj++) {
+        if (arrD[dj].id === memoryId) {
+          echoRenderMemoryDetailFullscreen(arrD[dj], orgsD[di]);
+          break;
+        }
+      }
+    }
+  }
 }
 
 function echoTogglePersonalPin(memoryId) {
@@ -24723,7 +24882,10 @@ function echoRenderMemoryDetailFullscreen(memory, memoryOrg) {
         (pinLive ? '<span style="padding:4px 10px;background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.3);border-radius:12px;font-size:10px;font-weight:700;color:#f59e0b;">📌 PINNED</span>' : '') +
         '<span style="padding:4px 10px;background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.25);border-radius:12px;font-size:10px;font-weight:600;color:var(--green);">◆ LOCKED</span>' +
       '</div>' +
-      '<button type="button" onclick="echoToggleMemoryPin(\'' + memIdEsc + '\')" style="background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3);color:#f59e0b;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:11px;font-weight:600;">' + (pinLive ? '📌 Pinned ✓' : '📌 Add to Pinned') + '</button>' +
+      '<div style="display:flex;gap:8px;">' +
+        '<button type="button" onclick="echoTogglePersonalPinDetail(\'' + memIdEsc + '\')" title="Pin to My Workspace (personal)" style="background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3);color:#f59e0b;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:11px;font-weight:600;">' + (function(){ var p = window.getActivePersona && window.getActivePersona(); var k = p ? 'pins:' + p.id : null; var pinned = k && window.__userPins && window.__userPins[k] && window.__userPins[k].indexOf(memory.id) !== -1; return pinned ? '📌 Pinned to My Workspace ✓' : '📌 Pin to My Workspace'; })() + '</button>' +
+        '<button type="button" onclick="echoOpenQuickNote(\'' + memIdEsc + '\')" title="Add a personal note" style="background:rgba(168,85,247,0.1);border:1px solid rgba(168,85,247,0.3);color:#a855f7;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:11px;font-weight:600;">📝 Add Note</button>' +
+      '</div>' +
     '</div>' +
     '<h2 style="font-size:22px;font-weight:700;color:var(--chrome2);margin:0 0 12px 0;line-height:1.3;">' + echoEscapeHtml(memory.summary || 'Untitled event') + '</h2>' +
   '</div>';
