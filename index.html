@@ -4892,6 +4892,7 @@ Settings
 </div><!-- /screen-dashboard -->
 
 <div id="screen-eden" class="screen">
+<div id="eden-core-pins" style="margin-bottom:14px;"></div>
 <div id="eden-core-root" style="min-height:200px"></div>
 <div style="display:none" aria-hidden="true">
 <canvas id="eden-di-chart" height="1" width="1"></canvas>
@@ -5517,6 +5518,7 @@ Settings
 </div>
 <!-- ══ HALO CORE ══ -->
 <div id="screen-halo" class="screen">
+<div id="halo-core-pins" style="margin-bottom:14px;"></div>
 <div class="halo-shell">
 <div class="halo-head">
 <div>
@@ -5703,6 +5705,7 @@ Halo Core
 </div>
 
 <div id="screen-compliance" class="screen"><span id="reg-calendar" style="display:none"></span><span id="comp-ledger-cert" style="display:none"></span><div id="reg-heatmap" style="display:none"></div>
+<div id="compliance-core-pins" style="margin-bottom:14px;"></div>
 <div class="screen-header">
 <div>
 <div class="screen-title">Compliance Exchange</div>
@@ -7181,6 +7184,7 @@ Template Overview
 </div>
 <!-- ══ CARDINAL SENTINEL ══ -->
 <div id="screen-sentinel" class="screen">
+<div id="sentinel-core-pins" style="margin-bottom:14px;"></div>
 <div class="section-hdr" style="margin-bottom:14px">
 <div>
 <div style="font-size:15px;font-weight:600;color:var(--chrome2)">◈ Cardinal Sentinel — Proactive Support Triage</div>
@@ -8950,6 +8954,14 @@ window.setActivePersona = function(personaId) {
 
   console.log('[Persona] switched to', p.name, '(' + p.role + ')');
 };
+
+(function wrapSetActivePersonaForQuickFab(){
+  var __origSetPersona = window.setActivePersona;
+  window.setActivePersona = function(personaId) {
+    __origSetPersona(personaId);
+    if (typeof updateQuickAddFAB === 'function') updateQuickAddFAB();
+  };
+})();
 
 // Restore persona on load
 try {
@@ -11992,6 +12004,7 @@ window.renderEden = function (org) {
   window.__edo.screen = 'eden';
   var root = document.getElementById('eden-core-root');
   if (!root) return;
+  try { if (typeof cardinalRenderCorePinsPanel === 'function') cardinalRenderCorePinsPanel('eden', 'eden-core-pins'); } catch(_e) {}
   var d = CD[org];
   var bfN = d.biasFraudStats ? d.biasFraudStats.overlapCount : 0;
   var bias = d.biasScore;
@@ -17245,7 +17258,7 @@ function showScreen(name, navEl) {
  compliance:'Compliance Exchange — Case Management & Regulatory Tracking'
  };
  document.getElementById('topbar-title').textContent = titles[name]||name;
- if(name==='halo') { try { stopHaloLive(); } catch(_h){} setTimeout(initHaloMap, 100); setTimeout(function(){ try { updateHaloIndustry(currentOrg||'ad'); updateHaloInaction((typeof currentOrg!=='undefined'&&currentOrg)?currentOrg:'ad'); } catch(_hh){} }, 110); }
+ if(name==='halo') { try { stopHaloLive(); } catch(_h){} setTimeout(initHaloMap, 100); setTimeout(function(){ try { updateHaloIndustry(currentOrg||'ad'); updateHaloInaction((typeof currentOrg!=='undefined'&&currentOrg)?currentOrg:'ad'); } catch(_hh){} }, 110); setTimeout(function(){ try { if (typeof cardinalRenderCorePinsPanel === 'function') cardinalRenderCorePinsPanel('halo', 'halo-core-pins'); } catch(_hp){} }, 260); }
  if(name==='trustloop') setTimeout(initTLChat,100);
  const _extraTitles={pipeline:'Data Pipeline — How Cardinal Works',trustloop:'Trust Loop — Team Workspace',modellibrary:'Model Library — Validated Data & Prevention Models',lucid:'✦ Lucid Layer — Adam & Eve Intelligence',echo:'◈ Echo Core — Audit Memory & Integrity',sentinel:'◈ Cardinal Sentinel — Case Engine',usecases:'Browse All AI Use Cases — Cardinal Master Library'};
  if(name==='echo') buildEcho(currentOrg);
@@ -17319,6 +17332,7 @@ function showScreen(name, navEl) {
  if(name==='settings') { try { syncSettingsScreenToggles(); } catch(_set) {} }
  if(name==='echo') setTimeout(function(){ try { if (typeof buildForensicsAndGuardrails === 'function') buildForensicsAndGuardrails(currentOrg); } catch(_fag) {} }, 100);
  if(_extraTitles[name]) document.getElementById('topbar-title').textContent=_extraTitles[name];
+ try { if (typeof updateQuickAddFAB === 'function') updateQuickAddFAB(); } catch(_fab) {}
 }
 
 function destroyCharts() {
@@ -21612,6 +21626,7 @@ const HALO_DATA = {
 };
 
 function buildHalo(org) {
+ try { if (typeof cardinalRenderCorePinsPanel === 'function') cardinalRenderCorePinsPanel('halo', 'halo-core-pins'); } catch(_e) {}
  const h = HALO_DATA[org];
  if(!h) return;
  const setEl = (id, val) => { const el=document.getElementById(id); if(el) el.textContent=val; };
@@ -23585,6 +23600,68 @@ function echoClearFilter() {
   if (banner) banner.remove();
 }
 
+window.cardinalRenderCorePinsPanel = function(coreName, containerId) {
+  var container = document.getElementById(containerId);
+  if (!container) return;
+  var persona = window.getActivePersona ? window.getActivePersona() : null;
+  if (!persona) { container.innerHTML = ''; return; }
+  window.__userPins = window.__userPins || {};
+  var key = 'pins:' + persona.id;
+  var allPins = window.__userPins[key] || [];
+  if (allPins.length === 0) { container.innerHTML = ''; return; }
+  var relevantPins = [];
+  var orgs = ['ad', 'fin', 'health'];
+  for (var i = 0; i < orgs.length; i++) {
+    var arr = (window.CARDINAL_DATA && window.CARDINAL_DATA[orgs[i]] && window.CARDINAL_DATA[orgs[i]].echoMemories) || [];
+    for (var j = 0; j < arr.length; j++) {
+      var m = arr[j];
+      if (allPins.indexOf(m.id) === -1) continue;
+      if (m.core === coreName || coreName === 'echo') relevantPins.push(m);
+    }
+  }
+  if (relevantPins.length === 0) { container.innerHTML = ''; return; }
+  var esc = typeof echoEscapeHtml === 'function' ? echoEscapeHtml : function(s){ return String(s == null ? '' : s); };
+  var escJs = typeof echoEscapeJsAttr === 'function' ? echoEscapeJsAttr : function(s){ return String(s == null ? '' : s).replace(/\\/g,'\\\\').replace(/'/g,"\\'"); };
+  var html = '<div style="background:rgba(245,158,11,0.04);border:1px solid rgba(245,158,11,0.2);border-radius:10px;padding:12px 14px;margin-bottom:14px;">' +
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">' +
+    '<div style="font-size:10px;color:#f59e0b;text-transform:uppercase;letter-spacing:0.8px;font-weight:700;">📌 Your Pins for this Core (' + relevantPins.length + ')</div>' +
+    '<button type="button" onclick="showScreen(\'echo\', null); setTimeout(function(){ if (typeof echoSwitchTab === \'function\') echoSwitchTab(\'myworkspace\'); }, 200);" style="background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3);color:#f59e0b;padding:4px 10px;border-radius:5px;cursor:pointer;font-size:10px;font-weight:600;">View My Workspace →</button>' +
+    '</div>' +
+    '<div style="display:flex;flex-direction:column;gap:5px;">' +
+    relevantPins.slice(0, 5).map(function(m){
+      return '<div onclick="echoOpenMemoryDetail(\'' + escJs(m.id) + '\')" style="cursor:pointer;display:grid;grid-template-columns:1fr auto;gap:10px;padding:6px 10px;background:rgba(15,23,42,0.5);border:1px solid rgba(245,158,11,0.15);border-radius:6px;font-size:11px;align-items:center;">' +
+        '<span style="color:var(--chrome2);">' + esc((m.summary || '').substring(0, 90) + ((m.summary || '').length > 90 ? '...' : '')) + '</span>' +
+        (m.caseId ? '<span style="color:var(--accent);font-family:monospace;font-size:10px;">#' + esc(String(m.caseId)) + '</span>' : '<span></span>') +
+      '</div>';
+    }).join('') +
+    '</div>' +
+  '</div>';
+  container.innerHTML = html;
+};
+
+function updateQuickAddFAB() {
+  var fab = document.getElementById('cardinal-quick-add-fab');
+  if (!fab) return;
+  var persona = window.getActivePersona ? window.getActivePersona() : null;
+  fab.style.alignItems = 'center';
+  fab.style.justifyContent = 'center';
+  var echoScr = document.getElementById('screen-echo');
+  var onEcho = echoScr && echoScr.classList.contains('active');
+  var mwTab = document.getElementById('echo-tab-content-myworkspace');
+  var myWsVisible = onEcho && mwTab && mwTab.style.display !== 'none';
+  fab.style.display = (persona && !myWsVisible) ? 'flex' : 'none';
+}
+
+window.cardinalQuickAddFromCurrentView = function() {
+  var persona = window.getActivePersona ? window.getActivePersona() : null;
+  if (!persona) return;
+  var activeScreen = document.querySelector('.screen.active');
+  var screenName = activeScreen ? activeScreen.id.replace('screen-', '') : 'unknown';
+  var topbarTitle = document.getElementById('topbar-title');
+  var viewLabel = topbarTitle ? topbarTitle.textContent : screenName;
+  if (typeof cardinalOpenContextNote === 'function') cardinalOpenContextNote('view', screenName + ': ' + viewLabel);
+};
+
 function echoRenderMyWorkspaceTab() {
   var container = document.getElementById('echo-tab-content-myworkspace');
   if (!container) return;
@@ -23869,6 +23946,221 @@ function echoSaveQuickNote(memoryId) {
     }
   }
 }
+
+// ════════════════════════════════════════════════════════════════
+// UNIVERSAL CONTEXT MENU — right-click any case ID / model / memory ID
+// ════════════════════════════════════════════════════════════════
+window.__cardinalContextMenu = null;
+
+function cardinalShowContextMenu(event, contextType, contextValue, contextLabel) {
+  event.preventDefault();
+  event.stopPropagation();
+
+  cardinalHideContextMenu();
+
+  var persona = (typeof window.getActivePersona === 'function') ? window.getActivePersona() : null;
+  if (!persona) return;
+
+  var menu = document.createElement('div');
+  menu.id = 'cardinal-context-menu';
+  menu.style.cssText = 'position:fixed;z-index:10001;background:linear-gradient(180deg, rgba(15,23,42,0.98) 0%, rgba(11,18,32,0.98) 100%);border:1px solid rgba(166,218,255,0.2);border-radius:10px;padding:6px;min-width:240px;box-shadow:0 12px 40px rgba(0,0,0,0.6);backdrop-filter:blur(12px);';
+
+  var x = event.clientX;
+  var y = event.clientY;
+  var menuWidth = 260;
+  var menuHeight = 240;
+  if (x + menuWidth > window.innerWidth) x = window.innerWidth - menuWidth - 10;
+  if (y + menuHeight > window.innerHeight) y = window.innerHeight - menuHeight - 10;
+  menu.style.left = x + 'px';
+  menu.style.top = y + 'px';
+
+  var typeIcon = { 'case': '📂', 'model': '🧬', 'memory': '◈', 'person': '👤', 'view': '✦' }[contextType] || '◈';
+  var typeLabel = { 'case': 'CASE', 'model': 'MODEL', 'memory': 'MEMORY', 'person': 'PERSON', 'view': 'CURRENT VIEW' }[contextType] || 'ITEM';
+
+  var esc = typeof echoEscapeHtml === 'function' ? echoEscapeHtml : function(s){ return String(s == null ? '' : s); };
+  var showLab = contextLabel != null ? contextLabel : contextValue;
+
+  var html = '<div style="padding:8px 12px;border-bottom:1px solid rgba(166,218,255,0.08);margin-bottom:4px;">' +
+    '<div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;font-weight:700;margin-bottom:3px;">' + typeIcon + ' ' + typeLabel + '</div>' +
+    '<div style="font-size:11px;color:var(--chrome2);font-weight:600;font-family:monospace;word-break:break-all;">' + esc(showLab) + '</div>' +
+  '</div>';
+
+  var items = [
+    { icon: '📌', label: 'Pin to My Workspace', action: 'pin' },
+    { icon: '📝', label: 'Add Note', action: 'note' }
+  ];
+
+  if (contextType === 'case') {
+    items.push({ icon: '◈', label: 'View in Echo', action: 'echo' });
+    items.push({ icon: '⚖️', label: 'View in Sentinel', action: 'sentinel' });
+    items.push({ icon: '✦', label: 'Open Compliance', action: 'compliance' });
+  } else if (contextType === 'model') {
+    items.push({ icon: '◈', label: 'View Lineage', action: 'lineage' });
+    items.push({ icon: '🔬', label: 'View in Eden', action: 'eden' });
+  } else if (contextType === 'memory') {
+    items.push({ icon: '◈', label: 'Open Memory Detail', action: 'open-memory' });
+  } else if (contextType === 'person') {
+    items.push({ icon: '👥', label: 'View Person Activity', action: 'person-log' });
+  }
+
+  var typeJs = typeof echoEscapeJsAttr === 'function' ? echoEscapeJsAttr(contextType) : String(contextType || '').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+  var valJs = typeof echoEscapeJsAttr === 'function' ? echoEscapeJsAttr(contextValue) : String(contextValue || '').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+
+  items.forEach(function(item){
+    var actJs = typeof echoEscapeJsAttr === 'function' ? echoEscapeJsAttr(item.action) : String(item.action || '').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+    html += '<div onclick="cardinalContextAction(\'' + actJs + '\', \'' + typeJs + '\', \'' + valJs + '\')" style="cursor:pointer;display:grid;grid-template-columns:auto 1fr;gap:10px;padding:8px 12px;border-radius:6px;align-items:center;transition:background 0.15s;" onmouseover="this.style.background=\'rgba(166,218,255,0.08)\';" onmouseout="this.style.background=\'\';">' +
+      '<span style="font-size:14px;">' + item.icon + '</span>' +
+      '<span style="font-size:11px;color:var(--chrome2);font-weight:500;">' + esc(item.label) + '</span>' +
+    '</div>';
+  });
+
+  html += '<div style="padding:6px 12px;border-top:1px solid rgba(166,218,255,0.08);margin-top:4px;font-size:9px;color:var(--muted);">Saved to ' + esc(persona.name) + '\'s Workspace</div>';
+
+  menu.innerHTML = html;
+  document.body.appendChild(menu);
+  window.__cardinalContextMenu = menu;
+
+  setTimeout(function(){
+    document.addEventListener('click', cardinalHideContextMenu, { once: true });
+    document.addEventListener('keydown', function escHandler(e) {
+      if (e.key === 'Escape') { cardinalHideContextMenu(); document.removeEventListener('keydown', escHandler); }
+    });
+  }, 50);
+}
+
+function cardinalHideContextMenu() {
+  if (window.__cardinalContextMenu) {
+    window.__cardinalContextMenu.remove();
+    window.__cardinalContextMenu = null;
+  }
+}
+
+function cardinalContextAction(action, contextType, contextValue) {
+  cardinalHideContextMenu();
+  var persona = window.getActivePersona ? window.getActivePersona() : null;
+  if (!persona) return;
+
+  if (action === 'pin') {
+    var pinId = 'ctx:' + contextType + ':' + contextValue;
+    var memId = cardinalFindMemoryByContext(contextType, contextValue);
+    if (memId) pinId = memId;
+    if (typeof echoTogglePersonalPin === 'function') {
+      echoTogglePersonalPin(pinId);
+    }
+    cardinalShowToast('📌 Pinned to ' + persona.name + '\'s Workspace');
+  } else if (action === 'note') {
+    var memId2 = cardinalFindMemoryByContext(contextType, contextValue);
+    if (memId2 && typeof echoOpenQuickNote === 'function') {
+      echoOpenQuickNote(memId2);
+    } else {
+      cardinalOpenContextNote(contextType, contextValue);
+    }
+  } else if (action === 'echo') {
+    showScreen('echo', null);
+    setTimeout(function(){
+      var search = document.getElementById('echo-search-input');
+      if (search) { search.value = contextValue; if (typeof echoApplyFilters === 'function') echoApplyFilters(); }
+    }, 200);
+  } else if (action === 'sentinel') {
+    showScreen('sentinel', null);
+  } else if (action === 'compliance') {
+    showScreen('compliance', null);
+  } else if (action === 'lineage') {
+    showScreen('echo', null);
+    setTimeout(function(){ if (typeof echoSwitchTab === 'function') echoSwitchTab('lineage'); }, 200);
+  } else if (action === 'eden') {
+    showScreen('eden', null);
+  } else if (action === 'open-memory') {
+    if (typeof echoOpenMemoryDetail === 'function') echoOpenMemoryDetail(contextValue);
+  } else if (action === 'person-log') {
+    showScreen('echo', null);
+    setTimeout(function(){
+      if (typeof echoSwitchTab === 'function') echoSwitchTab('peoplelog');
+      setTimeout(function(){
+        var pf = document.getElementById('echo-plog-person-filter');
+        if (pf) { pf.value = contextValue; if (typeof echoFilterPeopleLog === 'function') echoFilterPeopleLog(); }
+      }, 200);
+    }, 200);
+  }
+}
+
+function cardinalFindMemoryByContext(contextType, contextValue) {
+  var orgs = ['ad', 'fin', 'health'];
+  for (var i = 0; i < orgs.length; i++) {
+    var arr = (window.CARDINAL_DATA && window.CARDINAL_DATA[orgs[i]] && window.CARDINAL_DATA[orgs[i]].echoMemories) || [];
+    for (var j = 0; j < arr.length; j++) {
+      var m = arr[j];
+      if (contextType === 'case' && String(m.caseId || '') === String(contextValue)) return m.id;
+      if (contextType === 'model' && String(m.modelId || '') === String(contextValue)) return m.id;
+      if (contextType === 'memory' && m.id === contextValue) return m.id;
+      if (contextType === 'person' && (m.author || '') === contextValue) return m.id;
+    }
+  }
+  return null;
+}
+
+function cardinalOpenContextNote(contextType, contextValue) {
+  var persona = window.getActivePersona ? window.getActivePersona() : null;
+  if (!persona) return;
+  var existing = document.getElementById('echo-quick-note-modal');
+  if (existing) existing.remove();
+  var esc = typeof echoEscapeHtml === 'function' ? echoEscapeHtml : function(s){ return String(s == null ? '' : s); };
+  var ctJs = typeof echoEscapeJsAttr === 'function' ? echoEscapeJsAttr(contextType) : String(contextType || '').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+  var cvJs = typeof echoEscapeJsAttr === 'function' ? echoEscapeJsAttr(contextValue) : String(contextValue || '').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+  var modal = document.createElement('div');
+  modal.id = 'echo-quick-note-modal';
+  modal.style.cssText = 'display:flex;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.78);backdrop-filter:blur(8px);align-items:center;justify-content:center;padding:40px;';
+  modal.onclick = function(e) { if (e.target === modal) modal.remove(); };
+  modal.innerHTML = '<div onclick="event.stopPropagation();" style="max-width:480px;width:100%;background:linear-gradient(180deg, rgba(15,23,42,0.98) 0%, rgba(11,18,32,0.98) 100%);border:1px solid rgba(168,85,247,0.3);border-radius:14px;padding:24px;">' +
+    '<div style="font-size:10px;color:#a855f7;text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:4px;">📝 ADD NOTE</div>' +
+    '<h3 style="font-size:14px;font-weight:700;color:var(--chrome2);margin:0 0 8px 0;">About: ' + esc(contextType) + ' — ' + esc(contextValue) + '</h3>' +
+    '<div style="font-size:10px;color:var(--muted);margin-bottom:14px;">Saved to ' + esc(persona.name) + '\'s Workspace.</div>' +
+    '<textarea id="cardinal-ctx-note-text" placeholder="Type your note..." style="width:100%;min-height:100px;background:rgba(15,23,42,0.7);border:1px solid rgba(168,85,247,0.25);border-radius:8px;padding:12px;color:var(--chrome2);font-size:12px;font-family:inherit;resize:vertical;box-sizing:border-box;line-height:1.6;"></textarea>' +
+    '<div style="display:flex;justify-content:flex-end;gap:8px;margin-top:14px;">' +
+      '<button type="button" onclick="document.getElementById(\'echo-quick-note-modal\').remove()" style="background:rgba(166,218,255,0.05);border:1px solid rgba(166,218,255,0.15);color:var(--muted);padding:8px 14px;border-radius:6px;cursor:pointer;font-size:11px;font-weight:600;">Cancel</button>' +
+      '<button type="button" onclick="cardinalSaveContextNote(\'' + ctJs + '\', \'' + cvJs + '\')" style="background:rgba(168,85,247,0.15);border:1px solid rgba(168,85,247,0.4);color:#a855f7;padding:8px 14px;border-radius:6px;cursor:pointer;font-size:11px;font-weight:700;">Save Note</button>' +
+    '</div>' +
+  '</div>';
+  document.body.appendChild(modal);
+  setTimeout(function(){ var ta = document.getElementById('cardinal-ctx-note-text'); if (ta) ta.focus(); }, 50);
+}
+
+function cardinalSaveContextNote(contextType, contextValue) {
+  var ta = document.getElementById('cardinal-ctx-note-text');
+  if (!ta) return;
+  var text = (ta.value || '').trim();
+  if (!text) return;
+  var persona = window.getActivePersona ? window.getActivePersona() : null;
+  if (!persona) return;
+  window.__userNotes = window.__userNotes || {};
+  var key = 'notes:' + persona.id;
+  if (!window.__userNotes[key]) window.__userNotes[key] = [];
+  window.__userNotes[key].push({
+    text: text,
+    timestamp: new Date().toISOString(),
+    contextType: contextType,
+    contextValue: contextValue
+  });
+  try { localStorage.setItem('cardinal-notes-' + persona.id, JSON.stringify(window.__userNotes[key])); } catch(_e) {}
+  var qm = document.getElementById('echo-quick-note-modal');
+  if (qm) qm.remove();
+  cardinalShowToast('📝 Note saved to ' + persona.name + '\'s Workspace');
+  if (typeof echoRenderMyWorkspaceTab === 'function') {
+    var mwTab = document.getElementById('echo-tab-content-myworkspace');
+    if (mwTab && mwTab.style.display !== 'none') echoRenderMyWorkspaceTab();
+  }
+}
+
+function cardinalShowToast(message) {
+  var toast = document.createElement('div');
+  toast.style.cssText = 'position:fixed;bottom:30px;left:50%;transform:translateX(-50%);z-index:10000;background:rgba(168,85,247,0.95);color:white;padding:10px 18px;border-radius:8px;font-size:12px;font-weight:600;box-shadow:0 8px 24px rgba(0,0,0,0.4);';
+  toast.textContent = message;
+  document.body.appendChild(toast);
+  setTimeout(function(){ toast.style.transition = 'opacity 0.4s'; toast.style.opacity = '0'; setTimeout(function(){ toast.remove(); }, 400); }, 1800);
+}
+
+window.cardinalShowContextMenu = cardinalShowContextMenu;
+window.cardinalContextAction = cardinalContextAction;
 
 function echoTogglePersonalPin(memoryId) {
   var persona = window.getActivePersona ? window.getActivePersona() : null;
@@ -25361,6 +25653,9 @@ function echoSwitchTab(tab) {
   if (tab === 'peoplelog') {
     try { echoRenderPeopleLogTab(); } catch(e) { console.error('[PeopleLog] render failed:', e); }
   }
+  if (typeof updateQuickAddFAB === 'function') {
+    try { updateQuickAddFAB(); } catch(_fab) {}
+  }
 }
 
 function echoTabFilterChip(label, tab, key, currentValue, options) {
@@ -25896,6 +26191,7 @@ const MARKETING_SCAN = {
 };
 
 function buildCompliance(org) {
+ try { if (typeof cardinalRenderCorePinsPanel === 'function') cardinalRenderCorePinsPanel('compliance', 'compliance-core-pins'); } catch(_e) {}
  const c = COMPLIANCE_DATA[org];
  if(!c) return;
  const d = DATA[org];
@@ -30118,6 +30414,7 @@ function switchSentinelTab(name, idx) {
 window.switchSentinelTab = switchSentinelTab;
 
 function buildSentinel(org) {
+  try { if (typeof cardinalRenderCorePinsPanel === 'function') cardinalRenderCorePinsPanel('sentinel', 'sentinel-core-pins'); } catch(_e) {}
   var o = org || currentOrg || window.currentOrg || 'ad';
   var d = typeof cd === 'function' ? cd(o) : null;
   if (!d) return;
@@ -30128,16 +30425,20 @@ function buildSentinel(org) {
       .replace(/"/g, '&quot;');
   };
   var scr = document.getElementById('screen-sentinel');
+  var pinsSent = document.getElementById('sentinel-core-pins');
   var root = document.getElementById('sentinel-engine-root');
   if (!root && scr) {
     root = document.createElement('div');
     root.id = 'sentinel-engine-root';
-    scr.insertBefore(root, scr.firstChild);
+    if (pinsSent && pinsSent.nextSibling) scr.insertBefore(root, pinsSent.nextSibling);
+    else if (pinsSent) scr.appendChild(root);
+    else scr.insertBefore(root, scr.firstChild);
   }
   if (scr) {
     for (var hci = 0; hci < scr.children.length; hci++) {
       var ch = scr.children[hci];
-      if (ch.id !== 'sentinel-engine-root') ch.style.display = 'none';
+      if (ch.id !== 'sentinel-engine-root' && ch.id !== 'sentinel-core-pins') ch.style.display = 'none';
+      else ch.style.display = '';
     }
   }
   if (!root) return;
@@ -31412,6 +31713,60 @@ window.openModelDetail = openModelDetail;
     <div id="echo-memory-modal-body" style="min-height:40px"></div>
   </div>
 </div>
+<button type="button" id="cardinal-quick-add-fab" onclick="cardinalQuickAddFromCurrentView()" title="Quick add to My Workspace from any screen" style="display:none;position:fixed;bottom:24px;right:24px;z-index:9998;width:54px;height:54px;border-radius:50%;background:linear-gradient(135deg, #a855f7 0%, #6366f1 100%);border:none;color:white;font-size:22px;font-weight:700;cursor:pointer;box-shadow:0 8px 28px rgba(168,85,247,0.4), 0 0 0 1px rgba(168,85,247,0.5);transition:all 0.2s;" onmouseover="this.style.transform='scale(1.08)';this.style.boxShadow='0 12px 36px rgba(168,85,247,0.6), 0 0 0 2px rgba(168,85,247,0.7)';" onmouseout="this.style.transform='scale(1)';this.style.boxShadow='0 8px 28px rgba(168,85,247,0.4), 0 0 0 1px rgba(168,85,247,0.5)';">✦</button>
+<script>
+(function attachCardinalContextMenuDelegate() {
+  function bindCardinalContextMenu() {
+    var caseIdRegex = /^(AD|FIN|HS|HEALTH)-\d{4,}$/;
+    var memoryIdRegex = /^echo-/;
+    document.addEventListener('contextmenu', function(e) {
+      var target = e.target;
+      if (!target) return;
+      var el = target;
+      var depth = 0;
+      while (el && depth < 4) {
+        var text = (el.textContent || '').trim();
+        var caseMatch = text.match(/^#?(AD|FIN|HS|HEALTH)-\d{4,}$/);
+        if (caseMatch) {
+          var caseVal = caseMatch[0].replace('#', '');
+          if (caseIdRegex.test(caseVal) && typeof cardinalShowContextMenu === 'function') {
+            cardinalShowContextMenu(e, 'case', caseVal, '#' + caseVal);
+            return;
+          }
+        }
+        if (/v\d+(\.\d+)?$/.test(text) && text.length < 60 && el.tagName !== 'P') {
+          if (typeof cardinalShowContextMenu === 'function') cardinalShowContextMenu(e, 'model', text, text);
+          return;
+        }
+        if (memoryIdRegex.test(text)) {
+          if (typeof cardinalShowContextMenu === 'function') cardinalShowContextMenu(e, 'memory', text, text);
+          return;
+        }
+        if (el.getAttribute && el.getAttribute('data-person')) {
+          var dp = el.getAttribute('data-person');
+          if (typeof cardinalShowContextMenu === 'function') cardinalShowContextMenu(e, 'person', dp, dp);
+          return;
+        }
+        el = el.parentElement;
+        depth++;
+      }
+    });
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', bindCardinalContextMenu);
+  } else {
+    bindCardinalContextMenu();
+  }
+  function scheduleFabUpdate() {
+    setTimeout(function(){ try { if (typeof updateQuickAddFAB === 'function') updateQuickAddFAB(); } catch(_e) {} }, 200);
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', scheduleFabUpdate);
+  } else {
+    scheduleFabUpdate();
+  }
+})();
+</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 </body>
 </html>
