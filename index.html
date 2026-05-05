@@ -5539,6 +5539,9 @@ Halo Core
 </div>
 </div>
 
+<div id="halo-cardinal-hero" style="margin-bottom:16px;"></div>
+<div id="halo-attribution-cards" style="margin-bottom:16px;"></div>
+
 <div class="halo-map-shell" style="position:relative" onclick="haloBackdropClick(event)">
 <div id="halo-map-container" style="width:100%;height:380px;background:#080c14;border-radius:12px;border:1px solid rgba(166,218,255,0.1);position:relative;overflow:hidden;">
   <svg id="halo-world-svg" width="100%" height="380"></svg>
@@ -8948,6 +8951,16 @@ window.setActivePersona = function(personaId) {
       if (typeof echoApplyFilters === 'function') echoApplyFilters();
     }
   } catch(_re) {}
+
+  try {
+    var haloScreen = document.getElementById('screen-halo');
+    if (haloScreen && haloScreen.classList.contains('active')) {
+      var ho = window.currentOrg || 'ad';
+      if (typeof renderHaloCardinalHero === 'function') renderHaloCardinalHero(ho);
+      if (typeof renderHaloAttributionCards === 'function') renderHaloAttributionCards(ho);
+      if (typeof cardinalRenderCorePinsPanel === 'function') cardinalRenderCorePinsPanel('halo', 'halo-core-pins');
+    }
+  } catch(_rh) {}
 
   // Persist
   try { localStorage.setItem('cardinal-active-persona', personaId); } catch(_ls) {}
@@ -17915,6 +17928,8 @@ function updateHaloInaction(org) {
 }
 
 function updateHaloIndustry(org){
+ try { renderHaloCardinalHero(org); } catch(_e1) {}
+ try { renderHaloAttributionCards(org); } catch(_e2) {}
  org=org||'ad'; var cfg=HALO_CFG[org]; if(!cfg) return;
  var elSub=document.getElementById('halo-screen-subtitle'); if(elSub) elSub.textContent=cfg.subtitle;
  var pill=document.getElementById('halo-peer-pill'); if(pill) pill.textContent=cfg.peerPct;
@@ -21626,7 +21641,10 @@ const HALO_DATA = {
 };
 
 function buildHalo(org) {
- try { if (typeof cardinalRenderCorePinsPanel === 'function') cardinalRenderCorePinsPanel('halo', 'halo-core-pins'); } catch(_e) {}
+  // Render Cardinal Hero + per-case attribution cards FIRST
+  try { if (typeof renderHaloCardinalHero === 'function') renderHaloCardinalHero(org); } catch(_he) { console.warn('[Halo] hero failed:', _he); }
+  try { if (typeof renderHaloAttributionCards === 'function') renderHaloAttributionCards(org); } catch(_ae) { console.warn('[Halo] attribution failed:', _ae); }
+  try { if (typeof cardinalRenderCorePinsPanel === 'function') cardinalRenderCorePinsPanel('halo', 'halo-core-pins'); } catch(_pe) {}
  const h = HALO_DATA[org];
  if(!h) return;
  const setEl = (id, val) => { const el=document.getElementById(id); if(el) el.textContent=val; };
@@ -21778,6 +21796,160 @@ function switchHaloTab(name, idx) {
  const el=document.getElementById('halo-tab-'+name); if(el) el.style.display='block';
  if(name==='forecast') setTimeout(initHaloChart, 100);
 }
+
+window.renderHaloCardinalHero = function(org) {
+  var o = org || (typeof currentOrg !== 'undefined' && currentOrg) || 'ad';
+  var heroEl = document.getElementById('halo-cardinal-hero');
+  if (!heroEl) return;
+
+  var escHtml = function(t) {
+    return typeof echoEscapeHtml === 'function' ? echoEscapeHtml(t) : String(t == null ? '' : t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  };
+
+  var orgData = window.CARDINAL_DATA && window.CARDINAL_DATA[o];
+  var attribution = (orgData && orgData.haloAttribution) || [];
+  var openCases = attribution.filter(function(a){ return a.daysToImpact !== null && a.dollarImpact > 0; });
+  var closedCases = attribution.filter(function(a){ return a.daysToImpact === null || a.dollarImpact === 0; });
+
+  var totalExposure = openCases.reduce(function(sum, a){ return sum + (a.dollarImpact || 0); }, 0);
+  var minDays = openCases.length > 0 ? Math.min.apply(null, openCases.map(function(a){ return a.daysToImpact; })) : null;
+  var minDaysCase = openCases.filter(function(a){ return a.daysToImpact === minDays; })[0];
+
+  var sevCounts = { Critical: 0, High: 0, Medium: 0, Low: 0 };
+  openCases.forEach(function(a){ if (sevCounts[a.severity] !== undefined) sevCounts[a.severity]++; });
+
+  var persona = window.getActivePersona ? window.getActivePersona() : null;
+  var canSeeDollars = !persona || persona.scope === 'all' || persona.scope === 'org' || (persona.role && (persona.role.indexOf('CEO') !== -1 || persona.role.indexOf('Founder') !== -1 || persona.role.indexOf('Compliance') !== -1));
+
+  function formatM(amount) {
+    if (amount >= 1e9) return '$' + (amount / 1e9).toFixed(1) + 'B';
+    if (amount >= 1e6) return '$' + (amount / 1e6).toFixed(1) + 'M';
+    if (amount >= 1e3) return '$' + (amount / 1e3).toFixed(0) + 'K';
+    return '$' + amount;
+  }
+
+  var totalDisplay = canSeeDollars ? formatM(totalExposure) : '••••••';
+  var statusVerdict = totalExposure > 50000000 ? 'Material Exposure' : totalExposure > 10000000 ? 'Elevated Exposure' : totalExposure > 0 ? 'Monitored Exposure' : 'No Active Exposure';
+  var statusColor = totalExposure > 50000000 ? '#ef4444' : totalExposure > 10000000 ? '#f59e0b' : totalExposure > 0 ? '#3b82f6' : '#22c55e';
+
+  var html = '<div style="background:linear-gradient(135deg, ' + statusColor + '12 0%, rgba(15,23,42,0.6) 100%);border:1px solid ' + statusColor + '40;border-radius:14px;padding:20px 24px;box-shadow:0 8px 24px rgba(0,0,0,0.3);">' +
+    '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;flex-wrap:wrap;gap:14px;">' +
+      '<div>' +
+        '<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;flex-wrap:wrap;">' +
+          '<span style="font-size:10px;color:' + statusColor + ';font-weight:800;text-transform:uppercase;letter-spacing:1px;padding:3px 9px;background:' + statusColor + '15;border:1px solid ' + statusColor + '40;border-radius:10px;">⚡ ' + statusVerdict + '</span>' +
+          (!canSeeDollars ? '<span style="font-size:9px;color:#a855f7;background:rgba(168,85,247,0.1);padding:2px 8px;border-radius:8px;font-weight:600;">🔒 Dollar values restricted to executive/compliance roles</span>' : '') +
+        '</div>' +
+        '<div style="font-size:13px;color:var(--muted);margin-bottom:2px;">Total predictive financial exposure across ' + openCases.length + ' open case' + (openCases.length === 1 ? '' : 's') + '</div>' +
+        '<div style="display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;">' +
+          '<span style="font-size:42px;color:' + statusColor + ';font-weight:800;letter-spacing:-1px;line-height:1;">' + totalDisplay + '</span>' +
+          (minDays !== null ? '<span style="font-size:13px;color:#f59e0b;font-weight:600;">⏱ ' + minDays + ' days to nearest deadline</span>' : '') +
+        '</div>' +
+      '</div>' +
+      '<div style="display:flex;gap:8px;flex-wrap:wrap;">' +
+        (sevCounts.Critical > 0 ? '<div style="padding:8px 12px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.3);border-radius:8px;text-align:center;min-width:60px;"><div style="font-size:18px;color:#ef4444;font-weight:800;line-height:1;">' + sevCounts.Critical + '</div><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-top:3px;">Critical</div></div>' : '') +
+        (sevCounts.High > 0 ? '<div style="padding:8px 12px;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.3);border-radius:8px;text-align:center;min-width:60px;"><div style="font-size:18px;color:#f59e0b;font-weight:800;line-height:1;">' + sevCounts.High + '</div><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-top:3px;">High</div></div>' : '') +
+        (closedCases.length > 0 ? '<div style="padding:8px 12px;background:rgba(34,197,94,0.06);border:1px solid rgba(34,197,94,0.25);border-radius:8px;text-align:center;min-width:60px;"><div style="font-size:18px;color:#22c55e;font-weight:800;line-height:1;">' + closedCases.length + '</div><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-top:3px;">Resolved</div></div>' : '') +
+      '</div>' +
+    '</div>' +
+    (minDaysCase ? '<div style="padding:12px 14px;background:rgba(15,23,42,0.5);border:1px solid rgba(245,158,11,0.25);border-radius:10px;border-left:3px solid #f59e0b;">' +
+      '<div style="font-size:9px;color:#f59e0b;text-transform:uppercase;letter-spacing:0.8px;font-weight:700;margin-bottom:4px;">⏱ NEAREST DEADLINE</div>' +
+      '<div style="font-size:12px;color:var(--chrome2);font-weight:600;line-height:1.5;"><span style="color:var(--accent);font-family:monospace;">#' + escHtml(minDaysCase.caseId) + '</span> · ' + minDays + ' days · ' + (canSeeDollars ? formatM(minDaysCase.dollarImpact) : '••••••') + ' exposure</div>' +
+      '<div style="font-size:11px;color:var(--muted2);line-height:1.6;margin-top:6px;">' + escHtml(minDaysCase.scenario) + '</div>' +
+    '</div>' : '') +
+  '</div>';
+
+  heroEl.innerHTML = html;
+};
+
+window.renderHaloAttributionCards = function(org) {
+  var o = org || (typeof currentOrg !== 'undefined' && currentOrg) || 'ad';
+  var cardsEl = document.getElementById('halo-attribution-cards');
+  if (!cardsEl) return;
+
+  var escHtml = function(t) {
+    return typeof echoEscapeHtml === 'function' ? echoEscapeHtml(t) : String(t == null ? '' : t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  };
+  var escJs = function(t) {
+    return typeof echoEscapeJsAttr === 'function' ? echoEscapeJsAttr(t) : String(t == null ? '' : t).replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/\r?\n/g,' ');
+  };
+
+  var orgData = window.CARDINAL_DATA && window.CARDINAL_DATA[o];
+  var attribution = (orgData && orgData.haloAttribution) || [];
+
+  if (attribution.length === 0) { cardsEl.innerHTML = ''; return; }
+
+  var persona = window.getActivePersona ? window.getActivePersona() : null;
+  var canSeeDollars = !persona || persona.scope === 'all' || persona.scope === 'org' || (persona.role && (persona.role.indexOf('CEO') !== -1 || persona.role.indexOf('Founder') !== -1 || persona.role.indexOf('Compliance') !== -1));
+
+  function formatM(amount) {
+    if (amount >= 1e9) return '$' + (amount / 1e9).toFixed(1) + 'B';
+    if (amount >= 1e6) return '$' + (amount / 1e6).toFixed(1) + 'M';
+    if (amount >= 1e3) return '$' + (amount / 1e3).toFixed(0) + 'K';
+    return '$' + amount;
+  }
+
+  var sevColor = { Critical: '#ef4444', High: '#f59e0b', Medium: '#3b82f6', Low: '#22c55e' };
+
+  var sortedAttr = attribution.slice().sort(function(a, b){
+    var aClosed = a.daysToImpact === null;
+    var bClosed = b.daysToImpact === null;
+    if (aClosed && !bClosed) return 1;
+    if (!aClosed && bClosed) return -1;
+    if (aClosed && bClosed) return 0;
+    return a.daysToImpact - b.daysToImpact;
+  });
+
+  var html = '<div style="margin-bottom:10px;">' +
+    '<div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;font-weight:700;">📊 Per-Case Attribution — Where the Exposure Comes From</div>' +
+  '</div>' +
+  '<div style="display:grid;grid-template-columns:repeat(auto-fill, minmax(360px, 1fr));gap:12px;">';
+
+  sortedAttr.forEach(function(a){
+    var isClosed = a.daysToImpact === null;
+    var color = isClosed ? '#22c55e' : (sevColor[a.severity] || '#94a3b8');
+    var statusText = isClosed ? 'RESOLVED' : (a.severity ? a.severity.toUpperCase() : 'OPEN');
+    var cidJs = escJs(a.caseId);
+    var ctxPinJs = escJs('ctx:case:' + a.caseId);
+    var toastJs = escJs('📌 Pinned #' + a.caseId + ' to My Workspace');
+
+    html += '<div onclick="cardinalNavigateToCase(\'' + cidJs + '\')" oncontextmenu="cardinalShowContextMenu(event, \'case\', \'' + cidJs + '\', \'' + escJs('#' + a.caseId) + '\')" style="cursor:pointer;background:linear-gradient(180deg, ' + color + '08 0%, rgba(15,23,42,0.5) 100%);border:1px solid ' + color + '30;border-left:3px solid ' + color + ';border-radius:12px;padding:14px 16px;transition:all 0.15s;" onmouseover="this.style.borderColor=\'' + color + '60\';this.style.transform=\'translateY(-1px)\';" onmouseout="this.style.borderColor=\'' + color + '30\';this.style.transform=\'translateY(0)\';">' +
+      '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;gap:10px;">' +
+        '<div>' +
+          '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">' +
+            '<span style="font-size:13px;color:var(--chrome2);font-weight:700;font-family:monospace;">#' + escHtml(a.caseId) + '</span>' +
+            '<span style="font-size:9px;color:' + color + ';font-weight:700;text-transform:uppercase;letter-spacing:0.5px;padding:2px 7px;background:' + color + '15;border:1px solid ' + color + '40;border-radius:8px;">' + statusText + '</span>' +
+          '</div>' +
+        '</div>' +
+        '<div style="text-align:right;">' +
+          '<div style="font-size:20px;color:' + color + ';font-weight:800;line-height:1;">' + (canSeeDollars ? formatM(a.dollarImpact) : '••••••') + '</div>' +
+          (!isClosed ? '<div style="font-size:10px;color:var(--muted);margin-top:4px;">⏱ ' + a.daysToImpact + 'd to impact</div>' : '<div style="font-size:10px;color:#22c55e;margin-top:4px;">✓ exposure cleared</div>') +
+        '</div>' +
+      '</div>' +
+      '<div style="padding:10px 12px;background:rgba(15,23,42,0.6);border:1px solid rgba(166,218,255,0.06);border-radius:8px;margin-bottom:10px;">' +
+        '<div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;font-weight:700;margin-bottom:6px;">SCENARIO</div>' +
+        '<div style="font-size:11px;color:var(--chrome2);line-height:1.6;">' + escHtml(a.scenario) + '</div>' +
+      '</div>' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;font-size:10px;">' +
+        '<span style="color:var(--muted);">Click to investigate</span>' +
+        '<div style="display:flex;gap:6px;">' +
+          '<button type="button" onclick="event.stopPropagation();cardinalNavigateToCase(\'' + cidJs + '\');" style="background:rgba(166,218,255,0.06);border:1px solid rgba(166,218,255,0.2);color:var(--accent);padding:4px 10px;border-radius:5px;cursor:pointer;font-size:10px;font-weight:600;">⚖️ Sentinel →</button>' +
+          (typeof echoTogglePersonalPin === 'function' ? '<button type="button" onclick="event.stopPropagation();echoTogglePersonalPin(\'' + ctxPinJs + '\');cardinalShowToast(\'' + toastJs + '\');" style="background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3);color:#f59e0b;padding:4px 10px;border-radius:5px;cursor:pointer;font-size:10px;font-weight:600;">📌 Pin</button>' : '') +
+        '</div>' +
+      '</div>' +
+    '</div>';
+  });
+
+  html += '</div>';
+  cardsEl.innerHTML = html;
+};
+
+window.cardinalNavigateToCase = function(caseId) {
+  showScreen('sentinel', null);
+  setTimeout(function(){
+    window.__sentinelFocusCaseId = caseId;
+    if (typeof buildSentinel === 'function') buildSentinel(window.currentOrg || 'ad');
+  }, 200);
+};
 
 function toggleHaloMode(toggle) {
  var label = document.getElementById('halo-mode-label');
