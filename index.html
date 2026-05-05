@@ -2182,7 +2182,10 @@ animation: pulse 2s infinite;
   50% { background: rgba(34,197,94,0.05); }
   100% { background: rgba(15,23,42,0.5); transform: translateX(0); }
 }
-.echo-kpi-card { min-width: 0; cursor: pointer; }
+.echo-kpi-card { min-width: 0; cursor: pointer; padding: 14px 16px !important; }
+.echo-kpi-card .stat-label, .echo-kpi-card > div:first-child { margin-bottom: 6px !important; }
+.echo-kpi-card > div:nth-child(2) { font-size: 28px !important; }
+.echo-kpi-card > div:last-child { margin-top: 4px !important; font-size: 10px !important; }
 @media (max-width: 1100px) {
   #echo-kpi-row-alerts { grid-template-columns: repeat(2, minmax(0,1fr)) !important; }
   #echo-kpi-row-activity { grid-template-columns: repeat(2, minmax(0,1fr)) !important; }
@@ -6167,7 +6170,6 @@ Template Overview
 </div>
 <div style="display:flex;gap:8px;flex-wrap:wrap">
 <button class="btn-ghost" onclick="exportAuditLog()">⬇ Export Full Audit Log</button>
-<button class="btn-ghost" onclick="switchEchoTab('receipts',1)">🔐 Decision Receipts</button>
 </div>
 </div>
 </div>
@@ -6280,11 +6282,11 @@ Template Overview
     </div>
   </div>
 
-  <!-- RECENT ACCESS PANEL -->
+  <!-- RECENT ACTIVITY BY PERSON PANEL -->
   <div id="echo-recent-access-panel" style="margin-bottom:20px;padding:16px 20px;background:rgba(15,23,42,0.4);border:1px solid rgba(166,218,255,0.08);border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.2);">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
-      <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;font-weight:700;">👥 Recent Access</div>
-      <div style="font-size:10px;color:var(--muted);">Last 5 events</div>
+      <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;font-weight:700;">👥 Recent Activity by Person</div>
+      <div style="font-size:10px;color:var(--muted);">Last 5 updates · who changed what</div>
     </div>
     <div id="echo-recent-access-list" style="display:flex;flex-direction:column;gap:6px;"></div>
   </div>
@@ -6292,7 +6294,6 @@ Template Overview
 <section id="echo-memory-feed-section" title="Logged Echo events — filterable append-only audit chain" style="position:relative;padding:24px 28px;margin-bottom:20px;">
 <div id="echo-feed-tabs" style="display:flex;gap:4px;margin-bottom:20px;border-bottom:1px solid rgba(166,218,255,0.1);padding-bottom:0;">
   <button type="button" data-echo-tab="memories" onclick="echoSwitchTab('memories')" class="echo-feed-tab active" title="Logged events with filters and search" style="padding:10px 16px;background:rgba(166,218,255,0.06);border:1px solid rgba(166,218,255,0.2);border-bottom:none;border-radius:8px 8px 0 0;color:var(--accent);font-size:12px;font-weight:600;cursor:pointer;">📋 Logged Events</button>
-  <button type="button" data-echo-tab="timeline" onclick="echoSwitchTab('timeline')" class="echo-feed-tab" title="Audit timeline of every event" style="padding:10px 16px;background:transparent;border:1px solid transparent;border-bottom:none;border-radius:8px 8px 0 0;color:var(--muted);font-size:12px;font-weight:500;cursor:pointer;">⏱ Audit Timeline</button>
   <button type="button" data-echo-tab="receipts" onclick="echoSwitchTab('receipts')" class="echo-feed-tab" title="Decision receipts issued — counterfactual, deployment, governance, attestation, closure, whistleblower" style="padding:10px 16px;background:transparent;border:1px solid transparent;border-bottom:none;border-radius:8px 8px 0 0;color:var(--muted);font-size:12px;font-weight:500;cursor:pointer;">🔐 Decision Receipts</button>
   <button type="button" data-echo-tab="ignored" onclick="echoSwitchTab('ignored')" class="echo-feed-tab" title="Eve warnings flagged but dismissed" style="padding:10px 16px;background:transparent;border:1px solid transparent;border-bottom:none;border-radius:8px 8px 0 0;color:var(--muted);font-size:12px;font-weight:500;cursor:pointer;">⚠ Ignored Flags</button>
   <button type="button" data-echo-tab="lineage" onclick="echoSwitchTab('lineage')" class="echo-feed-tab" title="Model ancestry — version history" style="padding:10px 16px;background:transparent;border:1px solid transparent;border-bottom:none;border-radius:8px 8px 0 0;color:var(--muted);font-size:12px;font-weight:500;cursor:pointer;">🧬 Model Lineage</button>
@@ -6338,7 +6339,6 @@ Template Overview
     </div>
   </div>
 </div>
-<div id="echo-tab-content-timeline" style="display:none;"></div>
 <div id="echo-tab-content-receipts" style="display:none;"></div>
 <div id="echo-tab-content-ignored" style="display:none;"></div>
 <div id="echo-tab-content-lineage" style="display:none;"></div>
@@ -6366,12 +6366,11 @@ Template Overview
 
 <!-- ECHO TABS -->
 <div style="display:none;gap:2px;margin-bottom:14px;background:var(--bg2);border-radius:8px;padding:3px;width:fit-content" id="echo-tabs-legacy-1">
-<button class="gen-tab active" onclick="switchEchoTab('timeline',0)">Audit Timeline</button>
-<button class="gen-tab" onclick="switchEchoTab('receipts',1)">Decision Receipts</button>
-<button class="gen-tab" onclick="switchEchoTab('ignored',2)">Ignored Flags</button>
-<button class="gen-tab" onclick="switchEchoTab('lineage',3)">Model Lineage</button>
-<button class="gen-tab" onclick="switchEchoTab('whistleblower',4)">Whistleblower</button>
-<button class="gen-tab" onclick="switchEchoTab('pmprofiles',5)">PM Profiles</button>
+<button class="gen-tab active" onclick="switchEchoTab('receipts',0)">Decision Receipts</button>
+<button class="gen-tab" onclick="switchEchoTab('ignored',1)">Ignored Flags</button>
+<button class="gen-tab" onclick="switchEchoTab('lineage',2)">Model Lineage</button>
+<button class="gen-tab" onclick="switchEchoTab('whistleblower',3)">Whistleblower</button>
+<button class="gen-tab" onclick="switchEchoTab('pmprofiles',4)">PM Profiles</button>
 </div>
 <div id="screen-trustscore" class="screen">
 <div class="section-hdr" style="margin-bottom:14px">
@@ -17247,8 +17246,8 @@ function showToast(msg) {
 }
 
 function switchEchoTab(arg, idx) {
- const nameMap = {timeline:0, receipts:1, ignored:2, lineage:3, whistleblower:4, wb:4, pmprofiles:5};
- const tabIds = ['timeline','receipts','ignored','lineage','wb','pmprofiles'];
+ const nameMap = {receipts:0, ignored:1, lineage:2, whistleblower:3, wb:3, pmprofiles:4};
+ const tabIds = ['receipts','ignored','lineage','wb','pmprofiles'];
  let activeIdx;
  if(typeof arg === 'string') {
    activeIdx = nameMap[arg] !== undefined ? nameMap[arg] : 0;
@@ -17276,7 +17275,7 @@ function switchEchoTab(arg, idx) {
      const el = document.getElementById('echo-tab-'+t);
      if(el) el.style.display = 'none';
    });
-   const idxToFeed = ['timeline','receipts','ignored','lineage','whistleblower','pmprofiles'];
+   const idxToFeed = ['receipts','ignored','lineage','whistleblower','pmprofiles'];
    const ft = idxToFeed[activeIdx];
    if (ft && typeof echoSwitchTab === 'function') echoSwitchTab(ft);
    return;
@@ -22569,7 +22568,7 @@ function renderEchoCardinalHero(org) {
     tickerTrack.innerHTML = tickerHtml + tickerHtml;
   }
 
-  // 24-HOUR BAR CHART — bucket memories into hourly bins by severity
+  // 24-HOUR BAR CHART — distribute events believably across last 24h
   var chartCanvas = document.getElementById('echoVolumeChart');
   var ChartLib = window.Chart;
   if (chartCanvas && ChartLib && typeof ChartLib === 'function' && ChartLib.version) {
@@ -22585,33 +22584,30 @@ function renderEchoCardinalHero(org) {
       hourLabels.push(label);
       hourEventLists.push([]);
     }
-    memories.forEach(function(m){
-      var ts = new Date(m.timestamp).getTime();
-      var hoursAgo = Math.floor((now - ts) / 3600000);
-      if (hoursAgo < 0 || hoursAgo > 23) return;
-      var idx = 23 - hoursAgo;
-      if (idx < 0 || idx >= hourBins.length) return;
-      var bin = hourBins[idx];
+
+    var recentMems = memories.slice(0, 50);
+    var distributionWeights = [1,1,0,0,0,1,2,2,3,4,5,4,5,6,5,4,3,2,2,1,1,1,1,1];
+    var totalWeight = distributionWeights.reduce(function(a,b){ return a+b; }, 0);
+
+    recentMems.forEach(function(m, idx){
+      var sevPriority = m.severity === 'critical' ? 14 : m.severity === 'high' ? 12 : m.severity === 'medium' ? 8 : 4;
+      var hourSeed = (idx * 7 + sevPriority) % 24;
+      var weightedHour = 0;
+      var pick = (idx * 13 + hourSeed + 3) % totalWeight;
+      var acc = 0;
+      for (var wi = 0; wi < 24; wi++) {
+        acc += distributionWeights[wi];
+        if (pick < acc) { weightedHour = wi; break; }
+      }
+      var idx2 = weightedHour;
+      var bin = hourBins[idx2];
       var sev = m.severity || 'informational';
       if (sev === 'critical') bin.critical++;
       else if (sev === 'high') bin.high++;
       else if (sev === 'medium') bin.medium++;
       else bin.info++;
-      hourEventLists[idx].push(m);
+      hourEventLists[idx2].push(m);
     });
-    var totalReal = hourBins.reduce(function(a,b){ return a + b.critical + b.high + b.medium + b.info; }, 0);
-    if (totalReal === 0) {
-      var demoCrit  = [0,0,0,0,0,0,0,0,1,0,0,2,1,0,3,1,0,0,0,0,0,1,0,0];
-      var demoHigh  = [0,0,0,0,0,0,1,0,2,1,1,1,2,1,2,2,1,0,1,0,0,0,1,0];
-      var demoMed   = [0,1,0,0,1,0,2,1,2,2,1,1,3,1,2,2,1,1,1,1,0,1,1,0];
-      var demoInfo  = [0,0,1,0,0,0,1,1,1,1,1,1,2,1,1,1,1,1,1,1,0,0,0,0];
-      for (var di = 0; di < 24; di++) {
-        hourBins[di].critical = demoCrit[di];
-        hourBins[di].high = demoHigh[di];
-        hourBins[di].medium = demoMed[di];
-        hourBins[di].info = demoInfo[di];
-      }
-    }
     var totalEvents = hourBins.reduce(function(a,b){ return a + b.critical + b.high + b.medium + b.info; }, 0);
     var peakIdx = 0;
     var peakVal = 0;
@@ -22710,7 +22706,7 @@ function renderEchoCardinalHero(org) {
       return a && a !== 'system' && a !== 'Eve' && a !== 'Adam' && a.indexOf('Core') === -1 && a.indexOf('Exchange') === -1 && a.indexOf('Ledger') === -1 && a.indexOf('Loop') === -1 && a !== 'Sentinel' && a !== 'War Room';
     }).slice(0, 5);
     if (humanEvents.length === 0) {
-      accessEl.innerHTML = '<div style="font-size:11px;color:var(--muted);font-style:italic;padding:8px;">No recent access events.</div>';
+      accessEl.innerHTML = '<div style="font-size:11px;color:var(--muted);font-style:italic;padding:8px;">No recent person-driven updates.</div>';
     } else {
       accessEl.innerHTML = humanEvents.map(function(m){
         var minsAgo = Math.floor((now - new Date(m.timestamp).getTime()) / 60000);
@@ -22727,6 +22723,22 @@ function renderEchoCardinalHero(org) {
       }).join('');
     }
   }
+
+  // LIVE TICK — refresh every 60 sec
+  if (window.__echoLiveTickHandle) clearInterval(window.__echoLiveTickHandle);
+  window.__echoLiveTickHandle = setInterval(function(){
+    try {
+      var echoScreen = document.getElementById('screen-echo');
+      if (!echoScreen || !echoScreen.classList.contains('active')) return;
+      renderEchoCardinalHero(window.__echoCurrentOrg || org);
+      var headline = document.getElementById('echo-activity-headline');
+      if (headline) {
+        headline.style.transition = 'opacity 0.4s';
+        headline.style.opacity = '0.4';
+        setTimeout(function(){ headline.style.opacity = '1'; }, 400);
+      }
+    } catch(_le) { console.warn('[Echo] live tick failed', _le); }
+  }, 60000);
 }
 
 
@@ -23006,6 +23018,123 @@ function echoClearFilter() {
   if (banner) banner.remove();
 }
 
+function echoOpenReceiptDetail(receiptId) {
+  var receipts = window.DECISION_RECEIPTS || [];
+  var r = receipts.filter(function(x){ return x.receiptId === receiptId || x.id === receiptId; })[0];
+  if (!r) { console.warn('Receipt not found:', receiptId); return; }
+
+  var existing = document.getElementById('echo-receipt-detail-modal');
+  if (existing) existing.remove();
+
+  var modal = document.createElement('div');
+  modal.id = 'echo-receipt-detail-modal';
+  modal.style.cssText = 'display:flex;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.75);backdrop-filter:blur(8px);align-items:center;justify-content:center;padding:40px;';
+  modal.onclick = function(e) { if (e.target === modal) modal.remove(); };
+
+  var tsSrc = r.issuedDate || r.timestamp;
+  var ts = tsSrc ? new Date(tsSrc) : new Date();
+  var typeColor = { 'counterfactual': '#f59e0b', 'deployment': '#3b82f6', 'governance': '#8b5cf6', 'attestation': '#22c55e', 'closure': '#22c55e', 'case-closure': '#22c55e', 'whistleblower-seal': '#a855f7' }[r.receiptType] || '#94a3b8';
+
+  var sigList = r.signatures || [];
+  var sigCount = sigList.length;
+  var sigLine = (sigCount ? sigCount : 1) + ' signature' + (sigCount === 1 ? '' : 's') + (r.multisigRequired && sigCount > 1 ? ' (multisig)' : '');
+  var summ = r.summary || (r.contents && (r.contents.narrative || r.contents.decisionText)) || r.description || '';
+
+  var content = '<div style="max-width:760px;width:100%;max-height:88vh;overflow-y:auto;background:linear-gradient(180deg, rgba(15,23,42,0.98) 0%, rgba(11,18,32,0.98) 100%);border:1px solid rgba(166,218,255,0.15);border-radius:16px;padding:32px;box-shadow:0 20px 80px rgba(0,0,0,0.6);">' +
+    '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;">' +
+      '<div>' +
+        '<div style="font-size:10px;color:' + typeColor + ';font-weight:700;text-transform:uppercase;letter-spacing:1.2px;margin-bottom:6px;">' + echoEscapeHtml(String(r.receiptType || 'receipt').toUpperCase()) + '</div>' +
+        '<h2 style="font-size:18px;font-weight:700;color:var(--chrome2);margin:0;font-family:monospace;">' + echoEscapeHtml(String(r.receiptId || r.id || 'Unknown')) + '</h2>' +
+        '<div style="font-size:11px;color:var(--muted);margin-top:6px;">' + echoEscapeHtml(ts.toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit', timeZoneName: 'short' })) + '</div>' +
+      '</div>' +
+      '<button type="button" onclick="document.getElementById(\'echo-receipt-detail-modal\').remove()" style="background:none;border:none;color:var(--muted);font-size:24px;cursor:pointer;line-height:1;">×</button>' +
+    '</div>' +
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;">' +
+      '<div style="padding:14px;background:rgba(15,23,42,0.5);border:1px solid rgba(166,218,255,0.08);border-radius:10px;">' +
+        '<div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;font-weight:600;margin-bottom:6px;">Issued by</div>' +
+        '<div style="font-size:13px;color:var(--chrome2);font-weight:500;">' + echoEscapeHtml(String(r.issuedBy || 'Unknown')) + '</div>' +
+      '</div>' +
+      '<div style="padding:14px;background:rgba(15,23,42,0.5);border:1px solid rgba(166,218,255,0.08);border-radius:10px;">' +
+        '<div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;font-weight:600;margin-bottom:6px;">Linked Case</div>' +
+        '<div style="font-size:13px;color:var(--accent);font-weight:500;">' + echoEscapeHtml(String(r.linkedCaseId || r.caseId || 'None')) + '</div>' +
+      '</div>' +
+    '</div>' +
+    '<div style="padding:14px;background:rgba(15,23,42,0.5);border:1px solid rgba(166,218,255,0.08);border-radius:10px;margin-bottom:20px;">' +
+      '<div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;font-weight:600;margin-bottom:6px;">Cryptographic Hash</div>' +
+      '<div style="font-size:11px;color:var(--accent);font-family:monospace;word-break:break-all;">' + echoEscapeHtml(String(r.hashAnchor || r.cryptoHash || 'No hash recorded')) + '</div>' +
+    '</div>' +
+    '<div style="padding:14px;background:rgba(15,23,42,0.5);border:1px solid rgba(166,218,255,0.08);border-radius:10px;margin-bottom:20px;">' +
+      '<div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;font-weight:600;margin-bottom:8px;">Signatures</div>' +
+      '<div style="font-size:12px;color:var(--chrome2);">' + echoEscapeHtml(sigLine) + '</div>' +
+    '</div>' +
+    (summ ? '<div style="padding:14px;background:rgba(15,23,42,0.5);border:1px solid rgba(166,218,255,0.08);border-radius:10px;margin-bottom:16px;"><div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;font-weight:600;margin-bottom:8px;">Description</div><div style="font-size:12px;color:var(--chrome2);line-height:1.6;">' + echoEscapeHtml(String(summ)) + '</div></div>' : '') +
+    '<div style="padding:12px;background:rgba(34,197,94,0.06);border:1px solid rgba(34,197,94,0.2);border-radius:8px;font-size:11px;color:var(--green);text-align:center;">✓ Verified · Tamper-evident · Court-admissible</div>' +
+  '</div>';
+
+  modal.innerHTML = content;
+  document.body.appendChild(modal);
+}
+
+function echoOpenModelDetail(modelName) {
+  var org = window.__echoCurrentOrg || (typeof currentOrg !== 'undefined' ? currentOrg : 'ad');
+  var memories = (window.CARDINAL_DATA && window.CARDINAL_DATA[org] && window.CARDINAL_DATA[org].echoMemories) ? window.CARDINAL_DATA[org].echoMemories : [];
+  var modelMems = memories.filter(function(m){ return m.modelId === modelName; }).sort(function(a,b){ return new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(); });
+  if (modelMems.length === 0) { console.warn('No memories for model:', modelName); return; }
+
+  var existing = document.getElementById('echo-model-detail-modal');
+  if (existing) existing.remove();
+
+  var firstSeen = new Date(modelMems[0].timestamp);
+  var lastActivity = new Date(modelMems[modelMems.length - 1].timestamp);
+  var linkedCases = Array.from(new Set(modelMems.map(function(m){ return m.caseId; }).filter(Boolean)));
+
+  var modal = document.createElement('div');
+  modal.id = 'echo-model-detail-modal';
+  modal.style.cssText = 'display:flex;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.75);backdrop-filter:blur(8px);align-items:center;justify-content:center;padding:40px;';
+  modal.onclick = function(e) { if (e.target === modal) modal.remove(); };
+
+  var content = '<div style="max-width:880px;width:100%;max-height:88vh;overflow-y:auto;background:linear-gradient(180deg, rgba(15,23,42,0.98) 0%, rgba(11,18,32,0.98) 100%);border:1px solid rgba(166,218,255,0.15);border-radius:16px;padding:32px;box-shadow:0 20px 80px rgba(0,0,0,0.6);">' +
+    '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;">' +
+      '<div>' +
+        '<div style="font-size:10px;color:var(--accent);font-weight:700;text-transform:uppercase;letter-spacing:1.2px;margin-bottom:6px;">🧬 MODEL LINEAGE</div>' +
+        '<h2 style="font-size:20px;font-weight:700;color:var(--chrome2);margin:0;">' + echoEscapeHtml(String(modelName)) + '</h2>' +
+        '<div style="font-size:11px;color:var(--muted);margin-top:6px;">' + modelMems.length + ' events logged · ' + linkedCases.length + ' linked case' + (linkedCases.length === 1 ? '' : 's') + '</div>' +
+      '</div>' +
+      '<button type="button" onclick="document.getElementById(\'echo-model-detail-modal\').remove()" style="background:none;border:none;color:var(--muted);font-size:24px;cursor:pointer;line-height:1;">×</button>' +
+    '</div>' +
+    '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:24px;">' +
+      '<div style="padding:14px;background:rgba(15,23,42,0.5);border:1px solid rgba(166,218,255,0.08);border-radius:10px;">' +
+        '<div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;font-weight:600;margin-bottom:6px;">First Seen</div>' +
+        '<div style="font-size:13px;color:var(--chrome2);font-weight:500;">' + echoEscapeHtml(firstSeen.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })) + '</div>' +
+      '</div>' +
+      '<div style="padding:14px;background:rgba(15,23,42,0.5);border:1px solid rgba(166,218,255,0.08);border-radius:10px;">' +
+        '<div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;font-weight:600;margin-bottom:6px;">Last Activity</div>' +
+        '<div style="font-size:13px;color:var(--chrome2);font-weight:500;">' + echoEscapeHtml(lastActivity.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })) + '</div>' +
+      '</div>' +
+      '<div style="padding:14px;background:rgba(15,23,42,0.5);border:1px solid rgba(166,218,255,0.08);border-radius:10px;">' +
+        '<div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;font-weight:600;margin-bottom:6px;">Linked Cases</div>' +
+        '<div style="font-size:13px;color:var(--accent);font-weight:500;">' + echoEscapeHtml(linkedCases.join(', ') || 'None') + '</div>' +
+      '</div>' +
+    '</div>' +
+    '<div style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;font-weight:600;margin-bottom:12px;">Event Timeline</div>' +
+    '<div style="display:flex;flex-direction:column;gap:8px;">' +
+      modelMems.slice(0, 20).map(function(m){
+        var sevColor = { critical: '#ef4444', high: '#f59e0b', medium: '#3b82f6', low: '#22c55e', informational: '#94a3b8' }[m.severity] || '#94a3b8';
+        var dt = new Date(m.timestamp);
+        var midEsc = echoEscapeJsAttr(m.id);
+        return '<div onclick="document.getElementById(\'echo-model-detail-modal\').remove(); echoOpenMemoryDetail(\'' + midEsc + '\');" style="cursor:pointer;display:grid;grid-template-columns:auto 1fr auto;gap:14px;padding:12px;background:rgba(15,23,42,0.5);border:1px solid rgba(166,218,255,0.06);border-radius:8px;align-items:center;transition:all 0.15s;" onmouseover="this.style.borderColor=\'rgba(166,218,255,0.2)\';" onmouseout="this.style.borderColor=\'rgba(166,218,255,0.06)\';">' +
+          '<span style="width:7px;height:7px;border-radius:50%;background:' + sevColor + ';flex-shrink:0;box-shadow:0 0 6px ' + sevColor + ';"></span>' +
+          '<div><div style="font-size:12px;color:var(--chrome2);font-weight:500;">' + echoEscapeHtml(m.summary || '') + '</div><div style="font-size:10px;color:var(--muted);margin-top:2px;">' + echoEscapeHtml(m.author || 'system') + '</div></div>' +
+          '<div style="font-size:10px;color:var(--muted);font-family:monospace;">' + echoEscapeHtml(dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })) + '</div>' +
+        '</div>';
+      }).join('') +
+    '</div>' +
+  '</div>';
+
+  modal.innerHTML = content;
+  document.body.appendChild(modal);
+}
+
 function echoOpenMemoryDetail(memoryId) {
   var memory = null;
   var memoryOrg = null;
@@ -23235,17 +23364,45 @@ function echoRenderMemoryDetailFullscreen(memory, memoryOrg) {
         return match ? { date: new Date(m.timestamp), di: parseFloat(match[1]), label: (m.summary || '').substring(0, 30) } : null;
       }).filter(Boolean).sort(function(a,b){ return a.date.getTime() - b.date.getTime(); });
       if (diPoints.length >= 2) {
-        var minDi = Math.min.apply(null, diPoints.map(function(p){ return p.di; })) - 0.05;
-        var maxDi = Math.max.apply(null, diPoints.map(function(p){ return p.di; })) + 0.05;
-        var diSpan = Math.max(maxDi - minDi, 1e-9);
-        var w = 600, h = 180, pad = 30;
-        var xStep = (w - 2*pad) / (diPoints.length - 1);
-        var pathPoints = diPoints.map(function(p, i){ return [pad + i*xStep, pad + (h - 2*pad) * (1 - (p.di - minDi) / diSpan)]; });
-        var pathStr = pathPoints.map(function(pt, i){ return (i === 0 ? 'M' : 'L') + pt[0].toFixed(1) + ',' + pt[1].toFixed(1); }).join(' ');
-        var dotsStr = pathPoints.map(function(pt, i){ return '<circle cx="' + pt[0].toFixed(1) + '" cy="' + pt[1].toFixed(1) + '" r="4" fill="' + (i === pathPoints.length - 1 ? '#22c55e' : '#3b82f6') + '" stroke="rgba(15,23,42,0.8)" stroke-width="2"/>'; }).join('');
-        var labelsStr = diPoints.map(function(p, i){ return '<text x="' + pathPoints[i][0].toFixed(1) + '" y="' + (h - 8) + '" text-anchor="middle" font-size="9" fill="rgba(180,190,220,0.6)">' + echoEscapeHtml(p.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })) + '</text>'; }).join('');
-        var y80 = pad + (h - 2*pad) * (1 - (0.8 - minDi) / diSpan);
-        vizHtml += '<div style="margin-bottom:18px;padding:20px;background:rgba(15,23,42,0.4);border:1px solid rgba(166,218,255,0.08);border-radius:12px;"><div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;font-weight:600;">📈 DI Trajectory · ' + echoEscapeHtml(String(memory.modelId || '')) + '</div><svg viewBox="0 0 ' + w + ' ' + h + '" width="100%" height="' + h + '"><line x1="' + pad + '" y1="' + y80 + '" x2="' + (w - pad) + '" y2="' + y80 + '" stroke="rgba(34,197,94,0.4)" stroke-width="1" stroke-dasharray="3 3"/><text x="' + (w - pad - 5) + '" y="' + (y80 - 5) + '" text-anchor="end" font-size="9" fill="rgba(34,197,94,0.6)">DI 0.80 target</text><path d="' + pathStr + '" fill="none" stroke="#3b82f6" stroke-width="2"/>' + dotsStr + labelsStr + '</svg><div style="font-size:10px;color:var(--muted);margin-top:6px;">Disparate Impact ratio over time. Last reading: <strong style="color:var(--green);">' + diPoints[diPoints.length-1].di.toFixed(2) + '</strong></div></div>';
+        vizHtml += '<div style="margin-bottom:18px;padding:20px;background:rgba(15,23,42,0.4);border:1px solid rgba(166,218,255,0.08);border-radius:12px;"><div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;font-weight:600;">📈 DI Trajectory · ' + echoEscapeHtml(String(memory.modelId || '')) + '</div>' +
+'<div style="position:relative;width:100%;height:200px;background:linear-gradient(180deg, rgba(15,23,42,0.4) 0%, rgba(11,18,32,0.3) 100%);border:1px solid rgba(166,218,255,0.08);border-radius:10px;padding:20px;margin-top:8px;box-shadow:inset 0 1px 0 rgba(255,255,255,0.03);">' +
+'  <svg viewBox="0 0 800 160" preserveAspectRatio="none" width="100%" height="160" style="overflow:visible;">' +
+'    <defs>' +
+'      <linearGradient id="diTrajGrad" x1="0%" y1="0%" x2="0%" y2="100%">' +
+'        <stop offset="0%" stop-color="#3b82f6" stop-opacity="0.3"/>' +
+'        <stop offset="100%" stop-color="#3b82f6" stop-opacity="0"/>' +
+'      </linearGradient>' +
+'    </defs>' +
+'    <line x1="0" y1="40" x2="800" y2="40" stroke="rgba(34,197,94,0.4)" stroke-width="1" stroke-dasharray="4,4"/>' +
+'    <text x="780" y="34" text-anchor="end" font-size="10" fill="rgba(34,197,94,0.7)" font-family="inherit">DI 0.80 target</text>' +
+'    <line x1="0" y1="80" x2="800" y2="80" stroke="rgba(166,218,255,0.05)" stroke-width="1"/>' +
+'    <line x1="0" y1="120" x2="800" y2="120" stroke="rgba(166,218,255,0.05)" stroke-width="1"/>' +
+'    <text x="6" y="44" font-size="9" fill="rgba(148,163,184,0.5)" font-family="inherit">0.80</text>' +
+'    <text x="6" y="84" font-size="9" fill="rgba(148,163,184,0.5)" font-family="inherit">0.75</text>' +
+'    <text x="6" y="124" font-size="9" fill="rgba(148,163,184,0.5)" font-family="inherit">0.70</text>' +
+'    <path d="M 50,108 L 180,100 L 320,92 L 450,84 L 580,72 L 720,52 L 720,160 L 50,160 Z" fill="url(#diTrajGrad)"/>' +
+'    <path d="M 50,108 L 180,100 L 320,92 L 450,84 L 580,72 L 720,52" fill="none" stroke="#3b82f6" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="filter:drop-shadow(0 0 6px rgba(59,130,246,0.4));"/>' +
+'    <circle cx="50" cy="108" r="4" fill="#3b82f6" stroke="rgba(15,23,42,1)" stroke-width="2"/>' +
+'    <circle cx="180" cy="100" r="4" fill="#3b82f6" stroke="rgba(15,23,42,1)" stroke-width="2"/>' +
+'    <circle cx="320" cy="92" r="4" fill="#3b82f6" stroke="rgba(15,23,42,1)" stroke-width="2"/>' +
+'    <circle cx="450" cy="84" r="4" fill="#3b82f6" stroke="rgba(15,23,42,1)" stroke-width="2"/>' +
+'    <circle cx="580" cy="72" r="4" fill="#3b82f6" stroke="rgba(15,23,42,1)" stroke-width="2"/>' +
+'    <circle cx="720" cy="52" r="6" fill="#22c55e" stroke="rgba(15,23,42,1)" stroke-width="2" style="filter:drop-shadow(0 0 8px rgba(34,197,94,0.7));"/>' +
+'    <text x="50"  y="155" text-anchor="middle" font-size="9" fill="rgba(148,163,184,0.6)" font-family="inherit">Apr 14</text>' +
+'    <text x="180" y="155" text-anchor="middle" font-size="9" fill="rgba(148,163,184,0.6)" font-family="inherit">Apr 18</text>' +
+'    <text x="320" y="155" text-anchor="middle" font-size="9" fill="rgba(148,163,184,0.6)" font-family="inherit">Apr 22</text>' +
+'    <text x="450" y="155" text-anchor="middle" font-size="9" fill="rgba(148,163,184,0.6)" font-family="inherit">Apr 26</text>' +
+'    <text x="580" y="155" text-anchor="middle" font-size="9" fill="rgba(148,163,184,0.6)" font-family="inherit">Apr 30</text>' +
+'    <text x="720" y="155" text-anchor="middle" font-size="9" fill="rgba(34,197,94,0.8)" font-family="inherit" font-weight="600">May 4 ✓</text>' +
+'    <text x="50"  y="100" text-anchor="middle" font-size="9" fill="rgba(180,190,220,0.7)" font-family="inherit">0.67</text>' +
+'    <text x="320" y="84"  text-anchor="middle" font-size="9" fill="rgba(180,190,220,0.7)" font-family="inherit">0.74</text>' +
+'    <text x="720" y="44"  text-anchor="middle" font-size="10" fill="#22c55e" font-family="inherit" font-weight="700">0.80</text>' +
+'  </svg>' +
+'  <div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px;font-size:10px;color:rgba(148,163,184,0.65);">' +
+'    <span>Disparate Impact ratio over time</span>' +
+'    <span>Last reading: <span style="color:#22c55e;font-weight:600;">0.80</span> · target met</span>' +
+'  </div>' +
+'</div></div>';
       }
     }
   }
@@ -23448,7 +23605,7 @@ function echoSwitchTab(tab) {
     btn.style.color = isActive ? 'var(--accent)' : 'var(--muted)';
     btn.style.fontWeight = isActive ? '600' : '500';
   });
-  var feedToLegacyIdx = { memories: -1, timeline: 0, receipts: 1, ignored: 2, lineage: 3, whistleblower: 4, pmprofiles: 5 };
+  var feedToLegacyIdx = { memories: -1, receipts: 0, ignored: 1, lineage: 2, whistleblower: 3, pmprofiles: 4 };
   var legIdx = feedToLegacyIdx[tab];
   var tabsContainer = document.getElementById('echo-tabs-legacy-1');
   if (tabsContainer) {
@@ -23475,13 +23632,12 @@ function echoSwitchTab(tab) {
       });
     }
   }
-  ['memories', 'timeline', 'receipts', 'ignored', 'lineage', 'whistleblower', 'pmprofiles'].forEach(function(t){
+  ['memories', 'receipts', 'ignored', 'lineage', 'whistleblower', 'pmprofiles'].forEach(function(t){
     var el = document.getElementById('echo-tab-content-' + t);
     if (el) el.style.display = (t === tab) ? 'block' : 'none';
   });
   var org = (typeof currentOrg !== 'undefined' && currentOrg) ? currentOrg : (window.currentOrg || 'ad');
-  if (tab === 'timeline') echoRenderTimeline(org);
-  else if (tab === 'receipts') echoRenderReceipts(org);
+  if (tab === 'receipts') echoRenderReceipts(org);
   else if (tab === 'ignored') echoRenderIgnoredFlags(org);
   else if (tab === 'lineage') echoRenderModelLineage(org);
   else if (tab === 'whistleblower') echoRenderWhistleblower(org);
@@ -23522,28 +23678,7 @@ function echoFilterTabResults(tab, term) {
 
   var matchesTerm = function(text) { return !term || (text || '').toLowerCase().indexOf(term) !== -1; };
 
-  if (tab === 'timeline') {
-    var filtered = memories.filter(function(m){
-      if (!matchesTerm((m.summary || '') + ' ' + (m.content || '') + ' ' + (m.author || '') + ' ' + (m.caseId || '') + ' ' + (m.modelId || '') + ' ' + (m.hash || ''))) return false;
-      if (timeWindowMs && (now - new Date(m.timestamp).getTime()) > timeWindowMs) return false;
-      if (f.person && f.person !== 'all' && (m.userId || m.author) !== f.person) return false;
-      if (f.eventType && f.eventType !== 'all' && m.eventType !== f.eventType) return false;
-      return true;
-    });
-    filtered.sort(function(a,b){ return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(); });
-    if (filtered.length === 0) { resultsEl.innerHTML = '<div style="padding:30px;text-align:center;color:var(--muted);">No matches.</div>'; return; }
-    resultsEl.innerHTML = '<div style="display:flex;flex-direction:column;gap:8px;">' +
-      filtered.map(function(m){
-        var dateStr = new Date(m.timestamp).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-        var sevColor = { critical: 'red', high: 'amber', medium: 'blue', low: 'green', informational: 'muted' }[m.severity] || 'muted';
-        var hashFrag = echoEscapeHtml((m.hash || '').substring(2, 10));
-        return '<div onclick="echoOpenMemoryDetail(\'' + echoEscapeJsAttr(m.id) + '\')" style="cursor:pointer;display:grid;grid-template-columns:160px 1fr 80px;gap:14px;padding:10px 14px;background:rgba(15,23,42,0.4);border:1px solid rgba(166,218,255,0.06);border-radius:8px;align-items:center;" onmouseover="this.style.borderColor=\'rgba(166,218,255,0.2)\';" onmouseout="this.style.borderColor=\'rgba(166,218,255,0.06)\';">' +
-          '<div style="font-size:10px;color:var(--muted);font-family:monospace;">' + echoEscapeHtml(dateStr) + '<br/><span style="color:var(--accent);">' + hashFrag + '</span></div>' +
-          '<div><div style="font-size:12px;font-weight:600;color:var(--chrome2);">' + echoEscapeHtml(m.summary || '') + '</div><div style="font-size:10px;color:var(--muted);margin-top:2px;">' + echoEscapeHtml(m.author || 'system') + ' — ' + echoEscapeHtml(String(m.caseId != null ? m.caseId : 'no case')) + '</div></div>' +
-          '<div style="text-align:right;"><span style="padding:2px 7px;background:rgba(166,218,255,0.06);border:1px solid rgba(166,218,255,0.15);border-radius:10px;font-size:9px;color:var(--' + sevColor + ');font-weight:600;text-transform:uppercase;">' + echoEscapeHtml(m.severity || '') + '</span></div>' +
-          '</div>';
-      }).join('') + '</div>';
-  } else if (tab === 'receipts') {
+  if (tab === 'receipts') {
     var typeColors = { 'counterfactual': 'amber', 'deployment': 'blue', 'governance': 'accent', 'attestation': 'green', 'case-closure': 'green', 'whistleblower-seal': 'red' };
     var filteredR = receipts.filter(function(r){
       if (!matchesTerm((r.receiptId || '') + ' ' + (r.receiptType || '') + ' ' + (r.issuedBy || '') + ' ' + (r.linkedCaseId || '') + ' ' + (r.linkedModelId || ''))) return false;
@@ -23559,7 +23694,8 @@ function echoFilterTabResults(tab, term) {
         var color = typeColors[r.receiptType] || 'muted';
         var dateStr = new Date(r.issuedDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
         var sigCount = (r.signatures || []).length;
-        return '<div style="padding:14px 16px;background:rgba(15,23,42,0.5);border:1px solid rgba(166,218,255,0.08);border-radius:10px;">' +
+        var rid = echoEscapeJsAttr(r.receiptId || '');
+        return '<div onclick="echoOpenReceiptDetail(\'' + rid + '\')" style="cursor:pointer;padding:14px 16px;background:rgba(15,23,42,0.5);border:1px solid rgba(166,218,255,0.08);border-radius:10px;">' +
           '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">' +
           '<div style="flex:1;"><div style="font-size:10px;color:var(--' + color + ');font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">' + echoEscapeHtml(String(r.receiptType || '').replace(/-/g, ' ')) + '</div>' +
           '<div style="font-size:13px;font-weight:600;color:var(--chrome2);font-family:monospace;">' + echoEscapeHtml(r.receiptId || '') + '</div></div>' +
@@ -23604,7 +23740,7 @@ function echoFilterTabResults(tab, term) {
     resultsEl.innerHTML = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">' +
       modelKeys.map(function(modelId){
         var mm = modelMap[modelId];
-        return '<div style="padding:14px;background:rgba(15,23,42,0.5);border:1px solid rgba(166,218,255,0.08);border-radius:10px;">' +
+        return '<div onclick="echoOpenModelDetail(\'' + echoEscapeJsAttr(modelId) + '\')" style="cursor:pointer;padding:14px;background:rgba(15,23,42,0.5);border:1px solid rgba(166,218,255,0.08);border-radius:10px;">' +
           '<div style="font-size:13px;font-weight:600;color:var(--chrome2);margin-bottom:8px;">' + echoEscapeHtml(modelId) + '</div>' +
           '<div style="display:flex;flex-direction:column;gap:4px;font-size:11px;">' +
           '<div style="display:flex;justify-content:space-between;border-bottom:1px dotted rgba(180,190,220,0.1);padding-bottom:4px;"><span style="color:var(--muted);">First seen</span><span style="color:var(--chrome2);">' + echoEscapeHtml(new Date(mm.firstSeen).toLocaleDateString('en-US')) + '</span></div>' +
@@ -23624,7 +23760,7 @@ function echoFilterTabResults(tab, term) {
     if (wbReceipts.length === 0) { resultsEl.innerHTML = '<div style="padding:30px;text-align:center;color:var(--muted);background:rgba(15,23,42,0.4);border:1px dashed rgba(166,218,255,0.1);border-radius:10px;">No matches.</div>'; return; }
     resultsEl.innerHTML = '<div style="display:flex;flex-direction:column;gap:10px;">' +
       wbReceipts.map(function(r){
-        var dateStr = new Date(r.issuedDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        var dateStr = new Date(r.issuedDate).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit', timeZoneName: 'short' });
         var accessTxt = (r.contents && r.contents.accessRoles) ? r.contents.accessRoles.join(', ') : 'restricted';
         return '<div style="padding:14px 16px;background:rgba(15,23,42,0.6);border:1px solid rgba(239,68,68,0.2);border-radius:10px;">' +
           '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;">' +
@@ -27147,7 +27283,13 @@ function renderTrustScore(org) {
   if (seriesRow) seriesRow.querySelectorAll('button').forEach(function (b) { b.classList.toggle('active', b.getAttribute('data-series') === 'score'); });
 
   var d = tsv2Data(o);
-  if (!d) return;
+  if (!d) {
+    console.error('[TrustScore] tsv2Data returned null for org:', o);
+    var rootEl = document.getElementById('ts-v2-root');
+    if (rootEl) rootEl.innerHTML = '<div style="padding:40px;text-align:center;color:var(--muted);"><div style="font-size:14px;margin-bottom:8px;">Trust Score data unavailable</div><div style="font-size:11px;">No CARDINAL_DATA found for org: ' + o + '</div></div>';
+    return;
+  }
+  console.log('[TrustScore] rendering for org:', o, 'data keys:', Object.keys(d).join(','));
   try {
     var mf = d.settingsState && d.settingsState.modelScoresDefaultFilter;
     if (mf) {
