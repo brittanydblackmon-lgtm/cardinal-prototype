@@ -6215,6 +6215,16 @@ Template Overview
             <div>
               <div style="font-size:10px;color:rgba(148,163,184,0.7);text-transform:uppercase;letter-spacing:1.2px;font-weight:600;margin-bottom:4px;">ACTIVITY · LAST 24 HOURS</div>
               <div id="echo-activity-headline" style="font-size:14px;color:#e2e8f0;font-weight:600;">—</div>
+              <div id="echo-ai-summary-wrap" style="margin-top:10px;padding:12px 14px;background:linear-gradient(135deg, rgba(168,85,247,0.06) 0%, rgba(15,23,42,0.4) 100%);border:1px solid rgba(168,85,247,0.18);border-radius:10px;display:flex;gap:12px;align-items:flex-start;">
+                <div style="width:24px;height:24px;border-radius:50%;background:rgba(168,85,247,0.15);border:1px solid rgba(168,85,247,0.4);display:flex;align-items:center;justify-content:center;font-size:11px;color:#a855f7;font-weight:700;flex-shrink:0;margin-top:1px;">✦</div>
+                <div style="flex:1;min-width:0;">
+                  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                    <span style="font-size:9px;color:#a855f7;text-transform:uppercase;letter-spacing:0.8px;font-weight:700;">Eve · 24h Briefing</span>
+                    <span id="echo-ai-summary-stamp" style="font-size:9px;color:var(--muted);font-family:monospace;">updates every 4h</span>
+                  </div>
+                  <div id="echo-ai-summary-text" style="font-size:12px;color:var(--chrome2);line-height:1.6;font-weight:400;">Loading briefing...</div>
+                </div>
+              </div>
             </div>
             <div style="display:flex;gap:14px;font-size:10px;color:rgba(148,163,184,0.7);">
               <span style="display:flex;align-items:center;gap:5px;"><span style="width:8px;height:8px;border-radius:2px;background:#ef4444;box-shadow:0 0 6px rgba(239,68,68,0.5);"></span>critical</span>
@@ -22763,6 +22773,72 @@ function renderEchoCardinalHero(org) {
     });
   }
 
+  // === AI 24H BRIEFING — generated from memory data (runs every hero render) ===
+  try {
+    var summaryEl = document.getElementById('echo-ai-summary-text');
+    var stampEl = document.getElementById('echo-ai-summary-stamp');
+    if (summaryEl) {
+      var last24Mems = memories.filter(function(m){ return (now - new Date(m.timestamp).getTime()) <= 86400000; });
+      var crit = last24Mems.filter(function(m){ return m.severity === 'critical'; });
+      var high = last24Mems.filter(function(m){ return m.severity === 'high'; });
+      var dismissals = last24Mems.filter(function(m){ var s = (m.summary || '').toLowerCase(); return s.indexOf('dismiss') !== -1 || s.indexOf('false positive') !== -1; });
+      var caseOpens = last24Mems.filter(function(m){ return m.eventType === 'case-opened'; });
+      var deployments = last24Mems.filter(function(m){ return m.eventType === 'remediation-started' || m.eventType === 'model-deployed'; });
+      var people = new Set(last24Mems.filter(function(m){ return m.authorRole === 'user'; }).map(function(m){ return m.author; }));
+      var cases = new Set(last24Mems.map(function(m){ return m.caseId; }).filter(Boolean));
+
+      var winLabel = '24 hours';
+      var winMems = last24Mems;
+      if (last24Mems.length < 5) {
+        winLabel = '7 days';
+        winMems = memories.filter(function(m){ return (now - new Date(m.timestamp).getTime()) <= 604800000; });
+        crit = winMems.filter(function(m){ return m.severity === 'critical'; });
+        high = winMems.filter(function(m){ return m.severity === 'high'; });
+        dismissals = winMems.filter(function(m){ var s = (m.summary || '').toLowerCase(); return s.indexOf('dismiss') !== -1 || s.indexOf('false positive') !== -1; });
+        caseOpens = winMems.filter(function(m){ return m.eventType === 'case-opened'; });
+        deployments = winMems.filter(function(m){ return m.eventType === 'remediation-started' || m.eventType === 'model-deployed'; });
+        people = new Set(winMems.filter(function(m){ return m.authorRole === 'user'; }).map(function(m){ return m.author; }));
+        cases = new Set(winMems.map(function(m){ return m.caseId; }).filter(Boolean));
+      }
+
+      var parts = [];
+      var head = 'In the last ' + winLabel + ', Echo sealed <strong>' + winMems.length + ' events</strong> across <strong>' + cases.size + ' active case' + (cases.size === 1 ? '' : 's') + '</strong>.';
+      parts.push(head);
+
+      if (crit.length > 0) {
+        parts.push('<span style="color:#ef4444;">' + crit.length + ' critical</span> ' + (crit.length === 1 ? 'flag is' : 'flags are') + ' unresolved and need eyes now.');
+      } else if (high.length > 0) {
+        parts.push('<span style="color:#f59e0b;">' + high.length + ' high-severity</span> ' + (high.length === 1 ? 'item' : 'items') + ' open for review.');
+      } else {
+        parts.push('No critical or high-severity items pending — posture stable.');
+      }
+
+      if (dismissals.length > 0) {
+        parts.push('<strong>' + dismissals.length + ' dismissal' + (dismissals.length === 1 ? '' : 's') + '</strong> logged — Cardinal preserved each one with downstream impact tracking.');
+      }
+      if (caseOpens.length > 0) {
+        parts.push(caseOpens.length + ' new case' + (caseOpens.length === 1 ? '' : 's') + ' opened.');
+      }
+      if (deployments.length > 0) {
+        parts.push(deployments.length + ' model deployment' + (deployments.length === 1 ? '' : 's') + ' / remediation step' + (deployments.length === 1 ? '' : 's') + ' in flight.');
+      }
+      parts.push('<strong>' + people.size + '</strong> ' + (people.size === 1 ? 'person was' : 'people were') + ' active.');
+
+      if (crit.length > 0) {
+        parts.push('<span style="color:#a855f7;font-style:italic;">→ Eve recommends triaging the critical items before anything else today.</span>');
+      } else if (dismissals.length >= 2) {
+        parts.push('<span style="color:#a855f7;font-style:italic;">→ Eve flags review pattern: multiple dismissals in window — consider spot-check.</span>');
+      } else {
+        parts.push('<span style="color:#a855f7;font-style:italic;">→ Eve assessment: routine governance day, nothing requires CEO attention.</span>');
+      }
+
+      summaryEl.innerHTML = parts.join(' ');
+
+      var nextRefresh = new Date(now + 4 * 3600 * 1000);
+      if (stampEl) stampEl.textContent = 'Last generated ' + new Date(now).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) + ' · refreshes ' + nextRefresh.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+    }
+  } catch(_aiErr) { console.warn('[Echo] AI summary failed', _aiErr); }
+
   var addendumCount = memories.reduce(function(acc, m){ return acc + (m.addendums ? m.addendums.length : 0); }, 0);
   var modelCount = new Set(memories.map(function(m){ return m.modelId; }).filter(Boolean)).size;
   var archivedCount = memories.filter(function(m){ return m.eventType === 'model-archived' || m.eventType === 'cohort-archived' || (m.summary && m.summary.toLowerCase().indexOf('archived') !== -1); }).length;
@@ -22812,15 +22888,86 @@ function renderEchoCardinalHero(org) {
     try {
       var echoScreen = document.getElementById('screen-echo');
       if (!echoScreen || !echoScreen.classList.contains('active')) return;
+
+      // Show "updating..." indicator
+      var statusVerdict = document.getElementById('echo-status-verdict');
+      var origVerdict = statusVerdict ? statusVerdict.innerHTML : '';
+      if (statusVerdict) {
+        statusVerdict.innerHTML = '<span style="color:#a855f7;font-style:italic;">⟳ Echo refreshing...</span>';
+      }
+
+      // Capture old KPI values to detect changes
+      var oldVals = {};
+      ['echo-kpi-critical','echo-kpi-ignored','echo-kpi-pending','echo-kpi-whistleblower','echo-kpi-days-since','echo-kpi-active-cases','echo-kpi-last-activity'].forEach(function(id){
+        var el = document.getElementById(id);
+        if (el) oldVals[id] = el.textContent;
+      });
+
+      // Re-render hero (recomputes everything)
       renderEchoCardinalHero(window.__echoCurrentOrg || org);
+
+      // Compare new values; pulse any that changed
+      Object.keys(oldVals).forEach(function(id){
+        var el = document.getElementById(id);
+        if (el && el.textContent !== oldVals[id]) {
+          el.style.transition = 'all 0.5s ease';
+          el.style.transform = 'scale(1.15)';
+          el.style.textShadow = '0 0 12px currentColor';
+          setTimeout(function(){
+            el.style.transform = 'scale(1)';
+            el.style.textShadow = '';
+          }, 500);
+        }
+      });
+
+      // Pulse the headline always (signals refresh happened)
       var headline = document.getElementById('echo-activity-headline');
       if (headline) {
         headline.style.transition = 'opacity 0.4s';
-        headline.style.opacity = '0.4';
-        setTimeout(function(){ headline.style.opacity = '1'; }, 400);
+        headline.style.opacity = '0.5';
+        setTimeout(function(){ headline.style.opacity = '1'; }, 500);
       }
+
+      // Pulse AI summary too
+      var aiBox = document.getElementById('echo-ai-summary-wrap');
+      if (aiBox) {
+        aiBox.style.transition = 'box-shadow 0.6s ease, border-color 0.6s ease';
+        var origShadow = aiBox.style.boxShadow;
+        var origBorder = aiBox.style.borderColor;
+        aiBox.style.boxShadow = '0 0 20px rgba(168,85,247,0.3)';
+        aiBox.style.borderColor = 'rgba(168,85,247,0.5)';
+        setTimeout(function(){
+          aiBox.style.boxShadow = origShadow;
+          aiBox.style.borderColor = '';
+        }, 1200);
+      }
+
+      // Restore status verdict after brief delay
+      setTimeout(function(){
+        if (statusVerdict && origVerdict) statusVerdict.innerHTML = origVerdict;
+      }, 800);
+
+      // Log to console so you can see ticks happening
+      console.log('[Echo] live tick fired at', new Date().toLocaleTimeString());
     } catch(_le) { console.warn('[Echo] live tick failed', _le); }
   }, 60000);
+
+  // Also fire ONE preview tick after 6 seconds so user sees it work right away
+  setTimeout(function(){
+    if (window.__echoLiveTickHandle) {
+      var echoScreen = document.getElementById('screen-echo');
+      if (echoScreen && echoScreen.classList.contains('active')) {
+        var aiBox = document.getElementById('echo-ai-summary-wrap');
+        if (aiBox) {
+          aiBox.style.transition = 'box-shadow 0.6s ease, border-color 0.6s ease';
+          aiBox.style.boxShadow = '0 0 20px rgba(168,85,247,0.3)';
+          aiBox.style.borderColor = 'rgba(168,85,247,0.5)';
+          setTimeout(function(){ aiBox.style.boxShadow = ''; aiBox.style.borderColor = ''; }, 1200);
+        }
+        console.log('[Echo] preview tick at', new Date().toLocaleTimeString());
+      }
+    }
+  }, 6000);
 }
 
 
@@ -22905,6 +23052,9 @@ function echoSetFilter(key, value, opts) {
 
 function echoResetFilters() {
   try { if (typeof echoClearFilter === 'function') echoClearFilter(); } catch(_ec) {}
+  if (window.__echoCustomDateRange) delete window.__echoCustomDateRange['main:timePeriod'];
+  var crb = document.getElementById('echo-custom-range-banner');
+  if (crb) crb.remove();
   window.__echoFilters = { timePeriod: 'all', core: 'all', case: 'all', model: 'all', person: 'all', eventType: 'all', severity: 'all', accessTier: 'all' };
   var search = document.getElementById('echo-search-input');
   if (search) search.value = '';
@@ -22924,6 +23074,16 @@ function echoApplyFilters() {
   var now = Date.now();
   var timeWindowMs = { day: 86400000, week: 604800000, month: 2592000000, quarter: 7776000000, year: 31536000000 }[f.timePeriod];
 
+  // Custom range support
+  var customRange = null;
+  if (f.timePeriod === 'custom' && window.__echoCustomDateRange && window.__echoCustomDateRange['main:timePeriod']) {
+    var cr = window.__echoCustomDateRange['main:timePeriod'];
+    customRange = {
+      from: new Date(cr.from + 'T00:00:00').getTime(),
+      to: new Date(cr.to + 'T23:59:59').getTime()
+    };
+  }
+
   var filtered = memories.filter(function(m){
     if (f.core !== 'all' && m.core !== f.core) return false;
     if (f.case !== 'all' && m.caseId !== f.case) return false;
@@ -22932,7 +23092,12 @@ function echoApplyFilters() {
     if (f.eventType !== 'all' && m.eventType !== f.eventType) return false;
     if (f.severity !== 'all' && m.severity !== f.severity) return false;
     if (f.accessTier !== 'all' && m.accessTier !== f.accessTier) return false;
-    if (timeWindowMs && (now - new Date(m.timestamp).getTime()) > timeWindowMs) return false;
+    if (customRange) {
+      var mTs = new Date(m.timestamp).getTime();
+      if (mTs < customRange.from || mTs > customRange.to) return false;
+    } else if (timeWindowMs && (now - new Date(m.timestamp).getTime()) > timeWindowMs) {
+      return false;
+    }
     if (searchTerm) {
       var hay = ((m.summary || '') + ' ' + (m.content || '') + ' ' + (m.author || '') + ' ' + (m.caseId || '') + ' ' + (m.modelId || '') + ' ' + (m.userId || '')).toLowerCase();
       if (hay.indexOf(searchTerm) === -1) return false;
@@ -23366,6 +23531,19 @@ function echoOpenCustomDateRange(scope, filterKey) {
   document.body.appendChild(modal);
 }
 
+function echoClearCustomRange() {
+  if (window.__echoCustomDateRange) delete window.__echoCustomDateRange['main:timePeriod'];
+  window.__echoFilters = window.__echoFilters || {};
+  window.__echoFilters.timePeriod = 'all';
+  var banner = document.getElementById('echo-custom-range-banner');
+  if (banner) banner.remove();
+  try { echoApplyFilters(); } catch(_e) {}
+  try {
+    var org = (typeof currentOrg !== 'undefined' && currentOrg) ? currentOrg : (window.currentOrg || 'ad');
+    renderEchoFilterBar(org);
+  } catch(_r) {}
+}
+
 function echoApplyCustomDateRange(scope, filterKey) {
   var fromEl = document.getElementById('echo-custom-date-from');
   var toEl = document.getElementById('echo-custom-date-to');
@@ -23380,6 +23558,19 @@ function echoApplyCustomDateRange(scope, filterKey) {
     }
   } catch (_e) {}
   document.getElementById('echo-custom-date-modal').remove();
+  // Show active filter banner (main Echo feed only)
+  if (scope === 'main' && filterKey === 'timePeriod') {
+    var existing = document.getElementById('echo-custom-range-banner');
+    if (existing) existing.remove();
+    var banner = document.createElement('div');
+    banner.id = 'echo-custom-range-banner';
+    banner.style.cssText = 'margin:10px 0;padding:10px 14px;background:rgba(168,85,247,0.08);border:1px solid rgba(168,85,247,0.25);border-radius:8px;display:flex;justify-content:space-between;align-items:center;font-size:11px;color:#a855f7;';
+    banner.innerHTML = '<span>📅 Custom range active: <strong>' + fromEl.value + '</strong> → <strong>' + toEl.value + '</strong></span>' +
+      '<button type="button" onclick="echoClearCustomRange()" style="background:rgba(168,85,247,0.15);border:1px solid rgba(168,85,247,0.3);color:#a855f7;padding:4px 10px;border-radius:5px;cursor:pointer;font-size:10px;font-weight:600;">Clear range ×</button>';
+    var filterBar = document.getElementById('echo-filter-bar');
+    if (filterBar && filterBar.parentNode) filterBar.parentNode.insertBefore(banner, filterBar.nextSibling);
+  }
+  try { echoApplyFilters(); } catch(_ef) {}
 }
 
 function echoOpenReceiptDetail(receiptId) {
