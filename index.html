@@ -238,8 +238,91 @@
 --red-bg:  rgba(239,68,68,0.08);
 --blue:    #60A5FA;
 --blue-bg: rgba(96,165,250,0.08);
+
+  /* Severity color tokens — locked palette, use everywhere */
+  --sev-critical: #ef4444;
+  --sev-critical-bg: rgba(239,68,68,0.10);
+  --sev-critical-border: rgba(239,68,68,0.35);
+  --sev-critical-text: #ef4444;
+
+  --sev-high: #f59e0b;
+  --sev-high-bg: rgba(245,158,11,0.10);
+  --sev-high-border: rgba(245,158,11,0.35);
+  --sev-high-text: #f59e0b;
+
+  --sev-medium: #3b82f6;
+  --sev-medium-bg: rgba(59,130,246,0.10);
+  --sev-medium-border: rgba(59,130,246,0.30);
+  --sev-medium-text: #3b82f6;
+
+  --sev-low: #22c55e;
+  --sev-low-bg: rgba(34,197,94,0.08);
+  --sev-low-border: rgba(34,197,94,0.30);
+  --sev-low-text: #22c55e;
+
+  --sev-info: #94a3b8;
+  --sev-info-bg: rgba(148,163,184,0.06);
+  --sev-info-border: rgba(148,163,184,0.25);
+  --sev-info-text: #94a3b8;
+
+  /* Federal Lens accent */
+  --fed-accent: #a855f7;
+  --fed-accent-bg: rgba(168,85,247,0.08);
+  --fed-accent-border: rgba(168,85,247,0.30);
 }
 * { margin:0; padding:0; box-sizing:border-box; }
+
+/* Severity badge — drop-in for any severity indicator (2D-d-30) */
+.sev-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 8px;
+  border-radius: 8px;
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  white-space: nowrap;
+}
+.sev-badge-critical { color: var(--sev-critical-text); background: var(--sev-critical-bg); border: 1px solid var(--sev-critical-border); }
+.sev-badge-high     { color: var(--sev-high-text);     background: var(--sev-high-bg);     border: 1px solid var(--sev-high-border); }
+.sev-badge-medium   { color: var(--sev-medium-text);   background: var(--sev-medium-bg);   border: 1px solid var(--sev-medium-border); }
+.sev-badge-low      { color: var(--sev-low-text);      background: var(--sev-low-bg);      border: 1px solid var(--sev-low-border); }
+.sev-badge-info     { color: var(--sev-info-text);     background: var(--sev-info-bg);     border: 1px solid var(--sev-info-border); }
+
+.sev-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.sev-dot-critical { background: var(--sev-critical); }
+.sev-dot-high     { background: var(--sev-high); }
+.sev-dot-medium   { background: var(--sev-medium); }
+.sev-dot-low      { background: var(--sev-low); }
+.sev-dot-info     { background: var(--sev-info); }
+
+/* Case status badges */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  border-radius: 8px;
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+.status-open { color: #f59e0b; background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.3); }
+.status-closed { color: #22c55e; background: rgba(34,197,94,0.06); border: 1px solid rgba(34,197,94,0.25); }
+.status-in-flight { color: #3b82f6; background: rgba(59,130,246,0.08); border: 1px solid rgba(59,130,246,0.3); }
+.status-resolved { color: #22c55e; background: rgba(34,197,94,0.06); border: 1px solid rgba(34,197,94,0.25); }
+.status-blocked { color: #ef4444; background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.3); }
+.status-pending { color: #94a3b8; background: rgba(148,163,184,0.06); border: 1px solid rgba(148,163,184,0.25); }
 html, body { height: 100%; margin: 0; padding: 0; }
 body {
 font-family: var(--sans);
@@ -14873,6 +14956,40 @@ function doLogin() {
   }
 }
 
+window.cardinalTrustScoreColor = function(score) {
+  var n = typeof score === 'number' ? score : parseFloat(String(score));
+  if (isNaN(n)) return { color: '#f59e0b', label: 'Below Threshold', bg: 'rgba(245,158,11,0.08)' };
+  if (n > 0 && n <= 1) n = n * 100;
+  if (n >= 80) return { color: '#22c55e', label: 'Certified', bg: 'rgba(34,197,94,0.08)' };
+  if (n >= 70) return { color: '#f59e0b', label: 'Below Threshold', bg: 'rgba(245,158,11,0.08)' };
+  return { color: '#ef4444', label: 'Critical', bg: 'rgba(239,68,68,0.08)' };
+};
+
+window.cardinalSeverityColor = function(severity) {
+  var map = {
+    critical: { color: '#ef4444', bg: 'rgba(239,68,68,0.10)', border: 'rgba(239,68,68,0.35)' },
+    high:     { color: '#f59e0b', bg: 'rgba(245,158,11,0.10)', border: 'rgba(245,158,11,0.35)' },
+    medium:   { color: '#3b82f6', bg: 'rgba(59,130,246,0.10)', border: 'rgba(59,130,246,0.30)' },
+    low:      { color: '#22c55e', bg: 'rgba(34,197,94,0.08)', border: 'rgba(34,197,94,0.30)' },
+    informational: { color: '#94a3b8', bg: 'rgba(148,163,184,0.06)', border: 'rgba(148,163,184,0.25)' }
+  };
+  var key = String(severity || 'informational').toLowerCase();
+  return map[key] || map.informational;
+};
+
+window.cardinalSevBadge = function(severity, label) {
+  var sev = String(severity || 'informational').toLowerCase();
+  var displayLabel = label || sev.toUpperCase();
+  var className = 'sev-badge-' + (sev === 'informational' ? 'info' : sev);
+  return '<span class="sev-badge ' + className + '">' + displayLabel + '</span>';
+};
+
+window.cardinalSevDot = function(severity) {
+  var sev = String(severity || 'informational').toLowerCase();
+  var className = 'sev-dot-' + (sev === 'informational' ? 'info' : sev);
+  return '<span class="sev-dot ' + className + '"></span>';
+};
+
 window.updateSidebarTrustScoreChip = function() {
   var chipNum = document.querySelector('.sidebar-trust-score-chip-num') || document.getElementById('sidebar-trust-score-num') || document.getElementById('sidebar-score');
   var chipBadge = document.getElementById('sidebar-score-badge');
@@ -14881,13 +14998,14 @@ window.updateSidebarTrustScoreChip = function() {
   var scores = { ad: 74, fin: 81, health: 83, fed: 71 };
   var dotEl = document.querySelector('.sidebar-trust-score-chip-dot') || document.getElementById('sidebar-trust-score-dot') || document.querySelector('#sidebar-trust-badge-collapsed .trust-score-chip-badge-dot');
   var score = scores[org] || 74;
+  var tier = typeof window.cardinalTrustScoreColor === 'function' ? window.cardinalTrustScoreColor(score) : { color: '#f59e0b' };
+  var badgeColor = tier.color;
   if (chipNum) {
     chipNum.textContent = score;
-    chipNum.style.color = score >= 80 ? '#22c55e' : score >= 70 ? '#f59e0b' : '#ef4444';
+    chipNum.style.color = badgeColor;
   }
   if (chipBadge) chipBadge.textContent = score;
   var badgeHost = document.getElementById('sidebar-trust-badge-collapsed');
-  var badgeColor = score >= 80 ? '#22c55e' : score >= 70 ? '#f59e0b' : '#ef4444';
   if (badgeHost) badgeHost.style.background = badgeColor;
   if (dotEl) dotEl.style.background = badgeColor;
 };
@@ -15024,11 +15142,9 @@ document.addEventListener('DOMContentLoaded', function(){
 // Global Trust Score panel — tier color & navigation
 // ─────────────────────────────────────────────────────────────────────────
 function dashGlobalTrustScoreColor(score) {
-  var s = typeof score === 'number' ? score : parseFloat(String(score));
-  if (isNaN(s)) return '#F59E0B';
-  if (s >= 0.80) return '#22C55E';
-  if (s >= 0.70) return '#F59E0B';
-  return '#EF4444';
+  var o = (typeof window.cardinalTrustScoreColor === 'function') ? window.cardinalTrustScoreColor(score) : null;
+  if (o && o.color) return o.color;
+  return '#F59E0B';
 }
 
 function dashGlobalTrustPanelClick(ev) {
@@ -30743,9 +30859,8 @@ function tsv2AnimateNumber(el, from, to, durMs) {
 }
 
 function tsv2ScoreColor(score) {
-  if (score >= 80) return '#22c55e';
-  if (score >= 70) return '#f59e0b';
-  return '#ef4444';
+  var o = (typeof window.cardinalTrustScoreColor === 'function') ? window.cardinalTrustScoreColor(score) : null;
+  return (o && o.color) ? o.color : '#ef4444';
 }
 
 function tsv2OrdSuffix(n) {
@@ -30780,7 +30895,8 @@ function tsv2BuildHero(d) {
 
   var status = document.getElementById('tsv2-status');
   if (status) {
-    status.textContent = d.trustStatus || (score >= 80 ? 'Within Compliance' : 'Below Threshold — Not Certified');
+    var tier = (typeof window.cardinalTrustScoreColor === 'function') ? window.cardinalTrustScoreColor(score) : null;
+    status.textContent = d.trustStatus || (tier && tier.label) || (score >= 80 ? 'Certified' : score >= 70 ? 'Below Threshold' : 'Critical');
     status.style.color = color;
   }
 
