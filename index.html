@@ -15137,6 +15137,11 @@ function doLogin() {
     try { renderDashboardActiveChannels(currentOrg); } catch (eDAC) { console.log('renderDashboardActiveChannels:', eDAC.message); }
     try { window.currentAlertIndex = 0; renderAlert(0); } catch (_eAlerts) {}
     try { refreshDashboardGreeting(); } catch(e5) {}
+    try {
+      if (typeof window.cardinalEnsureDashboardLanding === 'function') {
+        window.cardinalEnsureDashboardLanding();
+      }
+    } catch (_cdl) {}
     // Charts now lazy-load via showScreen — no initCharts here
   } catch(e) {
     // Force show app anyway
@@ -34694,6 +34699,68 @@ window.openModelDetail = openModelDetail;
   }
   initDraggableEve();
 })();
+
+// ════════════════════════════════════════════════════════════════
+// 2D-d-33: Force Dashboard as default landing screen on every page load
+// ════════════════════════════════════════════════════════════════
+(function ensureDashboardOnLoad() {
+  function goDash() {
+    try {
+      if (window.location.hash) {
+        try {
+          history.replaceState(null, '', window.location.pathname + window.location.search);
+        } catch (_h) {}
+      }
+
+      var dashNavEl = null;
+      var nAll = document.querySelectorAll('.nav-item');
+      for (var j = 0; j < nAll.length; j++) {
+        var oc0 = nAll[j].getAttribute('onclick') || '';
+        if (oc0.indexOf("'dashboard'") !== -1) {
+          dashNavEl = nAll[j];
+          break;
+        }
+      }
+
+      if (typeof showScreen === 'function') {
+        showScreen('dashboard', dashNavEl);
+      } else {
+        document.querySelectorAll('.screen').forEach(function (s) {
+          s.classList.remove('active');
+        });
+        var dash = document.getElementById('screen-dashboard');
+        if (dash) dash.classList.add('active');
+        document.querySelectorAll('.nav-item.active').forEach(function (el) {
+          el.classList.remove('active');
+        });
+        if (dashNavEl) dashNavEl.classList.add('active');
+      }
+
+      var topTitle = document.getElementById('topbar-title');
+      var topSub = document.getElementById('topbar-sub');
+      if (topTitle) topTitle.textContent = 'Cardinal Dashboard';
+      if (topSub) {
+        topSub.textContent = 'Single pane of glass · all systems · live status';
+        topSub.style.display = '';
+      }
+
+      try {
+        if (typeof buildDashboard === 'function') buildDashboard(window.currentOrg || 'ad');
+      } catch (_e) {}
+    } catch (_err) {
+      console.error('[Cardinal] Dashboard default-load failed:', _err);
+    }
+  }
+  window.cardinalEnsureDashboardLanding = goDash;
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function () {
+      setTimeout(goDash, 0);
+    });
+  } else {
+    setTimeout(goDash, 0);
+  }
+})();
+
 (function wireCardinalAskBarOnce(){
   function go() {
     var inp = document.getElementById('cardinal-ask-input');
