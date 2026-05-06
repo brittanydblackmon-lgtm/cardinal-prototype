@@ -1620,6 +1620,14 @@ line-height: 1; margin-bottom: 5px;
   0%, 100% { opacity: 1; filter: brightness(1.1); transform: scale(1); }
   50% { opacity: 0.72; transform: scale(1.18); filter: brightness(1.35); box-shadow: 0 0 18px rgba(96,165,250,0.55); }
 }
+@keyframes haloPulseCritical {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0.4); }
+  50% { box-shadow: 0 0 0 6px rgba(239,68,68,0); }
+}
+.halo-pred-critical {
+  animation: haloPulseCritical 2s ease-in-out infinite;
+  border-radius: 14px;
+}
 .halo-cc { transition: opacity 0.15s ease, filter 0.15s ease; outline: none; }
 .halo-cc:hover { opacity: 0.96; filter: brightness(1.08); }
 
@@ -5773,6 +5781,7 @@ Settings
 <button class="btn-primary" onclick="deployToShadow()">Deploy to Shadow Lane →</button>
 </div>
 </div>
+<div id="atonement-deep-view" style="margin-top:18px;"></div>
 <!-- ATONEMENT TABS -->
 <div style="display:flex;gap:2px;margin-bottom:14px;background:var(--bg2);border-radius:8px;padding:3px;width:fit-content" id="at-tabs">
 <button class="gen-tab active" onclick="switchAtTab('fix',0)">Fix Recommendation</button>
@@ -6032,9 +6041,24 @@ Halo Core
 <div id="halo-cardinal-hero" class="cardinal-collapse-if-empty" style="margin-bottom:16px;"></div>
 <div id="halo-attribution-cards" class="cardinal-collapse-if-empty" style="margin-bottom:16px;"></div>
 
+<div id="halo-predictive-section" style="margin:20px 0;">
+  <div class="cardinal-section-hdr" style="margin-bottom:14px;">
+    <div>
+      <div class="section-title">🔮 Predictive Risk Engine — What's About to Break</div>
+      <div class="section-sub">Halo predicts model decay, bias drift, regulator action, and customer harm BEFORE it happens · Suggests targeted actions · Quantifies cost of inaction</div>
+    </div>
+    <div class="section-actions">
+      <button class="cardinal-btn cardinal-btn-ghost" onclick="haloRunMultiObjective()" style="font-size:10px;">⚖️ Multi-Objective Optimization</button>
+    </div>
+  </div>
+  <div id="halo-pred-stats" class="grid-4" style="margin-bottom:16px;"></div>
+  <div id="halo-pred-list"></div>
+</div>
+
 <div class="halo-map-shell" style="position:relative" onclick="haloBackdropClick(event)">
 <div id="halo-map-container" style="width:100%;height:380px;background:#080c14;border-radius:12px;border:1px solid rgba(166,218,255,0.1);position:relative;overflow:hidden;">
   <svg id="halo-world-svg" width="100%" height="380"></svg>
+  <div id="halo-map-prediction-overlay" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:7;"></div>
   <div id="halo-map-tooltip" style="display:none;position:absolute;background:rgba(13,14,20,0.95);border:1px solid rgba(166,218,255,0.2);border-radius:8px;padding:12px 16px;pointer-events:none;min-width:200px;z-index:10;"></div>
   <!-- Legend top right -->
   <div style="position:absolute;top:12px;right:12px;background:rgba(8,12,20,0.85);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:10px 14px;">
@@ -10295,6 +10319,285 @@ window.openPersonaSwitcher = function() {
 
   modal.innerHTML = html;
   document.body.appendChild(modal);
+};
+
+// ══════════════════════════════════════════════════════
+// CARDINAL_HALO_PREDICTIONS — industry-aware predictive risks (Halo Core)
+// ══════════════════════════════════════════════════════
+window.CARDINAL_HALO_PREDICTIONS = {
+  ad: [
+    {
+      id: 'PRED-AD-001',
+      severity: 'critical',
+      modelId: 'AD-PERSONNEL-V2.4',
+      modelName: 'Personnel Assignment v2.4',
+      caseLink: 'AD-2847',
+      title: 'Personnel v2.4 will breach DoD AI Ethics threshold within 14 days',
+      narrative: 'Disparate Impact ratio trending from 0.67 → 0.61 over last 21 days. At current rate, will cross 0.60 floor by May 20. Triggers DoD AI Ethics Article 4 Section C — automatic certification suspension.',
+      timeHorizon: '14 days',
+      certaintyPct: 87,
+      financialExposure: 67000000,
+      humanImpact: '847 service members affected. Mission readiness scoring inversion projected to spread to 1,400+ personnel if uncorrected.',
+      suggestedActions: [
+        { action: 'Send to Atonement for shadow remediation', target: 'atonement', priority: 'urgent', owner: 'Sarah Chen + James Martinez' },
+        { action: 'Open War Room case', target: 'sentinel', priority: 'high', owner: 'James Martinez' },
+        { action: 'Schedule DoD pre-disclosure call', target: 'compliance', priority: 'medium', owner: "Kevin O'Brien" }
+      ],
+      jurisdictions: ['Pentagon DC', 'Norfolk VA', 'San Diego CA', 'Honolulu HI'],
+      statutes: ['DoD AI Ethics', 'Title VII', '18 USC §1513'],
+      lat: 38.87, lng: -77.05,
+      trend: [0.72, 0.71, 0.70, 0.69, 0.68, 0.67, 0.65, 0.63, 0.61]
+    },
+    {
+      id: 'PRED-AD-002',
+      severity: 'high',
+      modelId: 'AD-MISSION-V1.2',
+      modelName: 'Mission Readiness v1.2',
+      caseLink: null,
+      title: 'Mission Readiness drift detected — projected DI degradation in 30 days',
+      narrative: 'Eden detected emergent demographic clustering in last 7 days. Pattern matches early signals from AD-2847. If not addressed, projected to reach Atonement-required threshold by Jun 5.',
+      timeHorizon: '30 days',
+      certaintyPct: 64,
+      financialExposure: 12000000,
+      humanImpact: '~340 personnel projected to be impacted if drift continues uncorrected.',
+      suggestedActions: [
+        { action: 'Send to Genesis for proactive counterfactual', target: 'genesis', priority: 'high', owner: 'Anthony Broadnax' },
+        { action: 'Adam autonomous coverage gap test', target: 'genesis', priority: 'medium', owner: 'Adam (AI)' }
+      ],
+      jurisdictions: ['Norfolk VA', 'San Diego CA'],
+      statutes: ['DoD AI Ethics'],
+      lat: 36.85, lng: -76.29,
+      trend: [0.81, 0.80, 0.80, 0.79, 0.78, 0.78, 0.77]
+    }
+  ],
+  fin: [
+    {
+      id: 'PRED-FIN-001',
+      severity: 'critical',
+      modelId: 'FIN-CREDIT-V3.4',
+      modelName: 'Credit Scoring v3.4',
+      caseLink: 'FIN-1203',
+      title: 'NYC Local Law 144 audit deadline in 8 days — current Trust Score insufficient',
+      narrative: 'Annual bias audit required by NYC LL144 for Credit Scoring v3.4 due May 14. Current Trust Score 65 below 80 certification floor. Predicted CFPB action: $33M plus $40M ECOA exposure.',
+      timeHorizon: '8 days',
+      certaintyPct: 92,
+      financialExposure: 73000000,
+      humanImpact: '1,203 applicants in protected ZIP clusters. 2.1x denial disparity. 687 already restored via v3.5 shadow.',
+      suggestedActions: [
+        { action: 'Promote v3.5 from shadow to production', target: 'atonement', priority: 'urgent', owner: 'Sarah Chen' },
+        { action: 'Generate NYC LL144 audit packet', target: 'compliance', priority: 'urgent', owner: 'James Martinez' },
+        { action: 'Complete remediation cohort outreach', target: 'atonement', priority: 'high', owner: 'Taylor Brennan' }
+      ],
+      jurisdictions: ['New York NY', 'Newark NJ'],
+      statutes: ['ECOA', 'NYC LL144', 'CO AI Act'],
+      lat: 40.71, lng: -74.01,
+      trend: [0.78, 0.74, 0.71, 0.68, 0.66, 0.65, 0.65]
+    },
+    {
+      id: 'PRED-FIN-002',
+      severity: 'medium',
+      modelId: 'FIN-FRAUD-V2.1',
+      modelName: 'Fraud Detection v2.1',
+      caseLink: null,
+      title: 'Insurance premium impact projected if Trust Score drops 6 points',
+      narrative: 'Cardinal Halo predicts that if Trust Score for FIN-FRAUD-V2.1 drops below 80 in next 60 days, your D&O insurance premium will increase 14% at renewal (Aug 15). Pareto frontier suggests minor threshold tuning preserves performance.',
+      timeHorizon: '60 days',
+      certaintyPct: 71,
+      financialExposure: 1800000,
+      humanImpact: 'No direct customer impact yet; monitoring threshold.',
+      suggestedActions: [
+        { action: 'Run multi-objective optimization in Halo', target: 'halo', priority: 'medium', owner: 'Sarah Chen' }
+      ],
+      jurisdictions: ['New York NY'],
+      statutes: ['ECOA', 'FTC §5 UDAP'],
+      lat: 40.71, lng: -74.01,
+      trend: [0.91, 0.90, 0.89, 0.89, 0.88]
+    }
+  ],
+  health: [
+    {
+      id: 'PRED-HS-001',
+      severity: 'critical',
+      modelId: 'HS-CLAIMS-V4.1',
+      modelName: 'Claims Adjudication v4.1',
+      caseLink: 'HS-2847',
+      title: 'Patient denial pattern projected to escalate — class action risk in 45 days',
+      narrative: 'Eden has flagged 2,847 patients aged 65+ denied at 2.3x rate over last 90 days. Trajectory predicts 4,200+ patients impacted by July if uncorrected. Halo flags significant ACA §1557 + class action exposure.',
+      timeHorizon: '45 days',
+      certaintyPct: 89,
+      financialExposure: 150000000,
+      humanImpact: '2,847 patients currently affected. Projected escalation to 4,200+. Mortality risk for time-sensitive treatments.',
+      suggestedActions: [
+        { action: 'Send to Atonement immediately', target: 'atonement', priority: 'urgent', owner: 'Sarah Chen + James Martinez' },
+        { action: 'Open War Room case + escalate to Legal', target: 'sentinel', priority: 'urgent', owner: "Kevin O'Brien" },
+        { action: 'Genesis counterfactual on age proxy variable', target: 'genesis', priority: 'high', owner: 'Anthony Broadnax' }
+      ],
+      jurisdictions: ['Atlanta GA', 'Houston TX', 'Phoenix AZ'],
+      statutes: ['ACA §1557', '18 USC §1513'],
+      lat: 33.75, lng: -84.39,
+      trend: [0.72, 0.70, 0.68, 0.66, 0.64, 0.62, 0.60]
+    }
+  ],
+  fed: [
+    {
+      id: 'PRED-FED-001',
+      severity: 'high',
+      modelId: 'FED-IRS-FRAUD-V3.1',
+      modelName: 'IRS Tax Fraud Detection v3.1',
+      caseLink: 'FED-PDV-001',
+      title: 'Pre-deployment vetting blocked — proxy variable detected',
+      narrative: 'OMB Unbiased AI requires resolved proxy variable risk before deployment. Halo predicts that without remediation, EO May 2026 deployment review will fail. Self-employed filer cohort (1,200) shows 2.4x audit selection disparity correlated with ZIP.',
+      timeHorizon: 'Pre-deployment block',
+      certaintyPct: 95,
+      financialExposure: 18000000,
+      humanImpact: '1,200 self-employed filers in pilot cohort. Production deployment would extend to 2.4M filers nationally.',
+      suggestedActions: [
+        { action: 'Send to Genesis for ZIP code counterfactual', target: 'genesis', priority: 'urgent', owner: 'Patricia Alvarez + Sarah Chen' },
+        { action: 'Block deployment via ERE rule', target: 'compliance', priority: 'urgent', owner: 'Patricia Alvarez' }
+      ],
+      jurisdictions: ['Washington DC'],
+      statutes: ['OMB Unbiased AI', 'EO May 2026'],
+      lat: 38.90, lng: -77.04,
+      trend: [0.59, 0.57, 0.55, 0.54, 0.54]
+    }
+  ]
+};
+
+// ══════════════════════════════════════════════════════
+// CARDINAL_ATONEMENT_PIPELINE — shadow → ramp → promote (Atonement Core deep view)
+// ══════════════════════════════════════════════════════
+window.CARDINAL_ATONEMENT_PIPELINE = {
+  ad: [
+    {
+      id: 'REM-AD-2847',
+      modelOriginal: 'Personnel Assignment v2.4',
+      modelOriginalId: 'AD-PERSONNEL-V2.4',
+      modelFixed: 'Personnel Assignment v2.5',
+      modelFixedId: 'AD-PERSONNEL-V2.5',
+      caseId: 'AD-2847',
+      stage: 'shadow',
+      stageProgress: 68,
+      shadowStartedAt: '2026-04-28',
+      shadowTrafficPct: 5,
+      diOriginal: 0.67,
+      diFixed: 0.81,
+      cohortLinked: 'COHORT-2847',
+      requiresApprovalFrom: ['Sarah Chen', 'James Martinez'],
+      pendingApprovals: ['James Martinez'],
+      gates: [
+        { stage: 'shadow', status: 'in-progress', label: 'Shadow Deploy 5%', metric: 'DI 0.81 vs 0.67', completion: 68 },
+        { stage: 'ramp', status: 'pending', label: 'Ramp to 25%', metric: 'Awaiting shadow validation', completion: 0 },
+        { stage: 'promote', status: 'pending', label: 'Promote to 100%', metric: 'Awaiting approvals', completion: 0 }
+      ],
+      autoRollbackArmed: true,
+      severity: 'critical'
+    }
+  ],
+  fin: [
+    {
+      id: 'REM-FIN-1203',
+      modelOriginal: 'Credit Scoring v3.4',
+      modelOriginalId: 'FIN-CREDIT-V3.4',
+      modelFixed: 'Credit Scoring v3.5',
+      modelFixedId: 'FIN-CREDIT-V3.5',
+      caseId: 'FIN-1203',
+      stage: 'ramp',
+      stageProgress: 84,
+      shadowStartedAt: '2026-03-30',
+      rampStartedAt: '2026-04-22',
+      shadowTrafficPct: 25,
+      diOriginal: 0.55,
+      diFixed: 0.82,
+      cohortLinked: 'COHORT-1203',
+      requiresApprovalFrom: ['Sarah Chen', 'James Martinez', "Kevin O'Brien"],
+      pendingApprovals: ["Kevin O'Brien"],
+      gates: [
+        { stage: 'shadow', status: 'complete', label: 'Shadow Deploy 5%', metric: 'DI 0.82 sustained 14d', completion: 100 },
+        { stage: 'ramp', status: 'in-progress', label: 'Ramp to 25%', metric: 'DI holding 0.82 · 7d remaining', completion: 84 },
+        { stage: 'promote', status: 'pending', label: 'Promote to 100%', metric: 'Awaiting GC sign-off', completion: 0 }
+      ],
+      autoRollbackArmed: true,
+      severity: 'critical'
+    },
+    {
+      id: 'REM-FIN-FRAUD',
+      modelOriginal: 'Fraud Detection v2.0',
+      modelOriginalId: 'FIN-FRAUD-V2.0',
+      modelFixed: 'Fraud Detection v2.1',
+      modelFixedId: 'FIN-FRAUD-V2.1',
+      caseId: null,
+      stage: 'promote',
+      stageProgress: 100,
+      shadowStartedAt: '2026-02-10',
+      rampStartedAt: '2026-03-05',
+      promotedAt: '2026-04-08',
+      shadowTrafficPct: 100,
+      diOriginal: 0.78,
+      diFixed: 0.93,
+      cohortLinked: null,
+      requiresApprovalFrom: ['Marcus Williams'],
+      pendingApprovals: [],
+      gates: [
+        { stage: 'shadow', status: 'complete', label: 'Shadow Deploy 5%', metric: 'DI 0.91 sustained', completion: 100 },
+        { stage: 'ramp', status: 'complete', label: 'Ramp to 25%', metric: 'No drift detected', completion: 100 },
+        { stage: 'promote', status: 'complete', label: 'Promote to 100%', metric: 'Live since Apr 8', completion: 100 }
+      ],
+      autoRollbackArmed: false,
+      severity: 'low'
+    }
+  ],
+  health: [
+    {
+      id: 'REM-HS-2847',
+      modelOriginal: 'Claims Adjudication v4.1',
+      modelOriginalId: 'HS-CLAIMS-V4.1',
+      modelFixed: 'Claims Adjudication v4.2',
+      modelFixedId: 'HS-CLAIMS-V4.2',
+      caseId: 'HS-2847',
+      stage: 'planning',
+      stageProgress: 12,
+      shadowStartedAt: null,
+      diOriginal: 0.64,
+      diFixed: null,
+      cohortLinked: 'COHORT-HS-2847',
+      requiresApprovalFrom: ['Sarah Chen', 'Amanda Clark'],
+      pendingApprovals: ['Sarah Chen', 'Amanda Clark'],
+      gates: [
+        { stage: 'planning', status: 'in-progress', label: 'Remediation Plan', metric: 'Strategy: Remove age proxy', completion: 12 },
+        { stage: 'shadow', status: 'pending', label: 'Shadow Deploy 5%', metric: 'Awaiting plan sign-off', completion: 0 },
+        { stage: 'ramp', status: 'pending', label: 'Ramp to 25%', metric: '—', completion: 0 },
+        { stage: 'promote', status: 'pending', label: 'Promote to 100%', metric: '—', completion: 0 }
+      ],
+      autoRollbackArmed: false,
+      severity: 'critical'
+    }
+  ],
+  fed: [
+    {
+      id: 'REM-FED-PDV-001',
+      modelOriginal: 'IRS Tax Fraud Detection v3.1',
+      modelOriginalId: 'FED-IRS-FRAUD-V3.1',
+      modelFixed: 'IRS Tax Fraud Detection v3.2',
+      modelFixedId: 'FED-IRS-FRAUD-V3.2',
+      caseId: 'FED-PDV-001',
+      stage: 'planning',
+      stageProgress: 28,
+      shadowStartedAt: null,
+      diOriginal: 0.54,
+      diFixed: null,
+      cohortLinked: 'COHORT-FED-1200',
+      requiresApprovalFrom: ['Patricia Alvarez', 'Sarah Chen'],
+      pendingApprovals: ['Sarah Chen'],
+      gates: [
+        { stage: 'planning', status: 'in-progress', label: 'Remediation Plan', metric: 'Strategy: ZIP code removal', completion: 28 },
+        { stage: 'shadow', status: 'pending', label: 'Shadow Deploy 5%', metric: 'Pre-deployment ERE block', completion: 0 },
+        { stage: 'ramp', status: 'pending', label: 'Ramp to 25%', metric: '—', completion: 0 },
+        { stage: 'promote', status: 'pending', label: 'Promote to 100%', metric: 'EO May 2026 review pending', completion: 0 }
+      ],
+      autoRollbackArmed: false,
+      severity: 'high'
+    }
+  ]
 };
 
 // ══════════════════════════════════════════════════════
@@ -15324,6 +15627,17 @@ function switchIndustry(org, btn) {
    }
  } catch (_esh) {}
 
+ try {
+   if (typeof haloRenderPredictiveSection === 'function') {
+     setTimeout(function(){ haloRenderPredictiveSection(window.currentOrg); }, 100);
+   }
+ } catch (_haloInd) {}
+ try {
+   if (typeof renderAtonementDeepView === 'function') {
+     setTimeout(function(){ renderAtonementDeepView(window.currentOrg); }, 100);
+   }
+ } catch (_atonInd) {}
+
   // Persist selection
   try { localStorage.setItem('cardinal-active-industry', org); } catch(_e) {}
 
@@ -19203,7 +19517,7 @@ function showScreen(name, navEl) {
      subSecondary.textContent = '';
    }
  }
- if(name==='halo') { try { stopHaloLive(); } catch(_h){} setTimeout(initHaloMap, 100); setTimeout(function(){ try { updateHaloIndustry(currentOrg||'ad'); updateHaloInaction((typeof currentOrg!=='undefined'&&currentOrg)?currentOrg:'ad'); } catch(_hh){} }, 110); setTimeout(function(){ try { if (typeof cardinalRenderCorePinsPanel === 'function') cardinalRenderCorePinsPanel('halo', 'halo-core-pins'); } catch(_hp){} }, 260); }
+ if(name==='halo') { try { stopHaloLive(); } catch(_h){} setTimeout(initHaloMap, 100); setTimeout(function(){ try { updateHaloIndustry(currentOrg||'ad'); updateHaloInaction((typeof currentOrg!=='undefined'&&currentOrg)?currentOrg:'ad'); } catch(_hh){} }, 110); setTimeout(function(){ try { if (typeof cardinalRenderCorePinsPanel === 'function') cardinalRenderCorePinsPanel('halo', 'halo-core-pins'); } catch(_hp){} }, 260); setTimeout(function(){ try { if (typeof haloRenderPredictiveSection === 'function') haloRenderPredictiveSection(window.currentOrg || currentOrg || 'ad'); } catch(_hpr) {} }, 50); }
  if(name==='trustloop') setTimeout(initTLChat,100);
  const _extraTitles={pipeline:'Data Pipeline — How Cardinal Works',trustloop:'Trust Loop — Team Workspace',modellibrary:'Cardinal Library — Use Cases & Models (Preview)',cardinallibrary:'📚 Cardinal Library — Unified Knowledge Hub',lucid:'✦ Lucid Layer — AI Intelligence',echo:'◈ Echo Core — Audit Memory & Integrity',sentinel:'Sentinel Core — Case Engine',usecases:'Browse All AI Use Cases — Cardinal Master Library'};
  if(name==='echo') buildEcho(currentOrg);
@@ -19223,6 +19537,16 @@ function showScreen(name, navEl) {
   }
  if(name==='compliance') buildCompliance(currentOrg);
  if(name==='genesis') { setTimeout(()=>initGenesisLog(currentOrg),100); setTimeout(()=>buildPMProfiles(currentOrg),150); }
+ if(name==='atonement') {
+   try { buildAtonement((typeof currentOrg !== 'undefined' && currentOrg) ? currentOrg : window.currentOrg || 'ad'); } catch (_ab) {}
+   setTimeout(function(){
+     try {
+       if (typeof renderAtonementDeepView === 'function') {
+         renderAtonementDeepView(window.currentOrg || currentOrg || 'ad');
+       }
+     } catch (_ad) {}
+   }, 50);
+ }
  if(name==='myworkspace') {
     try { renderBigWorkspacePage(); } catch(e) { console.error('[BigWorkspace] render failed:', e); }
     var ttMW = document.getElementById('topbar-title');
@@ -19904,6 +20228,7 @@ function updateHaloInaction(org) {
 function updateHaloIndustry(org){
  try { renderHaloCardinalHero(org); } catch(_e1) {}
  try { renderHaloAttributionCards(org); } catch(_e2) {}
+ try { if (typeof haloRenderPredictiveSection === 'function') setTimeout(function(){ haloRenderPredictiveSection(org || window.currentOrg || 'ad'); }, 50); } catch(_p) {}
  org=org||'ad'; var cfg=HALO_CFG[org]; if(!cfg) return;
  var elSub=document.getElementById('halo-screen-subtitle'); if(elSub) elSub.textContent=cfg.subtitle;
  var pill=document.getElementById('halo-peer-pill'); if(pill) pill.textContent=cfg.peerPct;
@@ -19914,6 +20239,304 @@ function updateHaloIndustry(org){
  initHaloCoreCharts(org);
  try { initHaloMap(); } catch(_hm) {}
 }
+window.haloRenderPredictiveSection = function(org) {
+  org = org || window.currentOrg || 'ad';
+  var preds = (window.CARDINAL_HALO_PREDICTIONS && window.CARDINAL_HALO_PREDICTIONS[org]) || [];
+
+  var statsContainer = document.getElementById('halo-pred-stats');
+  var listContainer = document.getElementById('halo-pred-list');
+  if (!statsContainer || !listContainer) return;
+
+  if (preds.length === 0) {
+    statsContainer.innerHTML = '';
+    listContainer.innerHTML =
+      '<div class="cardinal-empty-state"><div class="empty-icon">🔮</div><div class="empty-title">No predictive risks flagged</div><div>Halo will surface predictions as patterns emerge in your monitored models.</div></div>';
+    return;
+  }
+
+  var totalExposure = preds.reduce(function(s, p) {
+    return s + (p.financialExposure || 0);
+  }, 0);
+  var criticalCount = preds.filter(function(p) {
+    return p.severity === 'critical';
+  }).length;
+  var highCount = preds.filter(function(p) {
+    return p.severity === 'high';
+  }).length;
+  var dayVals = preds.map(function(p) {
+    var n = parseInt(p.timeHorizon, 10);
+    return isNaN(n) ? 365 : n;
+  });
+  var nearestDays = Math.min.apply(null, dayVals);
+  var nearestPred = preds.find(function(p) {
+    var n = parseInt(p.timeHorizon, 10);
+    return (!isNaN(n) ? n : 365) === nearestDays;
+  });
+
+  statsContainer.innerHTML =
+    '' +
+    '<div class="cardinal-stat-card" style="border-color: rgba(239,68,68,0.30);">' +
+      '<div class="cardinal-stat-label">⚠️ TOTAL EXPOSURE PREDICTED</div>' +
+      '<div class="cardinal-stat-value" style="color:#ef4444;">$' +
+      (totalExposure / 1000000).toFixed(0) +
+      'M</div>' +
+      '<div class="cardinal-stat-sub">If no action taken across active predictions</div>' +
+    '</div>' +
+    '<div class="cardinal-stat-card" style="border-color: rgba(245,158,11,0.30);">' +
+      '<div class="cardinal-stat-label">⏱ NEAREST DEADLINE</div>' +
+      '<div class="cardinal-stat-value" style="color:#f59e0b;">' +
+      (isFinite(nearestDays) ? nearestDays + 'd' : '—') +
+      '</div>' +
+      '<div class="cardinal-stat-sub">' +
+      (nearestPred ? nearestPred.title.substring(0, 55) + '...' : '') +
+      '</div>' +
+    '</div>' +
+    '<div class="cardinal-stat-card" style="border-color: rgba(239,68,68,0.30);">' +
+      '<div class="cardinal-stat-label">🔴 CRITICAL PREDICTIONS</div>' +
+      '<div class="cardinal-stat-value" style="color:#ef4444;">' +
+      criticalCount +
+      '</div>' +
+      '<div class="cardinal-stat-sub">High-severity: ' +
+      highCount +
+      ' · Total active: ' +
+      preds.length +
+      '</div>' +
+    '</div>' +
+    '<div class="cardinal-stat-card" style="border-color: rgba(168,85,247,0.30);">' +
+      '<div class="cardinal-stat-label">🔮 CONFIDENCE AVG</div>' +
+      '<div class="cardinal-stat-value" style="color:#a855f7;">' +
+      Math.round(
+        preds.reduce(function(s, p) {
+          return s + (p.certaintyPct || 0);
+        }, 0) / preds.length
+      ) +
+      '%</div>' +
+      '<div class="cardinal-stat-sub">Multi-model probability across active predictions</div>' +
+    '</div>';
+
+  listContainer.innerHTML = preds
+    .map(function(p) {
+      return haloRenderPredictionCard(p);
+    })
+    .join('');
+};
+
+window.haloRenderPredictionCard = function(p) {
+  var sevColor =
+    { critical: '#ef4444', high: '#f59e0b', medium: '#3b82f6', low: '#22c55e' }[p.severity] ||
+    '#94a3b8';
+  var sevBg =
+    {
+      critical: 'rgba(239,68,68,0.06)',
+      high: 'rgba(245,158,11,0.06)',
+      medium: 'rgba(59,130,246,0.06)',
+      low: 'rgba(34,197,94,0.06)'
+    }[p.severity] || 'rgba(148,163,184,0.04)';
+  var sevBorder =
+    {
+      critical: 'rgba(239,68,68,0.30)',
+      high: 'rgba(245,158,11,0.30)',
+      medium: 'rgba(59,130,246,0.25)',
+      low: 'rgba(34,197,94,0.25)'
+    }[p.severity] || 'rgba(148,163,184,0.18)';
+
+  var trendSparkline = '';
+  if (p.trend && p.trend.length > 0) {
+    var max = Math.max.apply(null, p.trend);
+    var min = Math.min.apply(null, p.trend);
+    var range = max - min || 0.01;
+    var w = 100,
+      h = 24;
+    var pts = p.trend
+      .map(function(v, i) {
+        var x = (i / (p.trend.length - 1)) * w;
+        var y = h - ((v - min) / range) * h;
+        return x.toFixed(1) + ',' + y.toFixed(1);
+      })
+      .join(' ');
+    trendSparkline =
+      '<svg viewBox="0 0 ' +
+      w +
+      ' ' +
+      h +
+      '" style="width:100px;height:24px;"><polyline points="' +
+      pts +
+      '" fill="none" stroke="' +
+      sevColor +
+      '" stroke-width="1.5" /></svg>';
+  }
+
+  var html =
+    '<div' +
+    (p.severity === 'critical' ? ' class="halo-pred-critical"' : '') +
+    ' style="margin-bottom:12px;padding:18px 20px;background:' +
+    sevBg +
+    ';border:1px solid ' +
+    sevBorder +
+    ';border-radius:14px;">';
+
+  html += '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:10px;flex-wrap:wrap;">';
+  html += '<div style="flex:1;min-width:280px;">';
+  html += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap;">';
+  html +=
+    '<span style="font-size:9px;background:' +
+    sevColor +
+    '20;color:' +
+    sevColor +
+    ';border:1px solid ' +
+    sevColor +
+    '60;padding:2px 8px;border-radius:6px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;">' +
+    p.severity +
+    '</span>';
+  html += '<span style="font-size:10px;color:var(--muted);font-family:monospace;">' + p.id + '</span>';
+  if (p.caseLink)
+    html +=
+      '<span style="font-size:10px;color:var(--accent);background:rgba(166,218,255,0.06);padding:2px 7px;border-radius:5px;font-weight:600;">→ ' +
+      p.caseLink +
+      '</span>';
+  html += '</div>';
+  html +=
+    '<div style="font-size:14px;color:var(--chrome2);font-weight:700;line-height:1.3;">' + p.title + '</div>';
+  html +=
+    '<div style="font-size:10px;color:var(--muted);margin-top:3px;">' +
+    p.modelName +
+    ' · ' +
+    (p.modelId || '') +
+    '</div>';
+  html += '</div>';
+
+  html += '<div style="display:flex;align-items:center;gap:14px;">';
+  html +=
+    '<div style="text-align:right;"><div style="font-size:9px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:0.6px;">Time horizon</div><div style="font-size:16px;color:' +
+    sevColor +
+    ';font-weight:800;">' +
+    p.timeHorizon +
+    '</div></div>';
+  html +=
+    '<div style="text-align:right;"><div style="font-size:9px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:0.6px;">Certainty</div><div style="font-size:16px;color:#a855f7;font-weight:800;">' +
+    p.certaintyPct +
+    '%</div></div>';
+  if (trendSparkline)
+    html +=
+      '<div style="text-align:right;"><div style="font-size:9px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:0.6px;">DI Trend</div>' +
+      trendSparkline +
+      '</div>';
+  html += '</div>';
+  html += '</div>';
+
+  html +=
+    '<div style="font-size:11px;color:var(--muted2);line-height:1.6;margin-bottom:12px;background:rgba(15,23,42,0.4);padding:10px 12px;border-radius:8px;border-left:2px solid ' +
+    sevColor +
+    ';">' +
+    p.narrative +
+    '</div>';
+
+  html +=
+    '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px;margin-bottom:12px;">';
+  html +=
+    '<div style="padding:8px 10px;background:rgba(15,23,42,0.5);border:1px solid rgba(239,68,68,0.20);border-radius:8px;"><div style="font-size:9px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:0.5px;">💰 Financial Exposure</div><div style="font-size:14px;color:#ef4444;font-weight:800;">$' +
+    (p.financialExposure / 1000000).toFixed(1) +
+    'M</div></div>';
+  html +=
+    '<div style="padding:8px 10px;background:rgba(15,23,42,0.5);border:1px solid rgba(245,158,11,0.20);border-radius:8px;grid-column:span 2;"><div style="font-size:9px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:0.5px;">👥 Human Impact</div><div style="font-size:11px;color:var(--chrome2);font-weight:600;line-height:1.4;margin-top:2px;">' +
+    p.humanImpact +
+    '</div></div>';
+  html += '</div>';
+
+  if ((p.statutes && p.statutes.length > 0) || (p.jurisdictions && p.jurisdictions.length > 0)) {
+    html += '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;align-items:center;">';
+    if (p.statutes && p.statutes.length) {
+      html +=
+        '<span style="font-size:9px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-right:4px;">📜 Statutes:</span>';
+      p.statutes.forEach(function(s) {
+        html +=
+          '<span style="font-size:9px;color:#a855f7;background:rgba(168,85,247,0.06);border:1px solid rgba(168,85,247,0.25);padding:2px 7px;border-radius:6px;font-weight:600;">' +
+          s +
+          '</span>';
+      });
+    }
+    if (p.jurisdictions && p.jurisdictions.length) {
+      html +=
+        '<span style="font-size:9px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-left:8px;margin-right:4px;">📍 Jurisdictions:</span>';
+      p.jurisdictions.forEach(function(j) {
+        html +=
+          '<span style="font-size:9px;color:var(--accent);background:rgba(166,218,255,0.06);border:1px solid rgba(166,218,255,0.18);padding:2px 7px;border-radius:6px;font-weight:600;">' +
+          j +
+          '</span>';
+      });
+    }
+    html += '</div>';
+  }
+
+  if (p.suggestedActions && p.suggestedActions.length > 0) {
+    html += '<div style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(166,218,255,0.10);">';
+    html +=
+      '<div style="font-size:10px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:0.6px;margin-bottom:8px;">💡 Halo Recommends</div>';
+    html += '<div style="display:flex;flex-wrap:wrap;gap:8px;">';
+    p.suggestedActions.forEach(function(a) {
+      var pColor =
+        { urgent: '#ef4444', high: '#f59e0b', medium: '#3b82f6', low: '#22c55e' }[a.priority] ||
+        '#94a3b8';
+      var icon =
+        {
+          atonement: '🔄',
+          genesis: '🧪',
+          sentinel: '🚨',
+          compliance: '⚖️',
+          halo: '🔮'
+        }[a.target] || '→';
+      html +=
+        '<button onclick="haloAcceptAction(\'' +
+        p.id +
+        '\', \'' +
+        a.target +
+        '\')" style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:rgba(15,23,42,0.6);border:1px solid ' +
+        pColor +
+        '40;border-radius:8px;cursor:pointer;transition:all 0.15s;text-align:left;" onmouseover="this.style.background=\'rgba(15,23,42,0.9)\';this.style.borderColor=\'' +
+        pColor +
+        '80\';" onmouseout="this.style.background=\'rgba(15,23,42,0.6)\';this.style.borderColor=\'' +
+        pColor +
+        '40\';">';
+      html += '<span style="font-size:14px;">' + icon + '</span>';
+      html += '<div style="text-align:left;">';
+      html +=
+        '<div style="font-size:11px;color:var(--chrome2);font-weight:600;line-height:1.3;">' +
+        a.action +
+        '</div>';
+      html +=
+        '<div style="font-size:9px;color:var(--muted);margin-top:2px;">Owner: ' +
+        a.owner +
+        ' · ' +
+        a.priority.toUpperCase() +
+        '</div>';
+      html += '</div>';
+      html += '</button>';
+    });
+    html += '</div>';
+    html += '</div>';
+  }
+
+  html += '</div>';
+  return html;
+};
+
+window.haloAcceptAction = function(predId, target) {
+  console.log('[Halo] Accept action:', predId, '→', target);
+  alert(
+    'Routing to ' +
+      target.toUpperCase() +
+      ' Core for prediction ' +
+      predId +
+      '. (Future: deep-link with prefilled context.)'
+  );
+};
+
+window.haloRunMultiObjective = function() {
+  alert(
+    'Multi-Objective Optimization\n\nHalo will compute the Pareto frontier balancing:\n• Profit\n• Fraud loss\n• Regulatory penalty risk\n• Fairness (DI)\n\nReturning trade-off curve & recommended threshold configuration.\n\n(Demo: full Pareto chart to be built next pass.)'
+  );
+};
+
 function initHaloMap() {
   if (typeof d3 === 'undefined' || typeof topojson === 'undefined') return;
   var svgSel = d3.select('#halo-world-svg');
@@ -20411,6 +21034,77 @@ function initHaloMap() {
             });
         })(orgIncidentsList[hi]);
       }
+
+      var haloPredMapList =
+        (typeof window.CARDINAL_HALO_PREDICTIONS !== 'undefined' &&
+          window.CARDINAL_HALO_PREDICTIONS[mapOrgKey]) ||
+        [];
+      haloPredMapList.forEach(function(p) {
+        if (typeof p.lng !== 'number' || typeof p.lat !== 'number') return;
+        var projected = projection([p.lng, p.lat]);
+        if (!projected) return;
+        var sevDot = { critical: '#ef4444', high: '#f59e0b', medium: '#3b82f6', low: '#22c55e' }[
+          p.severity
+        ];
+        var sevColor = sevDot || '#a855f7';
+        var pulseDur = p.severity === 'critical' ? '1.6s' : '2.4s';
+        mapGroup
+          .append('circle')
+          .attr('cx', projected[0])
+          .attr('cy', projected[1])
+          .attr('r', 14)
+          .attr('fill', 'transparent')
+          .attr('stroke', sevColor)
+          .attr('stroke-width', 2)
+          .style('animation', 'pulse ' + pulseDur + ' infinite')
+          .style('pointer-events', 'none');
+        mapGroup
+          .append('circle')
+          .attr('cx', projected[0])
+          .attr('cy', projected[1])
+          .attr('r', 6)
+          .attr('fill', sevColor)
+          .style('cursor', 'pointer')
+          .style('filter', 'drop-shadow(0 0 8px ' + sevColor + ')')
+          .on('click', function(event) {
+            event.stopPropagation();
+            var tooltip = document.getElementById('halo-map-tooltip');
+            if (!tooltip) return;
+            var escHtml = function(s) {
+              return String(s || '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;');
+            };
+            tooltip.style.minWidth = '280px';
+            tooltip.innerHTML =
+              '<div style="font-size:9px;font-weight:700;color:#a855f7;letter-spacing:0.6px;margin-bottom:4px;">🔮 PREDICTIVE RISK</div>' +
+              '<div style="font-size:12px;font-weight:700;color:#e2e8f0;margin-bottom:6px;">' +
+              escHtml(p.title) +
+              '</div>' +
+              '<div style="font-size:10px;color:#94a3b8;margin-bottom:8px;line-height:1.45;">' +
+              escHtml(p.narrative) +
+              '</div>' +
+              '<div style="font-size:10px;color:#f59e0b;line-height:1.45;">⏱ ' +
+              escHtml(p.timeHorizon) +
+              ' · ' +
+              (p.certaintyPct || 0) +
+              '% certainty · $' +
+              ((p.financialExposure || 0) / 1000000).toFixed(1) +
+              'M exposure · ' +
+              escHtml(String(p.modelId || '')) +
+              '</div>' +
+              '<div style="margin-top:10px;font-size:10px;color:#60a5fa;cursor:pointer;text-align:center;" onclick="document.getElementById(\'halo-map-tooltip\').style.display=\'none\'">✕ Close</div>';
+            tooltip.style.display = 'block';
+            tooltip.style.pointerEvents = 'auto';
+            tooltip.dataset.haloPinned = '1';
+            tooltip.style.transform = 'none';
+            var bbox = container.getBoundingClientRect();
+            tooltip.style.left = Math.min(event.clientX - bbox.left + 15, width - 300) + 'px';
+            tooltip.style.top = Math.min(event.clientY - bbox.top - 20, height - 220) + 'px';
+          });
+      });
 
       var zoom = d3.zoom()
         .scaleExtent([1, 8])
@@ -23102,6 +23796,480 @@ const ATONEMENT_DATA = {
  {time:'Apr 5 09:00',event:'CMS audit report exported — 30 minutes total',ref:'Audit export',c:'green'},
  ],
  }
+};
+
+window.renderAtonementDeepView = function(org) {
+  org = org || window.currentOrg || 'ad';
+  var container = document.getElementById('atonement-deep-view');
+  if (!container) return;
+
+  var pipelines = (window.CARDINAL_ATONEMENT_PIPELINE && window.CARDINAL_ATONEMENT_PIPELINE[org]) || [];
+
+  var html = '';
+
+  var activeCount = pipelines.filter(function(p) {
+    return p.stage !== 'promote' || p.stageProgress < 100;
+  }).length;
+  var inShadow = pipelines.filter(function(p) {
+    return p.stage === 'shadow';
+  }).length;
+  var inRamp = pipelines.filter(function(p) {
+    return p.stage === 'ramp';
+  }).length;
+  var inPlanning = pipelines.filter(function(p) {
+    return p.stage === 'planning';
+  }).length;
+  var pendingApprovals = pipelines.reduce(function(s, p) {
+    return s + (p.pendingApprovals ? p.pendingApprovals.length : 0);
+  }, 0);
+
+  var cohorts = (window.CARDINAL_COHORTS || []).filter(function(c) {
+    return c.industry === org && c.type === 'remediation';
+  });
+  var totalAffected = cohorts.reduce(function(s, c) {
+    return s + (c.size || 0);
+  }, 0);
+  var totalRestored = cohorts.reduce(function(s, c) {
+    return s + (c.restored != null ? c.restored : 0);
+  }, 0);
+  var restorePct = totalAffected > 0 ? Math.round((totalRestored / totalAffected) * 100) : 0;
+
+  html += '<div class="grid-4" style="margin-bottom:18px;">';
+  html +=
+    '<div class="cardinal-stat-card" style="border-color: rgba(59,130,246,0.30);"><div class="cardinal-stat-label">🔄 ACTIVE REMEDIATIONS</div><div class="cardinal-stat-value" style="color:#3b82f6;">' +
+    activeCount +
+    '</div><div class="cardinal-stat-sub">' +
+    inPlanning +
+    ' planning · ' +
+    inShadow +
+    ' shadow · ' +
+    inRamp +
+    ' ramp</div></div>';
+  html +=
+    '<div class="cardinal-stat-card" style="border-color: rgba(245,158,11,0.30);"><div class="cardinal-stat-label">⚠ PENDING APPROVALS</div><div class="cardinal-stat-value" style="color:#f59e0b;">' +
+    pendingApprovals +
+    '</div><div class="cardinal-stat-sub">Sign-offs blocking promotion</div></div>';
+  html +=
+    '<div class="cardinal-stat-card" style="border-color: rgba(34,197,94,0.30);"><div class="cardinal-stat-label">👥 PEOPLE RESTORED</div><div class="cardinal-stat-value" style="color:#22c55e;">' +
+    totalRestored.toLocaleString() +
+    '</div><div class="cardinal-stat-sub">of ' +
+    totalAffected.toLocaleString() +
+    ' affected · ' +
+    restorePct +
+    '%</div></div>';
+  html +=
+    '<div class="cardinal-stat-card" style="border-color: rgba(168,85,247,0.30);"><div class="cardinal-stat-label">⚡ AUTO-ROLLBACK</div><div class="cardinal-stat-value" style="color:#a855f7;">' +
+    pipelines.filter(function(p) {
+      return p.autoRollbackArmed;
+    }).length +
+    '</div><div class="cardinal-stat-sub">Models armed for safety abort</div></div>';
+  html += '</div>';
+
+  html += '<div style="margin-bottom:24px;">';
+  html +=
+    '<div class="cardinal-section-hdr" style="margin-bottom:14px;"><div><div class="section-title">🚀 Remediation Pipeline</div><div class="section-sub">Every model in flight: shadow → ramp → promote · Live DI · Auto-rollback armed</div></div></div>';
+  html +=
+    '<div id="atonement-pipeline-list">' +
+    (pipelines.length
+      ? pipelines
+          .map(function(p) {
+            return atonementRenderPipelineCard(p);
+          })
+          .join('')
+      : '<div class="cardinal-empty-state"><div class="empty-icon">🚀</div><div class="empty-title">No pipeline items</div></div>') +
+    '</div>';
+  html += '</div>';
+
+  var actionable = pipelines.filter(function(p) {
+    return p.pendingApprovals && p.pendingApprovals.length > 0;
+  });
+  html += '<div style="margin-bottom:24px;">';
+  html +=
+    '<div class="cardinal-section-hdr" style="margin-bottom:14px;"><div><div class="section-title">⚡ Action Queue — Decisions Needed Right Now</div><div class="section-sub">Persona-gated sign-offs · Click to approve, request changes, or escalate</div></div></div>';
+  if (actionable.length === 0) {
+    html +=
+      '<div class="cardinal-empty-state"><div class="empty-icon">✅</div><div class="empty-title">No pending actions</div><div>All remediation gates have required approvals.</div></div>';
+  } else {
+    html +=
+      '<div id="atonement-action-queue">' +
+      actionable
+        .map(function(p) {
+          return atonementRenderActionCard(p);
+        })
+        .join('') +
+      '</div>';
+  }
+  html += '</div>';
+
+  html += '<div style="margin-bottom:24px;">';
+  html +=
+    '<div class="cardinal-section-hdr" style="margin-bottom:14px;"><div><div class="section-title">👥 Cohort Restoration — Restoring the People AI Harmed</div><div class="section-sub">Every person affected. Every status. Path to 100% restoration.</div></div><div class="section-actions"><button class="cardinal-btn cardinal-btn-ghost" style="font-size:10px;" onclick="atonementExportCohorts()">📥 Export Cohort CSV</button></div></div>';
+  if (cohorts.length === 0) {
+    html +=
+      '<div class="cardinal-empty-state"><div class="empty-icon">👥</div><div class="empty-title">No remediation cohorts for this industry</div></div>';
+  } else {
+    html +=
+      '<div id="atonement-cohort-list">' +
+      cohorts
+        .map(function(c) {
+          return atonementRenderCohortCard(c);
+        })
+        .join('') +
+      '</div>';
+  }
+  html += '</div>';
+
+  container.innerHTML = html;
+};
+
+window.atonementRenderPipelineCard = function(p) {
+  var sevColor =
+    { critical: '#ef4444', high: '#f59e0b', medium: '#3b82f6', low: '#22c55e' }[p.severity] ||
+    '#94a3b8';
+  var stages = p.gates || [];
+
+  var html =
+    '<div style="margin-bottom:14px;padding:18px 20px;background:rgba(15,23,42,0.5);border:1px solid rgba(166,218,255,0.12);border-radius:14px;">';
+
+  html += '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:14px;flex-wrap:wrap;">';
+  html += '<div style="flex:1;min-width:280px;">';
+  html += '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px;">';
+  html +=
+    '<span style="font-size:9px;background:' +
+    sevColor +
+    '20;color:' +
+    sevColor +
+    ';border:1px solid ' +
+    sevColor +
+    '60;padding:2px 8px;border-radius:6px;font-weight:700;text-transform:uppercase;">' +
+    p.severity +
+    '</span>';
+  html += '<span style="font-size:10px;color:var(--muted);font-family:monospace;">' + p.id + '</span>';
+  if (p.caseId)
+    html +=
+      '<span style="font-size:10px;color:var(--accent);background:rgba(166,218,255,0.06);padding:2px 7px;border-radius:5px;font-weight:600;">→ ' +
+      p.caseId +
+      '</span>';
+  if (p.autoRollbackArmed)
+    html +=
+      '<span style="font-size:9px;color:#a855f7;background:rgba(168,85,247,0.06);border:1px solid rgba(168,85,247,0.30);padding:2px 7px;border-radius:5px;font-weight:600;">⚡ Auto-Rollback Armed</span>';
+  html += '</div>';
+  html +=
+    '<div style="font-size:13px;color:var(--chrome2);font-weight:700;line-height:1.3;">' +
+    p.modelOriginal +
+    ' → ' +
+    p.modelFixed +
+    '</div>';
+  var diFixedHtml =
+    p.diFixed !== null && p.diFixed !== undefined
+      ? '<span style="color:#22c55e;font-weight:700;">' + Number(p.diFixed).toFixed(2) + '</span>'
+      : '<span style="color:var(--muted);">pending</span>';
+  html +=
+    '<div style="font-size:10px;color:var(--muted);margin-top:3px;">DI improvement: <span style="color:#ef4444;font-weight:700;">' +
+    Number(p.diOriginal).toFixed(2) +
+    '</span> → ' +
+    diFixedHtml +
+    '</div>';
+  html += '</div>';
+  html += '</div>';
+
+  html += '<div style="display:flex;gap:6px;align-items:stretch;margin-bottom:8px;">';
+  stages.forEach(function(g, i) {
+    var statusColor =
+      {
+        complete: '#22c55e',
+        'in-progress': '#3b82f6',
+        pending: '#94a3b8',
+        failed: '#ef4444'
+      }[g.status] || '#94a3b8';
+    var statusBg =
+      {
+        complete: 'rgba(34,197,94,0.10)',
+        'in-progress': 'rgba(59,130,246,0.10)',
+        pending: 'rgba(148,163,184,0.04)',
+        failed: 'rgba(239,68,68,0.10)'
+      }[g.status] || 'rgba(148,163,184,0.04)';
+    var icon =
+      { complete: '✓', 'in-progress': '◐', pending: '○', failed: '✕' }[g.status] || '○';
+
+    html +=
+      '<div style="flex:1;padding:10px 12px;background:' +
+      statusBg +
+      ';border:1px solid ' +
+      statusColor +
+      '40;border-radius:9px;min-width:0;">';
+    html +=
+      '<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;"><span style="color:' +
+      statusColor +
+      ';font-weight:800;">' +
+      icon +
+      '</span><span style="font-size:10px;color:var(--chrome2);font-weight:700;">' +
+      g.label +
+      '</span></div>';
+    html +=
+      '<div style="font-size:9px;color:var(--muted);line-height:1.4;margin-bottom:6px;">' +
+      g.metric +
+      '</div>';
+    if (g.completion > 0 && g.completion < 100) {
+      html +=
+        '<div style="height:4px;background:rgba(0,0,0,0.3);border-radius:99px;overflow:hidden;"><div style="width:' +
+        g.completion +
+        '%;height:100%;background:' +
+        statusColor +
+        ';border-radius:99px;"></div></div>';
+      html +=
+        '<div style="font-size:9px;color:' +
+        statusColor +
+        ';margin-top:3px;font-weight:600;">' +
+        g.completion +
+        '%</div>';
+    }
+    html += '</div>';
+
+    if (i < stages.length - 1) {
+      html +=
+        '<div style="display:flex;align-items:center;color:var(--muted);font-size:11px;">→</div>';
+    }
+  });
+  html += '</div>';
+
+  if (p.requiresApprovalFrom && p.requiresApprovalFrom.length > 0) {
+    html +=
+      '<div style="display:flex;align-items:center;gap:8px;margin-top:10px;padding-top:10px;border-top:1px solid rgba(166,218,255,0.08);flex-wrap:wrap;">';
+    html +=
+      '<span style="font-size:9px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:0.5px;">Required:</span>';
+    p.requiresApprovalFrom.forEach(function(person) {
+      var pending = (p.pendingApprovals || []).indexOf(person) !== -1;
+      var color = pending ? '#f59e0b' : '#22c55e';
+      var icon = pending ? '⏳' : '✓';
+      html +=
+        '<span style="font-size:10px;color:' +
+        color +
+        ';background:rgba(' +
+        (pending ? '245,158,11' : '34,197,94') +
+        ',0.08);border:1px solid ' +
+        color +
+        '40;padding:3px 8px;border-radius:6px;font-weight:600;">' +
+        icon +
+        ' ' +
+        person +
+        '</span>';
+    });
+    html += '</div>';
+  }
+
+  if (p.cohortLinked) {
+    html +=
+      '<div style="margin-top:8px;font-size:10px;color:var(--accent);">🧬 Linked cohort: ' +
+      p.cohortLinked +
+      '</div>';
+  }
+
+  html += '</div>';
+  return html;
+};
+
+window.atonementRenderActionCard = function(p) {
+  var actionText = '';
+  var nextStage = '';
+  if (p.stage === 'planning') {
+    actionText = 'Approve remediation plan to begin shadow deployment';
+    nextStage = 'shadow';
+  } else if (p.stage === 'shadow') {
+    actionText =
+      'Approve ramp to 25% — shadow performance: DI ' +
+      (p.diFixed != null ? String(p.diFixed) : '—') +
+      ' sustained';
+    nextStage = 'ramp';
+  } else if (p.stage === 'ramp') {
+    actionText =
+      'Approve full promotion — ramp performance: DI ' +
+      (p.diFixed != null ? String(p.diFixed) : '—') +
+      ' sustained at 25% traffic';
+    nextStage = 'promote';
+  }
+
+  var html =
+    '<div style="margin-bottom:10px;padding:16px 18px;background:linear-gradient(135deg, rgba(245,158,11,0.04) 0%, rgba(15,23,42,0.6) 100%);border:1px solid rgba(245,158,11,0.30);border-radius:12px;">';
+
+  html += '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;">';
+  html += '<div style="flex:1;min-width:260px;">';
+  html +=
+    '<div style="font-size:9px;color:#f59e0b;font-weight:700;text-transform:uppercase;letter-spacing:0.6px;margin-bottom:4px;">⚡ DECISION REQUIRED · ' +
+    p.id +
+    '</div>';
+  html +=
+    '<div style="font-size:13px;color:var(--chrome2);font-weight:700;margin-bottom:4px;">' +
+    p.modelFixed +
+    '</div>';
+  html +=
+    '<div style="font-size:11px;color:var(--muted2);line-height:1.5;">' +
+    actionText +
+    '</div>';
+
+  html += '<div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;">';
+  (p.pendingApprovals || []).forEach(function(person) {
+    html +=
+      '<span style="font-size:10px;color:#f59e0b;background:rgba(245,158,11,0.06);border:1px solid rgba(245,158,11,0.30);padding:3px 8px;border-radius:6px;font-weight:600;">⏳ ' +
+      person +
+      '</span>';
+  });
+  html += '</div>';
+  html += '</div>';
+
+  html += '<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:flex-start;">';
+  html +=
+    '<button type="button" class="cardinal-btn cardinal-btn-success" onclick="atonementApprove(\'' +
+    p.id +
+    '\', \'' +
+    nextStage +
+    '\')" style="font-size:10px;">✓ Approve & Advance</button>';
+  html +=
+    '<button type="button" class="cardinal-btn cardinal-btn-ghost" onclick="atonementRequestChanges(\'' +
+    p.id +
+    '\')" style="font-size:10px;">↩ Request Changes</button>';
+  html +=
+    '<button type="button" class="cardinal-btn cardinal-btn-danger" onclick="atonementEscalate(\'' +
+    p.id +
+    '\')" style="font-size:10px;">🚨 Escalate</button>';
+  html += '</div>';
+  html += '</div>';
+
+  html += '</div>';
+  return html;
+};
+
+window.atonementApprove = function(id, nextStage) {
+  alert(
+    'Approval recorded for ' +
+      id +
+      '\n\nAdvancing to ' +
+      (nextStage || 'next stage') +
+      '\n\n• Decision Receipt sealed to Trust Ledger\n• Echo Core memory created\n• Sentinel auto-rollback monitoring continues\n\n(Demo: full sign-off flow with multi-party gates next pass.)'
+  );
+};
+
+window.atonementRequestChanges = function(id) {
+  alert(
+    'Request Changes for ' +
+      id +
+      '\n\nReturning to Sarah Chen + Anthony Broadnax with reviewer notes.\n\n(Demo: comment composer modal next pass.)'
+  );
+};
+
+window.atonementEscalate = function(id) {
+  alert(
+    'Escalation triggered for ' +
+      id +
+      "\n\n→ Opening Sentinel War Room case\n→ Notifying Kevin O'Brien (General Counsel)\n→ CCO email sent\n\n(Demo: full escalation flow next pass.)"
+  );
+};
+
+window.atonementRenderCohortCard = function(c) {
+  var pct = c.size > 0 ? Math.round(((c.restored != null ? c.restored : 0) / c.size) * 100) : 0;
+  var statusColor =
+    pct === 100 ? '#22c55e' : pct >= 50 ? '#3b82f6' : pct > 0 ? '#f59e0b' : '#94a3b8';
+  var rest = c.restored != null ? c.restored : 0;
+  var remaining = Math.max(0, (c.size || 0) - rest);
+
+  var html =
+    '<div style="margin-bottom:12px;padding:16px 18px;background:rgba(15,23,42,0.5);border:1px solid rgba(34,197,94,0.20);border-radius:12px;">';
+
+  html += '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:12px;flex-wrap:wrap;">';
+  html += '<div style="flex:1;min-width:250px;">';
+  html +=
+    '<div style="font-size:13px;color:var(--chrome2);font-weight:700;margin-bottom:3px;">' +
+    c.name +
+    '</div>';
+  html +=
+    '<div style="font-size:10px;color:var(--muted);">' +
+    c.id +
+    ' · Owner: ' +
+    c.owner +
+    (c.linkedCase ? ' · Case: ' + c.linkedCase : '') +
+    '</div>';
+  html += '</div>';
+  html += '<div style="text-align:right;">';
+  html +=
+    '<div style="font-size:9px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:0.6px;">Restoration</div>';
+  html +=
+    '<div style="font-size:22px;color:' +
+    statusColor +
+    ';font-weight:800;line-height:1;">' +
+    pct +
+    '%</div>';
+  html += '</div>';
+  html += '</div>';
+
+  html +=
+    '<div style="margin-bottom:10px;"><div style="height:8px;background:rgba(166,218,255,0.06);border-radius:99px;overflow:hidden;"><div style="width:' +
+    pct +
+    '%;height:100%;background:linear-gradient(90deg, #22c55e 0%, #3b82f6 100%);border-radius:99px;transition:width 0.3s;"></div></div></div>';
+
+  html +=
+    '<div style="display:grid;grid-template-columns:repeat(3, 1fr);gap:8px;margin-bottom:10px;">';
+  html +=
+    '<div style="padding:6px 10px;background:rgba(15,23,42,0.4);border:1px solid rgba(166,218,255,0.10);border-radius:7px;"><div style="font-size:9px;color:var(--muted);font-weight:700;text-transform:uppercase;">Total Affected</div><div style="font-size:14px;color:var(--chrome2);font-weight:800;">' +
+    (c.size != null ? c.size.toLocaleString() : '0') +
+    '</div></div>';
+  html +=
+    '<div style="padding:6px 10px;background:rgba(15,23,42,0.4);border:1px solid rgba(34,197,94,0.20);border-radius:7px;"><div style="font-size:9px;color:var(--muted);font-weight:700;text-transform:uppercase;">Restored</div><div style="font-size:14px;color:#22c55e;font-weight:800;">' +
+    rest.toLocaleString() +
+    '</div></div>';
+  html +=
+    '<div style="padding:6px 10px;background:rgba(15,23,42,0.4);border:1px solid rgba(245,158,11,0.20);border-radius:7px;"><div style="font-size:9px;color:var(--muted);font-weight:700;text-transform:uppercase;">Remaining</div><div style="font-size:14px;color:#f59e0b;font-weight:800;">' +
+    remaining.toLocaleString() +
+    '</div></div>';
+  html += '</div>';
+
+  html +=
+    '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;padding-top:10px;border-top:1px solid rgba(166,218,255,0.08);">';
+  html +=
+    '<button type="button" class="cardinal-btn cardinal-btn-primary" onclick="atonementOpenCohort(\'' +
+    String(c.id).replace(/\\/g, '\\\\').replace(/'/g, "\\'") +
+    '\')" style="font-size:10px;">📋 View Members</button>';
+  html +=
+    '<button type="button" class="cardinal-btn cardinal-btn-ghost" onclick="atonementPushSalesforce(\'' +
+    String(c.id).replace(/\\/g, '\\\\').replace(/'/g, "\\'") +
+    '\')" style="font-size:10px;">⚡ Push to Salesforce</button>';
+  html +=
+    '<button type="button" class="cardinal-btn cardinal-btn-ghost" onclick="atonementGenerateOutreach(\'' +
+    String(c.id).replace(/\\/g, '\\\\').replace(/'/g, "\\'") +
+    '\')" style="font-size:10px;">✉️ Generate Outreach</button>';
+  html += '</div>';
+
+  html += '</div>';
+  return html;
+};
+
+window.atonementOpenCohort = function(id) {
+  alert(
+    'Cohort Detail: ' +
+      id +
+      '\n\n• Member-by-member status\n• Decision history per pseudonym\n• Re-evaluation outcomes\n\n(Routes to Cardinal Library → Cohorts tab → drill-in next pass.)'
+  );
+};
+
+window.atonementPushSalesforce = function(id) {
+  alert(
+    'Push to Salesforce: ' +
+      id +
+      '\n\n💎 Requires AI Integrations add-on or Tier 3.\n\nWill push remediation cohort to:\n• Salesforce Marketing Cloud\n• HubSpot\n• Custom CRM via API\n\nFor automated re-engagement campaigns.'
+  );
+};
+
+window.atonementGenerateOutreach = function(id) {
+  alert(
+    'Generate Outreach Doc: ' +
+      id +
+      '\n\n• Personalized adverse-action notice\n• Cardinal-compliant disclosure\n• Delivery via email/SMS/mail\n\n(Demo: Eve generates compliant outreach letters next pass.)'
+  );
+};
+
+window.atonementExportCohorts = function() {
+  alert(
+    'Cohort CSV Export\n\nExporting all remediation cohorts for current industry:\n• Decision IDs (pseudonymized)\n• Demographic patterns\n• Restoration status per member\n• Audit trail links\n\nUse for: Jira tickets · Regulator filings · Marketing suppression lists'
+  );
 };
 
 function buildAtonement(org) {
