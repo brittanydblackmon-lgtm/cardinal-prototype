@@ -4742,13 +4742,14 @@ Settings
 <div class="topbar">
 <div>
 <div class="topbar-title" id="topbar-title">AI Bias Detection & Compliance Dashboard</div>
-<div class="topbar-subtitle" id="topbar-sub">Atlas Defense Systems · Tier 1 Pilot</div>
+<div class="topbar-subtitle" id="topbar-industry-context">Atlas Defense Systems · A&D Pilot</div>
+<div class="topbar-subtitle" id="topbar-sub" style="display:none;font-size:10px;color:var(--muted);opacity:0.92;"></div>
 </div>
 <div class="industry-switcher">
-<button class="ind-btn active" onclick="switchIndustry('ad',this)">A&D</button>
-<button class="ind-btn" onclick="switchIndustry('fin',this)">Finance</button>
-<button class="ind-btn" onclick="switchIndustry('health',this)">Healthcare</button>
-<button class="ind-btn" onclick="switchIndustry('fed',this)" title="Federal Civilian — pre-deployment vetting under May 2026 EO">🏛️ Federal</button>
+<button class="ind-btn active" onclick="switchIndustry('ad',this)" title="A&D — Atlas Defense Systems · DoD AI Ethics + Title VII">A&D</button>
+<button class="ind-btn" onclick="switchIndustry('fin',this)" title="Finance — Blackmoor Wealth · ECOA + NYC LL144 + CO AI Act">Finance</button>
+<button class="ind-btn" onclick="switchIndustry('health',this)" title="Healthcare — Sterling Health · ACA §1557 + HIPAA">Healthcare</button>
+<button class="ind-btn" onclick="switchIndustry('fed',this)" title="Federal Civilian — pre-deployment vetting under May 2026 EO"><span style="display:inline-block;font-size:13px;line-height:1;margin-right:3px;">🏛️</span>Federal</button>
 </div>
 <div class="topbar-alert" id="topbar-critical-cases" onclick="cardinalOpenSentinelCases('critical')" title="Open Sentinel — Critical Cases">
 <span class="alert-dot"></span>
@@ -14755,6 +14756,25 @@ function doLogin() {
   }
 }
 
+window.updateSidebarTrustScoreChip = function() {
+  var chipNum = document.querySelector('.sidebar-trust-score-chip-num') || document.getElementById('sidebar-trust-score-num') || document.getElementById('sidebar-score');
+  var chipBadge = document.getElementById('sidebar-score-badge');
+  if (!chipNum && !chipBadge) return;
+  var org = window.currentOrg || 'ad';
+  var scores = { ad: 74, fin: 81, health: 83, fed: 71 };
+  var dotEl = document.querySelector('.sidebar-trust-score-chip-dot') || document.getElementById('sidebar-trust-score-dot') || document.querySelector('#sidebar-trust-badge-collapsed .trust-score-chip-badge-dot');
+  var score = scores[org] || 74;
+  if (chipNum) {
+    chipNum.textContent = score;
+    chipNum.style.color = score >= 80 ? '#22c55e' : score >= 70 ? '#f59e0b' : '#ef4444';
+  }
+  if (chipBadge) chipBadge.textContent = score;
+  var badgeHost = document.getElementById('sidebar-trust-badge-collapsed');
+  var badgeColor = score >= 80 ? '#22c55e' : score >= 70 ? '#f59e0b' : '#ef4444';
+  if (badgeHost) badgeHost.style.background = badgeColor;
+  if (dotEl) dotEl.style.background = badgeColor;
+};
+
 function switchIndustry(org, btn) {
  try { document.querySelectorAll('.ind-btn').forEach(b => b.classList.remove('active')); } catch(e) {}
  if(btn) btn.classList.add('active');
@@ -14814,7 +14834,25 @@ function switchIndustry(org, btn) {
      echoRenderScoreHistoryTab();
    }
  } catch (_esh) {}
- try { if (typeof updateTopbarCriticalCount === 'function') updateTopbarCriticalCount(); } catch (_tbc) {}
+
+  // Persist selection
+  try { localStorage.setItem('cardinal-active-industry', org); } catch(_e) {}
+
+  // Update topbar industry context if present
+  var indContext = document.getElementById('topbar-industry-context');
+  if (indContext) {
+    var orgNames = { ad: 'Atlas Defense Systems · A&D Pilot', fin: 'Blackmoor Wealth · Finance Pilot', health: 'Sterling Health · Healthcare Pilot', fed: 'IRS Tax Compliance Division · Federal Pilot' };
+    indContext.textContent = orgNames[org] || '';
+  }
+
+  // Update topbar critical alert
+  if (typeof updateTopbarCriticalCount === 'function') {
+    setTimeout(updateTopbarCriticalCount, 100);
+  }
+
+  if (typeof updateSidebarTrustScoreChip === 'function') {
+    setTimeout(updateSidebarTrustScoreChip, 100);
+  }
 }
 
 window.updateTopbarCriticalCount = function updateTopbarCriticalCount() {
@@ -14849,6 +14887,20 @@ window.updateTopbarCriticalCount = function updateTopbarCriticalCount() {
 
 document.addEventListener('DOMContentLoaded', function(){
   setTimeout(function(){ try { updateTopbarCriticalCount(); } catch(_e) {} }, 300);
+  try {
+    var savedOrg = localStorage.getItem('cardinal-active-industry');
+    if (savedOrg && ['ad','fin','health','fed'].indexOf(savedOrg) !== -1 && typeof switchIndustry === 'function') {
+      var pills = document.querySelectorAll('.ind-btn');
+      for (var i = 0; i < pills.length; i++) {
+        var onclickAttr = pills[i].getAttribute('onclick') || '';
+        if (onclickAttr.indexOf("'" + savedOrg + "'") !== -1) {
+          setTimeout(function(p){ return function(){ p.click(); }; }(pills[i]), 200);
+          break;
+        }
+      }
+    }
+  } catch(_e) {}
+  setTimeout(function(){ if (typeof updateSidebarTrustScoreChip === 'function') updateSidebarTrustScoreChip(); }, 400);
 });
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -18294,12 +18346,16 @@ function syncIndustrySidebarChrome(org) {
 
  var subMap = {
   ad: 'Atlas Defense Systems · A&D Pilot',
-  fin: 'Blackmoor Wealth Group · Finance Pilot',
+  fin: 'Blackmoor Wealth · Finance Pilot',
   health: 'Sterling Health · Healthcare Pilot',
   fed: 'IRS Tax Compliance Division · Federal Pilot'
  };
- var subEl = document.getElementById('topbar-sub');
- if(subEl) subEl.textContent = subMap[org] || '';
+ var indCtx = document.getElementById('topbar-industry-context');
+ if (indCtx) indCtx.textContent = subMap[org] || '';
+ else {
+   var subEl = document.getElementById('topbar-sub');
+   if(subEl) subEl.textContent = subMap[org] || '';
+ }
  try {
    if (typeof window.setActivePersona === 'function' && window.__activePersonaId) {
      window.setActivePersona(window.__activePersonaId);
@@ -18619,12 +18675,28 @@ if (typeof window.buildTrustLedger === 'undefined' && typeof buildTrustLedger ==
 }
 
 function showScreen(name, navEl) {
+  // Clear all nav-item active states
+  document.querySelectorAll('.nav-item.active').forEach(function(el){ el.classList.remove('active'); });
+
+  // Set active on the clicked element if provided
+  if (navEl && navEl.classList) {
+    navEl.classList.add('active');
+  } else {
+    // Fallback: find nav-item by onclick attribute matching the screen name
+    var navItems = document.querySelectorAll('.nav-item');
+    for (var i = 0; i < navItems.length; i++) {
+      var onclickAttr = navItems[i].getAttribute('onclick') || '';
+      if (onclickAttr.indexOf("'" + name + "'") !== -1) {
+        navItems[i].classList.add('active');
+        break;
+      }
+    }
+  }
+
  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
  try { stopHaloLive(); } catch(e) {}
  const target = document.getElementById('screen-'+name);
  if(target) target.classList.add('active');
- document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
- if(navEl) navEl.classList.add('active');
  const titles = {
  dashboard:'AI Bias Detection & Compliance Dashboard',
  eden:'Eden Core — Bias Detection Engine',
@@ -18635,6 +18707,15 @@ function showScreen(name, navEl) {
  compliance:'Compliance Exchange — Case Management & Regulatory Tracking'
  };
  document.getElementById('topbar-title').textContent = titles[name]||name;
+ var subSecondary = document.getElementById('topbar-sub');
+ if (subSecondary) {
+   if (name === 'myworkspace' || name === 'usecases' || name === 'pmprofiles') {
+     subSecondary.style.display = '';
+   } else {
+     subSecondary.style.display = 'none';
+     subSecondary.textContent = '';
+   }
+ }
  if(name==='halo') { try { stopHaloLive(); } catch(_h){} setTimeout(initHaloMap, 100); setTimeout(function(){ try { updateHaloIndustry(currentOrg||'ad'); updateHaloInaction((typeof currentOrg!=='undefined'&&currentOrg)?currentOrg:'ad'); } catch(_hh){} }, 110); setTimeout(function(){ try { if (typeof cardinalRenderCorePinsPanel === 'function') cardinalRenderCorePinsPanel('halo', 'halo-core-pins'); } catch(_hp){} }, 260); }
  if(name==='trustloop') setTimeout(initTLChat,100);
  const _extraTitles={pipeline:'Data Pipeline — How Cardinal Works',trustloop:'Trust Loop — Team Workspace',modellibrary:'Model Library — Validated Data & Prevention Models',lucid:'✦ Lucid Layer — Adam & Eve Intelligence',echo:'◈ Echo Core — Audit Memory & Integrity',sentinel:'◈ Cardinal Sentinel — Case Engine',usecases:'Browse All AI Use Cases — Cardinal Master Library'};
