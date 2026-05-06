@@ -4512,9 +4512,33 @@ animation:waveform var(--dur) ease-in-out infinite alternate;
   .tsv2-model-row { grid-template-columns: 1fr 1fr 50px 80px; }
 }
 
+/* Cleanup walkthrough markers — visible only when ?cleanup=1 in URL */
+body.cardinal-cleanup-mode .screen:empty::after,
+body.cardinal-cleanup-mode .screen > div:empty:not(.cardinal-collapse-if-empty)::after {
+  content: '⚠ EMPTY CONTAINER — needs content or .cardinal-collapse-if-empty class';
+  display: block;
+  padding: 12px;
+  background: rgba(239,68,68,0.1);
+  border: 2px dashed #ef4444;
+  color: #ef4444;
+  font-size: 11px;
+  font-weight: 700;
+  text-align: center;
+  border-radius: 8px;
+  margin: 8px 0;
+}
+
 </style>
 </head>
 <body>
+<script>
+(function(){
+  if (window.location.search.indexOf('cleanup=1') !== -1) {
+    document.body.classList.add('cardinal-cleanup-mode');
+    console.log('[Cardinal] Cleanup mode ON — empty containers will be flagged red.');
+  }
+})();
+</script>
 <!-- ══════════════════ LOGIN ══════════════════ -->
 <div id="login-screen">
 <div class="login-box">
@@ -6473,15 +6497,15 @@ Template Overview
     </div>
   </div>
 </div>
-<div id="echo-tab-content-receipts" style="display:none;"></div>
-<div id="echo-tab-content-ignored" style="display:none;"></div>
-<div id="echo-tab-content-lineage" style="display:none;"></div>
-<div id="echo-tab-content-whistleblower" style="display:none;"></div>
-<div id="echo-tab-content-scorehistory" style="display:none;"></div>
-<div id="echo-tab-content-myworkspace" style="display:none;"></div>
-<div id="echo-tab-content-conversations" style="display:none;"></div>
-<div id="echo-tab-content-peoplelog" style="display:none;"></div>
-<div id="echo-tab-content-pmprofiles" style="display:none;"></div>
+<div id="echo-tab-content-receipts" class="cardinal-collapse-if-empty" style="display:none;"></div>
+<div id="echo-tab-content-ignored" class="cardinal-collapse-if-empty" style="display:none;"></div>
+<div id="echo-tab-content-lineage" class="cardinal-collapse-if-empty" style="display:none;"></div>
+<div id="echo-tab-content-whistleblower" class="cardinal-collapse-if-empty" style="display:none;"></div>
+<div id="echo-tab-content-scorehistory" class="cardinal-collapse-if-empty" style="display:none;"></div>
+<div id="echo-tab-content-myworkspace" class="cardinal-collapse-if-empty" style="display:none;"></div>
+<div id="echo-tab-content-conversations" class="cardinal-collapse-if-empty" style="display:none;"></div>
+<div id="echo-tab-content-peoplelog" class="cardinal-collapse-if-empty" style="display:none;"></div>
+<div id="echo-tab-content-pmprofiles" class="cardinal-collapse-if-empty" style="display:none;"></div>
 </section>
 
 <section id="echo-memory-detail-fullscreen" style="display:none;padding:20px 28px;">
@@ -34237,6 +34261,29 @@ window.openModelDetail = openModelDetail;
     scheduleFabUpdate();
   }
 })();
+</script>
+<script>
+window.__cardinalScaffoldDiagnostic = function() {
+  var screens = document.querySelectorAll('.screen');
+  var report = [];
+  screens.forEach(function(s){
+    var id = s.id;
+    var hasContent = s.children.length > 0;
+    var visibleText = (s.textContent || '').trim().length;
+    var firstChild = s.children[0] ? s.children[0].tagName + (s.children[0].id ? '#' + s.children[0].id : '') : 'none';
+    report.push({
+      id: id,
+      childCount: s.children.length,
+      textLen: visibleText,
+      firstChild: firstChild,
+      status: visibleText < 50 ? '⚠ SPARSE' : visibleText < 200 ? '🟡 LIGHT' : '✓ POPULATED'
+    });
+  });
+  console.table(report);
+  return report;
+};
+
+console.log('[Cardinal] Run window.__cardinalScaffoldDiagnostic() to audit all screens for empty/sparse content.');
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 </body>
