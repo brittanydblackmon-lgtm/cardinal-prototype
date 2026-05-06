@@ -1621,13 +1621,11 @@ line-height: 1; margin-bottom: 5px;
   50% { opacity: 0.72; transform: scale(1.18); filter: brightness(1.35); box-shadow: 0 0 18px rgba(96,165,250,0.55); }
 }
 @keyframes haloPulseCritical {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0.4); }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0.35); }
   50% { box-shadow: 0 0 0 6px rgba(239,68,68,0); }
 }
-.halo-pred-critical {
-  animation: haloPulseCritical 2s ease-in-out infinite;
-  border-radius: 14px;
-}
+.halo-pred-critical { animation: haloPulseCritical 2.4s ease-in-out infinite; }
+.halo-prediction-card { border-radius: 12px; }
 .halo-cc { transition: opacity 0.15s ease, filter 0.15s ease; outline: none; }
 .halo-cc:hover { opacity: 0.96; filter: brightness(1.08); }
 
@@ -6041,19 +6039,48 @@ Halo Core
 <div id="halo-cardinal-hero" class="cardinal-collapse-if-empty" style="margin-bottom:16px;"></div>
 <div id="halo-attribution-cards" class="cardinal-collapse-if-empty" style="margin-bottom:16px;"></div>
 
-<div id="halo-predictive-section" style="margin:20px 0;">
-  <div class="cardinal-section-hdr" style="margin-bottom:14px;">
-    <div>
-      <div class="section-title">🔮 Predictive Risk Engine — What's About to Break</div>
-      <div class="section-sub">Halo predicts model decay, bias drift, regulator action, and customer harm BEFORE it happens · Suggests targeted actions · Quantifies cost of inaction</div>
+<!-- ══ HALO PREDICTIVE SECTION (2D-d-36) ══ -->
+<div id="halo-predictive-section" style="margin-bottom:18px;">
+
+  <!-- Section header with multi-objective optimization button -->
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px;">
+    <div style="display:flex;align-items:center;gap:10px;">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.8" aria-hidden="true">
+        <circle cx="12" cy="12" r="9" opacity="0.4"/>
+        <path d="M12 7v5l3 2" stroke-linecap="round"/>
+        <circle cx="12" cy="12" r="1.5" fill="var(--accent)" stroke="none"/>
+      </svg>
+      <div>
+        <div style="font-size:15px;font-weight:700;color:var(--chrome2);letter-spacing:0.2px;">🔮 Predictive Risk Engine — What's About to Break</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px;">Halo predicts model decay, bias drift, regulator action, customer harm BEFORE it happens · Suggests targeted routes · Quantifies cost of inaction</div>
+      </div>
     </div>
-    <div class="section-actions">
-      <button class="cardinal-btn cardinal-btn-ghost" onclick="haloRunMultiObjective()" style="font-size:10px;">⚖️ Multi-Objective Optimization</button>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <span style="display:flex;align-items:center;gap:6px;font-size:10px;color:var(--muted);">
+        <span style="width:6px;height:6px;background:#22c55e;border-radius:50%;display:inline-block;box-shadow:0 0 6px #22c55e;"></span>
+        Live · Updated 2 min ago
+      </span>
+      <button type="button" onclick="haloRunMultiObjective()" style="background:rgba(168,85,247,0.10);border:1px solid rgba(168,85,247,0.35);color:#a855f7;border-radius:7px;padding:7px 12px;font-size:10px;cursor:pointer;font-weight:600;">⚖️ Multi-Objective Optimization</button>
     </div>
   </div>
-  <div id="halo-pred-stats" class="grid-4" style="margin-bottom:16px;"></div>
-  <div id="halo-pred-list"></div>
+
+  <!-- Stats strip: 4 KPI cards above prediction grid -->
+  <div id="halo-pred-stats" class="grid-4 cardinal-collapse-if-empty" style="margin-bottom:14px;"></div>
+
+  <!-- Predictions grid: dynamic from CARDINAL_HALO_PREDICTIONS by current industry -->
+  <div id="halo-predictions-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:12px;"></div>
+
+  <!-- Footer: cross-link to map + view-all -->
+  <div style="margin-top:12px;display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:rgba(166,218,255,0.04);border:1px solid rgba(166,218,255,0.08);border-radius:8px;flex-wrap:wrap;gap:8px;">
+    <div style="font-size:11px;color:var(--muted);">
+      <span style="color:var(--chrome2);font-weight:600;">Halo intelligence:</span>
+      Predictions tied to regulatory geography · See map below for jurisdiction view
+    </div>
+    <button type="button" onclick="haloShowAllPredictions()" style="background:transparent;border:1px solid rgba(166,218,255,0.18);color:var(--accent);border-radius:6px;padding:6px 12px;font-size:10px;cursor:pointer;font-weight:600;">View All Predictions →</button>
+  </div>
+
 </div>
+<!-- ══ END HALO PREDICTIVE SECTION ══ -->
 
 <div class="halo-map-shell" style="position:relative" onclick="haloBackdropClick(event)">
 <div id="halo-map-container" style="width:100%;height:380px;background:#080c14;border-radius:12px;border:1px solid rgba(166,218,255,0.1);position:relative;overflow:hidden;">
@@ -10321,147 +10348,6 @@ window.openPersonaSwitcher = function() {
   document.body.appendChild(modal);
 };
 
-// ══════════════════════════════════════════════════════
-// CARDINAL_HALO_PREDICTIONS — industry-aware predictive risks (Halo Core)
-// ══════════════════════════════════════════════════════
-window.CARDINAL_HALO_PREDICTIONS = {
-  ad: [
-    {
-      id: 'PRED-AD-001',
-      severity: 'critical',
-      modelId: 'AD-PERSONNEL-V2.4',
-      modelName: 'Personnel Assignment v2.4',
-      caseLink: 'AD-2847',
-      title: 'Personnel v2.4 will breach DoD AI Ethics threshold within 14 days',
-      narrative: 'Disparate Impact ratio trending from 0.67 → 0.61 over last 21 days. At current rate, will cross 0.60 floor by May 20. Triggers DoD AI Ethics Article 4 Section C — automatic certification suspension.',
-      timeHorizon: '14 days',
-      certaintyPct: 87,
-      financialExposure: 67000000,
-      humanImpact: '847 service members affected. Mission readiness scoring inversion projected to spread to 1,400+ personnel if uncorrected.',
-      suggestedActions: [
-        { action: 'Send to Atonement for shadow remediation', target: 'atonement', priority: 'urgent', owner: 'Sarah Chen + James Martinez' },
-        { action: 'Open War Room case', target: 'sentinel', priority: 'high', owner: 'James Martinez' },
-        { action: 'Schedule DoD pre-disclosure call', target: 'compliance', priority: 'medium', owner: "Kevin O'Brien" }
-      ],
-      jurisdictions: ['Pentagon DC', 'Norfolk VA', 'San Diego CA', 'Honolulu HI'],
-      statutes: ['DoD AI Ethics', 'Title VII', '18 USC §1513'],
-      lat: 38.87, lng: -77.05,
-      trend: [0.72, 0.71, 0.70, 0.69, 0.68, 0.67, 0.65, 0.63, 0.61]
-    },
-    {
-      id: 'PRED-AD-002',
-      severity: 'high',
-      modelId: 'AD-MISSION-V1.2',
-      modelName: 'Mission Readiness v1.2',
-      caseLink: null,
-      title: 'Mission Readiness drift detected — projected DI degradation in 30 days',
-      narrative: 'Eden detected emergent demographic clustering in last 7 days. Pattern matches early signals from AD-2847. If not addressed, projected to reach Atonement-required threshold by Jun 5.',
-      timeHorizon: '30 days',
-      certaintyPct: 64,
-      financialExposure: 12000000,
-      humanImpact: '~340 personnel projected to be impacted if drift continues uncorrected.',
-      suggestedActions: [
-        { action: 'Send to Genesis for proactive counterfactual', target: 'genesis', priority: 'high', owner: 'Anthony Broadnax' },
-        { action: 'Adam autonomous coverage gap test', target: 'genesis', priority: 'medium', owner: 'Adam (AI)' }
-      ],
-      jurisdictions: ['Norfolk VA', 'San Diego CA'],
-      statutes: ['DoD AI Ethics'],
-      lat: 36.85, lng: -76.29,
-      trend: [0.81, 0.80, 0.80, 0.79, 0.78, 0.78, 0.77]
-    }
-  ],
-  fin: [
-    {
-      id: 'PRED-FIN-001',
-      severity: 'critical',
-      modelId: 'FIN-CREDIT-V3.4',
-      modelName: 'Credit Scoring v3.4',
-      caseLink: 'FIN-1203',
-      title: 'NYC Local Law 144 audit deadline in 8 days — current Trust Score insufficient',
-      narrative: 'Annual bias audit required by NYC LL144 for Credit Scoring v3.4 due May 14. Current Trust Score 65 below 80 certification floor. Predicted CFPB action: $33M plus $40M ECOA exposure.',
-      timeHorizon: '8 days',
-      certaintyPct: 92,
-      financialExposure: 73000000,
-      humanImpact: '1,203 applicants in protected ZIP clusters. 2.1x denial disparity. 687 already restored via v3.5 shadow.',
-      suggestedActions: [
-        { action: 'Promote v3.5 from shadow to production', target: 'atonement', priority: 'urgent', owner: 'Sarah Chen' },
-        { action: 'Generate NYC LL144 audit packet', target: 'compliance', priority: 'urgent', owner: 'James Martinez' },
-        { action: 'Complete remediation cohort outreach', target: 'atonement', priority: 'high', owner: 'Taylor Brennan' }
-      ],
-      jurisdictions: ['New York NY', 'Newark NJ'],
-      statutes: ['ECOA', 'NYC LL144', 'CO AI Act'],
-      lat: 40.71, lng: -74.01,
-      trend: [0.78, 0.74, 0.71, 0.68, 0.66, 0.65, 0.65]
-    },
-    {
-      id: 'PRED-FIN-002',
-      severity: 'medium',
-      modelId: 'FIN-FRAUD-V2.1',
-      modelName: 'Fraud Detection v2.1',
-      caseLink: null,
-      title: 'Insurance premium impact projected if Trust Score drops 6 points',
-      narrative: 'Cardinal Halo predicts that if Trust Score for FIN-FRAUD-V2.1 drops below 80 in next 60 days, your D&O insurance premium will increase 14% at renewal (Aug 15). Pareto frontier suggests minor threshold tuning preserves performance.',
-      timeHorizon: '60 days',
-      certaintyPct: 71,
-      financialExposure: 1800000,
-      humanImpact: 'No direct customer impact yet; monitoring threshold.',
-      suggestedActions: [
-        { action: 'Run multi-objective optimization in Halo', target: 'halo', priority: 'medium', owner: 'Sarah Chen' }
-      ],
-      jurisdictions: ['New York NY'],
-      statutes: ['ECOA', 'FTC §5 UDAP'],
-      lat: 40.71, lng: -74.01,
-      trend: [0.91, 0.90, 0.89, 0.89, 0.88]
-    }
-  ],
-  health: [
-    {
-      id: 'PRED-HS-001',
-      severity: 'critical',
-      modelId: 'HS-CLAIMS-V4.1',
-      modelName: 'Claims Adjudication v4.1',
-      caseLink: 'HS-2847',
-      title: 'Patient denial pattern projected to escalate — class action risk in 45 days',
-      narrative: 'Eden has flagged 2,847 patients aged 65+ denied at 2.3x rate over last 90 days. Trajectory predicts 4,200+ patients impacted by July if uncorrected. Halo flags significant ACA §1557 + class action exposure.',
-      timeHorizon: '45 days',
-      certaintyPct: 89,
-      financialExposure: 150000000,
-      humanImpact: '2,847 patients currently affected. Projected escalation to 4,200+. Mortality risk for time-sensitive treatments.',
-      suggestedActions: [
-        { action: 'Send to Atonement immediately', target: 'atonement', priority: 'urgent', owner: 'Sarah Chen + James Martinez' },
-        { action: 'Open War Room case + escalate to Legal', target: 'sentinel', priority: 'urgent', owner: "Kevin O'Brien" },
-        { action: 'Genesis counterfactual on age proxy variable', target: 'genesis', priority: 'high', owner: 'Anthony Broadnax' }
-      ],
-      jurisdictions: ['Atlanta GA', 'Houston TX', 'Phoenix AZ'],
-      statutes: ['ACA §1557', '18 USC §1513'],
-      lat: 33.75, lng: -84.39,
-      trend: [0.72, 0.70, 0.68, 0.66, 0.64, 0.62, 0.60]
-    }
-  ],
-  fed: [
-    {
-      id: 'PRED-FED-001',
-      severity: 'high',
-      modelId: 'FED-IRS-FRAUD-V3.1',
-      modelName: 'IRS Tax Fraud Detection v3.1',
-      caseLink: 'FED-PDV-001',
-      title: 'Pre-deployment vetting blocked — proxy variable detected',
-      narrative: 'OMB Unbiased AI requires resolved proxy variable risk before deployment. Halo predicts that without remediation, EO May 2026 deployment review will fail. Self-employed filer cohort (1,200) shows 2.4x audit selection disparity correlated with ZIP.',
-      timeHorizon: 'Pre-deployment block',
-      certaintyPct: 95,
-      financialExposure: 18000000,
-      humanImpact: '1,200 self-employed filers in pilot cohort. Production deployment would extend to 2.4M filers nationally.',
-      suggestedActions: [
-        { action: 'Send to Genesis for ZIP code counterfactual', target: 'genesis', priority: 'urgent', owner: 'Patricia Alvarez + Sarah Chen' },
-        { action: 'Block deployment via ERE rule', target: 'compliance', priority: 'urgent', owner: 'Patricia Alvarez' }
-      ],
-      jurisdictions: ['Washington DC'],
-      statutes: ['OMB Unbiased AI', 'EO May 2026'],
-      lat: 38.90, lng: -77.04,
-      trend: [0.59, 0.57, 0.55, 0.54, 0.54]
-    }
-  ]
-};
 
 // ══════════════════════════════════════════════════════
 // CARDINAL_ATONEMENT_PIPELINE — shadow → ramp → promote (Atonement Core deep view)
@@ -15628,11 +15514,6 @@ function switchIndustry(org, btn) {
  } catch (_esh) {}
 
  try {
-   if (typeof haloRenderPredictiveSection === 'function') {
-     setTimeout(function(){ haloRenderPredictiveSection(window.currentOrg); }, 100);
-   }
- } catch (_haloInd) {}
- try {
    if (typeof renderAtonementDeepView === 'function') {
      setTimeout(function(){ renderAtonementDeepView(window.currentOrg); }, 100);
    }
@@ -19517,7 +19398,7 @@ function showScreen(name, navEl) {
      subSecondary.textContent = '';
    }
  }
- if(name==='halo') { try { stopHaloLive(); } catch(_h){} setTimeout(initHaloMap, 100); setTimeout(function(){ try { updateHaloIndustry(currentOrg||'ad'); updateHaloInaction((typeof currentOrg!=='undefined'&&currentOrg)?currentOrg:'ad'); } catch(_hh){} }, 110); setTimeout(function(){ try { if (typeof cardinalRenderCorePinsPanel === 'function') cardinalRenderCorePinsPanel('halo', 'halo-core-pins'); } catch(_hp){} }, 260); setTimeout(function(){ try { if (typeof haloRenderPredictiveSection === 'function') haloRenderPredictiveSection(window.currentOrg || currentOrg || 'ad'); } catch(_hpr) {} }, 50); }
+ if(name==='halo') { try { stopHaloLive(); } catch(_h){} setTimeout(initHaloMap, 100); setTimeout(function(){ try { updateHaloIndustry(currentOrg||'ad'); updateHaloInaction((typeof currentOrg!=='undefined'&&currentOrg)?currentOrg:'ad'); } catch(_hh){} }, 110); setTimeout(function(){ try { if (typeof cardinalRenderCorePinsPanel === 'function') cardinalRenderCorePinsPanel('halo', 'halo-core-pins'); } catch(_hp){} }, 260); setTimeout(function(){ if (typeof haloRenderPredictiveSection === 'function') haloRenderPredictiveSection(window.currentOrg); }, 60); }
  if(name==='trustloop') setTimeout(initTLChat,100);
  const _extraTitles={pipeline:'Data Pipeline — How Cardinal Works',trustloop:'Trust Loop — Team Workspace',modellibrary:'Cardinal Library — Use Cases & Models (Preview)',cardinallibrary:'📚 Cardinal Library — Unified Knowledge Hub',lucid:'✦ Lucid Layer — AI Intelligence',echo:'◈ Echo Core — Audit Memory & Integrity',sentinel:'Sentinel Core — Case Engine',usecases:'Browse All AI Use Cases — Cardinal Master Library'};
  if(name==='echo') buildEcho(currentOrg);
@@ -20228,7 +20109,6 @@ function updateHaloInaction(org) {
 function updateHaloIndustry(org){
  try { renderHaloCardinalHero(org); } catch(_e1) {}
  try { renderHaloAttributionCards(org); } catch(_e2) {}
- try { if (typeof haloRenderPredictiveSection === 'function') setTimeout(function(){ haloRenderPredictiveSection(org || window.currentOrg || 'ad'); }, 50); } catch(_p) {}
  org=org||'ad'; var cfg=HALO_CFG[org]; if(!cfg) return;
  var elSub=document.getElementById('halo-screen-subtitle'); if(elSub) elSub.textContent=cfg.subtitle;
  var pill=document.getElementById('halo-peer-pill'); if(pill) pill.textContent=cfg.peerPct;
@@ -20239,303 +20119,6 @@ function updateHaloIndustry(org){
  initHaloCoreCharts(org);
  try { initHaloMap(); } catch(_hm) {}
 }
-window.haloRenderPredictiveSection = function(org) {
-  org = org || window.currentOrg || 'ad';
-  var preds = (window.CARDINAL_HALO_PREDICTIONS && window.CARDINAL_HALO_PREDICTIONS[org]) || [];
-
-  var statsContainer = document.getElementById('halo-pred-stats');
-  var listContainer = document.getElementById('halo-pred-list');
-  if (!statsContainer || !listContainer) return;
-
-  if (preds.length === 0) {
-    statsContainer.innerHTML = '';
-    listContainer.innerHTML =
-      '<div class="cardinal-empty-state"><div class="empty-icon">🔮</div><div class="empty-title">No predictive risks flagged</div><div>Halo will surface predictions as patterns emerge in your monitored models.</div></div>';
-    return;
-  }
-
-  var totalExposure = preds.reduce(function(s, p) {
-    return s + (p.financialExposure || 0);
-  }, 0);
-  var criticalCount = preds.filter(function(p) {
-    return p.severity === 'critical';
-  }).length;
-  var highCount = preds.filter(function(p) {
-    return p.severity === 'high';
-  }).length;
-  var dayVals = preds.map(function(p) {
-    var n = parseInt(p.timeHorizon, 10);
-    return isNaN(n) ? 365 : n;
-  });
-  var nearestDays = Math.min.apply(null, dayVals);
-  var nearestPred = preds.find(function(p) {
-    var n = parseInt(p.timeHorizon, 10);
-    return (!isNaN(n) ? n : 365) === nearestDays;
-  });
-
-  statsContainer.innerHTML =
-    '' +
-    '<div class="cardinal-stat-card" style="border-color: rgba(239,68,68,0.30);">' +
-      '<div class="cardinal-stat-label">⚠️ TOTAL EXPOSURE PREDICTED</div>' +
-      '<div class="cardinal-stat-value" style="color:#ef4444;">$' +
-      (totalExposure / 1000000).toFixed(0) +
-      'M</div>' +
-      '<div class="cardinal-stat-sub">If no action taken across active predictions</div>' +
-    '</div>' +
-    '<div class="cardinal-stat-card" style="border-color: rgba(245,158,11,0.30);">' +
-      '<div class="cardinal-stat-label">⏱ NEAREST DEADLINE</div>' +
-      '<div class="cardinal-stat-value" style="color:#f59e0b;">' +
-      (isFinite(nearestDays) ? nearestDays + 'd' : '—') +
-      '</div>' +
-      '<div class="cardinal-stat-sub">' +
-      (nearestPred ? nearestPred.title.substring(0, 55) + '...' : '') +
-      '</div>' +
-    '</div>' +
-    '<div class="cardinal-stat-card" style="border-color: rgba(239,68,68,0.30);">' +
-      '<div class="cardinal-stat-label">🔴 CRITICAL PREDICTIONS</div>' +
-      '<div class="cardinal-stat-value" style="color:#ef4444;">' +
-      criticalCount +
-      '</div>' +
-      '<div class="cardinal-stat-sub">High-severity: ' +
-      highCount +
-      ' · Total active: ' +
-      preds.length +
-      '</div>' +
-    '</div>' +
-    '<div class="cardinal-stat-card" style="border-color: rgba(168,85,247,0.30);">' +
-      '<div class="cardinal-stat-label">🔮 CONFIDENCE AVG</div>' +
-      '<div class="cardinal-stat-value" style="color:#a855f7;">' +
-      Math.round(
-        preds.reduce(function(s, p) {
-          return s + (p.certaintyPct || 0);
-        }, 0) / preds.length
-      ) +
-      '%</div>' +
-      '<div class="cardinal-stat-sub">Multi-model probability across active predictions</div>' +
-    '</div>';
-
-  listContainer.innerHTML = preds
-    .map(function(p) {
-      return haloRenderPredictionCard(p);
-    })
-    .join('');
-};
-
-window.haloRenderPredictionCard = function(p) {
-  var sevColor =
-    { critical: '#ef4444', high: '#f59e0b', medium: '#3b82f6', low: '#22c55e' }[p.severity] ||
-    '#94a3b8';
-  var sevBg =
-    {
-      critical: 'rgba(239,68,68,0.06)',
-      high: 'rgba(245,158,11,0.06)',
-      medium: 'rgba(59,130,246,0.06)',
-      low: 'rgba(34,197,94,0.06)'
-    }[p.severity] || 'rgba(148,163,184,0.04)';
-  var sevBorder =
-    {
-      critical: 'rgba(239,68,68,0.30)',
-      high: 'rgba(245,158,11,0.30)',
-      medium: 'rgba(59,130,246,0.25)',
-      low: 'rgba(34,197,94,0.25)'
-    }[p.severity] || 'rgba(148,163,184,0.18)';
-
-  var trendSparkline = '';
-  if (p.trend && p.trend.length > 0) {
-    var max = Math.max.apply(null, p.trend);
-    var min = Math.min.apply(null, p.trend);
-    var range = max - min || 0.01;
-    var w = 100,
-      h = 24;
-    var pts = p.trend
-      .map(function(v, i) {
-        var x = (i / (p.trend.length - 1)) * w;
-        var y = h - ((v - min) / range) * h;
-        return x.toFixed(1) + ',' + y.toFixed(1);
-      })
-      .join(' ');
-    trendSparkline =
-      '<svg viewBox="0 0 ' +
-      w +
-      ' ' +
-      h +
-      '" style="width:100px;height:24px;"><polyline points="' +
-      pts +
-      '" fill="none" stroke="' +
-      sevColor +
-      '" stroke-width="1.5" /></svg>';
-  }
-
-  var html =
-    '<div' +
-    (p.severity === 'critical' ? ' class="halo-pred-critical"' : '') +
-    ' style="margin-bottom:12px;padding:18px 20px;background:' +
-    sevBg +
-    ';border:1px solid ' +
-    sevBorder +
-    ';border-radius:14px;">';
-
-  html += '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:10px;flex-wrap:wrap;">';
-  html += '<div style="flex:1;min-width:280px;">';
-  html += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap;">';
-  html +=
-    '<span style="font-size:9px;background:' +
-    sevColor +
-    '20;color:' +
-    sevColor +
-    ';border:1px solid ' +
-    sevColor +
-    '60;padding:2px 8px;border-radius:6px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;">' +
-    p.severity +
-    '</span>';
-  html += '<span style="font-size:10px;color:var(--muted);font-family:monospace;">' + p.id + '</span>';
-  if (p.caseLink)
-    html +=
-      '<span style="font-size:10px;color:var(--accent);background:rgba(166,218,255,0.06);padding:2px 7px;border-radius:5px;font-weight:600;">→ ' +
-      p.caseLink +
-      '</span>';
-  html += '</div>';
-  html +=
-    '<div style="font-size:14px;color:var(--chrome2);font-weight:700;line-height:1.3;">' + p.title + '</div>';
-  html +=
-    '<div style="font-size:10px;color:var(--muted);margin-top:3px;">' +
-    p.modelName +
-    ' · ' +
-    (p.modelId || '') +
-    '</div>';
-  html += '</div>';
-
-  html += '<div style="display:flex;align-items:center;gap:14px;">';
-  html +=
-    '<div style="text-align:right;"><div style="font-size:9px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:0.6px;">Time horizon</div><div style="font-size:16px;color:' +
-    sevColor +
-    ';font-weight:800;">' +
-    p.timeHorizon +
-    '</div></div>';
-  html +=
-    '<div style="text-align:right;"><div style="font-size:9px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:0.6px;">Certainty</div><div style="font-size:16px;color:#a855f7;font-weight:800;">' +
-    p.certaintyPct +
-    '%</div></div>';
-  if (trendSparkline)
-    html +=
-      '<div style="text-align:right;"><div style="font-size:9px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:0.6px;">DI Trend</div>' +
-      trendSparkline +
-      '</div>';
-  html += '</div>';
-  html += '</div>';
-
-  html +=
-    '<div style="font-size:11px;color:var(--muted2);line-height:1.6;margin-bottom:12px;background:rgba(15,23,42,0.4);padding:10px 12px;border-radius:8px;border-left:2px solid ' +
-    sevColor +
-    ';">' +
-    p.narrative +
-    '</div>';
-
-  html +=
-    '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px;margin-bottom:12px;">';
-  html +=
-    '<div style="padding:8px 10px;background:rgba(15,23,42,0.5);border:1px solid rgba(239,68,68,0.20);border-radius:8px;"><div style="font-size:9px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:0.5px;">💰 Financial Exposure</div><div style="font-size:14px;color:#ef4444;font-weight:800;">$' +
-    (p.financialExposure / 1000000).toFixed(1) +
-    'M</div></div>';
-  html +=
-    '<div style="padding:8px 10px;background:rgba(15,23,42,0.5);border:1px solid rgba(245,158,11,0.20);border-radius:8px;grid-column:span 2;"><div style="font-size:9px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:0.5px;">👥 Human Impact</div><div style="font-size:11px;color:var(--chrome2);font-weight:600;line-height:1.4;margin-top:2px;">' +
-    p.humanImpact +
-    '</div></div>';
-  html += '</div>';
-
-  if ((p.statutes && p.statutes.length > 0) || (p.jurisdictions && p.jurisdictions.length > 0)) {
-    html += '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;align-items:center;">';
-    if (p.statutes && p.statutes.length) {
-      html +=
-        '<span style="font-size:9px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-right:4px;">📜 Statutes:</span>';
-      p.statutes.forEach(function(s) {
-        html +=
-          '<span style="font-size:9px;color:#a855f7;background:rgba(168,85,247,0.06);border:1px solid rgba(168,85,247,0.25);padding:2px 7px;border-radius:6px;font-weight:600;">' +
-          s +
-          '</span>';
-      });
-    }
-    if (p.jurisdictions && p.jurisdictions.length) {
-      html +=
-        '<span style="font-size:9px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-left:8px;margin-right:4px;">📍 Jurisdictions:</span>';
-      p.jurisdictions.forEach(function(j) {
-        html +=
-          '<span style="font-size:9px;color:var(--accent);background:rgba(166,218,255,0.06);border:1px solid rgba(166,218,255,0.18);padding:2px 7px;border-radius:6px;font-weight:600;">' +
-          j +
-          '</span>';
-      });
-    }
-    html += '</div>';
-  }
-
-  if (p.suggestedActions && p.suggestedActions.length > 0) {
-    html += '<div style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(166,218,255,0.10);">';
-    html +=
-      '<div style="font-size:10px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:0.6px;margin-bottom:8px;">💡 Halo Recommends</div>';
-    html += '<div style="display:flex;flex-wrap:wrap;gap:8px;">';
-    p.suggestedActions.forEach(function(a) {
-      var pColor =
-        { urgent: '#ef4444', high: '#f59e0b', medium: '#3b82f6', low: '#22c55e' }[a.priority] ||
-        '#94a3b8';
-      var icon =
-        {
-          atonement: '🔄',
-          genesis: '🧪',
-          sentinel: '🚨',
-          compliance: '⚖️',
-          halo: '🔮'
-        }[a.target] || '→';
-      html +=
-        '<button onclick="haloAcceptAction(\'' +
-        p.id +
-        '\', \'' +
-        a.target +
-        '\')" style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:rgba(15,23,42,0.6);border:1px solid ' +
-        pColor +
-        '40;border-radius:8px;cursor:pointer;transition:all 0.15s;text-align:left;" onmouseover="this.style.background=\'rgba(15,23,42,0.9)\';this.style.borderColor=\'' +
-        pColor +
-        '80\';" onmouseout="this.style.background=\'rgba(15,23,42,0.6)\';this.style.borderColor=\'' +
-        pColor +
-        '40\';">';
-      html += '<span style="font-size:14px;">' + icon + '</span>';
-      html += '<div style="text-align:left;">';
-      html +=
-        '<div style="font-size:11px;color:var(--chrome2);font-weight:600;line-height:1.3;">' +
-        a.action +
-        '</div>';
-      html +=
-        '<div style="font-size:9px;color:var(--muted);margin-top:2px;">Owner: ' +
-        a.owner +
-        ' · ' +
-        a.priority.toUpperCase() +
-        '</div>';
-      html += '</div>';
-      html += '</button>';
-    });
-    html += '</div>';
-    html += '</div>';
-  }
-
-  html += '</div>';
-  return html;
-};
-
-window.haloAcceptAction = function(predId, target) {
-  console.log('[Halo] Accept action:', predId, '→', target);
-  alert(
-    'Routing to ' +
-      target.toUpperCase() +
-      ' Core for prediction ' +
-      predId +
-      '. (Future: deep-link with prefilled context.)'
-  );
-};
-
-window.haloRunMultiObjective = function() {
-  alert(
-    'Multi-Objective Optimization\n\nHalo will compute the Pareto frontier balancing:\n• Profit\n• Fraud loss\n• Regulatory penalty risk\n• Fairness (DI)\n\nReturning trade-off curve & recommended threshold configuration.\n\n(Demo: full Pareto chart to be built next pass.)'
-  );
-};
 
 function initHaloMap() {
   if (typeof d3 === 'undefined' || typeof topojson === 'undefined') return;
@@ -21160,6 +20743,410 @@ window.addEventListener('resize', function() {
     try { initHaloMap(); } catch (e) {}
   }
 });
+
+
+
+// ══ HALO PREDICTIVE ENGINE — DATA + RENDERERS (2D-d-36) ══
+
+window.CARDINAL_HALO_PREDICTIONS = {
+  ad: [
+    {
+      id: 'PRED-AD-001',
+      severity: 'critical',
+      severityLabel: '⚠ IMMINENT',
+      timeHorizon: '7 days',
+      certaintyPct: 94,
+      modelName: 'Personnel Assignment v2.4',
+      modelId: 'AD-PERSONNEL-V2.4',
+      caseLink: 'AD-2847',
+      title: 'DoD audit deadline — Personnel v2.4 will breach DI threshold',
+      narrative: 'Disparate Impact ratio trending 0.67 → 0.61 over 21 days. Will cross 0.60 floor by May 20. Triggers DoD AI Ethics Article 4 — automatic certification suspension.',
+      financialExposure: 67,
+      humanImpact: '847 service members affected · readiness inversion projected to spread to 1,400+ if uncorrected',
+      route: 'atonement',
+      routeLabel: '→ Atonement',
+      statutes: ['DoD AI Ethics', 'Title VII', '18 USC §1513'],
+      jurisdictions: ['Pentagon DC', 'Norfolk VA', 'San Diego CA'],
+      diTrend: [0.72, 0.71, 0.70, 0.69, 0.68, 0.67, 0.65, 0.63, 0.61]
+    },
+    {
+      id: 'PRED-AD-002',
+      severity: 'high',
+      severityLabel: '⏱ APPROACHING',
+      timeHorizon: '23 days',
+      certaintyPct: 78,
+      modelName: 'Mission Readiness v1.2',
+      modelId: 'AD-MISSION-V1.2',
+      caseLink: null,
+      title: 'Mission Readiness drift — base_location proxy correlation rising',
+      narrative: 'Eden flagged emergent demographic clustering. base_location correlation rising 0.74 → 0.79. Pattern matches early signals from AD-2847.',
+      financialExposure: 11.4,
+      humanImpact: '~340 personnel projected to be impacted if drift continues',
+      route: 'genesis',
+      routeLabel: '→ Genesis',
+      statutes: ['DoD AI Ethics'],
+      jurisdictions: ['Norfolk VA', 'San Diego CA'],
+      diTrend: [0.81, 0.80, 0.80, 0.79, 0.78, 0.78, 0.77]
+    },
+    {
+      id: 'PRED-AD-003',
+      severity: 'medium',
+      severityLabel: '📋 REGULATORY',
+      timeHorizon: 'Q3 2026',
+      certaintyPct: 100,
+      modelName: 'All A&D Models',
+      modelId: null,
+      caseLink: null,
+      title: 'DoD AI Ethics renewal cycle — 4 systems require re-attestation',
+      narrative: 'Annual re-certification required for all A&D models. Lead time recommended: 60 days for documentation pull and attestation packet.',
+      financialExposure: 43,
+      humanImpact: 'No direct customer impact · contract eligibility risk if cert lapses',
+      route: 'compliance',
+      routeLabel: '→ Compliance',
+      statutes: ['DoD AI Ethics'],
+      jurisdictions: ['Pentagon DC'],
+      diTrend: null
+    }
+  ],
+  fin: [
+    {
+      id: 'PRED-FIN-001',
+      severity: 'critical',
+      severityLabel: '⚠ IMMINENT',
+      timeHorizon: '8 days',
+      certaintyPct: 92,
+      modelName: 'Credit Scoring v3.4',
+      modelId: 'FIN-CREDIT-V3.4',
+      caseLink: 'FIN-1203',
+      title: 'NYC LL144 audit deadline — Trust Score insufficient',
+      narrative: 'Annual bias audit required by NYC LL144 due May 14. Current Trust Score 65 below 80 floor. Predicted CFPB action: $33M plus $40M ECOA exposure.',
+      financialExposure: 73,
+      humanImpact: '1,203 applicants in protected ZIP clusters · 2.1x denial disparity · 687 already restored via v3.5 shadow',
+      route: 'atonement',
+      routeLabel: '→ Atonement',
+      statutes: ['ECOA', 'NYC LL144', 'CO AI Act'],
+      jurisdictions: ['New York NY', 'Newark NJ'],
+      diTrend: [0.78, 0.74, 0.71, 0.68, 0.66, 0.65, 0.65]
+    },
+    {
+      id: 'PRED-FIN-002',
+      severity: 'high',
+      severityLabel: '⏱ APPROACHING',
+      timeHorizon: '60 days',
+      certaintyPct: 71,
+      modelName: 'Fraud Detection v2.1',
+      modelId: 'FIN-FRAUD-V2.1',
+      caseLink: null,
+      title: 'D&O insurance premium impact projected if Trust Score drops',
+      narrative: 'If FIN-FRAUD-V2.1 Trust Score drops below 80 in next 60 days, D&O insurance premium will increase 14% at renewal Aug 15. Pareto frontier suggests minor threshold tuning preserves performance.',
+      financialExposure: 1.8,
+      humanImpact: 'No direct customer impact yet · monitoring threshold',
+      route: 'halo',
+      routeLabel: '⚖️ Optimize',
+      statutes: ['ECOA', 'FTC §5 UDAP'],
+      jurisdictions: ['New York NY'],
+      diTrend: [0.91, 0.90, 0.89, 0.89, 0.88]
+    },
+    {
+      id: 'PRED-FIN-003',
+      severity: 'medium',
+      severityLabel: '📋 REGULATORY',
+      timeHorizon: 'Q3 2026',
+      certaintyPct: 100,
+      modelName: 'All Finance Models',
+      modelId: null,
+      caseLink: null,
+      title: 'CO AI Act enforcement begins — readiness review required',
+      narrative: 'Colorado AI Act enforcement Aug 1, 2026. All consumer-facing models require pre-deployment fairness review. 3 systems in scope.',
+      financialExposure: 8,
+      humanImpact: 'CO consumer market eligibility at stake',
+      route: 'compliance',
+      routeLabel: '→ Compliance',
+      statutes: ['CO AI Act', 'ECOA'],
+      jurisdictions: ['Denver CO'],
+      diTrend: null
+    }
+  ],
+  health: [
+    {
+      id: 'PRED-HS-001',
+      severity: 'critical',
+      severityLabel: '⚠ IMMINENT',
+      timeHorizon: '45 days',
+      certaintyPct: 89,
+      modelName: 'Claims Adjudication v4.1',
+      modelId: 'HS-CLAIMS-V4.1',
+      caseLink: 'HS-2847',
+      title: 'Patient denial pattern — class action risk in 45 days',
+      narrative: 'Eden flagged 2,847 patients aged 65+ denied at 2.3x rate over 90 days. Trajectory predicts 4,200+ patients impacted by July if uncorrected. ACA §1557 + class action exposure significant.',
+      financialExposure: 150,
+      humanImpact: '2,847 patients currently affected · projected 4,200+ · mortality risk for time-sensitive treatments',
+      route: 'atonement',
+      routeLabel: '→ Atonement',
+      statutes: ['ACA §1557', '18 USC §1513'],
+      jurisdictions: ['Atlanta GA', 'Houston TX', 'Phoenix AZ'],
+      diTrend: [0.72, 0.70, 0.68, 0.66, 0.64, 0.62, 0.60]
+    },
+    {
+      id: 'PRED-HS-002',
+      severity: 'high',
+      severityLabel: '⏱ APPROACHING',
+      timeHorizon: '30 days',
+      certaintyPct: 73,
+      modelName: 'Patient Triage v1.3',
+      modelId: 'HS-TRIAGE-V1.3',
+      caseLink: null,
+      title: 'CMS audit cycle approaches — documentation gap detected',
+      narrative: 'CMS quarterly audit window opens June 5. Echo Core has 2 missing attestation packets for v1.3. Adam recommends pre-emptive packet generation.',
+      financialExposure: 4.2,
+      humanImpact: 'No direct patient impact · regulatory documentation gap',
+      route: 'compliance',
+      routeLabel: '→ Compliance',
+      statutes: ['ACA §1557'],
+      jurisdictions: ['Atlanta GA'],
+      diTrend: null
+    },
+    {
+      id: 'PRED-HS-003',
+      severity: 'medium',
+      severityLabel: '📋 REGULATORY',
+      timeHorizon: 'Q4 2026',
+      certaintyPct: 95,
+      modelName: 'All Healthcare Models',
+      modelId: null,
+      caseLink: null,
+      title: 'HIPAA AI guidance update — re-review window',
+      narrative: 'HHS publishing updated AI guidance Q4 2026. Anticipated changes to patient data anonymization standards may affect 6 models.',
+      financialExposure: 22,
+      humanImpact: 'Patient privacy posture review required',
+      route: 'compliance',
+      routeLabel: '→ Compliance',
+      statutes: ['ACA §1557'],
+      jurisdictions: ['Washington DC'],
+      diTrend: null
+    }
+  ],
+  fed: [
+    {
+      id: 'PRED-FED-001',
+      severity: 'critical',
+      severityLabel: '⚠ IMMINENT',
+      timeHorizon: 'Pre-deployment block',
+      certaintyPct: 95,
+      modelName: 'IRS Tax Fraud Detection v3.1',
+      modelId: 'FED-IRS-FRAUD-V3.1',
+      caseLink: 'FED-PDV-001',
+      title: 'ERE blocks deployment — proxy variable detected',
+      narrative: 'OMB Unbiased AI requires resolved proxy variable risk. Without remediation, EO May 2026 deployment review will fail. Self-employed filer cohort (1,200) shows 2.4x audit selection disparity correlated with ZIP.',
+      financialExposure: 18,
+      humanImpact: '1,200 self-employed filers in pilot · production deployment would extend to 2.4M filers nationally',
+      route: 'genesis',
+      routeLabel: '→ Genesis',
+      statutes: ['OMB Unbiased AI', 'EO May 2026'],
+      jurisdictions: ['Washington DC'],
+      diTrend: [0.59, 0.57, 0.55, 0.54, 0.54]
+    },
+    {
+      id: 'PRED-FED-002',
+      severity: 'medium',
+      severityLabel: '📋 REGULATORY',
+      timeHorizon: 'Q3 2026',
+      certaintyPct: 100,
+      modelName: 'All Federal Models',
+      modelId: null,
+      caseLink: null,
+      title: 'EO May 2026 quarterly attestation due',
+      narrative: 'Quarterly attestation per EO May 2026 due Sept 1. Pre-deployment vetting documentation required for all federal AI systems.',
+      financialExposure: 6,
+      humanImpact: 'Federal contract eligibility',
+      route: 'compliance',
+      routeLabel: '→ Compliance',
+      statutes: ['EO May 2026', 'OMB Unbiased AI'],
+      jurisdictions: ['Washington DC'],
+      diTrend: null
+    }
+  ]
+};
+
+window.haloRenderPredictiveSection = function(org) {
+  org = org || window.currentOrg || 'ad';
+  var preds = (window.CARDINAL_HALO_PREDICTIONS && window.CARDINAL_HALO_PREDICTIONS[org]) || [];
+
+  var statsContainer = document.getElementById('halo-pred-stats');
+  var grid = document.getElementById('halo-predictions-grid');
+  if (!statsContainer || !grid) return;
+
+  if (preds.length === 0) {
+    statsContainer.innerHTML = '';
+    grid.innerHTML = '<div class="cardinal-empty-state" style="grid-column:1/-1;"><div class="empty-icon">🔮</div><div class="empty-title">No predictive risks flagged</div><div>Halo will surface predictions as patterns emerge.</div></div>';
+    return;
+  }
+
+  // Stats computation
+  var totalExposure = preds.reduce(function(s,p){ return s + (p.financialExposure || 0); }, 0);
+  var criticalCount = preds.filter(function(p){ return p.severity === 'critical'; }).length;
+  var highCount = preds.filter(function(p){ return p.severity === 'high'; }).length;
+  var avgCertainty = Math.round(preds.reduce(function(s,p){ return s + (p.certaintyPct||0); }, 0) / preds.length);
+  var nearestPred = preds.slice().sort(function(a,b){
+    var an = parseInt(a.timeHorizon, 10); if (isNaN(an)) an = 365;
+    var bn = parseInt(b.timeHorizon, 10); if (isNaN(bn)) bn = 365;
+    return an - bn;
+  })[0];
+
+  // Stats strip
+  statsContainer.innerHTML =
+    '<div class="cardinal-stat-card" style="border-color:rgba(239,68,68,0.30);"><div class="cardinal-stat-label">⚠ TOTAL EXPOSURE</div><div class="cardinal-stat-value" style="color:#ef4444;">$' + totalExposure.toFixed(0) + 'M</div><div class="cardinal-stat-sub">If no action across active predictions</div></div>' +
+    '<div class="cardinal-stat-card" style="border-color:rgba(245,158,11,0.30);"><div class="cardinal-stat-label">⏱ NEAREST DEADLINE</div><div class="cardinal-stat-value" style="color:#f59e0b;">' + (nearestPred ? nearestPred.timeHorizon : '—') + '</div><div class="cardinal-stat-sub">' + (nearestPred ? nearestPred.title.substring(0, 48) + '...' : '') + '</div></div>' +
+    '<div class="cardinal-stat-card" style="border-color:rgba(239,68,68,0.30);"><div class="cardinal-stat-label">🔴 CRITICAL PREDICTIONS</div><div class="cardinal-stat-value" style="color:#ef4444;">' + criticalCount + '</div><div class="cardinal-stat-sub">High: ' + highCount + ' · Total: ' + preds.length + '</div></div>' +
+    '<div class="cardinal-stat-card" style="border-color:rgba(168,85,247,0.30);"><div class="cardinal-stat-label">🔮 CONFIDENCE AVG</div><div class="cardinal-stat-value" style="color:#a855f7;">' + avgCertainty + '%</div><div class="cardinal-stat-sub">Multi-model probability</div></div>';
+
+  // Render prediction cards
+  grid.innerHTML = preds.map(function(p){ return haloRenderPredictionCard(p); }).join('');
+};
+
+window.haloRenderPredictionCard = function(p) {
+  var palette = {
+    critical: { color:'#ef4444', bg:'rgba(239,68,68,0.10)', border:'rgba(239,68,68,0.30)', accent:'linear-gradient(90deg,#ef4444,#f59e0b)' },
+    high:     { color:'#f59e0b', bg:'rgba(245,158,11,0.10)', border:'rgba(245,158,11,0.30)', accent:'linear-gradient(90deg,#f59e0b,#eab308)' },
+    medium:   { color:'#60a5fa', bg:'rgba(96,165,250,0.10)', border:'rgba(96,165,250,0.30)', accent:'linear-gradient(90deg,#60a5fa,#a78bfa)' },
+    low:      { color:'#22c55e', bg:'rgba(34,197,94,0.10)', border:'rgba(34,197,94,0.30)', accent:'linear-gradient(90deg,#22c55e,#10b981)' }
+  };
+  var sev = palette[p.severity] || palette.medium;
+
+  // DI trend sparkline
+  var sparkline = '';
+  if (p.diTrend && p.diTrend.length > 1) {
+    var max = Math.max.apply(null, p.diTrend);
+    var min = Math.min.apply(null, p.diTrend);
+    var range = max - min || 0.01;
+    var w = 100, h = 22;
+    var pts = p.diTrend.map(function(v, i){
+      var x = (i / (p.diTrend.length - 1)) * w;
+      var y = h - ((v - min) / range) * h;
+      return x.toFixed(1) + ',' + y.toFixed(1);
+    }).join(' ');
+    sparkline = '<div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;padding:6px 8px;background:rgba(0,0,0,0.20);border-radius:6px;">' +
+      '<span style="font-size:9px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">DI Trend</span>' +
+      '<svg viewBox="0 0 ' + w + ' ' + h + '" style="flex:1;height:18px;"><polyline points="' + pts + '" fill="none" stroke="' + sev.color + '" stroke-width="1.5" /></svg>' +
+      '<span style="font-size:10px;font-weight:700;color:' + sev.color + ';">' + p.diTrend[p.diTrend.length-1].toFixed(2) + '</span>' +
+    '</div>';
+  }
+
+  // Routing button label by route
+  var routeStyles = {
+    atonement: 'background:rgba(239,68,68,0.18);border:1px solid rgba(239,68,68,0.4);color:#ef4444;',
+    genesis:   'background:rgba(168,85,247,0.18);border:1px solid rgba(168,85,247,0.4);color:#a855f7;',
+    compliance:'background:rgba(96,165,250,0.18);border:1px solid rgba(96,165,250,0.4);color:#60a5fa;',
+    sentinel:  'background:rgba(245,158,11,0.18);border:1px solid rgba(245,158,11,0.4);color:#f59e0b;',
+    halo:      'background:rgba(34,197,94,0.18);border:1px solid rgba(34,197,94,0.4);color:#22c55e;'
+  };
+  var routeStyle = routeStyles[p.route] || routeStyles.compliance;
+
+  var html = '<div class="halo-prediction-card' + (p.severity === 'critical' ? ' halo-pred-critical' : '') + '" data-prediction-id="' + p.id + '" style="background:linear-gradient(135deg,' + sev.bg + ',rgba(13,14,20,0.95));border:1px solid ' + sev.border + ';border-radius:12px;padding:16px;position:relative;overflow:hidden;">';
+
+  // Top accent bar
+  html += '<div style="position:absolute;top:0;left:0;right:0;height:3px;background:' + sev.accent + ';"></div>';
+
+  // Header row: severity label + countdown
+  html += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:6px;">';
+  html += '<span style="font-size:9px;font-weight:700;color:' + sev.color + ';letter-spacing:1px;text-transform:uppercase;">' + p.severityLabel + '</span>';
+  html += '<span style="background:' + sev.bg + ';border:1px solid ' + sev.border + ';border-radius:6px;padding:3px 8px;font-size:10px;font-weight:700;color:' + sev.color + ';">' + p.timeHorizon.toUpperCase() + '</span>';
+  html += '</div>';
+
+  // Title + ID + case link
+  html += '<div style="font-size:14px;font-weight:700;color:#e2e8f0;line-height:1.35;margin-bottom:4px;">' + p.title + '</div>';
+  html += '<div style="font-size:10px;color:var(--muted);margin-bottom:8px;font-family:monospace;">' + p.id;
+  if (p.caseLink) html += ' · <span style="color:var(--accent);">' + p.caseLink + '</span>';
+  html += '</div>';
+
+  // Narrative
+  html += '<div style="font-size:11px;color:#94a3b8;line-height:1.55;margin-bottom:10px;">' + p.narrative + '</div>';
+
+  // DI sparkline if present
+  html += sparkline;
+
+  // Certainty bar
+  html += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;padding:8px 10px;background:rgba(0,0,0,0.25);border-radius:6px;">';
+  html += '<span style="font-size:10px;color:var(--muted);">Certainty</span>';
+  html += '<div style="flex:1;height:4px;background:rgba(255,255,255,0.08);border-radius:2px;overflow:hidden;"><div style="width:' + p.certaintyPct + '%;height:100%;background:' + sev.color + ';"></div></div>';
+  html += '<span style="font-size:11px;font-weight:700;color:' + sev.color + ';">' + p.certaintyPct + '%</span>';
+  html += '</div>';
+
+  // Cost + human impact
+  html += '<div style="font-size:10px;color:var(--muted);margin-bottom:6px;">Cost of inaction: <span style="color:' + sev.color + ';font-weight:700;">$' + p.financialExposure + 'M</span></div>';
+  html += '<div style="font-size:10px;color:var(--muted2);line-height:1.5;margin-bottom:10px;background:rgba(0,0,0,0.20);padding:6px 8px;border-radius:5px;border-left:2px solid ' + sev.color + ';">' + p.humanImpact + '</div>';
+
+  // Statute + jurisdiction pills
+  if ((p.statutes && p.statutes.length > 0) || (p.jurisdictions && p.jurisdictions.length > 0)) {
+    html += '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:10px;">';
+    (p.statutes || []).forEach(function(s){
+      html += '<span style="font-size:8px;color:#a855f7;background:rgba(168,85,247,0.06);border:1px solid rgba(168,85,247,0.25);padding:2px 6px;border-radius:5px;font-weight:600;">📜 ' + s + '</span>';
+    });
+    (p.jurisdictions || []).forEach(function(j){
+      html += '<span style="font-size:8px;color:var(--accent);background:rgba(166,218,255,0.06);border:1px solid rgba(166,218,255,0.20);padding:2px 6px;border-radius:5px;font-weight:600;">📍 ' + j + '</span>';
+    });
+    html += '</div>';
+  }
+
+  // Action buttons
+  html += '<div style="display:flex;gap:6px;">';
+  html += '<button type="button" onclick="haloRoutePrediction(\'' + p.id + '\', \'' + p.route + '\', \'' + (p.caseLink || '') + '\')" style="flex:1;' + routeStyle + 'border-radius:6px;padding:7px;font-size:10px;cursor:pointer;font-weight:600;">' + p.routeLabel + '</button>';
+  html += '<button type="button" onclick="haloViewPrediction(\'' + p.id + '\')" style="background:transparent;border:1px solid rgba(255,255,255,0.12);color:var(--muted);border-radius:6px;padding:7px 10px;font-size:10px;cursor:pointer;">Details</button>';
+  html += '</div>';
+
+  html += '</div>';
+  return html;
+};
+
+window.haloRoutePrediction = function(predId, route, caseId) {
+  try {
+    if (typeof showToast === 'function') {
+      showToast('Routing to ' + route.charAt(0).toUpperCase() + route.slice(1) + ' Core', 'Prediction ' + predId + (caseId ? ' · Case ' + caseId : ''));
+    }
+    if (typeof showScreen === 'function') showScreen(route, null);
+  } catch(e){ console.warn('haloRoutePrediction error', e); }
+};
+
+window.haloViewPrediction = function(predId) {
+  try {
+    var preds = window.CARDINAL_HALO_PREDICTIONS || {};
+    var found = null;
+    Object.keys(preds).forEach(function(o){ (preds[o] || []).forEach(function(p){ if (p.id === predId) found = p; }); });
+    if (!found) return;
+    if (typeof showToast === 'function') {
+      showToast('Halo Prediction ' + predId, found.severityLabel + ' · ' + found.timeHorizon + ' · ' + found.certaintyPct + '% certainty · $' + found.financialExposure + 'M exposure');
+    }
+  } catch(e){ console.warn('haloViewPrediction error', e); }
+};
+
+window.haloRunMultiObjective = function() {
+  try {
+    if (typeof showToast === 'function') {
+      showToast('Multi-Objective Optimization', 'Computing Pareto frontier: profit · fraud loss · regulatory penalty · fairness · returning trade-off curve & recommended threshold config');
+    }
+  } catch(e){ console.warn('haloRunMultiObjective error', e); }
+};
+
+window.haloShowAllPredictions = function() {
+  try {
+    if (typeof showToast === 'function') showToast('Halo Predictions', 'Full predictive feed (V1: ' + ((window.CARDINAL_HALO_PREDICTIONS[window.currentOrg||'ad']||[]).length) + ' active · V2: scrollable feed)');
+  } catch(e){ console.warn('haloShowAllPredictions error', e); }
+};
+
+// Hook into industry switcher if present
+(function hookHaloIndustrySwitch(){
+  if (typeof window.switchIndustry === 'function' && !window.__haloPredHooked) {
+    var orig = window.switchIndustry;
+    window.switchIndustry = function(org, btn) {
+      var r = orig.apply(this, arguments);
+      setTimeout(function(){ if (typeof haloRenderPredictiveSection === 'function') haloRenderPredictiveSection(window.currentOrg); }, 120);
+      return r;
+    };
+    window.__haloPredHooked = true;
+  }
+})();
+
+// ══ END HALO PREDICTIVE ENGINE ══
 
 function haloBackdropClick(ev){
   if (ev.target.closest && (ev.target.closest('#halo-map-tooltip') ||
