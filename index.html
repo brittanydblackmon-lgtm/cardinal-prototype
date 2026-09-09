@@ -10237,12 +10237,22 @@ window.getTagStats = function() {
 // Active persona — default to Anthony (preserves existing demo behavior)
 window.__activePersonaId = window.__activePersonaId || 'david-park';
 
+window.__CARDINAL_ORG_NAME_BY_INDUSTRY = {ad:'Atlas Defense Systems', fin:'Blackmoor Wealth Group', health:'Sterling Health', fed:'IRS Tax Compliance Division'};
+
 window.getActivePersona = function() {
   var fallbackId = window.__defaultPersonaId || 'david-park';
   var id = window.__activePersonaId || fallbackId;
   var match = window.CARDINAL_PERSONAS.filter(function(p){ return p.id === id; })[0];
-  if (match) return match;
-  return window.CARDINAL_PERSONAS.filter(function(p){ return p.id === fallbackId; })[0] || window.CARDINAL_PERSONAS[0];
+  if (!match) match = window.CARDINAL_PERSONAS.filter(function(p){ return p.id === fallbackId; })[0] || window.CARDINAL_PERSONAS[0];
+  if (!match) return match;
+  // Persona records were authored with a hardcoded org (originally A&D-only demo data).
+  // Override with whatever industry is actually active so the sidebar never shows a
+  // stale org after switching industries, regardless of which persona is selected.
+  var liveOrgName = window.__CARDINAL_ORG_NAME_BY_INDUSTRY[window.currentOrg];
+  if (liveOrgName && liveOrgName !== match.org) {
+    match = Object.assign({}, match, { org: liveOrgName });
+  }
+  return match;
 };
 
 window.setActivePersona = function(personaId) {
