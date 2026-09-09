@@ -18950,6 +18950,15 @@ function safeHTML(id, html) {
 }
 
 function syncIndustrySidebarChrome(org) {
+ // Run persona refresh FIRST — it can overwrite sidebar name/org with stale,
+ // org-agnostic persona data. The explicit org-aware assignments below must
+ // run last so they're what the user actually sees after switching industries.
+ try {
+   if (typeof window.setActivePersona === 'function' && window.__activePersonaId) {
+     window.setActivePersona(window.__activePersonaId);
+   }
+ } catch (_spcEarly) {}
+
  var userMap = {ad:'David Park', fin:'Riley Whitmore', health:'Dr. Maya Osei', fed:'Patricia Alvarez'};
  var orgMap = {ad:'Atlas Defense Systems', fin:'Blackmoor Wealth Group', health:'Sterling Health', fed:'IRS Tax Compliance Division'};
  var initialsMap = {ad:'AB', fin:'RW', health:'MO', fed:'PA'};
@@ -18982,11 +18991,6 @@ function syncIndustrySidebarChrome(org) {
    var subEl = document.getElementById('topbar-sub');
    if(subEl) subEl.textContent = subMap[org] || '';
  }
- try {
-   if (typeof window.setActivePersona === 'function' && window.__activePersonaId) {
-     window.setActivePersona(window.__activePersonaId);
-   }
- } catch (_spc) {}
 }
 
 
