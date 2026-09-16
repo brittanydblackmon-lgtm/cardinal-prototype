@@ -2814,6 +2814,33 @@ animation:waveform var(--dur) ease-in-out infinite alternate;
   z-index:2;
 }
 #eve-toggle-wrap:hover #eve-hover-label{opacity:1}
+/* Eve peek bubble — small greeting/alert that appears before the full panel, so she doesn't pop open and cover the screen */
+#eve-peek-bubble{
+  position:fixed;
+  right:110px;
+  bottom:34px;
+  max-width:260px;
+  background:rgba(8,12,20,0.97);
+  border:1px solid rgba(212, 160, 86,0.3);
+  border-radius:16px 16px 4px 16px;
+  padding:12px 14px;
+  font-size:12px;
+  line-height:1.5;
+  color:#e8e4db;
+  box-shadow:0 8px 28px rgba(0,0,0,.35), 0 0 0 1px rgba(212, 160, 86,.06);
+  cursor:pointer;
+  z-index:9997;
+  opacity:0;
+  transform:translateY(8px) scale(.97);
+  pointer-events:none;
+  transition:opacity .35s ease, transform .35s ease;
+}
+#eve-peek-bubble.show{opacity:1;transform:translateY(0) scale(1);pointer-events:auto}
+#eve-peek-bubble.critical{border-color:rgba(239,68,68,0.45);box-shadow:0 8px 28px rgba(239,68,68,.18), 0 0 0 1px rgba(239,68,68,.1)}
+#eve-peek-bubble .eve-peek-label{font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:var(--accent);margin-bottom:4px;font-weight:700}
+#eve-peek-bubble.critical .eve-peek-label{color:#ef4444}
+#eve-peek-bubble .eve-peek-close{position:absolute;top:6px;right:8px;font-size:11px;color:var(--muted);cursor:pointer;padding:2px}
+@media (max-width:768px){#eve-peek-bubble{right:16px;bottom:96px;max-width:calc(100vw - 110px)}}
 /* Slow rotating ring sitting around the 62px button (74px envelope) */
 #eve-toggle-wrap::before{
   content:'';
@@ -8323,6 +8350,7 @@ Template Overview
 <button type="button" class="eve-send-btn" onclick="sendEveMessage()">→</button>
 </div>
 </div>
+<div id="eve-peek-bubble" onclick="eveExpandFromPeek()"><span class="eve-peek-close" onclick="event.stopPropagation();eveHidePeekBubble()">&#x2715;</span><div class="eve-peek-label">Eve</div><div id="eve-peek-text"></div></div>
 <div id="eve-toggle-wrap">
 <div id="eve-hover-label">Eve — AI Governance Assistant</div>
 <div id="eve-toggle-btn" onclick="eveToggleFromOrbital()" aria-label="Open Eve assistant"><span id="eve-online-pulse" aria-hidden="true"></span><svg class="eve-icon" width="30" height="30" viewBox="0 0 30 30" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><ellipse class="orbit" cx="15" cy="15" rx="13" ry="5" stroke="rgba(212, 160, 86,0.35)" stroke-width="1" transform="rotate(45 15 15)"/><ellipse class="orbit" cx="15" cy="15" rx="13" ry="5" stroke="rgba(212, 160, 86,0.2)" stroke-width="1" transform="rotate(-45 15 15)"/><circle cx="15" cy="15" r="7" stroke="rgba(212, 160, 86,0.5)" stroke-width="1"/><circle cx="15" cy="15" r="4" fill="rgba(212, 160, 86,0.9)" style="filter: drop-shadow(0 0 4px rgba(212, 160, 86,0.8))"/></svg><div id="eve-urgency-dot"></div></div>
@@ -15370,6 +15398,15 @@ function doLogin() {
     // Sidebar user card, sidebar trust mini, topbar subtitle — set via syncIndustrySidebarChrome() at end of loadIndustry()
     var eveBubble = document.getElementById('eve-bubble');
     if(eveBubble) eveBubble.style.display = 'flex';
+    // Delayed, quiet greeting — a small bubble near her icon, not the full panel popping open.
+    setTimeout(function () {
+      try {
+        var org = window.currentOrg || currentOrg || 'ad';
+        var briefing = (EVE_ALERTS[org] || EVE_ALERTS.ad)[0];
+        var line = briefing ? briefing.msg.split('.').slice(0,1).join('.') + '.' : 'Good morning — I have your briefing ready when you are.';
+        eveShowPeekBubble(line, { critical: false });
+      } catch (_gp) {}
+    }, 2600);
     setTimeout(startDashHeatmaps, 300);
     setTimeout(initDashboardCharts, 350);
     try { startDashLastRefreshed(); } catch(eLR) {}
@@ -19401,7 +19438,7 @@ function showScreen(name, navEl) {
      subSecondary.textContent = '';
    }
  }
- if(name==='halo') { try { stopHaloLive(); } catch(_h){} setTimeout(initHaloMap, 100); setTimeout(function(){ try { updateHaloIndustry(currentOrg||'ad'); updateHaloInaction((typeof currentOrg!=='undefined'&&currentOrg)?currentOrg:'ad'); } catch(_hh){} }, 110); setTimeout(function(){ try { if (typeof cardinalRenderCorePinsPanel === 'function') cardinalRenderCorePinsPanel('halo', 'halo-core-pins'); } catch(_hp){} }, 260); setTimeout(function(){ if (typeof haloRenderPredictiveSection === 'function') haloRenderPredictiveSection(window.currentOrg); }, 60); }
+ if(name==='halo') { try { stopHaloLive(); } catch(_h){} setTimeout(initHaloMap, 100); setTimeout(function(){ try { updateHaloIndustry(currentOrg||'ad'); updateHaloInaction((typeof currentOrg!=='undefined'&&currentOrg)?currentOrg:'ad'); } catch(_hh){} }, 110); setTimeout(function(){ try { if (typeof cardinalRenderCorePinsPanel === 'function') cardinalRenderCorePinsPanel('halo', 'halo-core-pins'); } catch(_hp){} }, 260); setTimeout(function(){ if (typeof haloRenderPredictiveSection === 'function') haloRenderPredictiveSection(window.currentOrg); }, 60); setTimeout(function(){ try { eveMaybeShowHaloUrgentPeek(); } catch(_hu){} }, 3200); }
  if(name==='trustloop') setTimeout(initTLChat,100);
  const _extraTitles={pipeline:'Data Pipeline — How Cardinal Works',trustloop:'Trust Loop — Team Workspace',modellibrary:'Cardinal Library — Use Cases & Models (Preview)',cardinallibrary:'Cardinal Library — Unified Knowledge Hub',lucid:'✦ Lucid Layer — AI Intelligence',echo:'◈ Echo Core — Audit Memory & Integrity',sentinel:'Sentinel Core — Case Engine',usecases:'Browse All AI Use Cases — Cardinal Master Library'};
  if(name==='echo') buildEcho(currentOrg);
@@ -21813,6 +21850,15 @@ const EVE_ALERTS = {
  ]
 };
 
+// Demo-only: hardcoded backup/secondary contact per org, for the escalation flow.
+// Real version needs a Settings UI to let an owner assign their own backup per model/case — not built yet.
+const EVE_BACKUP_CONTACTS = {
+ ad: 'Marcus Webb, Deputy Compliance Officer',
+ fin: 'Priya Nair, Deputy Risk Officer',
+ health: 'Dr. Alan Reyes, Deputy Compliance Officer',
+ fed: 'Denise Carter, Deputy AI Ethics Officer'
+};
+
 const EVE_RESPONSES = {
  ad:{
  default:"I am monitoring all your models. Most critical right now: Personnel Assignment model — DI 0.67, 847 affected. What would you like to know?",
@@ -22213,6 +22259,80 @@ function eveToggleFromOrbital() {
 }
 window.eveToggleFromOrbital = eveToggleFromOrbital;
 
+// ── Eve peek bubble: a small greeting/alert that appears near her icon before the
+// full panel opens, so she doesn't cover the screen the moment something happens.
+var evePeekPendingCritical = false;
+var eveHaloAlertShown = false;
+
+function eveShowPeekBubble(text, opts) {
+  opts = opts || {};
+  var bubble = document.getElementById('eve-peek-bubble');
+  var textEl = document.getElementById('eve-peek-text');
+  var panel = document.getElementById('eve-panel');
+  if (!bubble || !textEl) return;
+  if (panel && panel.classList.contains('open')) return; // don't peek over an already-open panel
+  textEl.textContent = text;
+  bubble.classList.toggle('critical', !!opts.critical);
+  evePeekPendingCritical = !!opts.critical;
+  bubble.classList.add('show');
+  if (opts.critical) {
+    try { var t = document.getElementById('eve-toggle-btn'); if (t) t.classList.add('eve-critical'); } catch(_c) {}
+  }
+  clearTimeout(window.__evePeekAutoHide);
+  if (!opts.critical) {
+    window.__evePeekAutoHide = setTimeout(eveHidePeekBubble, 9000);
+  }
+}
+window.eveShowPeekBubble = eveShowPeekBubble;
+
+function eveHidePeekBubble() {
+  var bubble = document.getElementById('eve-peek-bubble');
+  if (bubble) bubble.classList.remove('show');
+  clearTimeout(window.__evePeekAutoHide);
+}
+window.eveHidePeekBubble = eveHidePeekBubble;
+
+function eveExpandFromPeek() {
+  var wasCritical = evePeekPendingCritical;
+  eveHidePeekBubble();
+  eveOpenPanel();
+  if (wasCritical) {
+    setTimeout(function () { try { eveDeliverHaloUrgentCard(); } catch (_e) {} }, 450);
+  }
+}
+window.eveExpandFromPeek = eveExpandFromPeek;
+
+function eveDeliverHaloUrgentCard() {
+  var alerts = EVE_ALERTS[currentOrg] || EVE_ALERTS.ad;
+  var urgent = alerts[2] || alerts[alerts.length - 1];
+  var backup = EVE_BACKUP_CONTACTS[currentOrg] || EVE_BACKUP_CONTACTS.ad;
+  addEveMsg('eve', urgent.msg, urgent.badge, urgent.label, true);
+  setTimeout(function () {
+    addEveCard({
+      icon: '⚠',
+      title: 'This needs a decision',
+      badge: 'l3',
+      badgeLabel: 'Action needed',
+      body: 'Reply below, or just tell me what you want to do — type or tap the mic.',
+      tripleActions: [
+        { label: 'Remind me in 1 hour', onClick: function () { handleIntent('remind me in 1 hour', addEveMsg, addEveCard, currentOrg); } },
+        { label: 'Add to notes', onClick: function () { handleIntent('add this to my notes: ' + urgent.msg, addEveMsg, addEveCard, currentOrg); } },
+        { label: 'Escalate to ' + backup.split(',')[0], onClick: function () { handleIntent('escalate to backup', addEveMsg, addEveCard, currentOrg); } }
+      ]
+    });
+  }, 500);
+}
+window.eveDeliverHaloUrgentCard = eveDeliverHaloUrgentCard;
+
+function eveMaybeShowHaloUrgentPeek() {
+  if (eveHaloAlertShown) return;
+  var panel = document.getElementById('eve-panel');
+  if (panel && panel.classList.contains('open')) return;
+  eveHaloAlertShown = true;
+  eveShowPeekBubble('This needs your attention — tap to see what\'s going on.', { critical: true });
+}
+window.eveMaybeShowHaloUrgentPeek = eveMaybeShowHaloUrgentPeek;
+
 function eveBindHeaderDrag() {
   var header = document.getElementById('eve-header');
   if (!header || header.getAttribute('data-eve-drag-bound') === '1') return;
@@ -22360,12 +22480,29 @@ function addEveMsg(who, text, badge, badgeLabel, speak) {
  if(speak) speakText(text, who);
 }
 
+var eveCardActionRegistry = {};
+var eveCardActionSeq = 0;
+function eveRunCardAction(key) {
+  var fn = eveCardActionRegistry[key];
+  if (typeof fn === 'function') fn();
+}
+window.eveRunCardAction = eveRunCardAction;
+
 function addEveCard(opts) {
  const c = document.getElementById('eve-messages');
  if(!c) return;
  const time = new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
  const d = document.createElement('div');
  d.className = 'msg-row';
+ const tripleBtns = opts.tripleActions ? `
+ <div style="display:flex;flex-direction:column;gap:6px;margin-top:9px">
+ ${opts.tripleActions.map(function(a){
+   eveCardActionSeq++;
+   var key = 'eveCardAct' + eveCardActionSeq;
+   eveCardActionRegistry[key] = a.onClick;
+   return '<button onclick="eveRunCardAction(\''+key+'\');this.disabled=true;this.style.opacity=.5" style="padding:7px 10px;border-radius:7px;background:rgba(212, 160, 86,.08);border:1px solid rgba(212, 160, 86,.2);color:var(--accent);font-size:11px;cursor:pointer;font-family:var(--sans);text-align:left">'+a.label+'</button>';
+ }).join('')}
+ </div>` : '';
  const routeBtns = opts.askRoute && opts.model ? `
  <div style="display:flex;gap:6px;margin-top:8px">
  <button onclick="routeModel(this)" data-model='${JSON.stringify(opts.model)}' style="flex:1;padding:6px 10px;border-radius:7px;background:rgba(212, 160, 86,.1);border:1px solid rgba(212, 160, 86,.2);color:var(--accent);font-size:10px;cursor:pointer;font-family:var(--sans)">Yes, route for remediation →</button>
@@ -22382,7 +22519,7 @@ function addEveCard(opts) {
  <span style="font-size:12px;font-weight:600;color:var(--chrome2)">${opts.title}</span>
  </div>
  <div style="font-size:11px;color:var(--muted2);line-height:1.55">${opts.body}</div>
- ${linkHTML}${routeBtns}
+ ${linkHTML}${routeBtns}${tripleBtns}
  </div>
  <div class="msg-meta">Eve · ${time}</div>
  </div>`;
@@ -22403,9 +22540,11 @@ function routeModel(btn) {
 function parseIntent(msg) {
  const m = msg.toLowerCase();
  if(m.includes('remind')) {
- const t = msg.match(/\b(monday|tuesday|wednesday|thursday|friday|tomorrow|next week|\d+ days?)\b/i);
+ const t = msg.match(/\b(monday|tuesday|wednesday|thursday|friday|tomorrow|next week|\d+\s*(minutes?|mins?|hours?|hrs?|days?))\b/i);
  return {intent:'remind', time:t?t[0]:'tomorrow', subject:msg.replace(/remind me (to |about )?/i,'').replace(t?t[0]:'','').trim()||'check on this'};
  }
+ if(m.includes('note')||m.includes('log this')||m.includes('write this down')) return {intent:'note', subject:msg.replace(/(add|put|log)?\s*(this|it)?\s*(to|in)?\s*(my\s*)?notes?/i,'').trim()||msg};
+ if(m.includes('escalat')||m.includes('backup')||m.includes('loop in')||m.includes('someone else')) return {intent:'escalate'};
  if(m.includes('csv')||m.includes('pull')||(m.includes('data')&&m.includes('file'))||m.includes('export')) return {intent:'pull'};
  if(m.includes('check')||m.includes('scan')||m.includes('look at')||m.includes('verify')||m.includes('model')) return {intent:'check'};
  return {intent:'respond'};
@@ -22432,6 +22571,17 @@ function handleIntent(msg, addMsg, addCard, org) {
  if(intent.intent==='remind') {
  addMsg('eve', `Got it. I will remind you ${intent.time} to ${intent.subject}.`, null, null, true);
  setTimeout(()=>addCard({icon:'🔔',title:`Reminder set — ${intent.time}`,body:intent.subject,badge:'l1',badgeLabel:'Reminder Set'}),400);
+ return true;
+ }
+ if(intent.intent==='note') {
+ addMsg('eve', `Added to your notes.`, null, null, true);
+ setTimeout(()=>addCard({icon:'📝',title:'Saved to My Workspace',body:intent.subject||'Noted from conversation with Eve',badge:'l1',badgeLabel:'Note Added',action:()=>showScreen('workspace',null),actionLabel:'View in My Workspace →'}),400);
+ return true;
+ }
+ if(intent.intent==='escalate') {
+ const backup = EVE_BACKUP_CONTACTS[org]||EVE_BACKUP_CONTACTS.ad;
+ addMsg('eve', `Escalating now — looping in ${backup} as your backup contact. They'll see this the moment they're online.`, null, null, true);
+ setTimeout(()=>addCard({icon:'📣',title:'Escalated to backup',body:`${backup} has been notified and can pick this up if you're unavailable.`,badge:'l2',badgeLabel:'Escalated'}),400);
  return true;
  }
  if(intent.intent==='pull') {
@@ -36370,7 +36520,7 @@ window.openModelDetail = openModelDetail;
     <div id="echo-memory-modal-body" style="min-height:40px"></div>
   </div>
 </div>
-<button type="button" id="cardinal-quick-add-fab" onclick="cardinalQuickAddFromCurrentView()" title="Quick add to My Workspace from any screen" style="display:none;position:fixed;bottom:24px;right:24px;z-index:9998;width:54px;height:54px;border-radius:50%;background:linear-gradient(135deg, #a855f7 0%, #6366f1 100%);border:none;color:white;font-size:22px;font-weight:700;cursor:pointer;box-shadow:0 8px 28px rgba(168,85,247,0.4), 0 0 0 1px rgba(168,85,247,0.5);transition:all 0.2s;" onmouseover="this.style.transform='scale(1.08)';this.style.boxShadow='0 12px 36px rgba(168,85,247,0.6), 0 0 0 2px rgba(168,85,247,0.7)';" onmouseout="this.style.transform='scale(1)';this.style.boxShadow='0 8px 28px rgba(168,85,247,0.4), 0 0 0 1px rgba(168,85,247,0.5)';">✦</button>
+<button type="button" id="cardinal-quick-add-fab" onclick="cardinalQuickAddFromCurrentView()" title="Quick add to My Workspace from any screen" style="display:none;position:fixed;bottom:114px;right:24px;z-index:9998;width:54px;height:54px;border-radius:50%;background:linear-gradient(135deg, #a855f7 0%, #6366f1 100%);border:none;color:white;font-size:22px;font-weight:700;cursor:pointer;box-shadow:0 8px 28px rgba(168,85,247,0.4), 0 0 0 1px rgba(168,85,247,0.5);transition:all 0.2s;" onmouseover="this.style.transform='scale(1.08)';this.style.boxShadow='0 12px 36px rgba(168,85,247,0.6), 0 0 0 2px rgba(168,85,247,0.7)';" onmouseout="this.style.transform='scale(1)';this.style.boxShadow='0 8px 28px rgba(168,85,247,0.4), 0 0 0 1px rgba(168,85,247,0.5)';">✦</button>
 <script>
 (function attachCardinalContextMenuDelegate() {
   function bindCardinalContextMenu() {
