@@ -2974,7 +2974,7 @@ animation:waveform var(--dur) ease-in-out infinite alternate;
 .eve-ctrl-btn:hover{color:var(--sidebar-text)}
 /* Header overflow menu — Quick actions / Transcript / Voice settings tucked here so the header
    isn't 6-7 icons wide. Bell + Mute stay inline since those get used every time. */
-.eve-more-menu{position:absolute;top:38px;right:0;background:rgba(8,12,20,0.98);border:1px solid rgba(212, 160, 86,.22);border-radius:10px;padding:6px;display:none;flex-direction:column;gap:2px;min-width:156px;box-shadow:0 12px 28px rgba(0,0,0,.45);z-index:20}
+.eve-more-menu{position:fixed;top:0;left:0;background:rgba(8,12,20,0.98);border:1px solid rgba(212, 160, 86,.22);border-radius:10px;padding:6px;display:none;flex-direction:column;gap:2px;min-width:156px;box-shadow:0 12px 28px rgba(0,0,0,.45);z-index:10050}
 .eve-more-menu.open{display:flex}
 .eve-more-menu button{background:transparent;border:none;color:var(--sidebar-text);font-size:11px;text-align:left;padding:7px 9px;border-radius:6px;cursor:pointer;font-family:var(--sans);display:flex;align-items:center;gap:7px;white-space:nowrap}
 .eve-more-menu button:hover{background:rgba(212, 160, 86,.12)}
@@ -22266,8 +22266,18 @@ window.eveToggleFromOrbital = eveToggleFromOrbital;
 // Header overflow menu (Quick actions / Transcript / Voice settings)
 function toggleEveMoreMenu(force) {
   var menu = document.getElementById('eve-more-menu');
-  if (!menu) return;
+  var btn = document.getElementById('eve-btn-more');
+  if (!menu || !btn) return;
+  // Move to <body> so #eve-panel's overflow:hidden (and backdrop-filter's containing
+  // block in some browsers) can't clip a position:fixed dropdown living inside it.
+  if (menu.parentElement !== document.body) document.body.appendChild(menu);
   var willOpen = typeof force === 'boolean' ? force : !menu.classList.contains('open');
+  if (willOpen) {
+    var r = btn.getBoundingClientRect();
+    menu.style.top = (r.bottom + 6) + 'px';
+    menu.style.left = 'auto';
+    menu.style.right = (window.innerWidth - r.right) + 'px';
+  }
   menu.classList.toggle('open', willOpen);
 }
 window.toggleEveMoreMenu = toggleEveMoreMenu;
