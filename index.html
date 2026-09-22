@@ -8339,9 +8339,9 @@ Template Overview
 <div class="vs-title" style="margin-bottom:0">Voice Settings</div>
 <button onclick="toggleVoiceSettings()" style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);color:var(--red);border-radius:6px;padding:2px 10px;cursor:pointer;font-size:12px;font-family:var(--sans)">✕ Close</button>
 </div>
-<div class="vs-row"><span class="vs-label">Eve speaks</span><div class="vs-toggle on" id="eve-tts-toggle" onclick="this.classList.toggle('on');eveTTSEnabled=this.classList.contains('on')"></div></div>
+<div class="vs-row"><span class="vs-label">Eve speaks</span><div class="vs-toggle on" id="eve-tts-toggle" data-tts="eve" onclick="setEveTTS(!eveTTSEnabled)"></div></div>
 <div class="vs-row"><span class="vs-label">Eve accent</span><select class="vs-select" id="eve-voice-select" onchange="setVoiceAccent('eve',this.value)"><option value="en-US">American</option><option value="en-GB">British</option><option value="es-ES">Spanish</option><option value="fr-FR">French</option><option value="it-IT">Italian</option><option value="ja-JP">Japanese</option></select></div>
-<div class="vs-row"><span class="vs-label">Adam speaks</span><div class="vs-toggle on" id="adam-tts-toggle" onclick="this.classList.toggle('on');adamTTSEnabled=this.classList.contains('on')"></div></div>
+<div class="vs-row"><span class="vs-label">Adam speaks</span><div class="vs-toggle on" id="adam-tts-toggle" data-tts="adam" onclick="setAdamTTS(!adamTTSEnabled)"></div></div>
 <div class="vs-row"><span class="vs-label">Adam accent</span><select class="vs-select" id="adam-voice-select" onchange="setVoiceAccent('adam',this.value)"><option value="en-US">American</option><option value="en-GB">British</option><option value="es-ES">Spanish</option><option value="fr-FR">French</option><option value="it-IT">Italian</option><option value="ja-JP">Japanese</option></select></div>
 <div style="border-top:1px solid rgba(167, 167, 167,.08);margin:10px 0;padding-top:10px">
 <div class="vs-title" style="margin-bottom:8px">Check-In Schedule</div>
@@ -8369,7 +8369,7 @@ Template Overview
 </div>
 <div style="display:flex;gap:4px;align-items:center;flex-shrink:0;position:relative" id="eve-header-actions">
 <button class="eve-icon-btn" id="eve-btn-bell" onclick="eveShowLatestAlertInChat()" aria-label="Notifications">&#x1F514;</button>
-<button class="eve-ctrl-btn" id="eve-btn-mute" onclick="toggleEveMute()" aria-label="Mute Eve" style="font-size:14px">&#x1F507;</button>
+<button class="eve-ctrl-btn" id="eve-btn-mute" onclick="toggleEveMute()" aria-label="Mute Eve" title="Mute Eve" style="font-size:14px">&#x1F507;</button>
 <button class="eve-ctrl-btn" id="eve-btn-more" onclick="toggleEveMoreMenu()" aria-label="More options" style="font-size:16px;font-weight:700;letter-spacing:1px">&#x22EF;</button>
 <div id="eve-more-menu" class="eve-more-menu">
 <button type="button" onclick="toggleEveQuickActions();toggleEveMoreMenu(false)">&#x26A1; Quick actions</button>
@@ -8555,11 +8555,11 @@ Eve & Adam
 </div>
 <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border)">
 <div style="font-size:12px;color:var(--text)">Eve voice enabled</div>
-<div class="vs-toggle on" onclick="this.classList.toggle('on');eveTTSEnabled=!eveTTSEnabled"></div>
+<div class="vs-toggle on" data-tts="eve" onclick="setEveTTS(!eveTTSEnabled)"></div>
 </div>
 <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border)">
 <div style="font-size:12px;color:var(--text)">Adam voice enabled</div>
-<div class="vs-toggle on" onclick="this.classList.toggle('on');adamTTSEnabled=!adamTTSEnabled"></div>
+<div class="vs-toggle on" data-tts="adam" onclick="setAdamTTS(!adamTTSEnabled)"></div>
 </div>
 <div style="padding:10px 0;border-bottom:1px solid var(--border)">
 <div style="font-size:12px;color:var(--text);margin-bottom:8px">Eve accent</div>
@@ -22061,19 +22061,23 @@ function animateWaveform(active) {
 
 let eveMuted = false;
 
-function toggleEveMute() {
- eveMuted = !eveMuted;
- const btn = document.getElementById('eve-mute-btn');
- if(eveMuted) {
-   window.speechSynthesis && window.speechSynthesis.cancel();
-   animateWaveform(false);
-   eveTTSEnabled = false;
-   if(btn) { btn.innerHTML='&#x1F50A;'; btn.style.background='rgba(239,68,68,.15)'; btn.style.borderColor='rgba(239,68,68,.3)'; btn.style.color='var(--red)'; btn.title='Unmute Eve'; }
- } else {
-   eveTTSEnabled = true;
-   if(btn) { btn.innerHTML='&#x1F507;'; btn.style.background=''; btn.style.borderColor=''; btn.style.color=''; btn.title='Mute Eve'; }
+function setEveTTS(enabled) {
+ eveTTSEnabled = enabled;
+ eveMuted = !enabled;
+ if(!enabled) { window.speechSynthesis && window.speechSynthesis.cancel(); animateWaveform(false); }
+ document.querySelectorAll('[data-tts="eve"]').forEach(el=>el.classList.toggle('on', enabled));
+ const btn = document.getElementById('eve-btn-mute');
+ if(btn) {
+   if(enabled) { btn.innerHTML='&#x1F507;'; btn.style.background=''; btn.style.borderColor=''; btn.style.color=''; btn.title='Mute Eve'; btn.setAttribute('aria-label','Mute Eve'); }
+   else { btn.innerHTML='&#x1F50A;'; btn.style.background='rgba(239,68,68,.15)'; btn.style.borderColor='rgba(239,68,68,.3)'; btn.style.color='var(--red)'; btn.title='Unmute Eve'; btn.setAttribute('aria-label','Unmute Eve'); }
  }
 }
+function setAdamTTS(enabled) {
+ adamTTSEnabled = enabled;
+ if(!enabled) { window.speechSynthesis && window.speechSynthesis.cancel(); }
+ document.querySelectorAll('[data-tts="adam"]').forEach(el=>el.classList.toggle('on', enabled));
+}
+function toggleEveMute() { setEveTTS(!eveTTSEnabled); }
 
 function speakText(text, who) {
  if(!window.speechSynthesis) return;
