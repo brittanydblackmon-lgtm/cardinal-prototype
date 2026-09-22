@@ -23833,25 +23833,39 @@ function genPreviewText(id) {
  const el = document.getElementById(id);
  return el ? el.textContent.trim() : '';
 }
-function setGenPreview(name, val, sub) {
- const v = document.getElementById('gen-preview-'+name+'-val'); if(v && val) v.textContent = val;
+function setGenPreview(name, val, sub, color) {
+ const v = document.getElementById('gen-preview-'+name+'-val');
+ if(v && val) { v.textContent = val; v.style.color = color || 'var(--chrome2)'; }
  const s = document.getElementById('gen-preview-'+name+'-sub'); if(s && sub) s.textContent = sub;
 }
 function refreshGenOverviewPreviews() {
- setGenPreview('counterfactual', genPreviewText('cf-var') || 'Causation proven', genPreviewText('cf-test-id'));
- setGenPreview('intersectionality', genPreviewText('int-badge'), genPreviewText('int-insight-title'));
+ setGenPreview('counterfactual', genPreviewText('cf-var') || 'Causation proven', genPreviewText('cf-test-id'), 'var(--green)');
+
+ const intBadgeEl = document.getElementById('int-badge');
+ setGenPreview('intersectionality', genPreviewText('int-badge'), genPreviewText('int-insight-title'), 'var(--amber)');
+
  const gapCount = document.querySelectorAll('#coverage-gap-cards > div').length;
- setGenPreview('coverage', gapCount ? gapCount + ' gaps flagged' : genPreviewText('gap-sub'), genPreviewText('gap-sub'));
- setGenPreview('ab', genPreviewText('ab-shadow-score'), 'vs current: ' + genPreviewText('ab-current-score'));
+ setGenPreview('coverage', gapCount ? gapCount + ' gaps flagged' : genPreviewText('gap-sub'), genPreviewText('gap-sub'), gapCount > 2 ? 'var(--red)' : gapCount > 0 ? 'var(--amber)' : 'var(--green)');
+
+ const abShadow = genPreviewText('ab-shadow-score'); const abCurrent = genPreviewText('ab-current-score');
+ setGenPreview('ab', abShadow, 'vs current: ' + abCurrent, 'var(--green)');
+ const abSubEl = document.getElementById('gen-preview-ab-sub');
+ if (abSubEl) abSubEl.innerHTML = 'vs current: <span style="color:var(--red);font-weight:600">' + abCurrent.replace('Trust Score: ','') + '</span>';
+
  const cohortCount = document.querySelectorAll('#cohort-list > div').length;
- setGenPreview('cohort', cohortCount ? cohortCount + ' active cohorts' : '\u2014', genPreviewText('cohort-alert-badge'));
+ const cohortBadgeTxt = genPreviewText('cohort-alert-badge');
+ const cohortBlocked = /blocked/i.test(cohortBadgeTxt);
+ setGenPreview('cohort', cohortCount ? cohortCount + ' active cohorts' : '\u2014', cohortBadgeTxt, cohortBlocked ? 'var(--red)' : 'var(--green)');
+
  const adamCount = document.querySelectorAll('#adam-active-tests > div').length;
- setGenPreview('adam', adamCount ? adamCount + ' tests running' : '\u2014', genPreviewText('adam-library-badge'));
- setGenPreview('pmprofiles', genPreviewText('pm-total') + ' profiles', 'Synthetic: ' + genPreviewText('pm-synthetic'));
+ setGenPreview('adam', adamCount ? adamCount + ' tests running' : '\u2014', genPreviewText('adam-library-badge'), 'var(--blue)');
+
+ setGenPreview('pmprofiles', genPreviewText('pm-total') + ' profiles', 'Synthetic: ' + genPreviewText('pm-synthetic'), 'var(--accent)');
+
  const modelA = document.getElementById('compare-model-a'); const modelB = document.getElementById('compare-model-b');
  const aTxt = modelA && modelA.options[modelA.selectedIndex] ? modelA.options[modelA.selectedIndex].text : '';
  const bTxt = modelB && modelB.options[modelB.selectedIndex] ? modelB.options[modelB.selectedIndex].text : '';
- setGenPreview('compare', (aTxt && bTxt) ? (aTxt + ' vs ' + bTxt) : 'Ready to compare', 'Model comparison');
+ setGenPreview('compare', (aTxt && bTxt) ? (aTxt + ' vs ' + bTxt) : 'Ready to compare', 'Model comparison', 'var(--chrome2)');
 }
 window.showGenOverview = showGenOverview;
 window.openGenSection = openGenSection;
