@@ -19212,6 +19212,7 @@ function loadIndustry(org) {
  try { buildHaloScenarios(d); } catch(e) {}
  try { buildGenesis(org); } catch(e) {}
  try { refreshGenOverviewPreviews(); } catch(e) {}
+ try { syncTTSUiFromSavedState(); } catch(e) {}
  try { buildAtonement(org); } catch(e) {}
  try { buildHalo(org); } catch(e) {}
  try { buildModelLibrary(org); } catch(e) {}
@@ -22039,6 +22040,12 @@ const MODEL_CHECK_DATA = {
 
 let eveTTSEnabled = true;
 let adamTTSEnabled = true;
+try {
+  var _eveSaved = localStorage.getItem('cardinal-eve-tts-enabled');
+  if (_eveSaved !== null) eveTTSEnabled = _eveSaved === '1';
+  var _adamSaved = localStorage.getItem('cardinal-adam-tts-enabled');
+  if (_adamSaved !== null) adamTTSEnabled = _adamSaved === '1';
+} catch(e) {}
 let eveVoiceLang = 'en-US';
 let adamVoiceLang = 'en-US';
 let eveListening = false;
@@ -22057,6 +22064,7 @@ let eveMuted = false;
 function setEveTTS(enabled) {
  eveTTSEnabled = enabled;
  eveMuted = !enabled;
+ try { localStorage.setItem('cardinal-eve-tts-enabled', enabled ? '1' : '0'); } catch(e) {}
  if(!enabled) { window.speechSynthesis && window.speechSynthesis.cancel(); animateWaveform(false); }
  document.querySelectorAll('[data-tts="eve"]').forEach(el=>el.classList.toggle('on', enabled));
  const btn = document.getElementById('eve-btn-mute');
@@ -22067,9 +22075,15 @@ function setEveTTS(enabled) {
 }
 function setAdamTTS(enabled) {
  adamTTSEnabled = enabled;
+ try { localStorage.setItem('cardinal-adam-tts-enabled', enabled ? '1' : '0'); } catch(e) {}
  if(!enabled) { window.speechSynthesis && window.speechSynthesis.cancel(); }
  document.querySelectorAll('[data-tts="adam"]').forEach(el=>el.classList.toggle('on', enabled));
 }
+function syncTTSUiFromSavedState() {
+ setEveTTS(eveTTSEnabled);
+ setAdamTTS(adamTTSEnabled);
+}
+window.syncTTSUiFromSavedState = syncTTSUiFromSavedState;
 function toggleEveMute() { setEveTTS(!eveTTSEnabled); }
 
 function speakText(text, who) {
