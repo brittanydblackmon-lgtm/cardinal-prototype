@@ -771,6 +771,14 @@ background: var(--accent);
 border-radius: 2px;
 }
 .nav-item.active .nav-icon { color: var(--accent); opacity: 1; }
+.nav-subnav { max-height: 0; overflow: hidden; transition: max-height .2s ease; margin: 0 6px; }
+.nav-subnav.open { max-height: 320px; }
+.nav-subitem {
+padding: 6px 14px 6px 34px; cursor: pointer; font-size: 11px; color: var(--muted2);
+border-radius: 6px; transition: background .15s, color .15s; white-space: nowrap;
+}
+.nav-subitem:hover { background: rgba(167,167,167,0.08); color: var(--chrome2); }
+#genesis-subnav-chevron.rotated { transform: rotate(90deg); }
 .nav-section-label.addon-label::after,
 .sidebar-section-label.addon-label::after {
   content: '';
@@ -5122,9 +5130,20 @@ Eden Core
 <svg class="nav-icon" viewBox="0 0 14 14" fill="none"><path d="M7 1.5l5.5 9.5H1.5L7 1.5z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>
 Obsidian Core
 </div>
-<div class="nav-item" onclick="showScreen('genesis',this)">
+<div class="nav-item" onclick="showScreen('genesis',this)" style="display:flex;align-items:center;gap:6px">
 <svg class="nav-icon" viewBox="0 0 14 14" fill="none"><rect x="1.5" y="1.5" width="4" height="4" rx="0.8" stroke="currentColor" stroke-width="1.4"/><rect x="8.5" y="1.5" width="4" height="4" rx="0.8" stroke="currentColor" stroke-width="1.4"/><rect x="1.5" y="8.5" width="4" height="4" rx="0.8" stroke="currentColor" stroke-width="1.4"/><rect x="8.5" y="8.5" width="4" height="4" rx="0.8" stroke="currentColor" stroke-width="1.4"/></svg>
-Genesis Core
+<span style="flex:1">Genesis Core</span>
+<span id="genesis-subnav-chevron" onclick="event.stopPropagation();document.getElementById('genesis-subnav').classList.toggle('open');this.classList.toggle('rotated')" style="cursor:pointer;padding:2px;opacity:0.6;display:inline-block;transition:transform .15s" aria-label="Expand Genesis Core sections">&#9656;</span>
+</div>
+<div id="genesis-subnav" class="nav-subnav">
+<div class="nav-subitem" onclick="event.stopPropagation();openGenSection('counterfactual',0)">Counterfactual</div>
+<div class="nav-subitem" onclick="event.stopPropagation();openGenSection('intersectionality',1)">Intersectionality</div>
+<div class="nav-subitem" onclick="event.stopPropagation();openGenSection('coverage',2)">Coverage gaps</div>
+<div class="nav-subitem" onclick="event.stopPropagation();openGenSection('ab',3)">A/B workspace</div>
+<div class="nav-subitem" onclick="event.stopPropagation();openGenSection('cohort',4)">Cohort analysis</div>
+<div class="nav-subitem" onclick="event.stopPropagation();openGenSection('adam',5)">Adam testing</div>
+<div class="nav-subitem" onclick="event.stopPropagation();openGenSection('pmprofiles',6)">PM-Profiles</div>
+<div class="nav-subitem" onclick="event.stopPropagation();openGenSection('compare',7)">Model compare</div>
 </div>
 <div class="nav-item" onclick="showScreen('atonement',this)">
 <svg class="nav-icon" viewBox="0 0 14 14" fill="none"><path d="M2.5 7h9M7 2.5l4.5 4.5L7 11.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -5505,18 +5524,18 @@ Settings
 </div>
 <span class="badge badge-amber">Pre-Deployment</span>
 </div>
-<div class="gen-fullpicture-el" id="gen-overview-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px">
-<div class="card" style="cursor:pointer;padding:14px" onclick="switchGenTab('counterfactual',0)"><div style="font-size:12px;font-weight:600;color:var(--chrome2);margin-bottom:6px">Counterfactual</div><div style="font-size:10px;color:var(--muted2);line-height:1.5">Change one variable, hold the rest constant — proves causation.</div></div>
-<div class="card" style="cursor:pointer;padding:14px" onclick="switchGenTab('intersectionality',1)"><div style="font-size:12px;font-weight:600;color:var(--chrome2);margin-bottom:6px">Intersectionality</div><div style="font-size:10px;color:var(--muted2);line-height:1.5">Catches bias that only shows up where two group memberships overlap.</div></div>
-<div class="card" style="cursor:pointer;padding:14px" onclick="switchGenTab('coverage',2)"><div style="font-size:12px;font-weight:600;color:var(--chrome2);margin-bottom:6px">Coverage gaps</div><div style="font-size:10px;color:var(--muted2);line-height:1.5">Flags demographic segments with too little test data before launch.</div></div>
-<div class="card" style="cursor:pointer;padding:14px" onclick="switchGenTab('ab',3)"><div style="font-size:12px;font-weight:600;color:var(--chrome2);margin-bottom:6px">A/B workspace</div><div style="font-size:10px;color:var(--muted2);line-height:1.5">Side-by-side comparison of model variants against the same case set.</div></div>
-<div class="card" style="cursor:pointer;padding:14px" onclick="switchGenTab('cohort',4)"><div style="font-size:12px;font-weight:600;color:var(--chrome2);margin-bottom:6px">Cohort analysis</div><div style="font-size:10px;color:var(--muted2);line-height:1.5">Groups affected people by shared outcome pattern to spot systemic effects.</div></div>
-<div class="card" style="cursor:pointer;padding:14px" onclick="switchGenTab('adam',5)"><div style="font-size:12px;font-weight:600;color:var(--chrome2);margin-bottom:6px">Adam testing</div><div style="font-size:10px;color:var(--muted2);line-height:1.5">Autonomous agent running technical tests around the clock.</div></div>
-<div class="card" style="cursor:pointer;padding:14px" onclick="switchGenTab('pmprofiles',6)"><div style="font-size:12px;font-weight:600;color:var(--chrome2);margin-bottom:6px">PM-Profiles</div><div style="font-size:10px;color:var(--muted2);line-height:1.5">Synthetic and live user profiles used to test without real data.</div></div>
-<div class="card" style="cursor:pointer;padding:14px" onclick="switchGenTab('compare',7)"><div style="font-size:12px;font-weight:600;color:var(--chrome2);margin-bottom:6px">Model compare</div><div style="font-size:10px;color:var(--muted2);line-height:1.5">Line up model versions to see what improved and what regressed.</div></div>
+<div id="gen-overview-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px">
+<div class="card gen-bento-tile" style="cursor:pointer;padding:14px;grid-column:span 2;" onclick="switchGenTab('pmprofiles',6)"><div style="font-size:12px;font-weight:600;color:var(--chrome2);margin-bottom:6px">PM-Profiles</div><div style="font-size:10px;color:var(--muted2);line-height:1.5">Synthetic and live user profiles used to test without real data.</div></div>
+<div class="card gen-bento-tile" style="cursor:pointer;padding:14px;grid-column:span 2;" onclick="switchGenTab('ab',3)"><div style="font-size:12px;font-weight:600;color:var(--chrome2);margin-bottom:6px">A/B workspace</div><div style="font-size:10px;color:var(--muted2);line-height:1.5">Side-by-side comparison of model variants against the same case set.</div></div>
+<div class="card gen-bento-tile" style="cursor:pointer;padding:14px;grid-column:span 1;" onclick="switchGenTab('counterfactual',0)"><div style="font-size:12px;font-weight:600;color:var(--chrome2);margin-bottom:6px">Counterfactual</div><div style="font-size:10px;color:var(--muted2);line-height:1.5">Change one variable, hold the rest constant — proves causation.</div></div>
+<div class="card gen-bento-tile" style="cursor:pointer;padding:14px;grid-column:span 1;" onclick="switchGenTab('intersectionality',1)"><div style="font-size:12px;font-weight:600;color:var(--chrome2);margin-bottom:6px">Intersectionality</div><div style="font-size:10px;color:var(--muted2);line-height:1.5">Catches bias at the overlap of two group memberships.</div></div>
+<div class="card gen-bento-tile" style="cursor:pointer;padding:14px;grid-column:span 1;" onclick="switchGenTab('cohort',4)"><div style="font-size:12px;font-weight:600;color:var(--chrome2);margin-bottom:6px">Cohort analysis</div><div style="font-size:10px;color:var(--muted2);line-height:1.5">Groups affected people by shared outcome pattern.</div></div>
+<div class="card gen-bento-tile" style="cursor:pointer;padding:14px;grid-column:span 1;" onclick="switchGenTab('compare',7)"><div style="font-size:12px;font-weight:600;color:var(--chrome2);margin-bottom:6px">Model compare</div><div style="font-size:10px;color:var(--muted2);line-height:1.5">Line up model versions to see what improved.</div></div>
+<div class="card gen-bento-tile" style="cursor:pointer;padding:14px;grid-column:span 4;" onclick="switchGenTab('coverage',2)"><div style="font-size:12px;font-weight:600;color:var(--chrome2);margin-bottom:6px">Coverage gaps</div><div style="font-size:10px;color:var(--muted2);line-height:1.5">Flags demographic segments with too little test data before launch.</div></div>
+<div class="card gen-bento-tile" style="cursor:pointer;padding:14px;grid-column:span 4;background:var(--bg2);border:1px solid rgba(167,167,167,0.35)" onclick="switchGenTab('adam',5)"><div style="font-size:12px;font-weight:600;color:var(--accent);margin-bottom:6px">Adam testing</div><div style="font-size:10px;color:var(--muted2);line-height:1.5">Autonomous agent running technical tests against your models around the clock.</div></div>
 </div>
-<div class="gen-fullpicture-el" id="gen-back-bar" style="display:none;margin-bottom:10px"><button class="btn-ghost" style="font-size:11px" onclick="showGenOverview()">&larr; All sections</button></div>
-<div class="gen-fullpicture-el" style="display:none;gap:2px;margin-bottom:14px;background:var(--bg2);border-radius:8px;padding:3px;width:fit-content" id="gen-tabs">
+<div id="gen-back-bar" style="display:none;margin-bottom:10px"><button class="btn-ghost" style="font-size:11px" onclick="showGenOverview()">&larr; All sections</button> <span id="gen-detail-title" style="font-size:12px;font-weight:600;color:var(--chrome2);margin-left:8px"></span></div>
+<div style="display:none;gap:2px;margin-bottom:14px;background:var(--bg2);border-radius:8px;padding:3px;width:fit-content" id="gen-tabs">
 <button class="gen-tab active" onclick="switchGenTab('counterfactual',0)">Counterfactual</button>
 <button class="gen-tab" onclick="switchGenTab('intersectionality',1)">Intersectionality</button>
 <button class="gen-tab" onclick="switchGenTab('coverage',2)">Coverage Gaps</button>
@@ -23793,6 +23812,7 @@ function genesisSetStage(stage) {
 }
 window.genesisSetStage = genesisSetStage;
 
+const GEN_SECTION_LABELS = {counterfactual:'Counterfactual',intersectionality:'Intersectionality',coverage:'Coverage Gaps',ab:'A/B Workspace',cohort:'Cohort Analysis',adam:'Adam Testing',pmprofiles:'PM-Profiles',compare:'Model Compare'};
 function switchGenTab(name, idx) {
  document.querySelectorAll('.gen-tab').forEach((t,i)=>t.classList.toggle('active',i===idx));
  document.querySelectorAll('.gen-tab-content').forEach(t=>t.style.display='none');
@@ -23801,6 +23821,8 @@ function switchGenTab(name, idx) {
  const grid = document.getElementById('gen-overview-grid'); if(grid) grid.style.display='none';
  const tabsBar = document.getElementById('gen-tabs'); if(tabsBar) tabsBar.style.display='flex';
  const backBar = document.getElementById('gen-back-bar'); if(backBar) backBar.style.display='block';
+ const title = document.getElementById('gen-detail-title'); if(title) title.textContent = (GEN_SECTION_LABELS[name]||'') + ' Dashboard';
+ if (el) el.scrollIntoView({behavior:'smooth', block:'start'});
 }
 function showGenOverview() {
  document.querySelectorAll('.gen-tab-content').forEach(t=>t.style.display='none');
@@ -23808,7 +23830,12 @@ function showGenOverview() {
  const tabsBar = document.getElementById('gen-tabs'); if(tabsBar) tabsBar.style.display='none';
  const backBar = document.getElementById('gen-back-bar'); if(backBar) backBar.style.display='none';
 }
+function openGenSection(name, idx) {
+ showScreen('genesis', null);
+ setTimeout(()=>{ switchGenTab(name, idx); }, 150);
+}
 window.showGenOverview = showGenOverview;
+window.openGenSection = openGenSection;
 
 function buildGenesis(org) {
  const g = GENESIS_DATA[org];
