@@ -5505,7 +5505,18 @@ Settings
 </div>
 <span class="badge badge-amber">Pre-Deployment</span>
 </div>
-<div class="gen-fullpicture-el" style="display:flex;gap:2px;margin-bottom:14px;background:var(--bg2);border-radius:8px;padding:3px;width:fit-content" id="gen-tabs">
+<div class="gen-fullpicture-el" id="gen-overview-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px">
+<div class="card" style="cursor:pointer;padding:14px" onclick="switchGenTab('counterfactual',0)"><div style="font-size:12px;font-weight:600;color:var(--chrome2);margin-bottom:6px">Counterfactual</div><div style="font-size:10px;color:var(--muted2);line-height:1.5">Change one variable, hold the rest constant — proves causation.</div></div>
+<div class="card" style="cursor:pointer;padding:14px" onclick="switchGenTab('intersectionality',1)"><div style="font-size:12px;font-weight:600;color:var(--chrome2);margin-bottom:6px">Intersectionality</div><div style="font-size:10px;color:var(--muted2);line-height:1.5">Catches bias that only shows up where two group memberships overlap.</div></div>
+<div class="card" style="cursor:pointer;padding:14px" onclick="switchGenTab('coverage',2)"><div style="font-size:12px;font-weight:600;color:var(--chrome2);margin-bottom:6px">Coverage gaps</div><div style="font-size:10px;color:var(--muted2);line-height:1.5">Flags demographic segments with too little test data before launch.</div></div>
+<div class="card" style="cursor:pointer;padding:14px" onclick="switchGenTab('ab',3)"><div style="font-size:12px;font-weight:600;color:var(--chrome2);margin-bottom:6px">A/B workspace</div><div style="font-size:10px;color:var(--muted2);line-height:1.5">Side-by-side comparison of model variants against the same case set.</div></div>
+<div class="card" style="cursor:pointer;padding:14px" onclick="switchGenTab('cohort',4)"><div style="font-size:12px;font-weight:600;color:var(--chrome2);margin-bottom:6px">Cohort analysis</div><div style="font-size:10px;color:var(--muted2);line-height:1.5">Groups affected people by shared outcome pattern to spot systemic effects.</div></div>
+<div class="card" style="cursor:pointer;padding:14px" onclick="switchGenTab('adam',5)"><div style="font-size:12px;font-weight:600;color:var(--chrome2);margin-bottom:6px">Adam testing</div><div style="font-size:10px;color:var(--muted2);line-height:1.5">Autonomous agent running technical tests around the clock.</div></div>
+<div class="card" style="cursor:pointer;padding:14px" onclick="switchGenTab('pmprofiles',6)"><div style="font-size:12px;font-weight:600;color:var(--chrome2);margin-bottom:6px">PM-Profiles</div><div style="font-size:10px;color:var(--muted2);line-height:1.5">Synthetic and live user profiles used to test without real data.</div></div>
+<div class="card" style="cursor:pointer;padding:14px" onclick="switchGenTab('compare',7)"><div style="font-size:12px;font-weight:600;color:var(--chrome2);margin-bottom:6px">Model compare</div><div style="font-size:10px;color:var(--muted2);line-height:1.5">Line up model versions to see what improved and what regressed.</div></div>
+</div>
+<div class="gen-fullpicture-el" id="gen-back-bar" style="display:none;margin-bottom:10px"><button class="btn-ghost" style="font-size:11px" onclick="showGenOverview()">&larr; All sections</button></div>
+<div class="gen-fullpicture-el" style="display:none;gap:2px;margin-bottom:14px;background:var(--bg2);border-radius:8px;padding:3px;width:fit-content" id="gen-tabs">
 <button class="gen-tab active" onclick="switchGenTab('counterfactual',0)">Counterfactual</button>
 <button class="gen-tab" onclick="switchGenTab('intersectionality',1)">Intersectionality</button>
 <button class="gen-tab" onclick="switchGenTab('coverage',2)">Coverage Gaps</button>
@@ -23777,11 +23788,7 @@ function genesisSetStage(stage) {
   if (!showFull) {
     document.querySelectorAll('#screen-genesis .gen-tab-content').forEach(function(el){ el.style.display = 'none'; });
   } else {
-    var activeIdx = 0;
-    var tabs = document.querySelectorAll('#screen-genesis .gen-tab');
-    tabs.forEach(function(t,i){ if (t.classList.contains('active')) activeIdx = i; });
-    var names = ['counterfactual','intersectionality','coverage','ab','cohort','adam','pmprofiles','compare'];
-    if (typeof switchGenTab === 'function') switchGenTab(names[activeIdx] || 'counterfactual', activeIdx);
+    if (typeof showGenOverview === 'function') showGenOverview();
   }
 }
 window.genesisSetStage = genesisSetStage;
@@ -23791,7 +23798,17 @@ function switchGenTab(name, idx) {
  document.querySelectorAll('.gen-tab-content').forEach(t=>t.style.display='none');
  const el = document.getElementById('gen-tab-'+name);
  if(el) el.style.display='block';
+ const grid = document.getElementById('gen-overview-grid'); if(grid) grid.style.display='none';
+ const tabsBar = document.getElementById('gen-tabs'); if(tabsBar) tabsBar.style.display='flex';
+ const backBar = document.getElementById('gen-back-bar'); if(backBar) backBar.style.display='block';
 }
+function showGenOverview() {
+ document.querySelectorAll('.gen-tab-content').forEach(t=>t.style.display='none');
+ const grid = document.getElementById('gen-overview-grid'); if(grid) grid.style.display='grid';
+ const tabsBar = document.getElementById('gen-tabs'); if(tabsBar) tabsBar.style.display='none';
+ const backBar = document.getElementById('gen-back-bar'); if(backBar) backBar.style.display='none';
+}
+window.showGenOverview = showGenOverview;
 
 function buildGenesis(org) {
  const g = GENESIS_DATA[org];
