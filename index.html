@@ -8386,6 +8386,7 @@ Template Overview
 <button type="button" onclick="toggleEveQuickActions();toggleEveMoreMenu(false)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> Quick actions</button>
 <button type="button" onclick="generateRemediationDoc();toggleEveMoreMenu(false)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg> Transcript</button>
 <button type="button" onclick="toggleVoiceSettings();toggleEveMoreMenu(false)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg> Voice settings</button>
+<button type="button" onclick="eveOpenPanel();eveShowChangeFeed();toggleEveMoreMenu(false)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 16 14"/></svg> What changed</button>
 </div>
 <span class="eve-drag-handle" id="eve-drag-handle" aria-label="Drag">&#x205A;&#x205A;&#x205A;</span>
 <button class="eve-min-btn" id="eve-btn-min" onclick="eveToggleMinimize()" aria-label="Minimize">&#x2014;</button>
@@ -22633,6 +22634,41 @@ function eveRunCardAction(key) {
   if (typeof fn === 'function') fn();
 }
 window.eveRunCardAction = eveRunCardAction;
+
+// Running "what changed" feed: a timestamped list of recent events pulled
+// from the same case/threat/model data already backing the rest of the
+// app, surfaced as an Eve card instead of only static scheduled briefings.
+const EVE_CHANGE_FEED = {
+  ad: [
+    {time:'9:14a', text:'Maintenance Routing v1.2 drift alert opened — Case AD-2902'},
+    {time:'8:02a', text:'Personnel Assignment v2.4 bias score unchanged at 67 — day 3 with no movement'},
+    {time:'Yesterday', text:'Blocked a synthetic credential ring — 12 records flagged'}
+  ],
+  fin: [
+    {time:'9:40a', text:'NYC Local Law 144 audit window narrowed to 14 days'},
+    {time:'8:15a', text:'Credit Scoring v3.4 disparate impact holding at 0.74 — no changes logged'},
+    {time:'Yesterday', text:'Blocked a synthetic identity ring — 47 applications from one device'}
+  ],
+  health: [
+    {time:'9:05a', text:'CMS audit escalated — Claims Adjudication v1.9 under active review'},
+    {time:'8:30a', text:'Diagnostic Triage AI income proxy flagged on 341 claims'},
+    {time:'Yesterday', text:'Blocked a prescription fraud network — 31 providers, 8 medications'}
+  ],
+  fed: [
+    {time:'9:20a', text:'OMB packet drafting — due May 22'},
+    {time:'8:10a', text:'IRS Tax Fraud Detection v3.1 remains blocked at pre-deployment vetting'},
+    {time:'Yesterday', text:'Refund fraud syndicate activity detected — under review'}
+  ]
+};
+function eveShowChangeFeed() {
+  var org = (typeof currentOrg !== 'undefined' && currentOrg) ? currentOrg : (window.currentOrg || 'ad');
+  var feed = EVE_CHANGE_FEED[org] || EVE_CHANGE_FEED.ad;
+  var body = feed.map(function (f) {
+    return '<div style="display:flex;gap:8px;margin-bottom:7px"><span style="color:var(--muted);min-width:52px;font-size:10px;flex-shrink:0">' + f.time + '</span><span>' + f.text + '</span></div>';
+  }).join('');
+  addEveCard({ icon: '↻', title: 'What changed', badge: 'l1', badgeLabel: 'Since you last checked', body: body });
+}
+window.eveShowChangeFeed = eveShowChangeFeed;
 
 function addEveCard(opts) {
  const c = document.getElementById('eve-messages');
