@@ -12427,7 +12427,14 @@ window.logEdenObsidianPiiAccess = function (org, individualId, screenCore) {
 };
 
 window.openEchoCoreFiltered = function (coreLens) {
-  window.__echoOpenCore = coreLens || null;
+  // This used to set window.__echoOpenCore and rely on buildEchoTimeline(), which
+  // writes into a hidden #echo-timeline span that isn't part of the live Echo
+  // Core UI -- so the click silently did nothing beyond opening the generic
+  // screen. The real, currently-rendered memory feed is filtered through
+  // window.__echoFilters + echoApplyFilters()/renderEchoMemoryFeed(), so set
+  // the filter there instead, and reset every other filter so a stale filter
+  // from a previous visit doesn't stack with it.
+  window.__echoFilters = { timePeriod: 'all', core: coreLens || 'all', case: 'all', model: 'all', person: 'all', eventType: 'all', severity: 'all', accessTier: 'all' };
   if (typeof showScreen === 'function') showScreen('echo', null);
 };
 
@@ -13579,7 +13586,12 @@ function edoBuildSection3BiasHtml(d, org) {
     linePts.push((bx + barW / 2) + ',' + (chartH - 8 - Math.round((ag.vsYoungestCohort / 100) * (chartH - 24))));
     ageBars += '<g' + edoT(ag.bracket, ag.bracket + ' / Approval: ' + ag.approvalRate + '%. vs youngest cohort index: ' + ag.vsYoungestCohort + '. Relative Comparison / Each age bracket compared to 18-25 baseline.') + '><rect x="' + (bx) + '" y="' + (chartH - 8 - hgt) + '" width="' + barW + '" height="' + hgt + '" fill="' + bc + '" rx="4"/><text x="' + (bx + barW / 2) + '" y="' + (chartH - 8 - hgt - 4) + '" font-size="9" text-anchor="middle" fill="currentColor">' + ag.approvalRate + '%</text><text x="' + (bx + barW / 2) + '" y="' + (chartH + 4) + '" font-size="8" text-anchor="middle" fill="var(--muted)">' + ag.bracket + '</text></g>';
   }
-  var ageSvg = '<svg width="100%" height="140" viewBox="0 0 ' + chartW + ' ' + (chartH + 12) + '" style="display:block;max-width:100%"' + edoT('Age Group Assignment Rates', 'Six brackets with approval % and vs-youngest overlay.') + '>' + ageBars + '<polyline fill="none" stroke="#f59e0b" stroke-width="2" points="' + linePts.join(' ') + '"' + edoT('vs youngest cohort overlay', 'Relative Comparison / Each age bracket compared to 18-25 baseline. Lower numbers = greater age-based disparity.') + '/></svg>';
+  var ageLine = '<polyline fill="none" stroke="#f59e0b" stroke-width="2" points="' + linePts.join(' ') + '"' + edoT('vs youngest cohort overlay', 'Relative Comparison / Each age bracket compared to 18-25 baseline. Lower numbers = greater age-based disparity.') + '/>';
+  // The trend line used to be drawn after the bars, painting it on top of the
+  // approval-rate percentage labels and making them unreadable where the line
+  // crossed them. Line now draws first (underneath); bars + their text render
+  // on top so the numbers stay legible no matter where the line passes.
+  var ageSvg = '<svg width="100%" height="140" viewBox="0 0 ' + chartW + ' ' + (chartH + 12) + '" style="display:block;max-width:100%"' + edoT('Age Group Assignment Rates', 'Six brackets with approval % and vs-youngest overlay.') + '>' + ageLine + ageBars + '</svg>';
   var worstAge = ages.length ? ages[ages.length - 1] : null;
   var ageCall = worstAge ? '<div style="margin-top:8px;padding:8px;background:rgba(245,158,11,.12);font-size:10px;border-radius:8px">\u2198 Age ' + worstAge.bracket + ' shows ' + (Math.round(100 - (worstAge.vsYoungestCohort || 0))) + '% lower relative assignment index vs 18-25 cohort.</div>' : '';
   var raceRows = (pb.racialEthnicAnalysis || []).map(function (r) {
@@ -13722,7 +13734,7 @@ function edoBuildBfVennHtml(d, org, screenIsObsidian) {
     '<p style="margin:0;font-size:10px;color:var(--muted);line-height:1.5;flex:1">' + frE.text + '</p>' +
     '<div style="font-size:10px;font-weight:700;color:#fb923c"' + edoT('Fraud metrics', frE.metric) + '>' + frE.metric + '</div></div></div></div>';
   var moat = '<div style="margin-top:20px;padding:14px 16px;border-radius:12px;border:1px solid rgba(167, 167, 167,.2);background:linear-gradient(90deg,rgba(10,14,22,.92),rgba(15,18,26,.88));display:flex;gap:14px;align-items:center;flex-wrap:wrap"' + edoT('Why this matters', 'Dual-lens posture / Other vendors offer bias detection OR fraud detection. This deployment ties both to shared audit infrastructure (Echo Core), so cross-lens cases surface together.') + '>' +
-    '<div style="flex:1;min-width:240px"><div style="font-size:11px;font-weight:800;margin-bottom:6px;color:var(--chrome2)">Why this matters</div><div style="font-size:10px;color:var(--muted);line-height:1.55">Bias detection tools see Step 1. Fraud detection tools see Step 3. Cardinal is the only platform that connects them. Every overlap case here was caught because Eden and Obsidian share the same audit core.</div></div>' +
+    '<div style="flex:1;min-width:240px"><div style="font-size:11px;font-weight:800;margin-bottom:6px;color:#F5F3EF">Why this matters</div><div style="font-size:10px;color:rgba(245,243,239,0.72);line-height:1.55">Bias detection tools see Step 1. Fraud detection tools see Step 3. Cardinal is the only platform that connects them. Every overlap case here was caught because Eden and Obsidian share the same audit core.</div></div>' +
     '<div style="font-size:12px;font-weight:900;letter-spacing:.12em;color:var(--accent);opacity:.9"' + edoT('Cardinal', 'Unified Eden + Obsidian core.') + '>CARDINAL</div></div>';
   return '<section id="' + (screenIsObsidian ? 'obs-sec-bf' : 'eden-sec-bf') + '" style="margin-bottom:24px">' +
     '<h2 style="font-size:15px;margin:0 0 6px"' + edoT('Bias-Fraud Overlap', 'Visualization of cases where bias and fraud share the same root proxy variable. The only platform monitoring both lenses on the same model decisions.') + '>Where Bias Creates Fraud Exposure</h2>' +
@@ -15364,7 +15376,13 @@ function drawDashAgeChart() {
 
   ctx.textAlign = 'center';
   var cxPts = [];
+  var barGeom = [];
 
+  // Pass 1: bars only (no text yet) -- the "vs youngest cohort" line tracks
+  // almost the same shape as the approval-rate bars, so its auto-scaled path
+  // often runs right along the top of the bars. Drawing it here, before any
+  // text, and drawing every label in a later pass keeps the percentage
+  // numbers on top and readable no matter where the line crosses.
   values.forEach(function (v, i) {
     var bh = Math.max(2, Math.min(plotH, (v / ymax) * plotH));
     var bx = pad.l + i * step + (step - bw) / 2;
@@ -15383,21 +15401,14 @@ function drawDashAgeChart() {
     ctx.closePath();
     ctx.fill();
 
-    ctx.fillStyle = '#f1f5f9';
-    ctx.font = 'bold 10px Inter, system-ui, sans-serif';
-    ctx.fillText(v + '%', bx + bw / 2, Math.max(pad.t + 10, by - 6));
-
-    var lb = labels[i] != null ? labels[i] : '';
-    ctx.fillStyle = '#64748b';
-    ctx.font = '8px Inter, system-ui, sans-serif';
-    ctx.fillText(lb, bx + bw / 2, H - pad.b + 12);
-
+    barGeom.push({ xc: bx + bw / 2, by: by });
     cxPts.push({
       xc: bx + bw / 2,
       ry: yRightRatio(ratios[i])
     });
   });
 
+  // Pass 2: the trend line, still underneath the text.
   if (cxPts.length > 1) {
     ctx.strokeStyle = 'rgba(251,191,36,0.95)';
     ctx.lineWidth = 2;
@@ -15415,6 +15426,26 @@ function drawDashAgeChart() {
       ctx.fill();
     });
   }
+
+  // Pass 3: labels last, on top of both bars and the line.
+  values.forEach(function (v, i) {
+    var g = barGeom[i];
+    if (!g) return;
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#0a0e16';
+    ctx.font = 'bold 10px Inter, system-ui, sans-serif';
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = 'rgba(10,14,22,0.85)';
+    var ty = Math.max(pad.t + 10, g.by - 6);
+    ctx.strokeText(v + '%', g.xc, ty);
+    ctx.fillStyle = '#f1f5f9';
+    ctx.fillText(v + '%', g.xc, ty);
+
+    var lb = labels[i] != null ? labels[i] : '';
+    ctx.fillStyle = '#64748b';
+    ctx.font = '8px Inter, system-ui, sans-serif';
+    ctx.fillText(lb, g.xc, H - pad.b + 12);
+  });
 }
 
 /** If a Chart.js instance ever uses canvas id dash-age-chart, sync it when industry changes. */
