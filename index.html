@@ -19487,6 +19487,7 @@ function showScreen(name, navEl) {
  compliance:'Compliance Exchange — Case Management & Regulatory Tracking'
  };
  document.getElementById('topbar-title').textContent = titles[name]||name;
+ try { eveUpdateQuickActionsForScreen(name); } catch (_qa) {}
  var subSecondary = document.getElementById('topbar-sub');
  if (subSecondary) {
    if (name === 'myworkspace' || name === 'usecases' || name === 'cardinallibrary') {
@@ -22890,6 +22891,66 @@ function addEveChatMessage(role, text) {
 }
 
 // Quick action chip — fills the input and submits as if typed by user
+const EVE_QUICK_ACTIONS_BY_SCREEN = {
+  eden: [
+    {label:'Explain this bias score', text:'Explain this bias score'},
+    {label:'Who is affected?', text:'Who is affected by this bias?'},
+    {label:'What is driving this?', text:'What is driving this bias?'},
+    {label:'Generate report', text:'Generate my incident report'}
+  ],
+  obsidian: [
+    {label:'Bias-fraud overlap?', text:'Is there a bias-fraud overlap here?'},
+    {label:'Fraud exposure?', text:'What is my fraud exposure right now?'},
+    {label:'Show blocked threats', text:'Show me the threats you have blocked'},
+    {label:'Generate report', text:'Generate my incident report'}
+  ],
+  genesis: [
+    {label:'Test coverage?', text:'What is my current test coverage?'},
+    {label:'Explain this scenario', text:'Explain this test scenario'},
+    {label:'Show the roadmap', text:'Show me the certification roadmap'},
+    {label:'Generate report', text:'Generate my incident report'}
+  ],
+  atonement: [
+    {label:'What is the fix?', text:'What is the fix for my highest priority issue?'},
+    {label:'Remediation ETA?', text:'What is the remediation ETA?'},
+    {label:'Draft remediation note', text:'Draft a remediation note for this case'},
+    {label:'Generate report', text:'Generate my incident report'}
+  ],
+  halo: [
+    {label:'Penalty exposure?', text:'What is my biggest risk right now?'},
+    {label:'Upcoming deadlines?', text:'Show me my upcoming regulatory deadlines'},
+    {label:'What if I do nothing?', text:'What happens if I do nothing?'},
+    {label:'Generate report', text:'Generate my incident report'}
+  ],
+  compliance: [
+    {label:'What is due this week?', text:'What compliance items are due this week?'},
+    {label:'Draft audit response', text:'Draft an audit response'},
+    {label:'Show open issues', text:'Show me my open compliance issues'},
+    {label:'Generate report', text:'Generate my incident report'}
+  ]
+};
+
+// Adaptive quick-action chips: the four suggestion chips in Eve's panel
+// change per core instead of staying identical everywhere. Falls back to
+// the original default set (captured on first run) for screens with no
+// specific mapping (dashboard, echo, sentinel, etc.).
+function eveUpdateQuickActionsForScreen(screenName) {
+  var row = document.getElementById('eve-quick-actions');
+  if (!row) return;
+  if (!window.__eveDefaultQuickActionsHTML) window.__eveDefaultQuickActionsHTML = row.innerHTML;
+  var set = EVE_QUICK_ACTIONS_BY_SCREEN[screenName];
+  if (!set) { row.innerHTML = window.__eveDefaultQuickActionsHTML; return; }
+  row.innerHTML = '';
+  set.forEach(function (a) {
+    var btn = document.createElement('button');
+    btn.className = 'eve-quick-chip';
+    btn.textContent = a.label;
+    btn.addEventListener('click', function () { sendEveQuickAction(a.text); });
+    row.appendChild(btn);
+  });
+}
+window.eveUpdateQuickActionsForScreen = eveUpdateQuickActionsForScreen;
+
 function sendEveQuickAction(text) {
   var score = '74';
   try {
