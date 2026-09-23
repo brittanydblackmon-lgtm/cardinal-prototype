@@ -8387,6 +8387,7 @@ Template Overview
 <button type="button" onclick="generateRemediationDoc();toggleEveMoreMenu(false)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg> Transcript</button>
 <button type="button" onclick="toggleVoiceSettings();toggleEveMoreMenu(false)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg> Voice settings</button>
 <button type="button" onclick="eveOpenPanel();eveShowChangeFeed();toggleEveMoreMenu(false)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 16 14"/></svg> What changed</button>
+<button type="button" onclick="eveStartNarration();toggleEveMoreMenu(false)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><path d="M4 4v16M4 4l16 8-16 8"/></svg> Walk me through this</button>
 </div>
 <span class="eve-drag-handle" id="eve-drag-handle" aria-label="Drag">&#x205A;&#x205A;&#x205A;</span>
 <button class="eve-min-btn" id="eve-btn-min" onclick="eveToggleMinimize()" aria-label="Minimize">&#x2014;</button>
@@ -19455,6 +19456,7 @@ if (typeof window.buildTrustLedger === 'undefined' && typeof buildTrustLedger ==
 }
 
 function showScreen(name, navEl) {
+  try { if (typeof eveStopNarration === 'function') eveStopNarration(); } catch (_n) {}
   // Clear all nav-item active states
   document.querySelectorAll('.nav-item.active').forEach(function(el){ el.classList.remove('active'); });
 
@@ -22310,6 +22312,7 @@ function eveApplySavedMinimized() {
 function eveCloseAndReset() {
   var panel = document.getElementById('eve-panel');
   if (!panel) return;
+  try { eveStopNarration(); } catch (_n) {}
   panel.classList.remove('open');
   panel.classList.remove('minimized');
   // Reset to docked anchor; clear saved position so the next open is fresh.
@@ -22626,6 +22629,72 @@ function addEveMsg(who, text, badge, badgeLabel, speak) {
  c.scrollTop = c.scrollHeight;
  if(speak) speakText(text, who);
 }
+
+// Guided narration mode: "walk me through this" plays a short spoken
+// tour of the screen you're on, reusing the existing TTS (speakText)
+// and message-stream infra. A token guards against stale steps firing
+// after the user stops narration or navigates away mid-tour.
+const EVE_NARRATION_SCRIPTS = {
+  dashboard: [
+    'This is your command center. Every core reports here in real time.',
+    'Trust Score up top is your overall governance health, out of 100.',
+    'The red banner is your most urgent open issue right now.',
+    'Quick actions below let you ask me anything about what you see.'
+  ],
+  eden: [
+    'Eden Core is where bias detection happens.',
+    'Each model gets a disparate impact score. Below 80 is a problem.',
+    'Click into any flagged model to see exactly who is affected and why.'
+  ],
+  atonement: [
+    'Atonement Core is where fixes get built and tested.',
+    'Every model in flight moves through shadow traffic, then ramp, then full promotion.',
+    'Auto-rollback is armed, so a bad fix never reaches everyone at once.'
+  ],
+  halo: [
+    'Halo Core forecasts what happens if issues go unaddressed.',
+    'Regulatory deadlines and penalty exposure are modeled out here.',
+    'Compare doing nothing against the optimal fix, side by side.'
+  ],
+  compliance: [
+    'Compliance Exchange tracks every regulation you are subject to.',
+    'Deadlines, audits, and certification status all live here.',
+    'One click generates a regulator-ready report from everything Cardinal has captured.'
+  ],
+  genesis: [
+    'Genesis Core is your testing workspace.',
+    'Run counterfactual scenarios to prove causation before you ship a fix.',
+    'Coverage analysis shows you what has and has not been tested yet.'
+  ],
+  default: [
+    'I can walk you through any screen. Ask me anything, or use the quick actions below.'
+  ]
+};
+
+var eveNarrationToken = 0;
+function eveStartNarration() {
+  eveOpenPanel();
+  var activeScreen = document.querySelector('.screen.active');
+  var screenName = activeScreen ? activeScreen.id.replace('screen-', '') : 'dashboard';
+  var script = EVE_NARRATION_SCRIPTS[screenName] || EVE_NARRATION_SCRIPTS.default;
+  var myToken = ++eveNarrationToken;
+  var titleEl = document.getElementById('topbar-title');
+  var screenTitle = titleEl ? titleEl.textContent : 'this screen';
+  addEveMsg('eve', 'Walking you through ' + screenTitle + '.', 'l1', 'Guided tour', true);
+  script.forEach(function (line, i) {
+    setTimeout(function () {
+      if (myToken !== eveNarrationToken) return;
+      addEveMsg('eve', line, null, null, true);
+    }, 2200 * (i + 1));
+  });
+}
+window.eveStartNarration = eveStartNarration;
+
+function eveStopNarration() {
+  eveNarrationToken++;
+  try { window.speechSynthesis.cancel(); } catch (_s) {}
+}
+window.eveStopNarration = eveStopNarration;
 
 var eveCardActionRegistry = {};
 var eveCardActionSeq = 0;
