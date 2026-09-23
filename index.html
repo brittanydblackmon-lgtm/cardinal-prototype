@@ -37313,6 +37313,16 @@ function cardinalAskAnswer(msgRaw, org) {
   if (msg.indexOf('critical case') !== -1 || msg.indexOf('case right now') !== -1) {
     if (d && d.primaryCase) return 'Case ' + d.primaryCase + ' is the one that needs attention. Click Penalty Exposure on the Dashboard to open it directly.';
   }
+  if (msg.indexOf('own') !== -1 && (msg.indexOf('case') !== -1 || msg.indexOf('who') !== -1)) {
+    var ownCaseId = d && d.primaryCase ? String(d.primaryCase).replace(/^#/, '') : '';
+    var ownRows = (d && d.complianceTrackerRows) || [];
+    var ownRow = ownRows.filter(function(row){ return row.caseId === ownCaseId; })[0];
+    if (ownRow) return ownRow.owner + ' owns case ' + d.primaryCase + ', filing with ' + ownRow.regulator + '. Due ' + ownRow.dueDate + '.';
+    var ownModels = (typeof CARDINAL_MODELS !== 'undefined') ? CARDINAL_MODELS : [];
+    var ownModel = ownModels.filter(function(mdl){ return mdl.cases && mdl.cases.indexOf(ownCaseId) !== -1; })[0];
+    if (ownModel) return ownModel.owner + ' owns case ' + d.primaryCase + ' (model: ' + ownModel.name + ').';
+    if (d && d.primaryCase) return 'Case ' + d.primaryCase + ' does not have a named owner on file yet.';
+  }
   if (msg.indexOf('model') !== -1 && msg.indexOf('risk') !== -1) {
     if (r) return r.bias;
   }
