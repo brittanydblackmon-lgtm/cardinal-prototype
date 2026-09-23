@@ -3018,6 +3018,8 @@ animation:waveform var(--dur) ease-in-out infinite alternate;
 .msg-avatar.user-av{background:rgba(167, 167, 167,.1);color:var(--chrome2)}
 .msg-bubble{max-width:260px;padding:10px 14px;border-radius:14px;font-size:12px;line-height:1.6;color:var(--sidebar-text);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
 .msg-bubble.eve{background:linear-gradient(180deg,rgba(167, 167, 167,.12),rgba(167, 167, 167,.04));border:1px solid rgba(167, 167, 167,.15);border-radius:14px 14px 14px 4px}
+.msg-bubble.eve.sev-critical{background:linear-gradient(180deg,rgba(239,68,68,.14),rgba(239,68,68,.04));border-color:rgba(239,68,68,.4);box-shadow:0 0 0 1px rgba(239,68,68,.06)}
+.msg-bubble.eve.sev-warn{background:linear-gradient(180deg,rgba(245,158,11,.12),rgba(245,158,11,.04));border-color:rgba(245,158,11,.35)}
 .msg-bubble.adam{background:linear-gradient(180deg,rgba(100,100,130,.18),rgba(100,100,130,.06));border:1px solid rgba(180,190,220,.12);border-radius:14px 14px 14px 4px}
 .msg-bubble.user{background:linear-gradient(180deg,rgba(232,228,219,.16),rgba(232,228,219,.06));border:1px solid rgba(232,228,219,.28);border-radius:14px 14px 4px 14px}
 .msg-meta{font-size:9px;color:var(--sidebar-muted);margin-top:3px;padding:0 4px}
@@ -22629,11 +22631,14 @@ function addEveMsg(who, text, badge, badgeLabel, speak) {
  const d = document.createElement('div');
  d.className = 'msg-row' + (isUser?' user':'');
  const badgeHTML = badge ? `<div class="eve-alert-badge ${badge}">${badgeLabel||badge}</div>` : '';
+ // Give the bubble itself a severity accent so critical vs routine is
+ // visible at a glance while scrolling, not just in the badge pill.
+ const severityClass = badge === 'l3' ? ' sev-critical' : badge === 'l2' ? ' sev-warn' : '';
  d.innerHTML = `
  ${!isUser?`<div class="msg-avatar ${who}">${who==='eve'?'✦':'⬡'}</div>`:''}
  <div>
  ${badgeHTML}
- <div class="msg-bubble ${who}">${text}</div>
+ <div class="msg-bubble ${who}${severityClass}">${text}</div>
  <div class="msg-meta">${who==='user'?userLabel:who==='eve'?'Eve':'Adam'} · ${time}</div>
  </div>
  ${isUser?`<div class="msg-avatar user-av">${userInitial}</div>`:''}
@@ -22780,11 +22785,16 @@ function addEveCard(opts) {
  <button onclick="this.closest('.msg-row').style.opacity='.5'" style="padding:6px 10px;border-radius:7px;background:transparent;border:1px solid rgba(180,190,220,.1);color:var(--muted);font-size:10px;cursor:pointer;font-family:var(--sans)">Not yet</button>
  </div>` : '';
  const linkHTML = opts.action && !opts.askRoute ? `<div style="margin-top:6px;font-size:10px;color:var(--accent);text-decoration:underline;cursor:pointer" onclick="(${opts.action.toString()})()">${opts.actionLabel}</div>` : '';
+ const cardSevStyle = opts.badge === 'l3'
+   ? 'background:linear-gradient(180deg,rgba(239,68,68,.10),rgba(239,68,68,.02));border:1px solid rgba(239,68,68,.35);'
+   : opts.badge === 'l2'
+   ? 'background:linear-gradient(180deg,rgba(245,158,11,.09),rgba(245,158,11,.02));border:1px solid rgba(245,158,11,.3);'
+   : 'background:rgba(255,255,255,.02);border:1px solid rgba(167, 167, 167,.12);';
  d.innerHTML = `
  <div class="msg-avatar eve">✦</div>
  <div style="flex:1">
  ${opts.badge?`<div class="eve-alert-badge ${opts.badge}">${opts.badgeLabel}</div>`:''}
- <div style="background:rgba(255,255,255,.02);border:1px solid rgba(167, 167, 167,.12);border-radius:10px;padding:11px 13px;margin-top:2px;color:#c7c3b8">
+ <div style="${cardSevStyle}border-radius:10px;padding:11px 13px;margin-top:2px;color:#c7c3b8">
  <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">
  <span style="font-size:15px">${opts.icon}</span>
  <span style="font-size:12px;font-weight:600;color:var(--chrome2)">${opts.title}</span>
