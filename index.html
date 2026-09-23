@@ -5252,7 +5252,7 @@ Settings
 <div class="sidebar-user-avatar" id="sidebar-avatar">DP</div>
 <div class="sidebar-user-info">
 <div class="sidebar-user-name" id="sidebar-user-name">David Park</div>
-<div class="sidebar-user-org" id="sidebar-user-org">CEO · Atlas Defense Systems</div>
+<div class="sidebar-user-org" id="sidebar-user-org">Data Scientist · Atlas Defense Systems</div>
 </div>
 <div style="position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:10px;color:var(--muted);">▼</div>
 </div>
@@ -8498,7 +8498,7 @@ Template Overview
 <div class="stat-card" style="cursor:default">
 <div class="stat-label">Active User</div>
 <div style="font-size:14px;font-weight:600;color:var(--chrome2)" id="settings-username">David Park</div>
-<div class="stat-change">Atlas Defense Systems</div>
+<div class="stat-change" id="settings-user-org">Atlas Defense Systems</div>
 </div>
 <div class="stat-card" style="cursor:default">
 <div class="stat-label">Access Level</div>
@@ -9653,9 +9653,9 @@ let scoreChart, demoChart, haloChart, haloPenaltyChart, haloForecastChart;
 // ════════════════════════════════════════════════════════════════
 window.CARDINAL_PERSONAS = [
   {
-    id: 'david-park', name: 'David Park', initials: 'DP', role: 'CEO',
+    id: 'david-park', name: 'David Park', initials: 'DP', role: 'Data Scientist',
     org: 'Atlas Defense Systems', color: '#a855f7', scope: 'org',
-    summary: 'Chief Executive — sets strategic governance posture, signs cert renewals, fields regulator escalations.',
+    summary: 'Data Scientist — builds and monitors the personnel and mission-readiness models, works remediation fixes directly with Atonement.',
     permissions: { whistleblower: true, sealedLegal: true, dollarValues: true },
     canSeeWhistleblower: true, canSeeSealedLegal: true, canSubmitWhistleblower: true
   },
@@ -10394,10 +10394,24 @@ window.getActivePersona = function() {
   if (!match) match = window.CARDINAL_PERSONAS.filter(function(p){ return p.id === fallbackId; })[0] || window.CARDINAL_PERSONAS[0];
   if (!match) return match;
   // Persona records were authored with a hardcoded org (originally A&D-only demo data).
-  // Override with whatever industry is actually active so the sidebar never shows a
-  // stale org after switching industries, regardless of which persona is selected.
   var liveOrgName = window.__CARDINAL_ORG_NAME_BY_INDUSTRY[window.currentOrg];
   if (liveOrgName && liveOrgName !== match.org) {
+    // The selected persona belongs to a different org than the one currently being
+    // viewed (e.g. David Park is A&D-only). Relabeling just the org text next to his
+    // name showed the wrong person under the right company -- fall back to that
+    // industry's real primary contact instead, sourced from CARDINAL_DATA so it can't
+    // drift out of sync with the sidebar/Dashboard, which already use the same field.
+    var d = (typeof cd === 'function') ? cd(window.currentOrg) : null;
+    if (d && d.user) {
+      return {
+        id: 'org-default-' + window.currentOrg,
+        name: d.user, initials: d.initials || '', role: 'Primary Contact',
+        org: liveOrgName, color: match.color, scope: 'org',
+        summary: d.user + ' is the primary contact for ' + liveOrgName + '.',
+        permissions: match.permissions, canSeeWhistleblower: match.canSeeWhistleblower,
+        canSeeSealedLegal: match.canSeeSealedLegal, canSubmitWhistleblower: match.canSubmitWhistleblower
+      };
+    }
     match = Object.assign({}, match, { org: liveOrgName });
   }
   return match;
@@ -10420,6 +10434,10 @@ window.setActivePersona = function(personaId) {
   }
   if (nameEl) nameEl.textContent = p.name;
   if (orgEl) orgEl.textContent = p.role + ' · ' + p.org;
+  var settingsNameEl = document.getElementById('settings-username');
+  var settingsOrgEl = document.getElementById('settings-user-org');
+  if (settingsNameEl) settingsNameEl.textContent = p.name;
+  if (settingsOrgEl) settingsOrgEl.textContent = p.org;
 
   // Update window.currentUserName so existing user-aware code uses the new persona
   window.currentUserName = p.name;
