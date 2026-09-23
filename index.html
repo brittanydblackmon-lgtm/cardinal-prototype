@@ -2892,7 +2892,12 @@ animation:waveform var(--dur) ease-in-out infinite alternate;
 #eve-peek-bubble{
   position:fixed;
   right:24px;
-  top:76px;
+  /* Anchored near Eve's floating avatar (bottom-right) instead of top:76px, which used
+     to sit directly over page content once you scrolled down (e.g. covering the Halo
+     Core predictive cards). Critical alerts don't auto-hide, so pinning them over
+     content meant they could block it indefinitely. Bottom-right is already "Eve's"
+     established spot and stays clear of page content at any scroll position. */
+  bottom:88px;
   max-width:260px;
   background:rgba(8,12,20,0.97);
   border:1px solid rgba(167, 167, 167,0.3);
@@ -2905,7 +2910,7 @@ animation:waveform var(--dur) ease-in-out infinite alternate;
   cursor:pointer;
   z-index:9997;
   opacity:0;
-  transform:translateY(-8px) scale(.97);
+  transform:translateY(8px) scale(.97);
   pointer-events:none;
   transition:opacity .35s ease, transform .35s ease;
 }
@@ -2916,7 +2921,7 @@ animation:waveform var(--dur) ease-in-out infinite alternate;
 #eve-peek-bubble .eve-peek-close{position:absolute;top:6px;right:8px;font-size:11px;color:var(--muted);cursor:pointer;padding:2px}
 #eve-peek-bubble .eve-peek-avatar{width:22px;height:22px;border-radius:50%;background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.35);color:#ef4444;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0}
 #eve-peek-bubble{max-width:280px;padding:13px 16px}
-@media (max-width:768px){#eve-peek-bubble{right:16px;left:16px;top:66px;max-width:calc(100vw - 32px)}}
+@media (max-width:768px){#eve-peek-bubble{right:16px;left:16px;bottom:78px;max-width:calc(100vw - 32px)}}
 /* Slow rotating ring sitting around the 62px button (74px envelope) */
 #eve-toggle-wrap::before{
   content:'';
@@ -9977,6 +9982,42 @@ window.CARDINAL_MODELS = [
 
   { id: 'FED-IRS-FRAUD-V3.1', name: 'IRS Tax Fraud Detection v3.1', industry: 'fed', status: 'test', trustScore: 71, di: 0.54, lastReview: '2026-05-02', owner: 'Patricia Alvarez', cases: ['FED-PDV-001'], deployedDate: null }
 ];
+
+// ── Single source of truth for model trust scores ──
+// A trust-score audit found the same model showing different numbers on different
+// screens (e.g. "Personnel Assignment v2.4" was 74 here in CARDINAL_MODELS, the data
+// Genesis and the model registry read from, but 67 in Sentinel's Lab tab grid and its
+// Compare tool). Likely root cause: those other two spots were separately hand-typed
+// and someone used the model's "di" (disparate-impact index, 0.67) as if it were the
+// trust score, instead of the real trust score (74) -- an easy mixup since 0.67 * 100
+// happens to equal the wrong-but-plausible-looking number 67.
+// This helper looks up the canonical score/DI by model name and is called by every
+// other screen's model list right before it renders, so there is exactly one place
+// (CARDINAL_MODELS) that owns these numbers going forward.
+window.cardinalCanonicalModelScore = function (modelName) {
+  if (!modelName || !window.CARDINAL_MODELS) return null;
+  var target = String(modelName).trim().toLowerCase();
+  for (var i = 0; i < window.CARDINAL_MODELS.length; i++) {
+    var m = window.CARDINAL_MODELS[i];
+    if (String(m.name).trim().toLowerCase() === target) {
+      return { trustScore: m.trustScore, di: m.di };
+    }
+  }
+  return null;
+};
+// Applies the canonical score/DI onto any array of objects that have a `.name`
+// matching a CARDINAL_MODELS entry, overwriting stale/duplicate hardcoded values.
+window.cardinalSyncModelScores = function (list) {
+  if (!Array.isArray(list)) return list;
+  list.forEach(function (row) {
+    var canon = window.cardinalCanonicalModelScore(row && row.name);
+    if (canon) {
+      row.trustScore = canon.trustScore;
+      row.di = String(canon.di);
+    }
+  });
+  return list;
+};
 
 window.CARDINAL_COHORTS = [
   { id: 'COHORT-2847', name: 'AD-2847 Affected Service Members', type: 'remediation', industry: 'ad', size: 847, status: 'in-progress', restored: 432, owner: 'James Martinez', linkedCase: 'AD-2847', created: '2026-04-16' },
@@ -31451,6 +31492,7 @@ function buildMLGrid(org, filter) {
     ]
   };
   var list = (ML_GRID_DATA[org] || ML_GRID_DATA.ad);
+  try { if (typeof window.cardinalSyncModelScores === 'function') window.cardinalSyncModelScores(list); } catch (_syncMl) {}
   var countEl = document.getElementById('ml-count-label');
   if(countEl) countEl.textContent = list.length + ' models';
   el.innerHTML = list.map(function(m) {
@@ -35600,6 +35642,15 @@ const MODEL_COMPARE_DATA = {
   fd: {name:'Fraud Detection v3.2',trustScore:91,di:'0.97',fraudIntegrity:94,transparency:85,governance:90,status:'Passing',affected:0,rootCause:'None detected',cohortIds:['EID:atlas:0xC3a','EID:atlas:0xF1b'],biasFlags:0,fraudFlags:0,testCoverage:'91%',lastDeployed:'Jan 20, 2026'},
   maint: {name:'Maintenance Routing v1.2',trustScore:78,di:'0.78',fraudIntegrity:81,transparency:75,governance:77,status:'Watch',affected:112,rootCause:'Geographic proxy (base location)',cohortIds:['EID:atlas:0xD9e'],biasFlags:1,fraudFlags:1,testCoverage:'71%',lastDeployed:'Mar 10, 2026'},
 };
+// Overwrite any entries here whose name matches a CARDINAL_MODELS record with the
+// canonical score/DI (see note above CARDINAL_MODELS). Only 'pa' (Personnel Assignment
+// v2.4) currently has an exact name match -- the others (Mission Readiness v1.1 vs the
+// registry's v1.2, Fraud Detection v3.2 vs the registry's Procurement Fraud v3.0,
+// Maintenance Routing v1.2 which isn't in the registry at all) reference model
+// names/versions that don't exist in CARDINAL_MODELS yet. That's a separate, bigger
+// data-completeness gap (this screen and the registry don't even agree on which model
+// versions exist) flagged for Brittany rather than guessed at here.
+try { if (typeof window.cardinalSyncModelScores === 'function') window.cardinalSyncModelScores(Object.keys(MODEL_COMPARE_DATA).map(function(k){ return MODEL_COMPARE_DATA[k]; })); } catch (_syncCmp) {}
 
 function runModelComparison() {
   var aKey = document.getElementById('compare-model-a')?.value || 'pa';
