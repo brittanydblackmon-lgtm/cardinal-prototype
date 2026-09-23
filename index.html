@@ -22403,6 +22403,12 @@ function eveShowPeekBubble(text, opts) {
   if (opts.critical) {
     try { var t = document.getElementById('eve-toggle-btn'); if (t) t.classList.add('eve-critical'); } catch(_c) {}
   }
+  // Speak critical pop-ups out loud, same as any other Eve message.
+  // speakText() already checks eveTTSEnabled/mute state internally, so
+  // this stays silent if the user has Eve muted.
+  if (opts.speak !== false) {
+    try { speakText(text, 'eve'); } catch (_s) {}
+  }
   clearTimeout(window.__evePeekAutoHide);
   if (!opts.critical) {
     window.__evePeekAutoHide = setTimeout(eveHidePeekBubble, 9000);
