@@ -23975,17 +23975,22 @@ function restoreGenSectionOrder() {
   if (!order || !Array.isArray(order)) return;
   var scope = genSectionScope();
   if (!scope) return;
-  // Anchor everything relative to the first section's current position.
   var firstA = document.getElementById('gen-anchor-' + order[0]);
   if (!firstA) return;
+  // Use a stable marker node (not part of the reordered set) as the
+  // insertion reference, since using one of the moved elements itself as
+  // the anchor breaks on the element that IS that anchor.
+  var marker = document.createComment('gen-section-order-marker');
+  firstA.parentNode.insertBefore(marker, firstA);
   order.forEach(function(sec){
    var a = document.getElementById('gen-anchor-'+sec);
    var c = document.getElementById('gen-tab-'+sec);
    if (!a || !c || !scope.contains(a) || !scope.contains(c)) return;
-   var destParent = firstA.parentNode;
-   destParent.insertBefore(a, firstA);
-   destParent.insertBefore(c, firstA);
+   var destParent = marker.parentNode;
+   destParent.insertBefore(a, marker);
+   destParent.insertBefore(c, marker);
   });
+  if (marker.parentNode) marker.parentNode.removeChild(marker);
   GEN_SECTIONS_ORDER = order.slice();
  } catch(e) {}
 }
