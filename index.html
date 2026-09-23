@@ -2854,6 +2854,8 @@ animation:waveform var(--dur) ease-in-out infinite alternate;
 #eve-peek-bubble .eve-peek-label{font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:var(--accent);margin-bottom:4px;font-weight:700}
 #eve-peek-bubble.critical .eve-peek-label{color:#ef4444}
 #eve-peek-bubble .eve-peek-close{position:absolute;top:6px;right:8px;font-size:11px;color:var(--muted);cursor:pointer;padding:2px}
+#eve-peek-bubble .eve-peek-avatar{width:22px;height:22px;border-radius:50%;background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.35);color:#ef4444;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0}
+#eve-peek-bubble{max-width:280px;padding:13px 16px}
 @media (max-width:768px){#eve-peek-bubble{right:16px;bottom:76px;max-width:calc(100vw - 90px)}}
 /* Slow rotating ring sitting around the 62px button (74px envelope) */
 #eve-toggle-wrap::before{
@@ -2984,7 +2986,9 @@ animation:waveform var(--dur) ease-in-out infinite alternate;
 .eve-name{font-size:14px;font-weight:700;background:linear-gradient(135deg,#A7A7A7,#7eb8f0);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;color:#A7A7A7;letter-spacing:.3px}
 .eve-status{font-size:10px;color:#22c55e;display:flex;align-items:center;gap:5px;letter-spacing:.3px}
 .eve-status-dot{width:5px;height:5px;border-radius:50%;background:var(--green);animation:pulse-dot 2s infinite}
-.eve-ctrl-btn{background:transparent;border:none;color:var(--sidebar-muted);cursor:pointer;font-size:13px;padding:4px 6px;border-radius:5px;transition:color .2s}
+.eve-ctrl-btn{background:transparent;border:none;color:var(--sidebar-muted);cursor:pointer;font-size:13px;padding:4px 6px;border-radius:5px;transition:color .2s, background .2s;outline:none}
+.eve-ctrl-btn:focus{outline:none;background:rgba(167,167,167,.1)}
+.eve-ctrl-btn:focus-visible{outline:none;box-shadow:0 0 0 2px rgba(167,167,167,.25)}
 .eve-ctrl-btn:hover{color:var(--sidebar-text)}
 /* Header overflow menu — Quick actions / Transcript / Voice settings tucked here so the header
    isn't 6-7 icons wide. Bell + Mute stay inline since those get used every time. */
@@ -8396,7 +8400,7 @@ Template Overview
 <button class="eve-quick-chip" onclick="sendEveQuickAction('Generate my incident report')">Generate report</button>
 </div>
 <div class="eve-input-row">
-<button type="button" class="eve-mic-hero pulse-idle" id="eve-mic-btn" onclick="toggleEveMic()" aria-label="Tap to speak" title="Voice input">🎤</button>
+<button type="button" class="eve-mic-hero pulse-idle" id="eve-mic-btn" onclick="toggleEveMic()" aria-label="Tap to speak" title="Voice input"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg></button>
 <div class="eve-input-field-wrap">
 <div class="eve-voice-wave-overlay" id="eve-voice-wave" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></div>
 <input id="eve-input" placeholder="Tap mic to speak — or type" autocomplete="off" oninput="if(typeof eveInputHint==='function')eveInputHint(this)" onkeydown="if(event.key==='Enter')sendEveMessage()"/>
@@ -8404,7 +8408,7 @@ Template Overview
 <button type="button" class="eve-send-btn" onclick="sendEveMessage()">→</button>
 </div>
 </div>
-<div id="eve-peek-bubble" onclick="eveExpandFromPeek()"><span class="eve-peek-close" onclick="event.stopPropagation();eveHidePeekBubble()">&#x2715;</span><div class="eve-peek-label">Eve</div><div id="eve-peek-text"></div></div>
+<div id="eve-peek-bubble" onclick="eveExpandFromPeek()"><span class="eve-peek-close" onclick="event.stopPropagation();eveHidePeekBubble()">&#x2715;</span><div style="display:flex;align-items:flex-start;gap:9px"><div class="eve-peek-avatar">&#10022;</div><div style="flex:1;min-width:0"><div class="eve-peek-label">Eve &mdash; Critical Alert</div><div id="eve-peek-text"></div></div></div></div>
 <div id="eve-toggle-wrap">
 <div id="eve-hover-label">Eve — AI Governance Assistant (press E)</div>
 <div id="eve-toggle-btn" onclick="eveToggleFromOrbital()" aria-label="Open Eve assistant"><span id="eve-online-pulse" aria-hidden="true"></span><svg class="eve-icon" width="30" height="30" viewBox="0 0 30 30" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><ellipse class="orbit" cx="15" cy="15" rx="13" ry="5" stroke="rgba(167, 167, 167,0.35)" stroke-width="1" transform="rotate(45 15 15)"/><ellipse class="orbit" cx="15" cy="15" rx="13" ry="5" stroke="rgba(167, 167, 167,0.2)" stroke-width="1" transform="rotate(-45 15 15)"/><circle cx="15" cy="15" r="7" stroke="rgba(167, 167, 167,0.5)" stroke-width="1"/><circle cx="15" cy="15" r="4" fill="rgba(167, 167, 167,0.9)" style="filter: drop-shadow(0 0 4px rgba(167, 167, 167,0.8))"/></svg><div id="eve-urgency-dot"></div></div>
@@ -15454,14 +15458,10 @@ function doLogin() {
     if(eveBubble) eveBubble.style.display = 'flex';
     try { if (typeof updateQuickAddFAB === 'function') updateQuickAddFAB(); } catch(_fabPostLogin) {}
     // Delayed, quiet greeting — a small bubble near her icon, not the full panel popping open.
-    setTimeout(function () {
-      try {
-        var org = window.currentOrg || currentOrg || 'ad';
-        var briefing = (EVE_ALERTS[org] || EVE_ALERTS.ad)[0];
-        var line = briefing ? briefing.msg.split('.').slice(0,1).join('.') + '.' : 'Good morning — I have your briefing ready when you are.';
-        eveShowPeekBubble(line, { critical: false });
-      } catch (_gp) {}
-    }, 2600);
+    // Routine post-login greeting no longer pops a bubble over the UI —
+    // the full briefing still lives inside the Eve panel when opened.
+    // The peek bubble is now reserved for genuinely critical alerts
+    // (see eveMaybeShowHaloUrgentPeek).
     setTimeout(startDashHeatmaps, 300);
     setTimeout(initDashboardCharts, 350);
     try { startDashLastRefreshed(); } catch(eLR) {}
