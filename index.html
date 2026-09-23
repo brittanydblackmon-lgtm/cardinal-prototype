@@ -23959,80 +23959,89 @@ window.isolateGenSection = isolateGenSection;
 window.restoreGenFullView = restoreGenFullView;
 
 // ---- Drag-to-reorder for the FULL stacked sections on the long page ----
+// NOTE: PM-Profiles and Model Compare anchors sit one DOM level deeper than the
+// other six sections (pre-existing markup quirk), so this scopes everything to
+// the #screen-genesis ancestor (guaranteed common ancestor) rather than a single
+// assumed direct parent, and always inserts relative to the destination node's
+// own actual parentNode rather than a cached container reference.
 var GEN_SECTION_DRAG_SRC = null;
-function genSectionContainer() {
- return document.getElementById('gen-anchor-counterfactual') ? document.getElementById('gen-anchor-counterfactual').parentElement : null;
+function genSectionScope() {
+ return document.getElementById('screen-genesis');
 }
 function restoreGenSectionOrder() {
  try {
   var order = JSON.parse(localStorage.getItem('cardinal-genesis-section-order') || 'null');
   if (!order || !Array.isArray(order)) return;
-  var parent = genSectionContainer();
-  if (!parent) return;
+  var scope = genSectionScope();
+  if (!scope) return;
+  // Anchor everything relative to the first section's current position.
+  var firstA = document.getElementById('gen-anchor-' + order[0]);
+  if (!firstA) return;
   order.forEach(function(sec){
    var a = document.getElementById('gen-anchor-'+sec);
    var c = document.getElementById('gen-tab-'+sec);
-   if (a && c && a.parentElement === parent && c.parentElement === parent) {
-    parent.appendChild(a);
-    parent.appendChild(c);
-   }
+   if (!a || !c || !scope.contains(a) || !scope.contains(c)) return;
+   var destParent = firstA.parentNode;
+   destParent.insertBefore(a, firstA);
+   destParent.insertBefore(c, firstA);
   });
   GEN_SECTIONS_ORDER = order.slice();
  } catch(e) {}
 }
 function initGenSectionReorder() {
- var parent = genSectionContainer();
- if (!parent || parent.dataset.sectionReorderBound === '1') return;
- parent.dataset.sectionReorderBound = '1';
- parent.addEventListener('dragstart', function(e){
+ var scope = genSectionScope();
+ if (!scope || scope.dataset.sectionReorderBound === '1') return;
+ scope.dataset.sectionReorderBound = '1';
+ scope.addEventListener('dragstart', function(e){
   var handle = e.target.closest('.gen-section-drag-handle');
   if (!handle) return;
   var anchorEl = handle.closest('.gen-section-anchor');
-  if (!anchorEl || !parent.contains(anchorEl)) return;
+  if (!anchorEl || !scope.contains(anchorEl)) return;
   GEN_SECTION_DRAG_SRC = anchorEl;
   anchorEl.style.opacity = '0.5';
   try { e.dataTransfer.effectAllowed = 'move'; } catch(_d) {}
  }, true);
- parent.addEventListener('dragend', function(){
+ scope.addEventListener('dragend', function(){
   if (GEN_SECTION_DRAG_SRC) GEN_SECTION_DRAG_SRC.style.opacity = '1';
   GEN_SECTION_DRAG_SRC = null;
-  parent.querySelectorAll('.gen-section-anchor').forEach(function(p){ p.style.borderColor = ''; p.style.outline=''; });
+  scope.querySelectorAll('.gen-section-anchor').forEach(function(p){ p.style.borderColor = ''; p.style.outline=''; });
  });
- parent.addEventListener('dragover', function(e){
+ scope.addEventListener('dragover', function(e){
   var p = e.target.closest('.gen-section-anchor');
-  if (!p || !parent.contains(p)) return;
+  if (!p || !scope.contains(p)) return;
   e.preventDefault();
   try { e.dataTransfer.dropEffect = 'move'; } catch(_e) {}
   p.style.outline = '1px dashed rgba(167,167,167,0.5)';
  });
- parent.addEventListener('dragleave', function(e){
+ scope.addEventListener('dragleave', function(e){
   var p = e.target.closest('.gen-section-anchor');
-  if (p && parent.contains(p)) p.style.outline = '';
+  if (p && scope.contains(p)) p.style.outline = '';
  });
- parent.addEventListener('drop', function(e){
+ scope.addEventListener('drop', function(e){
   var dest = e.target.closest('.gen-section-anchor');
   e.preventDefault();
-  if (!dest || !parent.contains(dest)) return;
+  if (!dest || !scope.contains(dest)) return;
   dest.style.outline = '';
   var src = GEN_SECTION_DRAG_SRC;
-  if (!src || !parent.contains(src) || src === dest) return;
+  if (!src || !scope.contains(src) || src === dest) return;
   var srcName = src.dataset.section, destName = dest.dataset.section;
   var srcContent = document.getElementById('gen-tab-'+srcName);
   var destContent = document.getElementById('gen-tab-'+destName);
   if (!srcContent || !destContent) return;
-  var anchors = [].slice.call(parent.querySelectorAll('.gen-section-anchor'));
+  var anchors = [].slice.call(scope.querySelectorAll('.gen-section-anchor'));
   var si = anchors.indexOf(src), di = anchors.indexOf(dest);
+  var destParent = dest.parentNode;
   if (si < di) {
-   // moving down: place src pair after dest pair
-   parent.insertBefore(src, destContent.nextSibling);
-   parent.insertBefore(srcContent, destContent.nextSibling);
+   // moving down: place src pair right after dest pair, in dest's own parent
+   destParent.insertBefore(src, destContent.nextSibling);
+   destParent.insertBefore(srcContent, destContent.nextSibling);
   } else {
-   // moving up: place src pair before dest anchor
-   parent.insertBefore(src, dest);
-   parent.insertBefore(srcContent, dest);
+   // moving up: place src pair right before dest anchor, in dest's own parent
+   destParent.insertBefore(src, dest);
+   destParent.insertBefore(srcContent, dest);
   }
   try {
-   var order = [].slice.call(parent.querySelectorAll('.gen-section-anchor')).map(function(a0){ return a0.dataset.section; });
+   var order = [].slice.call(scope.querySelectorAll('.gen-section-anchor')).map(function(a0){ return a0.dataset.section; });
    localStorage.setItem('cardinal-genesis-section-order', JSON.stringify(order));
    GEN_SECTIONS_ORDER = order;
   } catch(_s) {}
