@@ -8393,7 +8393,6 @@ Template Overview
 <button type="button" onclick="eveStartNarration();toggleEveMoreMenu(false)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><path d="M4 4v16M4 4l16 8-16 8"/></svg> Walk me through this</button>
 </div>
 <span class="eve-drag-handle" id="eve-drag-handle" aria-label="Drag">&#x205A;&#x205A;&#x205A;</span>
-<button class="eve-min-btn" id="eve-btn-min" onclick="eveToggleMinimize()" aria-label="Minimize"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
 <button class="eve-ctrl-btn" id="eve-btn-close" onclick="eveCloseAndReset()" aria-label="Close">✕</button>
 </div>
 </div>
@@ -8415,7 +8414,7 @@ Template Overview
 </div>
 <div id="eve-peek-bubble" onclick="eveExpandFromPeek()"><span class="eve-peek-close" onclick="event.stopPropagation();eveHidePeekBubble()">&#x2715;</span><div style="display:flex;align-items:flex-start;gap:9px"><div class="eve-peek-avatar">&#10022;</div><div style="flex:1;min-width:0"><div class="eve-peek-label">Eve &middot; Critical Alert</div><div id="eve-peek-text"></div></div></div></div>
 <div id="eve-toggle-wrap">
-<div id="eve-hover-label">Eve — AI Governance Assistant (press E)</div>
+<div id="eve-hover-label">Eve · AI Governance Assistant (press E)</div>
 <div id="eve-toggle-btn" onclick="eveToggleFromOrbital()" aria-label="Open Eve assistant"><span id="eve-online-pulse" aria-hidden="true"></span><svg class="eve-icon" width="28" height="28" viewBox="0 0 30 30" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><circle cx="15" cy="15" r="9" stroke="rgba(167, 167, 167,0.6)" stroke-width="1.4"/><circle cx="15" cy="15" r="3.4" fill="rgba(167, 167, 167,0.95)" style="filter: drop-shadow(0 0 4px rgba(167, 167, 167,0.6))"/></svg><div id="eve-urgency-dot"></div></div>
 </div>
 </div>
@@ -22298,20 +22297,15 @@ function eveToggleMinimize() {
 }
 window.eveToggleMinimize = eveToggleMinimize;
 
+// Minimize was removed (it caused more confusion than it was worth), but
+// a stale 'minimized=1' can still be sitting in a returning user's
+// localStorage from before this change. Always clear it so an old flag
+// can never leave the panel stuck in a state with no way back out.
 function eveApplySavedMinimized() {
   var panel = document.getElementById('eve-panel');
   if (!panel) return;
-  var min = false;
-  try { min = localStorage.getItem(EVE_MINIMIZED_KEY) === '1'; } catch (_e) {}
-  if (min) {
-    panel.classList.add('minimized');
-    var btn = document.getElementById('eve-btn-min');
-    if (btn) { btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="5" width="14" height="14" rx="2"/></svg>'; btn.setAttribute('aria-label', 'Expand'); }
-  } else {
-    panel.classList.remove('minimized');
-    var btn2 = document.getElementById('eve-btn-min');
-    if (btn2) { btn2.innerHTML = '&#x2014;'; btn2.setAttribute('aria-label', 'Minimize'); }
-  }
+  panel.classList.remove('minimized');
+  try { localStorage.removeItem(EVE_MINIMIZED_KEY); } catch (_e) {}
 }
 
 function eveCloseAndReset() {
@@ -22526,13 +22520,6 @@ function eveBindKeyboardShortcuts() {
   document.addEventListener('keydown', function (ev) {
     var panel = document.getElementById('eve-panel');
     if (!panel || !panel.classList.contains('open')) return;
-
-    // CMD/CTRL + M: toggle minimize
-    if ((ev.metaKey || ev.ctrlKey) && (ev.key === 'm' || ev.key === 'M')) {
-      ev.preventDefault();
-      eveToggleMinimize();
-      return;
-    }
 
     // ESC behavior
     if (ev.key === 'Escape') {
