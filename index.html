@@ -19515,12 +19515,15 @@ function showScreen(name, navEl) {
     }, 80);
   }
  if(name==='compliance') buildCompliance(currentOrg);
+ if(name==='compliance') setTimeout(function(){ try { eveMaybeShowMilestoneNudge('compliance'); } catch(_mn){} }, 1400);
  if(name==='genesis') { setTimeout(()=>initGenesisLog(currentOrg),100); setTimeout(()=>buildPMProfiles(currentOrg),150); }
  if(name==='atonement') {
    try { buildAtonement((typeof currentOrg !== 'undefined' && currentOrg) ? currentOrg : window.currentOrg || 'ad'); } catch (_ab) {}
    if (typeof window.renderAtonementDeepView === 'function') {
      try { window.renderAtonementDeepView(typeof currentOrg !== 'undefined' ? currentOrg : 'ad'); } catch(e){}
    }
+
+   setTimeout(function(){ try { eveMaybeShowMilestoneNudge('atonement'); } catch(_mn){} }, 1400);
  }
  if(name==='myworkspace') {
     try { renderBigWorkspacePage(); } catch(e) { console.error('[BigWorkspace] render failed:', e); }
@@ -22444,6 +22447,36 @@ function eveMaybeShowHaloUrgentPeek() {
   eveShowPeekBubble('This needs your attention — tap to see what\'s going on.', { critical: true });
 }
 window.eveMaybeShowHaloUrgentPeek = eveMaybeShowHaloUrgentPeek;
+
+// Screen-aware milestone nudges: when the user lands on a screen tied to
+// a regulatory/remediation deadline, Eve proactively surfaces it via the
+// same peek-bubble mechanism used for critical Halo alerts. Fires once
+// per screen per session so it never nags.
+var eveNudgedScreens = {};
+function eveMaybeShowMilestoneNudge(screenName) {
+  if (eveNudgedScreens[screenName]) return;
+  var relevantScreens = { atonement: true, compliance: true };
+  if (!relevantScreens[screenName]) return;
+  var panel = document.getElementById('eve-panel');
+  if (panel && panel.classList.contains('open')) return;
+  var org = (typeof currentOrg !== 'undefined' && currentOrg) ? currentOrg : (window.currentOrg || 'ad');
+  var regs = (typeof DATA !== 'undefined' && DATA[org] && DATA[org].regs) || [];
+  var urgent = null;
+  for (var i = 0; i < regs.length; i++) {
+    var r = regs[i];
+    var d = (r.deadline || '').toLowerCase().trim();
+    var daysMatch = d.match(/^(\d+)\s*days?$/);
+    var isUrgent = r.c === 'red' || d === 'immediate' || (daysMatch && parseInt(daysMatch[1], 10) <= 30);
+    if (isUrgent) { urgent = r; break; }
+  }
+  if (!urgent) return;
+  eveNudgedScreens[screenName] = true;
+  var msg = screenName === 'atonement'
+    ? 'Heads up — ' + urgent.name + ' is ' + urgent.status.toLowerCase() + ', deadline ' + urgent.deadline + '. Want me to pull up the fix?'
+    : 'Heads up — ' + urgent.name + ' is ' + urgent.status.toLowerCase() + ', deadline ' + urgent.deadline + '. I can help you prep.';
+  eveShowPeekBubble(msg, { critical: urgent.c === 'red' });
+}
+window.eveMaybeShowMilestoneNudge = eveMaybeShowMilestoneNudge;
 
 function eveBindHeaderDrag() {
   var header = document.getElementById('eve-header');
