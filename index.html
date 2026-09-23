@@ -2876,11 +2876,13 @@ animation:waveform var(--dur) ease-in-out infinite alternate;
   border:1px solid rgba(167, 167, 167,0.35);
   display:flex;align-items:center;justify-content:center;
   cursor:pointer;color:var(--accent);
+  --eve-trust-ring: transparent;
   box-shadow:
     0 0 0 1px rgba(167, 167, 167,0.1),
     0 0 8px rgba(167, 167, 167,0.16),
     0 0 16px rgba(167, 167, 167,0.06),
-    inset 0 0 10px rgba(167, 167, 167,0.06);
+    inset 0 0 10px rgba(167, 167, 167,0.06),
+    0 0 0 2px var(--eve-trust-ring);
   transition:transform .3s ease, box-shadow .3s ease;
   position:relative;
   animation:evePulse 4s ease-in-out infinite;
@@ -12663,7 +12665,7 @@ function edoActiveCasePillsHtml() {
   if (cur !== 'all' && cur !== 'critical' && cur !== 'high' && cur !== 'medium') cur = 'all';
   function one(filt, label, tipT, tipB) {
     var active = cur === filt ? ' edo-case-pill--active' : '';
-    return '<button type="button" class="edo-case-pill btn-ghost' + active + '" style="font-size:10px" data-filter="' + filt + '" onclick=' + JSON.stringify('edoFilterCases(' + JSON.stringify(filt) + ')') + edoT(tipT, tipB) + '>' + label + '</button>';
+    return '<button type="button" class="edo-case-pill btn-ghost' + active + '" style="font-size:10px" data-filter="' + filt + '"' + edoOn('edoFilterCases', [filt]) + edoT(tipT, tipB) + '>' + label + '</button>';
   }
   return '<div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap">' +
     one('all', 'All', 'All Cases', 'All Cases / Show every active case regardless of severity.') +
@@ -12676,7 +12678,7 @@ function edoModelFilterPillsHtml() {
   var cur = String(window.__edo.mdlFilt || 'all');
   function one(filt, label, tipT, tipB) {
     var active = cur === filt ? ' edo-case-pill--active' : '';
-    return '<button type="button" class="edo-case-pill btn-ghost' + active + '" style="font-size:10px" data-filter="' + filt + '" onclick=' + JSON.stringify('edoFilterModels(' + JSON.stringify(filt) + ')') + edoT(tipT, tipB) + '>' + label + '</button>';
+    return '<button type="button" class="edo-case-pill btn-ghost' + active + '" style="font-size:10px" data-filter="' + filt + '"' + edoOn('edoFilterModels', [filt]) + edoT(tipT, tipB) + '>' + label + '</button>';
   }
   return '<div style="display:flex;gap:6px;flex-wrap:wrap;margin:8px 0">' +
     one('all', 'All', 'All Models', 'All Models / Show every monitored model regardless of status.') +
@@ -14758,6 +14760,19 @@ function formatDashTrustStatusHtml(d) {
   return '<span class="dash-trust-status-inner" style="display:inline-flex;align-items:center;gap:8px">' + (useCheck ? iconCheck : iconWarn) + '<span>' + esc(text) + '</span></span>';
 }
 
+// Eve toggle icon reflects the current org's Trust Score band (color-coded ring),
+// reusing the same trustColor already computed per-org in CARDINAL_DATA so the
+// icon always matches what the sidebar score badge shows -- no separate logic to
+// keep in sync.
+function eveUpdateTrustColor(color, score) {
+  var btn = document.getElementById('eve-toggle-btn');
+  if (!btn) return;
+  btn.style.setProperty('--eve-trust-ring', color || 'transparent');
+  if (typeof score !== 'undefined' && score !== null) {
+    btn.setAttribute('aria-label', 'Open Eve assistant (Trust Score ' + score + ')');
+  }
+}
+
 function applyCardinalData(org) {
   var d = cd(org);
   if (!d) return;
@@ -14765,6 +14780,8 @@ function applyCardinalData(org) {
   // Sidebar
   var setT = function(id, v) { var e = document.getElementById(id); if (e) e.textContent = v; };
   var setS = function(id, p, v) { var e = document.getElementById(id); if (e) e.style[p] = v; };
+
+  try { eveUpdateTrustColor(d.trustColor, d.trustScoreDisplay); } catch (_etc) {}
 
   setT('sidebar-user-name', d.user);
   setT('sidebar-user-org', d.org);
@@ -15768,12 +15785,39 @@ function renderAlert(index) {
   // Smart routing per alert type:
   // BIAS → eden, FRAUD → obsidian, REGULATION → compliance,
   // MODEL → modellibrary, INCIDENT → warroom.
+  // Deep-links into the specific case/model where the app has a real anchor for
+  // it (Eden/Obsidian case list, Model Library's Models tab), rather than only
+  // dropping the viewer on the core's landing page. Compliance and War Room
+  // don't yet have per-item anchors to jump to -- landing on the screen is the
+  // honest behavior there until those anchors exist (see overnight decision log).
   var typeToScreen = { BIAS: 'eden', FRAUD: 'obsidian', REGULATION: 'compliance', MODEL: 'modellibrary', INCIDENT: 'warroom' };
   var routeScreen = typeToScreen[String(a.type || '').toUpperCase()] || a.screen || 'eden';
+  var alertType = String(a.type || '').toUpperCase();
   if (btnEl) {
     btnEl.onclick = function (ev) {
       if (ev) { ev.preventDefault(); ev.stopPropagation(); }
       try { showScreen(routeScreen, null); } catch (_e) {}
+      if (alertType === 'BIAS' || alertType === 'FRAUD') {
+        try {
+          window.__edo = window.__edo || {};
+          window.__edo.org = org;
+          window.__edo.screen = routeScreen;
+          window.__edo.caseSev = 'critical';
+          if (routeScreen === 'eden' && typeof renderEden === 'function') renderEden(org);
+          if (routeScreen === 'obsidian' && typeof renderObsidian === 'function') renderObsidian(org);
+          setTimeout(function () {
+            var secId = routeScreen === 'eden' ? 'eden-sec-cases' : 'obs-sec-cases';
+            var el = document.getElementById(secId);
+            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }, 120);
+        } catch (_dl) {}
+      } else if (alertType === 'MODEL') {
+        try {
+          setTimeout(function () {
+            if (typeof switchMLTab === 'function') switchMLTab('models', 1);
+          }, 120);
+        } catch (_dl2) {}
+      }
     };
   }
 
@@ -21956,7 +22000,7 @@ const EVE_BACKUP_CONTACTS = {
 
 const EVE_RESPONSES = {
  ad:{
- default:"I am monitoring all your models. Most critical right now: Personnel Assignment model — DI 0.67, 847 affected. What would you like to know?",
+ default:"I am monitoring all your models. Most critical right now: Personnel Assignment model, DI 0.67, 847 affected. What would you like to know?",
  bias:"Personnel Assignment v2.4 shows disparate impact 0.67 — below DoD's 0.80 threshold. 847 personnel affected. Atonement Core has the fix ready. Want me to walk you through it?",
  fraud:"Fraud integrity score 91 — performing well. We blocked 14 threats in 30 days, protecting $2.1M. One bias-fraud link: demographic classification enables both bias AND identity spoofing. One fix addresses both.",
  fix:"Atonement Core: remove demographic_classification feature, replace with verified performance metrics. Expected Trust Score after fix: 84 — certified. Implementation: 14 days.",
@@ -21984,7 +22028,7 @@ const EVE_RESPONSES = {
 // ── Rotating Eve defaults (5 per industry, no immediate repeats) ──
 const EVE_DEFAULTS_ROTATION = {
  ad:[
-  "I am monitoring all your models. Most critical right now: Personnel Assignment model — DI 0.67, 847 affected. What would you like to know?",
+  "I am monitoring all your models. Most critical right now: Personnel Assignment model, DI 0.67, 847 affected. What would you like to know?",
   "Personnel Assignment v2.4 is still under DoD's 0.80 threshold. As Adam mentioned earlier, the demographic_classification feature has 0.81 protected-attribute correlation. Want the fix walkthrough?",
   "Cross-checking with Adam's latest run: Mission Readiness v1.0 looks clean (DI 0.91), but Maintenance Routing v1.2 has a geographic proxy on 112 records. Worth flagging in Eden.",
   "Today's signal: Trust Score 74, Bias 67, Fraud 91. The bias-fraud overlap is the demographic feature — fixing it lifts both scores simultaneously. Ready when you are.",
@@ -22030,10 +22074,14 @@ function getTimeGreeting() {
 // hardcoded while the greeting text correctly adapted to real time, so a
 // briefing opened at 10pm still said "Morning Briefing" over "Good evening".
 function getBriefingLabel() {
- var h = new Date().getHours();
- if (h < 12) return 'Morning Briefing';
- if (h < 17) return 'Afternoon Briefing';
- return 'Evening Briefing';
+ // Intentionally time-neutral: the greeting text itself (via getTimeGreeting/personalize)
+ // is already real-time and correctly says "Good morning/afternoon/evening" based on
+ // the viewer's actual clock. Making the BADGE also swing Morning/Afternoon/Evening
+ // creates a second, independent clock reading right next to a visible timestamp
+ // (e.g. "Eve - 10:16 PM") -- any small mismatch between them reads as a bug even
+ // when both are technically correct. One neutral label removes that failure mode
+ // entirely instead of trying to keep two clocks in sync.
+ return 'Daily Briefing';
 }
 
 // Personalize a message — replace "You" / generic greeting with current user
