@@ -5290,7 +5290,7 @@ Settings
 <div class="main">
 <div class="topbar">
 <div>
-<div class="topbar-title" id="topbar-title">Cardinal Governance Platform</div>
+<div class="topbar-title" id="topbar-title">Dashboard</div>
 <div class="topbar-subtitle" id="topbar-industry-context">Atlas Defense Systems · Aerospace & Defense</div>
 <div class="topbar-subtitle" id="topbar-sub" style="display:none;font-size:10px;color:var(--muted);opacity:0.92;"></div>
 </div>
@@ -15513,6 +15513,14 @@ function otpMove(el, idx) {
 function doLogin() {
   try {
     window.__cardinalUnlocked = true; // security: only allow Eve/Adam voice after real login completes
+    // Identity should not persist across a fresh login -- a saved persona from a prior
+    // session (e.g. someone previously opened the persona switcher) was surfacing as a
+    // different logged-in person than the sidebar, which showed the correct default
+    // separately. Every real login now starts clean on the org's default contact.
+    try {
+      localStorage.removeItem('cardinal-active-persona');
+      window.__activePersonaId = window.__defaultPersonaId || 'david-park';
+    } catch (_persReset) {}
     // Never auto-open Eve on login — she should only appear when the user asks for her.
     try {
       var evePanelOnLogin = document.getElementById('eve-panel');
@@ -19599,7 +19607,7 @@ function showScreen(name, navEl) {
  if(target) target.classList.add('active');
  if (name === 'genesis' && typeof showGenOverview === 'function') { showGenOverview(); }
  const titles = {
- dashboard:'Cardinal Governance Platform',
+ dashboard:'Dashboard',
  eden:'Eden Core — Bias Detection Engine',
  obsidian:'Obsidian Core — Fraud Detection + Bias-Fraud Connection',
  genesis:'Genesis Core — Testing Workspace & Coverage Analysis',
@@ -37244,7 +37252,7 @@ window.openModelDetail = openModelDetail;
 
       var topTitle = document.getElementById('topbar-title');
       var topSub = document.getElementById('topbar-sub');
-      if (topTitle) topTitle.textContent = 'Cardinal Governance Platform';
+      if (topTitle) topTitle.textContent = 'Dashboard';
       if (topSub) {
         topSub.textContent = 'Single pane of glass · all systems · live status';
         topSub.style.display = '';
@@ -37341,16 +37349,32 @@ function cardinalAskHideSuggestions() {
 function cardinalAskRenderThread() {
   var host = document.getElementById('cardinal-ask-thread');
   if (!host) return;
-  var hist = window.__cardinalAskHistory.slice(-4).reverse();
-  host.innerHTML = hist.map(function(item){
+  var full = window.__cardinalAskHistory;
+  var hist = full.slice(-4).reverse();
+  if (!hist.length) { host.innerHTML = ''; return; }
+  var clearBtn = full.length
+    ? '<div style="display:flex;justify-content:flex-end;margin-bottom:2px"><button type="button" onclick="cardinalAskResetThread()" style="background:none;border:none;color:var(--muted);font-size:10px;cursor:pointer;text-decoration:underline">Clear</button></div>'
+    : '';
+  var cards = hist.map(function(item){
     var qSafe = String(item.q || '').replace(/</g,'&lt;');
     var aSafe = String(item.a || '').replace(/</g,'&lt;');
+    var idx = full.indexOf(item);
     return '<div class="cardinal-ask-card">' +
-      '<div class="cardinal-ask-card-q">' + qSafe + '</div>' +
-      '<div class="cardinal-ask-card-a">' + aSafe + '</div>' +
-      '<div class="cardinal-ask-card-foot"><button type="button" class="cardinal-ask-continue" onclick="cardinalAskContinueInEve(' + JSON.stringify(item.q).replace(/"/g, '&quot;') + ')">Continue in Eve →</button></div>' +
+      '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px">' +
+        '<div class="cardinal-ask-card-q" style="margin-bottom:0">' + qSafe + '</div>' +
+        '<button type="button" onclick="cardinalAskDismiss(' + idx + ')" title="Dismiss" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:13px;line-height:1;flex-shrink:0;padding:0 2px">×</button>' +
+      '</div>' +
+      '<div class="cardinal-ask-card-a" style="margin-top:6px">' + aSafe + '</div>' +
+      '<div class="cardinal-ask-card-foot"><button type="button" class="cardinal-ask-continue" onclick="cardinalAskContinueInEve(' + JSON.stringify(item.q).replace(/"/g, '&quot;') + ')">Continue in Eve →</button>' +
+      '<span style="font-size:10px;color:var(--muted)">or just keep typing above</span></div>' +
     '</div>';
   }).join('');
+  host.innerHTML = clearBtn + cards;
+}
+
+function cardinalAskDismiss(idx) {
+  if (idx > -1) window.__cardinalAskHistory.splice(idx, 1);
+  cardinalAskRenderThread();
 }
 
 function cardinalAskSubmit(textArg) {
