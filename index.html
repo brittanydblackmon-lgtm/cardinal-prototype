@@ -12436,6 +12436,14 @@ window.openEchoCoreFiltered = function (coreLens) {
   // from a previous visit doesn't stack with it.
   window.__echoFilters = { timePeriod: 'all', core: coreLens || 'all', case: 'all', model: 'all', person: 'all', eventType: 'all', severity: 'all', accessTier: 'all' };
   if (typeof showScreen === 'function') showScreen('echo', null);
+  // Land at the top of the screen, not wherever the page happened to be scrolled to --
+  // otherwise the filter is applied correctly but it looks like nothing happened
+  // because the filtered results are off-screen above the fold.
+  try {
+    var contentEl = document.querySelector('.content');
+    if (contentEl) contentEl.scrollTop = 0;
+    window.scrollTo(0, 0);
+  } catch (_scrollTop) {}
 };
 
 /* ═════ Eden / Obsidian UI (renderEden, renderObsidian) ═════ */
@@ -13087,7 +13095,7 @@ window.edoHistModelSearchInput = function (lens, org, q) {
   var hits = Object.keys(mids).filter(function (m) { return m.toLowerCase().indexOf(qq) >= 0; }).slice(0, 14);
   if (!hits.length) { dd.style.display = 'none'; return; }
   dd.innerHTML = hits.map(function (m) {
-    return '<button type="button" class="btn-ghost" style="display:block;width:100%;text-align:left;font-size:10px;border-radius:0;border:none;border-bottom:1px solid var(--border2);color:var(--chrome2)" onclick="edoHistPickModel(' + JSON.stringify(lens) + ',' + JSON.stringify(org) + ',' + JSON.stringify(m) + ')">' + m + '</button>';
+    return '<button type="button" class="btn-ghost" style="display:block;width:100%;text-align:left;font-size:10px;border-radius:0;border:none;border-bottom:1px solid var(--border2);color:var(--chrome2)" onclick="edoHistPickModel(' + JSON.stringify(lens).replace(/"/g, '&quot;') + ',' + JSON.stringify(org).replace(/"/g, '&quot;') + ',' + JSON.stringify(m).replace(/"/g, '&quot;') + ')">' + m + '</button>';
   }).join('');
   dd.style.display = 'block';
 };
@@ -13251,7 +13259,7 @@ function edoBuildHistorySection(lens, d, org) {
   var searchBlock =
     '<div style="position:relative;margin:8px 0 10px">' +
     '<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center">' +
-    '<input type="search" id="' + idP + '-hist-model-q" placeholder="Search models in this industry\u2026" autocomplete="off" style="flex:1;min-width:200px;font-size:11px;padding:8px 10px;border-radius:8px;border:1px solid var(--border2);background:var(--bg3);color:var(--text);font-family:var(--sans)"' + edoT('Model search', 'Autocomplete models for this industry. Choosing one filters the chart and opens the Model Detail drill-in.') + ' oninput="edoHistModelSearchInput(' + JSON.stringify(lens) + ',' + JSON.stringify(org) + ',this.value)" />' +
+    '<input type="search" id="' + idP + '-hist-model-q" placeholder="Search models in this industry\u2026" autocomplete="off" style="flex:1;min-width:200px;font-size:11px;padding:8px 10px;border-radius:8px;border:1px solid var(--border2);background:var(--bg3);color:var(--text);font-family:var(--sans)"' + edoT('Model search', 'Autocomplete models for this industry. Choosing one filters the chart and opens the Model Detail drill-in.') + ' oninput="edoHistModelSearchInput(' + JSON.stringify(lens).replace(/"/g, '&quot;') + ',' + JSON.stringify(org).replace(/"/g, '&quot;') + ',this.value)" />' +
     '<button type="button" class="btn-ghost" style="font-size:10px"' + edoOn('edoClearHistModelFilter', [lens, org]) + edoT('Clear chart filter', 'Remove model-specific trajectory overlay from the chart.') + '>Clear filter</button>' +
     filtBadge + '</div>' +
     '<div id="' + idP + '-hist-search-dd" style="display:none;position:absolute;left:0;top:100%;margin-top:4px;z-index:80;background:var(--card);border:1px solid var(--border2);border-radius:8px;max-height:200px;overflow-y:auto;min-width:min(360px,92vw);box-shadow:0 12px 32px rgba(0,0,0,.45)"></div></div>';
@@ -36005,7 +36013,18 @@ window.renderTrustLoopWeeklyDigest = function() {
   var attribution = orgData.haloAttribution || [];
 
   var sevenDays = 7 * 24 * 3600 * 1000;
+  // "Last 7 days" used to mean the last 7 days of real wall-clock time -- but every
+  // seeded memory in this demo is dated within the story's own timeline (roughly
+  // Nov 2025 - May 2026), which is now months behind today's real date. That mismatch
+  // made every stat in this digest read 0 regardless of how much activity is in the
+  // data. Anchor "now" to the most recent event actually in this org's data instead,
+  // so the digest reflects the latest week of the story, not the calendar.
   var now = Date.now();
+  var latestMemTs = allMems.reduce(function(max, m){
+    var t = new Date(m.timestamp).getTime();
+    return (!isNaN(t) && t > max) ? t : max;
+  }, 0);
+  if (latestMemTs > 0 && latestMemTs < now) now = latestMemTs;
   var recentMems = allMems.filter(function(m){ return (now - new Date(m.timestamp).getTime()) <= sevenDays; });
 
   var sealedCount = recentMems.filter(function(m){ return m.isSealed; }).length;
@@ -36339,9 +36358,9 @@ function buildSentinel(org) {
           ? '<span title="Adam/Eve orchestration enforcing Sentinel workflow on this row (prototype)." style="cursor:help;font-size:13px">\u2699</span>'
           : '<span style="color:var(--muted)" title="Human-led monitoring">\u2014</span>') +
         '</td>' +
-        '<td style="padding:8px 6px"><button type="button" class="btn-primary" style="font-size:10px;padding:4px 10px" title="Open Sentinel case detail with embedded channel" onclick="cardinalSentinelUiOpenCase(' +
-        JSON.stringify(cid) +
-        ')">Open</button></td>' +
+        '<td style="padding:8px 6px"><button type="button" class="btn-primary" style="font-size:10px;padding:4px 10px" title="Open Sentinel case detail with embedded channel" onclick="cardinalSentinelUiOpenCase(\'' +
+        cid.replace(/\\/g, '\\\\').replace(/'/g, "\\'") +
+        '\')">Open</button></td>' +
         '</tr>'
       );
     })
@@ -36772,7 +36791,7 @@ window.mdmSearchInput = function (q) {
   if (!hits.length) { dd.style.display = 'none'; return; }
   dd.innerHTML = hits.map(function (k) {
     var nm = (reg[k].identity && reg[k].identity.name) || k;
-    return '<button type="button" class="btn-ghost" style="display:block;width:100%;text-align:left;font-size:10px;border-radius:0;border:none;border-bottom:1px solid var(--border2);color:var(--chrome2)" onclick="mdmSearchPick(' + JSON.stringify(k) + ')">' + mdmEsc(nm) + '</button>';
+    return '<button type="button" class="btn-ghost" style="display:block;width:100%;text-align:left;font-size:10px;border-radius:0;border:none;border-bottom:1px solid var(--border2);color:var(--chrome2)" onclick="mdmSearchPick(' + JSON.stringify(k).replace(/"/g, '&quot;') + ')">' + mdmEsc(nm) + '</button>';
   }).join('');
   dd.style.display = 'block';
 };
@@ -36798,16 +36817,16 @@ function mdmPaintDrillInBody(det, resolvedKey) {
     return '<tr><td style="padding:6px;font-size:10px">' + mdmEsc(p.type || '') + '</td><td style="padding:6px;font-size:10px;color:var(--chrome2)">' + mdmEsc(p.dollars != null ? p.dollars : '') + '</td><td style="padding:6px;font-size:10px">' + mdmEsc(String(p.cases != null ? p.cases : '')) + '</td></tr>';
   }).join('');
   var cases = (det.linkedCases || []).map(function (cid) {
-    return '<tr style="cursor:pointer" onclick="mdmOpenCaseFromDetail(' + JSON.stringify(String(cid)) + ')"><td style="padding:8px;font-size:10px;color:var(--accent)">' + mdmEsc(cid) + '</td><td style="padding:8px;font-size:10px">\u2014</td><td style="padding:8px;font-size:10px">\u2014</td><td style="padding:8px;font-size:10px">\u2014</td><td style="padding:8px;font-size:10px">Open</td></tr>';
+    return '<tr style="cursor:pointer" onclick="mdmOpenCaseFromDetail(' + JSON.stringify(String(cid)).replace(/"/g, '&quot;') + ')"><td style="padding:8px;font-size:10px;color:var(--accent)">' + mdmEsc(cid) + '</td><td style="padding:8px;font-size:10px">\u2014</td><td style="padding:8px;font-size:10px">\u2014</td><td style="padding:8px;font-size:10px">\u2014</td><td style="padding:8px;font-size:10px">Open</td></tr>';
   }).join('') || '<tr><td colspan="5" style="padding:10px;font-size:10px;color:var(--muted)">No linked cases in seed data.</td></tr>';
   var lineage = (det.lineage || []).map(function (ln) {
     return '<div style="flex:1;min-width:100px;background:var(--bg3);border:1px solid var(--border2);border-radius:10px;padding:10px;text-align:center"><div style="font-size:9px;color:var(--muted)">' + mdmEsc(ln.phase || '') + '</div><div style="font-size:11px;font-weight:700;margin-top:4px;color:var(--chrome2)">' + mdmEsc(ln.label || '') + '</div><div style="font-size:9px;color:var(--muted2);margin-top:4px">' + mdmEsc(ln.note || '') + '</div></div>';
   }).join('');
   var cohorts = (det.cohortsAffected || []).map(function (c) {
-    return '<div style="cursor:pointer;background:var(--bg3);border:1px solid var(--border2);border-radius:10px;padding:12px;flex:1;min-width:140px" onclick="mdmGoCohortFromDetail(' + JSON.stringify(c) + ')"><div style="font-size:10px;font-weight:700;color:var(--chrome2)">Cohort</div><div style="font-size:10px;color:var(--muted);margin-top:4px">' + mdmEsc(c) + ' \u2014 Explorer</div></div>';
+    return '<div style="cursor:pointer;background:var(--bg3);border:1px solid var(--border2);border-radius:10px;padding:12px;flex:1;min-width:140px" onclick="mdmGoCohortFromDetail(' + JSON.stringify(c).replace(/"/g, '&quot;') + ')"><div style="font-size:10px;font-weight:700;color:var(--chrome2)">Cohort</div><div style="font-size:10px;color:var(--muted);margin-top:4px">' + mdmEsc(c) + ' \u2014 Explorer</div></div>';
   }).join('') || '<div style="font-size:10px;color:var(--muted)">No cohorts linked in seed.</div>';
   var echo = (det.echoLogTail || []).map(function (eid) {
-    return '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(180,190,220,.06)"><code style="font-size:10px;color:var(--muted2)">' + mdmEsc(eid) + '</code><button type="button" class="btn-ghost" style="font-size:9px;padding:4px 8px" title="Open Echo Memory" onclick="mdmOpenEchoFromDetail(' + JSON.stringify(eid) + ')">View</button></div>';
+    return '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(180,190,220,.06)"><code style="font-size:10px;color:var(--muted2)">' + mdmEsc(eid) + '</code><button type="button" class="btn-ghost" style="font-size:9px;padding:4px 8px" title="Open Echo Memory" onclick="mdmOpenEchoFromDetail(' + JSON.stringify(eid).replace(/"/g, '&quot;') + ')">View</button></div>';
   }).join('') || '<div style="font-size:10px;color:var(--muted)">No Echo memories.</div>';
 
   return (
