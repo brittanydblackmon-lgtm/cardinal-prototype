@@ -2157,6 +2157,66 @@ line-height: 1; margin-bottom: 5px;
   max-height: 340px;
   overflow: hidden;
 }
+/* Live activity ticker */
+.dash-activity-ticker {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--card);
+  border: 1px solid var(--border2);
+  border-radius: 10px;
+  padding: 9px 14px;
+  margin-bottom: 14px;
+  overflow: hidden;
+}
+.dash-activity-ticker-live {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.6px;
+  color: #ef4444;
+}
+.dash-activity-ticker-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #ef4444;
+  animation: dashTickerPulse 1.6s ease-in-out infinite;
+}
+@keyframes dashTickerPulse {
+  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(239,68,68,0.5); }
+  50% { opacity: 0.5; box-shadow: 0 0 0 4px rgba(239,68,68,0); }
+}
+.dash-activity-ticker-track {
+  flex: 1;
+  min-width: 0;
+  font-size: 11px;
+  color: var(--muted2, #94a3b8);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+  opacity: 1;
+  transition: opacity 0.35s ease;
+}
+.dash-activity-ticker-track.dash-ticker-fade {
+  opacity: 0;
+}
+.dash-activity-ticker-track strong {
+  color: var(--text);
+  font-weight: 600;
+}
+/* Chart entrance animation, retriggered on each dashboard render */
+.dash-chart-animate-in {
+  animation: dashChartFadeUp 0.6s ease-out;
+}
+@keyframes dashChartFadeUp {
+  0% { opacity: 0; transform: translateY(8px) scaleY(0.96); transform-origin: bottom; }
+  100% { opacity: 1; transform: translateY(0) scaleY(1); }
+}
 #dash-race-bars-root { max-height: 280px; overflow: hidden; }
 .dash-demo-geo-grid {
   display: grid;
@@ -5354,6 +5414,15 @@ Settings
 </div>
 
 <div id="dash-active-channels-host"></div>
+
+<!-- LIVE ACTIVITY TICKER -->
+<div id="dash-activity-ticker" class="dash-activity-ticker" style="display:none;">
+  <div class="dash-activity-ticker-live">
+    <span class="dash-activity-ticker-dot"></span>
+    <span>LIVE</span>
+  </div>
+  <div class="dash-activity-ticker-track" id="dash-activity-ticker-track"></div>
+</div>
 
 <!-- ░░░ DASHBOARD REDESIGN ░░░ -->
 
@@ -15079,6 +15148,97 @@ function initDashboardCharts() {
   try { drawDashGenderCompare(); } catch(e) { console.log('gender compare:', e.message); }
   try { drawDashAgeChart(); } catch(e) { console.log('age chart:', e.message); }
   try { drawDashProtectedDots(); } catch(e) { console.log('protected dots:', e.message); }
+  try { dashAnimateChartEntrance(); } catch(e) { console.log('chart entrance anim:', e.message); }
+}
+
+// Retrigger a subtle fade/rise-in on the three demographic chart boxes every time the
+// dashboard's charts are (re)drawn, so navigating back to Dashboard feels alive instead
+// of the charts just snapping into place. Removing then re-adding the class is what lets
+// the CSS animation replay on repeat visits (a class that's already present won't re-fire).
+function dashAnimateChartEntrance() {
+  var ids = ['dash-gender-compare-wrap', 'dash-age-chart-wrap'];
+  var extra = document.getElementById('dash-race-bars-root');
+  var els = ids.map(function (id) { return document.getElementById(id); }).filter(Boolean);
+  if (extra && extra.parentNode) els.push(extra.parentNode);
+  els.forEach(function (el) {
+    el.classList.remove('dash-chart-animate-in');
+    void el.offsetWidth; // force reflow so the animation restarts
+    el.classList.add('dash-chart-animate-in');
+  });
+}
+
+// ── Live activity ticker: rotates through real seeded decision-receipt events for the
+// current org, presented as a live feed. Uses the latest timestamp actually present in
+// the data as "now" (matching the anchoring approach used in the Sentinel weekly digest
+// fix) so relative times read as "recent" instead of months stale against the real clock.
+function dashBuildActivityTicker(org) {
+  var wrap = document.getElementById('dash-activity-ticker');
+  var track = document.getElementById('dash-activity-ticker-track');
+  if (!wrap || !track) return;
+  var all = (typeof window.DECISION_RECEIPTS !== 'undefined' && Array.isArray(window.DECISION_RECEIPTS)) ? window.DECISION_RECEIPTS : [];
+  var rows = all.filter(function (r) { return r.industryContext === org; })
+    .slice()
+    .sort(function (a, b) { return new Date(b.issuedDate).getTime() - new Date(a.issuedDate).getTime(); });
+  if (!rows.length) { wrap.style.display = 'none'; if (window.__dashTickerTimer) { clearInterval(window.__dashTickerTimer); window.__dashTickerTimer = null; } return; }
+
+  var latestTs = rows.reduce(function (max, r) {
+    var t = new Date(r.issuedDate).getTime();
+    return (!isNaN(t) && t > max) ? t : max;
+  }, 0);
+  var nowAnchor = latestTs > 0 ? latestTs : Date.now();
+
+  function relTime(iso) {
+    var t = new Date(iso).getTime();
+    if (isNaN(t)) return '';
+    var diffMs = Math.max(0, nowAnchor - t);
+    var mins = Math.round(diffMs / 60000);
+    if (mins < 1) return 'just now';
+    if (mins < 60) return mins + 'm ago';
+    var hrs = Math.round(mins / 60);
+    if (hrs < 24) return hrs + 'h ago';
+    var days = Math.round(hrs / 24);
+    return days + 'd ago';
+  }
+  function typeLabel(t) {
+    if (t === 'counterfactual') return 'issued a counterfactual receipt for';
+    if (t === 'deployment') return 'logged a deployment event for';
+    return 'recorded an event for';
+  }
+
+  var items = rows.slice(0, 10).map(function (r, idx) {
+    var caseLbl = (r.linkedCaseId || r.contents && r.contents.caseLabel || '').replace(/^#/, '');
+    var model = r.linkedModelId || (r.contents && r.contents.modelVersion) || '';
+    var html = '<strong>' + esc0(r.issuedBy || 'Cardinal') + '</strong> ' + esc0(typeLabel(r.receiptType)) +
+      ' <strong>' + esc0(caseLbl) + '</strong>' + (model ? ' · ' + esc0(model) : '') +
+      ' <span style="opacity:.65">— ' + relTime(r.issuedDate) + '</span>';
+    return { html: html, receiptId: r.receiptId, caseId: caseLbl };
+  });
+
+  function esc0(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]; }); }
+
+  wrap.style.display = 'flex';
+  window.__dashTickerItems = items;
+  window.__dashTickerIdx = 0;
+
+  function paint(i) {
+    var it = items[i % items.length];
+    if (!it) return;
+    track.classList.add('dash-ticker-fade');
+    setTimeout(function () {
+      track.innerHTML = it.html;
+      track.onclick = it.caseId ? function () {
+        if (typeof window.cardinalSentinelUiOpenCase === 'function') window.cardinalSentinelUiOpenCase(it.caseId);
+      } : null;
+      track.classList.remove('dash-ticker-fade');
+    }, 220);
+  }
+  paint(0);
+
+  if (window.__dashTickerTimer) clearInterval(window.__dashTickerTimer);
+  window.__dashTickerTimer = setInterval(function () {
+    window.__dashTickerIdx = (window.__dashTickerIdx + 1) % items.length;
+    paint(window.__dashTickerIdx);
+  }, 4500);
 }
 
 function _hidpiCanvas(c, cssW, cssH) {
@@ -15631,6 +15791,7 @@ function doLogin() {
     try { updateDashboardIndustry(currentOrg); } catch(eUDI) { console.log('updateDashboardIndustry:', eUDI.message); }
     try { applyCardinalData(currentOrg); } catch (eACD) { console.log('applyCardinalData:', eACD.message); }
     try { renderDashboardActiveChannels(currentOrg); } catch (eDAC) { console.log('renderDashboardActiveChannels:', eDAC.message); }
+    try { dashBuildActivityTicker(currentOrg); } catch (_eTk0) {}
     try { window.currentAlertIndex = 0; renderAlert(0); } catch (_eAlerts) {}
     try { refreshDashboardGreeting(); } catch(e5) {}
     try {
@@ -19193,6 +19354,7 @@ function updateDashboardIndustry(org) {
   if (cfg.demoSecEthnic) safeSet('dr-demo-sec-ethnic', cfg.demoSecEthnic);
 
   try { dashApplyExecutiveCards(org); } catch (_ecx) {}
+  try { dashBuildActivityTicker(org); } catch (_etk) {}
 
   window.currentAlertIndex = 0;
   try { renderAlert(0); } catch (_ra) {}
@@ -19727,7 +19889,12 @@ function showScreen(name, navEl) {
         dashboardRestoreDashboardLayoutAfterRender();
       } catch (_dl) {}
       try { renderDashboardActiveChannels((typeof currentOrg !== 'undefined' && currentOrg) ? currentOrg : window.currentOrg || 'ad'); } catch (_rda) {}
+      try { dashBuildActivityTicker((typeof currentOrg !== 'undefined' && currentOrg) ? currentOrg : window.currentOrg || 'ad'); } catch (_rdt) {}
     }, 80);
+  } else {
+    // Leaving Dashboard: stop the ticker's rotation timer so it doesn't keep firing
+    // (and stacking, the same class of bug as the earlier canvas HiDPI issue) in the background.
+    if (window.__dashTickerTimer) { clearInterval(window.__dashTickerTimer); window.__dashTickerTimer = null; }
   }
  if(name==='compliance') buildCompliance(currentOrg);
  if(name==='compliance') setTimeout(function(){ try { eveMaybeShowMilestoneNudge('compliance'); } catch(_mn){} }, 1400);
