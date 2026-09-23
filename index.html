@@ -36012,20 +36012,22 @@ window.renderTrustLoopWeeklyDigest = function() {
   var allMems = orgData.echoMemories || [];
   var attribution = orgData.haloAttribution || [];
 
-  var sevenDays = 7 * 24 * 3600 * 1000;
-  // "Last 7 days" used to mean the last 7 days of real wall-clock time -- but every
+  // This window used to mean "the last 7 days of real wall-clock time" -- but every
   // seeded memory in this demo is dated within the story's own timeline (roughly
-  // Nov 2025 - May 2026), which is now months behind today's real date. That mismatch
-  // made every stat in this digest read 0 regardless of how much activity is in the
-  // data. Anchor "now" to the most recent event actually in this org's data instead,
-  // so the digest reflects the latest week of the story, not the calendar.
+  // Nov 2025 - May 2026), which is now months behind today's real date, and even once
+  // anchored to the story's own latest event, a strict 7-day slice is too narrow: the
+  // seed data isn't dense enough for most orgs to have a bias/deployment/case event in
+  // any single week, so the digest read 0 across the board either way. Anchor to the
+  // latest event in this org's own data (not the calendar) and widen to 30 days so the
+  // digest actually reflects real recent activity in the story.
+  var digestWindowMs = 30 * 24 * 3600 * 1000;
   var now = Date.now();
   var latestMemTs = allMems.reduce(function(max, m){
     var t = new Date(m.timestamp).getTime();
     return (!isNaN(t) && t > max) ? t : max;
   }, 0);
   if (latestMemTs > 0 && latestMemTs < now) now = latestMemTs;
-  var recentMems = allMems.filter(function(m){ return (now - new Date(m.timestamp).getTime()) <= sevenDays; });
+  var recentMems = allMems.filter(function(m){ return (now - new Date(m.timestamp).getTime()) <= digestWindowMs; });
 
   var sealedCount = recentMems.filter(function(m){ return m.isSealed; }).length;
   var biasDetected = recentMems.filter(function(m){ return m.eventType === 'bias-detected'; }).length;
@@ -36046,7 +36048,7 @@ window.renderTrustLoopWeeklyDigest = function() {
       '<div>' +
         '<div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;">' +
           '<span style="font-size:11px;color:#a855f7;text-transform:uppercase;letter-spacing:1px;font-weight:800;">✦ EVE\'S WEEKLY DIGEST</span>' +
-          '<span style="font-size:9px;color:var(--muted);background:rgba(167, 167, 167,0.05);padding:2px 7px;border-radius:8px;font-family:monospace;">last 7 days</span>' +
+          '<span style="font-size:9px;color:var(--muted);background:rgba(167, 167, 167,0.05);padding:2px 7px;border-radius:8px;font-family:monospace;">last 30 days</span>' +
         '</div>' +
         '<div style="font-size:18px;color:var(--chrome2);font-weight:700;letter-spacing:-0.3px;">Trust Loop Activity Summary</div>' +
       '</div>' +
