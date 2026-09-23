@@ -5305,7 +5305,7 @@ Settings
 <button class="ind-btn active" onclick="switchIndustry('ad',this)" title="A&D — Atlas Defense Systems · DoD AI Ethics + Title VII">A&D</button>
 <button class="ind-btn" onclick="switchIndustry('fin',this)" title="Finance — Blackmoor Wealth · ECOA + NYC LL144 + CO AI Act">Finance</button>
 <button class="ind-btn" onclick="switchIndustry('health',this)" title="Healthcare — Sterling Health · ACA §1557 + HIPAA">Healthcare</button>
-<button class="ind-btn" onclick="switchIndustry('fed',this)" title="Federal Civilian — pre-deployment vetting under May 2026 EO"><span style="display:inline-block;font-size:13px;line-height:1;margin-right:3px;">🏛️</span>Federal</button>
+<button class="ind-btn" onclick="switchIndustry('fed',this)" title="Federal Civilian — pre-deployment vetting under May 2026 EO">Federal</button>
 </div>
 <div class="topbar-alert" id="topbar-critical-cases" onclick="cardinalOpenSentinelCases('critical')" title="Open Sentinel — Critical Cases">
 <span class="alert-dot"></span>
@@ -23568,6 +23568,32 @@ window.cardinalOpenSentinelCases = function (severityFilter) {
   var sf = severityFilter != null && severityFilter !== '' ? map[String(severityFilter).toLowerCase()] || null : null;
   window.__sentinelSeverityFilter = sf;
   window.__sentinelTypeFilter = null;
+  // The "1 Critical Case" topbar pill used to just land you on the filtered case
+  // list -- when the filter narrows things down to exactly one case (the common
+  // case for "1 Critical Case"), open that case's file directly instead, since
+  // that's what a single-count badge like that implies it'll do.
+  try {
+    if (sf) {
+      var org = (typeof currentOrg !== 'undefined' && currentOrg) || window.currentOrg || 'ad';
+      var d = (typeof cd === 'function') ? cd(org) : null;
+      if (d) {
+        var rawAll = (d.biasIncidentsActive || []).concat(d.fraudIncidentsActive || []);
+        var seen = {};
+        var matches = [];
+        for (var ri = 0; ri < rawAll.length; ri++) {
+          var cx = rawAll[ri];
+          var cidKey = String(cx.caseId || '').replace(/^#/, '');
+          if (!cidKey || seen[cidKey]) continue;
+          seen[cidKey] = true;
+          if (cx.severity === sf) matches.push(cidKey);
+        }
+        if (matches.length === 1) {
+          window.cardinalSentinelUiOpenCase(matches[0]);
+          return;
+        }
+      }
+    }
+  } catch (_eOpen) {}
   try {
     if (typeof showScreen === 'function') showScreen('sentinel', null);
   } catch (_e) {}
