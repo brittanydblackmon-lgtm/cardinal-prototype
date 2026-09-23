@@ -32629,18 +32629,23 @@ window.renderLibUseCases = function() {
     return;
   }
 
+  // Default to the industry you're currently viewing, not an "All Industries" view --
+  // you can still hop to another industry's library from here, you just don't land
+  // on a mixed-everything view first.
+  var __libCurOrg = (typeof currentOrg !== 'undefined' && currentOrg) || window.currentOrg || 'ad';
+  window.__libFilters.industry = __libCurOrg;
+
   var html = '<div style="display:flex;gap:14px;margin-bottom:14px;flex-wrap:wrap;align-items:center;">';
   html += '<div style="display:flex;gap:6px;">';
-  html +=
-    '<button class="lib-filter-btn active" data-lib-filter-ind="all" onclick="cardinalLibFilterUseCases(\'industry\', \'all\', this)" style="padding:5px 11px;background:rgba(167, 167, 167,0.10);border:1px solid rgba(167, 167, 167,0.30);border-radius:7px;font-size:10px;color:var(--accent);font-weight:600;cursor:pointer;">All Industries</button>';
   ['fin', 'health', 'ad', 'fed'].forEach(function(ind) {
     var label = { fin: 'Finance', health: 'Healthcare', ad: 'A&D', fed: 'Federal' }[ind];
+    var isCur = ind === __libCurOrg;
     html +=
-      '<button class="lib-filter-btn" data-lib-filter-ind="' +
+      '<button class="lib-filter-btn' + (isCur ? ' active' : '') + '" data-lib-filter-ind="' +
       ind +
       '" onclick="cardinalLibFilterUseCases(\'industry\', \'' +
       ind +
-      '\', this)" style="padding:5px 11px;background:transparent;border:1px solid rgba(167, 167, 167,0.18);border-radius:7px;font-size:10px;color:var(--muted);font-weight:600;cursor:pointer;">' +
+      '\', this)" style="padding:5px 11px;background:' + (isCur ? 'rgba(167, 167, 167,0.10)' : 'transparent') + ';border:1px solid ' + (isCur ? 'rgba(167, 167, 167,0.30)' : 'rgba(167, 167, 167,0.18)') + ';border-radius:7px;font-size:10px;color:' + (isCur ? 'var(--accent)' : 'var(--muted)') + ';font-weight:600;cursor:pointer;">' +
       label +
       '</button>';
   });
