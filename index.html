@@ -5130,9 +5130,20 @@ Eden Core
 <svg class="nav-icon" viewBox="0 0 14 14" fill="none"><path d="M7 1.5l5.5 9.5H1.5L7 1.5z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>
 Obsidian Core
 </div>
-<div class="nav-item" onclick="showScreen('genesis',this)">
+<div class="nav-item" onclick="showScreen('genesis',this)" style="display:flex;align-items:center">
 <svg class="nav-icon" viewBox="0 0 14 14" fill="none"><rect x="1.5" y="1.5" width="4" height="4" rx="0.8" stroke="currentColor" stroke-width="1.4"/><rect x="8.5" y="1.5" width="4" height="4" rx="0.8" stroke="currentColor" stroke-width="1.4"/><rect x="1.5" y="8.5" width="4" height="4" rx="0.8" stroke="currentColor" stroke-width="1.4"/><rect x="8.5" y="8.5" width="4" height="4" rx="0.8" stroke="currentColor" stroke-width="1.4"/></svg>
-Genesis Core
+<span style="flex:1">Genesis Core</span>
+<span id="genesis-subnav-chevron" onclick="event.stopPropagation();toggleGenesisSubnav();" style="padding:2px 4px;transition:transform .2s ease;color:var(--sidebar-muted)">&#8250;</span>
+</div>
+<div class="nav-subnav" id="genesis-subnav">
+<div class="nav-subitem" onclick="event.stopPropagation();isolateGenSection('counterfactual');">Counterfactual</div>
+<div class="nav-subitem" onclick="event.stopPropagation();isolateGenSection('intersectionality');">Intersectionality</div>
+<div class="nav-subitem" onclick="event.stopPropagation();isolateGenSection('coverage');">Coverage Gaps</div>
+<div class="nav-subitem" onclick="event.stopPropagation();isolateGenSection('ab');">A/B Workspace</div>
+<div class="nav-subitem" onclick="event.stopPropagation();isolateGenSection('cohort');">Cohort Analysis</div>
+<div class="nav-subitem" onclick="event.stopPropagation();isolateGenSection('adam');">Adam Testing</div>
+<div class="nav-subitem" onclick="event.stopPropagation();isolateGenSection('pmprofiles');">PM-Profiles</div>
+<div class="nav-subitem" onclick="event.stopPropagation();isolateGenSection('compare');">Model Compare</div>
 </div>
 <div class="nav-item" onclick="showScreen('atonement',this)">
 <svg class="nav-icon" viewBox="0 0 14 14" fill="none"><path d="M2.5 7h9M7 2.5l4.5 4.5L7 11.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -5470,13 +5481,35 @@ Settings
 <div id="screen-genesis" class="screen">
 <div class="section-hdr" style="margin-bottom:14px">
 <div>
-<div style="font-size:15px;font-weight:600;color:var(--chrome2)">Genesis Core — Diagnose, Test & Prove</div>
+<div style="font-size:15px;font-weight:600;color:var(--chrome2)">Genesis Core — Diagnose, Test &amp; Prove <span onclick="openGenRoadmap()" style="font-size:11px;font-weight:600;color:var(--accent);cursor:pointer;text-decoration:underline;text-underline-offset:2px">(Roadmap)</span></div>
 <div style="font-size:11px;color:var(--muted);margin-top:2px">User testing · Adam autonomous testing · Synthetic profiles · Cohort library · Model library</div>
 </div>
 
 <div style="display:flex;gap:8px">
 <button class="btn-ghost" onclick="switchGenTab('coverage',2)">Coverage Scan</button>
 <button class="btn-primary" onclick="openNewTestModal()">+ New Test</button>
+</div>
+</div>
+
+<div id="gen-isolate-bar" style="display:none;align-items:center;gap:8px;margin-bottom:14px">
+<button class="btn-ghost" onclick="restoreGenFullView()" style="font-size:11px">&larr; All sections</button>
+<span style="font-size:11px;color:var(--muted)">Showing one section &mdash; drag isn't available in this view</span>
+</div>
+
+<div id="gen-roadmap-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:2000;align-items:center;justify-content:center" onclick="if(event.target===this)closeGenRoadmap()">
+<div style="background:var(--card);border:1px solid var(--border2);border-radius:14px;padding:28px;max-width:480px;width:90%;position:relative">
+<button onclick="closeGenRoadmap()" style="position:absolute;top:14px;right:14px;background:transparent;border:none;color:var(--muted);cursor:pointer;font-size:16px">&times;</button>
+<div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Genesis Core Roadmap</div>
+<div style="display:flex;align-items:baseline;gap:10px;margin-bottom:10px">
+<div id="gen-roadmap-stage-label" style="font-size:20px;font-weight:700;color:var(--chrome2)"></div>
+<span id="gen-roadmap-stage-tag" class="badge badge-amber" style="font-size:10px"></span>
+</div>
+<div id="gen-roadmap-stage-copy" style="font-size:13px;color:var(--muted2);line-height:1.7;min-height:90px"></div>
+<div style="display:flex;align-items:center;justify-content:space-between;margin-top:20px">
+<button id="gen-roadmap-prev" class="btn-ghost" onclick="genRoadmapStep(-1)" style="font-size:11px">&larr; Back</button>
+<div id="gen-roadmap-dots"></div>
+<button id="gen-roadmap-next" class="btn-primary" onclick="genRoadmapStep(1)" style="font-size:11px">Next &rarr;</button>
+</div>
 </div>
 </div>
 
@@ -5503,7 +5536,7 @@ Settings
 </div>
 
 
-<div style="font-size:14px;font-weight:600;color:var(--chrome2);margin:22px 0 10px" id="gen-anchor-counterfactual">Counterfactual</div>
+<div class="gen-section-anchor" draggable="true" data-section="counterfactual" style="font-size:14px;font-weight:600;color:var(--chrome2);margin:22px 0 10px;display:flex;align-items:center" id="gen-anchor-counterfactual"><span class="gen-section-drag-handle" draggable="true" title="Drag to reorder section" onclick="event.stopPropagation();" style="cursor:grab;color:rgba(167,167,167,.4);font-size:13px;margin-right:8px;line-height:1">&#10495;</span>Counterfactual</div>
 <div id="gen-tab-counterfactual" class="gen-tab-content">
 <div class="grid-2" style="margin-bottom:14px">
 <div class="card">
@@ -5559,7 +5592,7 @@ Settings
 <div id="cf-run-result" style="margin-top:12px;display:none"></div>
 </div>
 </div>
-<div style="font-size:14px;font-weight:600;color:var(--chrome2);margin:22px 0 10px;padding-top:16px;border-top:1px solid rgba(167,167,167,.15)" id="gen-anchor-intersectionality">Intersectionality</div>
+<div class="gen-section-anchor" draggable="true" data-section="intersectionality" style="font-size:14px;font-weight:600;color:var(--chrome2);margin:22px 0 10px;padding-top:16px;border-top:1px solid rgba(167,167,167,.15);display:flex;align-items:center" id="gen-anchor-intersectionality"><span class="gen-section-drag-handle" draggable="true" title="Drag to reorder section" onclick="event.stopPropagation();" style="cursor:grab;color:rgba(167,167,167,.4);font-size:13px;margin-right:8px;line-height:1">&#10495;</span>Intersectionality</div>
 <div id="gen-tab-intersectionality" class="gen-tab-content">
 <div class="card" style="margin-bottom:14px">
 <div class="section-hdr" style="margin-bottom:12px">
@@ -5584,7 +5617,7 @@ Settings
 </div>
 </div>
 </div>
-<div style="font-size:14px;font-weight:600;color:var(--chrome2);margin:22px 0 10px;padding-top:16px;border-top:1px solid rgba(167,167,167,.15)" id="gen-anchor-coverage">Coverage Gaps</div>
+<div class="gen-section-anchor" draggable="true" data-section="coverage" style="font-size:14px;font-weight:600;color:var(--chrome2);margin:22px 0 10px;padding-top:16px;border-top:1px solid rgba(167,167,167,.15);display:flex;align-items:center" id="gen-anchor-coverage"><span class="gen-section-drag-handle" draggable="true" title="Drag to reorder section" onclick="event.stopPropagation();" style="cursor:grab;color:rgba(167,167,167,.4);font-size:13px;margin-right:8px;line-height:1">&#10495;</span>Coverage Gaps</div>
 <div id="gen-tab-coverage" class="gen-tab-content">
 <div class="section-hdr" style="margin-bottom:12px">
 <div>
@@ -5598,7 +5631,7 @@ Settings
 <div id="gap-sub" style="font-size:10px;color:var(--muted);margin-bottom:8px">Groups underrepresented in training data vs actual population</div><div id="coverage-gaps"></div>
 </div>
 </div>
-<div style="font-size:14px;font-weight:600;color:var(--chrome2);margin:22px 0 10px;padding-top:16px;border-top:1px solid rgba(167,167,167,.15)" id="gen-anchor-ab">A/B Workspace</div>
+<div class="gen-section-anchor" draggable="true" data-section="ab" style="font-size:14px;font-weight:600;color:var(--chrome2);margin:22px 0 10px;padding-top:16px;border-top:1px solid rgba(167,167,167,.15);display:flex;align-items:center" id="gen-anchor-ab"><span class="gen-section-drag-handle" draggable="true" title="Drag to reorder section" onclick="event.stopPropagation();" style="cursor:grab;color:rgba(167,167,167,.4);font-size:13px;margin-right:8px;line-height:1">&#10495;</span>A/B Workspace</div>
 <div id="gen-tab-ab" class="gen-tab-content">
 <div class="card" style="margin-bottom:14px">
 <div class="section-hdr" style="margin-bottom:12px">
@@ -5629,7 +5662,7 @@ Settings
 <div id="ab-threshold-workspace"></div>
 </div>
 </div>
-<div style="font-size:14px;font-weight:600;color:var(--chrome2);margin:22px 0 10px;padding-top:16px;border-top:1px solid rgba(167,167,167,.15)" id="gen-anchor-cohort">Cohort Analysis</div>
+<div class="gen-section-anchor" draggable="true" data-section="cohort" style="font-size:14px;font-weight:600;color:var(--chrome2);margin:22px 0 10px;padding-top:16px;border-top:1px solid rgba(167,167,167,.15);display:flex;align-items:center" id="gen-anchor-cohort"><span class="gen-section-drag-handle" draggable="true" title="Drag to reorder section" onclick="event.stopPropagation();" style="cursor:grab;color:rgba(167,167,167,.4);font-size:13px;margin-right:8px;line-height:1">&#10495;</span>Cohort Analysis</div>
 <div id="gen-tab-cohort" class="gen-tab-content">
 <div class="grid-2" style="margin-bottom:14px">
 <div class="card">
@@ -5651,7 +5684,7 @@ Settings
 <div id="cohort-predeployment"></div>
 </div>
 </div>
-<div style="font-size:14px;font-weight:600;color:var(--chrome2);margin:22px 0 10px;padding-top:16px;border-top:1px solid rgba(167,167,167,.15)" id="gen-anchor-adam">Adam Testing</div>
+<div class="gen-section-anchor" draggable="true" data-section="adam" style="font-size:14px;font-weight:600;color:var(--chrome2);margin:22px 0 10px;padding-top:16px;border-top:1px solid rgba(167,167,167,.15);display:flex;align-items:center" id="gen-anchor-adam"><span class="gen-section-drag-handle" draggable="true" title="Drag to reorder section" onclick="event.stopPropagation();" style="cursor:grab;color:rgba(167,167,167,.4);font-size:13px;margin-right:8px;line-height:1">&#10495;</span>Adam Testing</div>
 <div id="gen-tab-adam" class="gen-tab-content">
 <div style="background:rgba(100,100,180,.06);border:1px solid rgba(180,190,220,.12);border-radius:10px;padding:14px;margin-bottom:14px;display:flex;gap:12px;align-items:flex-start">
 <div style="font-size:22px">⬡</div>
@@ -5690,7 +5723,7 @@ Settings
 
       
 <!-- PM-PROFILES TAB IN GENESIS -->
-<div style="font-size:14px;font-weight:600;color:var(--chrome2);margin:22px 0 10px;padding-top:16px;border-top:1px solid rgba(167,167,167,.15)" id="gen-anchor-pmprofiles">PM-Profiles</div>
+<div class="gen-section-anchor" draggable="true" data-section="pmprofiles" style="font-size:14px;font-weight:600;color:var(--chrome2);margin:22px 0 10px;padding-top:16px;border-top:1px solid rgba(167,167,167,.15);display:flex;align-items:center" id="gen-anchor-pmprofiles"><span class="gen-section-drag-handle" draggable="true" title="Drag to reorder section" onclick="event.stopPropagation();" style="cursor:grab;color:rgba(167,167,167,.4);font-size:13px;margin-right:8px;line-height:1">&#10495;</span>PM-Profiles</div>
 <div id="gen-tab-pmprofiles" class="gen-tab-content">
 
 <!-- AT A GLANCE -->
@@ -5795,7 +5828,7 @@ Settings
 
 
 <!-- MODEL COMPARISON TAB -->
-<div style="font-size:14px;font-weight:600;color:var(--chrome2);margin:22px 0 10px;padding-top:16px;border-top:1px solid rgba(167,167,167,.15)" id="gen-anchor-compare">Model Compare</div>
+<div class="gen-section-anchor" draggable="true" data-section="compare" style="font-size:14px;font-weight:600;color:var(--chrome2);margin:22px 0 10px;padding-top:16px;border-top:1px solid rgba(167,167,167,.15);display:flex;align-items:center" id="gen-anchor-compare"><span class="gen-section-drag-handle" draggable="true" title="Drag to reorder section" onclick="event.stopPropagation();" style="cursor:grab;color:rgba(167,167,167,.4);font-size:13px;margin-right:8px;line-height:1">&#10495;</span>Model Compare</div>
 <div id="gen-tab-compare" class="gen-tab-content">
 
 <div style="background:rgba(167, 167, 167,.04);border:1px solid rgba(167, 167, 167,.1);border-radius:10px;padding:12px 16px;margin-bottom:14px;display:flex;gap:16px;align-items:flex-end">
@@ -23790,8 +23823,10 @@ function switchGenTab(name, idx) {
  if (anchor) anchor.scrollIntoView({behavior:'smooth', block:'start'});
 }
 function showGenOverview() {
+ try { restoreGenFullView(); } catch(e) {}
  try { refreshGenOverviewPreviews(); } catch(e) {}
  try { initGenTileReorder(); } catch(e) {}
+ try { initGenSectionReorderOnce(); } catch(e) {}
  if (typeof runModelComparison === 'function') {
    const resultsEl = document.getElementById('model-compare-results');
    if (resultsEl && !resultsEl.dataset.built) { runModelComparison(); resultsEl.dataset.built = '1'; }
@@ -23863,6 +23898,198 @@ function initGenTileReorder() {
  initTileReorderOnce('gen-overview-grid', 'gen-tile', 'cardinal-genesis-tile-order');
 }
 window.initGenTileReorder = initGenTileReorder;
+var GEN_SECTIONS_ORDER = ['counterfactual','intersectionality','coverage','ab','cohort','adam','pmprofiles','compare'];
+function toggleGenesisSubnav() {
+ var sub = document.getElementById('genesis-subnav');
+ var chev = document.getElementById('genesis-subnav-chevron');
+ if (!sub) return;
+ var open = sub.classList.toggle('open');
+ if (chev) chev.classList.toggle('rotated', open);
+}
+function isolateGenSection(name) {
+ showScreen('genesis', null);
+ setTimeout(function(){
+  var grid = document.getElementById('gen-overview-grid');
+  if (grid) grid.style.display = 'none';
+  var alertBox = document.getElementById('gen-discovery-alert');
+  if (alertBox) alertBox.style.display = 'none';
+  var statsRow = document.getElementById('gen-stats-row');
+  if (statsRow) statsRow.style.display = 'none';
+  GEN_SECTIONS_ORDER.forEach(function(sec){
+   var a = document.getElementById('gen-anchor-'+sec);
+   var c = document.getElementById('gen-tab-'+sec);
+   if (sec === name) {
+    if (a) a.style.display = '';
+    if (c) c.style.display = '';
+   } else {
+    if (a) a.style.display = 'none';
+    if (c) c.style.display = 'none';
+   }
+  });
+  var bar = document.getElementById('gen-isolate-bar');
+  if (bar) bar.style.display = 'flex';
+  var logPanel = document.getElementById('genesis-log-panel');
+  if (logPanel) logPanel.style.display = 'none';
+  if (name === 'compare' && typeof runModelComparison === 'function') {
+   var resultsEl = document.getElementById('model-compare-results');
+   if (resultsEl && !resultsEl.dataset.built) { runModelComparison(); resultsEl.dataset.built = '1'; }
+  }
+  window.scrollTo({top:0, behavior:'instant'});
+ }, 60);
+}
+function restoreGenFullView() {
+ var grid = document.getElementById('gen-overview-grid');
+ if (grid) grid.style.display = 'grid';
+ var alertBox = document.getElementById('gen-discovery-alert');
+ if (alertBox) alertBox.style.display = 'flex';
+ var statsRow = document.getElementById('gen-stats-row');
+ if (statsRow) statsRow.style.display = '';
+ GEN_SECTIONS_ORDER.forEach(function(sec){
+  var a = document.getElementById('gen-anchor-'+sec);
+  var c = document.getElementById('gen-tab-'+sec);
+  if (a) a.style.display = '';
+  if (c) c.style.display = '';
+ });
+ var bar = document.getElementById('gen-isolate-bar');
+ if (bar) bar.style.display = 'none';
+ var logPanel = document.getElementById('genesis-log-panel');
+ if (logPanel) logPanel.style.display = '';
+}
+window.isolateGenSection = isolateGenSection;
+window.restoreGenFullView = restoreGenFullView;
+
+// ---- Drag-to-reorder for the FULL stacked sections on the long page ----
+var GEN_SECTION_DRAG_SRC = null;
+function genSectionContainer() {
+ return document.getElementById('gen-anchor-counterfactual') ? document.getElementById('gen-anchor-counterfactual').parentElement : null;
+}
+function restoreGenSectionOrder() {
+ try {
+  var order = JSON.parse(localStorage.getItem('cardinal-genesis-section-order') || 'null');
+  if (!order || !Array.isArray(order)) return;
+  var parent = genSectionContainer();
+  if (!parent) return;
+  order.forEach(function(sec){
+   var a = document.getElementById('gen-anchor-'+sec);
+   var c = document.getElementById('gen-tab-'+sec);
+   if (a && c && a.parentElement === parent && c.parentElement === parent) {
+    parent.appendChild(a);
+    parent.appendChild(c);
+   }
+  });
+  GEN_SECTIONS_ORDER = order.slice();
+ } catch(e) {}
+}
+function initGenSectionReorder() {
+ var parent = genSectionContainer();
+ if (!parent || parent.dataset.sectionReorderBound === '1') return;
+ parent.dataset.sectionReorderBound = '1';
+ parent.addEventListener('dragstart', function(e){
+  var handle = e.target.closest('.gen-section-drag-handle');
+  if (!handle) return;
+  var anchorEl = handle.closest('.gen-section-anchor');
+  if (!anchorEl || !parent.contains(anchorEl)) return;
+  GEN_SECTION_DRAG_SRC = anchorEl;
+  anchorEl.style.opacity = '0.5';
+  try { e.dataTransfer.effectAllowed = 'move'; } catch(_d) {}
+ }, true);
+ parent.addEventListener('dragend', function(){
+  if (GEN_SECTION_DRAG_SRC) GEN_SECTION_DRAG_SRC.style.opacity = '1';
+  GEN_SECTION_DRAG_SRC = null;
+  parent.querySelectorAll('.gen-section-anchor').forEach(function(p){ p.style.borderColor = ''; p.style.outline=''; });
+ });
+ parent.addEventListener('dragover', function(e){
+  var p = e.target.closest('.gen-section-anchor');
+  if (!p || !parent.contains(p)) return;
+  e.preventDefault();
+  try { e.dataTransfer.dropEffect = 'move'; } catch(_e) {}
+  p.style.outline = '1px dashed rgba(167,167,167,0.5)';
+ });
+ parent.addEventListener('dragleave', function(e){
+  var p = e.target.closest('.gen-section-anchor');
+  if (p && parent.contains(p)) p.style.outline = '';
+ });
+ parent.addEventListener('drop', function(e){
+  var dest = e.target.closest('.gen-section-anchor');
+  e.preventDefault();
+  if (!dest || !parent.contains(dest)) return;
+  dest.style.outline = '';
+  var src = GEN_SECTION_DRAG_SRC;
+  if (!src || !parent.contains(src) || src === dest) return;
+  var srcName = src.dataset.section, destName = dest.dataset.section;
+  var srcContent = document.getElementById('gen-tab-'+srcName);
+  var destContent = document.getElementById('gen-tab-'+destName);
+  if (!srcContent || !destContent) return;
+  var anchors = [].slice.call(parent.querySelectorAll('.gen-section-anchor'));
+  var si = anchors.indexOf(src), di = anchors.indexOf(dest);
+  if (si < di) {
+   // moving down: place src pair after dest pair
+   parent.insertBefore(src, destContent.nextSibling);
+   parent.insertBefore(srcContent, destContent.nextSibling);
+  } else {
+   // moving up: place src pair before dest anchor
+   parent.insertBefore(src, dest);
+   parent.insertBefore(srcContent, dest);
+  }
+  try {
+   var order = [].slice.call(parent.querySelectorAll('.gen-section-anchor')).map(function(a0){ return a0.dataset.section; });
+   localStorage.setItem('cardinal-genesis-section-order', JSON.stringify(order));
+   GEN_SECTIONS_ORDER = order;
+  } catch(_s) {}
+  GEN_SECTION_DRAG_SRC = null;
+ });
+}
+function initGenSectionReorderOnce() {
+ restoreGenSectionOrder();
+ initGenSectionReorder();
+}
+window.initGenSectionReorderOnce = initGenSectionReorderOnce;
+
+// ---- Roadmap slideshow modal (placeholder content) ----
+var GEN_ROADMAP_STAGES = [
+ {label:'Pre-Seed', tag:'Entry tier', copy:'Core testing loop live: counterfactual proof, coverage-gap detection, and the Adam autonomous tester running against one production model. Enough to prove the mechanism works.'},
+ {label:'Seed', tag:'Mid tier', copy:'Full testing suite: cohort library, A/B shadow-model workspace, PM-Profiles at scale, and multi-model comparison. Built out for teams testing several models in parallel.'},
+ {label:'Series A', tag:'Top tier + Verification-Only', copy:'Continuous autonomous testing across the model lifecycle, plus a Verification-Only tier. Unlocks expansion into Finance, Healthcare, and Federal Civilian.'}
+];
+var GEN_ROADMAP_IDX = 0;
+function openGenRoadmap() {
+ GEN_ROADMAP_IDX = 0;
+ var modal = document.getElementById('gen-roadmap-modal');
+ if (!modal) return;
+ modal.style.display = 'flex';
+ renderGenRoadmapStage();
+}
+function closeGenRoadmap() {
+ var modal = document.getElementById('gen-roadmap-modal');
+ if (modal) modal.style.display = 'none';
+}
+function genRoadmapStep(dir) {
+ GEN_ROADMAP_IDX = Math.max(0, Math.min(GEN_ROADMAP_STAGES.length - 1, GEN_ROADMAP_IDX + dir));
+ renderGenRoadmapStage();
+}
+function renderGenRoadmapStage() {
+ var s = GEN_ROADMAP_STAGES[GEN_ROADMAP_IDX];
+ var labelEl = document.getElementById('gen-roadmap-stage-label');
+ var tagEl = document.getElementById('gen-roadmap-stage-tag');
+ var copyEl = document.getElementById('gen-roadmap-stage-copy');
+ var dotsEl = document.getElementById('gen-roadmap-dots');
+ var prevBtn = document.getElementById('gen-roadmap-prev');
+ var nextBtn = document.getElementById('gen-roadmap-next');
+ if (labelEl) labelEl.textContent = s.label;
+ if (tagEl) tagEl.textContent = s.tag;
+ if (copyEl) copyEl.textContent = s.copy;
+ if (dotsEl) {
+  dotsEl.innerHTML = GEN_ROADMAP_STAGES.map(function(_, i){
+   return '<span style="width:7px;height:7px;border-radius:50%;display:inline-block;margin:0 3px;background:' + (i === GEN_ROADMAP_IDX ? 'var(--accent)' : 'rgba(167,167,167,0.3)') + '"></span>';
+  }).join('');
+ }
+ if (prevBtn) prevBtn.style.visibility = GEN_ROADMAP_IDX === 0 ? 'hidden' : 'visible';
+ if (nextBtn) nextBtn.style.visibility = GEN_ROADMAP_IDX === GEN_ROADMAP_STAGES.length - 1 ? 'hidden' : 'visible';
+}
+window.openGenRoadmap = openGenRoadmap;
+window.closeGenRoadmap = closeGenRoadmap;
+window.genRoadmapStep = genRoadmapStep;
+
 function openGenSection(name, idx) {
  showScreen('genesis', null);
  setTimeout(()=>{ switchGenTab(name, idx); }, 150);
