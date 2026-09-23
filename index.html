@@ -22026,6 +22026,16 @@ function getTimeGreeting() {
  return 'Good evening';
 }
 
+// Badge label to match getTimeGreeting() — the "Morning Briefing" badge was
+// hardcoded while the greeting text correctly adapted to real time, so a
+// briefing opened at 10pm still said "Morning Briefing" over "Good evening".
+function getBriefingLabel() {
+ var h = new Date().getHours();
+ if (h < 12) return 'Morning Briefing';
+ if (h < 17) return 'Afternoon Briefing';
+ return 'Evening Briefing';
+}
+
 // Personalize a message — replace "You" / generic greeting with current user
 function personalize(text) {
  var name = (window.currentUserName && window.currentUserName !== 'You') ? window.currentUserName : '';
@@ -23130,15 +23140,15 @@ function eveShowLatestAlertInChat() {
 
 // Pre-loaded morning briefing rendered the first time Eve opens
 var EVE_MORNING_BRIEFING = {
-  ad: 'Good morning. Trust Score is 74 — below the 80 threshold. Personnel Assignment v2.4 is showing a 2.3x disparity against Hispanic technicians. The DoD AI Ethics audit is overdue. Your most urgent action: expand Personnel v2.5 from 5% to 100% traffic. Want me to generate the DoD disclosure package?',
-  fin: 'Good morning. Trust Score is 81 — approaching threshold but an active ECOA violation is putting certification at risk. Credit Scoring v3.4 is using ZIP code as a race proxy — 1,203 applicants affected. NYC Law 144 audit is in 13 days. Your most urgent action: deploy Credit v3.5 to full traffic today. Want me to prepare the NYC audit report?',
-  health: 'Good morning. Trust Score is 83 but an ACA 1557 violation is active. Claims Adjudication v1.9 is denying patients 65+ at 2.3x the rate of younger patients — 2,847 claims affected. ACA deadline is in 4 days. Your most urgent action: get CMO sign-off on Claims v2.0 shadow deployment. Want me to draft the CMO briefing?'
+  ad: 'Good morning. Trust Score is 74, below the 80 threshold. Personnel Assignment v2.4 is showing a 2.3x disparity against Hispanic technicians. The DoD AI Ethics audit is overdue. Your most urgent action: expand Personnel v2.5 from 5% to 100% traffic. Want me to generate the DoD disclosure package?',
+  fin: 'Good morning. Trust Score is 81, approaching threshold but an active ECOA violation is putting certification at risk. Credit Scoring v3.4 is using ZIP code as a race proxy. 1,203 applicants affected. NYC Law 144 audit is in 13 days. Your most urgent action: deploy Credit v3.5 to full traffic today. Want me to prepare the NYC audit report?',
+  health: 'Good morning. Trust Score is 83 but an ACA 1557 violation is active. Claims Adjudication v1.9 is denying patients 65+ at 2.3x the rate of younger patients. 2,847 claims affected. ACA deadline is in 4 days. Your most urgent action: get CMO sign-off on Claims v2.0 shadow deployment. Want me to draft the CMO briefing?'
 };
 
 function showEveMorningBriefing() {
   var org = window.currentOrg || 'ad';
   var text = EVE_MORNING_BRIEFING[org] || EVE_MORNING_BRIEFING.ad;
-  addEveMsg('eve', linkifyEveResponse(text), 'morning', 'Morning Briefing', true);
+  addEveMsg('eve', linkifyEveResponse(text), 'morning', getBriefingLabel(), true);
 }
 
 // Refresh the score chip whenever org changes
