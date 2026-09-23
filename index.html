@@ -15319,8 +15319,16 @@ function drawDashAgeChart() {
   var values = Array.isArray(spec.values) ? spec.values : [92, 89, 87, 81, 72, 68];
   var barColors = Array.isArray(spec.barColors) ? spec.barColors : ['#818cf8', '#818cf8', '#818cf8', '#818cf8', '#ef4444', '#ef4444'];
   var W = (c.parentNode && c.parentNode.clientWidth) ? c.parentNode.clientWidth : 360;
-  var HAttr = parseInt(c.getAttribute('height'), 10);
-  var H = !isNaN(HAttr) && HAttr > 0 ? HAttr : 200;
+  // Bug: this used to read the logical height back off the canvas's own
+  // "height" attribute -- but _hidpiCanvas() writes canvas.height = H * dpr
+  // every call, and that assignment also updates the reflected "height"
+  // attribute. So every re-render (switching screens and coming back, for
+  // instance) fed the already-DPR-scaled height back in as if it were the
+  // original 200px, compounding by dpr each time. A handful of navigations
+  // and the canvas backing store balloons to thousands of pixels tall,
+  // which is exactly the kind of "something is blocking/unreadable" bug
+  // this chart was showing. Use a fixed logical height instead so it can't compound.
+  var H = 200;
   var ctx = _hidpiCanvas(c, W, H);
   ctx.clearRect(0, 0, W, H);
 
