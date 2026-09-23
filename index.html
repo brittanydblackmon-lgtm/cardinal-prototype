@@ -3005,6 +3005,10 @@ animation:waveform var(--dur) ease-in-out infinite alternate;
 .eve-ctrl-btn:focus{outline:none;background:rgba(167,167,167,.1)}
 .eve-ctrl-btn:focus-visible{outline:none;box-shadow:0 0 0 2px rgba(167,167,167,.25)}
 .eve-ctrl-btn:hover{color:var(--sidebar-text)}
+.collapse-btn{outline:none;border-radius:5px;transition:color .2s, background .2s}
+.collapse-btn:focus{outline:none;background:rgba(167,167,167,.1)}
+.collapse-btn:focus-visible{outline:none;box-shadow:0 0 0 2px rgba(167,167,167,.3)}
+.collapse-btn:hover{color:#94a3b8}
 /* Header overflow menu — Quick actions / Transcript / Voice settings tucked here so the header
    isn't 6-7 icons wide. Bell + Mute stay inline since those get used every time. */
 .eve-more-menu{position:fixed;top:0;left:0;background:rgba(8,12,20,0.98);border:1px solid rgba(167, 167, 167,.22);border-radius:10px;padding:6px;display:none;flex-direction:column;gap:2px;min-width:156px;box-shadow:0 12px 28px rgba(0,0,0,.45);z-index:10050}
@@ -16019,8 +16023,12 @@ function dashApplyExecutiveCards(org) {
           '<span id="card-penalty-basis">' + esc(cdata.penaltyBasis) + '</span>' +
         '</div>';
     }
+    var penaltyCaseId = (cdata && cdata.primaryCase) ? String(cdata.primaryCase).replace(/^#/, '').replace(/\\/g,'').replace(/'/g,"\\'") : '';
+    var penaltyClick = penaltyCaseId
+      ? "cardinalSentinelUiOpenCase('" + penaltyCaseId + "')"
+      : "showScreen('halo',null)";
     return (
-      '<div class="dash-exec-card" role="button" tabindex="0" onclick="showScreen(\'halo\',null)">' +
+      '<div class="dash-exec-card" role="button" tabindex="0" onclick="' + penaltyClick + '" title="Open the case behind this exposure number">' +
       '<div class="dash-exec-h"><span class="dash-exec-title">Penalty Exposure</span>' + iconUsd() + '</div>' +
       '<div class="dash-exec-num-xl" style="color:' + esc(amountColor) + ';">' + esc(amount) + '</div>' +
       breakdownHtml +
@@ -22879,8 +22887,16 @@ function routeModel(btn) {
 function parseIntent(msg) {
  const m = msg.toLowerCase();
  if(m.includes('remind')) {
- const t = msg.match(/\b(monday|tuesday|wednesday|thursday|friday|tomorrow|next week|\d+\s*(minutes?|mins?|hours?|hrs?|days?))\b/i);
- return {intent:'remind', time:t?t[0]:'tomorrow', subject:msg.replace(/remind me (to |about )?/i,'').replace(t?t[0]:'','').trim()||'check on this'};
+ const numWords = {one:'1',two:'2',three:'3',four:'4',five:'5',six:'6',an:'1',a:'1'};
+ const normalized = msg.replace(/\b(one|two|three|four|five|six|an?)\b(?=\s*(minutes?|mins?|hours?|hrs?|days?)\b)/gi, function(w){ return numWords[w.toLowerCase()] || w; });
+ const t = normalized.match(/\b(monday|tuesday|wednesday|thursday|friday|tomorrow|next week|\d+\s*(minutes?|mins?|hours?|hrs?|days?))\b/i);
+ let subj = normalized
+ .replace(/remind me\b/i,'')
+ .replace(t?t[0]:'','')
+ .replace(/^\s*(to|about|in|at|by)\b\s*/i,'')
+ .replace(/\b(to|about|in|at|by)\s*$/i,'')
+ .trim();
+ return {intent:'remind', time:t?t[0]:'tomorrow', subject:subj||'check on this'};
  }
  if(m.includes('note')||m.includes('log this')||m.includes('write this down')) return {intent:'note', subject:msg.replace(/(add|put|log)?\s*(this|it)?\s*(to|in)?\s*(my\s*)?notes?/i,'').trim()||msg};
  if(m.includes('escalat')||m.includes('backup')||m.includes('loop in')||m.includes('someone else')) return {intent:'escalate'};
