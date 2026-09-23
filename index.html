@@ -3515,6 +3515,9 @@ animation:waveform var(--dur) ease-in-out infinite alternate;
 }
 .cardinal-ask-input {
   flex: 1;
+  width: 100%;
+  position: relative;
+  z-index: 1;
   background: transparent;
   border: none;
   outline: none;
@@ -3527,17 +3530,21 @@ animation:waveform var(--dur) ease-in-out infinite alternate;
 
 /* Ask Cardinal -- its own lightweight thread, separate from Eve's chat */
 .cardinal-ask-wrap { position: relative; margin-bottom: 12px; }
-.cardinal-ask-suggest {
-  position: absolute; left: 0; right: 0; top: calc(100% + 4px); z-index: 40;
-  background: var(--card); border: 1px solid rgba(167,167,167,0.25); border-radius: 12px;
-  box-shadow: 0 8px 30px rgba(0,0,0,0.35); padding: 6px; display: none;
+
+/* Inline "finish my sentence" autocomplete -- ghost text sits behind the input,
+   not a dropdown, so it never pushes the answer cards below it down the page. */
+.cardinal-ask-input-wrap { position: relative; flex: 1; display: flex; align-items: center; }
+.cardinal-ask-ghost {
+  position: absolute; inset: 0; z-index: 0; pointer-events: none;
+  display: flex; align-items: center;
+  font-size: 12px; font-family: var(--sans); white-space: pre; overflow: hidden;
 }
-.cardinal-ask-suggest.open { display: block; }
-.cardinal-ask-suggest-item {
-  padding: 8px 10px; border-radius: 8px; cursor: pointer; font-size: 11.5px; color: var(--text);
-  display: flex; align-items: center; gap: 8px;
+.cardinal-ask-ghost-typed { color: transparent; }
+.cardinal-ask-ghost-suggest { color: var(--muted); opacity: 0.65; }
+.cardinal-ask-ghost-hint {
+  position: absolute; right: -2px; top: 50%; transform: translateY(-50%);
+  font-size: 9px; color: var(--muted); opacity: 0.55; pointer-events: none; white-space: nowrap;
 }
-.cardinal-ask-suggest-item:hover, .cardinal-ask-suggest-item.active { background: rgba(167,167,167,0.10); }
 .cardinal-ask-thread { margin-top: 8px; display: flex; flex-direction: column; gap: 8px; }
 .cardinal-ask-card {
   background: var(--card); border: 1px solid rgba(167,167,167,0.18); border-radius: 12px;
@@ -5312,13 +5319,15 @@ Settings
 <div class="cardinal-ask-wrap">
 <div id="cardinal-ask-bar" class="cardinal-ask-bar">
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#A7A7A7" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-  <input id="cardinal-ask-input" class="cardinal-ask-input" placeholder="Ask Cardinal anything — try 'Why is my Trust Score 74?' or 'What do I fix before the NYC audit?'" autocomplete="off" />
+  <div class="cardinal-ask-input-wrap">
+    <div id="cardinal-ask-ghost" class="cardinal-ask-ghost" aria-hidden="true"></div>
+    <input id="cardinal-ask-input" class="cardinal-ask-input" placeholder="Ask Cardinal anything — try 'Why is my Trust Score 74?' or 'What do I fix before the NYC audit?'" autocomplete="off" />
+  </div>
   <button type="button" id="trustloop-ask-bar-btn" class="cardinal-trustloop-btn" onclick="showScreen('trustloop', null)" title="Open Trust Loop for deeper conversation">
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 2.1l4 4-4 4"/><path d="M3 12.03V11a9 9 0 0 1 9-9h3"/><path d="M7 21.9l-4-4 4-4"/><path d="M21 12v1a9 9 0 0 1-9 9h-3"/></svg>
     <span>Trust Loop</span>
   </button>
 </div>
-<div id="cardinal-ask-suggest" class="cardinal-ask-suggest"></div>
 <div id="cardinal-ask-thread" class="cardinal-ask-thread"></div>
 </div>
 
@@ -37335,25 +37344,42 @@ function cardinalAskAnswer(msgRaw, org) {
   return "I'm still learning that one -- try asking Eve for a deeper conversation.";
 }
 
+// Inline "finish my sentence" autocomplete -- ghost text drawn behind the
+// input itself, not a dropdown. Finds the first saved suggestion that starts
+// with what's typed and shows the remainder in muted text inside the bar.
+window.__cardinalAskGhostSuggestion = '';
 function cardinalAskRenderSuggestions(filterText) {
-  var box = document.getElementById('cardinal-ask-suggest');
-  if (!box) return;
+  var ghost = document.getElementById('cardinal-ask-ghost');
+  if (!ghost) return;
+  var typed = filterText || '';
   var org = (typeof currentOrg !== 'undefined' && currentOrg) || window.currentOrg || 'ad';
+  window.__cardinalAskGhostSuggestion = '';
+  if (!typed.trim()) { ghost.innerHTML = ''; return; }
   var all = cardinalAskSuggestions(org);
-  var f = (filterText || '').trim().toLowerCase();
-  var list = f ? all.filter(function(s){ return s.toLowerCase().indexOf(f) !== -1; }) : all;
-  if (!list.length) { box.classList.remove('open'); box.innerHTML = ''; return; }
-  box.innerHTML = list.map(function(s){
-    return '<div class="cardinal-ask-suggest-item" onclick="cardinalAskSubmit(' + JSON.stringify(s).replace(/"/g, '&quot;') + ')">' +
-      '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#A7A7A7" stroke-width="2" style="flex-shrink:0"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>' +
-      '<span>' + s.replace(/</g,'&lt;') + '</span></div>';
-  }).join('');
-  box.classList.add('open');
+  var t = typed.toLowerCase();
+  var match = all.filter(function(s){ return s.toLowerCase().indexOf(t) === 0 && s.length > typed.length; })[0];
+  if (!match) { ghost.innerHTML = ''; return; }
+  window.__cardinalAskGhostSuggestion = match;
+  var typedSafe = typed.replace(/</g,'&lt;');
+  var restSafe = match.slice(typed.length).replace(/</g,'&lt;');
+  ghost.innerHTML = '<span class="cardinal-ask-ghost-typed">' + typedSafe + '</span>' +
+    '<span class="cardinal-ask-ghost-suggest">' + restSafe + '</span>' +
+    '<span class="cardinal-ask-ghost-hint">Tab</span>';
+}
+
+function cardinalAskAcceptGhost() {
+  var inp = document.getElementById('cardinal-ask-input');
+  var g = window.__cardinalAskGhostSuggestion;
+  if (!inp || !g) return false;
+  inp.value = g;
+  cardinalAskRenderSuggestions(inp.value);
+  return true;
 }
 
 function cardinalAskHideSuggestions() {
-  var box = document.getElementById('cardinal-ask-suggest');
-  if (box) { box.classList.remove('open'); }
+  var ghost = document.getElementById('cardinal-ask-ghost');
+  if (ghost) { ghost.innerHTML = ''; }
+  window.__cardinalAskGhostSuggestion = '';
 }
 
 function cardinalAskRenderThread() {
@@ -37420,8 +37446,15 @@ window.cardinalAskResetThread = cardinalAskResetThread;
     if (!inp || inp.dataset.cardinalAskWired) return;
     inp.dataset.cardinalAskWired = '1';
     inp.addEventListener('keydown', function(e){
-      if (e.key === 'Enter') { e.preventDefault(); cardinalAskSubmit(); }
-      else if (e.key === 'Escape') { cardinalAskHideSuggestions(); }
+      if (e.key === 'Tab' && window.__cardinalAskGhostSuggestion) {
+        e.preventDefault(); cardinalAskAcceptGhost();
+      } else if (e.key === 'ArrowRight' && inp.selectionStart === inp.value.length && window.__cardinalAskGhostSuggestion) {
+        e.preventDefault(); cardinalAskAcceptGhost();
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        var g = window.__cardinalAskGhostSuggestion;
+        cardinalAskSubmit(g || undefined);
+      } else if (e.key === 'Escape') { cardinalAskHideSuggestions(); }
     });
     inp.addEventListener('input', function(){ cardinalAskRenderSuggestions(inp.value); });
     inp.addEventListener('focus', function(){ cardinalAskRenderSuggestions(inp.value); });
