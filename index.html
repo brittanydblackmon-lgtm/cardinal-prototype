@@ -16325,20 +16325,27 @@ function dashStartTrustScoreDrift(baseline) {
   if (!el) return;
   if (window._dashTrustDriftTimer) { clearInterval(window._dashTrustDriftTimer); window._dashTrustDriftTimer = null; }
   window._dashTrustDriftBase = baseline;
+  // Track the true floating-point drift value separately from the rounded DOM text —
+  // reading the rounded integer back each tick made every step round back to the same
+  // number and the "live" number never visibly moved. Keeping float state fixes that.
+  window._dashTrustDriftValue = baseline;
   el.style.transition = 'opacity 0.3s ease';
   window._dashTrustDriftTimer = setInterval(function () {
     if (window._dashTrustScoreRaf) return; // a real re-score animation is running, don't fight it
     var base = window._dashTrustDriftBase;
     if (typeof base !== 'number' || isNaN(base)) return;
-    var cur = parseFloat(el.textContent) || base;
-    var delta = (Math.random() - 0.45) * 1.6; // slight upward bias, matches the "+2.3% this month" trend pill
+    var cur = typeof window._dashTrustDriftValue === 'number' ? window._dashTrustDriftValue : base;
+    var delta = (Math.random() - 0.42) * 1.4; // slight upward bias, matches the "+2.3% this month" trend pill
     var next = cur + delta;
-    // pull back toward baseline so it never drifts far, clamp to a sane range
-    next = next + (base - next) * 0.35;
+    // pull back toward baseline once it's drifted more than ~2 points, so it wanders but never strays far
+    if (Math.abs(next - base) > 2) next = next + (base - next) * 0.5;
     next = Math.max(0, Math.min(100, next));
+    window._dashTrustDriftValue = next;
+    var displayed = Math.round(next);
+    if (String(displayed) === el.textContent) return; // skip the fade when it would round to the same number
     el.style.opacity = '0.55';
     setTimeout(function () {
-      el.textContent = String(Math.round(next));
+      el.textContent = String(displayed);
       el.style.opacity = '1';
     }, 150);
   }, 2800);
