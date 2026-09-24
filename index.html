@@ -5442,17 +5442,6 @@ Settings
 <!-- Executive summary — 4 cards (filled by dashApplyExecutiveCards) -->
 <div class="dr-grid-4" id="dash-exec-cards-root"></div>
 
-<!-- MODEL SECURITY & DRIFT MONITORING -->
-<div id="dash-drift-panel" class="dr-card dr-section-panel" style="margin-top:16px;background:var(--card);border:1px solid var(--border2);border-radius:14px;padding:20px;">
-  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
-    <div>
-      <div class="dr-section-title">Active Sentinel Cases</div>
-      <div class="dr-section-sub" style="font-size:11px;color:var(--muted);margin-top:2px;">Worst first, across every case type Sentinel tracks. Click any case to open it.</div>
-    </div>
-  </div>
-  <div id="dash-drift-rows"></div>
-</div>
-
 <!-- ░░ GLOBAL TRUST SCORE PANEL ░░ -->
 <div class="dr-card dr-trust-panel dr-trust-panel-click" id="dash-global-score-panel" onclick="dashGlobalTrustPanelClick(event)" style="cursor:pointer;">
   <div class="dr-panel-head">
@@ -5521,6 +5510,25 @@ Settings
 
 <!-- ░░ DASHBOARD BOTTOM — full width stacked ░░ -->
 <div class="dash-dashboard-bottom-stack" id="dashboard-bottom-columns">
+
+  <!-- ACTIVE SENTINEL CASES — moved down from the top strip (9/23) so it lives with the rest
+       of the AI risk intelligence panels instead of duplicating what Live AI Risk Intelligence's
+       Sentinel Core panel already shows up top. Now drag-to-reorder like everything else here. -->
+  <div id="dash-drift-panel" class="dashboard-bottom-panel dr-card dr-section-panel core-layout-card" data-core="dash-drift" data-collapsible="dash-drift-btm" style="cursor:default;background:var(--card);border:1px solid var(--border2);border-radius:14px;padding:0;overflow:visible;">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid rgba(255,255,255,0.06);" onclick="event.stopPropagation();">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <div class="dash-bottom-drag-handle drag-handle" draggable="true" title="Drag to reorder" onclick="event.stopPropagation();" style="color:rgba(255,255,255,0.15);cursor:grab;font-size:14px;padding:2px 4px;line-height:1;">⠿</div>
+        <div>
+          <div class="dr-section-title">Active Sentinel Cases</div>
+          <div class="dr-section-sub" style="font-size:11px;color:var(--muted);margin-top:2px;">Worst first, across every case type Sentinel tracks. Click any case to open it.</div>
+        </div>
+      </div>
+      <button type="button" class="collapse-btn" onclick="togglePanel(this);event.stopPropagation();" style="background:transparent;border:none;color:#64748b;cursor:pointer;font-size:14px;padding:2px 6px;line-height:1;">▾</button>
+    </div>
+    <div class="panel-content" style="padding:20px;">
+      <div id="dash-drift-rows"></div>
+    </div>
+  </div>
 
   <!-- DEMOGRAPHIC BREAKDOWN -->
   <div id="dash-demographic-panel" class="dashboard-bottom-panel dr-card dr-section-panel core-layout-card" data-core="dash-demographic" data-collapsible="dash-demographic-btm" title="People affected by your AI models" style="cursor:default;background:var(--card);border:1px solid var(--border2);border-radius:14px;padding:0;overflow:visible;">
@@ -18408,8 +18416,8 @@ function getDashboardCorePanelsConfig(org) {
       }),
       dashCorePzPanelMarkup({
         id: 'sentinel-warroom',
-        title: 'Sentinel & War Room',
-        screen: 'warroom',
+        title: 'Sentinel Core',
+        screen: 'sentinel',
         dot: '#ef4444',
         prioHex: '#ef4444',
         badge: '1 OPEN CASE',
@@ -18570,8 +18578,8 @@ function getDashboardCorePanelsConfig(org) {
       }),
       dashCorePzPanelMarkup({
         id: 'sentinel-warroom',
-        title: 'Sentinel & War Room',
-        screen: 'warroom',
+        title: 'Sentinel Core',
+        screen: 'sentinel',
         dot: '#ef4444',
         prioHex: '#ef4444',
         badge: '2 OPEN CASES',
@@ -18725,8 +18733,8 @@ function getDashboardCorePanelsConfig(org) {
     }),
     dashCorePzPanelMarkup({
       id: 'sentinel-warroom',
-      title: 'Sentinel & War Room',
-      screen: 'warroom',
+      title: 'Sentinel Core',
+      screen: 'sentinel',
       dot: '#ef4444',
       prioHex: '#ef4444',
       badge: '3 OPEN CASES',
@@ -19138,8 +19146,8 @@ var CARDINAL_CORE_PANEL_TIPS = {
     'Monitors AI systems for fraud patterns AND the connection between bias and fraud. <span class="tt-accent">Biased models create blind spots that fraudsters exploit</span> — Obsidian detects both simultaneously. The only platform that catches this bias-fraud connection.'
   ],
   'sentinel-warroom': [
-    'Sentinel & War Room',
-    '<span class="tt-accent">Sentinel</span> catches risks before they become incidents — stress-testing models with synthetic personas. <span class="tt-accent">War Room</span> manages active incidents with team assignments, SLA tracking, and one-click regulatory disclosure.'
+    'Sentinel Core',
+    '<span class="tt-accent">Sentinel</span> catches risks before they become incidents — stress-testing models with synthetic personas. When a case opens, it hands off to <span class="tt-accent">War Room</span> for team assignments, SLA tracking, and one-click regulatory disclosure.'
   ]
 };
 
