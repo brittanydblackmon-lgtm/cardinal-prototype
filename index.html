@@ -5258,7 +5258,7 @@ Trust Score
 <svg class="nav-icon" viewBox="0 0 14 14" fill="none"><path d="M1.5 4h11M1.5 7h11M1.5 10h11" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
 Data Pipeline
 </div>
-<div class="nav-item" onclick="isolateGenSection('pmprofiles'); document.querySelectorAll('.nav-item.active').forEach(function(el){el.classList.remove('active');}); this.classList.add('active');" title="Search any person by name or ID across every model they've touched">
+<div class="nav-item" onclick="showScreen('echo',this); setTimeout(function(){ if(typeof echoSwitchTab==='function') echoSwitchTab('pmprofiles'); },80);" title="Search any person by name or ID across every model they've touched">
 <svg class="nav-icon" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="5" r="2.3" stroke="currentColor" stroke-width="1.4"/><path d="M2.5 12c0-2.5 2-4 4.5-4s4.5 1.5 4.5 4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
 Cardinal Passport
 </div>
@@ -5284,7 +5284,7 @@ Obsidian Core
 <div class="nav-subitem" onclick="event.stopPropagation();isolateGenSection('ab');">A/B Workspace</div>
 <div class="nav-subitem" onclick="event.stopPropagation();isolateGenSection('cohort');">Cohort Analysis</div>
 <div class="nav-subitem" onclick="event.stopPropagation();isolateGenSection('adam');">Adam Testing</div>
-<div class="nav-subitem" onclick="event.stopPropagation();isolateGenSection('pmprofiles');">Cardinal Passport</div>
+<div class="nav-subitem" onclick="event.stopPropagation();isolateGenSection('pmprofiles');">Recently Tested</div>
 <div class="nav-subitem" onclick="event.stopPropagation();isolateGenSection('compare');">Model Compare</div>
 </div>
 <div class="nav-item" onclick="showScreen('atonement',this)">
@@ -5886,7 +5886,7 @@ Settings
 
       
 <!-- PM-PROFILES TAB IN GENESIS -->
-<div class="gen-section-anchor" draggable="true" data-section="pmprofiles" style="font-size:14px;font-weight:600;color:var(--chrome2);margin:22px 0 10px;padding-top:16px;border-top:1px solid rgba(167,167,167,.15);display:flex;align-items:center" id="gen-anchor-pmprofiles"><span class="gen-section-drag-handle" draggable="true" title="Drag to reorder section" onclick="event.stopPropagation();" style="cursor:grab;color:rgba(167,167,167,.4);font-size:13px;margin-right:8px;line-height:1">&#10495;</span>Cardinal Passport</div>
+<div class="gen-section-anchor" draggable="true" data-section="pmprofiles" style="font-size:14px;font-weight:600;color:var(--chrome2);margin:22px 0 10px;padding-top:16px;border-top:1px solid rgba(167,167,167,.15);display:flex;align-items:center" id="gen-anchor-pmprofiles"><span class="gen-section-drag-handle" draggable="true" title="Drag to reorder section" onclick="event.stopPropagation();" style="cursor:grab;color:rgba(167,167,167,.4);font-size:13px;margin-right:8px;line-height:1">&#10495;</span>Recently Tested Profiles</div>
 <div id="gen-tab-pmprofiles" class="gen-tab-content">
 
 <!-- AT A GLANCE -->
@@ -5920,10 +5920,13 @@ Settings
   <button class="gen-tab" onclick="switchPMTab('mapping',this)">Profile-to-Model Map</button>
 </div>
 
-<!-- LIVE USER PROFILES -->
+<!-- LIVE USER PROFILES (lightweight "recently tested" view -- full personal history/decisions
+     live in Echo Core's Cardinal Passport per Brittany's 9/23 direction; Genesis only shows
+     testing-activity fields: name, models, last tested date, flags) -->
 <div id="pm-tab-live">
+  <div style="font-size:11px;color:var(--muted);margin-bottom:10px;">Recently tested profiles — name, models, when last tested, and any flags. Full personal history lives in <span onclick="showScreen('echo',null);setTimeout(function(){ if(typeof echoSwitchTab==='function') echoSwitchTab('pmprofiles'); },80);" style="color:var(--accent);cursor:pointer;text-decoration:underline;">Echo Core →</span></div>
   <div style="display:flex;gap:8px;margin-bottom:12px;align-items:center">
-    <input id="pm-live-search-input" placeholder="Search by EID, name, model..." style="flex:1;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:8px 12px;color:var(--text);font-size:11px;font-family:var(--sans);outline:none" oninput="filterPMProfiles(this.value)"/>
+    <input id="pm-live-search-input" placeholder="Search by name, model, or flag..." style="flex:1;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:8px 12px;color:var(--text);font-size:11px;font-family:var(--sans);outline:none" oninput="filterPMProfiles(this.value)"/>
     <select id="pm-filter-status" onchange="filterPMProfiles()" style="background:var(--bg3);border:1px solid var(--border2);border-radius:7px;padding:7px 10px;font-size:10px;color:var(--text);font-family:var(--sans)">
       <option value="all">All Profiles</option>
       <option value="flagged">Flagged</option>
@@ -5931,7 +5934,7 @@ Settings
       <option value="repeat">Repeat Impact</option>
     </select>
   </div>
-  <div id="pm-live-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px"></div>
+  <div id="pm-live-grid" style="background:rgba(167,167,167,0.03);border:1px solid rgba(167,167,167,.12);border-radius:10px;padding:6px 16px;"></div>
 </div>
 
 <!-- SYNTHETIC PERSONAS -->
@@ -24572,7 +24575,7 @@ function toggleTLMic() {
 
 
 
-const GEN_SECTION_LABELS = {counterfactual:'Counterfactual',intersectionality:'Intersectionality',coverage:'Coverage Gaps',ab:'A/B Workspace',cohort:'Cohort Analysis',adam:'Adam Testing',pmprofiles:'Cardinal Passport',compare:'Model Compare'};
+const GEN_SECTION_LABELS = {counterfactual:'Counterfactual',intersectionality:'Intersectionality',coverage:'Coverage Gaps',ab:'A/B Workspace',cohort:'Cohort Analysis',adam:'Adam Testing',pmprofiles:'Recently Tested',compare:'Model Compare'};
 function switchGenTab(name, idx) {
  if (name === 'compare' && typeof runModelComparison === 'function') {
    const resultsEl = document.getElementById('model-compare-results');
@@ -30989,34 +30992,68 @@ function echoRenderWhistleblower(org) {
   echoFilterTabResults('whistleblower', '');
 }
 
-// This was a stub ("coming in next prompt") whose own leftover copy already described
-// exactly the split Brittany asked for on 9/23: "PM Profiles is the integrity engine --
-// Cardinal Search will be the investigator UX surfacing these records by name." So Echo's
-// version stays a passive, read-only vault listing (append-only framing, names redacted,
-// no active search-and-investigate UX), while Cardinal Passport (Genesis) is the active
-// search tool. Both read the exact same PM_PROFILES data -- no new/duplicate dataset.
+// Echo Core is now the FULL Cardinal Passport per Brittany's 9/23 correction (her first
+// instinct was Genesis, she reversed that: personal information and the real search
+// experience belong in Echo since that's the permissioned audit/record layer; Genesis
+// only gets a lightweight "recently tested" activity list, see renderPMLive above). Reads
+// the same PM_PROFILES data as Genesis always did -- nothing new invented, just relocated.
+function echoFilterPMProfiles(query) {
+  var org = (typeof currentOrg !== 'undefined' && currentOrg) ? currentOrg : (window.currentOrg || 'ad');
+  var profiles = (typeof PM_PROFILES !== 'undefined' && PM_PROFILES[org] && PM_PROFILES[org].live) || [];
+  var filterVal = document.getElementById('echo-pm-filter-status');
+  var filter = filterVal ? filterVal.value : 'all';
+  if (filter === 'flagged') profiles = profiles.filter(function(p){ return p.flags>0; });
+  else if (filter === 'clean') profiles = profiles.filter(function(p){ return p.flags===0; });
+  else if (filter === 'repeat') profiles = profiles.filter(function(p){ return p.repeat; });
+  if (query && query.length > 1) {
+    var q = query.toLowerCase();
+    profiles = profiles.filter(function(p){ return p.eid.toLowerCase().includes(q) || p.name.toLowerCase().includes(q) || p.models.some(function(m){ return m.toLowerCase().includes(q); }); });
+  }
+  echoRenderPMLive(profiles);
+}
+function echoRenderPMLive(profiles) {
+  var el = document.getElementById('echo-pm-live-grid');
+  if (!el) return;
+  el.innerHTML = profiles.map(function (p) {
+    var revealed = !!window.__pmRevealed[p.eid];
+    var nameDisplay = revealed ? p.name : pmMaskName(p.name);
+    return (
+      '<div style="background:var(--bg3);border:1px solid ' + (p.flags>0?'rgba(239,68,68,.2)':'var(--border)') + ';border-radius:10px;padding:14px;cursor:pointer;transition:border-color .15s" onclick="openProfileDetail(\'' + p.eid + '\')">' +
+        '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">' +
+          '<div>' +
+            '<div style="font-size:9px;color:var(--accent);font-weight:600;margin-bottom:2px">' + p.eid + '</div>' +
+            '<div style="font-size:12px;font-weight:600;color:var(--chrome2);display:flex;align-items:center;gap:6px">' +
+              '<span>' + nameDisplay + '</span>' +
+              '<span onclick="pmToggleReveal(\'' + p.eid + '\', event); echoFilterPMProfiles(document.getElementById(\'echo-pm-search-input\').value);" title="' + (revealed ? 'Hide name' : 'Reveal name (access logged)') + '" style="color:var(--muted);cursor:pointer;">' + (revealed ? '(hide)' : '(reveal)') + '</span>' +
+            '</div>' +
+          '</div>' +
+          '<span class="badge badge-' + (p.flags>0?'red':'green') + '" style="font-size:9px">' + (p.flags>0?p.flags+' Flag'+(p.flags>1?'s':''):'Clean') + '</span>' +
+        '</div>' +
+        '<div style="font-size:10px;color:var(--muted);margin-bottom:6px">' + p.models.length + ' model' + (p.models.length>1?'s':'') + ' · ' + p.decisions + ' decisions</div>' +
+        '<div style="display:flex;justify-content:space-between;align-items:center">' +
+          '<span style="font-size:10px;color:var(--muted)">Last: ' + p.lastDate + '</span>' +
+          '<span style="font-size:10px;font-weight:600;color:var(--' + (p.lastDecision==='DENIED'?'red':'green') + ')">' + p.lastDecision + '</span>' +
+        '</div>' +
+        (p.repeat ? '<div style="font-size:9px;color:var(--red);margin-top:6px;background:rgba(239,68,68,.08);border-radius:4px;padding:3px 6px">Repeat impact case</div>' : '') +
+      '</div>'
+    );
+  }).join('') || '<div style="font-size:11px;color:var(--muted);padding:12px 0;grid-column:1/-1;">No records match.</div>';
+}
 function echoRenderPMProfiles(org) {
   var el = document.getElementById('echo-tab-content-pmprofiles');
   if (!el) return;
-  var profiles = (typeof PM_PROFILES !== 'undefined' && PM_PROFILES[org] && PM_PROFILES[org].live) || [];
-  function esc2(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]; }); }
-  var rowsHtml = profiles.map(function (p) {
-    var revealed = !!window.__pmRevealed[p.eid];
-    var nameDisplay = revealed ? p.name : (typeof pmMaskName === 'function' ? pmMaskName(p.name) : p.name);
-    return (
-      '<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid rgba(167,167,167,.1);">' +
-        '<div style="display:flex;align-items:center;gap:10px;min-width:0;">' +
-          '<span style="font-size:9px;color:var(--accent);font-weight:600;">' + esc2(p.eid) + '</span>' +
-          '<span style="font-size:11px;color:var(--chrome2);font-weight:600;">' + esc2(nameDisplay) + '</span>' +
-          '<span onclick="pmToggleReveal(\'' + esc2(p.eid) + '\', event); echoRenderPMProfiles(\'' + esc2(org) + '\');" title="' + (revealed ? 'Hide name' : 'Reveal name (access logged)') + '" style="cursor:pointer;font-size:10px;color:var(--muted);">' + (revealed ? '(hide)' : '(reveal)') + '</span>' +
-        '</div>' +
-        '<div style="font-size:10px;color:var(--muted);white-space:nowrap;">' + (p.models || []).length + ' models · ' + (p.flags > 0 ? p.flags + ' flag' + (p.flags > 1 ? 's' : '') : 'clean') + ' · last ' + esc2(p.lastDate) + '</div>' +
-      '</div>'
-    );
-  }).join('') || '<div style="font-size:11px;color:var(--muted);padding:12px 0;">No records for this industry.</div>';
-
-  el.innerHTML = '<div style="padding:8px 0 20px;"><div style="font-size:18px;font-weight:700;color:var(--chrome2);margin-bottom:6px;">PM Profiles — Affected-Person Record Vault</div><div style="font-size:11px;color:var(--muted);margin-bottom:18px;">Append-only, read-only listing of every affected individual’s record. Names redacted by default — revealing one here is logged the same as anywhere else. This is the vault; for active search by name, case, or model, use <span onclick="showScreen(\'genesis\',null);isolateGenSection(\'pmprofiles\');" style="color:var(--accent);cursor:pointer;text-decoration:underline;">Cardinal Passport →</span></div>' +
-    '<div style="background:rgba(167,167,167,0.03);border:1px solid rgba(167,167,167,.12);border-radius:10px;padding:6px 16px;">' + rowsHtml + '</div></div>';
+  el.innerHTML = '<div style="padding:8px 0 20px;">' +
+    '<div style="font-size:18px;font-weight:700;color:var(--chrome2);margin-bottom:6px;">Cardinal Passport — Affected-Person Record Vault</div>' +
+    '<div style="font-size:11px;color:var(--muted);margin-bottom:16px;">Search any person by name, ID, or model. Names redacted by default — revealing one is logged. This is where personal decision history lives; access should be permissioned to compliance/legal only.</div>' +
+    '<div style="display:flex;gap:8px;margin-bottom:12px;align-items:center">' +
+      '<input id="echo-pm-search-input" placeholder="Search by EID, name, model..." style="flex:1;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:8px 12px;color:var(--text);font-size:11px;font-family:var(--sans);outline:none" oninput="echoFilterPMProfiles(this.value)"/>' +
+      '<select id="echo-pm-filter-status" onchange="echoFilterPMProfiles(document.getElementById(\'echo-pm-search-input\').value)" style="background:var(--bg3);border:1px solid var(--border2);border-radius:7px;padding:7px 10px;font-size:10px;color:var(--text);font-family:var(--sans)">' +
+        '<option value="all">All Profiles</option><option value="flagged">Flagged</option><option value="clean">Clean</option><option value="repeat">Repeat Impact</option>' +
+      '</select>' +
+    '</div>' +
+    '<div id="echo-pm-live-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px"></div>' +
+  '</div>';
+  echoFilterPMProfiles('');
 }
 
 function echoTogglePin(memoryId) {
@@ -35640,36 +35677,29 @@ function pmToggleReveal(eid, ev) {
   }
 }
 
+// Genesis's "recently tested profiles" list -- deliberately light. No decisions, no
+// approve/deny outcome, no click-through to personal history: Brittany's 9/23 direction
+// was that personal information lives only in Echo Core, Genesis just needs to show
+// testing activity (who's been tested, in which models, when, and whether they're flagged).
 function renderPMLive(profiles) {
   const el = document.getElementById('pm-live-grid');
   if(!el) return;
-  el.innerHTML = profiles.map(p => {
+  var sorted = profiles.slice().sort(function(a,b){ return new Date(b.lastDate) - new Date(a.lastDate); });
+  el.innerHTML = sorted.map(p => {
     const revealed = !!window.__pmRevealed[p.eid];
     const nameDisplay = revealed ? p.name : pmMaskName(p.name);
-    const eyeIcon = revealed
-      ? '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a18.5 18.5 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>'
-      : '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
     return `
-    <div style="background:var(--bg3);border:1px solid ${p.flags>0?'rgba(239,68,68,.2)':'var(--border)'};border-radius:10px;padding:14px;cursor:pointer;transition:border-color .15s" onclick="openProfileDetail('${p.eid}')" onmouseover="this.style.borderColor='${p.flags>0?'rgba(239,68,68,.4)':'var(--border2)'}';" onmouseout="this.style.borderColor='${p.flags>0?'rgba(239,68,68,.2)':'var(--border)'}';">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
-        <div>
-          <div style="font-size:9px;color:var(--accent);font-weight:600;margin-bottom:2px">${p.eid}</div>
-          <div style="font-size:12px;font-weight:600;color:var(--chrome2);display:flex;align-items:center;gap:6px">
-            <span>${nameDisplay}</span>
-            <span onclick="pmToggleReveal('${p.eid}', event)" title="${revealed ? 'Hide name' : 'Reveal name (access logged)'}" style="color:var(--muted);cursor:pointer;display:inline-flex;padding:2px;">${eyeIcon}</span>
-          </div>
-        </div>
-        <span class="badge badge-${p.flags>0?'red':'green'}" style="font-size:9px">${p.flags>0?p.flags+' Flag'+(p.flags>1?'s':''):'Clean'}</span>
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid rgba(167,167,167,.1);">
+      <div style="display:flex;align-items:center;gap:10px;min-width:0;">
+        <span style="font-size:9px;color:var(--accent);font-weight:600;">${p.eid}</span>
+        <span style="font-size:11px;color:var(--chrome2);font-weight:600;">${nameDisplay}</span>
+        <span onclick="pmToggleReveal('${p.eid}', event)" title="${revealed ? 'Hide name' : 'Reveal name (access logged)'}" style="cursor:pointer;font-size:10px;color:var(--muted);">${revealed ? '(hide)' : '(reveal)'}</span>
+        ${p.flags>0?'<span class="badge badge-red" style="font-size:9px;">'+p.flags+' Flag'+(p.flags>1?'s':'')+'</span>':''}
       </div>
-      <div style="font-size:10px;color:var(--muted);margin-bottom:6px">${p.models.length} model${p.models.length>1?'s':''} · ${p.decisions} decisions</div>
-      <div style="display:flex;justify-content:space-between;align-items:center">
-        <span style="font-size:10px;color:var(--muted)">Last: ${p.lastDate}</span>
-        <span style="font-size:10px;font-weight:600;color:var(--${p.lastDecision==='DENIED'?'red':'green'})">${p.lastDecision}</span>
-      </div>
-      ${p.repeat?'<div style="font-size:9px;color:var(--red);margin-top:6px;background:rgba(239,68,68,.08);border-radius:4px;padding:3px 6px">Repeat impact case</div>':''}
+      <div style="font-size:10px;color:var(--muted);white-space:nowrap;">${p.models.join(', ')} · last tested ${p.lastDate}</div>
     </div>
   `;
-  }).join('');
+  }).join('') || '<div style="font-size:11px;color:var(--muted);padding:12px 0;">No profiles match.</div>';
 }
 
 function renderPMSynthetic(profiles) {
