@@ -2157,17 +2157,38 @@ line-height: 1; margin-bottom: 5px;
   max-height: 340px;
   overflow: hidden;
 }
-/* Live activity ticker */
+/* Live activity ticker — gradient bar per Brittany's 9/24 ask ("the whole ticker should
+   be gradient"), plus a painted edge-fade overlay (more reliable across browsers than a
+   CSS mask alone) so scrolling text visibly fades out at both edges instead of a hard cut. */
 .dash-activity-ticker {
   display: flex;
   align-items: center;
   gap: 12px;
-  background: var(--card);
+  background: linear-gradient(90deg, rgba(239,68,68,0.06), var(--card) 18%, var(--card) 82%, rgba(239,68,68,0.06));
   border: 1px solid var(--border2);
   border-radius: 10px;
   padding: 9px 14px;
   margin-bottom: 14px;
   overflow: hidden;
+  position: relative;
+}
+.dash-activity-ticker::before,
+.dash-activity-ticker::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 36px;
+  pointer-events: none;
+  z-index: 2;
+}
+.dash-activity-ticker::before {
+  left: 76px; /* clears the LIVE badge, fades where the scrolling text starts */
+  background: linear-gradient(to right, var(--card), rgba(255,255,255,0));
+}
+.dash-activity-ticker::after {
+  right: 0;
+  background: linear-gradient(to left, var(--card), rgba(255,255,255,0));
 }
 .dash-activity-ticker-live {
   display: flex;
@@ -16370,6 +16391,21 @@ function dashSyncAllTrustScoreDisplays(value, delta) {
   if (tsCertBadge) {
     tsCertBadge.textContent = v >= 80 ? 'Certified ✓' : 'Not Certified';
     tsCertBadge.className = 'badge ' + (v >= 80 ? 'badge-green' : 'badge-amber');
+  }
+  // The progress bar and status line on the Dashboard's Global Trust Score panel weren't
+  // wired to the drift/cycle at all — the number and label would change color but the bar
+  // underneath it stayed the color it was first painted, which is why Brittany saw the
+  // number read 65 (red) while the bar underneath stayed amber. Both now follow the same
+  // tier as everything else.
+  var bar = document.getElementById('dash-global-score-bar');
+  if (bar) { bar.style.width = v + '%'; bar.style.background = color; }
+  var trustLabel = document.getElementById('dr-trust-label');
+  if (trustLabel) {
+    var iconWarn = '<svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true" style="flex-shrink:0"><path d="M7 1.5L1.5 12.5h11L7 1.5z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M7 5.5v3M7 10v.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>';
+    var iconCheck = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" style="flex-shrink:0"><path d="M20 6L9 17l-5-5"/></svg>';
+    var certified = v >= 80;
+    trustLabel.innerHTML = '<span class="dash-trust-status-inner" style="display:inline-flex;align-items:center;gap:8px">' + (certified ? iconCheck : iconWarn) + '<span>' + (certified ? 'Within Compliance' : (v >= 70 ? 'Below Threshold — Not Certified' : 'Critical — Immediate Action Required')) + '</span></span>';
+    trustLabel.style.color = color;
   }
   // Bias/fraud/compliance move together with the headline number, by the same absolute
   // number of points (not a loose independent nudge) — per Brittany's 9/24 ask that when
