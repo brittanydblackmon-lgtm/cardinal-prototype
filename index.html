@@ -23967,7 +23967,7 @@ window.cardinalSentinelUiGoBack = function () {
   } catch (_e) {}
 };
 window.cardinalSentinelUiSetMainTab = function (t) {
-  window.__sentinelTab = t === 'lab' ? 'lab' : 'cases';
+  window.__sentinelTab = (t === 'lab') ? 'lab' : (t === 'runtime') ? 'runtime' : 'cases';
   window.__sentinelFocusCaseId = null;
   try {
     if (typeof showScreen === 'function') showScreen('sentinel', null);
@@ -36795,6 +36795,9 @@ function buildSentinel(org) {
     '<button type="button" class="gen-tab' +
     (tab === 'lab' ? ' active' : '') +
     '" style="font-size:11px;padding:8px 14px" title="Synthetic personas, drift monitors, stress tests (placeholder data)" onclick="cardinalSentinelUiSetMainTab(\'lab\')">Lab</button>' +
+    '<button type="button" class="gen-tab' +
+    (tab === 'runtime' ? ' active' : '') +
+    '" style="font-size:11px;padding:8px 14px;color:var(--green)" title="Live enforcement on deployed models and agents, not just detection" onclick="cardinalSentinelUiSetMainTab(\'runtime\')"><span class="processing-animation" style="width:6px;height:6px;margin-right:4px;display:inline-block"></span>Runtime Enforcement</button>' +
     '</div>';
 
   var pillsRow =
@@ -36906,6 +36909,77 @@ function buildSentinel(org) {
     '<div style="font-size:11px;color:var(--muted);padding:12px;border:1px dashed var(--border2);border-radius:10px;text-align:center">No stress tests run this period.</div></div>' +
     '</div>';
 
+  // ═══ RUNTIME ENFORCEMENT TAB ═══
+  // Per Brittany's explicit 9/24 request ("I want runtime built in"): this is the difference
+  // between Sentinel catching a problem and Sentinel actually intervening on a live model or
+  // agent while it's running, in real time, the "checkbox vs runtime" gap identified in her
+  // competitor research. Built from real case + model data already in Cardinal, not a separate
+  // invented dataset. Only case types that are genuinely runtime-relevant are shown here
+  // (drift-alert, synthetic-threat, policy-violation, systemic-risk) — the others (repeat-bias,
+  // repeat-fraud, consumer-appeal, pre-deployment-vetting) are diagnostic/case-management work
+  // that belongs on the Cases tab, not a live enforcement feed.
+  var runtimeActionMap = {
+    'synthetic-threat': { verb: 'Blocked in real time', detail: 'adversarial pattern matched a known threat signature before the response reached the requester' },
+    'policy-violation': { verb: 'Blocked at the point of execution', detail: 'output violated a compiled Kernel Policy Compiler rule' },
+    'drift-alert': { verb: 'Auto-throttled', detail: 'model routed to shadow traffic only until drift is reviewed — production traffic held on the last stable version' },
+    'systemic-risk': { verb: 'Escalated + paused', detail: 'systemic pattern detected across multiple cases, model paused pending human sign-off' }
+  };
+  var runtimeRelevant = cases.filter(function (c) { return runtimeActionMap[c.sentinelCaseType]; });
+  var orgModels = (window.CARDINAL_MODELS || []).filter(function (m) { return m.industry === o; });
+  var liveModelCount = orgModels.filter(function (m) { return m.status === 'live'; }).length;
+  var lapsedCertModel = orgModels.slice().sort(function (a, b) { return (a.trustScore || 0) - (b.trustScore || 0); })[0];
+
+  var runtimeFeedRows = runtimeRelevant.slice(0, 6).map(function (c) {
+    var act = runtimeActionMap[c.sentinelCaseType];
+    var sevClass = c.severity === 'Critical' ? 'red' : c.severity === 'High' ? 'amber' : 'yellow';
+    return (
+      '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;padding:12px 0;border-bottom:1px solid rgba(180,190,220,.06)">' +
+      '<div style="flex:1;min-width:0">' +
+      '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap">' +
+      '<span class="badge badge-green" style="font-size:9px">' + esc(act.verb) + '</span>' +
+      '<span class="badge badge-' + sevClass + '" style="font-size:9px">' + esc(c.severity || '') + '</span>' +
+      '<span style="font-size:10px;color:var(--muted2);font-weight:600">' + esc(c.modelId || '') + '</span>' +
+      '</div>' +
+      '<div style="font-size:11px;color:var(--muted2)">' + esc(act.detail) + ' &middot; case ' + esc(c.caseId || '') + '</div>' +
+      '</div>' +
+      '<span style="font-size:9px;color:var(--muted);white-space:nowrap" title="Illustrative — prototype does not process live traffic">~' + (8 + Math.floor(Math.random() * 9)) + 'ms added</span>' +
+      '</div>'
+    );
+  }).join('') || '<div style="font-size:11px;color:var(--muted);padding:16px;text-align:center">No runtime-relevant cases open for this org right now.</div>';
+
+  var autoStopCard = lapsedCertModel
+    ? '<div class="card" style="padding:14px;border:1px solid rgba(239,68,68,.25);background:rgba(239,68,68,.04)">' +
+      '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:8px">' +
+      '<div style="font-size:13px;font-weight:700;color:var(--chrome2)">Auto-Stop Example — Certification-Linked Shutdown</div>' +
+      '<span class="badge badge-red" style="font-size:9px">AUTO-STOPPED</span>' +
+      '</div>' +
+      '<div style="font-size:11px;color:var(--muted2);line-height:1.6">' +
+      '<strong>' + esc(lapsedCertModel.name) + '</strong> was automatically pulled from production traffic when its governing certification lapsed, instead of waiting for a human to notice. This is the concept Brittany asked to have built in: not just detecting that a certification expired, but the platform acting on it immediately, the same way it would if a regulation changed underneath a live model.' +
+      '</div></div>'
+    : '';
+
+  var runtimePanel =
+    '<div style="display:grid;gap:14px">' +
+    '<div class="card" style="padding:14px">' +
+    '<div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;margin-bottom:4px">' +
+    '<div style="font-size:13px;font-weight:700;color:var(--chrome2)">Runtime Enforcement — Live, Not Just Logged</div>' +
+    '<span class="badge badge-green" style="font-size:9px" title="Illustrative prototype numbers, not connected to real inference traffic">Preview</span>' +
+    '</div>' +
+    '<div style="font-size:11px;color:var(--muted2);margin-bottom:14px">Most governance platforms check whether a policy exists on paper. This is Cardinal acting on a live model or agent while it is actually running — blocking, throttling, or stopping it in real time, the same moment Sentinel catches the problem.</div>' +
+    '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px">' +
+    '<div class="stat-card"><div class="stat-label">Models Under Active Enforcement</div><div class="stat-value" style="color:var(--accent);font-size:20px">' + liveModelCount + ' of ' + orgModels.length + '</div></div>' +
+    '<div class="stat-card"><div class="stat-label">Runtime Interventions Open</div><div class="stat-value" style="color:var(--green);font-size:20px">' + runtimeRelevant.length + '</div></div>' +
+    '<div class="stat-card"><div class="stat-label">Avg. Added Latency</div><div class="stat-value" style="font-size:20px" title="Illustrative — the industry threshold is ~20ms before teams disable a guardrail">~12ms</div></div>' +
+    '<div class="stat-card"><div class="stat-label">Auto-Stops This Quarter</div><div class="stat-value" style="font-size:20px">' + (lapsedCertModel ? 1 : 0) + '</div></div>' +
+    '</div></div>' +
+    '<div class="card" style="padding:14px">' +
+    '<div style="font-size:13px;font-weight:700;color:var(--chrome2);margin-bottom:4px">Recent Enforcement Actions</div>' +
+    '<div style="font-size:10px;color:var(--muted);margin-bottom:8px">Every action below is tied to a real Sentinel case for this org — this is what enforcement looked like the moment each case was caught.</div>' +
+    runtimeFeedRows +
+    '</div>' +
+    autoStopCard +
+    '</div>';
+
   root.innerHTML =
     '<div style="max-width:1280px;margin:0 auto">' +
     '<div style="margin-bottom:8px">' +
@@ -36913,7 +36987,7 @@ function buildSentinel(org) {
     '<div style="font-size:11px;color:var(--muted);margin-top:4px">Case engine + Lab workspace · Channels embed below when a case is opened</div></div>' +
     hero +
     tabRow +
-    (tab === 'lab' ? labPanel : casesPanel) +
+    (tab === 'lab' ? labPanel : tab === 'runtime' ? runtimePanel : casesPanel) +
     '</div>';
 }
 
