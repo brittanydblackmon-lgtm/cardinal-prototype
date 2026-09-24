@@ -1806,9 +1806,6 @@ line-height: 1; margin-bottom: 5px;
   font-size: 64px; font-weight: 700;
   color: #22c55e; line-height: 1;
   letter-spacing: -2px;
-  font-family: 'SF Mono', 'Roboto Mono', 'Courier New', monospace;
-  font-variant-numeric: tabular-nums;
-  text-shadow: 0 0 14px currentColor;
 }
 .dr-trust-label {
   font-size: 14px; color: var(--muted);
@@ -1825,9 +1822,7 @@ line-height: 1; margin-bottom: 5px;
 .dr-trust-progress-fill {
   height: 100%; background: #22c55e;
   border-radius: 3px;
-  transition: width .4s, box-shadow .3s;
-  box-shadow: 0 0 10px currentColor;
-  color: #22c55e;
+  transition: width .4s;
 }
 .dr-trust-cols {
   display: grid; grid-template-columns: repeat(3, 1fr);
@@ -1847,9 +1842,6 @@ line-height: 1; margin-bottom: 5px;
 .dr-trust-col-num {
   font-size: 32px; font-weight: 700;
   line-height: 1; margin-bottom: 10px;
-  font-family: 'SF Mono', 'Roboto Mono', 'Courier New', monospace;
-  font-variant-numeric: tabular-nums;
-  text-shadow: 0 0 10px currentColor;
 }
 .dr-mini-bar {
   height: 4px; background: rgba(26,24,21,0.06);
@@ -1858,8 +1850,7 @@ line-height: 1; margin-bottom: 5px;
 }
 .dr-mini-bar-fill {
   height: 100%; border-radius: 2px;
-  transition: width .4s, box-shadow .3s;
-  box-shadow: 0 0 8px currentColor;
+  transition: width .4s;
 }
 .dr-trust-blockers {
   margin-top: 12px;
@@ -5537,11 +5528,12 @@ Settings
   <div class="dr-trust-score-row">
     <div class="dr-trust-score-bundle">
       <div class="dr-trust-score" id="dash-global-score-number">0.87</div>
-      <div class="dr-trust-label" id="dr-trust-label">Within Compliance</div>
+      <div class="dr-trust-label" id="dr-trust-label">Certified</div>
       <div class="dr-trust-progress"><div class="dr-trust-progress-fill" id="dash-global-score-bar" style="width:87%"></div></div>
     </div>
-    <div style="flex-shrink:0;">
+    <div style="flex-shrink:0;text-align:center;">
       <canvas id="ts-mini-trend" width="120" height="40"></canvas>
+      <div style="font-size:9px;color:var(--muted);letter-spacing:0.3px;margin-top:2px;">Last 6 weeks</div>
     </div>
   </div>
 
@@ -16388,6 +16380,20 @@ function animateTrustScore(targetScore, color) {
 // dimensions each org's score is actually computed from (getDimensions + INDUSTRY_SCORES)
 // instead of a hardcoded bias/fraud/compliance trio. Tooltip on each card surfaces the
 // real regulatory rationale text that already existed in the data but was never shown here.
+// Plain-English definitions per dimension, independent of industry — Brittany's 9/24 ask:
+// hovering should actually explain what the term means, not just why it matters for this
+// industry (that rationale text still exists in the data, appended after the definition).
+// Written to make each one clearly distinct from its neighbors, especially Governance vs.
+// Privacy, which read as overlapping without a clear line between them.
+var DASH_TRUST_DIM_DEFS = {
+  fairness: 'Whether the model treats protected groups equitably — no disparate impact by race, gender, age, disability, or other protected class.',
+  fraud: 'How well the model detects and resists fraudulent or adversarial manipulation — fake identities, gamed inputs, collusion.',
+  transparency: 'Whether the model’s decisions can be explained — to a regulator, an auditor, or the person the decision affected.',
+  privacy: 'How personal data is collected, stored, and used by the model — consent, data minimization, and who can access it.',
+  governance: 'Whether the model has been through the required approvals, security review, and change-control process before and during use — the paperwork and sign-off trail, separate from what data it touches.',
+  monitoring: 'Whether the model is actively watched for new problems after deployment, not just checked once before launch.'
+};
+
 function dashRenderTrustDimensions(org) {
   var root = document.getElementById('dr-trust-cols-root');
   if (!root) return;
@@ -16396,10 +16402,16 @@ function dashRenderTrustDimensions(org) {
   root.innerHTML = dims.map(function (d) {
     var v = Math.round(scores[d.id] || 0);
     var color = v >= 80 ? '#22c55e' : v >= 70 ? '#f59e0b' : '#ef4444';
-    return '<div class="dr-trust-col" onmouseenter="showTooltip(\'' + dashCorePzEsc(d.label) + '\',\'' + dashCorePzEsc(d.rationale || '') + '\',event)">' +
-      '<div class="dr-trust-col-label">' + dashCorePzEsc(d.label) + '</div>' +
+    // Strip trailing "(Eden Core)" / "(Obsidian)" style suffixes — Brittany's 9/24 ask for
+    // cleaner naming; the underlying data keeps the core reference for internal linking,
+    // just not shown in the label anymore.
+    var cleanLabel = String(d.label || '').replace(/\s*\([^)]*\)\s*$/, '');
+    var def = DASH_TRUST_DIM_DEFS[d.id] || '';
+    var tooltipBody = def + (d.rationale ? ' ' + d.rationale : '');
+    return '<div class="dr-trust-col" onmouseenter="showTooltip(\'' + dashCorePzEsc(cleanLabel) + '\',\'' + dashCorePzEsc(tooltipBody) + '\',event)">' +
+      '<div class="dr-trust-col-label">' + dashCorePzEsc(cleanLabel) + '</div>' +
       '<div class="dr-trust-col-num" id="dr-dim-' + d.id + '-num" style="color:' + color + '">' + v + '%</div>' +
-      '<div class="dr-mini-bar"><div class="dr-mini-bar-fill" id="dr-dim-' + d.id + '-bar" style="width:' + v + '%;background:' + color + ';color:' + color + '"></div></div>' +
+      '<div class="dr-mini-bar"><div class="dr-mini-bar-fill" id="dr-dim-' + d.id + '-bar" style="width:' + v + '%;background:' + color + '"></div></div>' +
       '</div>';
   }).join('');
 }
@@ -16441,7 +16453,7 @@ function dashSyncAllTrustScoreDisplays(value, delta) {
     var iconWarn = '<svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true" style="flex-shrink:0"><path d="M7 1.5L1.5 12.5h11L7 1.5z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M7 5.5v3M7 10v.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>';
     var iconCheck = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" style="flex-shrink:0"><path d="M20 6L9 17l-5-5"/></svg>';
     var certified = v >= 80;
-    trustLabel.innerHTML = '<span class="dash-trust-status-inner" style="display:inline-flex;align-items:center;gap:8px">' + (certified ? iconCheck : iconWarn) + '<span>' + (certified ? 'Within Compliance' : (v >= 70 ? 'Below Threshold — Not Certified' : 'Critical — Immediate Action Required')) + '</span></span>';
+    trustLabel.innerHTML = '<span class="dash-trust-status-inner" style="display:inline-flex;align-items:center;gap:8px">' + (certified ? iconCheck : iconWarn) + '<span>' + (certified ? 'Certified' : (v >= 70 ? 'Below Threshold — Not Certified' : 'Critical — Immediate Action Required')) + '</span></span>';
     trustLabel.style.color = color;
   }
   // Bias/fraud/compliance move together with the headline number, by the same absolute
