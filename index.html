@@ -5434,6 +5434,17 @@ Settings
 <!-- Executive summary — 4 cards (filled by dashApplyExecutiveCards) -->
 <div class="dr-grid-4" id="dash-exec-cards-root"></div>
 
+<!-- MODEL SECURITY & DRIFT MONITORING -->
+<div id="dash-drift-panel" class="dr-card dr-section-panel" style="margin-top:16px;background:var(--card);border:1px solid var(--border2);border-radius:14px;padding:20px;">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+    <div>
+      <div class="dr-section-title">Model Security &amp; Drift Monitoring</div>
+      <div class="dr-section-sub" style="font-size:11px;color:var(--muted);margin-top:2px;">Every deployed model, watched continuously for behavior that's shifted since its last validation</div>
+    </div>
+  </div>
+  <div id="dash-drift-rows"></div>
+</div>
+
 <!-- ░░ GLOBAL TRUST SCORE PANEL ░░ -->
 <div class="dr-card dr-trust-panel dr-trust-panel-click" id="dash-global-score-panel" onclick="dashGlobalTrustPanelClick(event)" style="cursor:pointer;">
   <div class="dr-panel-head">
@@ -9968,19 +9979,19 @@ window.MASTER_TAG_LIBRARY = {
 // CARDINAL LIBRARY — models & cohorts index (2D-d-35)
 // ════════════════════════════════════════════════════════════════
 window.CARDINAL_MODELS = [
-  { id: 'AD-PERSONNEL-V2.4', name: 'Personnel Assignment v2.4', industry: 'ad', status: 'live', trustScore: 74, di: 0.67, lastReview: '2026-04-22', owner: 'James Park', cases: ['AD-2847'], deployedDate: '2025-11-08' },
-  { id: 'AD-MISSION-V1.2', name: 'Mission Readiness v1.2', industry: 'ad', status: 'live', trustScore: 81, di: 0.78, lastReview: '2026-04-15', owner: 'Kate Morgan', cases: [], deployedDate: '2025-08-14' },
-  { id: 'AD-FRAUD-V3.0', name: 'Procurement Fraud v3.0', industry: 'ad', status: 'live', trustScore: 88, di: 0.91, lastReview: '2026-04-10', owner: 'Sarah Chen', cases: [], deployedDate: '2026-01-20' },
-  { id: 'AD-PERSONNEL-V2.5', name: 'Personnel Assignment v2.5', industry: 'ad', status: 'test', trustScore: 79, di: 0.81, lastReview: '2026-05-03', owner: 'Anthony Broadnax', cases: ['AD-2847'], deployedDate: null },
+  { id: 'AD-PERSONNEL-V2.4', name: 'Personnel Assignment v2.4', industry: 'ad', status: 'live', trustScore: 74, di: 0.67, lastReview: '2026-04-22', owner: 'James Park', cases: ['AD-2847'], deployedDate: '2025-11-08', driftStatus: 'critical', driftNote: 'Output distribution has shifted 14% over the trailing 30 days versus training baseline — investigate before the next deployment window.' },
+  { id: 'AD-MISSION-V1.2', name: 'Mission Readiness v1.2', industry: 'ad', status: 'live', trustScore: 81, di: 0.78, lastReview: '2026-04-15', owner: 'Kate Morgan', cases: [], deployedDate: '2025-08-14', driftStatus: 'elevated', driftNote: 'Minor input-feature drift detected (+6%) — within tolerance but trending up, recommend re-validation before next release.' },
+  { id: 'AD-FRAUD-V3.0', name: 'Procurement Fraud v3.0', industry: 'ad', status: 'live', trustScore: 88, di: 0.91, lastReview: '2026-04-10', owner: 'Sarah Chen', cases: [], deployedDate: '2026-01-20', driftStatus: 'stable', driftNote: 'No significant drift detected — behavior consistent with training baseline.' },
+  { id: 'AD-PERSONNEL-V2.5', name: 'Personnel Assignment v2.5', industry: 'ad', status: 'test', trustScore: 79, di: 0.81, lastReview: '2026-05-03', owner: 'Anthony Broadnax', cases: ['AD-2847'], deployedDate: null, driftStatus: 'elevated', driftNote: 'Shadow-traffic behavior tracking close to production but not yet validated at full volume — monitor through ramp.' },
 
-  { id: 'FIN-CREDIT-V3.4', name: 'Credit Scoring v3.4', industry: 'fin', status: 'archive', trustScore: 65, di: 0.55, lastReview: '2026-02-18', owner: 'Sarah Chen', cases: ['FIN-1203'], deployedDate: '2025-09-01' },
-  { id: 'FIN-CREDIT-V3.5', name: 'Credit Scoring v3.5', industry: 'fin', status: 'live', trustScore: 81, di: 0.82, lastReview: '2026-04-30', owner: 'Sarah Chen', cases: [], deployedDate: '2026-04-15' },
-  { id: 'FIN-FRAUD-V2.1', name: 'Fraud Detection v2.1', industry: 'fin', status: 'live', trustScore: 89, di: 0.93, lastReview: '2026-04-05', owner: 'Marcus Williams', cases: [], deployedDate: '2025-12-10' },
+  { id: 'FIN-CREDIT-V3.4', name: 'Credit Scoring v3.4', industry: 'fin', status: 'archive', trustScore: 65, di: 0.55, lastReview: '2026-02-18', owner: 'Sarah Chen', cases: ['FIN-1203'], deployedDate: '2025-09-01', driftStatus: 'archived', driftNote: 'Archived — monitoring paused, superseded by v3.5.' },
+  { id: 'FIN-CREDIT-V3.5', name: 'Credit Scoring v3.5', industry: 'fin', status: 'live', trustScore: 81, di: 0.82, lastReview: '2026-04-30', owner: 'Sarah Chen', cases: [], deployedDate: '2026-04-15', driftStatus: 'elevated', driftNote: 'Minor score-distribution drift (+5%) since last quarterly review — recommend re-validation.' },
+  { id: 'FIN-FRAUD-V2.1', name: 'Fraud Detection v2.1', industry: 'fin', status: 'live', trustScore: 89, di: 0.93, lastReview: '2026-04-05', owner: 'Marcus Williams', cases: [], deployedDate: '2025-12-10', driftStatus: 'stable', driftNote: 'No significant drift detected — behavior consistent with training baseline.' },
 
-  { id: 'HS-CLAIMS-V4.1', name: 'Claims Adjudication v4.1', industry: 'health', status: 'live', trustScore: 83, di: 0.85, lastReview: '2026-04-25', owner: 'Sarah Chen', cases: ['HS-2847'], deployedDate: '2025-10-12' },
-  { id: 'HS-TRIAGE-V1.3', name: 'Patient Triage v1.3', industry: 'health', status: 'live', trustScore: 86, di: 0.88, lastReview: '2026-04-20', owner: 'Kate Morgan', cases: [], deployedDate: '2026-02-01' },
+  { id: 'HS-CLAIMS-V4.1', name: 'Claims Adjudication v4.1', industry: 'health', status: 'live', trustScore: 83, di: 0.85, lastReview: '2026-04-25', owner: 'Sarah Chen', cases: ['HS-2847'], deployedDate: '2025-10-12', driftStatus: 'elevated', driftNote: 'Denial-rate pattern shifted slightly (+4%) for one cohort over 30 days — recommend a closer look.' },
+  { id: 'HS-TRIAGE-V1.3', name: 'Patient Triage v1.3', industry: 'health', status: 'live', trustScore: 86, di: 0.88, lastReview: '2026-04-20', owner: 'Kate Morgan', cases: [], deployedDate: '2026-02-01', driftStatus: 'stable', driftNote: 'No significant drift detected — behavior consistent with training baseline.' },
 
-  { id: 'FED-IRS-FRAUD-V3.1', name: 'IRS Tax Fraud Detection v3.1', industry: 'fed', status: 'test', trustScore: 71, di: 0.54, lastReview: '2026-05-02', owner: 'Patricia Alvarez', cases: ['FED-PDV-001'], deployedDate: null }
+  { id: 'FED-IRS-FRAUD-V3.1', name: 'IRS Tax Fraud Detection v3.1', industry: 'fed', status: 'test', trustScore: 71, di: 0.54, lastReview: '2026-05-02', owner: 'Patricia Alvarez', cases: ['FED-PDV-001'], deployedDate: null, driftStatus: 'critical', driftNote: 'Pre-deployment testing shows meaningful behavior shift versus the validation set — blocking issue for the federal attestation packet.' }
 ];
 
 // ── Single source of truth for model trust scores ──
@@ -15212,6 +15223,45 @@ function dashAnimateChartEntrance() {
 // current org, presented as a live feed. Uses the latest timestamp actually present in
 // the data as "now" (matching the anchoring approach used in the Sentinel weekly digest
 // fix) so relative times read as "recent" instead of months stale against the real clock.
+// Model Security & Drift Monitoring panel: first of the three new "security" features
+// (drift alerts, data access monitoring, misuse/prompt-injection detection) requested
+// to broaden Cardinal's story beyond just bias/fraud into overall AI model security.
+// Reads driftStatus/driftNote straight off CARDINAL_MODELS (the same single source of
+// truth used for trust scores), so this never drifts out of sync with the registry the
+// way the old duplicated trust-score data did.
+function dashRenderDriftPanel(org) {
+  var root = document.getElementById('dash-drift-rows');
+  if (!root) return;
+  var all = (typeof window.CARDINAL_MODELS !== 'undefined' && Array.isArray(window.CARDINAL_MODELS)) ? window.CARDINAL_MODELS : [];
+  var rows = all.filter(function (m) { return m.industry === org && m.driftStatus !== 'archived'; });
+  if (!rows.length) { root.innerHTML = '<div style="font-size:11px;color:var(--muted);">No models being monitored for this industry yet.</div>'; return; }
+
+  var order = { critical: 0, elevated: 1, stable: 2 };
+  rows = rows.slice().sort(function (a, b) { return (order[a.driftStatus] || 9) - (order[b.driftStatus] || 9); });
+
+  function styleFor(status) {
+    if (status === 'critical') return { color: '#ef4444', bg: 'rgba(239,68,68,0.1)', label: 'DRIFT: CRITICAL' };
+    if (status === 'elevated') return { color: '#f59e0b', bg: 'rgba(245,158,11,0.1)', label: 'DRIFT: ELEVATED' };
+    return { color: '#22c55e', bg: 'rgba(34,197,94,0.1)', label: 'STABLE' };
+  }
+  function esc1(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]; }); }
+
+  root.innerHTML = rows.map(function (m) {
+    var st = styleFor(m.driftStatus);
+    var safeName = String(m.name).replace(/'/g, "\\'");
+    return (
+      '<div class="dash-exec-row" style="cursor:pointer;align-items:flex-start;padding:9px 0;" onclick="event.stopPropagation();openModelDetail(\'' + safeName + '\',\'Dashboard\')" title="Open model detail">' +
+        '<span class="dash-exec-dot" style="background:' + st.color + ';margin-top:4px;"></span>' +
+        '<span style="flex:1;">' +
+          '<span class="dash-model-link" style="font-weight:600;">' + esc1(m.name) + '</span>' +
+          '<div style="font-size:10px;color:var(--muted);margin-top:2px;line-height:1.4;">' + esc1(m.driftNote) + '</div>' +
+        '</span>' +
+        '<span class="dash-exec-badge" style="background:' + st.bg + ';color:' + st.color + ';white-space:nowrap;margin-left:8px;">' + st.label + '</span>' +
+      '</div>'
+    );
+  }).join('');
+}
+
 function dashBuildActivityTicker(org) {
   var wrap = document.getElementById('dash-activity-ticker');
   var track = document.getElementById('dash-activity-ticker-track');
@@ -15832,6 +15882,7 @@ function doLogin() {
     try { updateDashboardIndustry(currentOrg); } catch(eUDI) { console.log('updateDashboardIndustry:', eUDI.message); }
     try { applyCardinalData(currentOrg); } catch (eACD) { console.log('applyCardinalData:', eACD.message); }
     try { renderDashboardActiveChannels(currentOrg); } catch (eDAC) { console.log('renderDashboardActiveChannels:', eDAC.message); }
+    try { dashRenderDriftPanel(currentOrg); } catch (_eDp0) {}
     try { dashBuildActivityTicker(currentOrg); } catch (_eTk0) {}
     try { window.currentAlertIndex = 0; renderAlert(0); } catch (_eAlerts) {}
     try { refreshDashboardGreeting(); } catch(e5) {}
@@ -19395,6 +19446,7 @@ function updateDashboardIndustry(org) {
   if (cfg.demoSecEthnic) safeSet('dr-demo-sec-ethnic', cfg.demoSecEthnic);
 
   try { dashApplyExecutiveCards(org); } catch (_ecx) {}
+  try { dashRenderDriftPanel(org); } catch (_edp) {}
   try { dashBuildActivityTicker(org); } catch (_etk) {}
 
   window.currentAlertIndex = 0;
@@ -19930,6 +19982,7 @@ function showScreen(name, navEl) {
         dashboardRestoreDashboardLayoutAfterRender();
       } catch (_dl) {}
       try { renderDashboardActiveChannels((typeof currentOrg !== 'undefined' && currentOrg) ? currentOrg : window.currentOrg || 'ad'); } catch (_rda) {}
+      try { dashRenderDriftPanel((typeof currentOrg !== 'undefined' && currentOrg) ? currentOrg : window.currentOrg || 'ad'); } catch (_rdp) {}
       try { dashBuildActivityTicker((typeof currentOrg !== 'undefined' && currentOrg) ? currentOrg : window.currentOrg || 'ad'); } catch (_rdt) {}
     }, 80);
   } else {
