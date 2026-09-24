@@ -15236,8 +15236,12 @@ function dashRenderDriftPanel(org) {
   var rows = all.filter(function (m) { return m.industry === org && m.driftStatus !== 'archived'; });
   if (!rows.length) { root.innerHTML = '<div style="font-size:11px;color:var(--muted);">No models being monitored for this industry yet.</div>'; return; }
 
+  // NOTE: critical maps to 0, and `order[x] || 9` would treat that 0 as falsy and wrongly
+  // fall through to 9 (sorting critical items LAST instead of first) -- using an explicit
+  // "is this key present" check instead of `||` avoids that classic zero-is-falsy bug.
   var order = { critical: 0, elevated: 1, stable: 2 };
-  rows = rows.slice().sort(function (a, b) { return (order[a.driftStatus] || 9) - (order[b.driftStatus] || 9); });
+  function rank(status) { return Object.prototype.hasOwnProperty.call(order, status) ? order[status] : 9; }
+  rows = rows.slice().sort(function (a, b) { return rank(a.driftStatus) - rank(b.driftStatus); });
 
   function styleFor(status) {
     if (status === 'critical') return { color: '#ef4444', bg: 'rgba(239,68,68,0.1)', label: 'DRIFT: CRITICAL' };
