@@ -2219,9 +2219,27 @@ line-height: 1; margin-bottom: 5px;
   overflow: hidden;
   position: relative;
   height: 16px;
-  /* Fade text out at both edges instead of a hard clip, since it's continuously scrolling. */
-  -webkit-mask-image: linear-gradient(to right, transparent 0, black 20px, black calc(100% - 20px), transparent 100%);
-  mask-image: linear-gradient(to right, transparent 0, black 20px, black calc(100% - 20px), transparent 100%);
+}
+/* Fade text out at both edges instead of a hard clip, since it's continuously scrolling.
+   Using explicit gradient overlays instead of CSS mask-image — the mask version wasn't
+   rendering visibly for Brittany, this is a more broadly-supported approach. */
+.dash-activity-ticker-track::before,
+.dash-activity-ticker-track::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 28px;
+  z-index: 2;
+  pointer-events: none;
+}
+.dash-activity-ticker-track::before {
+  left: 0;
+  background: linear-gradient(to right, var(--card, #fff) 0%, rgba(255,255,255,0) 100%);
+}
+.dash-activity-ticker-track::after {
+  right: 0;
+  background: linear-gradient(to left, var(--card, #fff) 0%, rgba(255,255,255,0) 100%);
 }
 .dash-activity-ticker-track-inner {
   display: inline-flex;
