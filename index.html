@@ -16308,9 +16308,40 @@ function animateTrustScore(targetScore, color) {
     else {
       window._dashTrustScoreRaf = null;
       el.textContent = String(Math.round(numTarget));
+      try { dashStartTrustScoreDrift(Math.round(numTarget)); } catch (_d) {}
     }
   }
   window._dashTrustScoreRaf = requestAnimationFrame(step);
+}
+
+// Continuous "live" drift for the Global Trust Score, on top of the Refresh Analysis
+// button — per Brittany's 9/23 request to have it feel real-time between refreshes,
+// not just recalculate on click. Nudges the displayed number by a small amount every
+// few seconds, always pulled back toward the real baseline value so it never wanders
+// far or looks wrong; Refresh Analysis (or any real score change) resets the baseline.
+window._dashTrustDriftTimer = null;
+function dashStartTrustScoreDrift(baseline) {
+  var el = document.getElementById('dash-global-score-number');
+  if (!el) return;
+  if (window._dashTrustDriftTimer) { clearInterval(window._dashTrustDriftTimer); window._dashTrustDriftTimer = null; }
+  window._dashTrustDriftBase = baseline;
+  el.style.transition = 'opacity 0.3s ease';
+  window._dashTrustDriftTimer = setInterval(function () {
+    if (window._dashTrustScoreRaf) return; // a real re-score animation is running, don't fight it
+    var base = window._dashTrustDriftBase;
+    if (typeof base !== 'number' || isNaN(base)) return;
+    var cur = parseFloat(el.textContent) || base;
+    var delta = (Math.random() - 0.45) * 1.6; // slight upward bias, matches the "+2.3% this month" trend pill
+    var next = cur + delta;
+    // pull back toward baseline so it never drifts far, clamp to a sane range
+    next = next + (base - next) * 0.35;
+    next = Math.max(0, Math.min(100, next));
+    el.style.opacity = '0.55';
+    setTimeout(function () {
+      el.textContent = String(Math.round(next));
+      el.style.opacity = '1';
+    }, 150);
+  }, 2800);
 }
 
 function dashAnimateTrustBar(pct, color) {
@@ -20030,6 +20061,7 @@ function showScreen(name, navEl) {
     // Leaving Dashboard: stop the ticker's rotation timer so it doesn't keep firing
     // (and stacking, the same class of bug as the earlier canvas HiDPI issue) in the background.
     if (window.__dashTickerTimer) { clearInterval(window.__dashTickerTimer); window.__dashTickerTimer = null; }
+    if (window._dashTrustDriftTimer) { clearInterval(window._dashTrustDriftTimer); window._dashTrustDriftTimer = null; }
   }
  if(name==='compliance') buildCompliance(currentOrg);
  if(name==='compliance') setTimeout(function(){ try { eveMaybeShowMilestoneNudge('compliance'); } catch(_mn){} }, 1400);
