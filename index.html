@@ -2195,15 +2195,33 @@ line-height: 1; margin-bottom: 5px;
   min-width: 0;
   font-size: 11px;
   color: var(--muted2, #94a3b8);
-  white-space: nowrap;
   overflow: hidden;
-  text-overflow: ellipsis;
-  cursor: pointer;
-  opacity: 1;
-  transition: opacity 0.35s ease;
+  position: relative;
+  height: 16px;
 }
-.dash-activity-ticker-track.dash-ticker-fade {
-  opacity: 0;
+.dash-activity-ticker-track-inner {
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+  position: absolute;
+  left: 0;
+  top: 0;
+  will-change: transform;
+  animation: dashTickerScroll linear infinite;
+}
+.dash-activity-ticker-track-inner.dash-ticker-paused {
+  animation-play-state: paused;
+}
+.dash-activity-ticker-track-inner span.dash-ticker-item {
+  cursor: pointer;
+  padding-right: 40px;
+}
+.dash-activity-ticker-track-inner span.dash-ticker-item:hover {
+  color: var(--text);
+}
+@keyframes dashTickerScroll {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
 }
 .dash-activity-ticker-track strong {
   color: var(--text);
@@ -5497,11 +5515,14 @@ Settings
   </div>
 </div>
 
-<div id="dash-core-status" class="dash-core-status-panel" style="margin-bottom:16px;background:var(--card);border:1px solid var(--border2);border-radius:16px;padding:20px;">
+<div id="dash-core-status" class="dash-core-status-panel" style="margin-bottom:16px;background:var(--card);border:1px solid rgba(239,68,68,0.25);border-top:2px solid #ef4444;border-radius:16px;padding:20px;">
   <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:14px;margin-bottom:14px;flex-wrap:wrap;">
     <div>
-      <div id="dash-core-status-title" style="font-size:15px;font-weight:600;color:var(--text);cursor:help;">Live AI Risk Intelligence</div>
-      <div style="font-size:11px;color:var(--muted);margin-top:3px;">Real-time status across all Cardinal cores — every issue, every fix, every deadline</div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span class="dash-activity-ticker-dot" style="position:relative;"></span>
+        <div id="dash-core-status-title" style="font-size:18px;font-weight:700;color:var(--text);cursor:help;letter-spacing:-0.01em;">Live AI Risk Intelligence</div>
+      </div>
+      <div style="font-size:11px;color:var(--muted);margin-top:4px;">Real-time status across every Cardinal core — every issue, every fix, every deadline, updating as it happens</div>
     </div>
     <div style="font-size:10px;color:var(--muted2);text-align:right;">Drag to reorder · Click arrow to open core</div>
   </div>
@@ -5510,25 +5531,6 @@ Settings
 
 <!-- ░░ DASHBOARD BOTTOM — full width stacked ░░ -->
 <div class="dash-dashboard-bottom-stack" id="dashboard-bottom-columns">
-
-  <!-- ACTIVE SENTINEL CASES — moved down from the top strip (9/23) so it lives with the rest
-       of the AI risk intelligence panels instead of duplicating what Live AI Risk Intelligence's
-       Sentinel Core panel already shows up top. Now drag-to-reorder like everything else here. -->
-  <div id="dash-drift-panel" class="dashboard-bottom-panel dr-card dr-section-panel core-layout-card" data-core="dash-drift" data-collapsible="dash-drift-btm" style="cursor:default;background:var(--card);border:1px solid var(--border2);border-radius:14px;padding:0;overflow:visible;">
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid rgba(255,255,255,0.06);" onclick="event.stopPropagation();">
-      <div style="display:flex;align-items:center;gap:8px;">
-        <div class="dash-bottom-drag-handle drag-handle" draggable="true" title="Drag to reorder" onclick="event.stopPropagation();" style="color:rgba(255,255,255,0.15);cursor:grab;font-size:14px;padding:2px 4px;line-height:1;">⠿</div>
-        <div>
-          <div class="dr-section-title">Active Sentinel Cases</div>
-          <div class="dr-section-sub" style="font-size:11px;color:var(--muted);margin-top:2px;">Worst first, across every case type Sentinel tracks. Click any case to open it.</div>
-        </div>
-      </div>
-      <button type="button" class="collapse-btn" onclick="togglePanel(this);event.stopPropagation();" style="background:transparent;border:none;color:#64748b;cursor:pointer;font-size:14px;padding:2px 6px;line-height:1;">▾</button>
-    </div>
-    <div class="panel-content" style="padding:20px;">
-      <div id="dash-drift-rows"></div>
-    </div>
-  </div>
 
   <!-- DEMOGRAPHIC BREAKDOWN -->
   <div id="dash-demographic-panel" class="dashboard-bottom-panel dr-card dr-section-panel core-layout-card" data-core="dash-demographic" data-collapsible="dash-demographic-btm" title="People affected by your AI models" style="cursor:default;background:var(--card);border:1px solid var(--border2);border-radius:14px;padding:0;overflow:visible;">
@@ -5546,7 +5548,7 @@ Settings
       <div style="display:flex;align-items:center;gap:8px;">
         <button type="button" class="collapse-btn" onclick="togglePanel(this);event.stopPropagation();" style="background:transparent;border:none;color:#64748b;cursor:pointer;font-size:14px;padding:2px 6px;line-height:1;">▾</button>
         <button type="button" onclick="showScreen('eden',null);event.stopPropagation();" title="Open Eden Core" style="width:26px;height:26px;border-radius:50%;background:rgba(167, 167, 167,0.08);border:1px solid rgba(167, 167, 167,0.2);color:#A7A7A7;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px;line-height:1;">→</button>
-        <span class="dr-section-time">Last run 10/10/2025</span>
+        <span class="dr-section-time">Last run Apr 27, 2026</span>
       </div>
     </div>
     <div class="panel-content dash-demographic-inner" onclick="dashDashboardSectionClick(event,'eden')" style="cursor:pointer;padding:20px;">
@@ -5604,6 +5606,26 @@ Settings
     </div>
     </div>
   </div>
+
+  <!-- ACTIVE SENTINEL CASES — moved down from the top strip (9/23) so it lives with the rest
+       of the AI risk intelligence panels instead of duplicating what Live AI Risk Intelligence's
+       Sentinel Core panel already shows up top. Now drag-to-reorder like everything else here. -->
+  <div id="dash-drift-panel" class="dashboard-bottom-panel dr-card dr-section-panel core-layout-card" data-core="dash-drift" data-collapsible="dash-drift-btm" style="cursor:default;background:var(--card);border:1px solid var(--border2);border-radius:14px;padding:0;overflow:visible;">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid rgba(255,255,255,0.06);" onclick="event.stopPropagation();">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <div class="dash-bottom-drag-handle drag-handle" draggable="true" title="Drag to reorder" onclick="event.stopPropagation();" style="color:rgba(255,255,255,0.15);cursor:grab;font-size:14px;padding:2px 4px;line-height:1;">⠿</div>
+        <div>
+          <div class="dr-section-title">Active Sentinel Cases</div>
+          <div class="dr-section-sub" style="font-size:11px;color:var(--muted);margin-top:2px;">Worst first, across every case type Sentinel tracks. Click any case to open it.</div>
+        </div>
+      </div>
+      <button type="button" class="collapse-btn" onclick="togglePanel(this);event.stopPropagation();" style="background:transparent;border:none;color:#64748b;cursor:pointer;font-size:14px;padding:2px 6px;line-height:1;">▾</button>
+    </div>
+    <div class="panel-content" style="padding:20px;">
+      <div id="dash-drift-rows"></div>
+    </div>
+  </div>
+
 
   <!-- REGULATORY DEADLINES & CERTIFICATIONS -->
   <div id="dash-regulatory-panel" class="dashboard-bottom-panel dash-reg-panel core-layout-card" data-core="dash-regulatory" data-collapsible="dash-regulatory-btm" style="background:var(--card);border:1px solid var(--border2);border-radius:14px;padding:0;overflow:hidden;display:flex;flex-direction:column;min-height:0;">
@@ -15340,8 +15362,10 @@ function dashBuildActivityTicker(org) {
   var items = rows.slice(0, 10).map(function (r, idx) {
     var caseLbl = (r.linkedCaseId || r.contents && r.contents.caseLabel || '').replace(/^#/, '');
     var model = r.linkedModelId || (r.contents && r.contents.modelVersion) || '';
-    var html = '<strong>' + esc0(r.issuedBy || 'Cardinal') + '</strong> ' + esc0(typeLabel(r.receiptType)) +
-      ' <strong>' + esc0(caseLbl) + '</strong>' + (model ? ' · ' + esc0(model) : '') +
+    // Only show "for <case>" when there's an actual case/model to name — otherwise this
+    // used to render a dangling "for — 3d ago" with nothing between "for" and the dash.
+    var subject = caseLbl ? (' <strong>' + esc0(caseLbl) + '</strong>' + (model ? ' · ' + esc0(model) : '')) : '';
+    var html = '<strong>' + esc0(r.issuedBy || 'Cardinal') + '</strong> ' + esc0(typeLabel(r.receiptType)) + subject +
       ' <span style="opacity:.65">— ' + relTime(r.issuedDate) + '</span>';
     return { html: html, receiptId: r.receiptId, caseId: caseLbl };
   });
@@ -15350,27 +15374,33 @@ function dashBuildActivityTicker(org) {
 
   wrap.style.display = 'flex';
   window.__dashTickerItems = items;
-  window.__dashTickerIdx = 0;
 
-  function paint(i) {
-    var it = items[i % items.length];
-    if (!it) return;
-    track.classList.add('dash-ticker-fade');
-    setTimeout(function () {
-      track.innerHTML = it.html;
-      track.onclick = it.caseId ? function () {
-        if (typeof window.cardinalSentinelUiOpenCase === 'function') window.cardinalSentinelUiOpenCase(it.caseId);
-      } : null;
-      track.classList.remove('dash-ticker-fade');
-    }, 220);
-  }
-  paint(0);
+  // Continuous scrolling line (not a fade slideshow) — build one inner track containing
+  // every item back to back, duplicated once so the loop from -50% back to 0% is seamless,
+  // then let a CSS animation move it left forever. Speed scales with how much text there is
+  // so a longer list doesn't fly by any faster than a short one.
+  var itemsHtml = items.map(function (it, i) {
+    return '<span class="dash-ticker-item" data-idx="' + i + '">' + it.html + '</span>';
+  }).join('');
+  track.innerHTML = '<span class="dash-activity-ticker-track-inner" id="dash-activity-ticker-track-inner">' + itemsHtml + itemsHtml + '</span>';
+  var inner = document.getElementById('dash-activity-ticker-track-inner');
+  inner.addEventListener('click', function (e) {
+    var el = e.target.closest('.dash-ticker-item');
+    if (!el) return;
+    var it = items[Number(el.getAttribute('data-idx')) % items.length];
+    if (it && it.caseId && typeof window.cardinalSentinelUiOpenCase === 'function') window.cardinalSentinelUiOpenCase(it.caseId);
+  });
+  wrap.onmouseenter = function () { inner.classList.add('dash-ticker-paused'); };
+  wrap.onmouseleave = function () { inner.classList.remove('dash-ticker-paused'); };
+  // Duration proportional to content width so pace feels consistent regardless of item count.
+  requestAnimationFrame(function () {
+    var halfWidth = inner.scrollWidth / 2;
+    var pxPerSec = 34;
+    var duration = Math.max(12, halfWidth / pxPerSec);
+    inner.style.animationDuration = duration + 's';
+  });
 
-  if (window.__dashTickerTimer) clearInterval(window.__dashTickerTimer);
-  window.__dashTickerTimer = setInterval(function () {
-    window.__dashTickerIdx = (window.__dashTickerIdx + 1) % items.length;
-    paint(window.__dashTickerIdx);
-  }, 4500);
+  if (window.__dashTickerTimer) { clearInterval(window.__dashTickerTimer); window.__dashTickerTimer = null; }
 }
 
 function _hidpiCanvas(c, cssW, cssH) {
@@ -16314,11 +16344,69 @@ function animateTrustScore(targetScore, color) {
   window._dashTrustScoreRaf = requestAnimationFrame(step);
 }
 
+// Single place that pushes a Trust Score value out to every place it's displayed —
+// the dashboard panel, the sidebar chip/collapsed badge, the Trust Score screen's
+// big number, and the bias/fraud sub-scores underneath it. Before this existed, the
+// drift timer only touched dash-global-score-number, so the sidebar (which reads a
+// separate static map) and the dashboard panel could disagree (e.g. sidebar 74,
+// dashboard 75) — per Brittany's 9/23 report. Bias/fraud nudge a little in the same
+// direction as the headline number so the whole panel reads as one moving system
+// instead of just one number changing in isolation.
+function dashSyncAllTrustScoreDisplays(value, deltaSign) {
+  var v = Math.round(value);
+  var tier = typeof window.cardinalTrustScoreColor === 'function' ? window.cardinalTrustScoreColor(v) : { color: '#f59e0b' };
+  var color = tier.color;
+  ['dash-global-score-number', 'sidebar-score', 'big-score', 'dash-trust', 'computed-score'].forEach(function (id) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    el.textContent = String(v);
+    el.style.color = color;
+  });
+  var chipNum = document.querySelector('.sidebar-trust-score-chip-num') || document.getElementById('sidebar-trust-score-num');
+  if (chipNum) { chipNum.textContent = v; chipNum.style.color = color; }
+  var chipBadge = document.getElementById('sidebar-score-badge');
+  if (chipBadge) chipBadge.textContent = v;
+  var badgeHost = document.getElementById('sidebar-trust-badge-collapsed');
+  if (badgeHost) badgeHost.style.background = color;
+  var dotEl = document.querySelector('.sidebar-trust-score-chip-dot') || document.getElementById('sidebar-trust-score-dot') || document.querySelector('#sidebar-trust-badge-collapsed .trust-score-chip-badge-dot');
+  if (dotEl) dotEl.style.background = color;
+  var trustSub = document.getElementById('dash-trust-sub');
+  if (trustSub) trustSub.textContent = v >= 80 ? '✓ Certified' : 'Below 80 — Not Certified';
+  var tsCertBadge = document.getElementById('ts-cert-badge');
+  if (tsCertBadge) {
+    tsCertBadge.textContent = v >= 80 ? 'Certified ✓' : 'Not Certified';
+    tsCertBadge.className = 'badge ' + (v >= 80 ? 'badge-green' : 'badge-amber');
+  }
+  // Bias/fraud sub-scores nudge a little in the same direction as the headline move,
+  // not their own independent random walk — keeps them from ever visibly contradicting
+  // the number they're supposed to be components of.
+  if (typeof deltaSign === 'number' && deltaSign !== 0) {
+    ['dash-bias', 'dash-fraud'].forEach(function (id) {
+      var el = document.getElementById(id);
+      if (!el) return;
+      var cur = parseFloat(el.textContent);
+      if (isNaN(cur)) return;
+      var base = window['_dashTrust_' + id + '_base'];
+      if (typeof base !== 'number') { base = cur; window['_dashTrust_' + id + '_base'] = base; }
+      var next = cur + deltaSign * (0.15 + Math.random() * 0.3);
+      if (Math.abs(next - base) > 2) next = next + (base - next) * 0.5;
+      next = Math.max(0, Math.min(100, next));
+      var rounded = Math.round(next);
+      if (rounded !== Math.round(cur)) {
+        el.textContent = String(rounded);
+        el.style.color = rounded >= 80 ? '#22C55E' : rounded >= 70 ? '#F59E0B' : '#EF4444';
+      }
+    });
+  }
+}
+
 // Continuous "live" drift for the Global Trust Score, on top of the Refresh Analysis
 // button — per Brittany's 9/23 request to have it feel real-time between refreshes,
-// not just recalculate on click. Nudges the displayed number by a small amount every
-// few seconds, always pulled back toward the real baseline value so it never wanders
-// far or looks wrong; Refresh Analysis (or any real score change) resets the baseline.
+// not just recalculate on click, and per her 9/23 follow-up that if the number moves
+// it has to move consistently everywhere (sidebar included) or not at all. Nudges the
+// displayed number by a small amount every few seconds, always pulled back toward the
+// real baseline value so it never wanders far or looks wrong; Refresh Analysis (or any
+// real score change) resets the baseline.
 window._dashTrustDriftTimer = null;
 function dashStartTrustScoreDrift(baseline) {
   var el = document.getElementById('dash-global-score-number');
@@ -16345,7 +16433,7 @@ function dashStartTrustScoreDrift(baseline) {
     if (String(displayed) === el.textContent) return; // skip the fade when it would round to the same number
     el.style.opacity = '0.55';
     setTimeout(function () {
-      el.textContent = String(displayed);
+      dashSyncAllTrustScoreDisplays(displayed, delta > 0 ? 1 : -1);
       el.style.opacity = '1';
     }, 150);
   }, 2800);
@@ -18307,6 +18395,11 @@ function dashCorePzPanelMarkup(p) {
     eveTxt +
     '</div>' +
     rows +
+    (p.footerLink ?
+      '<div style="margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.06);">' +
+      '<a href="javascript:void(0)" onclick="event.stopPropagation();var t=document.getElementById(\'' + dashCorePzEsc(p.footerLinkTarget || '') + '\');if(t){t.scrollIntoView({behavior:\'smooth\',block:\'center\'});t.style.transition=\'box-shadow 0.3s ease\';t.style.boxShadow=\'0 0 0 2px rgba(167,167,167,0.4)\';setTimeout(function(){t.style.boxShadow=\'\';},1200);}" ' +
+      'style="font-size:11px;color:#A7A7A7;text-decoration:none;display:inline-flex;align-items:center;gap:4px;">' +
+      dashCorePzEsc(p.footerLink) + ' ↓</a></div>' : '') +
     '</div></div>'
   );
 }
@@ -18458,7 +18551,9 @@ function getDashboardCorePanelsConfig(org) {
         screen: 'sentinel',
         dot: '#ef4444',
         prioHex: '#ef4444',
-        badge: '1 OPEN CASE',
+        badge: 'TOP PRIORITY',
+        footerLink: 'See all 5 open Sentinel cases',
+        footerLinkTarget: 'dash-drift-panel',
         eve: 'Case #AD-2847 is on Day 5 of a 14-day SLA. The DoD disclosure package is ready and awaiting legal sign-off. Sentinel pre-caught this bias 6.2 days before it would have been discovered manually.',
         rows: [
           {
@@ -18620,7 +18715,9 @@ function getDashboardCorePanelsConfig(org) {
         screen: 'sentinel',
         dot: '#ef4444',
         prioHex: '#ef4444',
-        badge: '2 OPEN CASES',
+        badge: 'TOP PRIORITY',
+        footerLink: 'See all open Sentinel cases',
+        footerLinkTarget: 'dash-drift-panel',
         eve: 'Case #FIN-1203 is on Day 14. Credit v3.5 has been approved and is ready for full deployment. CFPB pre-notification has been filed. Sentinel pre-caught the ZIP proxy before the CFPB audit cycle.',
         rows: [
           {
@@ -18775,7 +18872,9 @@ function getDashboardCorePanelsConfig(org) {
       screen: 'sentinel',
       dot: '#ef4444',
       prioHex: '#ef4444',
-      badge: '3 OPEN CASES',
+      badge: 'TOP PRIORITY',
+      footerLink: 'See all open Sentinel cases',
+      footerLinkTarget: 'dash-drift-panel',
       eve: 'Case #HS-2847 is on Day 5. The fix is ready but CMO sign-off is blocking remediation. ACA 1557 deadline is in 4 days. Sentinel pre-caught the age proxy within 48 hours of deployment.',
       rows: [
         {
