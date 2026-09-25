@@ -15154,9 +15154,12 @@ function applyCardinalData(org) {
     };
   }
 
-  // Topbar critical cases pill
+  // Topbar critical cases pill -- reads the same real, deduped case list
+  // War Room computes its own count from (see dashRealCriticalCaseCount),
+  // not the static d.criticalCases field, which was found to disagree with
+  // the real case list for 3 of 4 orgs.
   var tac = document.getElementById('topbar-alert-count');
-  if (tac) tac.textContent = cdCriticalCasesLabel(d.criticalCases);
+  if (tac) tac.textContent = cdCriticalCasesLabel(typeof dashRealCriticalCaseCount === 'function' ? dashRealCriticalCaseCount(d.org) : d.criticalCases);
 
   // Trust Score panel — score / status / bar / 3 columns
   var dtl = document.getElementById('dr-trust-label');
@@ -16218,28 +16221,43 @@ function switchIndustry(org, btn) {
   }
 }
 
-// 9/24 -- found and fixed a real bug while checking Brittany's "do we need
-// this pill" question. This function used to independently derive the count
-// by scanning echoMemories for severity==='critical' minus closed cases --
-// a totally different calculation than the one every other place on the
-// dashboard uses (CARDINAL_DATA[org].criticalCases / DASH_INDUSTRY[org].
-// criticalCaseCount, which already agree with each other for all 4 orgs).
-// Confirmed live: switching to Finance showed "1 Critical Case" in this
-// pill while Finance's own data says 2 -- this function's echoMemories scan
-// was undercounting (fin: 1 vs 2, health: 1 vs 3, fed: 0 vs 1) and winning
-// the race since it fires last (setTimeout after switchIndustry). A&D was
-// the only org where it happened to agree (1 vs 1), which is why this went
-// unnoticed -- it's the org this has mostly been tested in. Fixed by making
-// this pull from the same authoritative static field as everywhere else,
-// instead of a second, disagreeing computation.
+// 9/24 -- Brittany asked directly: "does the topbar pill match when we go to
+// War Room?" Checked it for real rather than just answering from the static
+// field, and it uncovered a deeper version of the bug than the first pass
+// caught. The first pass made 4 different topbar-count writers agree with
+// each other by pointing them all at CARDINAL_DATA[org].criticalCases -- but
+// that static field itself turns out to be WRONG. War Room's own Case
+// Posture widget (and its case table) don't read that field at all -- they
+// compute their own count live from the real, deduped case list
+// (biasIncidentsActive + fraudIncidentsActive), which is the actual data a
+// person can open and count by hand. Checked all 4 orgs against that real
+// list: every one of them has exactly 1 real critical case (ad=1, fin=1,
+// health=1) or 0 (fed=0) -- not the 1/2/3/1 the static field claimed. A&D
+// was again the one org where the static field happened to be right, which
+// is exactly why this had gone unnoticed twice now. Fixed for real this
+// time: this function (and every other topbar-count writer) now computes
+// from the same real case list War Room itself uses, so the two can no
+// longer disagree by construction, not by coincidence.
+function dashRealCriticalCaseCount(org) {
+  var d = window.CARDINAL_DATA && window.CARDINAL_DATA[org];
+  if (!d) return 0;
+  var rawAll = (d.biasIncidentsActive || []).concat(d.fraudIncidentsActive || []);
+  var seen = {}, cases = [];
+  rawAll.forEach(function (cx) {
+    var k = String(cx.caseId || '').replace(/^#/, '');
+    if (k && !seen[k]) { seen[k] = true; cases.push(cx); }
+  });
+  return cases.filter(function (c) { return c.severity === 'Critical'; }).length;
+}
+window.dashRealCriticalCaseCount = dashRealCriticalCaseCount;
+
 window.updateTopbarCriticalCount = function updateTopbarCriticalCount() {
   var alertEl = document.getElementById('topbar-critical-cases');
   var countEl = document.getElementById('topbar-alert-count');
   if (!alertEl || !countEl) return;
 
   var org = window.currentOrg || 'ad';
-  var orgData = window.CARDINAL_DATA && window.CARDINAL_DATA[org];
-  var count = orgData && typeof orgData.criticalCases === 'number' ? orgData.criticalCases : 0;
+  var count = dashRealCriticalCaseCount(org);
 
   if (count === 0) {
     alertEl.style.display = 'none';
@@ -20192,8 +20210,13 @@ function showTooltip(arg1, arg2, arg3) {
     tt.style.left = Math.min(cx + 12, window.innerWidth - 300) + 'px';
     tt.style.top = cy + 14 + 'px';
     tt.classList.add('visible');
+    // 9/24 "let me actually finish reading it" ask — this one-shot 1.5s timeout
+    // never gave a real reading window, and this variant has no mouseleave to
+    // dismiss early either, so 1.5s was a hard ceiling on how long any of these
+    // could ever be visible. Bumped to 4s to match the ask ("a little bit
+    // longer, not too long").
     clearTimeout(window._cardinalTipAutoHide);
-    window._cardinalTipAutoHide = setTimeout(function () { tt.classList.remove('visible'); }, 1500);
+    window._cardinalTipAutoHide = setTimeout(function () { tt.classList.remove('visible'); }, 4000);
     return;
   }
   var el = arg1;
@@ -20214,10 +20237,19 @@ function showTooltip(arg1, arg2, arg3) {
       tt.style.left = Math.min(e.clientX + 12, window.innerWidth - 300) + 'px';
       tt.style.top = rect.bottom + 8 + 'px';
       tt.classList.add('visible');
+      // 9/24 "I need it to stay a little bit longer so I can read it" ask —
+      // two real problems here, not just the duration. (1) 4s was too short
+      // for the longer definitions (the 6 Trust Score dimension tooltips
+      // she was specifically trying to read). Bumped to 7s. (2) The bigger
+      // bug: this timer was never reset while she kept hovering, so it could
+      // vanish mid-read even with the cursor still sitting right on the
+      // question mark. mousemove now refreshes the same timer, so it only
+      // ever counts down from the last moment she was actually still, not
+      // from when she first arrived.
       clearTimeout(window._cardinalTipAutoHide);
       window._cardinalTipAutoHide = setTimeout(function () {
         tt.classList.remove('visible');
-      }, 4000);
+      }, 7000);
     }, 250);
   });
   el.addEventListener('mouseleave', function () {
@@ -20231,6 +20263,10 @@ function showTooltip(arg1, arg2, arg3) {
     if (!tt || !tt.classList.contains('visible')) return;
     tt.style.left = Math.min(e.clientX + 12, window.innerWidth - 300) + 'px';
     tt.style.top = e.clientY + 14 + 'px';
+    clearTimeout(window._cardinalTipAutoHide);
+    window._cardinalTipAutoHide = setTimeout(function () {
+      tt.classList.remove('visible');
+    }, 7000);
   });
   el.style.cursor = 'help';
 }
@@ -20673,9 +20709,9 @@ function updateDashboardIndustry(org) {
   window.currentAlertIndex = 0;
   try { renderAlert(0); } catch (_ra) {}
 
-  if (typeof cfg.criticalCaseCount === 'number') {
-    safeSet('topbar-alert-count', dashFormatCriticalCasesTopbar(cfg.criticalCaseCount));
-  }
+  // Real case list, not the static cfg.criticalCaseCount field -- see
+  // dashRealCriticalCaseCount's comment for why the static field was wrong.
+  safeSet('topbar-alert-count', dashFormatCriticalCasesTopbar(typeof dashRealCriticalCaseCount === 'function' ? dashRealCriticalCaseCount(org) : cfg.criticalCaseCount));
 
   var animColorMap = { ad: '#f59e0b', fin: '#22c55e', health: '#22c55e', fed: '#f59e0b' };
   var animCol = animColorMap[org] || '#f59e0b';
@@ -20857,12 +20893,10 @@ function loadIndustry(org) {
  safeSet('dash-fraud', dimScores.fraud);
  safeStyle('dash-fraud', 'color', dimScores.fraud >= 80 ? '#22C55E' : '#F59E0B');
  safeSet('dash-cases', d.activeCases);
- var _critTop =
-   typeof DASH_INDUSTRY !== 'undefined' &&
-   DASH_INDUSTRY[org] &&
-   typeof DASH_INDUSTRY[org].criticalCaseCount === 'number'
-     ? DASH_INDUSTRY[org].criticalCaseCount
-     : d.cases.filter(c=>c.sev==='Critical').length;
+ // Real case list (see dashRealCriticalCaseCount), not the static
+ // DASH_INDUSTRY[org].criticalCaseCount field, which disagreed with what
+ // War Room's own case table actually shows for 3 of 4 orgs.
+ var _critTop = typeof dashRealCriticalCaseCount === 'function' ? dashRealCriticalCaseCount(org) : 0;
  safeSet('topbar-alert-count', typeof dashFormatCriticalCasesTopbar === 'function'
    ? dashFormatCriticalCasesTopbar(_critTop)
    : _critTop + ' Critical Cases');
