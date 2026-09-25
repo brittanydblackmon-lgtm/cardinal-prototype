@@ -16627,6 +16627,12 @@ function dashSyncAllTrustScoreDisplays(value, delta) {
       tsv2RenderEveBody(tsv2Data(window.currentOrg || 'ad'));
     }
   } catch (_eveSyncTick) {}
+  // Same live-sync for the Dashboard's own quick-chat "Eve" greeting line -- was
+  // frozen at a static "Trust Score 74" the same way the floating Eve widget was.
+  try {
+    var dashGreetEl = document.getElementById('dash-tl-greeting');
+    if (dashGreetEl && typeof refreshDashboardGreeting === 'function') refreshDashboardGreeting();
+  } catch (_dgTick) {}
   var chipNum = document.querySelector('.sidebar-trust-score-chip-num') || document.getElementById('sidebar-trust-score-num');
   if (chipNum) { chipNum.textContent = v; chipNum.style.color = color; }
   var chipBadge = document.getElementById('sidebar-score-badge');
@@ -17391,8 +17397,13 @@ function dashShowGeoStateDetail(abbr) {
   // people actually are, and Cardinal's own root-cause read (not a claim of
   // real-world news -- this is a demo scenario, so it's framed as analysis,
   // which is the honest version of "why" for fictional data).
+  // 9/26, 3rd pass -- "center this": this card was spanning the full width of the
+  // (wider) panel it sits in while the chart right above it is capped at 520px and
+  // centered, so the card visually didn't line up with the chart. Capped it to the
+  // same max-width and centered it the same way -- kept text-align:left inside since
+  // a centered paragraph block still reads worse than a left-aligned one.
   detailEl.innerHTML =
-    '<div style="border-left:3px solid ' + tone.fill + ';padding:8px 12px;background:rgba(167,167,167,0.05);border-radius:0 8px 8px 0;">' +
+    '<div style="max-width:520px;margin:0 auto;border-left:3px solid ' + tone.fill + ';padding:8px 12px;background:rgba(167,167,167,0.05);border-radius:0 8px 8px 0;text-align:left;">' +
     '<div style="font-size:13px;font-weight:800;color:#1e293b;">' + dashRegulatoryEsc(st.abbr || '') + (st.city ? ' — ' + dashRegulatoryEsc(st.city) : '') + ': ' + dashRegulatoryEsc((st.tag || '').toString().toUpperCase()) + '</div>' +
     '<div style="font-size:12px;color:#334155;font-weight:600;margin-top:4px;">' + [dashRegulatoryEsc(st.countText || ''), dashRegulatoryEsc(st.approvalText || '')].filter(Boolean).join(' &middot; ') + '</div>' +
     (st.note ? '<div style="font-size:11px;color:#64748b;margin-top:4px;">' + dashRegulatoryEsc(st.note) + '</div>' : '') +
@@ -24110,6 +24121,13 @@ function getBriefingLabel() {
 
 // Personalize a message — replace "You" / generic greeting with current user
 function personalize(text) {
+ // 9/26 -- Brittany caught Eve's floating "Daily Briefing" bubble saying a frozen
+ // "Trust Score is 74" while the real Trust Score screen next to it was already
+ // moving live. This function already runs on every non-user Eve message (both
+ // message-render call sites route through it), so hooking the live-score swap in
+ // here fixes the morning briefing, the day-wrap messages, and any other Eve-voiced
+ // text at once instead of patching each hardcoded string separately.
+ try { text = eveSwapLiveScoreInText(text); } catch (_esl) {}
  var name = (window.currentUserName && window.currentUserName !== 'You') ? window.currentUserName : '';
  if (!name) return text;
  var firstName = name.split(' ')[0].replace(/^Dr\.?$/, '').trim() || name;
@@ -24117,6 +24135,25 @@ function personalize(text) {
  text = text.replace(/^Good (morning|afternoon|evening)\b\.?/i, getTimeGreeting() + ', ' + firstName + '.');
  return text;
 }
+
+// Finds "Trust Score is NN" / "Trust Score: NN" / "Trust Score NN" (anchored to the
+// literal "Trust Score" phrase, never a blind first-number swap) and replaces NN with
+// the live drifting number for the org this message is actually about. Also flips a
+// literal "below the 80"/"above the 80" phrase if the live number crossed 80, since a
+// stale "below the 80 threshold" next to a now-certified live number reads as a bug,
+// not just a stale digit. Text that doesn't use these exact phrases is left alone.
+function eveSwapLiveScoreInText(text) {
+  if (!text || typeof text !== 'string') return text;
+  var org = window.currentOrg || 'ad';
+  var live = (typeof window._dashTrustDriftValue === 'number') ? Math.round(window._dashTrustDriftValue)
+    : (window.CARDINAL_DATA && window.CARDINAL_DATA[org] ? Math.round(window.CARDINAL_DATA[org].trustScore * 100) : null);
+  if (live == null) return text;
+  var swapped = text.replace(/(Trust Score(?:\s+is|:)?\s+)(\d{2,3})/gi, function (m, pre) { return pre + live; });
+  if (live >= 80) swapped = swapped.replace(/below the 80\b/gi, 'above the 80');
+  else swapped = swapped.replace(/above the 80\b/gi, 'below the 80');
+  return swapped;
+}
+window.eveSwapLiveScoreInText = eveSwapLiveScoreInText;
 
 // Refresh the dashboard's quick-chat greeting so it reflects time-of-day + user
 function refreshDashboardGreeting() {
@@ -24130,6 +24167,7 @@ function refreshDashboardGreeting() {
    health: 'Trust Score 74 with CMS audit window at 30 days. Claims Adjudication v1.9 still using the age-cost proxy — fix is validated in Atonement.'
  };
  var line = orgLines[currentOrg] || orgLines.ad;
+ try { line = eveSwapLiveScoreInText(line); } catch (_dgs) {}
  el.textContent = prefix + ' ' + line;
 }
 
