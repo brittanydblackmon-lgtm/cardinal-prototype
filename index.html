@@ -16218,6 +16218,20 @@ function switchIndustry(org, btn) {
   }
 }
 
+// 9/24 -- found and fixed a real bug while checking Brittany's "do we need
+// this pill" question. This function used to independently derive the count
+// by scanning echoMemories for severity==='critical' minus closed cases --
+// a totally different calculation than the one every other place on the
+// dashboard uses (CARDINAL_DATA[org].criticalCases / DASH_INDUSTRY[org].
+// criticalCaseCount, which already agree with each other for all 4 orgs).
+// Confirmed live: switching to Finance showed "1 Critical Case" in this
+// pill while Finance's own data says 2 -- this function's echoMemories scan
+// was undercounting (fin: 1 vs 2, health: 1 vs 3, fed: 0 vs 1) and winning
+// the race since it fires last (setTimeout after switchIndustry). A&D was
+// the only org where it happened to agree (1 vs 1), which is why this went
+// unnoticed -- it's the org this has mostly been tested in. Fixed by making
+// this pull from the same authoritative static field as everywhere else,
+// instead of a second, disagreeing computation.
 window.updateTopbarCriticalCount = function updateTopbarCriticalCount() {
   var alertEl = document.getElementById('topbar-critical-cases');
   var countEl = document.getElementById('topbar-alert-count');
@@ -16225,20 +16239,7 @@ window.updateTopbarCriticalCount = function updateTopbarCriticalCount() {
 
   var org = window.currentOrg || 'ad';
   var orgData = window.CARDINAL_DATA && window.CARDINAL_DATA[org];
-  var allMems = (orgData && orgData.echoMemories) || [];
-
-  var criticalCases = {};
-  allMems.forEach(function(m){
-    if (m.severity === 'critical' && m.caseId) {
-      criticalCases[m.caseId] = true;
-    }
-  });
-  allMems.forEach(function(m){
-    if ((m.eventType === 'case-closed' || m.eventType === 'closure-attestation') && m.caseId) {
-      delete criticalCases[m.caseId];
-    }
-  });
-  var count = Object.keys(criticalCases).length;
+  var count = orgData && typeof orgData.criticalCases === 'number' ? orgData.criticalCases : 0;
 
   if (count === 0) {
     alertEl.style.display = 'none';
