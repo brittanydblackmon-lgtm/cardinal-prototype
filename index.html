@@ -5342,7 +5342,7 @@ Dashboard
 Trust Score
 <span class="nav-badge" id="nav-ts-badge" style="background:rgba(245,158,11,.15);color:var(--amber)">74</span>
 </div>
-<div class="nav-item" onclick="showScreen('pipeline',this)">
+<div class="nav-item" onclick="showScreen('pipeline',this); setTimeout(function(){ if(typeof pipelineInitWizard==='function') pipelineInitWizard(); },50);">
 <svg class="nav-icon" viewBox="0 0 14 14" fill="none"><path d="M1.5 4h11M1.5 7h11M1.5 10h11" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
 Data Pipeline
 </div>
@@ -8326,10 +8326,43 @@ Template Overview
 </div>
 <!-- PIPELINE -->
 <div id="screen-pipeline" class="screen">
+<div class="section-hdr" style="margin-bottom:14px">
+<div>
+<div style="font-size:15px;font-weight:600;color:var(--chrome2)">Data Pipeline — Bring Your AI System In</div>
+<div style="font-size:11px;color:var(--muted);margin-top:2px" id="pipeline-org-context">Upload assets directly, or connect a live enterprise data source. Cardinal handles both the same way from here on out.</div>
+</div>
+<span id="pipeline-sovereign-badge" class="badge" style="background:rgba(167,167,167,.1);color:var(--chrome2);border:1px solid var(--border2);display:flex;align-items:center;gap:5px;">🔒 <span id="pipeline-sovereign-badge-text">SOC 2 Type II Environment</span></span>
+</div>
+
+<!-- 9/26 -- new onboarding wizard per the data-pipeline landing page research: a real
+     3-step flow (asset type -> data source/upload -> run audit) instead of jumping
+     straight to the explainer diagram. Kept in Cardinal's existing light visual
+     language (stat-card / gen-tab / ds-chip / badge classes already used everywhere
+     else) rather than the dark "cybersecurity" palette the research suggested, per
+     Brittany's 9/26 call to keep this page visually consistent with the rest of the
+     app. See pipelineInitWizard() and friends. The existing "How Cardinal Works" flow
+     diagram stays below, now framed as what happens right after you submit here. -->
+<div id="pipeline-wizard" style="margin-bottom:26px;">
+  <div style="display:flex;gap:10px;margin-bottom:16px;" id="pipeline-step-chips"></div>
+  <div style="display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap;">
+    <div style="width:220px;flex-shrink:0;">
+      <div class="stat-card" style="margin-bottom:10px;padding:6px;">
+        <div style="display:flex;gap:2px;background:var(--bg3);border-radius:8px;padding:3px;">
+          <button id="pipeline-mode-upload-btn" class="gen-tab active" onclick="pipelineSetMode('upload')" style="flex:1;font-size:10px;">Isolated Upload</button>
+          <button id="pipeline-mode-cloud-btn" class="gen-tab" onclick="pipelineSetMode('cloud')" style="flex:1;font-size:10px;">Cloud Pipeline</button>
+        </div>
+      </div>
+      <div id="pipeline-asset-types"></div>
+    </div>
+    <div style="flex:1;min-width:320px;" id="pipeline-canvas"></div>
+    <div style="width:250px;flex-shrink:0;" id="pipeline-diagnostics"></div>
+  </div>
+</div>
+
 <div class="section-hdr" style="margin-bottom:18px">
 <div>
-<div style="font-size:15px;font-weight:600;color:var(--chrome2)">Data Pipeline — How Cardinal Works</div>
-<div style="font-size:11px;color:var(--muted);margin-top:2px">Eden + Obsidian simultaneous · Clean → Model Library · Issues → Remediation</div>
+<div style="font-size:15px;font-weight:600;color:var(--chrome2)">Then, Cardinal Processes It — Eden + Obsidian Simultaneously</div>
+<div style="font-size:11px;color:var(--muted);margin-top:2px">Clean → Model Library · Issues → Remediation</div>
 </div>
 <span class="badge badge-green"><span class="processing-animation"></span>Live</span>
 </div>
@@ -16157,6 +16190,16 @@ function switchIndustry(org, btn) {
  try { syncIndustrySidebarChrome(org); } catch(e) { console.warn('syncIndustrySidebarChrome:', e.message); }
  try { applyCardinalData(org); } catch(e) { console.warn('applyCardinalData:', e.message); }
  try { updateHaloInaction(org); } catch (_haloFx) {}
+ // Data Pipeline's sovereign/compliance badge text is org-specific (A&D/Federal read
+ // FIPS 140-3, Healthcare reads HIPAA, Finance reads SOC 2) -- only touch it, not the
+ // whole wizard, so an in-progress upload/connector demo isn't wiped by an org switch.
+ try {
+   var pipeScreenActive = document.getElementById('screen-pipeline');
+   if (pipeScreenActive && pipeScreenActive.classList.contains('active')) {
+     var pbt = document.getElementById('pipeline-sovereign-badge-text');
+     if (pbt && typeof pipelineOrgSovereignLabel === 'function') pbt.textContent = pipelineOrgSovereignLabel(org);
+   }
+ } catch (_pipeFx) {}
  try { applyUserSettingsMerge(org); } catch(_um) {}
  try { window._tlwSideSearch = ''; } catch (_tsc) {}
  // Re-render Trust Score if it's the active screen
@@ -32729,6 +32772,253 @@ function pmCustomRangeSet(prefix, org, inputEl, which) {
   if (bar) bar.innerHTML = pmStatsBarHtml(pmComputeStats(org, { start: r.start, end: r.end }), prefix, org);
 }
 window.pmCustomRangeSet = pmCustomRangeSet;
+
+// ══════════════════════════════════════════════════════════════════════
+// 9/26 -- Data Pipeline onboarding wizard. Built from the data-onboarding-page
+// research Brittany brought back: a 3-step flow (pick asset type -> upload or
+// connect a live source -> run the audit), demo-depth (real file picker, real
+// connector-drawer fields, a live diagnostics feed that actually reflects what's
+// been added, a Run Audit button that's genuinely disabled until something real
+// is attached) but with nothing actually uploading anywhere -- this is a
+// prototype, not a working ingestion backend.
+// ══════════════════════════════════════════════════════════════════════
+window._pipelineWizard = { mode: 'upload', assetType: 'models', assets: [], connectors: {}, masking: true, openDrawer: null };
+
+var PIPELINE_ASSET_TYPES = [
+  { id: 'models', label: 'Model Artifacts & Weights', hint: '.onnx, .safetensors', why: 'Scans the model\'s internal activation layers for hidden bias.' },
+  { id: 'datasets', label: 'Fine-Tuning & Eval Data', hint: '.csv, .jsonl, .parquet', why: 'Checks training data for structural bias before a model even reads it.' },
+  { id: 'cohorts', label: 'Demographic Cohorts', hint: '.csv, .json', why: 'Cross-references model outputs against real affected-group segments.' },
+  { id: 'pipelines', label: 'System Prompts & Agent Blueprints', hint: '.yaml, .json', why: 'Tests whether an agent\'s own instructions can be bypassed.' }
+];
+var PIPELINE_CONNECTORS = [
+  { id: 'snowflake', label: 'Snowflake', fields: [['account', 'Account Identifier', 'xy12345.us-east-1'], ['role', 'Role / IAM Role ARN', 'arn:aws:iam::123456789012:role/AI-Audit-Role'], ['warehouse', 'Warehouse Name', 'CARDINAL_AUDIT_WH']] },
+  { id: 'bigquery', label: 'Google BigQuery', fields: [['project', 'Project ID', 'cardinal-audit-prod'], ['dataset', 'Dataset', 'model_training_data'], ['sa', 'Service Account Email', 'cardinal-audit@project.iam.gserviceaccount.com']] },
+  { id: 's3', label: 'AWS S3 & Bedrock', fields: [['bucket', 'S3 Bucket', 's3://cardinal-audit-intake'], ['role', 'IAM Role ARN', 'arn:aws:iam::123456789012:role/AI-Audit-Role'], ['endpoint', 'Bedrock Model Endpoint', 'arn:aws:bedrock:us-east-1::model/…']] },
+  { id: 'azure', label: 'Azure OpenAI', fields: [['deployment', 'Deployment Name', 'gpt-audit-deployment'], ['endpoint', 'Endpoint URL', 'https://your-resource.openai.azure.com/'], ['vector', 'Vector Index Pointer', 'pinecone://cardinal-kb']] }
+];
+
+function pipelineOrgSovereignLabel(org) {
+  return { ad: 'Sovereign FIPS 140-3 Compliant Enclave', fed: 'Sovereign FIPS 140-3 Compliant Enclave', fin: 'SOC 2 Type II Environment', health: 'HIPAA-Aligned Compliant Environment' }[org] || 'SOC 2 Type II Environment';
+}
+
+function pipelineInitWizard() {
+  var chips = document.getElementById('pipeline-step-chips');
+  if (!chips) return; // pipeline screen markup not present
+  var org = (typeof currentOrg !== 'undefined' && currentOrg) || 'ad';
+  var badgeText = document.getElementById('pipeline-sovereign-badge-text');
+  if (badgeText) badgeText.textContent = pipelineOrgSovereignLabel(org);
+  pipelineRenderStepChips();
+  pipelineRenderAssetTypes();
+  pipelineRenderCanvas();
+  pipelineRenderDiagnostics();
+}
+
+function pipelineCurrentStep() {
+  var w = window._pipelineWizard;
+  if (w.assets.length === 0 && Object.keys(w.connectors).length === 0) return 1;
+  return 2;
+}
+function pipelineRenderStepChips() {
+  var el = document.getElementById('pipeline-step-chips');
+  if (!el) return;
+  var step = pipelineCurrentStep();
+  var steps = [['1', 'Select Asset Type'], ['2', 'Data Source / Upload'], ['3', 'Run Certification Audit']];
+  el.innerHTML = steps.map(function (s, i) {
+    var n = i + 1;
+    var active = n === step || (n === 3 && step === 2);
+    var done = n < step;
+    return '<div style="display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:20px;font-size:10.5px;font-weight:700;' +
+      (active ? 'background:rgba(34,197,94,.1);color:var(--green);border:1px solid rgba(34,197,94,.3);' : done ? 'background:rgba(167,167,167,.1);color:var(--chrome2);border:1px solid var(--border2);' : 'background:var(--bg3);color:var(--muted);border:1px solid var(--border2);') +
+      '">' + (done ? '✓' : s[0]) + '. ' + s[1] + '</div>' +
+      (n < 3 ? '<div style="color:var(--muted);font-size:11px;">→</div>' : '');
+  }).join('');
+}
+
+function pipelineSetMode(mode) {
+  window._pipelineWizard.mode = mode;
+  var upBtn = document.getElementById('pipeline-mode-upload-btn'), cloudBtn = document.getElementById('pipeline-mode-cloud-btn');
+  if (upBtn) upBtn.classList.toggle('active', mode === 'upload');
+  if (cloudBtn) cloudBtn.classList.toggle('active', mode === 'cloud');
+  pipelineRenderCanvas();
+}
+window.pipelineSetMode = pipelineSetMode;
+
+function pipelineSelectAssetType(id) {
+  window._pipelineWizard.assetType = id;
+  pipelineRenderAssetTypes();
+  pipelineRenderCanvas();
+}
+window.pipelineSelectAssetType = pipelineSelectAssetType;
+
+function pipelineRenderAssetTypes() {
+  var el = document.getElementById('pipeline-asset-types');
+  if (!el) return;
+  var w = window._pipelineWizard;
+  el.innerHTML = '<div style="font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;color:var(--muted);margin:4px 0 6px;">Asset Type</div>' +
+    PIPELINE_ASSET_TYPES.map(function (t) {
+      var active = t.id === w.assetType;
+      var count = w.assets.filter(function (a) { return a.type === t.id; }).length;
+      return '<div onclick="pipelineSelectAssetType(\'' + t.id + '\')" style="cursor:pointer;padding:9px 10px;border-radius:9px;margin-bottom:6px;border:1px solid ' + (active ? 'var(--accent)' : 'var(--border2)') + ';background:' + (active ? 'var(--bg3)' : 'var(--bg2)') + ';">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;"><span style="font-size:11px;font-weight:700;color:var(--chrome2);">' + t.label + '</span>' + (count ? '<span class="badge badge-green" style="font-size:9px;">' + count + '</span>' : '') + '</div>' +
+        '<div style="font-size:9px;color:var(--muted);margin-top:2px;font-family:monospace;">' + t.hint + '</div>' +
+        '</div>';
+    }).join('');
+}
+
+function pipelineRenderCanvas() {
+  var el = document.getElementById('pipeline-canvas');
+  if (!el) return;
+  var w = window._pipelineWizard;
+  if (w.mode === 'upload') {
+    var type = PIPELINE_ASSET_TYPES.filter(function (t) { return t.id === w.assetType; })[0];
+    var assetsOfType = w.assets.filter(function (a) { return a.type === w.assetType; });
+    el.innerHTML =
+      '<div style="border:2px dashed var(--accent);border-radius:12px;padding:28px 16px;text-align:center;background:var(--bg3);" ondragover="event.preventDefault();this.style.borderColor=\'var(--green)\'" ondragleave="this.style.borderColor=\'var(--accent)\'" ondrop="event.preventDefault();this.style.borderColor=\'var(--accent)\';pipelineHandleFiles(event.dataTransfer.files);">' +
+        '<div style="font-size:26px;margin-bottom:8px;">📦</div>' +
+        '<div style="font-size:12px;font-weight:700;color:var(--chrome2);">Drop ' + type.label + ' here</div>' +
+        '<div style="font-size:10px;color:var(--muted);margin-top:3px;">' + type.hint + ' — ' + type.why + '</div>' +
+        '<button type="button" class="dr-btn-ghost" style="margin-top:12px;" onclick="document.getElementById(\'pipeline-file-input\').click()">Browse Local Files</button>' +
+        '<input id="pipeline-file-input" type="file" multiple style="display:none" onchange="pipelineHandleFiles(this.files)">' +
+      '</div>' +
+      '<div style="margin-top:12px;">' +
+        (assetsOfType.length ? assetsOfType.map(function (a) {
+          return '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;border:1px solid var(--border2);border-radius:8px;margin-bottom:6px;background:var(--bg2);">' +
+            '<div style="display:flex;align-items:center;gap:8px;min-width:0;"><span style="font-size:14px;">📄</span><div><div style="font-size:11px;font-weight:600;color:var(--chrome2);">' + a.name + '</div><div style="font-size:9px;color:var(--muted);">' + a.size + '</div></div></div>' +
+            (a.progress < 100 ? '<div style="width:70px;height:5px;background:var(--bg3);border-radius:3px;overflow:hidden;"><div style="width:' + a.progress + '%;height:100%;background:var(--green);transition:width .3s;"></div></div>' : '<span style="color:var(--green);font-size:12px;">✓</span>') +
+            '</div>';
+        }).join('') : '<div style="font-size:10.5px;color:var(--muted);text-align:center;padding:10px;">No ' + type.label.toLowerCase() + ' added yet.</div>') +
+      '</div>';
+  } else {
+    el.innerHTML = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">' +
+      PIPELINE_CONNECTORS.map(function (c) {
+        var connected = !!w.connectors[c.id];
+        return '<div onclick="pipelineOpenDrawer(\'' + c.id + '\')" style="cursor:pointer;padding:14px;border-radius:10px;border:1px solid ' + (connected ? 'rgba(34,197,94,.4)' : 'var(--border2)') + ';background:' + (connected ? 'rgba(34,197,94,.04)' : 'var(--bg2)') + ';">' +
+          '<div style="display:flex;justify-content:space-between;align-items:center;"><span style="font-size:12px;font-weight:700;color:var(--chrome2);">' + c.label + '</span>' +
+          (connected ? '<span class="badge badge-green" style="font-size:9px;">Connected</span>' : '<span class="badge" style="font-size:9px;background:var(--bg3);color:var(--muted);border:1px solid var(--border2);">Disconnected</span>') + '</div>' +
+          '<div style="font-size:9.5px;color:var(--muted);margin-top:6px;">' + (connected ? 'Editable — click to reconfigure access' : 'Click to configure access') + '</div>' +
+          '</div>';
+      }).join('') +
+      '</div>' +
+      '<div id="pipeline-drawer-wrap"></div>';
+    if (w.openDrawer) pipelineRenderDrawer(w.openDrawer);
+  }
+}
+
+function pipelineHandleFiles(fileList) {
+  var w = window._pipelineWizard;
+  Array.prototype.forEach.call(fileList, function (f) {
+    var asset = { type: w.assetType, name: f.name, size: (f.size ? (f.size / 1024).toFixed(1) + ' KB' : 'size unknown'), progress: 0 };
+    w.assets.push(asset);
+    (function tick() {
+      asset.progress = Math.min(100, asset.progress + 20 + Math.random() * 25);
+      pipelineRenderCanvas();
+      pipelineRenderAssetTypes();
+      pipelineRenderDiagnostics();
+      pipelineRenderStepChips();
+      if (asset.progress < 100) setTimeout(tick, 220);
+    })();
+  });
+}
+window.pipelineHandleFiles = pipelineHandleFiles;
+
+function pipelineOpenDrawer(connectorId) {
+  window._pipelineWizard.openDrawer = connectorId;
+  pipelineRenderCanvas();
+}
+window.pipelineOpenDrawer = pipelineOpenDrawer;
+function pipelineCloseDrawer() {
+  window._pipelineWizard.openDrawer = null;
+  pipelineRenderCanvas();
+}
+window.pipelineCloseDrawer = pipelineCloseDrawer;
+
+function pipelineRenderDrawer(connectorId) {
+  var wrap = document.getElementById('pipeline-drawer-wrap');
+  if (!wrap) return;
+  var c = PIPELINE_CONNECTORS.filter(function (x) { return x.id === connectorId; })[0];
+  if (!c) return;
+  var existing = window._pipelineWizard.connectors[connectorId] || {};
+  wrap.innerHTML = '<div style="margin-top:12px;padding:14px;border:1px solid var(--accent);border-radius:10px;background:var(--bg2);">' +
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;"><span style="font-size:12px;font-weight:700;color:var(--chrome2);">Configure ' + c.label + '</span><span onclick="pipelineCloseDrawer()" style="cursor:pointer;color:var(--muted);font-size:14px;">✕</span></div>' +
+    c.fields.map(function (f) {
+      var val = existing[f[0]] || '';
+      return '<div style="margin-bottom:8px;"><label style="font-size:9.5px;color:var(--muted);display:block;margin-bottom:3px;">' + f[1] + '</label>' +
+        '<input id="pipeline-drawer-' + c.id + '-' + f[0] + '" value="' + val + '" placeholder="' + f[2] + '" style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;padding:6px 8px;font-size:10.5px;color:var(--text);font-family:monospace;" oninput="pipelineDrawerFieldChanged(\'' + c.id + '\')">' +
+        '</div>';
+    }).join('') +
+    '<label style="display:flex;align-items:center;gap:6px;font-size:10px;color:var(--muted);margin-top:6px;cursor:pointer;"><input type="checkbox" ' + (window._pipelineWizard.masking ? 'checked' : '') + ' onchange="pipelineToggleMasking()"> Enforce pre-ingestion masking (hash PII locally)</label>' +
+    '<button type="button" class="dr-btn-ghost" style="margin-top:10px;width:100%;" onclick="pipelineConnectSource(\'' + c.id + '\')">Save &amp; Connect</button>' +
+    '</div>';
+}
+
+function pipelineDrawerFieldChanged(connectorId) {
+  var c = PIPELINE_CONNECTORS.filter(function (x) { return x.id === connectorId; })[0];
+  if (!c) return;
+  var vals = {};
+  c.fields.forEach(function (f) {
+    var input = document.getElementById('pipeline-drawer-' + c.id + '-' + f[0]);
+    if (input) vals[f[0]] = input.value;
+  });
+  window._pipelineWizard.connectors[connectorId] = Object.assign({}, window._pipelineWizard.connectors[connectorId] || {}, vals);
+}
+window.pipelineDrawerFieldChanged = pipelineDrawerFieldChanged;
+
+function pipelineConnectSource(connectorId) {
+  pipelineDrawerFieldChanged(connectorId);
+  window._pipelineWizard.connectors[connectorId] = window._pipelineWizard.connectors[connectorId] || { connected: true };
+  window._pipelineWizard.connectors[connectorId].connected = true;
+  window._pipelineWizard.openDrawer = null;
+  pipelineRenderCanvas();
+  pipelineRenderDiagnostics();
+  pipelineRenderStepChips();
+  if (typeof showToast === 'function') showToast(PIPELINE_CONNECTORS.filter(function (x) { return x.id === connectorId; })[0].label + ' connected');
+}
+window.pipelineConnectSource = pipelineConnectSource;
+
+function pipelineToggleMasking() {
+  window._pipelineWizard.masking = !window._pipelineWizard.masking;
+  pipelineRenderDiagnostics();
+}
+window.pipelineToggleMasking = pipelineToggleMasking;
+
+function pipelineRenderDiagnostics() {
+  var el = document.getElementById('pipeline-diagnostics');
+  if (!el) return;
+  var w = window._pipelineWizard;
+  var hasAny = w.assets.length > 0 || Object.keys(w.connectors).length > 0;
+  var hasCohort = w.assets.some(function (a) { return a.type === 'cohorts'; });
+  var allUploaded = w.assets.length === 0 || w.assets.every(function (a) { return a.progress >= 100; });
+  var checks = [
+    { label: 'Secure Enclave Initialized', done: hasAny },
+    { label: 'Data Ingestion Mapped', done: hasAny && allUploaded },
+    { label: 'Cohort Alignment Validated', done: hasCohort || Object.keys(w.connectors).length > 0 },
+    { label: 'Ready to Execute Certification Audit', done: hasAny && allUploaded }
+  ];
+  var ready = checks[checks.length - 1].done;
+  el.innerHTML =
+    '<div style="background:#1a1815;border-radius:10px;padding:12px;font-family:monospace;">' +
+      '<div style="font-size:9px;color:#94a3b8;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">Compliance Sanitization Environment</div>' +
+      checks.map(function (c) {
+        return '<div style="font-size:10.5px;color:' + (c.done ? '#22c55e' : '#64748b') + ';margin-bottom:5px;">[' + (c.done ? '✓' : ' ') + '] ' + c.label + '</div>';
+      }).join('') +
+    '</div>' +
+    '<label style="display:flex;align-items:center;gap:6px;font-size:10px;color:var(--muted);margin:10px 0;cursor:pointer;"><input type="checkbox" ' + (w.masking ? 'checked' : '') + ' onchange="pipelineToggleMasking()"> Enforce pre-ingestion masking</label>' +
+    '<button type="button" ' + (ready ? '' : 'disabled') + ' onclick="pipelineRunAudit()" style="width:100%;padding:12px;border-radius:9px;border:none;font-size:11px;font-weight:700;cursor:' + (ready ? 'pointer' : 'not-allowed') + ';background:' + (ready ? 'var(--chrome2)' : 'var(--bg3)') + ';color:' + (ready ? '#fff' : 'var(--muted)') + ';">🚀 Run Independent AI Certification Audit</button>' +
+    (!ready ? '<div style="font-size:9px;color:var(--muted);text-align:center;margin-top:6px;">Add at least one asset or connect a source first</div>' : '');
+}
+
+function pipelineRunAudit() {
+  if (typeof showToast === 'function') showToast('Certification audit started — routing to Eden + Obsidian');
+  var target = document.querySelector('#screen-pipeline .pipeline-layer');
+  if (target) target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+window.pipelineRunAudit = pipelineRunAudit;
+
+(function pipelineWizardBoot() {
+  function boot() { try { pipelineInitWizard(); } catch (e) { if (window.console) console.warn('pipelineInitWizard', e); } }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
+  else boot();
+})();
 
 function echoTogglePin(memoryId) {
   window.__echoPinnedOverrides = window.__echoPinnedOverrides || {};
