@@ -16592,12 +16592,16 @@ function dashStartTrustScoreDrift(baseline) {
   ['dr-bias-det-num', 'dr-fraud-num', 'dr-comp-num'].forEach(function (id) { delete window['_dashTrust_' + id + '_base']; });
   el.style.transition = 'opacity 0.4s ease';
 
-  // Slower, more deliberate cadence per Brittany's 9/24 "it's changing too fast" note —
-  // fewer, larger steps with a gentler ease and a longer hold at each stop, so a viewer
-  // can actually read each number before it moves again instead of it feeling jittery.
+  // 9/24, 2nd pass — the first slowdown fixed the transition jitter, but
+  // Brittany's real complaint was pacing between stops, not transition
+  // speed: "it can change quickly, but then it can take its time... let it
+  // breathe." So the transition itself (stepMs, ease factor below) is left
+  // as-is, and only the hold time at each stop is doubled (6s -> 12s) so the
+  // number sits still and readable for real, instead of feeling like it's
+  // constantly dropping/climbing.
   var keyframes = [baseline, Math.min(100, baseline + 9), Math.max(0, baseline - 9), baseline];
   var stepMs = 650;
-  var holdTicks = Math.round(6000 / stepMs);
+  var holdTicks = Math.round(12000 / stepMs);
 
   function pushValue(v) {
     var displayed = Math.round(v);
@@ -18916,7 +18920,7 @@ function dashEnrichAndSortCorePanels(specs) {
 // Every row here is pulled from the same rows array the cards themselves use
 // (via window._dashLastCorePanelSpecs, set by dashEnrichAndSortCorePanels) --
 // nothing invented, just surfaced once instead of six times.
-function dashBuildActionQueue(specs) {
+function dashBuildActionQueue(specs, cfg) {
   var items = [];
   (specs || []).forEach(function (spec) {
     (spec.rows || []).forEach(function (r) {
@@ -18930,6 +18934,32 @@ function dashBuildActionQueue(specs) {
         color: r.bd || '#94a3b8',
         severity: spec._severity || 0
       });
+    });
+  });
+  // 9/24, third follow-up — Brittany's call: this shouldn't be core-only, it
+  // should read as "everything needing action right now," including the real
+  // regulatory deadlines/lapses/violations that already live in Regulatory
+  // Deadlines & Certifications further down. Pulling the same
+  // cfg.regulatoryPanel.action array that section renders from (no new/
+  // duplicate data), tagged as REGULATORY so it's clear where each item
+  // belongs, so the two sections tell one story instead of two disconnected
+  // ones.
+  var toneColor = { red: '#ef4444', amber: '#f59e0b', green: '#22c55e' };
+  var regAction = (cfg && cfg.regulatoryPanel && Array.isArray(cfg.regulatoryPanel.action)) ? cfg.regulatoryPanel.action : [];
+  regAction.forEach(function (it, i) {
+    var color = toneColor[it.badgeTone] || '#ef4444';
+    // Regulatory items are, by definition, already in the "Action Required"
+    // bucket, so they rank at least as urgent as a critical core row --
+    // index-tiebroken so the order shown in Regulatory Deadlines is preserved.
+    var severity = (it.badgeTone === 'red' ? 5000 : 3000) - i;
+    items.push({
+      core: 'REGULATORY',
+      screen: it.screen || 'compliance',
+      id: it.statuteId || it.caseId || ('reg-' + i),
+      text: it.title || it.detail || '',
+      badge: it.badge || '',
+      color: color,
+      severity: severity
     });
   });
   items.sort(function (a, b) { return b.severity - a.severity; });
@@ -18953,7 +18983,8 @@ function dashRenderActionQueue(org) {
   var root = document.getElementById('dash-action-queue');
   if (!root) return;
   var specs = window._dashLastCorePanelSpecs || [];
-  var items = dashBuildActionQueue(specs);
+  var cfg = typeof DASH_INDUSTRY !== 'undefined' ? DASH_INDUSTRY[org || window.currentOrg || 'ad'] : null;
+  var items = dashBuildActionQueue(specs, cfg);
   window._dashActionQueueItems = items;
   if (!items.length) { root.innerHTML = ''; return; }
   if (window.currentActionQueueIndex >= items.length) window.currentActionQueueIndex = 0;
