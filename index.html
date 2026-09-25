@@ -16630,6 +16630,21 @@ function dashSyncAllTrustScoreDisplays(value, delta) {
   // rather than patched in place, same approach as the Eve narrative below.
   var compInlineEl = document.getElementById('tsv2-comp-num-inline');
   if (compInlineEl) compInlineEl.textContent = String(v);
+  // 9/26 -- found live while verifying the fixes above: the "Your Score N · Industry
+  // Avg M · Pth Percentile" line and its position dot under Score Confidence (also
+  // set once in tsv2BuildHero from the static `score`) had the exact same staleness --
+  // ring/pills/heading had already moved to 88 while this line still said "Your Score
+  // 79". Only the "Your Score" number and dot position move here; industry avg and
+  // percentile are static peer-comparison context, same treatment as the Dashboard's
+  // peer line fixed above.
+  var peerTextEl = document.getElementById('tsv2-peer-text');
+  if (peerTextEl) peerTextEl.innerHTML = peerTextEl.innerHTML.replace(/(Your Score<\/strong>\s*)(\d+)/i, '$1' + v);
+  var youDotEl = document.getElementById('tsv2-peer-you');
+  if (youDotEl) {
+    youDotEl.style.left = Math.max(0, Math.min(100, v)) + '%';
+    youDotEl.style.color = color;
+    youDotEl.style.background = color;
+  }
   ['tsv2-pill-bias-num', 'tsv2-pill-fraud-num', 'tsv2-pill-comp-num'].forEach(function (id) {
     var pillEl = document.getElementById(id);
     if (!pillEl) return;
