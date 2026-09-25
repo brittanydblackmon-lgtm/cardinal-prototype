@@ -5346,10 +5346,11 @@ Trust Score
 <svg class="nav-icon" viewBox="0 0 14 14" fill="none"><path d="M1.5 4h11M1.5 7h11M1.5 10h11" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
 Data Pipeline
 </div>
-<div class="nav-item" onclick="showScreen('echo',this); setTimeout(function(){ if(typeof echoSwitchTab==='function') echoSwitchTab('pmprofiles'); },80);" title="Search any person by name or ID across every model they've touched">
-<svg class="nav-icon" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="5" r="2.3" stroke="currentColor" stroke-width="1.4"/><path d="M2.5 12c0-2.5 2-4 4.5-4s4.5 1.5 4.5 4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
-Cardinal Passport
-</div>
+<!-- 9/26 -- removed per Brittany: "it shouldn't be a place where you just click on
+     the sidebar, it should only exist in Echo Core." This was already just a shortcut
+     into Echo Core's pmprofiles tab (see showScreen('echo') below), not a separate
+     screen -- so nothing is lost, it's reached by going into Echo Core directly now,
+     same as any other Echo Core tab. -->
 <div class="nav-section-label sidebar-section-label">CORES</div>
 <div class="nav-item" onclick="showScreen('eden',this)">
 <svg class="nav-icon" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.4"/><path d="M7 4.5v2.5l1.5 1.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
@@ -5996,28 +5997,11 @@ Settings
 <div id="gen-tab-pmprofiles" class="gen-tab-content">
 
 <!-- AT A GLANCE -->
-<div class="grid-4" style="margin-bottom:14px">
-  <div class="stat-card" style="cursor:pointer">
-    <div class="stat-label">Total Profiles</div>
-    <div class="stat-value" style="color:var(--accent);font-size:22px" id="pm-total">1,247</div>
-    <div class="stat-change">Across all models</div>
-  </div>
-  <div class="stat-card" style="cursor:pointer">
-    <div class="stat-label">Synthetic Personas</div>
-    <div class="stat-value" style="color:var(--blue);font-size:22px" id="pm-synthetic">312</div>
-    <div class="stat-change">Adam-generated</div>
-  </div>
-  <div class="stat-card" style="cursor:pointer;border-color:rgba(245,158,11,.2)">
-    <div class="stat-label">Flagged Profiles</div>
-    <div class="stat-value" style="color:var(--amber);font-size:22px" id="pm-flagged">47</div>
-    <div class="stat-change warn">Bias detected</div>
-  </div>
-  <div class="stat-card" style="cursor:pointer">
-    <div class="stat-label">Repeat Impact Cases</div>
-    <div class="stat-value" style="color:var(--red);font-size:22px" id="pm-repeat">3</div>
-    <div class="stat-change down">Same profile, multiple flags</div>
-  </div>
-</div>
+<!-- 9/26 -- was 4 hand-typed static numbers (1,247 / 312 / 47 / 3); replaced with the
+     same pmStatsBarHtml() Echo Core now uses, computed live from PM_PROFILES, plus a
+     real Approved/Denied count with a date-range picker instead of a fixed window. See
+     buildPMProfiles() for the populate call. -->
+<div class="grid-4" style="margin-bottom:14px" id="pm-stats-bar"></div>
 
 <!-- TABS INSIDE PM-PROFILES -->
 <div style="display:flex;gap:2px;margin-bottom:14px;background:var(--bg2);border-radius:8px;padding:3px;width:fit-content">
@@ -7546,6 +7530,15 @@ Template Overview
     </div>
     <div class="tsv2-hero-right">
       <div id="tsv2-cert-badge-wrap"></div>
+      <!-- 9/26 -- new quarterly Bias/Fraud checkpoint layer, per Brittany's cadence
+           question ("what about bias and fraud only certifications, how do we keep
+           them accountable?"). Global Trust Score recert stays annual; this adds a
+           quarterly formal checkpoint specifically for Fairness and Fraud Integrity,
+           since those two already have real-time continuous monitoring (Eden/
+           Obsidian) -- continuous monitoring catches problems as they happen, the
+           quarterly checkpoint creates a paper-trail accountability moment for
+           auditors, annual is the full recert. See tsv2BuildCadenceCheckpoint(). -->
+      <div id="tsv2-cadence-wrap"></div>
       <div class="tsv2-peer-block" id="tsv2-peer-block">
         <div class="tsv2-peer-line">
           <span id="tsv2-peer-title">Industry Position</span>
@@ -16582,6 +16575,15 @@ function dashSyncAllTrustScoreDisplays(value, delta) {
     ringOld.setAttribute('stroke', color);
     ringOld.setAttribute('stroke-dashoffset', ringOldCirc * (1 - Math.max(0, Math.min(100, v)) / 100));
   }
+  // Keep Eve's written executive summary's opening score reference moving with the
+  // same live number, whenever the Trust Score screen is actually on screen -- see
+  // tsv2RenderEveBody's 9/26 note for why only the first number gets swapped.
+  try {
+    var tsRootLive = document.getElementById('ts-v2-root');
+    if (tsRootLive && tsRootLive.style.display !== 'none' && typeof tsv2RenderEveBody === 'function' && typeof tsv2Data === 'function') {
+      tsv2RenderEveBody(tsv2Data(window.currentOrg || 'ad'));
+    }
+  } catch (_eveSyncTick) {}
   var chipNum = document.querySelector('.sidebar-trust-score-chip-num') || document.getElementById('sidebar-trust-score-num');
   if (chipNum) { chipNum.textContent = v; chipNum.style.color = color; }
   var chipBadge = document.getElementById('sidebar-score-badge');
@@ -32561,6 +32563,37 @@ function echoRenderWhistleblower(org) {
   echoFilterTabResults('whistleblower', '');
 }
 
+// 9/26 -- shared helpers for the Cardinal Passport redesign (both Echo Core's full
+// vault and Genesis's lightweight list use these, so the two can't drift apart the
+// way the rest of the app's numbers did before tonight). No new data invented: risk
+// tier is derived from the same real `flags` count already on each profile, and the
+// stats are computed live from PM_PROFILES instead of the hand-typed static numbers
+// Genesis used to show.
+function pmRiskTier(flags) {
+  if (flags >= 2) return { label: 'High', color: '#ef4444', bg: 'rgba(239,68,68,.12)' };
+  if (flags === 1) return { label: 'Medium', color: '#f59e0b', bg: 'rgba(245,158,11,.12)' };
+  return { label: 'Low', color: '#22c55e', bg: 'rgba(34,197,94,.12)' };
+}
+function pmComputeStats(org, opts) {
+  opts = opts || {};
+  var live = (typeof PM_PROFILES !== 'undefined' && PM_PROFILES[org] && PM_PROFILES[org].live) || [];
+  var synthetic = (typeof PM_PROFILES !== 'undefined' && PM_PROFILES[org] && PM_PROFILES[org].synthetic) || [];
+  var start, end;
+  if (opts.start && opts.end) { start = new Date(opts.start); end = new Date(opts.end); end.setHours(23, 59, 59, 999); }
+  else { var days = opts.days || 30; end = new Date(); start = new Date(end.getTime() - days * 86400000); }
+  var inRange = live.filter(function (p) { var d = new Date(p.lastDate); return d >= start && d <= end; });
+  return {
+    total: live.length,
+    synthetic: synthetic.length,
+    flagged: live.filter(function (p) { return p.flags > 0; }).length,
+    repeat: live.filter(function (p) { return p.repeat; }).length,
+    approved: inRange.filter(function (p) { return p.lastDecision === 'APPROVED'; }).length,
+    denied: inRange.filter(function (p) { return p.lastDecision === 'DENIED'; }).length,
+    rangeDays: opts.days || null,
+    start: start, end: end
+  };
+}
+
 // Echo Core is now the FULL Cardinal Passport per Brittany's 9/23 correction (her first
 // instinct was Genesis, she reversed that: personal information and the real search
 // experience belong in Echo since that's the permissioned audit/record layer; Genesis
@@ -32580,51 +32613,122 @@ function echoFilterPMProfiles(query) {
   }
   echoRenderPMLive(profiles);
 }
+// 9/26 -- rebuilt from a card grid to a real list with column headers, per Brittany's
+// 9/23 design notes: Name / EID / Models / Decisions / Flags / Last Decision / Last
+// Date, plus a Risk column (derived from the same real `flags` count, not a new
+// invented number). Redact/reveal and repeat-impact behavior unchanged.
 function echoRenderPMLive(profiles) {
   var el = document.getElementById('echo-pm-live-grid');
   if (!el) return;
   el.innerHTML = profiles.map(function (p) {
     var revealed = !!window.__pmRevealed[p.eid];
     var nameDisplay = revealed ? p.name : pmMaskName(p.name);
+    var risk = pmRiskTier(p.flags);
     return (
-      '<div style="background:var(--bg3);border:1px solid ' + (p.flags>0?'rgba(239,68,68,.2)':'var(--border)') + ';border-radius:10px;padding:14px;cursor:pointer;transition:border-color .15s" onclick="openProfileDetail(\'' + p.eid + '\')">' +
-        '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">' +
-          '<div>' +
-            '<div style="font-size:9px;color:var(--accent);font-weight:600;margin-bottom:2px">' + p.eid + '</div>' +
-            '<div style="font-size:12px;font-weight:600;color:var(--chrome2);display:flex;align-items:center;gap:6px">' +
-              '<span>' + nameDisplay + '</span>' +
-              '<span onclick="pmToggleReveal(\'' + p.eid + '\', event); echoFilterPMProfiles(document.getElementById(\'echo-pm-search-input\').value);" title="' + (revealed ? 'Hide name' : 'Reveal name (access logged)') + '" style="color:var(--muted);cursor:pointer;">' + (revealed ? '(hide)' : '(reveal)') + '</span>' +
-            '</div>' +
-          '</div>' +
-          '<span class="badge badge-' + (p.flags>0?'red':'green') + '" style="font-size:9px">' + (p.flags>0?p.flags+' Flag'+(p.flags>1?'s':''):'Clean') + '</span>' +
-        '</div>' +
-        '<div style="font-size:10px;color:var(--muted);margin-bottom:6px">' + p.models.length + ' model' + (p.models.length>1?'s':'') + ' · ' + p.decisions + ' decisions</div>' +
-        (revealed && p.email ? '<div style="font-size:9px;color:var(--muted2);margin-bottom:6px">' + p.email + ' <span style="color:var(--muted);font-style:italic">(placeholder)</span></div>' : '') +
-        '<div style="display:flex;justify-content:space-between;align-items:center">' +
-          '<span style="font-size:10px;color:var(--muted)">Last: ' + p.lastDate + '</span>' +
-          '<span style="font-size:10px;font-weight:600;color:var(--' + (p.lastDecision==='DENIED'?'red':'green') + ')">' + p.lastDecision + '</span>' +
-        '</div>' +
-        (p.repeat ? '<div style="font-size:9px;color:var(--red);margin-top:6px;background:rgba(239,68,68,.08);border-radius:4px;padding:3px 6px">Repeat impact case</div>' : '') +
-      '</div>'
+      '<tr style="border-top:1px solid rgba(167,167,167,.08);cursor:pointer;' + (p.repeat ? 'background:rgba(239,68,68,.03);' : '') + '" onclick="openProfileDetail(\'' + p.eid + '\')">' +
+        '<td style="padding:9px 12px;">' +
+          '<span style="font-weight:600;color:var(--chrome2);">' + nameDisplay + '</span> ' +
+          '<span onclick="event.stopPropagation();pmToggleReveal(\'' + p.eid + '\', event); echoFilterPMProfiles(document.getElementById(\'echo-pm-search-input\').value);" title="' + (revealed ? 'Hide name' : 'Reveal name (access logged)') + '" style="color:var(--muted);cursor:pointer;font-size:9.5px;">' + (revealed ? '(hide)' : '(reveal)') + '</span>' +
+          (p.repeat ? '<div style="font-size:9px;color:var(--red);margin-top:2px;">Repeat impact case</div>' : '') +
+        '</td>' +
+        '<td style="padding:9px 8px;font-size:9.5px;color:var(--accent);white-space:nowrap;">' + p.eid + '</td>' +
+        '<td style="padding:9px 8px;font-size:10px;color:var(--muted);">' + p.models.join(', ') + '</td>' +
+        '<td style="padding:9px 8px;text-align:center;">' + p.decisions + '</td>' +
+        '<td style="padding:9px 8px;text-align:center;color:' + (p.flags > 0 ? 'var(--red)' : 'var(--muted)') + ';font-weight:600;">' + p.flags + '</td>' +
+        '<td style="padding:9px 8px;text-align:center;"><span style="font-size:9.5px;font-weight:700;color:' + risk.color + ';background:' + risk.bg + ';border-radius:5px;padding:2px 7px;">' + risk.label + '</span></td>' +
+        '<td style="padding:9px 8px;font-weight:600;color:' + (p.lastDecision === 'DENIED' ? 'var(--red)' : 'var(--green)') + ';white-space:nowrap;">' + p.lastDecision + '</td>' +
+        '<td style="padding:9px 12px;font-size:10px;color:var(--muted);white-space:nowrap;">' + p.lastDate + '</td>' +
+      '</tr>'
     );
-  }).join('') || '<div style="font-size:11px;color:var(--muted);padding:12px 0;grid-column:1/-1;">No records match.</div>';
+  }).join('') || '<tr><td colspan="8" style="font-size:11px;color:var(--muted);padding:16px;text-align:center;">No records match.</td></tr>';
 }
 function echoRenderPMProfiles(org) {
   var el = document.getElementById('echo-tab-content-pmprofiles');
   if (!el) return;
+  var s = pmComputeStats(org, { days: 30 });
   el.innerHTML = '<div style="padding:8px 0 20px;">' +
-    '<div style="font-size:18px;font-weight:700;color:var(--chrome2);margin-bottom:6px;">Cardinal Passport — Affected-Person Record Vault</div>' +
-    '<div style="font-size:11px;color:var(--muted);margin-bottom:16px;">Search any person by name, ID, or model. Names redacted by default — revealing one is logged. This is where personal decision history lives; access should be permissioned to compliance/legal only.</div>' +
-    '<div style="display:flex;gap:8px;margin-bottom:12px;align-items:center">' +
-      '<input id="echo-pm-search-input" placeholder="Search by EID, name, model..." style="flex:1;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:8px 12px;color:var(--text);font-size:11px;font-family:var(--sans);outline:none" oninput="echoFilterPMProfiles(this.value)"/>' +
+    '<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">' +
+      '<div style="font-size:18px;font-weight:700;color:var(--chrome2);">Cardinal Passport — Affected-Person Record Vault</div>' +
+      // 9/26 -- visual lock indicator per Brittany's 9/23 design notes, so this reads
+      // as restricted before anyone even tries to open a record (the actual gate --
+      // passcode/2FA on Echo Core itself -- is a separate, already-queued item).
+      '<span title="Restricted — Compliance/Legal only" style="display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:700;color:#b45309;background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.3);border-radius:6px;padding:3px 8px;">🔒 RESTRICTED</span>' +
+    '</div>' +
+    '<div style="font-size:11px;color:var(--muted);margin-bottom:14px;">Search any person by name, ID, or model. Names redacted by default — revealing one is logged. Real people only; synthetic test personas stay in Genesis. Access should be permissioned to compliance/legal only.</div>' +
+    '<div class="grid-4" style="margin-bottom:14px" id="echo-pm-stats-bar">' + pmStatsBarHtml(s, 'echo', org) + '</div>' +
+    '<div style="display:flex;gap:8px;margin-bottom:12px;align-items:center;flex-wrap:wrap">' +
+      '<input id="echo-pm-search-input" placeholder="Search by EID, name, model..." style="flex:1;min-width:180px;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:8px 12px;color:var(--text);font-size:11px;font-family:var(--sans);outline:none" oninput="echoFilterPMProfiles(this.value)"/>' +
       '<select id="echo-pm-filter-status" onchange="echoFilterPMProfiles(document.getElementById(\'echo-pm-search-input\').value)" style="background:var(--bg3);border:1px solid var(--border2);border-radius:7px;padding:7px 10px;font-size:10px;color:var(--text);font-family:var(--sans)">' +
         '<option value="all">All Profiles</option><option value="flagged">Flagged</option><option value="clean">Clean</option><option value="repeat">Repeat Impact</option>' +
       '</select>' +
     '</div>' +
-    '<div id="echo-pm-live-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px"></div>' +
+    '<div style="overflow-x:auto;background:rgba(167,167,167,0.03);border:1px solid rgba(167,167,167,.12);border-radius:10px;">' +
+      '<table style="width:100%;border-collapse:collapse;font-size:11px;">' +
+      '<thead><tr style="text-align:left;color:var(--muted);font-size:9.5px;text-transform:uppercase;letter-spacing:.03em;">' +
+        '<th style="padding:10px 12px;">Name</th><th style="padding:10px 8px;">EID</th><th style="padding:10px 8px;">Models</th>' +
+        '<th style="padding:10px 8px;text-align:center;">Decisions</th><th style="padding:10px 8px;text-align:center;">Flags</th>' +
+        '<th style="padding:10px 8px;text-align:center;">Risk</th><th style="padding:10px 8px;">Last Decision</th><th style="padding:10px 12px;">Last Date</th>' +
+      '</tr></thead>' +
+      '<tbody id="echo-pm-live-grid"></tbody>' +
+      '</table>' +
+    '</div>' +
   '</div>';
   echoFilterPMProfiles('');
 }
+
+// Shared stats-bar markup for both Echo (full vault) and Genesis (lightweight list) --
+// real numbers computed by pmComputeStats, not hand-typed. `prefix` keeps the two
+// copies' element IDs from colliding since both can exist in the DOM at once.
+function pmStatsBarHtml(s, prefix, org) {
+  var rangeId = prefix + '-pm-range';
+  return (
+    '<div class="stat-card"><div class="stat-label">Total Profiles</div><div class="stat-value" style="color:var(--accent);font-size:22px">' + s.total + '</div><div class="stat-change">Across all models</div></div>' +
+    // Synthetic personas only make sense as their own tab in Genesis -- Echo Core is
+    // real people only (per Brittany's 9/23 direction), so this card is Genesis-only.
+    (prefix === 'genesis' ? '<div class="stat-card"><div class="stat-label">Synthetic Personas</div><div class="stat-value" style="color:var(--blue);font-size:22px">' + s.synthetic + '</div><div class="stat-change">Adam-generated</div></div>' : '') +
+    '<div class="stat-card" style="border-color:rgba(245,158,11,.2)"><div class="stat-label">Flagged Profiles</div><div class="stat-value" style="color:var(--amber);font-size:22px">' + s.flagged + '</div><div class="stat-change warn">Bias detected</div></div>' +
+    '<div class="stat-card"><div class="stat-label">Repeat Impact Cases</div><div class="stat-value" style="color:var(--red);font-size:22px">' + s.repeat + '</div><div class="stat-change down">Same profile, multiple flags</div></div>' +
+    '<div class="stat-card">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;gap:6px;">' +
+        '<div class="stat-label">Approved / Denied</div>' +
+        '<select id="' + rangeId + '" onchange="pmRangeChanged(\'' + prefix + '\',\'' + org + '\',this.value)" style="background:var(--bg3);border:1px solid var(--border2);border-radius:5px;padding:2px 4px;font-size:9px;color:var(--muted);font-family:var(--sans)">' +
+          '<option value="7"' + (s.rangeDays === 7 ? ' selected' : '') + '>7d</option>' +
+          '<option value="30"' + (s.rangeDays === 30 ? ' selected' : '') + '>30d</option>' +
+          '<option value="90"' + (s.rangeDays === 90 ? ' selected' : '') + '>90d</option>' +
+          '<option value="custom"' + (!s.rangeDays ? ' selected' : '') + '>Custom…</option>' +
+        '</select>' +
+      '</div>' +
+      '<div class="stat-value" style="font-size:22px"><span style="color:#22c55e">' + s.approved + '</span><span style="color:var(--muted);font-size:14px"> / </span><span style="color:#ef4444">' + s.denied + '</span></div>' +
+      '<div class="stat-change" id="' + prefix + '-pm-range-custom"></div>' +
+    '</div>'
+  );
+}
+window.pmStatsBarHtml = pmStatsBarHtml;
+
+function pmRangeChanged(prefix, org, val) {
+  var wrap = document.getElementById(prefix + '-pm-range-custom');
+  if (val === 'custom') {
+    if (wrap) wrap.innerHTML = '<input type="date" onchange="pmCustomRangeSet(\'' + prefix + '\',\'' + org + '\',this,\'start\')" style="font-size:9px;width:47%;background:var(--bg3);border:1px solid var(--border2);border-radius:4px;color:var(--text);margin-top:3px;"> <input type="date" onchange="pmCustomRangeSet(\'' + prefix + '\',\'' + org + '\',this,\'end\')" style="font-size:9px;width:47%;background:var(--bg3);border:1px solid var(--border2);border-radius:4px;color:var(--text);margin-top:3px;">';
+    return;
+  }
+  if (wrap) wrap.innerHTML = '';
+  var barId = prefix === 'echo' ? 'echo-pm-stats-bar' : 'pm-stats-bar';
+  var bar = document.getElementById(barId);
+  if (bar) bar.innerHTML = pmStatsBarHtml(pmComputeStats(org, { days: parseInt(val, 10) }), prefix, org);
+}
+window.pmRangeChanged = pmRangeChanged;
+window._pmCustomRange = window._pmCustomRange || {};
+function pmCustomRangeSet(prefix, org, inputEl, which) {
+  var key = prefix + ':' + org;
+  window._pmCustomRange[key] = window._pmCustomRange[key] || {};
+  window._pmCustomRange[key][which] = inputEl.value;
+  var r = window._pmCustomRange[key];
+  if (!r.start || !r.end) return;
+  var barId = prefix === 'echo' ? 'echo-pm-stats-bar' : 'pm-stats-bar';
+  var bar = document.getElementById(barId);
+  if (bar) bar.innerHTML = pmStatsBarHtml(pmComputeStats(org, { start: r.start, end: r.end }), prefix, org);
+}
+window.pmCustomRangeSet = pmCustomRangeSet;
 
 function echoTogglePin(memoryId) {
   window.__echoPinnedOverrides = window.__echoPinnedOverrides || {};
@@ -36268,6 +36372,29 @@ function tsv2RenderEveBody(d) {
   var body = document.getElementById('tsv2-eve-body');
   if (!body) return;
   var text = tsv2EveText(d, TSV2_EVE_TIMEFRAME);
+  // 9/26 -- Brittany: Eve's narrative said "sits at 74" as a fixed snapshot while the
+  // ring/sidebar right next to it now move live with the "let it breathe" drift, so the
+  // two could read as contradicting each other. The written scenario's other numbers
+  // (percentiles, DI ratios, dollar exposure, affected-record counts) are part of the
+  // story and don't move with a live ±9 drift -- only the score itself does. The
+  // quarterly summaries all open with an explicit "sits at NN" / "score is NN" lead
+  // sentence, but the monthly summaries don't (they open with a point-delta like
+  // "April saw a 2-point drop") -- so this only fires on that specific phrase, matched
+  // by regex, instead of blindly swapping the first number in the paragraph (which for
+  // monthly text would wrongly hit the delta number, not a score).
+  try {
+    var liveScoreForEve = (typeof window._dashTrustDriftValue === 'number' && window.currentOrg === (window.TSV2_LAST_ORG || window.currentOrg))
+      ? Math.round(window._dashTrustDriftValue)
+      : null;
+    var seedScoreForEve = parseInt(d.trustScoreDisplay, 10);
+    if (liveScoreForEve != null && seedScoreForEve && liveScoreForEve !== seedScoreForEve && text) {
+      var eveScoreRe = /(sits at |score is )(\d{2,3})/i;
+      var eveMatch = eveScoreRe.exec(text);
+      if (eveMatch && parseInt(eveMatch[2], 10) === seedScoreForEve) {
+        text = text.slice(0, eveMatch.index) + eveMatch[1] + liveScoreForEve + text.slice(eveMatch.index + eveMatch[0].length);
+      }
+    }
+  } catch (_eveLive) {}
   // Split on blank lines first; if only one paragraph, split sentences into 2-3 chunks.
   var paras = String(text || '').split(/\n\n+/).map(function (p) { return p.trim(); }).filter(Boolean);
   if (paras.length === 1) {
@@ -37036,6 +37163,47 @@ function tsv2WireTooltips() {
   } catch (_e) { if (window.console) console.warn('tsv2WireTooltips', _e); }
 }
 
+// 9/26 -- Quarterly Bias & Fraud checkpoint. Brittany's cadence question: annual-only
+// recert doesn't hold Fairness/Fraud Integrity accountable often enough given they
+// already have real-time continuous monitoring (Eden/Obsidian). Recommendation she
+// approved: keep the Global Trust Score recert annual, add a quarterly formal
+// checkpoint layer just for those two -- continuous monitoring catches problems as
+// they happen, the quarterly checkpoint is the paper-trail accountability moment for
+// auditors, annual is the full recert. This is a new, separate layer, not a change to
+// the existing annual certStatus/certRenewal fields.
+function tsv2BuildCadenceCheckpoint(d) {
+  var wrap = document.getElementById('tsv2-cadence-wrap');
+  if (!wrap || !d) return;
+  function tier(score) {
+    if (score >= 80) return { label: 'On Track', color: '#22c55e', bg: 'rgba(34,197,94,.12)' };
+    if (score >= 70) return { label: 'Below Target', color: '#f59e0b', bg: 'rgba(245,158,11,.12)' };
+    return { label: 'At Risk', color: '#ef4444', bg: 'rgba(239,68,68,.12)' };
+  }
+  var biasTier = tier(d.biasScore || 0);
+  var fraudTier = tier(d.fraudScore || 0);
+  // Fixed calendar-quarter checkpoints (Jan/Apr/Jul/Oct 1) -- the simplest schedule
+  // that reads as real without inventing a separate per-org cadence date on top of
+  // the org's own annual cert date.
+  var now = new Date();
+  var candidates = [];
+  [0, 3, 6, 9].forEach(function (m) {
+    candidates.push(new Date(now.getFullYear(), m, 1));
+    candidates.push(new Date(now.getFullYear() + 1, m, 1));
+  });
+  var next = candidates.filter(function (dt) { return dt > now; }).sort(function (a, b) { return a - b; })[0];
+  var daysOut = Math.round((next - now) / 86400000);
+  var dateStr = next.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  wrap.innerHTML =
+    '<div style="margin-top:10px;padding:10px 12px;border:1px solid rgba(148,163,184,.25);border-radius:10px;background:rgba(148,163,184,.05);">' +
+    '<div style="font-size:10.5px;font-weight:800;letter-spacing:.02em;color:var(--muted2,#64748b);text-transform:uppercase;">Quarterly Bias &amp; Fraud Checkpoint</div>' +
+    '<div style="font-size:11px;color:var(--muted,#94a3b8);margin-top:3px;">Next checkpoint: <strong style="color:var(--chrome2,#334155)">' + dateStr + '</strong> (' + daysOut + ' days) — annual Global Trust Score recert is separate</div>' +
+    '<div style="display:flex;gap:8px;margin-top:8px;">' +
+    '<div style="flex:1;padding:6px 8px;border-radius:8px;background:' + biasTier.bg + '"><div style="font-size:10px;color:var(--muted2,#64748b)">Fairness</div><div style="font-size:12px;font-weight:700;color:' + biasTier.color + '">' + biasTier.label + '</div></div>' +
+    '<div style="flex:1;padding:6px 8px;border-radius:8px;background:' + fraudTier.bg + '"><div style="font-size:10px;color:var(--muted2,#64748b)">Fraud Integrity</div><div style="font-size:12px;font-weight:700;color:' + fraudTier.color + '">' + fraudTier.label + '</div></div>' +
+    '</div></div>';
+}
+window.tsv2BuildCadenceCheckpoint = tsv2BuildCadenceCheckpoint;
+
 // ── Renderer ────────────────────────────────────────────────────────
 function renderTrustScore(org) {
   var o = org || (typeof currentOrg !== 'undefined' ? currentOrg : 'ad');
@@ -37069,6 +37237,7 @@ function renderTrustScore(org) {
     }
   } catch (_mff) { window.TSV2_MODEL_FILTER = 'all'; }
   try { tsv2BuildHero(d); }            catch (e) { if (window.console) console.warn('tsv2BuildHero', e); }
+  try { tsv2BuildCadenceCheckpoint(d); } catch (e) { if (window.console) console.warn('tsv2BuildCadenceCheckpoint', e); }
   try { tsv2BuildSummary(d); }         catch (e) { if (window.console) console.warn('tsv2BuildSummary', e); }
   try { tsv2BuildHistoryChart(d); }    catch (e) { if (window.console) console.warn('tsv2BuildHistoryChart', e); }
   try { tsv2BuildHistoryCaption(d, TSV2_CURRENT_RANGE, tsv2GetRangeSeries(d, TSV2_CURRENT_RANGE)); } catch (e) { if (window.console) console.warn('tsv2BuildHistoryCaption', e); }
@@ -37192,12 +37361,12 @@ function pmBackfillPlaceholders(profilesByOrg) {
 const PM_PROFILES = pmBackfillPlaceholders({
   ad: {
     live: [
-      {eid:'EID:atlas:0xB7f',name:'Marcus Thompson',type:'Live',status:'Flagged',models:['Personnel Assignment v2.4','Mission Readiness v1.1'],decisions:3,flags:2,lastDecision:'DENIED',lastDate:'Apr 5, 2026',di:'0.67',cohort:'Minority Technicians',repeat:true},
-      {eid:'EID:atlas:0xC3a',name:'James Park',type:'Live',status:'Clean',models:['Personnel Assignment v2.4'],decisions:2,flags:0,lastDecision:'APPROVED',lastDate:'Apr 4, 2026',di:'0.91',cohort:null,repeat:false},
-      {eid:'EID:atlas:0xD9e',name:'Sophia Reyes',type:'Live',status:'Flagged',models:['Personnel Assignment v2.4','Maintenance Routing v1.2'],decisions:4,flags:3,lastDecision:'DENIED',lastDate:'Apr 3, 2026',di:'0.64',cohort:'Minority Technicians',repeat:true},
-      {eid:'EID:atlas:0xF1b',name:'David Kim',type:'Live',status:'Clean',models:['Fraud Detection v3.2'],decisions:1,flags:0,lastDecision:'APPROVED',lastDate:'Apr 2, 2026',di:'0.94',cohort:null,repeat:false},
-      {eid:'EID:atlas:0xA2c',name:'Layla Hassan',type:'Live',status:'Flagged',models:['Personnel Assignment v2.4'],decisions:2,flags:1,lastDecision:'DENIED',lastDate:'Apr 1, 2026',di:'0.71',cohort:'Minority Technicians',repeat:false},
-      {eid:'EID:atlas:0xE5d',name:'Tyler Brooks',type:'Live',status:'Clean',models:['Mission Readiness v1.1'],decisions:2,flags:0,lastDecision:'APPROVED',lastDate:'Mar 30, 2026',di:'0.89',cohort:null,repeat:false},
+      {eid:'EID:atlas:0xB7f',name:'Marcus Thompson',type:'Live',status:'Flagged',models:['Personnel Assignment v2.4','Mission Readiness v1.1'],decisions:3,flags:2,lastDecision:'DENIED',lastDate:'Sep 22, 2026',di:'0.67',cohort:'Minority Technicians',repeat:true},
+      {eid:'EID:atlas:0xC3a',name:'James Park',type:'Live',status:'Clean',models:['Personnel Assignment v2.4'],decisions:2,flags:0,lastDecision:'APPROVED',lastDate:'Sep 21, 2026',di:'0.91',cohort:null,repeat:false},
+      {eid:'EID:atlas:0xD9e',name:'Sophia Reyes',type:'Live',status:'Flagged',models:['Personnel Assignment v2.4','Maintenance Routing v1.2'],decisions:4,flags:3,lastDecision:'DENIED',lastDate:'Sep 19, 2026',di:'0.64',cohort:'Minority Technicians',repeat:true},
+      {eid:'EID:atlas:0xF1b',name:'David Kim',type:'Live',status:'Clean',models:['Fraud Detection v3.2'],decisions:1,flags:0,lastDecision:'APPROVED',lastDate:'Sep 18, 2026',di:'0.94',cohort:null,repeat:false},
+      {eid:'EID:atlas:0xA2c',name:'Layla Hassan',type:'Live',status:'Flagged',models:['Personnel Assignment v2.4'],decisions:2,flags:1,lastDecision:'DENIED',lastDate:'Sep 16, 2026',di:'0.71',cohort:'Minority Technicians',repeat:false},
+      {eid:'EID:atlas:0xE5d',name:'Tyler Brooks',type:'Live',status:'Clean',models:['Mission Readiness v1.1'],decisions:2,flags:0,lastDecision:'APPROVED',lastDate:'Sep 12, 2026',di:'0.89',cohort:null,repeat:false},
     ],
     synthetic: [
       {eid:'SYN:atlas:0x001',name:'Persona #24 — Synthetic Credential Ring',type:'Synthetic',status:'Active',creator:'Adam',purpose:'Fraud ring detection testing',models:['Fraud Detection v3.2'],flags:0,created:'Apr 10, 2026'},
@@ -37208,10 +37377,10 @@ const PM_PROFILES = pmBackfillPlaceholders({
   },
   fin: {
     live: [
-      {eid:'EID:chase:0xA3f',name:'Maria Gonzalez',type:'Live',status:'Flagged',models:['Credit Scoring v3.4','Auto Loan v2.1'],decisions:4,flags:3,lastDecision:'DENIED',lastDate:'Apr 10, 2026',di:'0.63',cohort:'Hispanic Applicants',repeat:true},
-      {eid:'EID:chase:0xB2c',name:'Jamal Williams',type:'Live',status:'Flagged',models:['Credit Scoring v3.4'],decisions:2,flags:1,lastDecision:'DENIED',lastDate:'Apr 8, 2026',di:'0.71',cohort:null,repeat:false},
-      {eid:'EID:chase:0xC7d',name:'James Chen',type:'Live',status:'Clean',models:['Credit Scoring v3.4'],decisions:2,flags:0,lastDecision:'APPROVED',lastDate:'Apr 8, 2026',di:'0.91',cohort:null,repeat:false},
-      {eid:'EID:bmw:0xD4e',name:'Sarah Mitchell',type:'Live',status:'Clean',models:['Fraud Ring Detector v4.0'],decisions:1,flags:0,lastDecision:'APPROVED',lastDate:'Apr 5, 2026',di:'0.95',cohort:null,repeat:false},
+      {eid:'EID:chase:0xA3f',name:'Maria Gonzalez',type:'Live',status:'Flagged',models:['Credit Scoring v3.4','Auto Loan v2.1'],decisions:4,flags:3,lastDecision:'DENIED',lastDate:'Sep 20, 2026',di:'0.63',cohort:'Hispanic Applicants',repeat:true},
+      {eid:'EID:chase:0xB2c',name:'Jamal Williams',type:'Live',status:'Flagged',models:['Credit Scoring v3.4'],decisions:2,flags:1,lastDecision:'DENIED',lastDate:'Sep 18, 2026',di:'0.71',cohort:null,repeat:false},
+      {eid:'EID:chase:0xC7d',name:'James Chen',type:'Live',status:'Clean',models:['Credit Scoring v3.4'],decisions:2,flags:0,lastDecision:'APPROVED',lastDate:'Sep 18, 2026',di:'0.91',cohort:null,repeat:false},
+      {eid:'EID:bmw:0xD4e',name:'Sarah Mitchell',type:'Live',status:'Clean',models:['Fraud Ring Detector v4.0'],decisions:1,flags:0,lastDecision:'APPROVED',lastDate:'Sep 15, 2026',di:'0.95',cohort:null,repeat:false},
     ],
     synthetic: [
       {eid:'SYN:fin:0x001',name:'Persona #47 — iPhone Fraud Ring Member',type:'Synthetic',status:'Active',creator:'Adam',purpose:'47-app coordinated fraud detection',models:['Fraud Ring Detector v4.0'],flags:0,created:'Apr 12, 2026'},
@@ -37220,9 +37389,9 @@ const PM_PROFILES = pmBackfillPlaceholders({
   },
   health: {
     live: [
-      {eid:'EID:sterling:0xA1b',name:'Patient #2847 (65+)',type:'Live',status:'Flagged',models:['Claims Adjudication v1.9'],decisions:3,flags:2,lastDecision:'DENIED',lastDate:'Apr 2, 2026',di:'0.64',cohort:'Age 65+',repeat:true},
-      {eid:'EID:sterling:0xB3c',name:'Patient #1203 (Rural)',type:'Live',status:'Flagged',models:['Claims Adjudication v1.9','Diagnostic Assist v2.3'],decisions:2,flags:1,lastDecision:'DENIED',lastDate:'Apr 1, 2026',di:'0.72',cohort:'Rural Patients',repeat:false},
-      {eid:'EID:sterling:0xC5d',name:'Patient #0892',type:'Live',status:'Clean',models:['Diagnostic Assist v2.3'],decisions:2,flags:0,lastDecision:'APPROVED',lastDate:'Mar 28, 2026',di:'0.93',cohort:null,repeat:false},
+      {eid:'EID:sterling:0xA1b',name:'Patient #2847 (65+)',type:'Live',status:'Flagged',models:['Claims Adjudication v1.9'],decisions:3,flags:2,lastDecision:'DENIED',lastDate:'Sep 17, 2026',di:'0.64',cohort:'Age 65+',repeat:true},
+      {eid:'EID:sterling:0xB3c',name:'Patient #1203 (Rural)',type:'Live',status:'Flagged',models:['Claims Adjudication v1.9','Diagnostic Assist v2.3'],decisions:2,flags:1,lastDecision:'DENIED',lastDate:'Sep 16, 2026',di:'0.72',cohort:'Rural Patients',repeat:false},
+      {eid:'EID:sterling:0xC5d',name:'Patient #0892',type:'Live',status:'Clean',models:['Diagnostic Assist v2.3'],decisions:2,flags:0,lastDecision:'APPROVED',lastDate:'Sep 10, 2026',di:'0.93',cohort:null,repeat:false},
     ],
     synthetic: [
       {eid:'SYN:health:0x001',name:'Persona #08 — Age 72 Chronic Condition',type:'Synthetic',status:'Active',creator:'Adam',purpose:'Age-cost proxy detection in claims',models:['Claims Adjudication v1.9'],flags:2,created:'Apr 2, 2026'},
@@ -37232,15 +37401,10 @@ const PM_PROFILES = pmBackfillPlaceholders({
 
 function buildPMProfiles(org) {
   const d = PM_PROFILES[org] || PM_PROFILES.ad;
-  // Update stats
-  const total = d.live.length + d.synthetic.length;
-  const flagged = d.live.filter(p=>p.flags>0).length;
-  const repeat = d.live.filter(p=>p.repeat).length;
-  const setEl = (id,v) => { const el=document.getElementById(id); if(el) el.textContent=v; };
-  setEl('pm-total', total);
-  setEl('pm-synthetic', d.synthetic.length);
-  setEl('pm-flagged', flagged);
-  setEl('pm-repeat', repeat);
+  // 9/26 -- was 4 hand-typed static numbers; now computed live via pmComputeStats,
+  // same shared helper Echo Core's vault uses, so the two can't drift apart.
+  var statsBar = document.getElementById('pm-stats-bar');
+  if (statsBar) statsBar.innerHTML = pmStatsBarHtml(pmComputeStats(org, { days: 30 }), 'genesis', org);
   renderPMLive(d.live);
   renderPMSynthetic(d.synthetic);
   renderPMMapping(d);
@@ -37276,13 +37440,18 @@ function pmToggleReveal(eid, ev) {
 // approve/deny outcome, no click-through to personal history: Brittany's 9/23 direction
 // was that personal information lives only in Echo Core, Genesis just needs to show
 // testing activity (who's been tested, in which models, when, and whether they're flagged).
+// 9/26 -- added a real column-header row (matching Echo Core's list treatment) and a
+// Risk column (same pmRiskTier logic Echo uses, derived from real flag counts).
 function renderPMLive(profiles) {
   const el = document.getElementById('pm-live-grid');
   if(!el) return;
   var sorted = profiles.slice().sort(function(a,b){ return new Date(b.lastDate) - new Date(a.lastDate); });
-  el.innerHTML = sorted.map(p => {
+  var header = '<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(167,167,167,.18);font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;color:var(--muted);">' +
+    '<span>Name / EID</span><span>Models &middot; Risk &middot; Last Tested</span></div>';
+  var rows = sorted.map(p => {
     const revealed = !!window.__pmRevealed[p.eid];
     const nameDisplay = revealed ? p.name : pmMaskName(p.name);
+    const risk = pmRiskTier(p.flags);
     return `
     <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid rgba(167,167,167,.1);">
       <div style="display:flex;align-items:center;gap:10px;min-width:0;">
@@ -37290,11 +37459,13 @@ function renderPMLive(profiles) {
         <span style="font-size:11px;color:var(--chrome2);font-weight:600;">${nameDisplay}</span>
         <span onclick="pmToggleReveal('${p.eid}', event)" title="${revealed ? 'Hide name' : 'Reveal name (access logged)'}" style="cursor:pointer;font-size:10px;color:var(--muted);">${revealed ? '(hide)' : '(reveal)'}</span>
         ${p.flags>0?'<span class="badge badge-red" style="font-size:9px;">'+p.flags+' Flag'+(p.flags>1?'s':'')+'</span>':''}
+        <span style="font-size:9px;font-weight:700;color:${risk.color};background:${risk.bg};border-radius:5px;padding:1px 6px;">${risk.label}</span>
       </div>
       <div style="font-size:10px;color:var(--muted);white-space:nowrap;">${p.models.join(', ')} · last tested ${p.lastDate}${p.testedBy ? ' · tested by <span style="color:var(--muted2)">'+p.testedBy+'</span>' : ''}</div>
     </div>
   `;
   }).join('') || '<div style="font-size:11px;color:var(--muted);padding:12px 0;">No profiles match.</div>';
+  el.innerHTML = header + rows;
 }
 
 function renderPMSynthetic(profiles) {
