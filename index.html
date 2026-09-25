@@ -2114,24 +2114,24 @@ line-height: 1; margin-bottom: 5px;
 .dash-demo-3col {
   display: grid;
   grid-template-columns: 1fr 1.7fr 1.3fr;
-  gap: 32px;
+  gap: 20px;
   align-items: start;
 }
-/* 9/24 "make it bigger, more info" pass — Protected Group Impact charts were
-   reading as decorative at the old sizes. Bumped chart heights, the section
-   subtitle above each chart, and the sub-title label itself. */
+/* 9/24 pass #1 ("make it bigger, more info") bumped these up; 9/24 pass #2
+   ("too big, that's why it's not right") sized them back down. Kept the
+   richer per-card content from pass #1, just at a more compact footprint. */
 .dash-demographic-inner .dr-sub-title {
-  font-size: 14px;
+  font-size: 12.5px;
 }
 .dash-demographic-inner .dr-sub-title svg {
-  width: 16px;
-  height: 16px;
+  width: 13px;
+  height: 13px;
 }
 .dash-demo-3col .dr-sub-demo-col { align-self: start; min-height: 0; box-sizing: border-box; }
 .dash-demo-3col .dr-sub-demo-col .dr-sub { margin-top: 0; }
 .dash-demo-3col .dr-sub-demo-col .dr-sub:first-child { margin-top: 2px; }
-.dash-demographic-inner .dr-sub-demo-col > .dr-sub-title { margin-bottom: 16px !important; }
-.dash-demo-col-pad { padding: 0 12px; }
+.dash-demographic-inner .dr-sub-demo-col > .dr-sub-title { margin-bottom: 10px !important; }
+.dash-demo-col-pad { padding: 0 10px; }
 .dash-demo-gender-col {
   max-height: none;
   overflow: visible;
@@ -2150,28 +2150,28 @@ line-height: 1; margin-bottom: 5px;
 }
 #dash-gender-compare-wrap {
   width: 100%;
-  height: 230px;
+  height: 165px;
   overflow: hidden;
 }
 #dash-gender-compare {
   display: block;
   width: 100% !important;
-  height: 230px !important;
-  max-height: 230px !important;
+  height: 165px !important;
+  max-height: 165px !important;
 }
 #dash-age-chart-wrap {
   width: 100%;
-  height: 270px;
+  height: 190px;
   overflow: hidden;
 }
 #dash-age-chart {
   display: block;
   width: 100% !important;
-  height: 270px !important;
-  max-height: 270px !important;
+  height: 190px !important;
+  max-height: 190px !important;
 }
 .dash-demo-ethnic-box {
-  max-height: 440px;
+  max-height: 320px;
   overflow: hidden;
 }
 /* Live activity ticker — gradient bar per Brittany's 9/24 ask ("the whole ticker should
@@ -5593,7 +5593,7 @@ Settings
     </label>
     <span id="dash-core-filter-count" style="font-size:10.5px;color:#64748b;margin-left:auto;"></span>
   </div>
-  <div id="core-panels-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start;"></div>
+  <div id="core-panels-grid" style="column-count:2;column-gap:16px;"></div>
 </div>
 
 <!-- ░░ DASHBOARD BOTTOM — full width stacked ░░ -->
@@ -5642,7 +5642,7 @@ Settings
         </div>
         <div class="dr-sub-box dr-sub-gender">
           <div id="dash-gender-compare-wrap">
-            <canvas id="dash-gender-compare" width="280" height="230"></canvas>
+            <canvas id="dash-gender-compare" width="220" height="165"></canvas>
           </div>
           <div class="dr-gender-rows" id="dr-demo-gender-rows-container" style="display:none;"></div>
         </div>
@@ -5654,7 +5654,7 @@ Settings
           <span id="dr-demo-sec-age">Age cohort approval &amp; relative disparity</span>
         </div>
         <div class="dr-sub-box" id="dash-age-chart-wrap">
-          <canvas id="dash-age-chart" height="270"></canvas>
+          <canvas id="dash-age-chart" height="190"></canvas>
         </div>
         <div id="dr-demo-age-note" style="font-size:12px;font-weight:600;margin-top:10px;line-height:1.5;"></div>
       </div>
@@ -15646,10 +15646,10 @@ function drawDashGenderCompare() {
   var org = typeof window.currentOrg !== 'undefined' ? window.currentOrg : 'ad';
   var cfg = typeof DASH_INDUSTRY !== 'undefined' ? DASH_INDUSTRY[org] : null;
   var g = (cfg && cfg.demoGenderBars) || { male: 75, female: 75, other: 75, threshold: 70 };
-  var W = (c.parentNode && c.parentNode.clientWidth) ? c.parentNode.clientWidth : 280;
-  // 9/24 "make it bigger" pass — taller rows, bigger bars, bigger type so the
-  // chart reads as real content at a glance instead of a small decoration.
-  var H = 230;
+  var W = (c.parentNode && c.parentNode.clientWidth) ? c.parentNode.clientWidth : 220;
+  // 9/24 pass #2 ("too big") — sized back down from the earlier "make it
+  // bigger" pass; kept the same layout math, just at a more compact scale.
+  var H = 165;
   var ctx = _hidpiCanvas(c, W, H);
   ctx.clearRect(0, 0, W, H);
   var labels = ['Male', 'Female', 'Other'];
@@ -15659,8 +15659,8 @@ function drawDashGenderCompare() {
     typeof g.other === 'number' ? g.other : 75
   ];
   var thresh = typeof g.threshold === 'number' ? g.threshold : 70;
-  var rowH = 58;
-  var top = 30;
+  var rowH = 42;
+  var top = 22;
   var trackL = 66;
   var trackR = W - 60;
   var trackW = trackR - trackL;
@@ -15737,7 +15737,7 @@ function drawDashAgeChart() {
   var labels = Array.isArray(spec.labels) ? spec.labels : ['18-25', '26-35', '36-45', '46-55', '55-64', '65+'];
   var values = Array.isArray(spec.values) ? spec.values : [92, 89, 87, 81, 72, 68];
   var barColors = Array.isArray(spec.barColors) ? spec.barColors : ['#818cf8', '#818cf8', '#818cf8', '#818cf8', '#ef4444', '#ef4444'];
-  var W = (c.parentNode && c.parentNode.clientWidth) ? c.parentNode.clientWidth : 360;
+  var W = (c.parentNode && c.parentNode.clientWidth) ? c.parentNode.clientWidth : 300;
   // Bug: this used to read the logical height back off the canvas's own
   // "height" attribute -- but _hidpiCanvas() writes canvas.height = H * dpr
   // every call, and that assignment also updates the reflected "height"
@@ -15747,13 +15747,14 @@ function drawDashAgeChart() {
   // and the canvas backing store balloons to thousands of pixels tall,
   // which is exactly the kind of "something is blocking/unreadable" bug
   // this chart was showing. Use a fixed logical height instead so it can't compound.
-  // 9/24 "make it bigger" pass — taller canvas + larger type throughout.
-  var H = 270;
+  // 9/24 pass #2 ("too big") — sized back down from the earlier "make it
+  // bigger" pass.
+  var H = 190;
   var ctx = _hidpiCanvas(c, W, H);
   ctx.clearRect(0, 0, W, H);
 
   var ymax = 100;
-  var pad = { l: 42, r: 48, t: 28, b: 42 };
+  var pad = { l: 38, r: 40, t: 22, b: 34 };
   var plotW = W - pad.l - pad.r;
   var plotH = H - pad.t - pad.b;
   var base = values.length && values[0] > 0 ? values[0] : 1;
@@ -17103,17 +17104,21 @@ function dashRenderRaceBars(cfg) {
 // (a recognizable schematic layout, not a precise projection) since building
 // real state boundary paths is out of scope for this prototype -- but every
 // number plotted at each position (count/rate/level) is the real seeded data.
+// Recalibrated 9/24 to line up with the redrawn US outline below (each pin
+// sits inside that state's real relative position on the shape, not a random
+// scatter) -- schematic, not survey-accurate, but geographically ordered:
+// west coast on the left, Florida bottom-right, Maine/NY top-right, etc.
 var DASH_GEO_STATE_POS = {
-  CA: { x: 90, y: 300 },
-  TX: { x: 430, y: 430 },
-  FL: { x: 800, y: 500 },
-  NC: { x: 760, y: 330 },
-  DC: { x: 795, y: 275 },
-  NY: { x: 800, y: 160 },
-  IL: { x: 590, y: 260 },
   WA: { x: 140, y: 90 },
-  AZ: { x: 220, y: 380 },
-  GA: { x: 730, y: 400 }
+  CA: { x: 100, y: 280 },
+  AZ: { x: 230, y: 400 },
+  TX: { x: 430, y: 490 },
+  IL: { x: 580, y: 240 },
+  NY: { x: 760, y: 130 },
+  DC: { x: 800, y: 300 },
+  NC: { x: 810, y: 380 },
+  GA: { x: 770, y: 480 },
+  FL: { x: 820, y: 530 }
 };
 
 // fill/ring are used on the dark map pins (white text on top, fine at any of
@@ -17147,9 +17152,13 @@ function dashRenderGeoSection(cfg) {
   }
   window._dashGeoStates = g.states;
   var W = 960, H = 560;
-  // Simplified continental-US silhouette -- schematic, not survey-accurate,
-  // just enough shape to read as "a US map" at a glance.
-  var outline = 'M120,120 L360,90 L520,80 L700,100 L860,140 L900,220 L880,320 L900,420 L820,480 L760,520 L640,540 L520,530 L400,540 L260,500 L160,440 L110,340 L100,220 Z';
+  // Redrawn 9/24 -- the previous 8-point outline read as "a circle," not a
+  // map. This traces the actual continental-US silhouette (Pacific coast,
+  // Great Lakes notch, Maine bump, Atlantic coast, Florida peninsula, Gulf
+  // coast, Texas bulge, Rio Grande, Southwest) at ~45 points so it reads as
+  // a real US map at a glance. Still schematic/hand-traced, not
+  // survey-accurate -- good enough for "which region," not for geocoding.
+  var outline = 'M150,75 L280,55 L430,50 L560,65 L600,110 L640,90 L660,140 L630,160 L680,130 L720,100 L760,70 L800,90 L820,60 L845,100 L800,140 L820,180 L790,210 L810,250 L790,290 L820,330 L800,370 L830,400 L800,430 L790,470 L820,510 L860,540 L840,560 L790,540 L740,500 L680,510 L600,520 L560,540 L520,510 L480,540 L440,560 L400,520 L340,480 L300,440 L260,420 L200,410 L160,380 L120,340 L95,280 L110,220 L90,170 L110,120 L130,90 Z';
   var pins = g.states.map(function (st) {
     var pos = DASH_GEO_STATE_POS[String(st.abbr || '').toUpperCase()] || { x: 480, y: 300 };
     var tone = dashGeoToneColor(st.level);
@@ -19082,7 +19091,7 @@ function dashCorePzPanelMarkup(p) {
     '<div class="core-panel" data-core="' +
     dashCorePzEsc(p.id) +
     '" data-severity-tier="' + dashCorePzEsc(p._tierKey || 'other') + '" data-cross-link="' + crossLinked + '"' +
-    ' style="background:var(--card);border:1px solid var(--border2);border-radius:14px;padding:0;overflow:hidden;">' +
+    ' style="background:var(--card);border:1px solid var(--border2);border-radius:14px;padding:0;overflow:hidden;break-inside:avoid;-webkit-column-break-inside:avoid;page-break-inside:avoid;margin-bottom:16px;">' +
     '<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid rgba(255,255,255,0.06);">' +
     '<div style="display:flex;align-items:center;gap:8px;min-width:0;">' +
     '<div class="drag-handle" draggable="true" title="Drag to reorder" style="color:rgba(255,255,255,0.15);cursor:grab;font-size:14px;padding:2px 4px;line-height:1;">⠿</div>' +
