@@ -21616,7 +21616,17 @@ function showScreen(name, navEl) {
     // Leaving Dashboard: stop the ticker's rotation timer so it doesn't keep firing
     // (and stacking, the same class of bug as the earlier canvas HiDPI issue) in the background.
     if (window.__dashTickerTimer) { clearInterval(window.__dashTickerTimer); window.__dashTickerTimer = null; }
-    if (window._dashTrustDriftTimer) { clearInterval(window._dashTrustDriftTimer); window._dashTrustDriftTimer = null; }
+    // 9/26 -- real root cause behind Brittany's whole "nothing updates on the Trust
+    // Score page" report: this used to kill the live drift timer on ANY screen other
+    // than Dashboard, Trust Score included. Every fix made tonight to sync the Trust
+    // Score page's pills/heading/cert-math to the live score was correct but
+    // pointless as long as the timer driving those ticks was dead the moment you
+    // navigated to that very screen -- it only ever looked "synced" because those
+    // elements grabbed a one-time snapshot of window._dashTrustDriftValue at render,
+    // then froze right along with the stopped timer. The drift needs to keep running
+    // on the Trust Score screen too, not just Dashboard, or "watch it move" has
+    // nothing left to watch.
+    if (name !== 'trustscore' && window._dashTrustDriftTimer) { clearInterval(window._dashTrustDriftTimer); window._dashTrustDriftTimer = null; }
   }
  if(name==='compliance') buildCompliance(currentOrg);
  if(name==='compliance') setTimeout(function(){ try { eveMaybeShowMilestoneNudge('compliance'); } catch(_mn){} }, 1400);
@@ -21645,6 +21655,20 @@ function showScreen(name, navEl) {
   }
  if(name==='trustscore') {
     console.log('[TrustScore-v3] click fired, currentOrg=', currentOrg);
+    // 9/26 -- restart the live drift if it isn't already running (e.g. it was
+    // stopped on some other screen visited before this one, not just Dashboard
+    // directly to Trust Score). Resumes from wherever the score last sat rather
+    // than restarting the whole baseline->high->low->baseline cycle from scratch.
+    if (!window._dashTrustDriftTimer && typeof dashStartTrustScoreDrift === 'function') {
+      var tsResumeFrom = (typeof window._dashTrustDriftValue === 'number') ? Math.round(window._dashTrustDriftValue) : (typeof window._dashTrustDriftBase === 'number' ? window._dashTrustDriftBase : null);
+      if (tsResumeFrom == null) {
+        try {
+          var tsResumeData = (typeof tsv2Data === 'function') ? tsv2Data(currentOrg || 'ad') : null;
+          tsResumeFrom = tsResumeData ? parseInt(tsResumeData.trustScoreDisplay, 10) : 75;
+        } catch (_trf) { tsResumeFrom = 75; }
+      }
+      try { dashStartTrustScoreDrift(tsResumeFrom); } catch (_tsd) {}
+    }
     var tsScreenEl = document.getElementById('screen-trustscore');
     if (tsScreenEl) {
       tsScreenEl.style.display = 'block';
