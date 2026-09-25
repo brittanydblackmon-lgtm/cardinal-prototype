@@ -17224,26 +17224,45 @@ function dashRenderGeoSection(cfg) {
   var loX = havePcts.length ? Math.max(0, Math.min.apply(null, havePcts) - 5) : 0;
   var hiX = havePcts.length ? Math.min(100, Math.max.apply(null, havePcts) + 5) : 100;
 
-  var W = 560, labelX = 4, labelW = 46, padTop = 16, rowH = 27, padBottom = 18;
-  var pctColX = W - 84, deltaColX = W - 6;
+  // 9/25, 2nd pass -- "huge, font too small... lines are in the numbers."
+  // Two real bugs: (1) this row's value column was showing the FULL
+  // approvalText string ("69% assignment rate" repeated 5x) right-aligned
+  // with only 14px of clearance from the plot line, so on any state with a
+  // longer string the text ran back over the dot/line instead of stopping
+  // clear of it -- fixed by showing just the number here and saying "assignment
+  // rate" once, in a column header, instead of five times. (2) the SVG had no
+  // max-width, so a wide dashboard column stretched the viewBox up and the
+  // text scaled up right along with it -- capped it so it can't blow up past
+  // a readable size regardless of how wide the panel around it is.
+  var basePct = (cfg.demoRaceBars && cfg.demoRaceBars.baselinePct) || (havePcts.length ? Math.max.apply(null, havePcts) : null);
+  var W = 560, labelX = 4, labelW = 34, padTop = 30, rowH = 26, padBottom = 18;
+  var pctColX = W - 90, deltaColX = W - 6;
   var plotL = labelX + labelW;
-  var plotR = pctColX - 14;
+  var plotR = pctColX - 26;
   var H = padTop + states.length * rowH + padBottom;
   function xOf(pct) { return plotL + ((pct - loX) / (hiX - loX || 1)) * (plotR - plotL); }
 
   var svg = [];
+  svg.push(
+    '<text x="' + labelX + '" y="14" font-size="8" font-weight="700" fill="#94a3b8">STATE</text>' +
+    '<text x="' + pctColX + '" y="14" font-size="8" font-weight="700" fill="#94a3b8" text-anchor="end">APPROVAL RATE</text>' +
+    '<text x="' + deltaColX + '" y="14" font-size="8" font-weight="700" fill="#94a3b8" text-anchor="end">VS. BASELINE</text>'
+  );
+  if (basePct != null) {
+    svg.push('<line x1="' + xOf(basePct) + '" y1="' + (padTop - 6) + '" x2="' + xOf(basePct) + '" y2="' + (H - padBottom + 3) + '" stroke="#94a3b8" stroke-dasharray="3,3" stroke-width="1"/>');
+  }
   states.forEach(function (st, i) {
     var cy = padTop + i * rowH + rowH / 2;
     var tone = dashGeoToneColor(st.level);
     var pct = pcts[i];
     var cx = pct != null ? xOf(pct) : plotL;
-    svg.push('<line x1="' + plotL + '" y1="' + cy + '" x2="' + plotR + '" y2="' + cy + '" stroke="rgba(148,163,184,0.35)" stroke-width="1"/>');
+    svg.push('<line x1="' + plotL + '" y1="' + cy + '" x2="' + plotR + '" y2="' + cy + '" stroke="rgba(148,163,184,0.3)" stroke-width="1"/>');
     svg.push(
       '<g style="cursor:pointer;" onclick="event.stopPropagation();dashShowGeoStateDetail(\'' + escAttr(st.abbr || '') + '\')">' +
-      '<text x="' + labelX + '" y="' + (cy + 3) + '" font-size="10.5" font-weight="800" fill="#334155">' + dashRegulatoryEsc(st.abbr || '') + '</text>' +
-      (pct != null ? '<circle cx="' + cx + '" cy="' + cy + '" r="5" fill="' + tone.fill + '" fill-opacity="0.75" stroke="' + tone.fill + '" stroke-width="1.5"><title>' + escAttr(String(st.abbr || '') + ': ' + (st.countText || '') + ', ' + (st.approvalText || '')) + '</title></circle>' : '') +
-      '<text x="' + pctColX + '" y="' + (cy + 3) + '" font-size="9.5" font-weight="700" fill="#1e293b" text-anchor="end">' + dashRegulatoryEsc(st.approvalText || '&ndash;') + '</text>' +
-      '<text x="' + deltaColX + '" y="' + (cy + 3) + '" font-size="9" font-weight="700" fill="' + tone.text + '" text-anchor="end">' + dashRegulatoryEsc(st.delta || '') + '</text>' +
+      '<text x="' + labelX + '" y="' + (cy + 2.5) + '" font-size="8.5" font-weight="800" fill="#334155">' + dashRegulatoryEsc(st.abbr || '') + '</text>' +
+      (pct != null ? '<circle cx="' + cx + '" cy="' + cy + '" r="4" fill="' + tone.fill + '" fill-opacity="0.75" stroke="' + tone.fill + '" stroke-width="1.5"><title>' + escAttr(String(st.abbr || '') + ': ' + (st.countText || '') + ', ' + (st.approvalText || '')) + '</title></circle>' : '') +
+      '<text x="' + pctColX + '" y="' + (cy + 2.5) + '" font-size="8.5" font-weight="700" fill="#1e293b" text-anchor="end">' + (pct != null ? pct + '%' : '&ndash;') + '</text>' +
+      '<text x="' + deltaColX + '" y="' + (cy + 2.5) + '" font-size="8" font-weight="700" fill="' + tone.text + '" text-anchor="end">' + dashRegulatoryEsc(st.delta || '') + '</text>' +
       '</g>'
     );
   });
@@ -17254,14 +17273,16 @@ function dashRenderGeoSection(cfg) {
   // language first, computed from the same worst-state data the detail
   // panel already uses.
   var headline = worst
-    ? '<div style="font-size:13px;font-weight:700;color:#1e293b;margin-bottom:10px;line-height:1.4;">' +
+    ? '<div style="font-size:13px;font-weight:700;color:#1e293b;margin-bottom:6px;line-height:1.4;">' +
       dashRegulatoryEsc(worst.abbr || '') + ' has the widest gap: ' + dashRegulatoryEsc(worst.delta || '') + ' below baseline' +
       (worst.countText ? ' &mdash; ' + dashRegulatoryEsc(worst.countText) : '') + '.</div>'
     : '';
+  var context = '<div style="font-size:10.5px;color:#64748b;margin-bottom:8px;line-height:1.4;">Each row is one state. The dot marks that state\'s real approval rate; further left of the dashed line means further below the ' +
+    (basePct != null ? basePct.toFixed(1) + '%' : '') + ' baseline used everywhere on this page. Color = disparity severity (red = critical/high, amber = medium, green = low). Click a row for its full detail.</div>';
   root.innerHTML =
     headline +
-    '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%;height:auto;" role="img" aria-label="Disparity severity by state, worst first">' + svg.join('') + '</svg>' +
-    '<div style="font-size:10px;color:#64748b;margin-top:4px;">Click a state for its full detail. Color = disparity severity (red = critical/high, amber = medium, green = low).</div>';
+    context +
+    '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%;max-width:520px;height:auto;display:block;" role="img" aria-label="Disparity severity by state, worst first">' + svg.join('') + '</svg>';
   if (worst) dashShowGeoStateDetail(worst.abbr);
 }
 
@@ -17326,25 +17347,31 @@ function dashRenderIntersectionScatter(cfg) {
   }
 
   // Fixed columns -- label and value never move based on data, only the dot does.
-  // 9/24, 6th pass -- "too big" ask: shrunk the whole chart (rows, fonts,
-  // dots) roughly 30%, and fixed a real spacing bug the screenshot caught --
-  // the percentage and delta columns didn't have enough gap between them
-  // ("74.1%-4.1 pts" ran together), since a value like "78.2%" is wider
-  // than the 30px gap assumed. Widened it and right-aligned the percentage
-  // so the two columns can't collide regardless of digit count.
-  var W = 560, labelX = 4, labelW = 118, padTop = 16, rowH = 25, padBottom = 18;
-  var pctColX = W - 74, deltaColX = W - 6;
+  // 9/25, 2nd pass -- "huge, font too small, add more context." Shrunk fonts
+  // and dots further, and capped the SVG at a max-width so it can't scale up
+  // past a readable size just because the column around it happens to be
+  // wide -- that scaling, not the font-size numbers themselves, is why the
+  // screenshot looked oversized. Added a column-header row (GROUP / APPROVAL
+  // RATE / VS. BASELINE) so the axes are labeled once instead of relying on
+  // the caption alone to explain what's being plotted.
+  var W = 560, labelX = 4, labelW = 108, padTop = 28, rowH = 24, padBottom = 18;
+  var pctColX = W - 78, deltaColX = W - 6;
   var plotL = labelX + labelW;
-  var plotR = pctColX - 14;
+  var plotR = pctColX - 20;
   var H = padTop + rows.length * rowH + padBottom;
   var allPcts = rows.map(function (r) { return r.pct; }).concat([basePct]);
   var minPct = Math.min.apply(null, allPcts), maxPct = Math.max.apply(null, allPcts);
   var padPct = Math.max(3, (maxPct - minPct) * 0.2 || 5);
   var loX = Math.max(0, minPct - padPct), hiX = Math.min(100, maxPct + padPct);
   function xOf(pct) { return plotL + ((pct - loX) / (hiX - loX || 1)) * (plotR - plotL); }
-  function rOf(count) { if (!count) return 3.5; return 3.2 + (count / maxCount) * 2.8; }
+  function rOf(count) { if (!count) return 3; return 2.8 + (count / maxCount) * 2.2; }
 
   var svg = [];
+  svg.push(
+    '<text x="' + labelX + '" y="14" font-size="8" font-weight="700" fill="#94a3b8">GROUP</text>' +
+    '<text x="' + pctColX + '" y="14" font-size="8" font-weight="700" fill="#94a3b8" text-anchor="end">APPROVAL RATE</text>' +
+    '<text x="' + deltaColX + '" y="14" font-size="8" font-weight="700" fill="#94a3b8" text-anchor="end">VS. BASELINE</text>'
+  );
   // Baseline: one dashed vertical line spanning every row, labeled once in
   // the caption above the chart instead of on the chart itself -- there is
   // structurally nowhere for that label to collide with anymore.
@@ -17353,10 +17380,10 @@ function dashRenderIntersectionScatter(cfg) {
   rows.forEach(function (r, i) {
     var cy = padTop + i * rowH + rowH / 2;
     var cx = xOf(r.pct);
-    var trackColor = 'rgba(148,163,184,0.35)';
+    var trackColor = 'rgba(148,163,184,0.3)';
     svg.push('<line x1="' + plotL + '" y1="' + cy + '" x2="' + plotR + '" y2="' + cy + '" stroke="' + trackColor + '" stroke-width="1"/>');
     svg.push(
-      '<text x="' + labelX + '" y="' + (cy + 3) + '" font-size="9.5" font-weight="' + (r.highlight ? '800' : '700') + '" fill="' + (r.highlight ? '#7f1d1d' : '#334155') + '">' +
+      '<text x="' + labelX + '" y="' + (cy + 2.5) + '" font-size="8.5" font-weight="' + (r.highlight ? '800' : '700') + '" fill="' + (r.highlight ? '#7f1d1d' : '#334155') + '">' +
       dashRegulatoryEsc(r.label) + '</text>'
     );
     var r2 = rOf(r.count);
@@ -17368,8 +17395,8 @@ function dashRenderIntersectionScatter(cfg) {
     var deltaTxt = Math.abs(deltaFromBase) < 0.05 ? '(baseline)' : (deltaFromBase > 0 ? '+' : '') + deltaFromBase.toFixed(1) + ' pts';
     var deltaColor = Math.abs(deltaFromBase) < 0.05 ? '#64748b' : (deltaFromBase < 0 ? '#dc2626' : '#16a34a');
     svg.push(
-      '<text x="' + pctColX + '" y="' + (cy + 3) + '" font-size="9.5" font-weight="700" fill="#1e293b" text-anchor="end">' + r.pct + '%</text>' +
-      '<text x="' + deltaColX + '" y="' + (cy + 3) + '" font-size="9" font-weight="700" fill="' + deltaColor + '" text-anchor="end">' + deltaTxt + '</text>'
+      '<text x="' + pctColX + '" y="' + (cy + 2.5) + '" font-size="8.5" font-weight="700" fill="#1e293b" text-anchor="end">' + r.pct + '%</text>' +
+      '<text x="' + deltaColX + '" y="' + (cy + 2.5) + '" font-size="8" font-weight="700" fill="' + deltaColor + '" text-anchor="end">' + deltaTxt + '</text>'
     );
   });
 
@@ -17379,11 +17406,12 @@ function dashRenderIntersectionScatter(cfg) {
       dashRegulatoryEsc(worstPt.label) + ' has the widest gap: ' + (basePct - worstPt.pct).toFixed(1) + ' points below the ' + basePct.toFixed(1) + '% baseline' +
       (worstPt.count ? ' &mdash; ' + worstPt.count.toLocaleString() + ' real records' : '') + '.</div>'
     : '';
-  var baselineCaption = '<div style="font-size:10.5px;color:#64748b;margin-bottom:10px;">Dashed line = baseline (' + dashRegulatoryEsc(pts[0].label) + ', ' + basePct.toFixed(1) + '%). Dot size = real affected-record count.</div>';
+  var baselineCaption = '<div style="font-size:10.5px;color:#64748b;margin-bottom:8px;line-height:1.4;">Each row is one demographic group. The dot marks that group\'s real approval rate; further left of the dashed baseline (' +
+    dashRegulatoryEsc(pts[0].label) + ', ' + basePct.toFixed(1) + '%) means a bigger gap. Dot size = how many real records that group represents — a bigger dot is a bigger, more statistically solid group.</div>';
   root.innerHTML =
     scatterHeadline +
     baselineCaption +
-    '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%;height:auto;overflow:visible;" role="img" aria-label="Approval rate by group, one row per group">' + svg.join('') + '</svg>' +
+    '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%;max-width:520px;height:auto;display:block;overflow:visible;" role="img" aria-label="Approval rate by group, one row per group">' + svg.join('') + '</svg>' +
     '<div style="font-size:10.5px;color:#64748b;margin-top:6px;line-height:1.4;">Red row = the one seeded intersectional data point (Hispanic women 55+, Fort Bragg NC): not enough real intersectional rows exist yet for a full age &times; race &times; gender matrix.</div>';
 }
 
