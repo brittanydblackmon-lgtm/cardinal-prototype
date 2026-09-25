@@ -18863,7 +18863,7 @@ function dashEnrichAndSortCorePanels(specs) {
   return specs;
 }
 
-function dashCorePzWhyNowMarkup(p) {
+function dashCorePzWhyNowMarkup(p, expandToggle) {
   if (!p.whyNow) return '';
   var arrow = dashCorePzEsc(p.trendArrow || '');
   var trendLbl = dashCorePzEsc(p.trendLabel || '');
@@ -18872,9 +18872,16 @@ function dashCorePzWhyNowMarkup(p) {
     // 9/24 "make it stand out" pass — Why now / Top factor were reading as
     // captions next to the 13px card title and 9px badge. Sized up and
     // weighted so they read as the headline content of the card, not a footnote.
+    // Show more/less toggle moved here (from the header row) since the header
+    // has no room left once title + badge + collapse + open-screen icons are
+    // all present -- it was truncating "Sentinel Core" down to "Se...". This
+    // row already flex-wraps so the toggle just drops to its own line if tight.
     '<div style="display:flex;flex-wrap:wrap;align-items:flex-start;justify-content:space-between;gap:6px 10px;margin-bottom:10px;">' +
     '<div style="font-size:13px;font-weight:600;color:#1e293b;line-height:1.5;flex:1 1 220px;min-width:220px;"><span style="color:#475569;font-weight:800;">Why now: </span>' + dashCorePzEsc(p.whyNow) + '</div>' +
-    '<div style="display:flex;align-items:center;gap:3px;flex-shrink:0;font-size:12px;font-weight:800;color:' + trendColor + ';white-space:nowrap;padding-top:1px;">' + arrow + ' ' + trendLbl + '</div>' +
+    '<div style="display:flex;align-items:center;gap:10px;flex-shrink:0;">' +
+    '<span style="display:flex;align-items:center;gap:3px;font-size:12px;font-weight:800;color:' + trendColor + ';white-space:nowrap;padding-top:1px;">' + arrow + ' ' + trendLbl + '</span>' +
+    (expandToggle || '') +
+    '</div>' +
     '</div>' +
     (p.topFactor ? '<div style="font-size:12px;font-weight:600;color:#334155;margin-bottom:12px;"><span style="font-weight:800;color:#64748b;">Top factor: </span>' + dashCorePzEsc(p.topFactor) + '</div>' : '')
   );
@@ -19017,7 +19024,6 @@ function dashCorePzPanelMarkup(p) {
     '</span>' +
     '</div>' +
     '<div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">' +
-    (expandToggle ? '<span class="core-expand-toggle" onclick="event.stopPropagation();dashToggleCoreExpand(\'' + dashCorePzEsc(p.id) + '\',this)" style="font-size:10px;font-weight:800;color:#7e22ce;cursor:pointer;white-space:nowrap;flex-shrink:0;">Show more \u25be</span>' : '') +
     '<button type="button" class="collapse-btn" onclick="togglePanel(this);" style="background:transparent;border:none;color:#64748b;cursor:pointer;font-size:14px;padding:2px 4px;line-height:1;">\u25be</button>' +
     '<button type="button" onclick="showScreen(\'' +
     scr +
@@ -19025,7 +19031,7 @@ function dashCorePzPanelMarkup(p) {
     '</div>' +
     '</div>' +
     '<div class="panel-content" style="padding:14px 16px;display:block;">' +
-    dashCorePzWhyNowMarkup(p) +
+    dashCorePzWhyNowMarkup(p, expandToggle) +
     '<div style="background:rgba(167, 167, 167,0.05);border:1px solid rgba(167, 167, 167,0.1);border-radius:8px;padding:8px 12px;margin-bottom:12px;font-size:11px;color:#94a3b8;line-height:1.5;">' +
     '<span style="color:#A7A7A7;font-weight:600;">Eve: </span>' +
     eveTxt +
