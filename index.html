@@ -17235,15 +17235,20 @@ function dashShowGeoStateDetail(abbr) {
     '</div>';
 }
 
-// 9/24 "real charts, not flat bars" ask — bubble chart plotting each race
-// group's real approval rate (x-axis) against its real affected-record count
-// (bubble size), reusing demoRaceBars + the raw eth[] record counts already
-// seeded per org (no new numbers). The single real seeded intersectional data
-// point (Hispanic women 55+ at Fort Bragg NC, from demoIntersection) is
-// plotted as a distinct marker on the same rate axis. There is only one real
-// intersectional row seeded today, not a full age x race x gender matrix, so
-// this deliberately stops at "one extra real point on the same chart" rather
-// than fabricating a grid of intersections that doesn't exist yet.
+// 9/24, 5th pass — Brittany's call after 4 rounds of patching the bubble
+// chart: keep it a chart, but do a real redesign, not another patch. The
+// scatter/bubble layout had a structural flaw no patch could fully fix —
+// every label's position was DERIVED from that group's own data value, so
+// any two groups with close values (or a value close to baseline) could
+// always collide again somewhere, no matter how many individual collisions
+// got patched. Replaced it with a horizontal dot-plot: one fixed-height row
+// per group, with the group name and the value text both in their own FIXED
+// columns (not positioned based on the data value) and only the dot itself
+// moving along a track. This makes collision structurally impossible — two
+// labels can never overlap because their positions don't depend on the data
+// at all, only their row index. Same real data as before (demoRaceBars +
+// raw eth[] record counts, no new numbers), same single real intersectional
+// point, same honest "only one real intersectional row exists" caption.
 function dashRenderIntersectionScatter(cfg) {
   var root = document.getElementById('dash-demo-intersection-scatter');
   if (!root) return;
@@ -17257,67 +17262,76 @@ function dashRenderIntersectionScatter(cfg) {
     return { label: r.label, pct: r.pct, count: count, color: r.barColor || '#60a5fa' };
   });
   if (!pts.length) { root.innerHTML = '<div style="font-size:11px;color:#64748b;">No group-level data for this cohort.</div>'; return; }
-  // 9/24 4th pass -- the previous fix (moving the baseline label to a fixed
-  // top-right corner) didn't actually solve it: the baseline value is almost
-  // always the group with the HIGHEST approval rate (usually White), so its
-  // bubble+label sits at the right edge of the chart too -- the exact corner
-  // I'd moved the baseline label to. Real fix this time: the baseline label
-  // now lives entirely below the x-axis (in its own row under the % ticks),
-  // a zone no bubble or point-label ever renders into, so it structurally
-  // can't collide with anything regardless of where the baseline value falls.
-  var W = 620, H = 220, padL = 62, padR = 46, padT = 34, padB = 50;
-  var pctVals = pts.map(function (p) { return p.pct; });
-  var minPct = Math.min.apply(null, pctVals), maxPct = Math.max.apply(null, pctVals);
-  var padPct = Math.max(3, (maxPct - minPct) * 0.25 || 5);
-  var loX = Math.max(0, minPct - padPct), hiX = Math.min(100, maxPct + padPct);
-  function xOf(pct) { return padL + ((pct - loX) / (hiX - loX || 1)) * (W - padL - padR); }
+  pts.sort(function (a, b) { return b.pct - a.pct; });
+
+  var basePct = (cfg.demoRaceBars && cfg.demoRaceBars.baselinePct) || Math.max.apply(null, pts.map(function (p) { return p.pct; }));
   var maxCount = Math.max.apply(null, pts.map(function (p) { return p.count || 0; }).concat([1]));
-  function rOf(count) { if (!count) return 8; return 7 + (count / maxCount) * 16; }
-  var basePct = (cfg.demoRaceBars && cfg.demoRaceBars.baselinePct) || maxPct;
-  var svg = [];
-  svg.push('<line x1="' + padL + '" y1="' + (H - padB) + '" x2="' + (W - padR) + '" y2="' + (H - padB) + '" stroke="#cbd5e1" stroke-width="1"/>');
-  [loX, (loX + hiX) / 2, hiX].forEach(function (t) {
-    svg.push('<text x="' + xOf(t) + '" y="' + (H - padB + 16) + '" font-size="10" fill="#64748b" text-anchor="middle">' + Math.round(t) + '%</text>');
-  });
-  svg.push('<line x1="' + xOf(basePct) + '" y1="' + padT + '" x2="' + xOf(basePct) + '" y2="' + (H - padB) + '" stroke="#94a3b8" stroke-dasharray="3,3" stroke-width="1"/>');
-  var baseLabelX = Math.min(W - padR, Math.max(padL, xOf(basePct)));
-  var baseAnchor = baseLabelX > W - padR - 60 ? 'end' : (baseLabelX < padL + 60 ? 'start' : 'middle');
-  svg.push('<text x="' + baseLabelX + '" y="' + (H - padB + 32) + '" font-size="10" font-weight="700" fill="#475569" text-anchor="' + baseAnchor + '">▲ baseline ' + basePct.toFixed(1) + '%</text>');
-  var rowH = (H - padT - padB - 20) / Math.max(1, pts.length - 1 || 1);
-  pts.forEach(function (p, i) {
-    var cx = xOf(p.pct);
-    var cy = padT + 14 + (pts.length > 1 ? i * rowH : (H - padT - padB) / 2);
-    var r = rOf(p.count);
-    svg.push('<circle cx="' + cx + '" cy="' + cy + '" r="' + r + '" fill="' + p.color + '" fill-opacity="0.5" stroke="' + p.color + '" stroke-width="2"><title>' + escAttr(p.label + ': ' + p.pct + '% approval' + (p.count ? (', ' + p.count.toLocaleString() + ' records') : '')) + '</title></circle>');
-    // Flip the label below the bubble instead of above whenever there isn't
-    // enough headroom -- this is what was colliding with the baseline text.
-    var labelAbove = (cy - r - 6) > 14;
-    var labelY = labelAbove ? (cy - r - 6) : (cy + r + 14);
-    svg.push('<text x="' + cx + '" y="' + labelY + '" font-size="10.5" font-weight="700" fill="#334155" text-anchor="middle">' + dashRegulatoryEsc(p.label) + '</text>');
-  });
+
   var it = cfg && cfg.demoIntersection ? cfg.demoIntersection : null;
+  var interPct = null;
   if (it && it.body) {
     var m = /:\s*([\d.]+)%/.exec(it.body);
-    var interPct = m ? parseFloat(m[1]) : null;
-    if (interPct != null) {
-      var ix = xOf(Math.max(loX, Math.min(hiX, interPct)));
-      var iy = H - padB - 10;
-      svg.push('<circle cx="' + ix + '" cy="' + iy + '" r="8" fill="#dc2626" stroke="#7f1d1d" stroke-width="2"><title>' + escAttr('Most vulnerable intersection: ' + interPct + '%') + '</title></circle>');
-      svg.push('<text x="' + ix + '" y="' + (iy + 20) + '" font-size="9.5" font-weight="800" fill="#7f1d1d" text-anchor="middle">Hispanic women 55+</text>');
-    }
+    interPct = m ? parseFloat(m[1]) : null;
   }
-  // 9/24 "not telling me much" fix — same as the map above: say the real
-  // headline in plain language before making the viewer read bubble positions.
+
+  var rows = pts.map(function (p) { return { label: p.label, pct: p.pct, count: p.count, color: p.color, highlight: false }; });
+  if (interPct != null) {
+    rows.push({ label: 'Hispanic women 55+', pct: interPct, count: null, color: '#dc2626', highlight: true });
+  }
+
+  // Fixed columns -- label and value never move based on data, only the dot does.
+  var W = 620, labelX = 4, labelW = 152, valGap = 14, padTop = 22, rowH = 34, padBottom = 26;
+  var plotL = labelX + labelW;
+  var plotR = W - 118;
+  var H = padTop + rows.length * rowH + padBottom;
+  var allPcts = rows.map(function (r) { return r.pct; }).concat([basePct]);
+  var minPct = Math.min.apply(null, allPcts), maxPct = Math.max.apply(null, allPcts);
+  var padPct = Math.max(3, (maxPct - minPct) * 0.2 || 5);
+  var loX = Math.max(0, minPct - padPct), hiX = Math.min(100, maxPct + padPct);
+  function xOf(pct) { return plotL + ((pct - loX) / (hiX - loX || 1)) * (plotR - plotL); }
+  function rOf(count) { if (!count) return 5; return 4.5 + (count / maxCount) * 4; }
+
+  var svg = [];
+  // Baseline: one dashed vertical line spanning every row, labeled once in
+  // the caption above the chart instead of on the chart itself -- there is
+  // structurally nowhere for that label to collide with anymore.
+  svg.push('<line x1="' + xOf(basePct) + '" y1="' + (padTop - 8) + '" x2="' + xOf(basePct) + '" y2="' + (H - padBottom + 4) + '" stroke="#94a3b8" stroke-dasharray="3,3" stroke-width="1"/>');
+
+  rows.forEach(function (r, i) {
+    var cy = padTop + i * rowH + rowH / 2;
+    var cx = xOf(r.pct);
+    var trackColor = 'rgba(148,163,184,0.35)';
+    svg.push('<line x1="' + plotL + '" y1="' + cy + '" x2="' + plotR + '" y2="' + cy + '" stroke="' + trackColor + '" stroke-width="1"/>');
+    svg.push(
+      '<text x="' + labelX + '" y="' + (cy + 4) + '" font-size="11.5" font-weight="' + (r.highlight ? '800' : '700') + '" fill="' + (r.highlight ? '#7f1d1d' : '#334155') + '">' +
+      dashRegulatoryEsc(r.label) + '</text>'
+    );
+    var r2 = rOf(r.count);
+    svg.push(
+      '<circle cx="' + cx + '" cy="' + cy + '" r="' + r2 + '" fill="' + r.color + '" fill-opacity="0.55" stroke="' + r.color + '" stroke-width="2">' +
+      '<title>' + escAttr(r.label + ': ' + r.pct + '% approval' + (r.count ? (', ' + r.count.toLocaleString() + ' records') : '')) + '</title></circle>'
+    );
+    var deltaFromBase = r.pct - basePct;
+    var deltaTxt = Math.abs(deltaFromBase) < 0.05 ? '(baseline)' : (deltaFromBase > 0 ? '+' : '') + deltaFromBase.toFixed(1) + ' pts';
+    var deltaColor = Math.abs(deltaFromBase) < 0.05 ? '#64748b' : (deltaFromBase < 0 ? '#dc2626' : '#16a34a');
+    svg.push(
+      '<text x="' + (plotR + valGap) + '" y="' + (cy + 4) + '" font-size="11" font-weight="700" fill="#1e293b">' + r.pct + '%</text>' +
+      '<text x="' + (plotR + valGap + 30) + '" y="' + (cy + 4) + '" font-size="10" font-weight="700" fill="' + deltaColor + '">' + deltaTxt + '</text>'
+    );
+  });
+
   var worstPt = pts.reduce(function (a, b) { return b.pct < a.pct ? b : a; }, pts[0]);
   var scatterHeadline = worstPt
-    ? '<div style="font-size:13px;font-weight:700;color:#1e293b;margin-bottom:10px;line-height:1.4;">' +
+    ? '<div style="font-size:13px;font-weight:700;color:#1e293b;margin-bottom:4px;line-height:1.4;">' +
       dashRegulatoryEsc(worstPt.label) + ' has the widest gap: ' + (basePct - worstPt.pct).toFixed(1) + ' points below the ' + basePct.toFixed(1) + '% baseline' +
       (worstPt.count ? ' &mdash; ' + worstPt.count.toLocaleString() + ' real records' : '') + '.</div>'
     : '';
+  var baselineCaption = '<div style="font-size:10.5px;color:#64748b;margin-bottom:10px;">Dashed line = baseline (' + dashRegulatoryEsc(pts[0].label) + ', ' + basePct.toFixed(1) + '%). Dot size = real affected-record count.</div>';
   root.innerHTML =
     scatterHeadline +
-    '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%;height:auto;overflow:visible;" role="img" aria-label="Approval rate by race, bubble sized by affected record count">' + svg.join('') + '</svg>' +
-    '<div style="font-size:10.5px;color:#64748b;margin-top:6px;line-height:1.4;">Bubble size = real affected-record count per group. Red marker = the one seeded intersectional data point (Hispanic women 55+, Fort Bragg NC): not enough real intersectional rows exist yet for a full age &times; race &times; gender matrix.</div>';
+    baselineCaption +
+    '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%;height:auto;overflow:visible;" role="img" aria-label="Approval rate by group, one row per group">' + svg.join('') + '</svg>' +
+    '<div style="font-size:10.5px;color:#64748b;margin-top:6px;line-height:1.4;">Red row = the one seeded intersectional data point (Hispanic women 55+, Fort Bragg NC): not enough real intersectional rows exist yet for a full age &times; race &times; gender matrix.</div>';
 }
 
 function dashRenderIntersectionCard(cfg) {
