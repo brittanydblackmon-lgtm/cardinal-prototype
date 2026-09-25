@@ -15158,8 +15158,17 @@ function applyCardinalData(org) {
   // War Room computes its own count from (see dashRealCriticalCaseCount),
   // not the static d.criticalCases field, which was found to disagree with
   // the real case list for 3 of 4 orgs.
+  // 9/25 real bug found live (Brittany: "why 0 critical cases at the top but
+  // Sentinel shows 1?") -- this was passing d.org, which is the org's
+  // human-readable display NAME ("Atlas Defense Systems"), not its short
+  // code ('ad'/'fin'/'health'/'fed') that dashRealCriticalCaseCount actually
+  // looks up in CARDINAL_DATA. CARDINAL_DATA['Atlas Defense Systems'] doesn't
+  // exist, so this silently resolved to 0 on every login/initial load, and
+  // stayed wrong until something else (switching industries) happened to
+  // overwrite it correctly. Fixed to use the function's own `org` parameter,
+  // which is already the short code applyCardinalData was called with.
   var tac = document.getElementById('topbar-alert-count');
-  if (tac) tac.textContent = cdCriticalCasesLabel(typeof dashRealCriticalCaseCount === 'function' ? dashRealCriticalCaseCount(d.org) : d.criticalCases);
+  if (tac) tac.textContent = cdCriticalCasesLabel(typeof dashRealCriticalCaseCount === 'function' ? dashRealCriticalCaseCount(org) : d.criticalCases);
 
   // Trust Score panel — score / status / bar / 3 columns
   var dtl = document.getElementById('dr-trust-label');
@@ -20961,18 +20970,36 @@ function syncIndustrySidebarChrome(org) {
 
 function loadIndustry(org) {
  const d = DATA[org];
- const score = computeTrustScore(dimScores);
+ // 9/25 real bug found live (Brittany: "the trust score is 75 on the
+ // dashboard, 74 on the actual core, 65 everywhere else"). Root cause: this
+ // function computed its OWN score from a completely separate, older data
+ // structure (dimScores/computeTrustScore/INDUSTRY_SCORES) that has no
+ // connection to CARDINAL_DATA -- the source every other screen, and the
+ // "let it breathe" drift animation, actually uses. It ran on every org
+ // switch/screen load and silently overwrote whatever the real, live number
+ // had just displayed. Same "two writers, one stale" pattern found and fixed
+ // five other times tonight, just hiding in a general screen-refresh
+ // function instead of a dedicated display-sync one. Fixed to read the same
+ // real score (the drift's current live value if it's running for this org,
+ // else the org's real CARDINAL_DATA baseline) and hand it to the one shared
+ // display function instead of computing and writing a competing number.
+ var cdReal = (window.CARDINAL_DATA && window.CARDINAL_DATA[org]) || null;
+ var score = (typeof window._dashTrustDriftValue === 'number' && window.currentOrg === org)
+   ? Math.round(window._dashTrustDriftValue)
+   : Math.round(cdReal ? cdReal.trustScore * 100 : computeTrustScore(dimScores));
  const sc = scoreColor(score);
 
  safeSet('sidebar-org-name', d.orgName);
 
- safeSet('big-score', score);
- safeStyle('big-score', 'color', sc);
- safeSet('dash-trust', score);
- safeStyle('dash-trust', 'color', sc);
+ try { dashSyncAllTrustScoreDisplays(score); } catch (_dsy) {
+   safeSet('big-score', score);
+   safeStyle('big-score', 'color', sc);
+   safeSet('dash-trust', score);
+   safeStyle('dash-trust', 'color', sc);
+   safeSet('computed-score', score);
+   safeStyle('computed-score', 'color', sc);
+ }
  safeSet('dash-trust-sub', score >= 80 ? '✓ Certified' : 'Below 80 — Not Certified');
- safeSet('computed-score', score);
- safeStyle('computed-score', 'color', sc);
 
  // cert-badge is a hidden placeholder — write to ts-cert-badge instead (the visible one in trustscore screen)
  const tsCertBadge = document.getElementById('ts-cert-badge');
