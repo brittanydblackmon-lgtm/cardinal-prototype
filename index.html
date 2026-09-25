@@ -17162,17 +17162,28 @@ function dashRenderGeoSection(cfg) {
       '</g>'
     );
   }).join('');
-  root.innerHTML =
-    '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%;height:auto;max-height:340px;" role="img" aria-label="US map, disparity severity by state">' +
-    '<path d="' + outline + '" fill="rgba(148,163,184,0.12)" stroke="rgba(148,163,184,0.35)" stroke-width="2"/>' +
-    pins +
-    '</svg>' +
-    '<div style="font-size:10px;color:#64748b;margin-top:4px;">Click a state for its full detail. Color = disparity severity (red = critical/high, amber = medium, green = low).</div>';
   // Auto-select the worst state so the detail panel isn't empty on first render.
   var worst = g.states.reduce(function (a, b) {
     var order = { critical: 4, high: 3, medium: 2, low: 1 };
     return (order[String(b.level || '').toLowerCase()] || 0) > (order[String(a.level || '').toLowerCase()] || 0) ? b : a;
   }, g.states[0]);
+  // 9/24 "not telling me much" fix — a map of colored dots still makes the
+  // viewer do the work of finding the worst one and reading its numbers. Say
+  // the real headline in plain language first, computed from the same worst-state
+  // data the detail panel already uses, so the map becomes the supporting visual
+  // instead of the only way to find out what's actually going on.
+  var headline = worst
+    ? '<div style="font-size:13px;font-weight:700;color:#1e293b;margin-bottom:10px;line-height:1.4;">' +
+      dashRegulatoryEsc(worst.abbr || '') + ' has the widest gap: ' + dashRegulatoryEsc(worst.delta || '') + ' below baseline' +
+      (worst.countText ? ' &mdash; ' + dashRegulatoryEsc(worst.countText) : '') + '.</div>'
+    : '';
+  root.innerHTML =
+    headline +
+    '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%;height:auto;max-height:340px;" role="img" aria-label="US map, disparity severity by state">' +
+    '<path d="' + outline + '" fill="rgba(148,163,184,0.12)" stroke="rgba(148,163,184,0.35)" stroke-width="2"/>' +
+    pins +
+    '</svg>' +
+    '<div style="font-size:10px;color:#64748b;margin-top:4px;">Click a state for its full detail. Color = disparity severity (red = critical/high, amber = medium, green = low).</div>';
   if (worst) dashShowGeoStateDetail(worst.abbr);
 }
 
@@ -17249,7 +17260,16 @@ function dashRenderIntersectionScatter(cfg) {
       svg.push('<text x="' + ix + '" y="' + (iy + 20) + '" font-size="9.5" font-weight="800" fill="#7f1d1d" text-anchor="middle">Hispanic women 55+</text>');
     }
   }
+  // 9/24 "not telling me much" fix — same as the map above: say the real
+  // headline in plain language before making the viewer read bubble positions.
+  var worstPt = pts.reduce(function (a, b) { return b.pct < a.pct ? b : a; }, pts[0]);
+  var scatterHeadline = worstPt
+    ? '<div style="font-size:13px;font-weight:700;color:#1e293b;margin-bottom:10px;line-height:1.4;">' +
+      dashRegulatoryEsc(worstPt.label) + ' has the widest gap: ' + (basePct - worstPt.pct).toFixed(1) + ' points below the ' + basePct.toFixed(1) + '% baseline' +
+      (worstPt.count ? ' &mdash; ' + worstPt.count.toLocaleString() + ' real records' : '') + '.</div>'
+    : '';
   root.innerHTML =
+    scatterHeadline +
     '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%;height:auto;overflow:visible;" role="img" aria-label="Approval rate by race, bubble sized by affected record count">' + svg.join('') + '</svg>' +
     '<div style="font-size:10.5px;color:#64748b;margin-top:6px;line-height:1.4;">Bubble size = real affected-record count per group. Red marker = the one seeded intersectional data point (Hispanic women 55+, Fort Bragg NC): not enough real intersectional rows exist yet for a full age &times; race &times; gender matrix.</div>';
 }
@@ -18899,20 +18919,30 @@ function dashRenderActionQueue(org) {
   var items = dashBuildActionQueue(specs);
   if (!items.length) { root.innerHTML = ''; return; }
   var esc = dashCorePzEsc;
-  var rows = items.map(function (it) {
+  // 9/24 follow-up — Brittany's call: keep this real (not the old restated
+  // summary), but bring back the urgent red look the old alert banner had
+  // instead of a flat white list, which read as "dull." Reusing the same
+  // .cardinal-alert-banner/-dot/-type-pill classes/animation the old banner
+  // used, just relabeled and pointed at the real action queue instead.
+  var rows = items.map(function (it, i) {
+    var borderStyle = i < items.length - 1 ? 'border-bottom:1px solid rgba(239,68,68,0.15);' : '';
     return (
-      '<div onclick="typeof showScreen===\'function\'&&showScreen(\'' + esc(it.screen) + '\',null)" style="cursor:pointer;display:flex;align-items:center;gap:10px;padding:9px 14px;border-bottom:1px solid rgba(255,255,255,0.06);">' +
+      '<div onclick="typeof showScreen===\'function\'&&showScreen(\'' + esc(it.screen) + '\',null)" style="cursor:pointer;display:flex;align-items:center;gap:10px;padding:9px 0;' + borderStyle + '">' +
       '<span style="width:6px;height:6px;border-radius:50%;background:' + esc(it.color) + ';flex-shrink:0;"></span>' +
-      '<span style="font-size:11px;font-weight:800;color:#64748b;letter-spacing:0.3px;flex-shrink:0;width:88px;">' + esc(it.core) + '</span>' +
+      '<span style="font-size:11px;font-weight:800;color:#991b1b;letter-spacing:0.3px;flex-shrink:0;width:88px;">' + esc(it.core) + '</span>' +
       '<span style="font-size:12.5px;font-weight:600;color:#1e293b;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(it.text) + '</span>' +
       '<span style="font-size:9px;font-weight:800;color:' + esc(it.color) + ';background:' + (typeof dashHexToRgba === 'function' ? dashHexToRgba(it.color, 0.12) : 'transparent') + ';border-radius:4px;padding:2px 7px;flex-shrink:0;white-space:nowrap;">' + esc(it.badge) + '</span>' +
       '</div>'
     );
   }).join('');
   root.innerHTML =
-    '<div style="background:var(--card);border:1px solid var(--border2);border-radius:10px;overflow:hidden;margin-bottom:16px;">' +
-    '<div style="padding:10px 14px;border-bottom:1px solid rgba(255,255,255,0.06);font-size:11px;font-weight:800;letter-spacing:0.6px;text-transform:uppercase;color:#64748b;">Action Items — ' + items.length + ' waiting across your cores</div>' +
-    rows +
+    '<div class="cardinal-alert-banner" style="display:block;">' +
+    '<div style="display:flex;align-items:center;gap:10px;margin-bottom:2px;">' +
+    '<span class="cardinal-alert-dot"></span>' +
+    '<span class="cardinal-alert-type-pill">URGENT</span>' +
+    '<span style="font-size:13px;font-weight:700;color:#7f1d1d;">Action Needed — ' + items.length + ' waiting across your cores</span>' +
+    '</div>' +
+    '<div style="margin-top:6px;">' + rows + '</div>' +
     '</div>';
 }
 
