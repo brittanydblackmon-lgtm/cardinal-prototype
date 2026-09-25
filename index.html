@@ -7014,9 +7014,13 @@ Showing: <span id="comp-map-filter-region">All</span>
 </div>
 </div>
 </div>
-<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px" id="comp-regs-grid">
-<!-- Regulation cards rendered by filterRegsByRegion -->
+<div style="margin-bottom:10px;position:relative">
+<input type="text" id="comp-reg-search" placeholder="Search regulations or certifications by name, state, or country — try &quot;Colorado&quot; or &quot;bias audit&quot;" oninput="filterRegsBySearch(this.value)" style="width:100%;box-sizing:border-box;padding:9px 12px;border-radius:8px;border:1px solid var(--border2);background:var(--card);color:var(--text);font-size:11px"/>
 </div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px" id="comp-regs-grid">
+<!-- Regulation cards rendered by filterRegsByRegion / filterRegsBySearch -->
+</div>
+<div id="comp-regs-empty" style="display:none;font-size:11px;color:var(--muted);padding:16px;text-align:center">No regulations match that search. Try a state, country, or regulation name — this covers the jurisdictions Cardinal actively tracks, not a full 50-state database yet.</div>
 </div>
 
 <!-- COMPLIANCE CALENDAR TAB -->
@@ -17244,18 +17248,23 @@ function dashRenderGeoSection(cfg) {
   // text scaled up right along with it -- capped it so it can't blow up past
   // a readable size regardless of how wide the panel around it is.
   var basePct = (cfg.demoRaceBars && cfg.demoRaceBars.baselinePct) || (havePcts.length ? Math.max.apply(null, havePcts) : null);
-  var W = 560, labelX = 4, labelW = 34, padTop = 30, rowH = 26, padBottom = 18;
-  var pctColX = W - 90, deltaColX = W - 6;
+  // 9/26 -- "make the font a little bigger, to match Gender Distribution."
+  // Bumped fonts back up and grew row height/padding to match so bigger text
+  // still has room to breathe (this is what the "too big" pass three rounds
+  // ago actually fixed -- the container's max-width, not these numbers -- so
+  // sizing the font up again here doesn't reintroduce that bug).
+  var W = 560, labelX = 4, labelW = 38, padTop = 34, rowH = 32, padBottom = 18;
+  var pctColX = W - 92, deltaColX = W - 6;
   var plotL = labelX + labelW;
-  var plotR = pctColX - 26;
+  var plotR = pctColX - 28;
   var H = padTop + states.length * rowH + padBottom;
   function xOf(pct) { return plotL + ((pct - loX) / (hiX - loX || 1)) * (plotR - plotL); }
 
   var svg = [];
   svg.push(
-    '<text x="' + labelX + '" y="14" font-size="8" font-weight="700" fill="#94a3b8">STATE</text>' +
-    '<text x="' + pctColX + '" y="14" font-size="8" font-weight="700" fill="#94a3b8" text-anchor="end">APPROVAL RATE</text>' +
-    '<text x="' + deltaColX + '" y="14" font-size="8" font-weight="700" fill="#94a3b8" text-anchor="end">VS. BASELINE</text>'
+    '<text x="' + labelX + '" y="16" font-size="9.5" font-weight="700" fill="#94a3b8">STATE</text>' +
+    '<text x="' + pctColX + '" y="16" font-size="9.5" font-weight="700" fill="#94a3b8" text-anchor="end">APPROVAL RATE</text>' +
+    '<text x="' + deltaColX + '" y="16" font-size="9.5" font-weight="700" fill="#94a3b8" text-anchor="end">VS. BASELINE</text>'
   );
   if (basePct != null) {
     svg.push('<line x1="' + xOf(basePct) + '" y1="' + (padTop - 6) + '" x2="' + xOf(basePct) + '" y2="' + (H - padBottom + 3) + '" stroke="#94a3b8" stroke-dasharray="3,3" stroke-width="1"/>');
@@ -17268,10 +17277,10 @@ function dashRenderGeoSection(cfg) {
     svg.push('<line x1="' + plotL + '" y1="' + cy + '" x2="' + plotR + '" y2="' + cy + '" stroke="rgba(148,163,184,0.3)" stroke-width="1"/>');
     svg.push(
       '<g style="cursor:pointer;" onclick="event.stopPropagation();dashShowGeoStateDetail(\'' + escAttr(st.abbr || '') + '\')">' +
-      '<text x="' + labelX + '" y="' + (cy + 2.5) + '" font-size="8.5" font-weight="800" fill="#334155">' + dashRegulatoryEsc(st.abbr || '') + '</text>' +
-      (pct != null ? '<circle cx="' + cx + '" cy="' + cy + '" r="4" fill="' + tone.fill + '" fill-opacity="0.75" stroke="' + tone.fill + '" stroke-width="1.5"><title>' + escAttr(String(st.abbr || '') + ': ' + (st.countText || '') + ', ' + (st.approvalText || '')) + '</title></circle>' : '') +
-      '<text x="' + pctColX + '" y="' + (cy + 2.5) + '" font-size="8.5" font-weight="700" fill="#1e293b" text-anchor="end">' + (pct != null ? pct + '%' : '&ndash;') + '</text>' +
-      '<text x="' + deltaColX + '" y="' + (cy + 2.5) + '" font-size="8" font-weight="700" fill="' + tone.text + '" text-anchor="end">' + dashRegulatoryEsc(st.delta || '') + '</text>' +
+      '<text x="' + labelX + '" y="' + (cy + 3.5) + '" font-size="12" font-weight="800" fill="#334155">' + dashRegulatoryEsc(st.abbr || '') + '</text>' +
+      (pct != null ? '<circle cx="' + cx + '" cy="' + cy + '" r="5" fill="' + tone.fill + '" fill-opacity="0.75" stroke="' + tone.fill + '" stroke-width="1.5"><title>' + escAttr((st.city ? st.city + ' — ' : '') + (st.countText || '') + ', ' + (st.approvalText || '') + (st.why ? '. ' + st.why : '')) + '</title></circle>' : '') +
+      '<text x="' + pctColX + '" y="' + (cy + 3.5) + '" font-size="12" font-weight="700" fill="#1e293b" text-anchor="end">' + (pct != null ? pct + '%' : '&ndash;') + '</text>' +
+      '<text x="' + deltaColX + '" y="' + (cy + 3.5) + '" font-size="11" font-weight="700" fill="' + tone.text + '" text-anchor="end">' + dashRegulatoryEsc(st.delta || '') + '</text>' +
       '</g>'
     );
   });
@@ -17302,12 +17311,21 @@ function dashShowGeoStateDetail(abbr) {
   var st = states.filter(function (s) { return String(s.abbr || '').toUpperCase() === String(abbr || '').toUpperCase(); })[0];
   if (!st) { detailEl.innerHTML = ''; return; }
   var tone = dashGeoToneColor(st.level);
+  // 9/26 -- "more wording context... down to cities, when things happened,
+  // how does it impact, what are these people doing, anything on why this
+  // may be impacting it." Added city, a detection date, who the affected
+  // people actually are, and Cardinal's own root-cause read (not a claim of
+  // real-world news -- this is a demo scenario, so it's framed as analysis,
+  // which is the honest version of "why" for fictional data).
   detailEl.innerHTML =
     '<div style="border-left:3px solid ' + tone.fill + ';padding:8px 12px;background:rgba(167,167,167,0.05);border-radius:0 8px 8px 0;">' +
-    '<div style="font-size:13px;font-weight:800;color:#1e293b;">' + dashRegulatoryEsc(st.abbr || '') + ': ' + dashRegulatoryEsc((st.tag || '').toString().toUpperCase()) + '</div>' +
+    '<div style="font-size:13px;font-weight:800;color:#1e293b;">' + dashRegulatoryEsc(st.abbr || '') + (st.city ? ' — ' + dashRegulatoryEsc(st.city) : '') + ': ' + dashRegulatoryEsc((st.tag || '').toString().toUpperCase()) + '</div>' +
     '<div style="font-size:12px;color:#334155;font-weight:600;margin-top:4px;">' + [dashRegulatoryEsc(st.countText || ''), dashRegulatoryEsc(st.approvalText || '')].filter(Boolean).join(' &middot; ') + '</div>' +
     (st.note ? '<div style="font-size:11px;color:#64748b;margin-top:4px;">' + dashRegulatoryEsc(st.note) + '</div>' : '') +
-    '<div style="font-size:11px;font-weight:800;color:' + tone.text + ';margin-top:4px;">' + dashRegulatoryEsc(st.delta || '') + ' vs. baseline</div>' +
+    (st.since ? '<div style="font-size:11px;color:#64748b;margin-top:6px;"><span style="font-weight:700;color:#475569;">When:</span> ' + dashRegulatoryEsc(st.since) + '</div>' : '') +
+    (st.who ? '<div style="font-size:11px;color:#64748b;margin-top:4px;"><span style="font-weight:700;color:#475569;">Who:</span> ' + dashRegulatoryEsc(st.who) + '</div>' : '') +
+    (st.why ? '<div style="font-size:11px;color:#64748b;margin-top:4px;line-height:1.4;"><span style="font-weight:700;color:#475569;">Why:</span> ' + dashRegulatoryEsc(st.why) + '</div>' : '') +
+    '<div style="font-size:11px;font-weight:800;color:' + tone.text + ';margin-top:6px;">' + dashRegulatoryEsc(st.delta || '') + ' vs. baseline</div>' +
     '</div>';
 }
 
@@ -17363,23 +17381,27 @@ function dashRenderIntersectionScatter(cfg) {
   // screenshot looked oversized. Added a column-header row (GROUP / APPROVAL
   // RATE / VS. BASELINE) so the axes are labeled once instead of relying on
   // the caption alone to explain what's being plotted.
-  var W = 560, labelX = 4, labelW = 108, padTop = 28, rowH = 24, padBottom = 18;
-  var pctColX = W - 78, deltaColX = W - 6;
+  // 9/26 -- "make the font a little bigger, to match Gender Distribution."
+  // Grew fonts and row spacing back up; the max-width cap on the SVG (below)
+  // is what actually fixed the "huge" complaint two rounds ago, not these
+  // font-size numbers, so this is safe to size up again.
+  var W = 560, labelX = 4, labelW = 128, padTop = 36, rowH = 30, padBottom = 18;
+  var pctColX = W - 84, deltaColX = W - 6;
   var plotL = labelX + labelW;
-  var plotR = pctColX - 20;
+  var plotR = pctColX - 26;
   var H = padTop + rows.length * rowH + padBottom;
   var allPcts = rows.map(function (r) { return r.pct; }).concat([basePct]);
   var minPct = Math.min.apply(null, allPcts), maxPct = Math.max.apply(null, allPcts);
   var padPct = Math.max(3, (maxPct - minPct) * 0.2 || 5);
   var loX = Math.max(0, minPct - padPct), hiX = Math.min(100, maxPct + padPct);
   function xOf(pct) { return plotL + ((pct - loX) / (hiX - loX || 1)) * (plotR - plotL); }
-  function rOf(count) { if (!count) return 3; return 2.8 + (count / maxCount) * 2.2; }
+  function rOf(count) { if (!count) return 3.5; return 3.2 + (count / maxCount) * 2.6; }
 
   var svg = [];
   svg.push(
-    '<text x="' + labelX + '" y="14" font-size="8" font-weight="700" fill="#94a3b8">GROUP</text>' +
-    '<text x="' + pctColX + '" y="14" font-size="8" font-weight="700" fill="#94a3b8" text-anchor="end">APPROVAL RATE</text>' +
-    '<text x="' + deltaColX + '" y="14" font-size="8" font-weight="700" fill="#94a3b8" text-anchor="end">VS. BASELINE</text>'
+    '<text x="' + labelX + '" y="16" font-size="9.5" font-weight="700" fill="#94a3b8">GROUP</text>' +
+    '<text x="' + pctColX + '" y="16" font-size="9.5" font-weight="700" fill="#94a3b8" text-anchor="end">APPROVAL RATE</text>' +
+    '<text x="' + deltaColX + '" y="16" font-size="9.5" font-weight="700" fill="#94a3b8" text-anchor="end">VS. BASELINE</text>'
   );
   // Baseline: one dashed vertical line spanning every row, labeled once in
   // the caption above the chart instead of on the chart itself -- there is
@@ -17392,7 +17414,7 @@ function dashRenderIntersectionScatter(cfg) {
     var trackColor = 'rgba(148,163,184,0.3)';
     svg.push('<line x1="' + plotL + '" y1="' + cy + '" x2="' + plotR + '" y2="' + cy + '" stroke="' + trackColor + '" stroke-width="1"/>');
     svg.push(
-      '<text x="' + labelX + '" y="' + (cy + 2.5) + '" font-size="8.5" font-weight="' + (r.highlight ? '800' : '700') + '" fill="' + (r.highlight ? '#7f1d1d' : '#334155') + '">' +
+      '<text x="' + labelX + '" y="' + (cy + 3.5) + '" font-size="11.5" font-weight="' + (r.highlight ? '800' : '700') + '" fill="' + (r.highlight ? '#7f1d1d' : '#334155') + '">' +
       dashRegulatoryEsc(r.label) + '</text>'
     );
     var r2 = rOf(r.count);
@@ -17404,8 +17426,8 @@ function dashRenderIntersectionScatter(cfg) {
     var deltaTxt = Math.abs(deltaFromBase) < 0.05 ? '(baseline)' : (deltaFromBase > 0 ? '+' : '') + deltaFromBase.toFixed(1) + ' pts';
     var deltaColor = Math.abs(deltaFromBase) < 0.05 ? '#64748b' : (deltaFromBase < 0 ? '#dc2626' : '#16a34a');
     svg.push(
-      '<text x="' + pctColX + '" y="' + (cy + 2.5) + '" font-size="8.5" font-weight="700" fill="#1e293b" text-anchor="end">' + r.pct + '%</text>' +
-      '<text x="' + deltaColX + '" y="' + (cy + 2.5) + '" font-size="8" font-weight="700" fill="' + deltaColor + '" text-anchor="end">' + deltaTxt + '</text>'
+      '<text x="' + pctColX + '" y="' + (cy + 3.5) + '" font-size="12" font-weight="700" fill="#1e293b" text-anchor="end">' + r.pct + '%</text>' +
+      '<text x="' + deltaColX + '" y="' + (cy + 3.5) + '" font-size="10.5" font-weight="700" fill="' + deltaColor + '" text-anchor="end">' + deltaTxt + '</text>'
     );
   });
 
@@ -17616,7 +17638,11 @@ const DASH_INDUSTRY = {
           tag: 'HIGH',
           countText: '247 service members in this state',
           approvalText: '69% assignment rate',
-          note: 'Case #AD-2847'
+          note: 'Case #AD-2847',
+          city: 'Fort Bragg',
+          since: 'Flagged Aug 12, 2026 — 6 weeks before the DoD audit deadline',
+          who: 'Junior enlisted (E1–E4) applying for premium-base placement in Special Operations support roles',
+          why: 'The model weighs a "readiness score" tied to training-cohort assignment timing. Cohorts trained under less senior mentorship post lower scores regardless of individual skill, and enlisted demographics differ by cohort — this is the largest concentration of the pattern.'
         },
         {
           abbr: 'DC',
@@ -17624,7 +17650,11 @@ const DASH_INDUSTRY = {
           delta: '-13%',
           tag: 'HIGH',
           countText: '92 service members in this state',
-          approvalText: '71% assignment rate'
+          approvalText: '71% assignment rate',
+          city: 'Pentagon / Arlington corridor',
+          since: 'Flagged Aug 19, 2026',
+          who: 'Mid-career officers and civilian analysts in clearance-gated assignments',
+          why: 'Same readiness-score proxy as Fort Bragg, feeding into Pentagon-track assignment decisions at a smaller volume.'
         },
         {
           abbr: 'TX',
@@ -17632,7 +17662,11 @@ const DASH_INDUSTRY = {
           delta: '-9%',
           tag: 'MEDIUM',
           countText: '511 service members in this state',
-          approvalText: '76% assignment rate'
+          approvalText: '76% assignment rate',
+          city: 'Fort Cavazos — Great Plains rotation cohort',
+          since: 'Flagged Sep 2, 2026',
+          who: 'Rotational-assignment personnel cycling through multi-base deployments',
+          why: 'Rotational cohorts have shorter tenure at any one base, which the model reads as lower "stability" and scores down — largest raw headcount of any state, but a smaller gap than NC/DC.'
         },
         {
           abbr: 'CA',
@@ -17640,7 +17674,11 @@ const DASH_INDUSTRY = {
           delta: '-5%',
           tag: 'LOW',
           countText: '104 service members in this state',
-          approvalText: '79% assignment rate'
+          approvalText: '79% assignment rate',
+          city: 'Camp Pendleton',
+          since: 'Flagged Sep 2, 2026',
+          who: 'Technicians and support staff at a major installation',
+          why: 'Smallest gap of the five states — a more senior average cohort tenure here largely offsets the readiness-score proxy.'
         },
         {
           abbr: 'FL',
@@ -17648,7 +17686,11 @@ const DASH_INDUSTRY = {
           delta: '-6%',
           tag: 'LOW',
           countText: '88 service members in this state',
-          approvalText: '78% assignment rate'
+          approvalText: '78% assignment rate',
+          city: 'MacDill AFB — CENTCOM liaison cohort',
+          since: 'Flagged Sep 9, 2026',
+          who: 'CENTCOM liaison and logistics personnel',
+          why: 'Liaison postings route through the same readiness-score pipeline as Fort Bragg, just at much lower volume.'
         }
       ]
     },
@@ -17932,7 +17974,11 @@ const DASH_INDUSTRY = {
           tag: 'CRITICAL',
           countText: '312 applicants in this state',
           approvalText: '59% approval rate',
-          note: 'NYC Law 144'
+          note: 'NYC Law 144',
+          city: 'New York City metro',
+          since: 'Flagged Jul 2026 — surfaced during NYC Local Law 144 prep',
+          who: 'Credit applicants in ZIP codes with a history of redlining',
+          why: 'Credit Scoring v3.4 uses ZIP code as a feature — correlation 0.82 with protected class, an illegal ECOA proxy. This is exactly the pattern NYC Local Law 144’s annual bias audit exists to catch.'
         },
         {
           abbr: 'IL',
@@ -17940,7 +17986,11 @@ const DASH_INDUSTRY = {
           delta: '-18%',
           tag: 'HIGH',
           countText: '267 applicants in this state',
-          approvalText: '64% approval rate'
+          approvalText: '64% approval rate',
+          city: 'Chicago metro',
+          since: 'Flagged Jul 2026',
+          who: 'Applicants in majority-Black and Hispanic Chicago-area ZIP codes',
+          why: 'Same ZIP-code proxy issue as New York, in a different metro — second-largest concentration.'
         },
         {
           abbr: 'CA',
@@ -17948,7 +17998,11 @@ const DASH_INDUSTRY = {
           delta: '-11%',
           tag: 'MEDIUM',
           countText: '198 applicants in this state',
-          approvalText: '70% approval rate'
+          approvalText: '70% approval rate',
+          city: 'Los Angeles metro',
+          since: 'Flagged Aug 2026',
+          who: 'Applicants in Los Angeles-area ZIP codes',
+          why: 'Moderate gap from the same proxy; California’s AB 2930 algorithmic-discrimination law applies here.'
         },
         {
           abbr: 'TX',
@@ -17956,7 +18010,11 @@ const DASH_INDUSTRY = {
           delta: '-8%',
           tag: 'LOW',
           countText: '155 applicants in this state',
-          approvalText: '74% approval rate'
+          approvalText: '74% approval rate',
+          city: 'Dallas / Houston metros',
+          since: 'Flagged Aug 2026',
+          who: 'Applicants across major metro ZIP codes',
+          why: 'Smaller gap — lower loan volume concentration than NY/IL keeps the proxy effect from compounding as much.'
         },
         {
           abbr: 'FL',
@@ -17964,7 +18022,11 @@ const DASH_INDUSTRY = {
           delta: '-9%',
           tag: 'LOW',
           countText: '176 applicants in this state',
-          approvalText: '73% approval rate'
+          approvalText: '73% approval rate',
+          city: 'Miami / Orlando metros',
+          since: 'Flagged Aug 2026',
+          who: 'Applicants across major metro ZIP codes',
+          why: 'Same ZIP-code proxy pattern at a smaller scale.'
         }
       ]
     },
@@ -18249,7 +18311,11 @@ const DASH_INDUSTRY = {
           tag: 'CRITICAL',
           countText: '412 patients in this state',
           approvalText: '56% approval rate',
-          note: 'Case #HS-2847'
+          note: 'Case #HS-2847',
+          city: 'Atlanta metro',
+          since: 'Flagged Jun 2026 — surfaced during CMS oversight prep',
+          who: 'Medicaid-eligible patients seeking claims approval',
+          why: 'Claims Adjudication v1.9 uses an age-based proxy correlated with claims-history length — older patients with thinner claims histories score lower regardless of actual medical need. Largest Medicaid population of the five states, so the effect compounds most here.'
         },
         {
           abbr: 'TX',
@@ -18257,7 +18323,11 @@ const DASH_INDUSTRY = {
           delta: '-27%',
           tag: 'HIGH',
           countText: '511 patients in this state',
-          approvalText: '64% approval rate'
+          approvalText: '64% approval rate',
+          city: 'Statewide — rural counties concentrated',
+          since: 'Flagged Jun 2026',
+          who: 'Patients in Medicaid-heavy rural counties',
+          why: 'Same claims-history proxy as Georgia; largest raw patient count of any state.'
         },
         {
           abbr: 'LA',
@@ -18265,7 +18335,11 @@ const DASH_INDUSTRY = {
           delta: '-31%',
           tag: 'HIGH',
           countText: '288 patients in this state',
-          approvalText: '61% approval rate'
+          approvalText: '61% approval rate',
+          city: 'New Orleans / Baton Rouge metros',
+          since: 'Flagged Jul 2026',
+          who: 'Patients in Medicaid-heavy parishes',
+          why: 'Same proxy pattern, one of the higher Medicaid-enrollment states in the cohort.'
         },
         {
           abbr: 'MS',
@@ -18273,7 +18347,11 @@ const DASH_INDUSTRY = {
           delta: '-34%',
           tag: 'HIGH',
           countText: '142 patients in this state',
-          approvalText: '58% approval rate'
+          approvalText: '58% approval rate',
+          city: 'Jackson metro',
+          since: 'Flagged Jul 2026',
+          who: 'Patients in Medicaid-heavy rural counties',
+          why: 'Smallest patient count but the second-worst gap — Mississippi’s Medicaid population skews older, which the age-based proxy penalizes hardest.'
         },
         {
           abbr: 'CA',
@@ -18281,7 +18359,11 @@ const DASH_INDUSTRY = {
           delta: '-21%',
           tag: 'MEDIUM',
           countText: '367 patients in this state',
-          approvalText: '69% approval rate'
+          approvalText: '69% approval rate',
+          city: 'Statewide — managed-care networks',
+          since: 'Flagged Aug 2026',
+          who: 'Patients across managed-care networks',
+          why: 'Smallest gap of the five — a more mixed insurance base offsets some of the proxy effect.'
         }
       ]
     },
@@ -18562,50 +18644,70 @@ const DASH_INDUSTRY = {
         {
           abbr: 'GA',
           level: 'critical',
-          delta: '-43%',
+          delta: '-38%',
           tag: 'CRITICAL',
-          countText: '412 patients in this state',
-          approvalText: '56% approval rate',
-          note: 'Case #FED-PDV-001'
+          countText: '312 self-employed filers in this state',
+          approvalText: '52% clean-review rate',
+          note: 'Case #FED-PDV-001',
+          city: 'Atlanta metro',
+          since: 'Flagged May 2, 2026 \u2014 the pre-deployment vetting run that paused this model',
+          who: 'Self-employed and gig-economy filers with Schedule C income',
+          why: 'IRS Tax Fraud Detection v3.1 uses metro_zip_cluster combined with schedule_c_volatility as fraud-risk signals \u2014 a 0.76 correlation with protected class, producing a 1.84x disparate flag rate. This state has the largest concentration of the flagged filer profile, which is why EO May 2026\u2019s mandatory audit trigger fired here.'
         },
         {
           abbr: 'TX',
           level: 'high',
-          delta: '-27%',
+          delta: '-29%',
           tag: 'HIGH',
-          countText: '511 patients in this state',
-          approvalText: '64% approval rate'
+          countText: '287 self-employed filers in this state',
+          approvalText: '61% clean-review rate',
+          city: 'Dallas / Houston metros',
+          since: 'Flagged May 2, 2026',
+          who: 'Self-employed and gig-economy filers with Schedule C income',
+          why: 'Same metro_zip_cluster + schedule_c_volatility proxy, second-largest concentration of flagged filers.'
         },
         {
           abbr: 'LA',
           level: 'high',
-          delta: '-31%',
+          delta: '-32%',
           tag: 'HIGH',
-          countText: '288 patients in this state',
-          approvalText: '61% approval rate'
+          countText: '164 self-employed filers in this state',
+          approvalText: '58% clean-review rate',
+          city: 'New Orleans metro',
+          since: 'Flagged May 2, 2026',
+          who: 'Self-employed and gig-economy filers with Schedule C income',
+          why: 'Same proxy pattern at a smaller scale.'
         },
         {
           abbr: 'MS',
           level: 'high',
-          delta: '-34%',
+          delta: '-33%',
           tag: 'HIGH',
-          countText: '142 patients in this state',
-          approvalText: '58% approval rate'
+          countText: '98 self-employed filers in this state',
+          approvalText: '57% clean-review rate',
+          city: 'Jackson metro',
+          since: 'Flagged May 2, 2026',
+          who: 'Self-employed and gig-economy filers with Schedule C income',
+          why: 'Smallest filer count but nearly the worst rate \u2014 a higher share of single-filer Schedule C returns here trips the volatility signal harder.'
         },
         {
           abbr: 'CA',
           level: 'medium',
-          delta: '-21%',
+          delta: '-19%',
           tag: 'MEDIUM',
-          countText: '367 patients in this state',
-          approvalText: '69% approval rate'
+          countText: '339 self-employed filers in this state',
+          approvalText: '71% clean-review rate',
+          city: 'Los Angeles / Bay Area metros',
+          since: 'Flagged May 2, 2026',
+          who: 'Self-employed and gig-economy filers with Schedule C income',
+          why: 'Largest filer count but the smallest gap \u2014 a more varied income-volatility profile here dilutes the proxy\u2019s effect.'
         }
       ]
     },
     demoIntersection: {
-      title: 'Most Vulnerable Intersection',
+      title: 'Most Vulnerable Filer Profile',
       body:
-        'Black women age 75+ \u2014 lowest claims approval rate: 34.1% \u2014 56% below baseline \u2014 highest priority for remediation'
+        'Self-employed filers with 2+ years of Schedule C income under $75K \u2014 lowest clean-review rate of any group: 48.2% \u2014 highest priority for the recourse mechanism required under EO section 3(c)'
     },
     biasNum: 64, biasColor: '#ef4444',
     trustNum: '0.71', trustWidth: 71,
@@ -21578,10 +21680,7 @@ function switchCompTab(tab) {
  if(tab==='calendar') buildCompCalendar();
 }
 
-function buildCompRegulations(region) {
- const grid = document.getElementById('comp-regs-grid');
- if(!grid) return;
- const regs = [
+var COMP_REGS_LIST = [
    {name:'NYC Local Law 144',loc:'New York City',region:'North America',status:'Compliant',color:'green',action:'Dec 31, 2026',detail:'Annual bias audit for automated employment decision tools. Tests disparate impact across race, ethnicity, sex.'},
    {name:'ECOA Annual Review',loc:'United States',region:'North America',status:'Due Soon',color:'amber',action:'Nov 11, 2026 — 47 days',detail:'Equal Credit Opportunity Act lending practices review.'},
    {name:'FCRA Compliance',loc:'United States',region:'North America',status:'Compliant',color:'green',action:'Jan 15, 2027',detail:'Fair Credit Reporting Act — accurate consumer reporting.'},
@@ -21592,8 +21691,20 @@ function buildCompRegulations(region) {
    {name:'UK AI Regulation',loc:'United Kingdom',region:'Europe',status:'Compliant',color:'green',action:'Mar 30, 2027',detail:'Pro-innovation AI regulatory framework.'},
    {name:'DPDP Act',loc:'India',region:'Asia Pacific',status:'In Review',color:'blue',action:'Jun 1, 2027',detail:'Digital Personal Data Protection Act — new requirements.'},
    {name:'Singapore FEAT',loc:'Singapore',region:'Asia Pacific',status:'Compliant',color:'green',action:'Ongoing',detail:'Fairness, Ethics, Accountability, Transparency principles.'},
- ];
- const filtered = region === 'All' ? regs : regs.filter(r=>r.region===region);
+];
+window._compRegRegion = 'All';
+window._compRegQuery = '';
+function buildCompRegulations(region) {
+ const grid = document.getElementById('comp-regs-grid');
+ if(!grid) return;
+ const regs = COMP_REGS_LIST;
+ var byRegion = region === 'All' ? regs : regs.filter(r=>r.region===region);
+ var q = String(window._compRegQuery || '').trim().toLowerCase();
+ const filtered = q ? byRegion.filter(function (r) {
+   return (r.name + ' ' + r.loc + ' ' + r.detail).toLowerCase().indexOf(q) !== -1;
+ }) : byRegion;
+ var emptyEl = document.getElementById('comp-regs-empty');
+ if (emptyEl) emptyEl.style.display = filtered.length ? 'none' : 'block';
  grid.innerHTML = filtered.map(r=>`
    <div style="background:var(--card);border:1px solid rgba(${r.color==='green'?'34,197,94':r.color==='amber'?'245,158,11':r.color==='red'?'239,68,68':'167, 167, 167'},.25);border-radius:12px;padding:14px">
      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
@@ -21618,8 +21729,22 @@ function filterRegsByRegion(region) {
  const filterRegion = document.getElementById('comp-map-filter-region');
  if(filter) filter.style.display = region==='All'?'none':'block';
  if(filterRegion) filterRegion.textContent = region;
+ window._compRegRegion = region;
  buildCompRegulations(region);
 }
+
+// 9/26 -- "I forgot the compliance exchange was supposed to have a place
+// where you search what regulation/certifications for a state, like a
+// search bar." Real text search across name, jurisdiction, and detail —
+// combines with whatever region the map is already filtered to. This is
+// keyword search over the regulations Cardinal actively tracks, not a live
+// research/LLM lookup — flagged that distinction in the checklist rather
+// than quietly building something that looks like it does more than it does.
+function filterRegsBySearch(query) {
+ window._compRegQuery = query;
+ buildCompRegulations(window._compRegRegion || 'All');
+}
+window.filterRegsBySearch = filterRegsBySearch;
 
 function buildCompCalendar() {
  const container = document.getElementById('comp-calendar-items');
