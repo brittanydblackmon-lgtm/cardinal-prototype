@@ -5610,7 +5610,7 @@ Settings
     </label>
     <span id="dash-core-filter-count" style="font-size:10.5px;color:#64748b;margin-left:auto;"></span>
   </div>
-  <div id="core-panels-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;"></div>
+  <div id="core-panels-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start;"></div>
 </div>
 
 <!-- ░░ DASHBOARD BOTTOM — full width stacked ░░ -->
@@ -16516,6 +16516,12 @@ function dashSyncAllTrustScoreDisplays(value, delta) {
   var v = Math.round(value);
   var tier = typeof window.cardinalTrustScoreColor === 'function' ? window.cardinalTrustScoreColor(v) : { color: '#f59e0b' };
   var color = tier.color;
+  // Keep the mini sparkline's line/dot color following the live drifting
+  // number too, not just the big number and bar -- see drawTrustMiniTrend's
+  // 9/24 follow-up note for why this was still out of sync before.
+  if (typeof drawTrustMiniTrend === 'function') {
+    try { drawTrustMiniTrend(window.currentOrg || 'ad', v); } catch (_dtm) {}
+  }
   ['dash-global-score-number', 'sidebar-score', 'big-score', 'dash-trust', 'computed-score'].forEach(function (id) {
     var el = document.getElementById(id);
     if (!el) return;
@@ -16904,7 +16910,7 @@ function dashApplyExecutiveCards(org) {
   );
 }
 
-function drawTrustMiniTrend(org) {
+function drawTrustMiniTrend(org, liveValue) {
   var c = document.getElementById('ts-mini-trend');
   if (!c || !c.getContext || c.tagName !== 'CANVAS') return;
   var cfg = typeof DASH_INDUSTRY !== 'undefined' ? DASH_INDUSTRY[org] : null;
@@ -16937,7 +16943,13 @@ function drawTrustMiniTrend(org) {
   // band (same green/amber/red thresholds as the big number and the badge),
   // never a color baked into the historical data. The history values
   // themselves are untouched — this only changes how they're painted.
-  var statusColor = dashGlobalTrustScoreColor(parseFloat((cfg || {}).trustNum));
+  // 9/24 follow-up fix — that color was only ever computed from the org's
+  // static config number, so once the live drift cycle started moving the
+  // big number through green/amber/red, the sparkline color stayed frozen at
+  // whatever it was on page load and stopped matching. dashSyncAllTrustScoreDisplays
+  // now passes the live drifting value in here on every tick so the two never
+  // disagree, with the static config value only used as a fallback on first paint.
+  var statusColor = dashGlobalTrustScoreColor(typeof liveValue === 'number' && !isNaN(liveValue) ? liveValue : parseFloat((cfg || {}).trustNum));
   ctx.strokeStyle = statusColor;
   ctx.lineWidth = 2;
   ctx.lineJoin = 'round';
@@ -17219,7 +17231,7 @@ function dashRenderIntersectionScatter(cfg) {
     return { label: r.label, pct: r.pct, count: count, color: r.barColor || '#60a5fa' };
   });
   if (!pts.length) { root.innerHTML = '<div style="font-size:11px;color:#64748b;">No group-level data for this cohort.</div>'; return; }
-  var W = 620, H = 210, padL = 46, padR = 30, padT = 26, padB = 34;
+  var W = 620, H = 210, padL = 62, padR = 46, padT = 26, padB = 34;
   var pctVals = pts.map(function (p) { return p.pct; });
   var minPct = Math.min.apply(null, pctVals), maxPct = Math.max.apply(null, pctVals);
   var padPct = Math.max(3, (maxPct - minPct) * 0.25 || 5);
@@ -17255,7 +17267,7 @@ function dashRenderIntersectionScatter(cfg) {
     }
   }
   root.innerHTML =
-    '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%;height:auto;" role="img" aria-label="Approval rate by race, bubble sized by affected record count">' + svg.join('') + '</svg>' +
+    '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%;height:auto;overflow:visible;" role="img" aria-label="Approval rate by race, bubble sized by affected record count">' + svg.join('') + '</svg>' +
     '<div style="font-size:10.5px;color:#64748b;margin-top:6px;line-height:1.4;">Bubble size = real affected-record count per group. Red marker = the one seeded intersectional data point (Hispanic women 55+, Fort Bragg NC): not enough real intersectional rows exist yet for a full age &times; race &times; gender matrix.</div>';
 }
 
