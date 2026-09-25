@@ -5490,27 +5490,10 @@ Settings
 <div id="cardinal-ask-thread" class="cardinal-ask-thread"></div>
 </div>
 
-<!-- MULTI-ALERT BANNER (dashboard) -->
-<div id="dash-alert-banner" class="cardinal-alert-banner">
-  <div style="display:flex;align-items:flex-start;gap:12px;flex:1;min-width:0;">
-    <div id="dash-alert-dot" class="cardinal-alert-dot"></div>
-    <div style="flex:1;min-width:0;">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap;">
-        <span id="dash-alert-type" class="cardinal-alert-type-pill">BIAS</span>
-        <span id="dash-alert-title" style="font-size:13px;font-weight:700;color:#fee2e2;"></span>
-      </div>
-      <div id="dash-alert-desc" style="font-size:11px;color:#94a3b8;line-height:1.5;"></div>
-    </div>
-  </div>
-  <div style="display:flex;align-items:center;gap:10px;flex-shrink:0;">
-    <div style="display:flex;align-items:center;gap:4px;">
-      <button type="button" class="cardinal-alert-cycle" onclick="cycleAlert(-1)">‹</button>
-      <span id="dash-alert-counter" style="font-size:10px;color:#94a3b8;min-width:36px;text-align:center;font-weight:600;">1 / 3</span>
-      <button type="button" class="cardinal-alert-cycle" onclick="cycleAlert(1)">›</button>
-    </div>
-    <button type="button" id="dash-alert-btn" class="cardinal-alert-cta">View Details <span class="arrow">→</span></button>
-  </div>
-</div>
+<!-- ACTION ITEMS QUEUE (dashboard) — replaces the old rotating alert banner,
+     see dashRenderActionQueue's comment for why. Populated by buildCoreStatusPanels
+     once the 6 core cards (and their real "next action" rows) are on the page. -->
+<div id="dash-action-queue"></div>
 
 <div id="dash-active-channels-host"></div>
 
@@ -18872,7 +18855,65 @@ function dashEnrichAndSortCorePanels(specs) {
     spec._tierKey = dashCoreSeverityTierKey(spec);
   });
   specs.sort(function (a, b) { return b._severity - a._severity; });
+  // Stashed so dashRenderActionQueue can build the top-of-dashboard action
+  // list from the exact same enriched real data the 6 cards render from,
+  // instead of a second, parallel read of the config (single source of truth).
+  window._dashLastCorePanelSpecs = specs;
   return specs;
+}
+
+// 9/24 — replaces the old rotating BIAS/REGULATION/etc. alert banner. That
+// banner had become pure duplication: its slides restated content that now
+// lives in much more detail in Live AI Risk Intelligence and Regulatory
+// Deadlines further down the page. Brittany's call: cut the restated summary,
+// replace the same real estate with something genuinely new -- a single
+// prioritized queue of the real "next action" rows that already exist inside
+// each of the 6 core cards but were only visible by scrolling into every card.
+// Every row here is pulled from the same rows array the cards themselves use
+// (via window._dashLastCorePanelSpecs, set by dashEnrichAndSortCorePanels) --
+// nothing invented, just surfaced once instead of six times.
+function dashBuildActionQueue(specs) {
+  var items = [];
+  (specs || []).forEach(function (spec) {
+    (spec.rows || []).forEach(function (r) {
+      if (!r || !/next action/i.test(String(r.lb || ''))) return;
+      items.push({
+        core: spec.title,
+        screen: spec.screen,
+        id: spec.id,
+        text: r.cx || '',
+        badge: r.bg || '',
+        color: r.bd || '#94a3b8',
+        severity: spec._severity || 0
+      });
+    });
+  });
+  items.sort(function (a, b) { return b.severity - a.severity; });
+  return items;
+}
+
+function dashRenderActionQueue(org) {
+  var root = document.getElementById('dash-action-queue');
+  if (!root) return;
+  var specs = window._dashLastCorePanelSpecs || [];
+  var items = dashBuildActionQueue(specs);
+  if (!items.length) { root.innerHTML = ''; return; }
+  var esc = dashCorePzEsc;
+  var rows = items.map(function (it) {
+    return (
+      '<div onclick="typeof showScreen===\'function\'&&showScreen(\'' + esc(it.screen) + '\',null)" style="cursor:pointer;display:flex;align-items:center;gap:10px;padding:9px 14px;border-bottom:1px solid rgba(255,255,255,0.06);">' +
+      '<span style="width:6px;height:6px;border-radius:50%;background:' + esc(it.color) + ';flex-shrink:0;"></span>' +
+      '<span style="font-size:11px;font-weight:800;color:#64748b;letter-spacing:0.3px;flex-shrink:0;width:88px;">' + esc(it.core) + '</span>' +
+      '<span style="font-size:12.5px;font-weight:600;color:#1e293b;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(it.text) + '</span>' +
+      '<span style="font-size:9px;font-weight:800;color:' + esc(it.color) + ';background:' + (typeof dashHexToRgba === 'function' ? dashHexToRgba(it.color, 0.12) : 'transparent') + ';border-radius:4px;padding:2px 7px;flex-shrink:0;white-space:nowrap;">' + esc(it.badge) + '</span>' +
+      '</div>'
+    );
+  }).join('');
+  root.innerHTML =
+    '<div style="background:var(--card);border:1px solid var(--border2);border-radius:10px;overflow:hidden;margin-bottom:16px;">' +
+    '<div style="padding:10px 14px;border-bottom:1px solid rgba(255,255,255,0.06);font-size:11px;font-weight:800;letter-spacing:0.6px;text-transform:uppercase;color:#64748b;">Action Items — ' + items.length + ' waiting across your cores</div>' +
+    rows +
+    '</div>';
 }
 
 function dashCorePzWhyNowMarkup(p, expandToggle) {
@@ -19646,6 +19687,7 @@ function buildCoreStatusPanels(org) {
   try { dashApplyCoreFilters(); } catch (_cf) {}
   try { dashBindCoreRowTooltips(); } catch (_rt) {}
   try { dashStartCoreRowDrift(); } catch (_crd) {}
+  try { dashRenderActionQueue(o); } catch (_aq) {}
 }
 
 // Filters the 6 real cards by severity tier / core / cross-core-linked-only.
