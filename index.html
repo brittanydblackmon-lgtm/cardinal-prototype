@@ -17253,8 +17253,12 @@ function dashRenderGeoSection(cfg) {
   // still has room to breathe (this is what the "too big" pass three rounds
   // ago actually fixed -- the container's max-width, not these numbers -- so
   // sizing the font up again here doesn't reintroduce that bug).
-  var W = 560, labelX = 4, labelW = 38, padTop = 34, rowH = 32, padBottom = 18;
-  var pctColX = W - 92, deltaColX = W - 6;
+  // 9/26, 2nd pass -- "center this and increase font a little bit more."
+  // Bumped fonts up one more notch and centered the SVG itself (margin:0
+  // auto) -- the chart was sitting flush-left in a much wider panel, leaving
+  // dead space on the right instead of being centered in it.
+  var W = 560, labelX = 4, labelW = 40, padTop = 36, rowH = 34, padBottom = 18;
+  var pctColX = W - 94, deltaColX = W - 6;
   var plotL = labelX + labelW;
   var plotR = pctColX - 28;
   var H = padTop + states.length * rowH + padBottom;
@@ -17262,9 +17266,9 @@ function dashRenderGeoSection(cfg) {
 
   var svg = [];
   svg.push(
-    '<text x="' + labelX + '" y="16" font-size="9.5" font-weight="700" fill="#94a3b8">STATE</text>' +
-    '<text x="' + pctColX + '" y="16" font-size="9.5" font-weight="700" fill="#94a3b8" text-anchor="end">APPROVAL RATE</text>' +
-    '<text x="' + deltaColX + '" y="16" font-size="9.5" font-weight="700" fill="#94a3b8" text-anchor="end">VS. BASELINE</text>'
+    '<text x="' + labelX + '" y="17" font-size="10" font-weight="700" fill="#94a3b8">STATE</text>' +
+    '<text x="' + pctColX + '" y="17" font-size="10" font-weight="700" fill="#94a3b8" text-anchor="end">APPROVAL RATE</text>' +
+    '<text x="' + deltaColX + '" y="17" font-size="10" font-weight="700" fill="#94a3b8" text-anchor="end">VS. BASELINE</text>'
   );
   if (basePct != null) {
     svg.push('<line x1="' + xOf(basePct) + '" y1="' + (padTop - 6) + '" x2="' + xOf(basePct) + '" y2="' + (H - padBottom + 3) + '" stroke="#94a3b8" stroke-dasharray="3,3" stroke-width="1"/>');
@@ -17277,10 +17281,10 @@ function dashRenderGeoSection(cfg) {
     svg.push('<line x1="' + plotL + '" y1="' + cy + '" x2="' + plotR + '" y2="' + cy + '" stroke="rgba(148,163,184,0.3)" stroke-width="1"/>');
     svg.push(
       '<g style="cursor:pointer;" onclick="event.stopPropagation();dashShowGeoStateDetail(\'' + escAttr(st.abbr || '') + '\')">' +
-      '<text x="' + labelX + '" y="' + (cy + 3.5) + '" font-size="12" font-weight="800" fill="#334155">' + dashRegulatoryEsc(st.abbr || '') + '</text>' +
-      (pct != null ? '<circle cx="' + cx + '" cy="' + cy + '" r="5" fill="' + tone.fill + '" fill-opacity="0.75" stroke="' + tone.fill + '" stroke-width="1.5"><title>' + escAttr((st.city ? st.city + ' — ' : '') + (st.countText || '') + ', ' + (st.approvalText || '') + (st.why ? '. ' + st.why : '')) + '</title></circle>' : '') +
-      '<text x="' + pctColX + '" y="' + (cy + 3.5) + '" font-size="12" font-weight="700" fill="#1e293b" text-anchor="end">' + (pct != null ? pct + '%' : '&ndash;') + '</text>' +
-      '<text x="' + deltaColX + '" y="' + (cy + 3.5) + '" font-size="11" font-weight="700" fill="' + tone.text + '" text-anchor="end">' + dashRegulatoryEsc(st.delta || '') + '</text>' +
+      '<text x="' + labelX + '" y="' + (cy + 4) + '" font-size="13" font-weight="800" fill="#334155">' + dashRegulatoryEsc(st.abbr || '') + '</text>' +
+      (pct != null ? '<circle cx="' + cx + '" cy="' + cy + '" r="5.5" fill="' + tone.fill + '" fill-opacity="0.75" stroke="' + tone.fill + '" stroke-width="1.5"><title>' + escAttr((st.city ? st.city + ' — ' : '') + (st.countText || '') + ', ' + (st.approvalText || '') + (st.why ? '. ' + st.why : '')) + '</title></circle>' : '') +
+      '<text x="' + pctColX + '" y="' + (cy + 4) + '" font-size="13" font-weight="700" fill="#1e293b" text-anchor="end">' + (pct != null ? pct + '%' : '&ndash;') + '</text>' +
+      '<text x="' + deltaColX + '" y="' + (cy + 4) + '" font-size="12" font-weight="700" fill="' + tone.text + '" text-anchor="end">' + dashRegulatoryEsc(st.delta || '') + '</text>' +
       '</g>'
     );
   });
@@ -17300,7 +17304,7 @@ function dashRenderGeoSection(cfg) {
   root.innerHTML =
     headline +
     context +
-    '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%;max-width:520px;height:auto;display:block;" role="img" aria-label="Disparity severity by state, worst first">' + svg.join('') + '</svg>';
+    '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%;max-width:520px;height:auto;display:block;margin:0 auto;" role="img" aria-label="Disparity severity by state, worst first">' + svg.join('') + '</svg>';
   if (worst) dashShowGeoStateDetail(worst.abbr);
 }
 
@@ -17385,23 +17389,24 @@ function dashRenderIntersectionScatter(cfg) {
   // Grew fonts and row spacing back up; the max-width cap on the SVG (below)
   // is what actually fixed the "huge" complaint two rounds ago, not these
   // font-size numbers, so this is safe to size up again.
-  var W = 560, labelX = 4, labelW = 128, padTop = 36, rowH = 30, padBottom = 18;
-  var pctColX = W - 84, deltaColX = W - 6;
+  // 9/26, 2nd pass -- "center this and increase font a little bit more."
+  var W = 560, labelX = 4, labelW = 130, padTop = 38, rowH = 32, padBottom = 18;
+  var pctColX = W - 86, deltaColX = W - 6;
   var plotL = labelX + labelW;
-  var plotR = pctColX - 26;
+  var plotR = pctColX - 28;
   var H = padTop + rows.length * rowH + padBottom;
   var allPcts = rows.map(function (r) { return r.pct; }).concat([basePct]);
   var minPct = Math.min.apply(null, allPcts), maxPct = Math.max.apply(null, allPcts);
   var padPct = Math.max(3, (maxPct - minPct) * 0.2 || 5);
   var loX = Math.max(0, minPct - padPct), hiX = Math.min(100, maxPct + padPct);
   function xOf(pct) { return plotL + ((pct - loX) / (hiX - loX || 1)) * (plotR - plotL); }
-  function rOf(count) { if (!count) return 3.5; return 3.2 + (count / maxCount) * 2.6; }
+  function rOf(count) { if (!count) return 3.8; return 3.5 + (count / maxCount) * 2.8; }
 
   var svg = [];
   svg.push(
-    '<text x="' + labelX + '" y="16" font-size="9.5" font-weight="700" fill="#94a3b8">GROUP</text>' +
-    '<text x="' + pctColX + '" y="16" font-size="9.5" font-weight="700" fill="#94a3b8" text-anchor="end">APPROVAL RATE</text>' +
-    '<text x="' + deltaColX + '" y="16" font-size="9.5" font-weight="700" fill="#94a3b8" text-anchor="end">VS. BASELINE</text>'
+    '<text x="' + labelX + '" y="17" font-size="10" font-weight="700" fill="#94a3b8">GROUP</text>' +
+    '<text x="' + pctColX + '" y="17" font-size="10" font-weight="700" fill="#94a3b8" text-anchor="end">APPROVAL RATE</text>' +
+    '<text x="' + deltaColX + '" y="17" font-size="10" font-weight="700" fill="#94a3b8" text-anchor="end">VS. BASELINE</text>'
   );
   // Baseline: one dashed vertical line spanning every row, labeled once in
   // the caption above the chart instead of on the chart itself -- there is
@@ -17414,7 +17419,7 @@ function dashRenderIntersectionScatter(cfg) {
     var trackColor = 'rgba(148,163,184,0.3)';
     svg.push('<line x1="' + plotL + '" y1="' + cy + '" x2="' + plotR + '" y2="' + cy + '" stroke="' + trackColor + '" stroke-width="1"/>');
     svg.push(
-      '<text x="' + labelX + '" y="' + (cy + 3.5) + '" font-size="11.5" font-weight="' + (r.highlight ? '800' : '700') + '" fill="' + (r.highlight ? '#7f1d1d' : '#334155') + '">' +
+      '<text x="' + labelX + '" y="' + (cy + 4) + '" font-size="12.5" font-weight="' + (r.highlight ? '800' : '700') + '" fill="' + (r.highlight ? '#7f1d1d' : '#334155') + '">' +
       dashRegulatoryEsc(r.label) + '</text>'
     );
     var r2 = rOf(r.count);
@@ -17426,8 +17431,8 @@ function dashRenderIntersectionScatter(cfg) {
     var deltaTxt = Math.abs(deltaFromBase) < 0.05 ? '(baseline)' : (deltaFromBase > 0 ? '+' : '') + deltaFromBase.toFixed(1) + ' pts';
     var deltaColor = Math.abs(deltaFromBase) < 0.05 ? '#64748b' : (deltaFromBase < 0 ? '#dc2626' : '#16a34a');
     svg.push(
-      '<text x="' + pctColX + '" y="' + (cy + 3.5) + '" font-size="12" font-weight="700" fill="#1e293b" text-anchor="end">' + r.pct + '%</text>' +
-      '<text x="' + deltaColX + '" y="' + (cy + 3.5) + '" font-size="10.5" font-weight="700" fill="' + deltaColor + '" text-anchor="end">' + deltaTxt + '</text>'
+      '<text x="' + pctColX + '" y="' + (cy + 4) + '" font-size="13" font-weight="700" fill="#1e293b" text-anchor="end">' + r.pct + '%</text>' +
+      '<text x="' + deltaColX + '" y="' + (cy + 4) + '" font-size="11.5" font-weight="700" fill="' + deltaColor + '" text-anchor="end">' + deltaTxt + '</text>'
     );
   });
 
@@ -17442,7 +17447,7 @@ function dashRenderIntersectionScatter(cfg) {
   root.innerHTML =
     scatterHeadline +
     baselineCaption +
-    '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%;max-width:520px;height:auto;display:block;overflow:visible;" role="img" aria-label="Approval rate by group, one row per group">' + svg.join('') + '</svg>' +
+    '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%;max-width:520px;height:auto;display:block;margin:0 auto;overflow:visible;" role="img" aria-label="Approval rate by group, one row per group">' + svg.join('') + '</svg>' +
     '<div style="font-size:10.5px;color:#64748b;margin-top:6px;line-height:1.4;">Red row = the one seeded intersectional data point (Hispanic women 55+, Fort Bragg NC): not enough real intersectional rows exist yet for a full age &times; race &times; gender matrix.</div>';
 }
 
