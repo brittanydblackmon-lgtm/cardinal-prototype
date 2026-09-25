@@ -5580,6 +5580,36 @@ Settings
     <div style="font-size:10px;color:var(--muted2);text-align:right;">Sorted by urgency · Drag to reorder · Click arrow to open core</div>
   </div>
   <div id="dash-core-crosslink-banner"></div>
+  <!-- 9/24 "more interactive" pass — filter/sort the 6 real core cards by their own
+       already-computed severity tier, by core, or to cross-core-linked only. Pure
+       client-side filter over dashCoreSeverityScore()/data-core, no new data. -->
+  <div id="dash-core-filter-bar" style="display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-bottom:14px;padding:10px 12px;background:rgba(167,167,167,0.05);border:1px solid rgba(167,167,167,0.15);border-radius:10px;">
+    <label style="font-size:11px;font-weight:700;color:#475569;display:flex;align-items:center;gap:6px;">Severity
+      <select id="dash-core-filter-tier" onchange="dashApplyCoreFilters()" style="font-size:11px;font-weight:600;color:#1e293b;background:#fff;border:1px solid #cbd5e1;border-radius:6px;padding:4px 6px;">
+        <option value="all">All</option>
+        <option value="critical">Critical</option>
+        <option value="warning">Warning</option>
+        <option value="progress">In Progress</option>
+        <option value="running">Running</option>
+      </select>
+    </label>
+    <label style="font-size:11px;font-weight:700;color:#475569;display:flex;align-items:center;gap:6px;">Core
+      <select id="dash-core-filter-core" onchange="dashApplyCoreFilters()" style="font-size:11px;font-weight:600;color:#1e293b;background:#fff;border:1px solid #cbd5e1;border-radius:6px;padding:4px 6px;">
+        <option value="all">All</option>
+        <option value="eden">Eden</option>
+        <option value="obsidian">Obsidian</option>
+        <option value="genesis">Genesis</option>
+        <option value="atonement">Atonement</option>
+        <option value="halo">Halo</option>
+        <option value="sentinel-warroom">Sentinel</option>
+      </select>
+    </label>
+    <label style="font-size:11px;font-weight:700;color:#475569;display:flex;align-items:center;gap:6px;cursor:pointer;">
+      <input type="checkbox" id="dash-core-filter-linked" onchange="dashApplyCoreFilters()" style="cursor:pointer;">
+      Cross-core linked only
+    </label>
+    <span id="dash-core-filter-count" style="font-size:10.5px;color:#64748b;margin-left:auto;"></span>
+  </div>
   <div id="core-panels-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;"></div>
 </div>
 
@@ -5596,6 +5626,17 @@ Settings
           <div>
             <div class="dr-section-title" id="dr-demo-panel-title">Protected Group Impact Analysis</div>
             <div class="dr-section-sub" id="dr-demo-panel-sub"></div>
+          </div>
+          <!-- 9/24 "trend over time" ask — no per-group (gender/age/race) historical
+               series exists anywhere in the app's seed data (checked: demoRaceBars,
+               demoGenderBars and dashAgeChart are all single current-value snapshots).
+               The one real history that does exist is the org-level Trust Score
+               sparkline (trustUx.sparkline.values), which the code elsewhere already
+               treats as moving with bias/fraud/compliance together. Reused here,
+               honestly labeled as an overall trend rather than a per-group one. -->
+          <div style="display:flex;align-items:center;gap:6px;margin-left:8px;" title="Reuses the same real Trust Score history used elsewhere on this dashboard — a true per-group breakdown isn't seeded yet.">
+            <canvas id="dash-demo-trend-mini" width="90" height="28" style="display:block;"></canvas>
+            <span id="dash-demo-trend-label" style="font-size:10px;font-weight:700;color:#64748b;white-space:nowrap;"></span>
           </div>
         </div>
       </div>
@@ -5649,7 +5690,16 @@ Settings
     <div style="margin-top:28px;padding-top:22px;border-top:1px solid rgba(255,255,255,0.06);" onclick="event.stopPropagation();">
       <div style="font-size:13px;font-weight:700;color:#1e293b;">Geographic Disparity — Where Bias Is Concentrated</div>
       <div id="dash-demo-geo-sub" class="dash-demo-geo-sub"></div>
-      <div id="dash-demo-geo-grid" class="dash-demo-geo-grid"></div>
+      <div id="dash-demo-geo-map" style="margin-top:10px;"></div>
+      <div id="dash-demo-geo-detail" style="margin-top:10px;"></div>
+    </div>
+
+    <!-- 9/24 "real charts, not flat bars" ask — bubble chart of real per-race
+         approval rate x real affected-record count, plus the one real seeded
+         intersectional data point. See dashRenderIntersectionScatter(). -->
+    <div style="margin-top:22px;padding-top:20px;border-top:1px solid rgba(255,255,255,0.06);" onclick="event.stopPropagation();">
+      <div style="font-size:13px;font-weight:700;color:#1e293b;">Approval Rate vs. Affected Population, by Group</div>
+      <div id="dash-demo-intersection-scatter" style="margin-top:8px;"></div>
     </div>
 
     <div id="dash-demo-intersection-card" class="dash-demo-intersection-card" style="display:none;"></div>
@@ -15631,28 +15681,34 @@ function drawDashGenderCompare() {
   var trackL = 66;
   var trackR = W - 60;
   var trackW = trackR - trackL;
-  ctx.fillStyle = '#94a3b8';
+  ctx.fillStyle = '#475569';
   ctx.font = 'bold 12px Inter, system-ui, sans-serif';
   ctx.textAlign = 'left';
   ctx.fillText('Equity threshold', trackL + (thresh / 100) * trackW + 4, 16);
 
+  // 9/24 "color-coded severity everywhere" ask — every rate in this chart now
+  // carries the same real red/amber/green band used across the rest of the
+  // Protected Group Impact section (distance from the real equity threshold),
+  // instead of an indigo "pass" tone that didn't match that scheme. This also
+  // fixes labels/values that were painted in near-white (#f1f5f9/#cbd5e1/
+  // #94a3b8) — invisible on this canvas's white card background — with dark,
+  // readable colors instead.
   vals.forEach(function (rate, i) {
     var y = top + i * rowH;
-    ctx.fillStyle = '#cbd5e1';
+    ctx.fillStyle = '#334155';
     ctx.font = 'bold 13px Inter, system-ui, sans-serif';
     ctx.textAlign = 'left';
     ctx.fillText(labels[i], 0, y + 18);
 
-    ctx.fillStyle = 'rgba(255,255,255,0.07)';
+    ctx.fillStyle = 'rgba(148,163,184,0.18)';
     ctx.fillRect(trackL, y + 2, trackW, 24);
 
     var col;
     if (rate >= thresh) {
-      var alt = ['#6366f1', '#818cf8', '#a78bfa'][i] || '#6366f1';
-      col = alt;
+      col = '#15803d';
     } else {
       var gapBelow = thresh - rate;
-      col = gapBelow <= 4 ? '#f59e0b' : '#ef4444';
+      col = gapBelow <= 4 ? '#b45309' : '#b91c1c';
     }
 
     ctx.fillStyle = col;
@@ -15668,7 +15724,7 @@ function drawDashGenderCompare() {
     var tx = trackL + (thresh / 100) * trackW;
     ctx.save();
     ctx.setLineDash([3, 3]);
-    ctx.strokeStyle = 'rgba(255,255,255,0.45)';
+    ctx.strokeStyle = 'rgba(100,116,139,0.6)';
     ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.moveTo(tx, y - 1);
@@ -15676,7 +15732,7 @@ function drawDashGenderCompare() {
     ctx.stroke();
     ctx.restore();
 
-    ctx.fillStyle = '#f1f5f9';
+    ctx.fillStyle = col;
     ctx.font = 'bold 15px Inter, system-ui, sans-serif';
     ctx.textAlign = 'left';
     ctx.fillText(rate + '%', trackL + bw + 8, y + 19);
@@ -15731,9 +15787,9 @@ function drawDashAgeChart() {
     return pad.t + plotH - ((rr - rLo) / (rHi - rLo)) * plotH;
   }
 
-  ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+  ctx.strokeStyle = 'rgba(148,163,184,0.18)';
   ctx.lineWidth = 1;
-  ctx.fillStyle = '#94a3b8';
+  ctx.fillStyle = '#64748b';
   ctx.font = '10px Inter, system-ui, sans-serif';
   ctx.textAlign = 'right';
   [0, 25, 50, 75, 100].forEach(function (t) {
@@ -15746,19 +15802,31 @@ function drawDashAgeChart() {
   });
 
   ctx.textAlign = 'left';
-  ctx.fillStyle = '#f59e0b';
+  ctx.fillStyle = '#b45309';
   ctx.font = 'bold 10px Inter, system-ui, sans-serif';
   [rLo, (rLo + rHi) / 2, rHi].forEach(function (rk) {
     var gy = yRightRatio(rk);
     ctx.fillText(Math.round(rk * 100) + '%', W - pad.r + 6, gy + 3);
   });
 
-  ctx.fillStyle = '#cbd5e1';
+  ctx.fillStyle = '#334155';
   ctx.font = 'bold 11px Inter, system-ui, sans-serif';
   ctx.textAlign = 'center';
   ctx.fillText('Approval %', pad.l + plotW * 0.22, 14);
   ctx.textAlign = 'right';
   ctx.fillText('Vs youngest cohort', W - pad.r, 14);
+
+  // 9/24 "color-coded severity everywhere" ask — bar color derived from each
+  // real value's own distance from the real baseline (values[0], the "vs
+  // youngest cohort" comparator this chart already uses), instead of the
+  // static 2-tone barColors config, so every bar carries a genuine red/amber/
+  // green band, not just the ones an author pre-marked red.
+  var sevColors = values.map(function (v) {
+    var r = base > 0 ? v / base : 1;
+    if (r >= 0.95) return '#15803d';
+    if (r >= 0.85) return '#b45309';
+    return '#b91c1c';
+  });
 
   var n = values.length || 6;
   var step = plotW / n;
@@ -15779,7 +15847,7 @@ function drawDashAgeChart() {
     var bx2 = bx;
     var by = pad.t + plotH - bh;
     var rad = 4;
-    ctx.fillStyle = barColors[i] || '#818cf8';
+    ctx.fillStyle = sevColors[i] || barColors[i] || '#818cf8';
     ctx.beginPath();
     ctx.moveTo(bx2 + rad, by);
     ctx.lineTo(bx2 + bw - rad, by);
@@ -15822,17 +15890,17 @@ function drawDashAgeChart() {
     var g = barGeom[i];
     if (!g) return;
     ctx.textAlign = 'center';
-    ctx.fillStyle = '#0a0e16';
+    var svCol = sevColors[i] || '#334155';
     ctx.font = 'bold 13px Inter, system-ui, sans-serif';
     ctx.lineWidth = 3;
-    ctx.strokeStyle = 'rgba(10,14,22,0.85)';
+    ctx.strokeStyle = 'rgba(255,255,255,0.9)';
     var ty = Math.max(pad.t + 12, g.by - 8);
     ctx.strokeText(v + '%', g.xc, ty);
-    ctx.fillStyle = '#f1f5f9';
+    ctx.fillStyle = svCol;
     ctx.fillText(v + '%', g.xc, ty);
 
     var lb = labels[i] != null ? labels[i] : '';
-    ctx.fillStyle = '#94a3b8';
+    ctx.fillStyle = '#475569';
     ctx.font = 'bold 10px Inter, system-ui, sans-serif';
     ctx.fillText(lb, g.xc, H - pad.b + 16);
   });
@@ -16900,6 +16968,43 @@ function drawTrustMiniTrend(org) {
   }
 }
 
+// 9/24 "trend over time" ask, honest version — reuses the real trustUx.sparkline
+// history (the same array drawTrustMiniTrend() already draws on the Trust Score
+// screen) since no per-group (gender/age/race) historical series exists
+// anywhere in this file's seed data. Labeled as an overall trend, not a
+// per-group one, so it doesn't imply data that isn't there.
+function drawDashDemoSectionTrend(org) {
+  var c = document.getElementById('dash-demo-trend-mini');
+  var lbl = document.getElementById('dash-demo-trend-label');
+  if (!c || !c.getContext) return;
+  var cfg = typeof DASH_INDUSTRY !== 'undefined' ? DASH_INDUSTRY[org] : null;
+  var sp = (cfg && cfg.trustUx && cfg.trustUx.sparkline) || null;
+  var data = sp && Array.isArray(sp.values) ? sp.values.slice() : [];
+  var ctx = c.getContext('2d');
+  ctx.clearRect(0, 0, c.width, c.height);
+  if (data.length < 2) { if (lbl) lbl.textContent = ''; return; }
+  var W = c.width, H = c.height, pad = 3;
+  var vmin = Math.min.apply(null, data), vmax = Math.max.apply(null, data);
+  if (vmin === vmax) { vmin -= 1; vmax += 1; }
+  function yPx(v) { return pad + (H - pad * 2) - ((v - vmin) / (vmax - vmin)) * (H - pad * 2); }
+  var worsening = data[data.length - 1] < data[0];
+  var color = worsening ? '#b91c1c' : '#15803d';
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 2;
+  ctx.lineJoin = 'round';
+  ctx.beginPath();
+  data.forEach(function (v, i) {
+    var x = pad + ((W - pad * 2) * i) / (data.length - 1);
+    var y = yPx(v);
+    if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+  });
+  ctx.stroke();
+  if (lbl) {
+    lbl.textContent = 'Overall trend: ' + (worsening ? 'worsening ↓' : 'improving ↑');
+    lbl.style.color = color;
+  }
+}
+
 function dashRenderImpactedGroups(groups) {
   var el = document.getElementById('dash-impacted-groups');
   if (!el || !groups || !groups.length) {
@@ -16998,73 +17103,160 @@ function dashRenderRaceBars(cfg) {
     .join('');
 }
 
-function dashRenderGeoSection(cfg) {
-  var root = document.getElementById('dash-demo-geo-grid');
-  var subEl = document.getElementById('dash-demo-geo-sub');
-  if (!root) return;
-  root.onclick = function (ev) {
-    if (ev) ev.stopPropagation();
-  };
-  var g = cfg && cfg.demoGeo ? cfg.demoGeo : null;
-  if (subEl) {
-    subEl.textContent =
-      g && g.subtitle
-        ? g.subtitle
-        : '';
+// Approximate on-map position (percent of a 960x600 schematic US viewBox) for
+// the handful of states this demo data ever seeds. Positions are illustrative
+// (a recognizable schematic layout, not a precise projection) since building
+// real state boundary paths is out of scope for this prototype -- but every
+// number plotted at each position (count/rate/level) is the real seeded data.
+var DASH_GEO_STATE_POS = {
+  CA: { x: 90, y: 300 },
+  TX: { x: 430, y: 430 },
+  FL: { x: 800, y: 500 },
+  NC: { x: 760, y: 330 },
+  DC: { x: 795, y: 275 },
+  NY: { x: 800, y: 160 },
+  IL: { x: 590, y: 260 },
+  WA: { x: 140, y: 90 },
+  AZ: { x: 220, y: 380 },
+  GA: { x: 730, y: 400 }
+};
+
+// fill/ring are used on the dark map pins (white text on top, fine at any of
+// these shades); text is a darker shade of the same hue for use as plain text
+// on the white card background, so every severity color stays >=4.5:1 contrast.
+function dashGeoToneColor(lvl) {
+  switch (String(lvl || '').toLowerCase()) {
+    case 'critical': return { fill: '#7f1d1d', ring: '#450a0a', text: '#7f1d1d' };
+    case 'high': return { fill: '#dc2626', ring: '#7f1d1d', text: '#b91c1c' };
+    case 'medium': return { fill: '#d97706', ring: '#92400e', text: '#92400e' };
+    default: return { fill: '#15803d', ring: '#14532d', text: '#15803d' };
   }
+}
+
+// 9/24 "map instead of tiles" ask — same 5 real states/counts/rates, now
+// plotted on a schematic US map instead of a tile grid. Clicking a state pin
+// shows the same real detail (count/rate/note) the tiles used to always show,
+// in a detail panel under the map.
+function dashRenderGeoSection(cfg) {
+  var root = document.getElementById('dash-demo-geo-map');
+  var subEl = document.getElementById('dash-demo-geo-sub');
+  var detailEl = document.getElementById('dash-demo-geo-detail');
+  if (!root) return;
+  root.onclick = function (ev) { if (ev) ev.stopPropagation(); };
+  var g = cfg && cfg.demoGeo ? cfg.demoGeo : null;
+  if (subEl) subEl.textContent = g && g.subtitle ? g.subtitle : '';
+  if (detailEl) detailEl.innerHTML = '';
   if (!g || !Array.isArray(g.states) || !g.states.length) {
-    root.innerHTML =
-      '<div style="font-size:11px;color:#64748b;">No geography highlights for this cohort.</div>';
+    root.innerHTML = '<div style="font-size:11px;color:#64748b;">No geography highlights for this cohort.</div>';
     return;
   }
-  function toneBg(lvl) {
-    switch (lvl) {
-      case 'critical':
-      case 'CRITICAL':
-        return 'linear-gradient(180deg,#7f1d1d,#450a0a)';
-      case 'high':
-      case 'HIGH':
-        return 'linear-gradient(180deg,#dc2626,#7f1d1d)';
-      case 'medium':
-      case 'MEDIUM':
-        return 'linear-gradient(180deg,#d97706,#92400e)';
-      default:
-        return 'linear-gradient(180deg,#15803d,#14532d)';
+  window._dashGeoStates = g.states;
+  var W = 960, H = 560;
+  // Simplified continental-US silhouette -- schematic, not survey-accurate,
+  // just enough shape to read as "a US map" at a glance.
+  var outline = 'M120,120 L360,90 L520,80 L700,100 L860,140 L900,220 L880,320 L900,420 L820,480 L760,520 L640,540 L520,530 L400,540 L260,500 L160,440 L110,340 L100,220 Z';
+  var pins = g.states.map(function (st) {
+    var pos = DASH_GEO_STATE_POS[String(st.abbr || '').toUpperCase()] || { x: 480, y: 300 };
+    var tone = dashGeoToneColor(st.level);
+    var r = 22;
+    return (
+      '<g class="dash-geo-pin" data-abbr="' + escAttr(st.abbr || '') + '" style="cursor:pointer;" onclick="event.stopPropagation();dashShowGeoStateDetail(\'' + escAttr(st.abbr || '') + '\')">' +
+      '<circle cx="' + pos.x + '" cy="' + pos.y + '" r="' + r + '" fill="' + tone.fill + '" stroke="' + tone.ring + '" stroke-width="3"><title>' + escAttr(String(st.abbr || '') + ': ' + (st.countText || '') + ', ' + (st.approvalText || '')) + '</title></circle>' +
+      '<text x="' + pos.x + '" y="' + (pos.y + 5) + '" text-anchor="middle" font-size="14" font-weight="800" fill="#fff" style="pointer-events:none;">' + dashRegulatoryEsc(st.abbr || '') + '</text>' +
+      '<text x="' + pos.x + '" y="' + (pos.y + r + 16) + '" text-anchor="middle" font-size="12" font-weight="800" fill="#1e293b" style="pointer-events:none;">' + dashRegulatoryEsc(st.delta || '') + '</text>' +
+      '</g>'
+    );
+  }).join('');
+  root.innerHTML =
+    '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%;height:auto;max-height:340px;" role="img" aria-label="US map, disparity severity by state">' +
+    '<path d="' + outline + '" fill="rgba(148,163,184,0.12)" stroke="rgba(148,163,184,0.35)" stroke-width="2"/>' +
+    pins +
+    '</svg>' +
+    '<div style="font-size:10px;color:#64748b;margin-top:4px;">Click a state for its full detail. Color = disparity severity (red = critical/high, amber = medium, green = low).</div>';
+  // Auto-select the worst state so the detail panel isn't empty on first render.
+  var worst = g.states.reduce(function (a, b) {
+    var order = { critical: 4, high: 3, medium: 2, low: 1 };
+    return (order[String(b.level || '').toLowerCase()] || 0) > (order[String(a.level || '').toLowerCase()] || 0) ? b : a;
+  }, g.states[0]);
+  if (worst) dashShowGeoStateDetail(worst.abbr);
+}
+
+function dashShowGeoStateDetail(abbr) {
+  var detailEl = document.getElementById('dash-demo-geo-detail');
+  if (!detailEl) return;
+  var states = window._dashGeoStates || [];
+  var st = states.filter(function (s) { return String(s.abbr || '').toUpperCase() === String(abbr || '').toUpperCase(); })[0];
+  if (!st) { detailEl.innerHTML = ''; return; }
+  var tone = dashGeoToneColor(st.level);
+  detailEl.innerHTML =
+    '<div style="border-left:3px solid ' + tone.fill + ';padding:8px 12px;background:rgba(167,167,167,0.05);border-radius:0 8px 8px 0;">' +
+    '<div style="font-size:13px;font-weight:800;color:#1e293b;">' + dashRegulatoryEsc(st.abbr || '') + ': ' + dashRegulatoryEsc((st.tag || '').toString().toUpperCase()) + '</div>' +
+    '<div style="font-size:12px;color:#334155;font-weight:600;margin-top:4px;">' + [dashRegulatoryEsc(st.countText || ''), dashRegulatoryEsc(st.approvalText || '')].filter(Boolean).join(' &middot; ') + '</div>' +
+    (st.note ? '<div style="font-size:11px;color:#64748b;margin-top:4px;">' + dashRegulatoryEsc(st.note) + '</div>' : '') +
+    '<div style="font-size:11px;font-weight:800;color:' + tone.text + ';margin-top:4px;">' + dashRegulatoryEsc(st.delta || '') + ' vs. baseline</div>' +
+    '</div>';
+}
+
+// 9/24 "real charts, not flat bars" ask — bubble chart plotting each race
+// group's real approval rate (x-axis) against its real affected-record count
+// (bubble size), reusing demoRaceBars + the raw eth[] record counts already
+// seeded per org (no new numbers). The single real seeded intersectional data
+// point (Hispanic women 55+ at Fort Bragg NC, from demoIntersection) is
+// plotted as a distinct marker on the same rate axis. There is only one real
+// intersectional row seeded today, not a full age x race x gender matrix, so
+// this deliberately stops at "one extra real point on the same chart" rather
+// than fabricating a grid of intersections that doesn't exist yet.
+function dashRenderIntersectionScatter(cfg) {
+  var root = document.getElementById('dash-demo-intersection-scatter');
+  if (!root) return;
+  var raceRows = (cfg && cfg.demoRaceBars && cfg.demoRaceBars.rows) || [];
+  var ethMap = (cfg && cfg.eth) || {};
+  var keyForLabel = { 'White': 'white', 'Black/AA': 'black', 'Hispanic': 'hisp', 'Asian': 'asian', 'Other': 'other' };
+  var pts = raceRows.filter(function (r) { return typeof r.pct === 'number'; }).map(function (r) {
+    var k = keyForLabel[r.label];
+    var rec = k && ethMap[k] ? ethMap[k] : null;
+    var count = rec && rec[1] ? parseInt(String(rec[1]).replace(/[^0-9]/g, ''), 10) : null;
+    return { label: r.label, pct: r.pct, count: count, color: r.barColor || '#60a5fa' };
+  });
+  if (!pts.length) { root.innerHTML = '<div style="font-size:11px;color:#64748b;">No group-level data for this cohort.</div>'; return; }
+  var W = 620, H = 210, padL = 46, padR = 30, padT = 26, padB = 34;
+  var pctVals = pts.map(function (p) { return p.pct; });
+  var minPct = Math.min.apply(null, pctVals), maxPct = Math.max.apply(null, pctVals);
+  var padPct = Math.max(3, (maxPct - minPct) * 0.25 || 5);
+  var loX = Math.max(0, minPct - padPct), hiX = Math.min(100, maxPct + padPct);
+  function xOf(pct) { return padL + ((pct - loX) / (hiX - loX || 1)) * (W - padL - padR); }
+  var maxCount = Math.max.apply(null, pts.map(function (p) { return p.count || 0; }).concat([1]));
+  function rOf(count) { if (!count) return 8; return 7 + (count / maxCount) * 16; }
+  var basePct = (cfg.demoRaceBars && cfg.demoRaceBars.baselinePct) || maxPct;
+  var svg = [];
+  svg.push('<line x1="' + padL + '" y1="' + (H - padB) + '" x2="' + (W - padR) + '" y2="' + (H - padB) + '" stroke="#cbd5e1" stroke-width="1"/>');
+  [loX, (loX + hiX) / 2, hiX].forEach(function (t) {
+    svg.push('<text x="' + xOf(t) + '" y="' + (H - padB + 16) + '" font-size="10" fill="#64748b" text-anchor="middle">' + Math.round(t) + '%</text>');
+  });
+  svg.push('<line x1="' + xOf(basePct) + '" y1="' + padT + '" x2="' + xOf(basePct) + '" y2="' + (H - padB) + '" stroke="#94a3b8" stroke-dasharray="3,3" stroke-width="1"/>');
+  svg.push('<text x="' + xOf(basePct) + '" y="' + (padT - 8) + '" font-size="10" font-weight="700" fill="#475569" text-anchor="middle">baseline ' + basePct.toFixed(1) + '%</text>');
+  var rowH = (H - padT - padB - 20) / Math.max(1, pts.length - 1 || 1);
+  pts.forEach(function (p, i) {
+    var cx = xOf(p.pct);
+    var cy = padT + 14 + (pts.length > 1 ? i * rowH : (H - padT - padB) / 2);
+    var r = rOf(p.count);
+    svg.push('<circle cx="' + cx + '" cy="' + cy + '" r="' + r + '" fill="' + p.color + '" fill-opacity="0.5" stroke="' + p.color + '" stroke-width="2"><title>' + escAttr(p.label + ': ' + p.pct + '% approval' + (p.count ? (', ' + p.count.toLocaleString() + ' records') : '')) + '</title></circle>');
+    svg.push('<text x="' + cx + '" y="' + (cy - r - 6) + '" font-size="10.5" font-weight="700" fill="#334155" text-anchor="middle">' + dashRegulatoryEsc(p.label) + '</text>');
+  });
+  var it = cfg && cfg.demoIntersection ? cfg.demoIntersection : null;
+  if (it && it.body) {
+    var m = /:\s*([\d.]+)%/.exec(it.body);
+    var interPct = m ? parseFloat(m[1]) : null;
+    if (interPct != null) {
+      var ix = xOf(Math.max(loX, Math.min(hiX, interPct)));
+      var iy = H - padB - 10;
+      svg.push('<circle cx="' + ix + '" cy="' + iy + '" r="8" fill="#dc2626" stroke="#7f1d1d" stroke-width="2"><title>' + escAttr('Most vulnerable intersection: ' + interPct + '%') + '</title></circle>');
+      svg.push('<text x="' + ix + '" y="' + (iy + 20) + '" font-size="9.5" font-weight="800" fill="#7f1d1d" text-anchor="middle">Hispanic women 55+</text>');
     }
   }
-  // Used to hide countText/approvalText/note in the title="" hover tooltip — per Brittany's
-  // 9/24 "give more information, it can be even more specific" ask, that detail now prints
-  // directly on the tile (bigger tiles make room for it) instead of only on hover.
-  root.innerHTML = g.states
-    .map(function (st) {
-      function escTxt(s) {
-        return dashRegulatoryEsc(String(s || ''));
-      }
-      var tipPlain = [String(st.countText || ''), String(st.approvalText || '')]
-        .concat(st.note ? [String(st.note)] : [])
-        .filter(Boolean)
-        .join(' — ');
-      var detailLine = [st.countText, st.approvalText].filter(Boolean).join(' · ');
-      var div =
-        '<div class="dash-demo-geo-cell" style="background:' +
-        toneBg(st.level || 'low') +
-        ';" title="' +
-        escAttr(tipPlain) +
-        '">' +
-        '<strong>' +
-        escTxt(st.abbr || '') +
-        '</strong>' +
-        '<span>' +
-        escTxt(st.delta || '') +
-        ' &middot; ' +
-        escTxt(st.tag || '') +
-        '</span>' +
-        (detailLine ? '<div class="geo-detail">' + escTxt(detailLine) + '</div>' : '') +
-        (st.note ? '<div class="geo-detail">' + escTxt(st.note) + '</div>' : '') +
-        '</div>';
-      return div;
-    })
-    .join('');
+  root.innerHTML =
+    '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%;height:auto;" role="img" aria-label="Approval rate by race, bubble sized by affected record count">' + svg.join('') + '</svg>' +
+    '<div style="font-size:10.5px;color:#64748b;margin-top:6px;line-height:1.4;">Bubble size = real affected-record count per group. Red marker = the one seeded intersectional data point (Hispanic women 55+, Fort Bragg NC): not enough real intersectional rows exist yet for a full age &times; race &times; gender matrix.</div>';
 }
 
 function dashRenderIntersectionCard(cfg) {
@@ -18525,11 +18717,18 @@ function dashCorePzIcon(which) {
   }
 }
 
-function dashCorePzRowInner(r) {
+// r, coreId + idx (9/24 "live-updating numbers" + "hover reveals more" asks) --
+// coreId/idx give each row's bar/number a stable id so dashStartCoreRowDrift()
+// can animate it, and the row wrapper carries a data-row-tip with the row's own
+// real th/pct/badge spelled out as text for a hover tooltip -- no new fields,
+// just more of what r already carries (bg/bd/bc/pct/th/cx).
+function dashCorePzRowInner(r, coreId, idx) {
   var bd = r.bd || '#94a3b8';
   var bg22 = typeof dashHexToRgba === 'function' ? dashHexToRgba(bd, 0.127) : 'rgba(148,163,184,0.13)';
   var br44 = typeof dashHexToRgba === 'function' ? dashHexToRgba(bd, 0.267) : 'rgba(148,163,184,0.27)';
   var barBlock = '';
+  var pctNum = '';
+  var rowId = dashCorePzEsc(String(coreId || 'core')) + '-' + (typeof idx === 'number' ? idx : 0);
   if (typeof r.pct === 'number' && !isNaN(r.pct)) {
     var th = '';
     if (typeof r.th === 'number' && !isNaN(r.th)) {
@@ -18541,16 +18740,29 @@ function dashCorePzRowInner(r) {
         '</div>';
     }
     barBlock =
-      '<div style="position:relative;height:3px;background:rgba(255,255,255,0.06);border-radius:2px;margin-bottom:4px;">' +
+      '<div style="position:relative;height:3px;background:rgba(255,255,255,0.06);border-radius:2px;margin-bottom:4px;" data-core-row-base="' + r.pct + '">' +
       th +
-      '<div style="position:relative;height:3px;background:' +
+      '<div data-core-row-bar style="position:relative;height:3px;background:' +
       dashCorePzEsc(r.bc || bd) +
       ';border-radius:2px;width:' +
       Math.min(100, Math.max(0, r.pct)) +
-      '%;max-width:100%;"></div></div>';
+      '%;max-width:100%;transition:width 0.5s ease;"></div></div>';
+    pctNum =
+      '<span data-core-row-num style="font-size:10px;font-weight:800;color:' +
+      dashCorePzEsc(r.bc || bd) +
+      ';flex-shrink:0;margin-left:6px;">' +
+      Math.round(r.pct) +
+      '%</span>';
   }
+  var tipTitle = dashCorePzEsc(r.lb || '');
+  var tipBodyBits = [];
+  if (typeof r.pct === 'number' && !isNaN(r.pct)) tipBodyBits.push('Current: ' + Math.round(r.pct) + '%');
+  if (typeof r.th === 'number' && !isNaN(r.th)) tipBodyBits.push('Threshold: ' + Math.round(r.th) + '%');
+  if (r.bg) tipBodyBits.push('Status: ' + r.bg);
+  if (r.cx) tipBodyBits.push(r.cx);
+  var tipBody = dashCorePzEsc(tipBodyBits.join(' · '));
   return (
-    '<div style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.04);">' +
+    '<div class="core-row-hoverable" data-row-id="' + rowId + '" data-row-tip-title="' + tipTitle + '" data-row-tip-body="' + tipBody + '" style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.04);">' +
     '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">' +
     '<div style="display:flex;align-items:center;gap:6px;min-width:0;">' +
     dashCorePzIcon(r.ic) +
@@ -18558,6 +18770,7 @@ function dashCorePzRowInner(r) {
     dashCorePzEsc(r.lb) +
     '</span>' +
     '</div>' +
+    '<div style="display:flex;align-items:center;flex-shrink:0;">' +
     '<span style="font-size:10px;font-weight:700;color:' +
     dashCorePzEsc(bd) +
     ';background:' +
@@ -18567,6 +18780,8 @@ function dashCorePzRowInner(r) {
     ';border-radius:3px;padding:2px 7px;flex-shrink:0;">' +
     dashCorePzEsc(r.bg) +
     '</span>' +
+    pctNum +
+    '</div>' +
     '</div>' +
     barBlock +
     '<div style="font-size:11.5px;font-weight:500;color:#94a3b8;line-height:1.45;">' +
@@ -18615,6 +18830,17 @@ function dashCoreSeverityScore(spec) {
   return tier * 1000 + pct;
 }
 
+// Maps the same tier used by dashCoreSeverityScore to a filter-bar value
+// (Brittany's 9/24 filter-by-severity ask) — same badge text, no new field.
+function dashCoreSeverityTierKey(spec) {
+  var badge = String(spec.badge || '').toUpperCase();
+  if (/CRITICAL|BLOCKED|TOP PRIORITY|OVERDUE/.test(badge)) return 'critical';
+  if (/DEADLINE|FLAG|WARNING/.test(badge)) return 'warning';
+  if (/PROGRESS/.test(badge)) return 'progress';
+  if (/RUNNING/.test(badge)) return 'running';
+  return 'other';
+}
+
 // Enrich each of the 6 core specs with a computed "why now" line (first
 // sentence of the card's real Eve narrative), a trend indicator, and the top
 // contributing factor (the highest-pct real row) -- then sort worst-first.
@@ -18631,6 +18857,7 @@ function dashEnrichAndSortCorePanels(specs) {
     var m = eveStr.match(/^[^.!?]*[.!?]/);
     spec.whyNow = m ? m[0].trim() : eveStr;
     spec._severity = dashCoreSeverityScore(spec);
+    spec._tierKey = dashCoreSeverityTierKey(spec);
   });
   specs.sort(function (a, b) { return b._severity - a._severity; });
   return specs;
@@ -18688,17 +18915,84 @@ function dashCorePzCrossLinkMarkup(p) {
   );
 }
 
+// 9/24 "click to expand" ask — reveals the real linked model/cohort/statute
+// names behind the cross-link banner's counts (e.g. "2 models" becomes the
+// actual model names + DI, the cohort size becomes name + restored/total +
+// status). Pulled from the same CARDINAL_MODELS/CARDINAL_COHORTS/CARDINAL_STATUTES
+// arrays dashCoreCrossLinkInfo already reads -- nothing invented. If a core has
+// no cross-core case link, there is genuinely nothing longer-form to expand into
+// beyond the always-visible Eve narrative, so the toggle is simply not rendered.
+function dashCoreExpandDetailMarkup(p) {
+  if (!p.caseId) return '';
+  var info = dashCoreCrossLinkInfo(p.caseId);
+  if (!info) return '';
+  var parts = [];
+  if (info.models.length) {
+    parts.push(
+      '<div style="margin-bottom:10px;"><div style="font-size:10px;font-weight:800;color:#64748b;letter-spacing:0.5px;margin-bottom:4px;">LINKED MODELS</div>' +
+      info.models.map(function (m) {
+        return '<div style="font-size:12px;color:#334155;font-weight:600;padding:3px 0;">' + dashCorePzEsc(m.name || m.id || '') +
+          (typeof m.di === 'number' ? ' (DI ' + m.di + ')' : '') +
+          (m.status ? ', ' + dashCorePzEsc(m.status) : '') + '</div>';
+      }).join('') + '</div>'
+    );
+  }
+  if (info.cohorts.length) {
+    parts.push(
+      '<div style="margin-bottom:10px;"><div style="font-size:10px;font-weight:800;color:#64748b;letter-spacing:0.5px;margin-bottom:4px;">LINKED COHORT</div>' +
+      info.cohorts.map(function (c) {
+        var restored = typeof c.restored === 'number' ? c.restored : 0;
+        return '<div style="font-size:12px;color:#334155;font-weight:600;padding:3px 0;">' + dashCorePzEsc(c.name || c.id) +
+          ': ' + restored + ' of ' + c.size + ' restored (' + dashCorePzEsc(c.status || '') + ')</div>';
+      }).join('') + '</div>'
+    );
+  }
+  if (info.statutes.length) {
+    parts.push(
+      '<div><div style="font-size:10px;font-weight:800;color:#64748b;letter-spacing:0.5px;margin-bottom:4px;">STATUTES IN SCOPE</div>' +
+      info.statutes.map(function (s) {
+        return '<div style="font-size:12px;color:#334155;font-weight:600;padding:3px 0;">' + dashCorePzEsc(s.fullName || s.name || s.id) +
+          (s.authority ? ' (' + dashCorePzEsc(s.authority) + ')' : '') + '</div>';
+      }).join('') + '</div>'
+    );
+  }
+  if (!parts.length) return '';
+  return (
+    '<div id="core-expand-' + dashCorePzEsc(p.id) + '" class="core-expand-detail" style="display:none;margin-top:2px;margin-bottom:12px;padding:10px 12px;background:rgba(167,167,167,0.05);border:1px solid rgba(167,167,167,0.15);border-radius:8px;">' +
+    parts.join('') + '</div>'
+  );
+}
+
+function dashCoreExpandToggleMarkup(p, hasDetail) {
+  if (!hasDetail) return '';
+  return (
+    '<span onclick="event.stopPropagation();dashToggleCoreExpand(\'' + dashCorePzEsc(p.id) + '\',this)" style="font-size:10px;font-weight:800;color:#7e22ce;cursor:pointer;white-space:nowrap;margin-left:8px;flex-shrink:0;">Show more ▾</span>'
+  );
+}
+
+function dashToggleCoreExpand(id, el) {
+  var box = document.getElementById('core-expand-' + id);
+  if (!box) return;
+  var open = box.style.display !== 'none';
+  box.style.display = open ? 'none' : 'block';
+  if (el) el.innerHTML = open ? 'Show more ▾' : 'Show less ▴';
+}
+
 function dashCorePzPanelMarkup(p) {
   var prio = p.prioHex || p.dot || '#A7A7A7';
   var prioBg = typeof dashHexToRgba === 'function' ? dashHexToRgba(prio, 0.127) : 'rgba(148,163,184,0.13)';
   var prioBr = typeof dashHexToRgba === 'function' ? dashHexToRgba(prio, 0.267) : 'rgba(148,163,184,0.27)';
   var scr = String(p.screen || 'dashboard').replace(/'/g, "\\'");
-  var rows = (p.rows || []).map(dashCorePzRowInner).join('');
+  var rows = (p.rows || []).map(function (r, idx) { return dashCorePzRowInner(r, p.id, idx); }).join('');
   var eveTxt = dashCorePzEsc(p.eve || '');
+  var expandDetail = dashCoreExpandDetailMarkup(p);
+  var expandToggle = dashCoreExpandToggleMarkup(p, !!expandDetail);
+  var crossLinked = p.caseId && dashCoreCrossLinkInfo(p.caseId) ? '1' : '0';
   return (
     '<div class="core-panel" data-core="' +
     dashCorePzEsc(p.id) +
-    '" style="background:var(--card);border:1px solid var(--border2);border-radius:14px;padding:0;overflow:hidden;">' +
+    '" data-severity-tier="' + dashCorePzEsc(p._tierKey || 'other') + '" data-cross-link="' + crossLinked + '"' +
+    ' style="background:var(--card);border:1px solid var(--border2);border-radius:14px;padding:0;overflow:hidden;">' +
     '<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid rgba(255,255,255,0.06);">' +
     '<div style="display:flex;align-items:center;gap:8px;min-width:0;">' +
     '<div class="drag-handle" draggable="true" title="Drag to reorder" style="color:rgba(255,255,255,0.15);cursor:grab;font-size:14px;padding:2px 4px;line-height:1;">⠿</div>' +
@@ -18721,6 +19015,7 @@ function dashCorePzPanelMarkup(p) {
     ';border-radius:4px;padding:2px 7px;letter-spacing:0.5px;flex-shrink:0;margin-left:6px;">' +
     dashCorePzEsc(p.badge) +
     '</span>' +
+    (expandToggle ? '<span class="core-expand-toggle" onclick="event.stopPropagation();dashToggleCoreExpand(\'' + dashCorePzEsc(p.id) + '\',this)" style="font-size:10px;font-weight:800;color:#7e22ce;cursor:pointer;white-space:nowrap;margin-left:8px;flex-shrink:0;">Show more \u25be</span>' : '') +
     '</div>' +
     '<div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">' +
     '<button type="button" class="collapse-btn" onclick="togglePanel(this);" style="background:transparent;border:none;color:#64748b;cursor:pointer;font-size:14px;padding:2px 4px;line-height:1;">\u25be</button>' +
@@ -18736,6 +19031,7 @@ function dashCorePzPanelMarkup(p) {
     eveTxt +
     '</div>' +
     dashCorePzCrossLinkMarkup(p) +
+    expandDetail +
     rows +
     (p.inlineList ?
       '<div style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.06);">' +
@@ -19325,6 +19621,91 @@ function buildCoreStatusPanels(org) {
       c.classList.add('dash-core-card-in');
     });
   } catch (_anim) {}
+  // 9/24 "more interactive" pass: re-apply whatever filter is currently
+  // selected (survives an org switch/refresh instead of resetting), bind the
+  // real-data hover tooltips on every row, and (re)start the bounded live
+  // drift on the row pct bars/numbers.
+  try { dashApplyCoreFilters(); } catch (_cf) {}
+  try { dashBindCoreRowTooltips(); } catch (_rt) {}
+  try { dashStartCoreRowDrift(); } catch (_crd) {}
+}
+
+// Filters the 6 real cards by severity tier / core / cross-core-linked-only.
+// Pure DOM show/hide over data-severity-tier, data-core and data-cross-link,
+// all of which are computed above from real badge/case data -- no new fields.
+function dashApplyCoreFilters() {
+  var grid = document.getElementById('core-panels-grid');
+  if (!grid) return;
+  var tierSel = document.getElementById('dash-core-filter-tier');
+  var coreSel = document.getElementById('dash-core-filter-core');
+  var linkedCb = document.getElementById('dash-core-filter-linked');
+  var tier = tierSel ? tierSel.value : 'all';
+  var core = coreSel ? coreSel.value : 'all';
+  var linkedOnly = !!(linkedCb && linkedCb.checked);
+  var cards = grid.querySelectorAll('.core-panel');
+  var shown = 0;
+  cards.forEach(function (c) {
+    var okTier = tier === 'all' || c.getAttribute('data-severity-tier') === tier;
+    var okCore = core === 'all' || c.getAttribute('data-core') === core;
+    var okLinked = !linkedOnly || c.getAttribute('data-cross-link') === '1';
+    var visible = okTier && okCore && okLinked;
+    c.style.display = visible ? '' : 'none';
+    if (visible) shown++;
+  });
+  var countEl = document.getElementById('dash-core-filter-count');
+  if (countEl) countEl.textContent = shown + ' of ' + cards.length + ' shown';
+}
+
+// Hover reveals more (9/24 ask) -- binds the existing app-wide showTooltip()
+// popover to every row using the row's own real th/pct/badge/cx already
+// computed in dashCorePzRowInner, so hovering a row surfaces the exact
+// threshold/current numbers instead of only the bar's visual position.
+function dashBindCoreRowTooltips() {
+  var grid = document.getElementById('core-panels-grid');
+  if (!grid || typeof showTooltip !== 'function') return;
+  grid.querySelectorAll('.core-row-hoverable[data-row-tip-title]').forEach(function (row) {
+    var title = row.getAttribute('data-row-tip-title');
+    var body = row.getAttribute('data-row-tip-body');
+    if (title && body) showTooltip(row, title, body);
+  });
+}
+
+// Live-updating numbers (9/24 ask) -- same scripted-drift-with-easing pattern
+// as dashStartTrustScoreDrift(), applied to each row's own real seeded pct
+// (data-core-row-base) instead of a single global number. Each row wobbles a
+// few points around its real value and is pulled back to that exact real
+// value before picking a new wobble target, so it never drifts away from what
+// was actually seeded.
+window._dashCoreRowDriftTimer = null;
+function dashStartCoreRowDrift() {
+  if (window._dashCoreRowDriftTimer) { clearInterval(window._dashCoreRowDriftTimer); window._dashCoreRowDriftTimer = null; }
+  var wraps = Array.prototype.slice.call(document.querySelectorAll('#core-panels-grid [data-core-row-base]'));
+  if (!wraps.length) return;
+  function pickTarget(base) {
+    var span = 4 + Math.random() * 3;
+    var dir = Math.random() < 0.5 ? -1 : 1;
+    return Math.max(0, Math.min(100, base + dir * span));
+  }
+  var state = wraps.map(function (el) {
+    var base = parseFloat(el.getAttribute('data-core-row-base'));
+    return { wrap: el, base: base, cur: base, target: pickTarget(base) };
+  });
+  window._dashCoreRowDriftTimer = setInterval(function () {
+    state.forEach(function (s) {
+      var diff = s.target - s.cur;
+      if (Math.abs(diff) < 0.4) {
+        s.cur = s.base;
+        s.target = pickTarget(s.base);
+      } else {
+        s.cur = s.cur + diff * 0.12;
+      }
+      var v = Math.max(0, Math.min(100, Math.round(s.cur)));
+      var bar = s.wrap.querySelector('[data-core-row-bar]');
+      var num = s.wrap.parentNode ? s.wrap.parentNode.querySelector('[data-core-row-num]') : null;
+      if (bar) bar.style.width = v + '%';
+      if (num) num.textContent = v + '%';
+    });
+  }, 900);
 }
 
 function dashboardInitCoreReorderOnce() {
@@ -20091,7 +20472,9 @@ function updateDashboardIndustry(org) {
   try {
     dashRenderGeoSection(cfg);
     dashRenderIntersectionCard(cfg);
+    dashRenderIntersectionScatter(cfg);
   } catch (_g) {}
+  try { drawDashDemoSectionTrend(org); } catch (_dst) {}
 
   try {
     dashApplyTrustUxPanels(org);
