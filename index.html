@@ -5670,17 +5670,17 @@ Settings
       </div>
     </div>
 
-    <div style="margin-top:28px;padding-top:22px;border-top:1px solid rgba(255,255,255,0.06);" onclick="event.stopPropagation();">
+    <div style="margin-top:28px;padding-top:22px;border-top:1px solid rgba(255,255,255,0.06);text-align:center;" onclick="event.stopPropagation();">
       <div style="font-size:13px;font-weight:700;color:#1e293b;">Geographic Disparity — Where Bias Is Concentrated</div>
       <div id="dash-demo-geo-sub" class="dash-demo-geo-sub"></div>
       <div id="dash-demo-geo-map" style="margin-top:10px;"></div>
-      <div id="dash-demo-geo-detail" style="margin-top:10px;"></div>
+      <div id="dash-demo-geo-detail" style="margin-top:10px;text-align:left;"></div>
     </div>
 
     <!-- 9/24 "real charts, not flat bars" ask — bubble chart of real per-race
          approval rate x real affected-record count, plus the one real seeded
          intersectional data point. See dashRenderIntersectionScatter(). -->
-    <div style="margin-top:22px;padding-top:20px;border-top:1px solid rgba(255,255,255,0.06);" onclick="event.stopPropagation();">
+    <div style="margin-top:22px;padding-top:20px;border-top:1px solid rgba(255,255,255,0.06);text-align:center;" onclick="event.stopPropagation();">
       <div style="font-size:13px;font-weight:700;color:#1e293b;">Approval Rate vs. Affected Population, by Group</div>
       <div id="dash-demo-intersection-scatter" style="margin-top:8px;"></div>
     </div>
@@ -16557,6 +16557,31 @@ function dashSyncAllTrustScoreDisplays(value, delta) {
     el.textContent = String(v);
     el.style.color = color;
   });
+  // 9/26 -- Brittany caught the Trust Score CORE page's own hero ring (the
+  // big "/100" gauge) sitting on 74 while the sidebar drifted to 76. Root
+  // cause: that ring's elements (tsv2-gauge-num/-ring, and the older
+  // ts-ring-num/-ring markup) were never in this shared write list, so they
+  // only ever got set once -- at screen-render time, from the static
+  // CARDINAL_DATA.trustScoreDisplay seed value -- and then just sat there
+  // while every other display kept moving with the live "let it breathe"
+  // drift. Same "two writers, one stale" pattern as the others tonight, just
+  // manifesting as "one display never write updates" instead of a race.
+  var gaugeNum = document.getElementById('tsv2-gauge-num');
+  var gaugeRing = document.getElementById('tsv2-gauge-ring');
+  if (gaugeNum) { gaugeNum.textContent = String(v); gaugeNum.setAttribute('fill', color); }
+  if (gaugeRing) {
+    var gaugeCirc = 2 * Math.PI * 86;
+    gaugeRing.style.stroke = color;
+    gaugeRing.style.strokeDashoffset = (gaugeCirc * (1 - Math.max(0, Math.min(100, v)) / 100)).toFixed(2);
+  }
+  var ringNumOld = document.getElementById('ts-ring-num');
+  var ringOld = document.getElementById('ts-ring');
+  if (ringNumOld) { ringNumOld.textContent = String(v); ringNumOld.setAttribute('fill', color); }
+  if (ringOld) {
+    var ringOldCirc = 2 * Math.PI * 76;
+    ringOld.setAttribute('stroke', color);
+    ringOld.setAttribute('stroke-dashoffset', ringOldCirc * (1 - Math.max(0, Math.min(100, v)) / 100));
+  }
   var chipNum = document.querySelector('.sidebar-trust-score-chip-num') || document.getElementById('sidebar-trust-score-num');
   if (chipNum) { chipNum.textContent = v; chipNum.style.color = color; }
   var chipBadge = document.getElementById('sidebar-score-badge');
@@ -17454,6 +17479,18 @@ function dashRenderIntersectionScatter(cfg) {
 function dashRenderIntersectionCard(cfg) {
   var card = document.getElementById('dash-demo-intersection-card');
   if (!card) return;
+  // 9/26 -- Brittany: "what's the point of the brown bar?" It restated the
+  // exact same fact already shown twice above it (the red highlighted row in
+  // the scatter chart, and the "Red row = the one seeded intersectional data
+  // point..." caption right under the chart) with nothing new added. Rather
+  // than build a bigger version that says something genuinely new (a real
+  // "what's being done about it" fact pulled from actual remediation data,
+  // not invented), we're just turning this card off for now -- the data
+  // (cfg.demoIntersection) is left untouched below so it's a quick add-back
+  // if a non-redundant version gets scoped later.
+  card.style.display = 'none';
+  card.innerHTML = '';
+  return;
   var it = cfg && cfg.demoIntersection ? cfg.demoIntersection : null;
   if (!it || !it.title) {
     card.style.display = 'none';
@@ -35573,7 +35610,13 @@ function tsv2OrdSuffix(n) {
 // ── Section 1: Hero (with Score Confidence) ─────────────────────────
 function tsv2BuildHero(d) {
   if (!d) return;
-  var score = parseInt(d.trustScoreDisplay, 10) || 0;
+  // 9/26 -- read the live drift value (same source the sidebar/dashboard use)
+  // when it's running for the org actually on screen, instead of the static
+  // seed number, so the ring doesn't paint a stale value for one frame before
+  // dashSyncAllTrustScoreDisplays's next tick corrects it.
+  var score = (typeof window._dashTrustDriftValue === 'number' && window.currentOrg === (window.TSV2_LAST_ORG || window.currentOrg))
+    ? Math.round(window._dashTrustDriftValue)
+    : (parseInt(d.trustScoreDisplay, 10) || 0);
   var color = d.trustColor || tsv2ScoreColor(score);
 
   var ring = document.getElementById('tsv2-gauge-ring');
