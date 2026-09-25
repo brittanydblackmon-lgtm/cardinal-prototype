@@ -17333,7 +17333,14 @@ function dashRenderGeoSection(cfg) {
   // Bumped fonts up one more notch and centered the SVG itself (margin:0
   // auto) -- the chart was sitting flush-left in a much wider panel, leaving
   // dead space on the right instead of being centered in it.
-  var W = 560, labelX = 4, labelW = 40, padTop = 36, rowH = 34, padBottom = 18;
+  // 9/26, 4th pass -- "remove dead white space." Widened the chart's own coordinate
+  // space (W) and the CSS max-width together, by the same ratio, instead of just
+  // raising max-width alone -- raising max-width alone would have re-inflated the
+  // fonts/dots along with it (the exact "huge" bug from two rounds ago), since the
+  // SVG's internal units scale with whatever pixel width it's stretched to. Keeping
+  // the ratio between W and max-width constant means the extra width only goes into
+  // a longer dot-track between the label and value columns, not bigger text.
+  var W = 900, labelX = 4, labelW = 40, padTop = 36, rowH = 34, padBottom = 18;
   var pctColX = W - 94, deltaColX = W - 6;
   var plotL = labelX + labelW;
   var plotR = pctColX - 28;
@@ -17380,7 +17387,7 @@ function dashRenderGeoSection(cfg) {
   root.innerHTML =
     headline +
     context +
-    '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%;max-width:520px;height:auto;display:block;margin:0 auto;" role="img" aria-label="Disparity severity by state, worst first">' + svg.join('') + '</svg>';
+    '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%;max-width:840px;height:auto;display:block;margin:0 auto;" role="img" aria-label="Disparity severity by state, worst first">' + svg.join('') + '</svg>';
   if (worst) dashShowGeoStateDetail(worst.abbr);
 }
 
@@ -17403,7 +17410,7 @@ function dashShowGeoStateDetail(abbr) {
   // same max-width and centered it the same way -- kept text-align:left inside since
   // a centered paragraph block still reads worse than a left-aligned one.
   detailEl.innerHTML =
-    '<div style="max-width:520px;margin:0 auto;border-left:3px solid ' + tone.fill + ';padding:8px 12px;background:rgba(167,167,167,0.05);border-radius:0 8px 8px 0;text-align:left;">' +
+    '<div style="max-width:840px;margin:0 auto;border-left:3px solid ' + tone.fill + ';padding:8px 12px;background:rgba(167,167,167,0.05);border-radius:0 8px 8px 0;text-align:left;">' +
     '<div style="font-size:13px;font-weight:800;color:#1e293b;">' + dashRegulatoryEsc(st.abbr || '') + (st.city ? ' — ' + dashRegulatoryEsc(st.city) : '') + ': ' + dashRegulatoryEsc((st.tag || '').toString().toUpperCase()) + '</div>' +
     '<div style="font-size:12px;color:#334155;font-weight:600;margin-top:4px;">' + [dashRegulatoryEsc(st.countText || ''), dashRegulatoryEsc(st.approvalText || '')].filter(Boolean).join(' &middot; ') + '</div>' +
     (st.note ? '<div style="font-size:11px;color:#64748b;margin-top:4px;">' + dashRegulatoryEsc(st.note) + '</div>' : '') +
@@ -17471,7 +17478,9 @@ function dashRenderIntersectionScatter(cfg) {
   // is what actually fixed the "huge" complaint two rounds ago, not these
   // font-size numbers, so this is safe to size up again.
   // 9/26, 2nd pass -- "center this and increase font a little bit more."
-  var W = 560, labelX = 4, labelW = 130, padTop = 38, rowH = 32, padBottom = 18;
+  // 9/26, 4th pass -- same width/max-width scaling as the Geography chart above,
+  // for the same "remove dead white space without re-inflating fonts" reason.
+  var W = 900, labelX = 4, labelW = 130, padTop = 38, rowH = 32, padBottom = 18;
   var pctColX = W - 86, deltaColX = W - 6;
   var plotL = labelX + labelW;
   var plotR = pctColX - 28;
@@ -17528,7 +17537,7 @@ function dashRenderIntersectionScatter(cfg) {
   root.innerHTML =
     scatterHeadline +
     baselineCaption +
-    '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%;max-width:520px;height:auto;display:block;margin:0 auto;overflow:visible;" role="img" aria-label="Approval rate by group, one row per group">' + svg.join('') + '</svg>' +
+    '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%;max-width:840px;height:auto;display:block;margin:0 auto;overflow:visible;" role="img" aria-label="Approval rate by group, one row per group">' + svg.join('') + '</svg>' +
     '<div style="font-size:10.5px;color:#64748b;margin-top:6px;line-height:1.4;">Red row = the one seeded intersectional data point (Hispanic women 55+, Fort Bragg NC): not enough real intersectional rows exist yet for a full age &times; race &times; gender matrix.</div>';
 }
 
