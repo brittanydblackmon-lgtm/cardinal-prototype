@@ -16114,24 +16114,26 @@ window.cardinalSevDot = function(severity) {
   return '<span class="sev-dot ' + className + '"></span>';
 };
 
+// 9/24 -- this used to keep its own static per-org baseline lookup and write
+// it straight into the same elements the live drift (dashSyncAllTrustScoreDisplays)
+// updates every few seconds. Whichever fired more recently won, so the
+// sidebar chip could show a stale baseline number/color even while the real
+// live number (and its correct color) was already on screen elsewhere --
+// exactly what Brittany caught (main panel showing 80/green, sidebar frozen
+// at 74/amber). Fixed by delegating entirely to dashSyncAllTrustScoreDisplays
+// with the CURRENT on-screen live value (falling back to the per-org
+// baseline only if no live number has rendered yet, e.g. on first load
+// before the drift starts), so there's exactly one writer, not two.
 window.updateSidebarTrustScoreChip = function() {
-  var chipNum = document.querySelector('.sidebar-trust-score-chip-num') || document.getElementById('sidebar-trust-score-num') || document.getElementById('sidebar-score');
-  var chipBadge = document.getElementById('sidebar-score-badge');
-  if (!chipNum && !chipBadge) return;
   var org = window.currentOrg || 'ad';
-  var scores = { ad: 74, fin: 81, health: 83, fed: 71 };
-  var dotEl = document.querySelector('.sidebar-trust-score-chip-dot') || document.getElementById('sidebar-trust-score-dot') || document.querySelector('#sidebar-trust-badge-collapsed .trust-score-chip-badge-dot');
-  var score = scores[org] || 74;
-  var tier = typeof window.cardinalTrustScoreColor === 'function' ? window.cardinalTrustScoreColor(score) : { color: '#f59e0b' };
-  var badgeColor = tier.color;
-  if (chipNum) {
-    chipNum.textContent = score;
-    chipNum.style.color = badgeColor;
+  var fallback = { ad: 74, fin: 81, health: 83, fed: 71 };
+  var liveEl = document.getElementById('dash-global-score-number');
+  var current = liveEl && liveEl.textContent && !isNaN(parseFloat(liveEl.textContent))
+    ? parseFloat(liveEl.textContent)
+    : (fallback[org] || 74);
+  if (typeof dashSyncAllTrustScoreDisplays === 'function') {
+    dashSyncAllTrustScoreDisplays(current);
   }
-  if (chipBadge) chipBadge.textContent = score;
-  var badgeHost = document.getElementById('sidebar-trust-badge-collapsed');
-  if (badgeHost) badgeHost.style.background = badgeColor;
-  if (dotEl) dotEl.style.background = badgeColor;
 };
 
 function switchIndustry(org, btn) {
@@ -16451,6 +16453,17 @@ function animateTrustScore(targetScore, color) {
   var duration = 1500;
   var startTime = null;
   el.style.color = color || el.style.color;
+  // 9/24 sweep -- this ramp only ever touched the big dashboard number
+  // directly, never dashSyncAllTrustScoreDisplays. Everywhere else (sidebar
+  // chip, nav pill, bar, sub-scores) sat on whatever value was there before
+  // until the FIRST live-drift tick fired ~650ms-1.5s later, which is a real
+  // (if brief) window where the sidebar could show a stale number/color
+  // right after a fresh page load or org switch -- the same family of bug
+  // as the nav-ts-badge fix above. Syncing everything else immediately here
+  // closes that window; the big number keeps its own smooth ramp below.
+  if (typeof dashSyncAllTrustScoreDisplays === 'function') {
+    try { dashSyncAllTrustScoreDisplays(numTarget); } catch (_sync0) {}
+  }
   function step(timestamp) {
     if (!startTime) startTime = timestamp;
     var progress = Math.min((timestamp - startTime) / duration, 1);
@@ -16539,6 +16552,23 @@ function dashSyncAllTrustScoreDisplays(value, delta) {
   if (badgeHost) badgeHost.style.background = color;
   var dotEl = document.querySelector('.sidebar-trust-score-chip-dot') || document.getElementById('sidebar-trust-score-dot') || document.querySelector('#sidebar-trust-badge-collapsed .trust-score-chip-badge-dot');
   if (dotEl) dotEl.style.background = color;
+  // 9/24 -- Brittany caught two real mismatches: the "Trust Score" sidebar nav
+  // pill (nav-ts-badge) was never wired to the live number at all (it was set
+  // once in static HTML to a per-org baseline and never touched again), and a
+  // separate function (updateSidebarTrustScoreChip) was independently
+  // recomputing the same sidebar elements from that same stale per-org
+  // baseline, racing with this live update depending on call order -- the
+  // same "two writers, one stale" pattern already found and fixed twice
+  // elsewhere in this file (the action banner, the critical-case count).
+  // Fixed by including nav-ts-badge here, and by making
+  // updateSidebarTrustScoreChip below delegate to whatever this function
+  // most recently displayed instead of keeping its own competing baseline.
+  var navBadge = document.getElementById('nav-ts-badge');
+  if (navBadge) {
+    navBadge.textContent = v;
+    navBadge.style.color = color;
+    navBadge.style.background = tier.bg || 'rgba(148,163,184,0.15)';
+  }
   var trustSub = document.getElementById('dash-trust-sub');
   if (trustSub) trustSub.textContent = v >= 80 ? '✓ Certified' : 'Below 80 — Not Certified';
   var tsCertBadge = document.getElementById('ts-cert-badge');
@@ -20853,12 +20883,15 @@ function syncIndustrySidebarChrome(org) {
    }
  } catch (_spcColor) {}
 
+ // 9/24 sweep -- another instance of the same bug: this wrote #sidebar-score
+ // directly from its own static per-org map, racing against
+ // dashSyncAllTrustScoreDisplays (which also targets #sidebar-score) on every
+ // org switch, depending on which one happened to run more recently.
+ // Delegating to the same single writer everything else now uses.
  var scoreMap = {ad:74, fin:81, health:83, fed:71};
- var scoreColorMap = {ad:'#F59E0B', fin:'#22C55E', health:'#22C55E', fed:'#F59E0B'};
-
- var scoreEl = document.getElementById('sidebar-score');
-
- if(scoreEl) { scoreEl.textContent = scoreMap[org]; scoreEl.style.color = scoreColorMap[org]; }
+ if (typeof dashSyncAllTrustScoreDisplays === 'function') {
+   try { dashSyncAllTrustScoreDisplays(scoreMap[org] || 74); } catch (_sync1) {}
+ }
 
  var subMap = {
   ad: 'Atlas Defense Systems · Aerospace & Defense',
