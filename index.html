@@ -24142,13 +24142,24 @@ function personalize(text) {
 // literal "below the 80"/"above the 80" phrase if the live number crossed 80, since a
 // stale "below the 80 threshold" next to a now-certified live number reads as a bug,
 // not just a stale digit. Text that doesn't use these exact phrases is left alone.
+//
+// 9/26 -- first version of this regex missed every message that goes through
+// linkifyEveResponse() first (which is most of them: the morning briefing, the
+// day-wrap messages, anything routed through addEveChatMessage), because linkify
+// wraps "Trust Score" in `<span class="eve-link" ...>Trust Score</span>` BEFORE this
+// runs -- so the literal text became "...Trust Score</span> is 74...", and the old
+// regex (which expected "Trust Score" directly followed by "is"/whitespace/digits)
+// silently failed to match, leaving the number untouched. Confirmed live: calling
+// this function standalone worked, but the actual rendered Eve bubble still showed
+// the stale number, which is what gave this away. Fixed by letting an optional
+// `</span>` sit between "Trust Score" and the rest of the match.
 function eveSwapLiveScoreInText(text) {
   if (!text || typeof text !== 'string') return text;
   var org = window.currentOrg || 'ad';
   var live = (typeof window._dashTrustDriftValue === 'number') ? Math.round(window._dashTrustDriftValue)
     : (window.CARDINAL_DATA && window.CARDINAL_DATA[org] ? Math.round(window.CARDINAL_DATA[org].trustScore * 100) : null);
   if (live == null) return text;
-  var swapped = text.replace(/(Trust Score(?:\s+is|:)?\s+)(\d{2,3})/gi, function (m, pre) { return pre + live; });
+  var swapped = text.replace(/(Trust Score(?:<\/span>)?(?:\s+is|:)?\s+)(\d{2,3})/gi, function (m, pre) { return pre + live; });
   if (live >= 80) swapped = swapped.replace(/below the 80\b/gi, 'above the 80');
   else swapped = swapped.replace(/above the 80\b/gi, 'below the 80');
   return swapped;
