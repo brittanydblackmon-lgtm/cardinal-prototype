@@ -16618,6 +16618,49 @@ function dashSyncAllTrustScoreDisplays(value, delta) {
     ringOld.setAttribute('stroke', color);
     ringOld.setAttribute('stroke-dashoffset', ringOldCirc * (1 - Math.max(0, Math.min(100, v)) / 100));
   }
+  // 9/26 -- Brittany: "Why is your score 74?" heading stuck at 74 while
+  // everything else around it moved. tsv2-comp-num-inline (the number inside
+  // that heading, set by tsv2BuildComposition) and tsv2-path's projected-gap
+  // gauge/text were both only ever written once at render time (screen open /
+  // org switch), same "two writers, one stale" pattern -- neither was in this
+  // shared tick list. Composition's heading number just mirrors the live
+  // score, no recompute needed; the Path-to-Certification section (blockers,
+  // upside/downside, and the "Up N points from current" projected gauge) does
+  // real math off the current score, so it's re-run in full via tsv2BuildPath
+  // rather than patched in place, same approach as the Eve narrative below.
+  var compInlineEl = document.getElementById('tsv2-comp-num-inline');
+  if (compInlineEl) compInlineEl.textContent = String(v);
+  ['tsv2-pill-bias-num', 'tsv2-pill-fraud-num', 'tsv2-pill-comp-num'].forEach(function (id) {
+    var pillEl = document.getElementById(id);
+    if (!pillEl) return;
+    var baseKey = '_dashTrust_' + id + '_base';
+    var base = window[baseKey];
+    if (typeof base !== 'number') {
+      base = parseFloat(pillEl.textContent) || 75;
+      window[baseKey] = base;
+    }
+    var nextPill = Math.max(0, Math.min(100, base + (typeof delta === 'number' && !isNaN(delta) ? delta : 0)));
+    pillEl.textContent = Math.round(nextPill) + '%';
+  });
+  try {
+    var tsRootForPath = document.getElementById('ts-v2-root');
+    if (tsRootForPath && tsRootForPath.style.display !== 'none' && typeof tsv2BuildPath === 'function' && typeof tsv2Data === 'function') {
+      tsv2BuildPath(tsv2Data(window.currentOrg || 'ad'));
+    }
+  } catch (_pathSyncTick) {}
+  // 9/26 -- same stale-seed pattern found live on the Dashboard itself: the
+  // Global Trust Score hero showed the live-drifted number (e.g. 75) while
+  // the "Industry avg: 79 · Your score: 74 · 38th percentile" line just below
+  // it (dashApplyTrustUxPanels, written once from the static DASH_INDUSTRY
+  // seed) kept showing the old seed score. Only the "Your score: N" number is
+  // swapped here -- industry avg and percentile are comparison context, not
+  // the live score, and don't recompute off this drift.
+  try {
+    var peerWrapEl = document.getElementById('dr-trust-peer-wrap');
+    if (peerWrapEl) {
+      peerWrapEl.innerHTML = peerWrapEl.innerHTML.replace(/(Your score:\s*)(\d+)/i, '$1' + v);
+    }
+  } catch (_peerSyncTick) {}
   // Keep Eve's written executive summary's opening score reference moving with the
   // same live number, whenever the Trust Score screen is actually on screen -- see
   // tsv2RenderEveBody's 9/26 note for why only the first number gets swapped.
@@ -16726,7 +16769,7 @@ function dashStartTrustScoreDrift(baseline) {
   window._dashTrustDriftBase = baseline;
   window._dashTrustDriftValue = baseline;
   // reset sub-score baselines so they re-anchor to whatever's on screen after a refresh/switch
-  ['dr-bias-det-num', 'dr-fraud-num', 'dr-comp-num'].forEach(function (id) { delete window['_dashTrust_' + id + '_base']; });
+  ['dr-bias-det-num', 'dr-fraud-num', 'dr-comp-num', 'tsv2-pill-bias-num', 'tsv2-pill-fraud-num', 'tsv2-pill-comp-num'].forEach(function (id) { delete window['_dashTrust_' + id + '_base']; });
   el.style.transition = 'opacity 0.4s ease';
 
   // 9/24, 2nd pass — the first slowdown fixed the transition jitter, but
@@ -36679,7 +36722,16 @@ function tsv2BuildPath(d) {
   var miniNum = document.getElementById('tsv2-projected-mini-num');
   var miniSub = document.getElementById('tsv2-projected-mini-sub');
   var projected = d.projectedScoreAfterFixes || d.projectedScore;
-  var current = parseInt(d.trustScoreDisplay, 10) || 0;
+  // 9/26 -- Brittany: "the math is not mathing" on the points-to-certification
+  // projection. Root cause: `current` was read from the static seed
+  // (d.trustScoreDisplay), same bug class as the hero ring and Eve narrative --
+  // as the live drift moved the actual on-screen score, this "Up N points from
+  // current" line kept computing its delta against the frozen seed number
+  // instead of what was actually on screen, so the math looked wrong. Same
+  // live-value-preferring read used in tsv2BuildHero.
+  var current = (typeof window._dashTrustDriftValue === 'number' && window.currentOrg === (window.TSV2_LAST_ORG || window.currentOrg))
+    ? Math.round(window._dashTrustDriftValue)
+    : (parseInt(d.trustScoreDisplay, 10) || 0);
   if (miniRing && miniNum && projected) {
     var circ2 = 2 * Math.PI * 50;
     var color2 = tsv2ScoreColor(projected);
