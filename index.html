@@ -17234,16 +17234,15 @@ function dashRenderIntersectionScatter(cfg) {
     return { label: r.label, pct: r.pct, count: count, color: r.barColor || '#60a5fa' };
   });
   if (!pts.length) { root.innerHTML = '<div style="font-size:11px;color:#64748b;">No group-level data for this cohort.</div>'; return; }
-  // 9/24 3rd pass -- real bug found: the baseline label sat directly above
-  // the dashed baseline line, and the group whose approval rate IS the
-  // baseline (usually the reference group, e.g. White) renders its own
-  // bubble+label right on that same line, so the two labels collided/
-  // overlapped at the top of the chart (this is the "getting cut off" /
-  // "not right" Brittany kept seeing). Fixed by moving the baseline label to
-  // the top-right corner instead of centered on the line, giving it more
-  // headroom (padT 26->40), and clamping each point's own label so it flips
-  // below the bubble instead of above whenever there isn't room at the top.
-  var W = 620, H = 220, padL = 62, padR = 46, padT = 40, padB = 34;
+  // 9/24 4th pass -- the previous fix (moving the baseline label to a fixed
+  // top-right corner) didn't actually solve it: the baseline value is almost
+  // always the group with the HIGHEST approval rate (usually White), so its
+  // bubble+label sits at the right edge of the chart too -- the exact corner
+  // I'd moved the baseline label to. Real fix this time: the baseline label
+  // now lives entirely below the x-axis (in its own row under the % ticks),
+  // a zone no bubble or point-label ever renders into, so it structurally
+  // can't collide with anything regardless of where the baseline value falls.
+  var W = 620, H = 220, padL = 62, padR = 46, padT = 34, padB = 50;
   var pctVals = pts.map(function (p) { return p.pct; });
   var minPct = Math.min.apply(null, pctVals), maxPct = Math.max.apply(null, pctVals);
   var padPct = Math.max(3, (maxPct - minPct) * 0.25 || 5);
@@ -17258,7 +17257,9 @@ function dashRenderIntersectionScatter(cfg) {
     svg.push('<text x="' + xOf(t) + '" y="' + (H - padB + 16) + '" font-size="10" fill="#64748b" text-anchor="middle">' + Math.round(t) + '%</text>');
   });
   svg.push('<line x1="' + xOf(basePct) + '" y1="' + padT + '" x2="' + xOf(basePct) + '" y2="' + (H - padB) + '" stroke="#94a3b8" stroke-dasharray="3,3" stroke-width="1"/>');
-  svg.push('<text x="' + (W - padR) + '" y="16" font-size="10" font-weight="700" fill="#475569" text-anchor="end">baseline ' + basePct.toFixed(1) + '%</text>');
+  var baseLabelX = Math.min(W - padR, Math.max(padL, xOf(basePct)));
+  var baseAnchor = baseLabelX > W - padR - 60 ? 'end' : (baseLabelX < padL + 60 ? 'start' : 'middle');
+  svg.push('<text x="' + baseLabelX + '" y="' + (H - padB + 32) + '" font-size="10" font-weight="700" fill="#475569" text-anchor="' + baseAnchor + '">▲ baseline ' + basePct.toFixed(1) + '%</text>');
   var rowH = (H - padT - padB - 20) / Math.max(1, pts.length - 1 || 1);
   pts.forEach(function (p, i) {
     var cx = xOf(p.pct);
@@ -18977,6 +18978,27 @@ function dashRenderActionQueue(org) {
     '</div>' +
     '</div>';
   renderActionAlert(window.currentActionQueueIndex);
+  dashStartActionQueueAutoRotate();
+}
+
+// 9/24 5th pass -- Brittany wants this to auto-advance like the old banner
+// did, not require clicking the arrow every time. Rotates every 5s (same
+// family as the other tickers in this app -- Active Conversations and Echo
+// Core's LIVE EVENT STREAM both use ~4.5s), pauses while the mouse is over
+// the banner so it doesn't flip mid-read or mid-click, and clears any
+// previous interval first so re-renders (industry switch, etc.) can't stack
+// up duplicate timers.
+window._dashActionQueueTimer = null;
+
+function dashStartActionQueueAutoRotate() {
+  if (window._dashActionQueueTimer) { clearInterval(window._dashActionQueueTimer); window._dashActionQueueTimer = null; }
+  var items = window._dashActionQueueItems || [];
+  if (items.length < 2) return;
+  window._dashActionQueueTimer = setInterval(function () {
+    var banner = document.getElementById('dash-action-alert-banner');
+    if (banner && banner.matches(':hover')) return;
+    cycleActionAlert(1);
+  }, 5000);
 }
 
 function renderActionAlert(index) {
