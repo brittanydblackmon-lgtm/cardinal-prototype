@@ -3841,7 +3841,7 @@ animation:waveform var(--dur) ease-in-out infinite alternate;
   inset: 0;
   border-radius: 50%;
   pointer-events: none;
-  box-shadow: 0 0 60px 2px rgba(245, 158, 11, 0.25), 0 18px 34px -12px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 0 60px 2px rgba(245, 158, 11, 0.25), 0 10px 18px -8px rgba(0, 0, 0, 0.32);
   opacity: 0.6;
   animation: tsv2GaugePulse 3.4s ease-in-out infinite;
 }
@@ -7503,7 +7503,8 @@ Template Overview
           <circle id="tsv2-gauge-ring" cx="100" cy="100" r="86" fill="none" stroke="#f59e0b" stroke-width="14" stroke-linecap="round" stroke-dasharray="540.35" stroke-dashoffset="140" transform="rotate(-90 100 100)" style="transition: stroke-dashoffset 1.2s ease, stroke 0.4s ease;"/>
           <line x1="100" y1="6" x2="100" y2="20" stroke="rgba(34,197,94,.65)" stroke-width="2" transform="rotate(108 100 100)"/>
           <text id="tsv2-gauge-num" class="tsv2-gauge-num" x="100" y="105" text-anchor="middle" dominant-baseline="middle" fill="#f59e0b">74</text>
-          <text id="tsv2-score-range-tip" x="100" y="135" text-anchor="middle" font-size="11" fill="rgba(180,190,220,.55)" font-family="var(--sans)" style="cursor:help">/ 100</text>
+          <rect x="78" y="126" width="44" height="16" rx="8" fill="var(--card)" opacity="0.9"/>
+          <text id="tsv2-score-range-tip" x="100" y="135" text-anchor="middle" font-size="11" fill="rgba(180,190,220,.85)" font-family="var(--sans)" style="cursor:help">/ 100</text>
         </svg>
       </div>
       <div style="flex:1;min-width:0">
@@ -12780,6 +12781,13 @@ function edoStatColor(st) {
   if (st === 'Watch') return '#f59e0b';
   return '#22c55e';
 }
+function edoDiColor(di) {
+  var n = parseFloat(di);
+  if (isNaN(n)) return 'var(--muted2)';
+  if (n < 0.70) return '#ef4444';
+  if (n < 0.80) return '#f59e0b';
+  return '#22c55e';
+}
 function edoGaugeColor(n, fraud) {
   if (fraud) { if (n >= 80) return '#22c55e'; if (n >= 70) return '#f59e0b'; return '#ef4444'; }
   if (n >= 80) return '#22c55e'; if (n >= 70) return '#f59e0b'; return '#ef4444';
@@ -12817,7 +12825,7 @@ function edoHeroGaugeInner(prefix, col, circ, sweepDeg, threshDeg) {
     '<line id="' + prefix + '-sweep" x1="100" y1="10" x2="100" y2="24" stroke="rgba(255,255,255,.82)" stroke-width="2" transform="rotate(' + sweepDeg + ' 100 100)" style="transition: transform 1.2s ease"/>' +
     '<text id="' + prefix + '-gauge-num" class="tsv2-gauge-num" x="100" y="102" text-anchor="middle" dominant-baseline="middle" fill="' + col + '">0</text>' +
     '</svg>' +
-    '<div style="position:absolute;left:50%;bottom:20px;transform:translateX(-50%);font-size:11px;color:rgba(180,190,220,.55);font-family:var(--sans);cursor:help"' + edoT('Score Range', '0-100 scale. 80 is the certification floor.') + '>/ 100</div>';
+    '<div style="position:absolute;left:50%;bottom:20px;transform:translateX(-50%);font-size:11px;color:rgba(180,190,220,.85);font-family:var(--sans);cursor:help;background:var(--card);padding:1px 8px;border-radius:8px;z-index:2"' + edoT('Score Range', '0-100 scale. 80 is the certification floor.') + '>/ 100</div>';
 }
 function edoWireHeroGauge(prefix, score, color) {
   var circ = 2 * Math.PI * 86;
@@ -12837,7 +12845,7 @@ function edoWireHeroGauge(prefix, score, color) {
     else num.textContent = score;
   }
   var pulse = document.getElementById(prefix + '-gauge-pulse');
-  if (pulse && typeof tsv2HexA === 'function') pulse.style.boxShadow = '0 0 60px 2px ' + tsv2HexA(color, 0.30) + ', 0 18px 34px -12px rgba(0,0,0,0.35)';
+  if (pulse && typeof tsv2HexA === 'function') pulse.style.boxShadow = '0 0 60px 2px ' + tsv2HexA(color, 0.30) + ', 0 10px 18px -8px rgba(0,0,0,0.32)';
   var sweep = document.getElementById(prefix + '-sweep');
   if (sweep) sweep.setAttribute('transform', 'rotate(' + (-90 + score * 3.6) + ' 100 100)');
 }
@@ -14193,11 +14201,13 @@ window.renderEden = function (org) {
     cohortRows += '<tr><td colspan="5" style="padding:0"><div style="border:1px solid var(--border2);border-radius:10px;margin-bottom:8px;overflow:hidden">' +
       '<div style="display:table;width:100%;table-layout:fixed;cursor:pointer"' + edoOn('edoExpGroup', [ek]) + '><span style="display:table-cell;padding:10px;font-size:11px;width:32%"' + edoT(g.groupLabel, 'Cohort group aggregated statistics.') + '>' + g.groupLabel + '</span>' +
       '<span style="display:table-cell;padding:10px;font-size:11px">' + g.affectedCount + '</span>' +
-      '<span style="display:table-cell;padding:10px;font-size:11px">' + g.biasMetric + '</span>' +
+      '<span style="display:table-cell;padding:10px;font-size:11px;color:' + edoDiColor(g.biasMetric) + ';font-weight:600"' + edoT('Disparate Impact (DI)', 'Ratio of favorable rates — EEOC 0.80 floor. Below 0.70 is Critical, 0.70–0.79 is Watch, 0.80+ is Passing.') + '>' + g.biasMetric + '</span>' +
       '<span style="display:table-cell;padding:10px;font-size:11px"' + edoT('Fraud Connection', 'Linked fraud cases from bias-fraud overlap.') + '>' + fc + ' cases</span>' +
       '<span style="display:table-cell;padding:10px;font-size:11px"' + edoT('Active Case', 'Open War Room case tied to this cohort.') + '>' + cshow + '</span></div>' +
       (exp ? '<div style="padding:10px;background:rgba(167, 167, 167,.06);font-size:10px;color:var(--muted2)">' + anon + '</div>' : '') +
-      '<div style="padding:8px;display:flex;gap:8px"><button type="button" class="btn-ghost" style="font-size:10px"' + edoOnStop('edoViewIndividuals', [item.modelId, g.groupId]) + (!edoCanPii() ? edoT('Restricted Access', 'Individual PII view requires Admin or Legal Counsel. Contact your Cardinal administrator to request access.') : edoT('Individual View', 'Per-person record with PII. Admin and Legal Counsel only. Every access logged to Echo Core.')) + '>' + (edoCanPii() ? 'View Individuals' : '\ud83d\udd12 Admin Access Required') + '</button></div></div></td></tr>';
+      '<div style="padding:8px;display:flex;gap:8px">' + (edoCanPii()
+        ? '<button type="button" class="btn-ghost" style="font-size:10px"' + edoOnStop('edoViewIndividuals', [item.modelId, g.groupId]) + edoT('Individual View', 'Per-person record with PII. Admin and Legal Counsel only. Every access logged to Echo Core.') + '>View Individuals</button>'
+        : '<span style="font-size:10px;color:var(--muted)"' + edoT('Restricted Access', 'Individual PII view requires Admin or Legal Counsel. Contact your Cardinal administrator to request access.') + '>\ud83d\udd12 Admin access required</span>') + '</div></div></td></tr>';
   }
   var piiBlock = '';
   if (!window.__edo.cohortSummary && edoCanPii()) {
@@ -14332,9 +14342,9 @@ window.renderObsidian = function (org) {
     var fc = conn && conn.biasFraudConnection ? conn.biasFraudConnection.caseCount : 0;
     var lbl = org === 'fin' ? ('Synthetic identity pressure — ' + g.groupLabel) : org === 'health' ? ('Fraud target cohort — ' + g.groupLabel) : ('Fraud ring proximity — ' + g.groupLabel);
     cohortRows += '<tr><td colspan="5" style="padding:0"><div style="border:1px solid var(--border2);border-radius:10px;margin-bottom:8px">' +
-      '<div style="padding:10px;cursor:pointer"' + edoOn('edoExpGroup', [ek]) + '><strong' + edoT('Fraud cohort', 'Fraud lens cohort summary.') + '>' + lbl + '</strong><div style="font-size:10px;color:var(--muted)">Affected ' + g.affectedCount + ' · Fraud catch proxy ' + g.fraudMetric + '% · Bias\u2011fraud ' + fc + '</div></div>' +
+      '<div style="padding:10px;cursor:pointer"' + edoOn('edoExpGroup', [ek]) + '><strong' + edoT('Fraud cohort', 'Fraud lens cohort summary.') + '>' + lbl + '</strong><div style="font-size:10px;color:var(--muted)">Affected ' + g.affectedCount + ' · Fraud catch proxy <span style="color:' + edoGaugeColor(g.fraudMetric, true) + ';font-weight:600">' + g.fraudMetric + '%</span> · Bias\u2011fraud ' + fc + '</div></div>' +
       (exp ? '<div style="padding:8px;font-size:10px;background:rgba(251,146,60,.08)">Representative anonymized IDs on file.</div>' : '') +
-      '<div style="padding:8px"><button type="button" class="btn-ghost" style="font-size:10px"' + edoOnStop('edoViewIndividuals', [item.modelId, g.groupId]) + '>' + (edoCanPii() ? 'View Individuals' : '\ud83d\udd12 Admin Access Required') + '</button></div></div></td></tr>';
+      '<div style="padding:8px">' + (edoCanPii() ? '<button type="button" class="btn-ghost" style="font-size:10px"' + edoOnStop('edoViewIndividuals', [item.modelId, g.groupId]) + '>View Individuals</button>' : '<span style="font-size:10px;color:var(--muted)">\ud83d\udd12 Admin access required</span>') + '</div></div></td></tr>';
   }
   var piiBlock = '';
   if (!window.__edo.cohortSummary && edoCanPii()) {
@@ -36271,7 +36281,7 @@ function tsv2BuildHero(d) {
     var fromVal = parseInt(num.textContent, 10) || 0;
     tsv2AnimateNumber(num, fromVal, score, 1500);
   }
-  if (pulse) pulse.style.boxShadow = '0 0 60px 2px ' + tsv2HexA(color, 0.30);
+  if (pulse) pulse.style.boxShadow = '0 0 60px 2px ' + tsv2HexA(color, 0.30) + ', 0 10px 18px -8px rgba(0,0,0,0.32)';
 
   var status = document.getElementById('tsv2-status');
   if (status) {
