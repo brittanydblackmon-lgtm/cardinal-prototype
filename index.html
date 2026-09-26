@@ -3843,13 +3843,13 @@ animation:waveform var(--dur) ease-in-out infinite alternate;
   inset: 0;
   border-radius: 50%;
   pointer-events: none;
-  box-shadow: 0 0 60px 2px rgba(245, 158, 11, 0.25), 0 10px 18px -8px rgba(0, 0, 0, 0.32);
-  opacity: 0.6;
+  box-shadow: 0 0 70px 6px rgba(245, 158, 11, 0.38), 0 10px 18px -6px rgba(0, 0, 0, 0.4);
+  opacity: 0.75;
   animation: tsv2GaugePulse 3.4s ease-in-out infinite;
 }
 @keyframes tsv2GaugePulse {
-  0%, 100% { opacity: 0.35; }
-  50% { opacity: 0.7; }
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 0.9; }
 }
 .tsv2-status {
   font-size: 14px;
@@ -7502,7 +7502,7 @@ Template Overview
         <div class="tsv2-gauge-pulse" id="tsv2-gauge-pulse"></div>
         <svg viewBox="0 0 200 200">
           <circle cx="100" cy="100" r="86" fill="none" stroke="rgba(167, 167, 167,.06)" stroke-width="14"/>
-          <circle id="tsv2-gauge-ring" cx="100" cy="100" r="86" fill="none" stroke="#f59e0b" stroke-width="14" stroke-linecap="round" stroke-dasharray="540.35" stroke-dashoffset="140" transform="rotate(-90 100 100)" style="transition: stroke-dashoffset 1.2s ease, stroke 0.4s ease;"/>
+          <circle id="tsv2-gauge-ring" cx="100" cy="100" r="86" fill="none" stroke="#f59e0b" stroke-width="14" stroke-linecap="round" stroke-dasharray="540.35" stroke-dashoffset="140" transform="rotate(-90 100 100)" style="transition: stroke-dashoffset 1.2s ease, stroke 0.4s ease;filter:drop-shadow(0 6px 10px rgba(0,0,0,.30))"/>
           <line x1="100" y1="6" x2="100" y2="20" stroke="rgba(34,197,94,.65)" stroke-width="2" transform="rotate(108 100 100)"/>
           <text id="tsv2-gauge-num" class="tsv2-gauge-num" x="100" y="105" text-anchor="middle" dominant-baseline="middle" fill="#f59e0b">74</text>
           <rect x="78" y="126" width="44" height="16" rx="8" fill="var(--card)" opacity="0.9"/>
@@ -8370,6 +8370,22 @@ Template Overview
   </div>
 </div>
 
+<!-- 9/26 -- real per-source ingestion status, replacing the "nothing is actually
+     a list here" gap Brittany flagged. Pulls connector status + last-sync from
+     PIPELINE_SOURCE_STATUS (per org) and cross-references CARDINAL_MODELS for a
+     genuine "models fed" count instead of a hand-typed number. -->
+<div class="section-hdr" style="margin-bottom:12px">
+<div>
+<div style="font-size:15px;font-weight:600;color:var(--chrome2)">Connected Data Sources</div>
+<div style="font-size:11px;color:var(--muted);margin-top:2px">Live connector status for this organization — what's actually feeding the pipeline right now.</div>
+</div>
+</div>
+<div style="margin-bottom:26px;border:1px solid var(--border2);border-radius:10px;overflow:hidden">
+<table class="data-table" style="width:100%"><thead style="background:var(--bg3)"><tr>
+<th style="padding:10px 12px">Source</th><th style="padding:10px 8px">Status</th><th style="padding:10px 8px">Last Sync</th><th style="padding:10px 8px">Format</th><th style="padding:10px 8px">Records Ingested</th><th style="padding:10px 8px">Models Fed</th>
+</tr></thead><tbody id="pipeline-sources-tbody"></tbody></table>
+</div>
+
 <div class="section-hdr" style="margin-bottom:18px">
 <div>
 <div style="font-size:15px;font-weight:600;color:var(--chrome2)">Then, Cardinal Processes It — Eden + Obsidian Simultaneously</div>
@@ -8452,11 +8468,11 @@ Template Overview
 </div>
 <div style="width:170px;flex-shrink:0">
 <div style="font-size:11px;font-weight:600;color:var(--chrome2);margin-bottom:12px">Pipeline Health</div>
-<div class="stat-card" style="margin-bottom:8px"><div class="stat-label">Records Processed</div><div class="stat-value" style="color:var(--green)">1,247</div></div>
+<div class="stat-card" style="margin-bottom:8px"><div class="stat-label">Records Processed</div><div class="stat-value" style="color:var(--green)" id="pipeline-stat-records">—</div></div>
 <div class="stat-card" style="margin-bottom:8px"><div class="stat-label">Process Time</div><div class="stat-value">2.3s</div><div class="stat-change up">Both cores parallel</div></div>
-<div class="stat-card" style="margin-bottom:8px"><div class="stat-label">Bias Issues</div><div class="stat-value" style="color:var(--amber)">1</div></div>
-<div class="stat-card" style="margin-bottom:8px"><div class="stat-label">Fraud Issues</div><div class="stat-value" style="color:var(--green)">0</div></div>
-<div class="stat-card"><div class="stat-label">Model Library</div><div class="stat-value" style="color:var(--green)">12</div><div class="stat-change up">Validated</div></div>
+<div class="stat-card" style="margin-bottom:8px"><div class="stat-label">Bias Issues</div><div class="stat-value" style="color:var(--amber)" id="pipeline-stat-bias">—</div></div>
+<div class="stat-card" style="margin-bottom:8px"><div class="stat-label">Fraud Issues</div><div class="stat-value" style="color:var(--green)" id="pipeline-stat-fraud">—</div></div>
+<div class="stat-card"><div class="stat-label">Model Library</div><div class="stat-value" style="color:var(--green)" id="pipeline-stat-library">—</div><div class="stat-change up">Validated</div></div>
 </div>
 </div>
 </div>
@@ -12795,15 +12811,58 @@ window.edoToggleStamp = function (lens, org, modelId) {
   window.__edo.stampLog = window.__edo.stampLog || [];
   var k = edoStampKey(lens, org, modelId);
   var wasUnstamped = !!window.__edo.unstamped[k];
-  window.__edo.unstamped[k] = !wasUnstamped;
-  window.__edo.stampLog.push({
-    org: org, lens: lens, modelId: modelId,
-    action: wasUnstamped ? 'restamp' : 'unstamp',
-    at: new Date().toISOString(),
-    actor: (window.CARDINAL_DATA && window.CARDINAL_DATA[org] && window.CARDINAL_DATA[org].user) || 'current user'
-  });
+  var actor = (window.CARDINAL_DATA && window.CARDINAL_DATA[org] && window.CARDINAL_DATA[org].user) || 'current user';
+  if (wasUnstamped) {
+    // Re-stamping -- no reason required. Clear any pending re-stamp reminder for this key.
+    window.__edo.unstamped[k] = false;
+    window.__edo.stampLog.push({
+      org: org, lens: lens, modelId: modelId,
+      action: 'restamp',
+      at: new Date().toISOString(),
+      actor: actor,
+      reason: null,
+      reminderDue: null
+    });
+  } else {
+    // Unstamping -- require a typed reason for the audit trail.
+    var reason = window.prompt('Why are you unstamping "' + modelId + '"? This reason is recorded in the stamp audit log.', '');
+    if (reason === null) return; // cancelled -- leave stamped
+    reason = reason.trim();
+    if (!reason) reason = 'No reason provided';
+    var wantsReminder = window.confirm('Set a reminder to review re-stamping this model in 30 days?');
+    var reminderDue = null;
+    if (wantsReminder) {
+      var rd = new Date();
+      rd.setDate(rd.getDate() + 30);
+      reminderDue = rd.toISOString();
+    }
+    window.__edo.unstamped[k] = true;
+    window.__edo.stampLog.push({
+      org: org, lens: lens, modelId: modelId,
+      action: 'unstamp',
+      at: new Date().toISOString(),
+      actor: actor,
+      reason: reason,
+      reminderDue: reminderDue
+    });
+  }
   if (lens === 'obs') renderObsidian(org); else renderEden(org);
 };
+// Returns the most recent stampLog entry for a given lens/org/model, or null.
+function edoLatestStampLogEntry(lens, org, modelId) {
+  var log = (window.__edo && window.__edo.stampLog) || [];
+  var latest = null;
+  for (var i = 0; i < log.length; i++) {
+    var e = log[i];
+    if (e.lens === lens && e.org === org && e.modelId === modelId) latest = e;
+  }
+  return latest;
+}
+// Returns all stampLog entries for a given lens/org/model, oldest first.
+function edoStampHistory(lens, org, modelId) {
+  var log = (window.__edo && window.__edo.stampLog) || [];
+  return log.filter(function (e) { return e.lens === lens && e.org === org && e.modelId === modelId; });
+}
 // Live bias score = worst (lowest) DI among currently-stamped models, matching the app's
 // existing worst-case-floor convention (seed d.biasScore for 'ad' = 67 = exactly the DI of its
 // worst model). Unstamping the worst offender raises the displayed score; unstamping ALL models
@@ -12830,7 +12889,7 @@ function edoStampCoverageHtml(lens, org, models) {
   var total = models.length;
   var stamped = models.filter(function (m) { return edoIsStamped(lens, org, m); }).length;
   if (stamped === total) return '';
-  return '<div style="margin-top:8px;font-size:11px;color:var(--amber)"' + edoT('Unstamped Models', 'Unstamped models are excluded from the live score above. Re-add a stamp to include a model again.') + '>⚠ ' + stamped + ' of ' + total + ' systems currently monitored — ' + (total - stamped) + ' unstamped and excluded from this score</div>';
+  return '<button type="button" onclick="edoScrollModels(' + edoQ(lens) + ')" style="display:block;width:100%;text-align:left;margin-top:8px;padding:8px 10px;font-size:11px;color:var(--amber);background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.3);border-radius:8px;cursor:pointer"' + edoT('Unstamped Models', 'Unstamped models are excluded from the live score above. Click to jump to the model table and re-add a stamp to include a model again.') + '>⚠ ' + stamped + ' of ' + total + ' systems currently monitored — ' + (total - stamped) + ' unstamped and excluded from this score. <span style="text-decoration:underline">View unstamped models →</span></button>';
 }
 function edoDiColor(di) {
   var n = parseFloat(di);
@@ -13123,6 +13182,17 @@ window.edoScrollBf = function () {
   var id = window.__edo.screen === 'eden' ? 'eden-sec-bf' : 'obs-sec-bf';
   var el = document.getElementById(id);
   if (el) el.scrollIntoView({ behavior: 'smooth' });
+};
+window.edoScrollModels = function (lens) {
+  var id = lens === 'obs' ? 'obs-sec-models' : 'eden-sec-models';
+  var el = document.getElementById(id);
+  if (el) el.scrollIntoView({ behavior: 'smooth' });
+};
+window.edoToggleBfCaseExpand = function (expKey) {
+  window.__edo.exp = window.__edo.exp || {};
+  window.__edo.exp[expKey] = !window.__edo.exp[expKey];
+  var o = window.__edo.org;
+  if (window.__edo.screen === 'eden') renderEden(o); else renderObsidian(o);
 };
 window.edoVennSetFilter = function (flt) {
   window.__edo.vennFilter = flt || 'overlap';
@@ -14043,12 +14113,22 @@ function edoBuildBfVennHtml(d, org, screenIsObsidian) {
     var routeStatus = matched ? (matched.status || 'open') : 'open';
     var indicatorText = routeType === 'incident' ? 'Open in Sentinel \u2192' : (['remediation-in-progress','shadow-deploy','awaiting-approval','escalated'].indexOf(routeStatus.toLowerCase())>=0 ? 'View in Atonement \u2192' : 'View in Genesis \u2192');
     var dollarsLabel = typeof c.dollarsAtRisk === 'number' ? ('$' + (c.dollarsAtRisk >= 1000000 ? (c.dollarsAtRisk / 1000000).toFixed(1) + 'M' : c.dollarsAtRisk.toLocaleString())) : String(c.dollarsAtRisk || '');
-    return '<div style="padding:14px;border-radius:12px;border:1px solid var(--border2);background:var(--bg3);margin-bottom:12px;cursor:pointer"' + edoOn('cardinalRouteCase', [warId, routeType, routeStatus]) + edoT(c.caseId, (c.summary || '') + ' ' + indicatorText) + '>' +
-      '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px"><strong style="font-size:12px"' + edoT('Case', c.caseId) + '>' + c.caseId + '</strong><span style="font-size:10px;color:var(--accent)">' + indicatorText + '</span></div>' +
+    var expKey = 'bf-' + sid + '-' + warId;
+    var isExp = !!window.__edo.exp[expKey];
+    var expandedBlock = isExp ? (
+      '<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border2);font-size:10px;color:var(--muted2);line-height:1.6">' +
+      '<div><strong style="color:var(--chrome2)">Why it\u2019s linked:</strong> The bias signal (' + (c.biasAspect || 'bias metric') + ') concentrated review capacity away from this cohort, and fraud operators exploited that lighter verification path (' + (c.fraudAspect || 'fraud pattern') + ').</div>' +
+      '<div style="margin-top:6px"><strong style="color:var(--chrome2)">Combined exposure:</strong> ' + dollarsLabel + ' across regulatory penalty, litigation and fraud loss.</div>' +
+      '<div style="margin-top:6px"><strong style="color:var(--chrome2)">Status:</strong> ' + mdmEsc(routeStatus) + '</div>' +
+      '<button type="button" class="btn-ghost" style="font-size:10px;margin-top:8px"' + edoOnStop('cardinalRouteCase', [warId, routeType, routeStatus]) + '>' + indicatorText + '</button>' +
+      '</div>'
+    ) : '';
+    return '<div style="padding:14px;border-radius:12px;border:1px solid var(--border2);background:var(--bg3);margin-bottom:12px;cursor:pointer"' + edoOnStop('edoToggleBfCaseExpand', [expKey]) + edoT(c.caseId, (c.summary || '') + ' \u2014 click to ' + (isExp ? 'collapse' : 'expand')) + '>' +
+      '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px"><strong style="font-size:12px"' + edoT('Case', c.caseId) + '>' + c.caseId + '</strong><span style="font-size:10px;color:var(--accent)">' + (isExp ? '\u25b2 Collapse' : '\u25bc Expand') + '</span></div>' +
       '<p style="font-size:11px;color:var(--muted);margin:8px 0">' + (c.summary || '') + '</p>' +
       '<div style="display:flex;flex-wrap:wrap;gap:8px;font-size:9px"><span class="badge badge-red"' + edoT('Bias Aspect', 'Bias Aspect / Disparate impact metric on this case (DI, EOdds, etc).') + '>' + (c.biasAspect || 'Bias') + '</span>' +
       '<span class="badge badge-amber"' + edoT('Fraud Aspect', 'Fraud Aspect / Fraud detection metric on this case (synthetic identity, velocity, cluster).') + '>' + (c.fraudAspect || 'Fraud') + '</span>' +
-      '<span class="badge badge-blue"' + edoT('Combined Exposure', 'Combined Exposure / Regulatory penalty + litigation + fraud loss for this case.') + '>' + dollarsLabel + '</span></div></div>';
+      '<span class="badge badge-blue"' + edoT('Combined Exposure', 'Combined Exposure / Regulatory penalty + litigation + fraud loss for this case.') + '>' + dollarsLabel + '</span></div>' + expandedBlock + '</div>';
   }).join('');
   var fresh = d.liveScoreFreshness || '2 minutes ago';
   var heroLine = flow.eveSummaryLine || (oCount + ' overlap cases where bias signals and fraud telemetry intersected on ' + (flow.primaryModel || 'primary model') + '.');
@@ -14302,7 +14382,7 @@ window.renderEden = function (org) {
     cardsRow +
     '<button type="button" class="btn-ghost" style="font-size:11px;margin-top:8px" onclick="showScreen(\'warroom\',null)"' + edoT('War Room', 'Open case command center.') + '>View All in War Room \u2192</button></section>' +
     sec3b +
-    '<section style="margin-bottom:20px"><h2 style="font-size:14px"' + edoT('Models Monitored for Bias', 'Coverage grid from biasMetricsByModel.') + '>Models Monitored for Bias</h2>' +
+    '<section id="eden-sec-models" style="margin-bottom:20px"><h2 style="font-size:14px"' + edoT('Models Monitored for Bias', 'Coverage grid from biasMetricsByModel.') + '>Models Monitored for Bias</h2>' +
     edoModelFilterPillsHtml() +
     '<div style="max-height:340px;overflow-y:auto;overflow-x:auto;border:1px solid var(--border2);border-radius:10px;margin-top:8px;background:var(--card)"><table class="data-table"><thead style="position:sticky;top:0;background:var(--card);z-index:1"><tr><th onclick="edoSortModels(\'model\')"' + edoT('Model', 'Monitored model name and version.') + '>Model</th><th onclick="edoSortModels(\'di\')"' + edoT('Disparate Impact (DI)', 'Ratio of favorable rates — EEOC 0.80 floor.') + '>DI</th><th ' + edoT('Equalized Odds', 'Should be <0.10.') + '>EO</th><th ' + edoT('Proxy Variable', 'Feature correlating with protected class.') + '>Top Proxy</th><th>Affected</th><th ' + edoT('Status', 'Critical / Watch / Passing.') + '>Status</th><th ' + edoT('Trend (30d)', 'Direction of bias metric over last 30 days.') + '>Trend</th><th ' + edoT('Stamp', 'Whether this model is actively counted in the live Trust Score. Unstamp during remediation to exclude it.') + '>Stamp</th></tr></thead><tbody>' + mrows + '</tbody></table></div></section>' +
     '<section id="edo-sec-cohort" style="margin-bottom:20px"><h2 style="font-size:14px"' + edoT('Cohort Explorer', 'Search affected groups and individuals.') + '>Cohort Explorer — Affected Individuals</h2><p style="font-size:11px;color:var(--muted)">Search and filter across ' + nAff + ' affected individuals (aggregated).</p>' +
@@ -14439,7 +14519,7 @@ window.renderObsidian = function (org) {
     cardsRowObs +
     '<button type="button" class="btn-ghost" style="font-size:11px;margin-top:8px" onclick="showScreen(\'warroom\',null)"' + edoT('War Room', 'Open case command center.') + '>View All in War Room \u2192</button></section>' +
     sec3f +
-    '<section style="margin-top:20px"><h2 style="font-size:14px">Models — Fraud Coverage</h2>' +
+    '<section id="obs-sec-models" style="margin-top:20px"><h2 style="font-size:14px">Models — Fraud Coverage</h2>' +
     edoModelFilterPillsHtml() +
     '<div style="max-height:340px;overflow-y:auto;overflow-x:auto;margin-top:10px;border:1px solid var(--border2);border-radius:10px;background:var(--card)"><table class="data-table"><thead style="position:sticky;top:0;background:var(--card);z-index:1"><tr><th ' + edoT('Model', 'Monitored model.') + '>Model</th><th ' + edoT('Synthetic Identity Rate', 'Percent caught / blocked in monitor.') + '>Syn ID</th><th ' + edoT('Behavioral Anomaly', 'Behavioral fraud detection rate.') + '>Behav</th><th ' + edoT('Cluster Fraud', 'Ring detection rate.') + '>Cluster</th><th ' + edoT('Top Pattern', 'Dominant fraud typology.') + '>Pattern</th><th ' + edoT('Bias\u2011Fraud', 'Linked cases count.') + '>B\u2011F</th><th>Status</th><th ' + edoT('Trend (30d)', '30-day trajectory.') + '>Tr</th><th ' + edoT('Stamp', 'Whether this model is actively counted in the live Trust Score. Unstamp during remediation to exclude it.') + '>Stamp</th></tr></thead><tbody>' + mrows + '</tbody></table></div></section>' +
     '<section id="edo-sec-cohort" style="margin-top:20px"><h2 style="font-size:14px">Cohort Explorer — Fraud Lens</h2><p style="font-size:11px;color:var(--muted)">' + nAff + ' individuals in monitored cohorts (aggregated).</p>' +
@@ -33105,6 +33185,67 @@ var PIPELINE_CONNECTORS = [
   { id: 'azure', label: 'Azure OpenAI', fields: [['deployment', 'Deployment Name', 'gpt-audit-deployment'], ['endpoint', 'Endpoint URL', 'https://your-resource.openai.azure.com/'], ['vector', 'Vector Index Pointer', 'pinecone://cardinal-kb']] }
 ];
 
+// Real per-org connector status -- not a live backend (this is a prototype), but
+// unlike the old static "1,247 records / 12 models" block, these numbers actually
+// change per org and cross-reference CARDINAL_MODELS so "Models Fed" is a real count,
+// not a hand-typed one. Dates are relative to the Sept 26, 2026 demo date.
+var PIPELINE_SOURCE_STATUS = {
+  ad: [
+    { connector: 'Snowflake', status: 'connected', lastSync: '2026-09-26T06:14:00Z', records: 184320, format: 'Parquet' },
+    { connector: 'AWS S3', status: 'connected', lastSync: '2026-09-25T22:40:00Z', records: 52104, format: 'CSV' },
+    { connector: 'Databricks', status: 'not_connected', lastSync: null, records: 0, format: '—' },
+    { connector: 'Azure OpenAI', status: 'not_connected', lastSync: null, records: 0, format: '—' }
+  ],
+  fin: [
+    { connector: 'BigQuery', status: 'connected', lastSync: '2026-09-26T04:02:00Z', records: 96540, format: 'JSON' },
+    { connector: 'Snowflake', status: 'connected', lastSync: '2026-09-24T18:15:00Z', records: 41220, format: 'CSV' },
+    { connector: 'AWS S3', status: 'not_connected', lastSync: null, records: 0, format: '—' }
+  ],
+  health: [
+    { connector: 'AWS S3 & Bedrock', status: 'connected', lastSync: '2026-09-25T14:30:00Z', records: 68910, format: 'Parquet' },
+    { connector: 'Snowflake', status: 'not_connected', lastSync: null, records: 0, format: '—' }
+  ],
+  fed: [
+    { connector: 'Snowflake', status: 'connected', lastSync: '2026-09-23T09:00:00Z', records: 12480, format: 'CSV' },
+    { connector: 'Azure OpenAI', status: 'not_connected', lastSync: null, records: 0, format: '—' }
+  ]
+};
+function pipelineFmtSync(iso) {
+  if (!iso) return '—';
+  var d = new Date(iso);
+  return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) + ' · ' + d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+}
+function pipelineRenderSourcesTable(org) {
+  var tbody = document.getElementById('pipeline-sources-tbody');
+  if (!tbody) return;
+  var rows = PIPELINE_SOURCE_STATUS[org] || PIPELINE_SOURCE_STATUS.ad;
+  var modelsForOrg = (window.CARDINAL_MODELS || []).filter(function (m) { return m.industry === org; });
+  tbody.innerHTML = rows.map(function (r) {
+    var connected = r.status === 'connected';
+    var modelsFed = connected ? modelsForOrg.length : 0;
+    return '<tr><td style="padding:8px 12px;font-size:11px;font-weight:600;color:var(--chrome2)">' + r.connector + '</td>' +
+      '<td style="padding:8px;font-size:10px"><span class="badge" style="' + (connected ? 'color:#22c55e;background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.3)' : 'color:var(--muted);background:rgba(180,190,220,.08);border:1px solid rgba(180,190,220,.2)') + '">' + (connected ? '● Connected' : 'Not Connected') + '</span></td>' +
+      '<td style="padding:8px;font-size:10px;color:var(--muted)">' + pipelineFmtSync(r.lastSync) + '</td>' +
+      '<td style="padding:8px;font-size:10px;color:var(--muted)">' + r.format + '</td>' +
+      '<td style="padding:8px;font-size:10px;color:var(--chrome2)">' + (r.records ? r.records.toLocaleString() : '—') + '</td>' +
+      '<td style="padding:8px;font-size:10px;color:var(--chrome2)">' + (modelsFed || '—') + '</td></tr>';
+  }).join('');
+}
+function pipelineRenderHealthStats(org) {
+  var rows = PIPELINE_SOURCE_STATUS[org] || PIPELINE_SOURCE_STATUS.ad;
+  var totalRecords = rows.reduce(function (sum, r) { return sum + (r.records || 0); }, 0);
+  var modelsForOrg = (window.CARDINAL_MODELS || []).filter(function (m) { return m.industry === org; });
+  var biasIssues = modelsForOrg.filter(function (m) { return m.di < 0.80; }).length;
+  var liveModels = modelsForOrg.filter(function (m) { return m.status === 'live'; }).length;
+  var recEl = document.getElementById('pipeline-stat-records');
+  var biasEl = document.getElementById('pipeline-stat-bias');
+  var fraudEl = document.getElementById('pipeline-stat-fraud');
+  var libEl = document.getElementById('pipeline-stat-library');
+  if (recEl) recEl.textContent = totalRecords.toLocaleString();
+  if (biasEl) biasEl.textContent = String(biasIssues);
+  if (fraudEl) fraudEl.textContent = String((window.CARDINAL_DATA && window.CARDINAL_DATA[org] && window.CARDINAL_DATA[org].fraudIncidentsActive || []).length);
+  if (libEl) libEl.textContent = String(liveModels);
+}
 function pipelineOrgSovereignLabel(org) {
   return { ad: 'Sovereign FIPS 140-3 Compliant Enclave', fed: 'Sovereign FIPS 140-3 Compliant Enclave', fin: 'SOC 2 Type II Environment', health: 'HIPAA-Aligned Compliant Environment' }[org] || 'SOC 2 Type II Environment';
 }
@@ -33119,6 +33260,8 @@ function pipelineInitWizard() {
   pipelineRenderAssetTypes();
   pipelineRenderCanvas();
   pipelineRenderDiagnostics();
+  pipelineRenderSourcesTable(org);
+  pipelineRenderHealthStats(org);
 }
 
 function pipelineCurrentStep() {
@@ -35509,6 +35652,29 @@ window.cardinalLibFilterModels = function(filter, btn) {
   cardinalLibRenderModelsGrid(filter);
 };
 
+// Shows stamp status for a Cardinal Library model card by checking whether the
+// model actually appears in that org's Eden (bias) / Obsidian (fraud) monitored-model
+// arrays -- CARDINAL_MODELS is a separate registry list (see cardinalCanonicalModelScore
+// note above), so presence isn't assumed, it's looked up by matching model name to
+// modelId in CARDINAL_DATA[m.industry].biasMetricsByModel / fraudMetricsByModel.
+function cardinalLibStampBadgesHtml(m) {
+  if (typeof edoIsStamped !== 'function' || !window.CARDINAL_DATA) return '';
+  var d = window.CARDINAL_DATA[m.industry];
+  if (!d) return '';
+  var inBias = (d.biasMetricsByModel || []).some(function(bm) { return bm.modelId === m.name; });
+  var inFraud = (d.fraudMetricsByModel || []).some(function(fm) { return fm.modelId === m.name; });
+  if (!inBias && !inFraud) return '';
+  var parts = [];
+  if (inBias) {
+    var biasStamped = edoIsStamped('eden', m.industry, { modelId: m.name });
+    parts.push('<span style="font-size:8px;padding:2px 6px;border-radius:5px;font-weight:700;' + (biasStamped ? 'color:#22c55e;background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.3)' : 'color:var(--muted);background:rgba(180,190,220,.08);border:1px solid rgba(180,190,220,.2)') + '">' + (biasStamped ? '✓ Bias Stamped' : 'Bias Unstamped') + '</span>');
+  }
+  if (inFraud) {
+    var fraudStamped = edoIsStamped('obs', m.industry, { modelId: m.name });
+    parts.push('<span style="font-size:8px;padding:2px 6px;border-radius:5px;font-weight:700;' + (fraudStamped ? 'color:#22c55e;background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.3)' : 'color:var(--muted);background:rgba(180,190,220,.08);border:1px solid rgba(180,190,220,.2)') + '">' + (fraudStamped ? '✓ Fraud Stamped' : 'Fraud Unstamped') + '</span>');
+  }
+  return '<div style="display:flex;gap:5px;margin-top:8px;flex-wrap:wrap">' + parts.join('') + '</div>';
+}
 window.cardinalLibRenderModelsGrid = function(filter) {
   var grid = document.getElementById('lib-models-grid');
   if (!grid) return;
@@ -35578,6 +35744,7 @@ window.cardinalLibRenderModelsGrid = function(filter) {
         m.owner +
         '</span>' +
         '</div>' +
+        cardinalLibStampBadgesHtml(m) +
         (m.cases && m.cases.length > 0
           ? '<div style="margin-top:8px;font-size:9px;color:var(--accent);">Linked: ' + m.cases.join(', ') + '</div>'
           : '') +
@@ -36338,7 +36505,7 @@ function tsv2BuildHero(d) {
     var fromVal = parseInt(num.textContent, 10) || 0;
     tsv2AnimateNumber(num, fromVal, score, 1500);
   }
-  if (pulse) pulse.style.boxShadow = '0 0 60px 2px ' + tsv2HexA(color, 0.30) + ', 0 10px 18px -8px rgba(0,0,0,0.32)';
+  if (pulse) pulse.style.boxShadow = '0 0 70px 6px ' + tsv2HexA(color, 0.4) + ', 0 10px 18px -6px rgba(0,0,0,0.4)';
 
   var status = document.getElementById('tsv2-status');
   if (status) {
@@ -39760,6 +39927,68 @@ window.mdmSearchInput = function (q) {
   dd.style.display = 'block';
 };
 
+// Stamp Status section for the model detail popup -- shows current stamp state,
+// since-when, unstamp reason + pending reminder, and full chronological history
+// for both the Eden (bias) and Obsidian (fraud) lenses, per Brittany's ask:
+// "how do I know what's stamped... when did it get stamped... was it included
+// in any of the trust score, badges or certifications."
+function mdmStampFmtDate(iso) {
+  if (!iso) return '—';
+  try {
+    var dt = new Date(iso);
+    return dt.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) + ' · ' + dt.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+  } catch (_e) { return iso; }
+}
+function mdmStampLensCard(lensKey, lensLabel, org, modelId) {
+  var model = { modelId: modelId };
+  var stamped = edoIsStamped(lensKey, org, model);
+  var latest = edoLatestStampLogEntry(lensKey, org, modelId);
+  var history = edoStampHistory(lensKey, org, modelId);
+  var sinceLabel = latest ? mdmStampFmtDate(latest.at) : (stamped ? 'Since onboarding (no changes logged this session)' : '—');
+  var statusBadge = stamped
+    ? '<span class="badge badge-green" style="font-size:9px">✓ Stamped</span>'
+    : '<span class="badge" style="font-size:9px;background:rgba(180,190,220,.12);color:var(--muted)">Unstamped</span>';
+  var inclusion = stamped
+    ? '<span style="color:#22c55e">Included</span> in live ' + lensLabel + ' score, badges and certifications'
+    : '<span style="color:var(--amber)">Excluded</span> from live ' + lensLabel + ' score, badges and certifications while unstamped';
+  var reasonBlock = '';
+  var reminderBlock = '';
+  if (!stamped && latest && latest.action === 'unstamp') {
+    reasonBlock = '<div style="font-size:10px;color:var(--muted2);margin-top:6px"><strong style="color:var(--chrome2)">Reason:</strong> ' + mdmEsc(latest.reason || 'No reason provided') + '</div>';
+    if (latest.reminderDue) {
+      var due = new Date(latest.reminderDue);
+      var overdue = due.getTime() < Date.now();
+      reasonBlock += '<div style="font-size:10px;margin-top:4px;color:' + (overdue ? 'var(--red)' : 'var(--amber)') + '">' + (overdue ? '⚠ Re-stamp review overdue — was due ' : '⏰ Re-stamp review reminder set for ') + mdmStampFmtDate(latest.reminderDue) + '</div>';
+    }
+  }
+  var histRows = history.slice().reverse().map(function (e) {
+    var actionLabel = e.action === 'unstamp' ? 'Unstamped' : 'Re-stamped';
+    var actionColor = e.action === 'unstamp' ? 'var(--amber)' : '#22c55e';
+    var line = '<div style="font-size:10px;padding:6px 0;border-bottom:1px solid rgba(180,190,220,.06)">' +
+      '<span style="color:' + actionColor + ';font-weight:600">' + actionLabel + '</span> · ' + mdmStampFmtDate(e.at) + ' · <span style="color:var(--muted)">' + mdmEsc(e.actor || 'current user') + '</span>';
+    if (e.action === 'unstamp' && e.reason) line += '<div style="color:var(--muted2);margin-top:2px">Reason: ' + mdmEsc(e.reason) + '</div>';
+    if (e.action === 'unstamp' && e.reminderDue) line += '<div style="color:var(--muted2);margin-top:2px">Reminder set for ' + mdmStampFmtDate(e.reminderDue) + '</div>';
+    line += '</div>';
+    return line;
+  }).join('') || '<div style="font-size:10px;color:var(--muted)">No stamp changes logged this session — model has held its seed default status.</div>';
+  return '<div style="flex:1;min-width:220px;background:var(--bg3);border:1px solid var(--border2);border-radius:10px;padding:12px">' +
+    '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px">' +
+    '<div style="font-size:11px;font-weight:700;color:var(--chrome2)">' + lensLabel + ' lens</div>' + statusBadge + '</div>' +
+    '<div style="font-size:10px;color:var(--muted);margin-top:6px">Since ' + sinceLabel + '</div>' +
+    '<div style="font-size:10px;margin-top:6px">' + inclusion + '</div>' +
+    reasonBlock +
+    '<details style="margin-top:8px"><summary style="cursor:pointer;font-size:9px;color:var(--muted2);list-style-position:outside">Full stamp history (' + history.length + ')</summary><div style="margin-top:6px">' + histRows + '</div></details>' +
+    '</div>';
+}
+function mdmStampStatusHtml(modelId) {
+  var org = (window.__edo && window.__edo.org) || 'ad';
+  return '<section style="margin-bottom:20px;padding:16px;border-radius:12px;background:var(--bg3);border:1px solid var(--border2)">' +
+    '<div style="font-size:10px;color:var(--muted2);margin-bottom:8px"' + edoT('Stamp Status', 'Stamping marks a model as actively monitored and counted toward the live Trust Score, badges and certifications. Unstamping excludes it during remediation and requires a logged reason.') + '>Stamp Status</div>' +
+    '<div style="display:flex;flex-wrap:wrap;gap:10px">' +
+    mdmStampLensCard('eden', 'Bias', org, modelId) +
+    mdmStampLensCard('obs', 'Fraud', org, modelId) +
+    '</div></section>';
+}
 function mdmPaintDrillInBody(det, resolvedKey) {
   var id = det.identity || {};
   var bm = det.biasMetrics || {};
@@ -39801,6 +40030,8 @@ function mdmPaintDrillInBody(det, resolvedKey) {
     '<div style="font-size:10px;color:var(--muted);margin-top:8px;line-height:1.55">ID <code>' + mdmEsc(resolvedKey) + '</code> \u00b7 Created ' + mdmEsc(id.creationDate) + ' \u00b7 Updated ' + mdmEsc(id.lastUpdate) + ' \u00b7 ' + mdmEsc(id.ownerTeam) + '</div>' +
     '<p style="font-size:11px;color:var(--muted2);margin:12px 0 8px;line-height:1.55">' + mdmEsc(id.description) + '</p>' +
     '<div>' + tags + '</div></section>' +
+
+    mdmStampStatusHtml(resolvedKey) +
 
     '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px">' +
     '<button type="button" id="mdm-lens-bias" class="btn-ghost" style="font-size:10px;padding:6px 12px;border-radius:8px" title="Bias-only lens" onclick="mdmSetLens(\'bias\')">Bias view</button>' +
