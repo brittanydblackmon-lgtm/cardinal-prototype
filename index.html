@@ -5786,7 +5786,7 @@ Settings
 </div>
 </div>
 
-<div class="grid-4" id="gen-stats-row" style="margin-bottom:14px"><div class="stat-card"  style=";"><div class="stat-label">Active Tests</div><div class="stat-value" style="color:var(--accent);font-size:22px">3</div><div class="stat-change ">Running now</div></div><div class="stat-card"  style=";"><div class="stat-label">Models in Testing</div><div class="stat-value" style="color:#F59E0B;font-size:22px">2</div><div class="stat-change warn">v2.5-shadow · v3.0-draft</div></div><div class="stat-card"  style=";"><div class="stat-label">Coverage Rate</div><div class="stat-value" style="color:#F59E0B;font-size:22px">78%</div><div class="stat-change warn">A&D coverage gap detected</div></div><div class="stat-card"  style=";"><div class="stat-label">Tests Passed</div><div class="stat-value" style="color:#22C55E;font-size:22px">47</div><div class="stat-change up">This month</div></div></div>
+<div class="grid-4" id="gen-stats-row" style="margin-bottom:14px"><div class="stat-card"  style=";"><div class="stat-label">Active Tests</div><div class="stat-value" style="color:var(--accent);font-size:22px" id="gen-stat-active">—</div><div class="stat-change " id="gen-stat-active-sub">Running now</div></div><div class="stat-card"  style=";"><div class="stat-label">Models in Testing</div><div class="stat-value" style="color:#F59E0B;font-size:22px" id="gen-stat-models">—</div><div class="stat-change warn" id="gen-stat-models-sub"></div></div><div class="stat-card"  style=";"><div class="stat-label">Coverage Rate</div><div class="stat-value" style="color:#F59E0B;font-size:22px" id="gen-stat-coverage">—</div><div class="stat-change warn" id="gen-stat-coverage-sub"></div></div><div class="stat-card"  style=";"><div class="stat-label">Tests Passed</div><div class="stat-value" style="color:#22C55E;font-size:22px" id="gen-stat-passed">—</div><div class="stat-change up">This month</div></div></div>
 
 <div id="gen-discovery-alert" style="background:rgba(245,158,11,.06);border:1px solid rgba(245,158,11,.2);border-radius:10px;padding:14px;margin-bottom:14px;display:flex;align-items:flex-start;gap:12px">
 <div style="font-size:20px;flex-shrink:0"></div>
@@ -6146,7 +6146,7 @@ Settings
 <div style="font-size:15px;font-weight:600;color:var(--chrome2)">Atonement Core — Remediation Engine</div>
 <div style="font-size:11px;color:var(--muted);margin-top:2px">Fix recommendations · Shadow deployment · Auto-rollback · Remediation cohorts · Regulatory simulation</div>
 </div>
-<div class="grid-4" style="margin-bottom:14px"><div class="stat-card"  style=";"><div class="stat-label">Active Remediations</div><div class="stat-value" style="color:#F59E0B;font-size:22px">1</div><div class="stat-change warn">Case #2847 in progress</div></div><div class="stat-card"  style=";"><div class="stat-label">Shadow Deployments</div><div class="stat-value" style="color:var(--accent);font-size:22px">1</div><div class="stat-change ">5% traffic · 72hr window</div></div><div class="stat-card"  style=";"><div class="stat-label">Models Fixed</div><div class="stat-value" style="color:#22C55E;font-size:22px">8</div><div class="stat-change up">This quarter</div></div><div class="stat-card"  style=";"><div class="stat-label">Avg Remediation Time</div><div class="stat-value" style="color:var(--accent);font-size:22px">11 days</div><div class="stat-change ">vs 42d industry average</div></div></div>
+<div class="grid-4" style="margin-bottom:14px"><div class="stat-card"  style=";"><div class="stat-label">Active Remediations</div><div class="stat-value" style="color:#F59E0B;font-size:22px" id="at-stat-active">—</div><div class="stat-change warn" id="at-stat-active-sub">In progress</div></div><div class="stat-card"  style=";"><div class="stat-label">Shadow Deployments</div><div class="stat-value" style="color:var(--accent);font-size:22px" id="at-stat-shadow">—</div><div class="stat-change " id="at-stat-shadow-sub">5% traffic</div></div><div class="stat-card"  style=";"><div class="stat-label">Models Fixed</div><div class="stat-value" style="color:#22C55E;font-size:22px" id="at-stat-fixed">—</div><div class="stat-change up">This quarter</div></div><div class="stat-card"  style=";"><div class="stat-label">Avg Remediation Time</div><div class="stat-value" style="color:var(--accent);font-size:22px" id="at-stat-time">—</div><div class="stat-change ">vs 42d industry average</div></div></div>
 
 <div style="display:flex;gap:8px">
 <button class="btn-ghost" onclick="switchAtTab('cohorts',1)"> View Cohorts</button>
@@ -6487,6 +6487,36 @@ Halo Core
 <div id="halo-cardinal-hero" class="cardinal-collapse-if-empty" style="margin-bottom:16px;"></div>
 <div id="halo-attribution-cards" class="cardinal-collapse-if-empty" style="margin-bottom:16px;"></div>
 
+<!-- 9/26 -- moved the map above Predictive Risk Engine and enlarged it (380px was too
+     short relative to its near-full-width, which squashed the world projection into a
+     "triangle" look at the poles) per Brittany's midnight note. Reorder is pure markup --
+     initHaloMap() and haloRenderPredictiveSection() both target by getElementById, not
+     DOM position, so neither depends on being in a particular place. Height is kept in
+     sync in 3 spots: this container's inline height, the <svg height> attribute, and
+     initHaloMap()'s internal `height` var (~line 22679 as of this pass). -->
+<div class="halo-map-shell" style="position:relative;margin-bottom:18px" onclick="haloBackdropClick(event)">
+<div id="halo-map-container" style="width:100%;height:540px;background:#080c14;border-radius:12px;border:1px solid rgba(167, 167, 167,0.1);position:relative;overflow:hidden;">
+  <svg id="halo-world-svg" width="100%" height="540"></svg>
+  <div id="halo-map-prediction-overlay" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:7;"></div>
+  <div id="halo-map-tooltip" style="display:none;position:absolute;background:rgba(13,14,20,0.95);border:1px solid rgba(167, 167, 167,0.2);border-radius:8px;padding:12px 16px;pointer-events:none;min-width:200px;z-index:10;"></div>
+  <!-- Legend top right -->
+  <div style="position:absolute;top:12px;right:12px;background:rgba(8,12,20,0.85);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:10px 14px;">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;font-size:11px;color:#94a3b8;"><span style="width:10px;height:10px;background:#ef4444;border-radius:2px;display:inline-block;"></span>Active Violation</div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;font-size:11px;color:#94a3b8;"><span style="width:10px;height:10px;background:#f59e0b;border-radius:2px;display:inline-block;"></span>Deadline Approaching</div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;font-size:11px;color:#94a3b8;"><span style="width:10px;height:10px;background:#22c55e;border-radius:2px;display:inline-block;"></span>Compliant</div>
+    <div style="display:flex;align-items:center;gap:8px;font-size:11px;color:#94a3b8;"><span style="width:8px;height:8px;background:#60a5fa;border-radius:50%;display:inline-block;box-shadow:0 0 6px #60a5fa;"></span>Your Operations</div>
+  </div>
+  <div style="position:absolute;bottom:12px;left:12px;display:flex;flex-direction:column;gap:4px;z-index:5;">
+    <button type="button" id="halo-zoom-in" style="width:28px;height:28px;background:rgba(13,14,20,0.9);border:1px solid rgba(167, 167, 167,0.2);border-radius:6px;color:#94a3b8;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;">+</button>
+    <button type="button" id="halo-zoom-out" style="width:28px;height:28px;background:rgba(13,14,20,0.9);border:1px solid rgba(167, 167, 167,0.2);border-radius:6px;color:#94a3b8;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;">−</button>
+    <button type="button" id="halo-zoom-reset" style="width:28px;height:28px;background:rgba(13,14,20,0.9);border:1px solid rgba(167, 167, 167,0.2);border-radius:6px;color:#94a3b8;font-size:11px;cursor:pointer;display:flex;align-items:center;justify-content:center;">⊙</button>
+  </div>
+  <div style="position:absolute;bottom:12px;left:50%;transform:translateX(-50%);font-size:10px;color:rgba(148,163,184,0.5);pointer-events:none;">
+    Scroll to zoom · Click country to focus · ⊙ to reset
+  </div>
+</div>
+</div>
+
 <!-- ══ HALO PREDICTIVE SECTION (2D-d-36) ══ -->
 <div id="halo-predictive-section" style="margin-bottom:18px;">
 
@@ -6522,36 +6552,13 @@ Halo Core
   <div style="margin-top:12px;display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:rgba(167, 167, 167,0.04);border:1px solid rgba(167, 167, 167,0.08);border-radius:8px;flex-wrap:wrap;gap:8px;">
     <div style="font-size:11px;color:var(--muted);">
       <span style="color:var(--chrome2);font-weight:600;">Halo intelligence:</span>
-      Predictions tied to regulatory geography · See map below for jurisdiction view
+      Predictions tied to regulatory geography · See map above for jurisdiction view
     </div>
     <button type="button" onclick="haloShowAllPredictions()" style="background:transparent;border:1px solid rgba(167, 167, 167,0.18);color:var(--accent);border-radius:6px;padding:6px 12px;font-size:10px;cursor:pointer;font-weight:600;">View All Predictions →</button>
   </div>
 
 </div>
 <!-- ══ END HALO PREDICTIVE SECTION ══ -->
-
-<div class="halo-map-shell" style="position:relative" onclick="haloBackdropClick(event)">
-<div id="halo-map-container" style="width:100%;height:380px;background:#080c14;border-radius:12px;border:1px solid rgba(167, 167, 167,0.1);position:relative;overflow:hidden;">
-  <svg id="halo-world-svg" width="100%" height="380"></svg>
-  <div id="halo-map-prediction-overlay" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:7;"></div>
-  <div id="halo-map-tooltip" style="display:none;position:absolute;background:rgba(13,14,20,0.95);border:1px solid rgba(167, 167, 167,0.2);border-radius:8px;padding:12px 16px;pointer-events:none;min-width:200px;z-index:10;"></div>
-  <!-- Legend top right -->
-  <div style="position:absolute;top:12px;right:12px;background:rgba(8,12,20,0.85);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:10px 14px;">
-    <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;font-size:11px;color:#94a3b8;"><span style="width:10px;height:10px;background:#ef4444;border-radius:2px;display:inline-block;"></span>Active Violation</div>
-    <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;font-size:11px;color:#94a3b8;"><span style="width:10px;height:10px;background:#f59e0b;border-radius:2px;display:inline-block;"></span>Deadline Approaching</div>
-    <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;font-size:11px;color:#94a3b8;"><span style="width:10px;height:10px;background:#22c55e;border-radius:2px;display:inline-block;"></span>Compliant</div>
-    <div style="display:flex;align-items:center;gap:8px;font-size:11px;color:#94a3b8;"><span style="width:8px;height:8px;background:#60a5fa;border-radius:50%;display:inline-block;box-shadow:0 0 6px #60a5fa;"></span>Your Operations</div>
-  </div>
-  <div style="position:absolute;bottom:12px;left:12px;display:flex;flex-direction:column;gap:4px;z-index:5;">
-    <button type="button" id="halo-zoom-in" style="width:28px;height:28px;background:rgba(13,14,20,0.9);border:1px solid rgba(167, 167, 167,0.2);border-radius:6px;color:#94a3b8;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;">+</button>
-    <button type="button" id="halo-zoom-out" style="width:28px;height:28px;background:rgba(13,14,20,0.9);border:1px solid rgba(167, 167, 167,0.2);border-radius:6px;color:#94a3b8;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;">−</button>
-    <button type="button" id="halo-zoom-reset" style="width:28px;height:28px;background:rgba(13,14,20,0.9);border:1px solid rgba(167, 167, 167,0.2);border-radius:6px;color:#94a3b8;font-size:11px;cursor:pointer;display:flex;align-items:center;justify-content:center;">⊙</button>
-  </div>
-  <div style="position:absolute;bottom:12px;left:50%;transform:translateX(-50%);font-size:10px;color:rgba(148,163,184,0.5);pointer-events:none;">
-    Scroll to zoom · Click country to focus · ⊙ to reset
-  </div>
-</div>
-</div>
 
 <div class="card" style="margin-bottom:16px;border:1px solid rgba(239,68,68,0.2);background:linear-gradient(135deg,rgba(239,68,68,0.05),rgba(13,14,20,0.95));">
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
@@ -7776,12 +7783,24 @@ Template Overview
 </div>
 </div>
 <!-- TABS -->
-<div style="display:flex;gap:2px;margin-bottom:14px;background:var(--bg2);border-radius:8px;padding:3px;width:fit-content;flex-wrap:wrap" id="tl-tabs">
-<button class="gen-tab active" onclick="switchTLTab('entries',0)">Ledger Entries</button>
-<button class="gen-tab" onclick="switchTLTab('access',1)">Access Levels</button>
-<button class="gen-tab" onclick="switchTLTab('whistleblower',2)">WB Verification</button>
-<button class="gen-tab" onclick="switchTLTab('privacy',3)">Privacy & Crypto</button>
-<button class="gen-tab" onclick="switchTLTab('query',4)">Query Ledger</button>
+<!-- 9/26 -- fixed: this nav shared id="tl-tabs" with the nested Access-Levels sub-nav
+     below, and both called the same switchTLTab() function keyed only by numeric index.
+     Because duplicate ids still match in querySelectorAll, clicking either nav mixed up
+     both button sets and the content-div toggle only ever knew about the *nested* tab
+     ids (overview/certs/issues/verify/tlwb) -- so the two real top-level containers
+     (tl-tab-entries, tl-tab-access) were never actually shown/hidden by this nav, and
+     "Access Levels" was permanently unreachable. Split into its own id + function.
+     Also: only "Ledger Entries" and "Access Levels" have real built-out content behind
+     them -- "WB Verification", "Privacy & Crypto" and "Query Ledger" were never given
+     their own containers (their subject matter mostly lives inside Access Levels' own
+     sub-tabs instead). Rather than leave them silently doing nothing, they now show an
+     honest "not built yet" placeholder -- logged to backlog for real scoping. -->
+<div style="display:flex;gap:2px;margin-bottom:14px;background:var(--bg2);border-radius:8px;padding:3px;width:fit-content;flex-wrap:wrap" id="tl-tabs-top">
+<button class="gen-tab active" onclick="switchTLTopTab('entries',0)">Ledger Entries</button>
+<button class="gen-tab" onclick="switchTLTopTab('access',1)">Access Levels</button>
+<button class="gen-tab" onclick="switchTLTopTab('whistleblower',2)">WB Verification</button>
+<button class="gen-tab" onclick="switchTLTopTab('privacy',3)">Privacy & Crypto</button>
+<button class="gen-tab" onclick="switchTLTopTab('query',4)">Query Ledger</button>
 </div>
 <!-- LEDGER ENTRIES TAB -->
 <div id="tl-tab-entries" class="gen-tab-content">
@@ -7816,7 +7835,7 @@ Template Overview
 <div style="font-size:11px;color:var(--muted2);margin-bottom:14px">All audiences use the same Trust Ledger platform. Regulators have deeper access through a separate permission tier with cryptographic keys.</div>
 <div id="tl-access-levels"></div>
 </div>
-<div style="display:flex;gap:2px;margin-bottom:16px;background:var(--bg3);border-radius:10px;padding:4px" id="tl-tabs">
+<div style="display:flex;gap:2px;margin-bottom:16px;background:var(--bg3);border-radius:10px;padding:4px" id="tl-tabs-access">
 <button class="gen-tab active" onclick="switchTLTab(this,0)" style="flex:1;padding:8px;border-radius:8px;border:none;background:var(--card);color:var(--text);font-size:11px;font-weight:600;cursor:pointer;font-family:var(--sans)">Overview</button>
 <button class="gen-tab" onclick="switchTLTab(this,1)" style="flex:1;padding:8px;border-radius:8px;border:none;background:transparent;color:var(--muted);font-size:11px;cursor:pointer;font-family:var(--sans)">Certifications</button>
 <button class="gen-tab" onclick="switchTLTab(this,2)" style="flex:1;padding:8px;border-radius:8px;border:none;background:transparent;color:var(--muted);font-size:11px;cursor:pointer;font-family:var(--sans)">Reported Issues</button>
@@ -8025,6 +8044,29 @@ Template Overview
 </div>
 </div>
 </div><!-- /tl-tab-access (Trust Ledger access tab) -->
+<!-- 9/26 -- placeholders for the 3 top-level tabs with no built content yet (see note
+     above switchTLTopTab). Clearly labeled per the same "placeholder of what things could
+     look like" convention used elsewhere (Cardinal Passport), not a silent no-op. -->
+<div id="tl-tab-whistleblower" class="gen-tab-content" style="display:none">
+<div class="card" style="padding:20px;text-align:center">
+<div style="font-size:12px;font-weight:600;color:var(--chrome2);margin-bottom:6px">WB Verification — Full Tab Not Yet Built</div>
+<div style="font-size:11px;color:var(--muted2);max-width:480px;margin:0 auto 10px;line-height:1.6">The whistleblower case verification log already exists under Access Levels → Whistleblower. This top-level tab is a placeholder for a possibly-expanded standalone view — needs real scoping before building further.</div>
+<button type="button" class="btn-ghost" style="font-size:10px" onclick="switchTLTopTab('access',1);setTimeout(function(){switchTLTab(null,4)},50)">Go to Access Levels → Whistleblower</button>
+</div>
+</div>
+<div id="tl-tab-privacy" class="gen-tab-content" style="display:none">
+<div class="card" style="padding:20px;text-align:center">
+<div style="font-size:12px;font-weight:600;color:var(--chrome2);margin-bottom:6px">Privacy & Crypto — Not Yet Built</div>
+<div style="font-size:11px;color:var(--muted2);max-width:480px;margin:0 auto;line-height:1.6">Planned: a plain-language explainer of the hashing/encryption scheme behind the Trust Ledger (what's hashed, what's public, key management). Needs scoping before building.</div>
+</div>
+</div>
+<div id="tl-tab-query" class="gen-tab-content" style="display:none">
+<div class="card" style="padding:20px;text-align:center">
+<div style="font-size:12px;font-weight:600;color:var(--chrome2);margin-bottom:6px">Query Ledger — Not Yet Built</div>
+<div style="font-size:11px;color:var(--muted2);max-width:480px;margin:0 auto 10px;line-height:1.6">The quick "Query Ledger" action above already opens a lightweight lookup. This tab is a placeholder for a fuller query/search interface — needs scoping before building.</div>
+<button type="button" class="btn-ghost" style="font-size:10px" onclick="queryLedger()">Try the quick lookup instead →</button>
+</div>
+</div>
 </div><!-- /screen-trustledger -->
 
 <div id="screen-warroom" class="screen">
@@ -22407,7 +22449,7 @@ function verifyDecisionReceipt() {
 
 function switchTLTab(btn, idx) {
  const tabs = ['overview','certs','issues','verify','tlwb'];
- document.querySelectorAll('#tl-tabs .gen-tab').forEach((t,i)=>{
+ document.querySelectorAll('#tl-tabs-access .gen-tab').forEach((t,i)=>{
    t.style.background = i===idx ? 'var(--card)' : 'transparent';
    t.style.color = i===idx ? 'var(--text)' : 'var(--muted)';
    t.style.fontWeight = i===idx ? '600' : '400';
@@ -22417,6 +22459,21 @@ function switchTLTab(btn, idx) {
    if(el) el.style.display = i===idx ? 'block' : 'none';
  });
 }
+
+// 9/26 -- new top-level tab switcher, split out from switchTLTab (see note above the
+// nav markup): toggles the real top-level containers instead of colliding with the
+// nested Access-Levels sub-nav that used to share the same id.
+function switchTLTopTab(name, idx) {
+ const tabs = ['entries','access','whistleblower','privacy','query'];
+ document.querySelectorAll('#tl-tabs-top .gen-tab').forEach((t,i)=>{
+   t.classList.toggle('active', i===idx);
+ });
+ tabs.forEach((t,i)=>{
+   const el = document.getElementById('tl-tab-'+t);
+   if(el) el.style.display = i===idx ? 'block' : 'none';
+ });
+}
+window.switchTLTopTab = switchTLTopTab;
 
 function queryLedger() {
  const input = document.getElementById('tl-query-input');
@@ -22676,7 +22733,7 @@ function initHaloMap() {
   if (!svgSel.node() || !container) return;
 
   var width = container.offsetWidth || 900;
-  var height = 380;
+  var height = 540;
 
   svgSel.attr('width', width).attr('height', height);
   svgSel.selectAll('*').remove();
@@ -23936,6 +23993,25 @@ window.renderAtonementDeepView = function(org) {
   window.renderAtonementPipeline(org);
   window.renderAtonementQueue(org);
   window.renderAtonementRestoration(org);
+  window.renderAtonementTopStats(org);
+};
+
+// 9/26 -- top stat row used to be 4 hand-typed numbers, identical for every org
+// (found during the tomorrow-scope investigation pass). Wired to the real per-org
+// CARDINAL_ATONEMENT_PIPELINE data instead.
+window.renderAtonementTopStats = function(org) {
+  var pipeline = (window.CARDINAL_ATONEMENT_PIPELINE && window.CARDINAL_ATONEMENT_PIPELINE[org]) || [];
+  var active = pipeline.filter(function(p){ return p.status === 'in-flight'; }).length;
+  var shadow = pipeline.filter(function(p){ return p.stage === 'shadow'; }).length;
+  var fixed = pipeline.filter(function(p){ return p.status === 'complete'; }).length;
+  var completeDays = pipeline.filter(function(p){ return p.status === 'complete'; }).map(function(p){ return p.sinceDays; });
+  var avgDays = completeDays.length ? Math.round(completeDays.reduce(function(a,b){return a+b;},0) / completeDays.length) : null;
+  var blocked = pipeline.filter(function(p){ return p.status === 'blocked-by-ere'; }).length;
+  var activeEl = document.getElementById('at-stat-active'); if (activeEl) activeEl.textContent = String(active);
+  var activeSubEl = document.getElementById('at-stat-active-sub'); if (activeSubEl) activeSubEl.textContent = blocked ? (blocked + ' blocked by ERE') : (pipeline[0] ? 'Case #' + pipeline[0].caseId + ' in progress' : 'None in progress');
+  var shadowEl = document.getElementById('at-stat-shadow'); if (shadowEl) shadowEl.textContent = String(shadow);
+  var fixedEl = document.getElementById('at-stat-fixed'); if (fixedEl) fixedEl.textContent = String(fixed);
+  var timeEl = document.getElementById('at-stat-time'); if (timeEl) timeEl.textContent = avgDays != null ? (avgDays + ' days') : '—';
 };
 
 // Sign-off + export actions
@@ -26890,6 +26966,22 @@ window.refreshGenOverviewPreviews = refreshGenOverviewPreviews;
 function buildGenesis(org) {
  const g = GENESIS_DATA[org];
  if(!g) return;
+
+ // 9/26 -- top stat row used to be 4 hand-typed numbers that never changed with org
+ // (found during the tomorrow-scope investigation pass). Wired to real per-org arrays:
+ // cohorts (real cohort tests) and coverageGapCards (real coverage-gap tests).
+ var genCohorts = g.cohorts || [];
+ var genGaps = g.coverageGapCards || [];
+ var genActive = genCohorts.filter(function(c){return c.status==='Running';}).length + genGaps.filter(function(c){return c.result==='Testing in progress';}).length;
+ var genComplete = genCohorts.filter(function(c){return c.status==='Complete';}).length;
+ var genCoverageRate = genCohorts.length ? Math.round((genComplete / genCohorts.length) * 100) : 0;
+ var genPassed = genCohorts.filter(function(c){return c.c==='green';}).length + genGaps.filter(function(c){return c.c==='green';}).length;
+ var genActiveEl = document.getElementById('gen-stat-active'); if (genActiveEl) genActiveEl.textContent = String(genActive);
+ var genModelsEl = document.getElementById('gen-stat-models'); if (genModelsEl) genModelsEl.textContent = '2';
+ var genModelsSubEl = document.getElementById('gen-stat-models-sub'); if (genModelsSubEl) genModelsSubEl.textContent = (g.abCurrentLabel || '').split(' — ')[0] + ' · shadow candidate';
+ var genCovEl = document.getElementById('gen-stat-coverage'); if (genCovEl) genCovEl.textContent = genCoverageRate + '%';
+ var genCovSubEl = document.getElementById('gen-stat-coverage-sub'); if (genCovSubEl) genCovSubEl.textContent = genCoverageRate < 90 ? 'Coverage gap detected' : 'Full coverage';
+ var genPassedEl = document.getElementById('gen-stat-passed'); if (genPassedEl) genPassedEl.textContent = String(genPassed);
 
  const at=document.getElementById('gen-alert-title'); if(at) at.textContent=g.alertTitle;
  const ac=document.getElementById('gen-alert-cohorts'); if(ac) ac.innerHTML=g.alertCohorts.map(c=>`<span class="cohort-chip">🧪 ${c}</span>`).join('');
@@ -35446,7 +35538,7 @@ window.updateLibTabCounts = function() {
   if (cc) cc.textContent = cohortCount || '—';
 };
 
-window.__libFilters = { industry: 'all', statuses: { active: true, placeholder: true, roadmap: true } };
+window.__libFilters = { industry: 'all', industryUserSet: false, lastOrgSeen: null, statuses: { active: true, placeholder: true, roadmap: true } };
 
 window.renderLibUseCases = function() {
   var container = document.getElementById('lib-tab-content-usecases');
@@ -35462,14 +35554,24 @@ window.renderLibUseCases = function() {
   // Default to the industry you're currently viewing, not an "All Industries" view --
   // you can still hop to another industry's library from here, you just don't land
   // on a mixed-everything view first.
+  // 9/26 -- this used to force-reset __libFilters.industry back to the current org on
+  // EVERY render, including a re-render triggered by simply re-opening/re-visiting this
+  // tab -- so picking, say, Finance, then switching tabs and coming back silently reverted
+  // the pill to whatever org you're viewing (looked exactly like "only ever shows A&D" if
+  // you were viewing the A&D org). Now it only applies that default the first time this
+  // tab is opened, or after the org itself changes -- an explicit pill click sticks.
   var __libCurOrg = (typeof currentOrg !== 'undefined' && currentOrg) || window.currentOrg || 'ad';
-  window.__libFilters.industry = __libCurOrg;
+  if (!window.__libFilters.industryUserSet || window.__libFilters.lastOrgSeen !== __libCurOrg) {
+    window.__libFilters.industry = __libCurOrg;
+    window.__libFilters.industryUserSet = false;
+  }
+  window.__libFilters.lastOrgSeen = __libCurOrg;
 
   var html = '<div style="display:flex;gap:14px;margin-bottom:14px;flex-wrap:wrap;align-items:center;">';
   html += '<div style="display:flex;gap:6px;">';
   ['fin', 'health', 'ad', 'fed'].forEach(function(ind) {
     var label = { fin: 'Finance', health: 'Healthcare', ad: 'A&D', fed: 'Federal' }[ind];
-    var isCur = ind === __libCurOrg;
+    var isCur = ind === window.__libFilters.industry;
     html +=
       '<button class="lib-filter-btn' + (isCur ? ' active' : '') + '" data-lib-filter-ind="' +
       ind +
@@ -35506,6 +35608,7 @@ window.renderLibUseCases = function() {
 window.cardinalLibFilterUseCases = function(filterType, value, btn) {
   if (filterType === 'industry') {
     window.__libFilters.industry = value;
+    window.__libFilters.industryUserSet = true;
     document.querySelectorAll('[data-lib-filter-ind]').forEach(function(b) {
       b.style.background = 'transparent';
       b.style.border = '1px solid rgba(167, 167, 167,0.18)';
