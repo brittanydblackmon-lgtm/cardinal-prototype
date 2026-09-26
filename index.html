@@ -7512,6 +7512,7 @@ Template Overview
           <span class="dot"></span>
           <span id="tsv2-live-text">Last calculated <strong id="tsv2-last-calc" style="color:var(--chrome2)">2 minutes ago</strong></span>
         </div>
+        <div id="tsv2-week-delta" style="margin-top:6px;font-size:11px;color:var(--muted)"></div>
         <div class="tsv2-subscores" style="margin-top:14px">
           <div class="tsv2-sub-pill" id="tsv2-pill-bias" onclick="showScreen('eden', null)">
             <span class="pill-label" id="tsv2-pill-bias-label">Bias Detection</span>
@@ -7576,8 +7577,9 @@ Template Overview
       </div>
     </div>
     <div class="tsv2-eve-tabs" id="tsv2-eve-tabs">
-      <button data-tf="monthly"   onclick="tsv2SetEveTimeframe('monthly', this)">Monthly · April 2026</button>
-      <button class="active" data-tf="quarterly" onclick="tsv2SetEveTimeframe('quarterly', this)">Quarterly · Q1 2026</button>
+      <button data-tf="daily"     onclick="tsv2SetEveTimeframe('daily', this)">Daily · Sep 25</button>
+      <button data-tf="monthly"   onclick="tsv2SetEveTimeframe('monthly', this)">Monthly · September 2026</button>
+      <button class="active" data-tf="quarterly" onclick="tsv2SetEveTimeframe('quarterly', this)">Quarterly · Q3 2026</button>
       <button data-tf="ytd"       onclick="tsv2SetEveTimeframe('ytd', this)">YTD · 12 Months</button>
     </div>
     <div class="tsv2-eve-body" id="tsv2-eve-body"></div>
@@ -7592,6 +7594,7 @@ Template Overview
     <div class="tsv2-section-title" id="tsv2-history-title">Trust Score History</div>
     <div class="tsv2-section-sub" id="tsv2-history-sub">Hover any month for what was happening · Dashed line = 80 certification threshold</div>
     <div class="tsv2-history-tf" id="tsv2-history-tf">
+      <button data-range="day"     onclick="tsv2SetHistoryRange('day', this)">Day</button>
       <button data-range="week"    onclick="tsv2SetHistoryRange('week', this)">Week</button>
       <button data-range="month"   onclick="tsv2SetHistoryRange('month', this)">Month</button>
       <button data-range="quarter" onclick="tsv2SetHistoryRange('quarter', this)">Quarter</button>
@@ -7599,9 +7602,13 @@ Template Overview
     </div>
     <div class="tsv2-history-toggle" id="tsv2-history-toggle">
       <button class="active" data-series="score"      onclick="tsv2SetHistorySeries('score', this)">Trust Score</button>
-      <button data-series="bias"       onclick="tsv2SetHistorySeries('bias', this)">Bias</button>
-      <button data-series="fraud"      onclick="tsv2SetHistorySeries('fraud', this)">Fraud</button>
-      <button data-series="compliance" onclick="tsv2SetHistorySeries('compliance', this)">Compliance</button>
+      <button data-series="bias"         onclick="tsv2SetHistorySeries('bias', this)">Fairness</button>
+      <button data-series="fraud"        onclick="tsv2SetHistorySeries('fraud', this)">Fraud</button>
+      <button data-series="transparency" onclick="tsv2SetHistorySeries('transparency', this)">Transparency</button>
+      <button data-series="privacy"      onclick="tsv2SetHistorySeries('privacy', this)">Privacy</button>
+      <button data-series="governance"   onclick="tsv2SetHistorySeries('governance', this)">Governance</button>
+      <button data-series="monitoring"   onclick="tsv2SetHistorySeries('monitoring', this)">Monitoring</button>
+      <button data-series="compliance"   onclick="tsv2SetHistorySeries('compliance', this)">Compliance</button>
     </div>
     <div class="tsv2-history-canvas-wrap" id="tsv2-history-canvas-wrap">
       <div id="tsv2-history-svg" style="position:absolute;inset:0;width:100%;height:100%"></div>
@@ -7667,6 +7674,7 @@ Template Overview
   <div class="tsv2-section">
     <div class="tsv2-section-title" id="tsv2-path-title">What's Blocking Your Certification</div>
     <div class="tsv2-section-sub" id="tsv2-path-sub">Resolve every blocker, model the upside, and watch the downside risks.</div>
+    <div id="tsv2-path-top-callout"></div>
     <div class="tsv2-path-grid">
       <div class="tsv2-path-col col-low">
         <div class="tsv2-path-col-title" id="tsv2-path-low-title">Why is your score low?</div>
@@ -13487,7 +13495,7 @@ function edoRenderEveBodyCore(lens, d) {
 function edoBuildEveExecutiveSection(lens, d, org) {
   var idP = lens === 'obsidian' ? 'obs' : 'eden';
   var tf = lens === 'obsidian' ? window.__edo.eveTfObsidian : window.__edo.eveTfEden;
-  var tabs = [['monthly', 'Monthly · April 2026'], ['quarterly', 'Quarterly · Q1 2026'], ['ytd', 'YTD · 12 Months']];
+  var tabs = [['daily', 'Daily · Sep 25'], ['monthly', 'Monthly · September 2026'], ['quarterly', 'Quarterly · Q3 2026'], ['ytd', 'YTD · 12 Months']];
   var tabHtml = tabs.map(function (t) {
     var on = tf === t[0];
     return '<button type="button" class="' + (on ? 'active' : '') + '" data-tf="' + t[0] + '"' + edoOn('edoSetEveTimeframeCore', [lens, t[0]]) + edoT('Reporting Period', 'Reporting Period / Switch between monthly, quarterly, or YTD analysis. Each timeframe pulls fresh data from Echo Core.') + '>' + t[1] + '</button>';
@@ -14409,7 +14417,12 @@ var CARDINAL_DATA_TS_EXT = {
       {month:'Jan 2026', score:71, biasScore:65, fraudScore:89, complianceScore:79, annotation:'Eden flagged Personnel v2.4 — DI 0.67'},
       {month:'Feb 2026', score:71, biasScore:65, fraudScore:90, complianceScore:80, annotation:null},
       {month:'Mar 2026', score:72, biasScore:66, fraudScore:90, complianceScore:81, annotation:'Atonement shadow deploy began'},
-      {month:'Apr 2026', score:74, biasScore:67, fraudScore:91, complianceScore:82, annotation:null}
+      {month:'Apr 2026', score:74, biasScore:67, fraudScore:91, complianceScore:82, annotation:null},
+      {month:'May 2026', score:76, biasScore:69, fraudScore:91, complianceScore:82, annotation:'Personnel v2.5 rollout reached 60% of traffic'},
+      {month:'Jun 2026', score:77, biasScore:70, fraudScore:91, complianceScore:83, annotation:null},
+      {month:'Jul 2026', score:75, biasScore:68, fraudScore:90, complianceScore:82, annotation:'DoD AI Ethics audit remained overdue'},
+      {month:'Aug 2026', score:73, biasScore:66, fraudScore:90, complianceScore:81, annotation:'Mission Readiness v1.1 drift flagged'},
+      {month:'Sep 2026', score:74, biasScore:67, fraudScore:91, complianceScore:82, annotation:null}
     ],
     regulationsList: [
       {name:'DoD AI Ethics', score:71.2, status:'below threshold', key:'dod'},
@@ -14464,7 +14477,12 @@ var CARDINAL_DATA_TS_EXT = {
       {month:'Jan 2026', score:79, biasScore:72, fraudScore:87, complianceScore:74, annotation:null},
       {month:'Feb 2026', score:78, biasScore:71, fraudScore:87, complianceScore:73, annotation:'Credit v3.4 issue caught — v3.5 in shadow deploy'},
       {month:'Mar 2026', score:80, biasScore:73, fraudScore:88, complianceScore:75, annotation:null},
-      {month:'Apr 2026', score:81, biasScore:74, fraudScore:88, complianceScore:76, annotation:null}
+      {month:'Apr 2026', score:81, biasScore:74, fraudScore:88, complianceScore:76, annotation:null},
+      {month:'May 2026', score:82, biasScore:75, fraudScore:89, complianceScore:77, annotation:'Credit v3.5 reached full traffic rollout'},
+      {month:'Jun 2026', score:83, biasScore:76, fraudScore:89, complianceScore:77, annotation:null},
+      {month:'Jul 2026', score:82, biasScore:75, fraudScore:88, complianceScore:76, annotation:null},
+      {month:'Aug 2026', score:80, biasScore:73, fraudScore:88, complianceScore:75, annotation:'NYC Local Law 144 audit packet filed'},
+      {month:'Sep 2026', score:81, biasScore:74, fraudScore:88, complianceScore:76, annotation:null}
     ],
     regulationsList: [
       {name:'ECOA', score:68.3, status:'below threshold', key:'ecoa'},
@@ -14521,7 +14539,12 @@ var CARDINAL_DATA_TS_EXT = {
       {month:'Jan 2026', score:81, biasScore:79, fraudScore:83, complianceScore:77, annotation:null},
       {month:'Feb 2026', score:82, biasScore:80, fraudScore:84, complianceScore:77, annotation:null},
       {month:'Mar 2026', score:82, biasScore:80, fraudScore:84, complianceScore:77, annotation:'Claims v1.9 issue detected — awaiting CMO'},
-      {month:'Apr 2026', score:83, biasScore:81, fraudScore:84, complianceScore:77, annotation:null}
+      {month:'Apr 2026', score:83, biasScore:81, fraudScore:84, complianceScore:77, annotation:null},
+      {month:'May 2026', score:84, biasScore:82, fraudScore:85, complianceScore:78, annotation:'Claims v1.9 CMO sign-off received'},
+      {month:'Jun 2026', score:84, biasScore:82, fraudScore:84, complianceScore:77, annotation:null},
+      {month:'Jul 2026', score:83, biasScore:81, fraudScore:84, complianceScore:77, annotation:null},
+      {month:'Aug 2026', score:82, biasScore:80, fraudScore:84, complianceScore:76, annotation:'CMS audit packet submitted'},
+      {month:'Sep 2026', score:83, biasScore:81, fraudScore:84, complianceScore:77, annotation:null}
     ],
     regulationsList: [
       {name:'ACA Section 1557', score:64.8, status:'below threshold', key:'aca1557'},
@@ -14637,9 +14660,10 @@ var CARDINAL_DATA_TS_V2 = {
       topFinding:'Hispanic technicians at Camp Pendleton are 2.3x more likely to be denied premium-base placement than the baseline group. This is the violation that triggered Case #AD-2847.'
     },
     eveNarrativeByTimeframe: {
-      monthly:'April saw a 2-point drop, driven entirely by Personnel Assignment v2.4. The model crossed the disparate-impact threshold on April 3 when ZIP-code-correlated patterns surfaced in technician assignments. Sentinel flagged it within hours; Atonement has the fix queued. We expect a 4-point rebound when the patch deploys to 100%.',
-      quarterly:'Atlas Defense Systems Q1 2026 Trust Score sits at 74, below the 80 certification threshold and in the 38th percentile of A&D peers. The driver is Personnel Assignment v2.4, an AI model used to allocate technicians across forward bases. Eden Core flagged a disparate impact ratio of 0.67 in January after the demographic_classification feature showed a 0.81 correlation with assignment outcomes — Hispanic technicians were 2.3x more likely to be denied premium-base placement. 847 service members were affected. Total regulatory and litigation exposure is $67M ($28M DoD penalties, $39M projected litigation).\n\nAtonement Core is running a shadow deployment of Personnel v2.5 at 5% of live traffic with bias metrics tracking back toward the 0.80 floor. Remediation is 35% complete; full rollout estimated May 15. The DoD AI Ethics audit is overdue and must be filed via Compliance Exchange this week.\n\nRecommended board action: approve full v2.5 traffic expansion and authorize remediation cohort outreach to all 847 affected service members.',
-      ytd:'Year-to-date, Trust Score has moved from 78 (May 2025) to 74 (April 2026) — net -4 points across the year. The decline is not gradual: it concentrates entirely in Q1 2026 when Personnel Assignment v2.4 entered violation. Pre-violation, the score was tracking at or above the 80 certification threshold for 7 consecutive months. Atlas Defense Systems has been on Cardinal for 12 months; the platform caught the v2.4 issue 6.2 days before any external regulator inquiry. Once the v2.5 fix completes, projected return to 82 by end of Q2.'
+      daily:'As of today, September 25, Atlas Defense Systems’ Trust Score is 74. The drag is still Personnel Assignment v2.4 — its disparate impact ratio remains below the 0.80 floor while the v2.5 shadow deploy holds at 35% remediation complete. No new incidents in the last 24 hours; the open item is the DoD AI Ethics audit, still overdue and needing to be filed via Compliance Exchange.',
+      monthly:'August into September held roughly flat after a mid-quarter dip. Personnel Assignment v2.4 is still the driver: the model crossed the disparate-impact threshold back in April when ZIP-code-correlated patterns surfaced in technician assignments, and a Mission Readiness v1.1 drift flag added a second point of pressure in August. Sentinel flagged both within hours; Atonement has the v2.4 fix queued at 35% rollout. We expect a rebound toward 78 as v2.5 reaches full traffic.',
+      quarterly:'Atlas Defense Systems Q3 2026 Trust Score sits at 74, below the 80 certification threshold and in the 38th percentile of A&D peers. The driver is Personnel Assignment v2.4, an AI model used to allocate technicians across forward bases. Eden Core flagged a disparate impact ratio of 0.67 in January after the demographic_classification feature showed a 0.81 correlation with assignment outcomes — Hispanic technicians were 2.3x more likely to be denied premium-base placement. 847 service members were affected. Total regulatory and litigation exposure is $67M ($28M DoD penalties, $39M projected litigation).\n\nAtonement Core is running a shadow deployment of Personnel v2.5, now at 60% of live traffic as of Q2, with bias metrics tracking back toward the 0.80 floor. Remediation is 35% complete. The DoD AI Ethics audit is overdue and must be filed via Compliance Exchange this week.\n\nRecommended board action: approve full v2.5 traffic expansion and authorize remediation cohort outreach to all 847 affected service members.',
+      ytd:'Year-to-date, Trust Score has moved from 78 (May 2025) to 74 (September 2026) — net -4 points across the year. The decline is not gradual: it concentrates in Q1 2026 when Personnel Assignment v2.4 entered violation, with a second dip in Q3 when a Mission Readiness v1.1 drift flag added pressure. Pre-violation, the score was tracking at or above the 80 certification threshold for 7 consecutive months. Atlas Defense Systems has been on Cardinal for 16 months; the platform caught the v2.4 issue 6.2 days before any external regulator inquiry. Once the v2.5 fix reaches full traffic, projected return to 82.'
     }
   },
   fin: {
@@ -14692,9 +14716,10 @@ var CARDINAL_DATA_TS_V2 = {
       topFinding:'Black applicants in ZIP 10453 (Morris Heights) are 2.1x more likely to be denied than the baseline group, despite comparable credit profiles. This is the ECOA violation that triggered Case #FIN-1203.'
     },
     eveNarrativeByTimeframe: {
-      monthly:'April saw a 1-point gain. Credit Scoring v3.5 shadow deployment expanded from 5% to 35% of live traffic with bias metrics tracking back toward the 0.80 floor. 687 of the 1,203 affected applicants have been re-approved — 57% of the remediation cohort complete. NYC Law 144 audit packet is 80% prepared.',
-      quarterly:'Blackmoor Wealth Group Q1 2026 Trust Score is 81, above the 80 certification threshold and in the 64th percentile of finance peers. Cardinal ECOA certification is active. The current open issue is Credit Scoring v3.4, which Eden Core flagged in February for a 0.82 correlation between zip_code and race. 1,203 applicants in protected ZIP clusters were affected, with an approval disparity of 2.1x. Total exposure is $73M ($40M ECOA fines, $33M CFPB action).\n\nCredit v3.5 is running in Atonement shadow deployment with the proxy variable removed; 687 of the 1,203 affected applicants have already been re-approved (57% of the remediation cohort complete). Full v3.5 rollout is on track for May 8, ahead of the NYC Local Law 144 audit deadline of May 14. Remaining work: complete remediation cohort outreach and finalize the NYC audit packet via Compliance Exchange.\n\nCardinal certification renews October 12, 2026.',
-      ytd:'Year-to-date, Trust Score has moved from 76 (May 2025) to 81 (April 2026) — net +5 points. The trajectory is steady improvement with two minor incidents caught early (Aug 2025 Credit v3.2 ECOA flag, Feb 2026 Credit v3.4 catch). Cardinal certification is active and renews October 12, 2026. Blackmoor Wealth has been on Cardinal for 12 months; bias-fraud connection caught 3 fraud rings in Q4 2025 that traditional fraud-only systems missed.'
+      daily:'As of today, September 25, Blackmoor Wealth’s Trust Score is 81. Credit Scoring v3.5 has been at full traffic since June with no new proxy flags in the last 24 hours. The open item is the NYC Local Law 144 audit packet, filed in August and awaiting final sign-off.',
+      monthly:'September held steady after Credit Scoring v3.5 reached full traffic in June. No new bias flags in the last 30 days. The NYC Law 144 audit packet was filed in August, ahead of the fiscal-year deadline. Remediation cohort outreach from the Q1 v3.4 issue is fully closed — all 1,203 affected applicants have been re-approved or resolved.',
+      quarterly:'Blackmoor Wealth Group Q3 2026 Trust Score is 81, above the 80 certification threshold and in the 64th percentile of finance peers. Cardinal ECOA certification is active. Credit Scoring v3.5 completed its shadow-to-full rollout in June with the zip_code proxy variable fully removed, and the NYC Local Law 144 audit packet was filed in August. Total exposure from the earlier Credit v3.4 issue has closed out — all 1,203 affected applicants were re-approved or otherwise resolved.\n\nRemaining work this quarter: hold monitoring coverage above 90% and complete the ECOA renewal filing.\n\nCardinal certification renews October 12, 2026.',
+      ytd:'Year-to-date, Trust Score has moved from 76 (May 2025) to 81 (September 2026) — net +5 points. The trajectory is steady improvement with three incidents caught and resolved early (Aug 2025 Credit v3.2 ECOA flag, Feb 2026 Credit v3.4 catch, Aug 2026 NYC Law 144 filing). Cardinal certification is active and renews October 12, 2026. Blackmoor Wealth has been on Cardinal for 16 months; bias-fraud connection caught 3 fraud rings in Q4 2025 that traditional fraud-only systems missed.'
     }
   },
   health: {
@@ -14744,9 +14769,10 @@ var CARDINAL_DATA_TS_V2 = {
       topFinding:'Patients 75+ requesting Specialty care are 2.3x more likely to have claims denied than the baseline group. This is the ACA Section 1557 violation that triggered Case #HS-2847.'
     },
     eveNarrativeByTimeframe: {
-      monthly:'April held steady at 83. Claims Adjudication v1.9 remediation is blocked awaiting CMO approval — 0 of 2,847 affected claims re-evaluated this month. CMS audit deadline is in 30 days. Recommend escalating CMO sign-off this week to start Atonement shadow deploy.',
-      quarterly:'Sterling Health Q1 2026 Trust Score is 83, above the 80 certification threshold and in the 71st percentile of healthcare peers. Cardinal ACA Section 1557 certification is active. The current open issue is Claims Adjudication v1.9, which Eden Core flagged in March for a 0.81 correlation between an age_cost_proxy feature and claim adjudication outcomes. 2,847 patient claims were affected, with a 2.3x disparity for patients 65 and older receiving specialty care. Total exposure is $150M ($65M ACA penalties, $85M CMS exclusion risk).\n\nRemediation is currently blocked awaiting CMO sign-off to begin shadow deployment — 0 of 2,847 claims re-evaluated to date. CMS audit deadline is in 30 days.\n\nRecommended board action: escalate CMO approval this week to start the Atonement shadow deploy and unblock the remediation cohort. Estimated full remediation completion June 1.',
-      ytd:'Year-to-date, Trust Score has moved from 80 (May 2025) to 83 (April 2026) — net +3 points despite an active ACA 1557 violation in flight. Cardinal certification is active. Sterling Health has been on Cardinal for 12 months; the platform caught Claims v1.9 age_cost_proxy issue 9.4 days before any patient complaint surfaced. CMO approval remains the gating item to begin remediation.'
+      daily:'As of today, September 25, Sterling Health’s Trust Score is 83. Claims Adjudication v1.9 remains in CMO-approved remediation with no new incidents in the last 24 hours. The CMS audit packet was submitted in August and is awaiting review.',
+      monthly:'September held steady at 83. Claims Adjudication v1.9 received CMO sign-off in May and has been in active Atonement remediation since; the CMS audit packet was submitted in August. Recommend monitoring for the CMS response, expected within 45 days.',
+      quarterly:'Sterling Health Q3 2026 Trust Score is 83, above the 80 certification threshold and in the 71st percentile of healthcare peers. Cardinal ACA Section 1557 certification is active. Claims Adjudication v1.9, flagged in March for a 0.81 correlation between an age_cost_proxy feature and claim adjudication outcomes, received CMO sign-off in May and has been in active remediation since. The CMS audit packet was submitted in August, ahead of the internal review deadline.\n\nRemaining work: await CMS review response and complete final re-evaluation of the affected claims cohort.',
+      ytd:'Year-to-date, Trust Score has moved from 80 (May 2025) to 83 (September 2026) — net +3 points despite an active ACA 1557 violation resolved mid-year. Cardinal certification is active. Sterling Health has been on Cardinal for 16 months; the platform caught the Claims v1.9 age_cost_proxy issue 9.4 days before any patient complaint surfaced, and CMO approval in May unblocked full remediation.'
     }
   }
 };
@@ -16763,6 +16789,41 @@ function dashSyncAllTrustScoreDisplays(value, delta) {
       el.style.color = subColor;
       var barEl = document.getElementById(barId);
       if (barEl) { barEl.style.width = rounded + '%'; barEl.style.background = subColor; barEl.style.color = subColor; }
+      // 9/26 -- Brittany caught the Dashboard's Fairness card (dr-dim-fairness-num,
+      // this loop) reading 59 while Eden Core's own hero ring said 67 for the exact
+      // same number, and the same thing for Fraud vs Obsidian's hero (82 vs 91). Root
+      // cause: Eden/Obsidian's own hero gauges (eden-gauge-num/-ring,
+      // obsidian-gauge-num/-ring, via edoWireHeroGauge) are set once from the static
+      // d.biasScore/d.fraudScore seed at screen-render and never touched again --
+      // meanwhile this Dashboard dims loop keeps drifting dr-dim-fairness-num and
+      // dr-dim-fraud-num live. Rather than maintain a second independent drift base
+      // for Eden/Obsidian (which could round differently and drift apart on its own),
+      // mirror this exact computed value straight onto the matching Core's hero so
+      // there is only ever one live number for "Fairness"/"Fraud", just displayed in
+      // two places.
+      if (d.id === 'fairness') {
+        var edenGaugeNum = document.getElementById('eden-gauge-num');
+        var edenGaugeRing = document.getElementById('eden-gauge-ring');
+        if (edenGaugeNum) { edenGaugeNum.textContent = String(rounded); edenGaugeNum.setAttribute('fill', subColor); }
+        if (edenGaugeRing) {
+          var edenCirc = 2 * Math.PI * 86;
+          edenGaugeRing.style.stroke = subColor;
+          edenGaugeRing.style.strokeDashoffset = (edenCirc * (1 - Math.max(0, Math.min(100, rounded)) / 100)).toFixed(2);
+        }
+        var edenSweep = document.getElementById('eden-sweep');
+        if (edenSweep) edenSweep.setAttribute('transform', 'rotate(' + (-90 + rounded * 3.6) + ' 100 100)');
+      } else if (d.id === 'fraud') {
+        var obsGaugeNum = document.getElementById('obsidian-gauge-num');
+        var obsGaugeRing = document.getElementById('obsidian-gauge-ring');
+        if (obsGaugeNum) { obsGaugeNum.textContent = String(rounded); obsGaugeNum.setAttribute('fill', subColor); }
+        if (obsGaugeRing) {
+          var obsCirc = 2 * Math.PI * 86;
+          obsGaugeRing.style.stroke = subColor;
+          obsGaugeRing.style.strokeDashoffset = (obsCirc * (1 - Math.max(0, Math.min(100, rounded)) / 100)).toFixed(2);
+        }
+        var obsSweep = document.getElementById('obsidian-sweep');
+        if (obsSweep) obsSweep.setAttribute('transform', 'rotate(' + (-90 + rounded * 3.6) + ' 100 100)');
+      }
     });
   }
 }
@@ -21716,8 +21777,42 @@ function showScreen(name, navEl) {
     try { if (typeof buildScoreDims === 'function') buildScoreDims(); } catch(_e2) {}
     try { if (typeof buildTrustScoreNew === 'function') buildTrustScoreNew(currentOrg); } catch(_e3) {}
   }
- if(name==='eden') { setTimeout(function(){ try{ var o=currentOrg||window.currentOrg||'ad'; if(typeof renderEden==='function') renderEden(o); }catch(e){} }, 50); }
- if(name==='obsidian') { setTimeout(function(){ try{ var o2=currentOrg||window.currentOrg||'ad'; if(typeof renderObsidian==='function') renderObsidian(o2); }catch(e2){} }, 50); }
+ if(name==='eden') {
+   setTimeout(function(){ try{ var o=currentOrg||window.currentOrg||'ad'; if(typeof renderEden==='function') renderEden(o); }catch(e){} }, 50);
+   // 9/26 -- Eden's own hero renders from the static seed every time this screen opens
+   // (renderEden -> edoBuildEdenHeroSection -> d.biasScore), which can already be stale
+   // vs. the Dashboard's live-drifted Fairness number if the drift has moved since the
+   // last full page load. Force an immediate resync from whatever the Dashboard's
+   // Fairness card currently shows, instead of waiting for the next drift tick to
+   // happen to touch this dimension.
+   setTimeout(function(){
+     try {
+       var fairEl = document.getElementById('dr-dim-fairness-num');
+       var edenNum = document.getElementById('eden-gauge-num');
+       if (fairEl && edenNum) {
+         var fv = parseInt(fairEl.textContent, 10);
+         if (!isNaN(fv) && typeof edoWireHeroGauge === 'function' && typeof edoGaugeColor === 'function') {
+           edoWireHeroGauge('eden', fv, edoGaugeColor(fv, false));
+         }
+       }
+     } catch (_eResync) {}
+   }, 60);
+ }
+ if(name==='obsidian') {
+   setTimeout(function(){ try{ var o2=currentOrg||window.currentOrg||'ad'; if(typeof renderObsidian==='function') renderObsidian(o2); }catch(e2){} }, 50);
+   setTimeout(function(){
+     try {
+       var fraudEl = document.getElementById('dr-dim-fraud-num');
+       var obsNum = document.getElementById('obsidian-gauge-num');
+       if (fraudEl && obsNum) {
+         var fdv = parseInt(fraudEl.textContent, 10);
+         if (!isNaN(fdv) && typeof edoWireHeroGauge === 'function' && typeof edoGaugeColor === 'function') {
+           edoWireHeroGauge('obsidian', fdv, edoGaugeColor(fdv, true));
+         }
+       }
+     } catch (_oResync) {}
+   }, 60);
+ }
  if(name==='sentinel') {
    if (navEl) {
      window.__sentinelFocusCaseId = null;
@@ -36179,6 +36274,29 @@ function tsv2BuildHero(d) {
     status.style.color = color;
   }
 
+  // 9/26 -- Brittany asked for a "what changed since last week" indicator on the
+  // hero, separate from having to read the full 12-month history chart. Compares
+  // the live score against the score 7 days back (the same synthetic week series
+  // the History chart's own "Week" tab already generates), so it's always a real
+  // week-over-week delta rather than a static number.
+  var weekDeltaEl = document.getElementById('tsv2-week-delta');
+  if (weekDeltaEl && typeof tsv2GetRangeSeries === 'function') {
+    try {
+      var weekSeries = tsv2GetRangeSeries(d, 'week');
+      if (weekSeries && weekSeries.length) {
+        var weekAgoScore = weekSeries[0].score;
+        var wdelta = score - weekAgoScore;
+        if (wdelta === 0) {
+          weekDeltaEl.textContent = 'Unchanged from last week';
+        } else {
+          var wArrow = wdelta > 0 ? '▲' : '▼';
+          var wColor = wdelta > 0 ? '#22c55e' : '#ef4444';
+          weekDeltaEl.innerHTML = '<span style="color:' + wColor + ';font-weight:700">' + wArrow + ' ' + (wdelta > 0 ? '+' : '') + wdelta + '</span> since last week';
+        }
+      }
+    } catch (_wd) {}
+  }
+
   var certWrap = document.getElementById('tsv2-cert-badge-wrap');
   if (certWrap) {
     var isCertified = !!(d.certStatus && /^certified/i.test(d.certStatus) && !/not.+certified/i.test(d.certStatus));
@@ -36239,7 +36357,12 @@ function tsv2BuildHero(d) {
 
 // ── Section 2: 12-Month History (D3.js) — shared renderer (Trust Score + Eden + Obsidian) ──
 function tsv2HistorySeriesKey() {
-  return ({score:'score', bias:'biasScore', fraud:'fraudScore', compliance:'complianceScore'})[TSV2_CURRENT_SERIES] || 'score';
+  // 9/26 -- Brittany: the Dashboard shows all 6 governance dimensions (Fairness,
+  // Fraud, Transparency, Privacy, Governance & Security Compliance, Post-Deployment
+  // Monitoring), so the Trust Score page's own History chart should let you filter
+  // by all of them too, not just the legacy 3-metric Bias/Fraud/Compliance split.
+  // Added as new tabs alongside the existing ones rather than replacing them.
+  return ({score:'score', bias:'biasScore', fraud:'fraudScore', compliance:'complianceScore', transparency:'transparencyScore', privacy:'privacyScore', governance:'governanceScore', monitoring:'monitoringScore'})[TSV2_CURRENT_SERIES] || 'score';
 }
 
 /** Same visual recipe as Trust Score history: scales, grid, threshold, gradient area, stroke, dots, pins. */
@@ -36650,6 +36773,30 @@ function tsv2BuildPath(d) {
     : (d.certBlockers || []).map(function (b) {
         return { title: b.text || String(b), severity:'High', explanation:'', scoreImpact:'+3 points to Trust Score', fixCore:'Atonement Core', fixScreen: b.fixScreen || 'atonement', eta: d.remediationETA || '' };
       });
+  // 9/26 -- Brittany: the three Path to Certification columns are useful but a lot
+  // to scan for someone who just wants the headline. This is a one-line summary
+  // of the single highest-impact blocker and where fixing just that one puts you,
+  // computed from the same blockers list rendered below (not a separate guess).
+  var calloutEl = document.getElementById('tsv2-path-top-callout');
+  if (calloutEl) {
+    var liveForCallout = (typeof window._dashTrustDriftValue === 'number' && window.currentOrg === (window.TSV2_LAST_ORG || window.currentOrg))
+      ? Math.round(window._dashTrustDriftValue)
+      : (parseInt(d.trustScoreDisplay, 10) || 0);
+    var topBlocker = null, topImpact = 0;
+    blockers.forEach(function (b) {
+      var m = String(b.scoreImpact || '').match(/([+\-]?\s*[0-9]+(?:\.[0-9]+)?)/);
+      var n = m ? Math.abs(parseFloat(m[1].replace(/\s+/g, ''))) : 0;
+      if (n > topImpact) { topImpact = n; topBlocker = b; }
+    });
+    if (topBlocker && topImpact > 0) {
+      var targetScore = Math.min(100, Math.round(liveForCallout + topImpact));
+      calloutEl.innerHTML = '<div style="margin:10px 0 16px;padding:12px 16px;background:rgba(34,197,94,.06);border:1px solid rgba(34,197,94,.22);border-radius:8px;font-size:12px;color:var(--text)">' +
+        'Fix just <strong>' + (topBlocker.title || 'your top blocker') + '</strong> and your score goes to <strong style="color:#22c55e">' + targetScore + '</strong>.</div>';
+    } else {
+      calloutEl.innerHTML = '';
+    }
+  }
+
   var lowEl = document.getElementById('tsv2-path-low');
   if (lowEl) {
     if (!blockers.length) {
@@ -36760,17 +36907,30 @@ function tsv2BuildPath(d) {
   var miniRing = document.getElementById('tsv2-projected-mini-ring');
   var miniNum = document.getElementById('tsv2-projected-mini-num');
   var miniSub = document.getElementById('tsv2-projected-mini-sub');
-  var projected = d.projectedScoreAfterFixes || d.projectedScore;
   // 9/26 -- Brittany: "the math is not mathing" on the points-to-certification
-  // projection. Root cause: `current` was read from the static seed
-  // (d.trustScoreDisplay), same bug class as the hero ring and Eve narrative --
-  // as the live drift moved the actual on-screen score, this "Up N points from
-  // current" line kept computing its delta against the frozen seed number
-  // instead of what was actually on screen, so the math looked wrong. Same
-  // live-value-preferring read used in tsv2BuildHero.
+  // projection. Two bugs here, not one:
+  // (1) `current` was read from the static seed (d.trustScoreDisplay), same bug
+  //     class as the hero ring and Eve narrative -- as the live drift moved the
+  //     actual on-screen score, this "Up N points from current" line kept
+  //     computing its delta against the frozen seed number. Same
+  //     live-value-preferring read used in tsv2BuildHero.
+  // (2) Brittany caught the deeper one live: the "up to" TARGET number
+  //     (projected) was a hardcoded seed value (d.projectedScoreAfterFixes,
+  //     e.g. 82 for A&D) that never moved regardless of where the live score
+  //     actually was -- so as current climbed toward or past that fixed
+  //     number, the projection stopped making sense (a "projected after
+  //     fixes" score lower than or barely above the live current score).
+  //     Recomputed instead as current + the sum of every upside scenario's
+  //     point value (the same fixImpactScenarios list rendered in the green
+  //     "What would raise your score?" column just above) -- this is in fact
+  //     how the static 82 was originally derived (74 seed + ~7.9 pts of listed
+  //     upside, rounded), so this makes the number live instead of hardcoding
+  //     a value that was only ever correct at the seed baseline.
   var current = (typeof window._dashTrustDriftValue === 'number' && window.currentOrg === (window.TSV2_LAST_ORG || window.currentOrg))
     ? Math.round(window._dashTrustDriftValue)
     : (parseInt(d.trustScoreDisplay, 10) || 0);
+  var upsideTotal = (d.fixImpactScenarios || []).reduce(function (sum, u) { return sum + (typeof u.points === 'number' ? u.points : 0); }, 0);
+  var projected = Math.max(0, Math.min(100, Math.round(current + upsideTotal)));
   if (miniRing && miniNum && projected) {
     var circ2 = 2 * Math.PI * 50;
     var color2 = tsv2ScoreColor(projected);
@@ -37371,25 +37531,60 @@ function tsv2BuildModelLevel(d) {
 // ── Section 3: History range support (week/month/quarter/year) + caption ──
 var TSV2_CURRENT_RANGE = 'year';
 
-function tsv2SyntheticDailySeries(d, days) {
+// 9/26 -- Brittany added Transparency/Privacy/Governance/Monitoring as History
+// chart series, but the seeded trustScoreHistory month objects (and the synthetic
+// day/week/month/quarter generator below) only ever carried score/biasScore/
+// fraudScore/complianceScore -- the old 3-metric breakdown, from before the 6-dim
+// composition redesign. Rather than hand-author 4 more fields across every month
+// of seed data for every org (and every future org added), this backfills the 3
+// missing dimensions once per history array, deterministically, from that org's
+// CURRENT real dimensionScores (d.dimensionScores) plus the same "how far this
+// point sits from the current score" pull + small per-point wobble already used
+// for the hardcoded arrays -- so a bad month pulls all dimensions down together
+// the way a real correlated dip would, instead of only bias/fraud moving.
+function tsv2FillExtraDimHistory(hist, d) {
+  if (!hist || !hist.length || !d) return hist;
+  if (hist[0].transparencyScore != null) return hist;
+  var dims = d.dimensionScores || {};
+  var curT = dims.transparency != null ? dims.transparency : 78;
+  var curP = dims.privacy != null ? dims.privacy : 80;
+  var curG = dims.governance != null ? dims.governance : 75;
+  var curM = dims.monitoring != null ? dims.monitoring : 70;
+  var curScore = parseInt(d.trustScoreDisplay, 10) || (hist[hist.length - 1] ? hist[hist.length - 1].score : 75);
+  hist.forEach(function (p, i) {
+    var pull = (typeof p.score === 'number' ? p.score : curScore) - curScore;
+    p.transparencyScore = Math.max(0, Math.min(100, Math.round(curT + pull + Math.sin(i * 0.9) * 3)));
+    p.privacyScore = Math.max(0, Math.min(100, Math.round(curP + pull + Math.cos(i * 0.8) * 2)));
+    p.governanceScore = Math.max(0, Math.min(100, Math.round(curG + pull + Math.sin(i * 1.3) * 3)));
+    p.monitoringScore = Math.max(0, Math.min(100, Math.round(curM + pull + Math.cos(i * 1.1) * 3)));
+  });
+  return hist;
+}
+
+function tsv2SyntheticDailySeries(d, points, opts) {
+  var hourly = !!(opts && opts.hourly);
   var hist = (d.trustScoreHistory || []).slice();
   var endScore = parseInt(d.trustScoreDisplay, 10) || (hist.length ? hist[hist.length - 1].score : 75);
   var startScore = endScore;
   if (hist.length >= 2) {
     var prev = hist[hist.length - 2].score;
     var slopePerDay = ((endScore - prev) / 30) || 0;
-    startScore = endScore - slopePerDay * (days - 1);
+    startScore = endScore - slopePerDay * (hourly ? 1 : (points - 1));
   }
   var arr = [];
   var now = new Date();
-  for (var i = 0; i < days; i++) {
-    var t = i / Math.max(1, days - 1);
+  var unitMs = hourly ? 3600000 : 86400000;
+  for (var i = 0; i < points; i++) {
+    var t = i / Math.max(1, points - 1);
     var base = startScore + (endScore - startScore) * t;
     var jitter = ((i * 9301 + 49297) % 233280) / 233280;
-    var v = Math.round(base + (jitter - 0.5) * 1.6);
-    var dt = new Date(now.getTime() - (days - 1 - i) * 86400000);
+    var v = Math.round(base + (jitter - 0.5) * (hourly ? 1.0 : 1.6));
+    var dt = new Date(now.getTime() - (points - 1 - i) * unitMs);
+    var label = hourly
+      ? (dt.getHours() % 12 === 0 ? 12 : dt.getHours() % 12) + (dt.getHours() < 12 ? 'am' : 'pm')
+      : (dt.getMonth() + 1) + '/' + dt.getDate();
     arr.push({
-      month: (dt.getMonth() + 1) + '/' + dt.getDate(),
+      month: label,
       score: v,
       biasScore: Math.max(0, Math.min(100, v - 4)),
       fraudScore: Math.max(0, Math.min(100, v + 8)),
@@ -37401,16 +37596,17 @@ function tsv2SyntheticDailySeries(d, days) {
   for (var j = hist.length - 1; j >= 0; j--) {
     if (hist[j].annotation) { arr[arr.length - 1].annotation = hist[j].annotation; break; }
   }
-  return arr;
+  return tsv2FillExtraDimHistory(arr, d);
 }
 
 function tsv2GetRangeSeries(d, range) {
   var hist = (d.trustScoreHistory || []).slice();
-  if (range === 'year' || !range) return hist;
-  if (range === 'quarter') return hist.slice(-3).length ? tsv2SyntheticDailySeries(d, 90) : hist;
+  if (range === 'year' || !range) return tsv2FillExtraDimHistory(hist, d);
+  if (range === 'quarter') return tsv2FillExtraDimHistory(hist.slice(-3).length ? tsv2SyntheticDailySeries(d, 90) : hist, d);
   if (range === 'month')   return tsv2SyntheticDailySeries(d, 30);
   if (range === 'week')    return tsv2SyntheticDailySeries(d, 7);
-  return hist;
+  if (range === 'day')     return tsv2SyntheticDailySeries(d, 24, { hourly: true });
+  return tsv2FillExtraDimHistory(hist, d);
 }
 
 function tsv2BuildHistoryCaption(d, range, series) {
@@ -37432,7 +37628,9 @@ function tsv2BuildHistoryCaption(d, range, series) {
   var lowIdx = values.indexOf(minV);
   var lowMonth = series[lowIdx] && series[lowIdx].month ? series[lowIdx].month : '';
   var msg = '';
-  if (range === 'week') {
+  if (range === 'day') {
+    msg = 'Today: Score moved from ' + bold(first) + ' to ' + bold(last) + ' (' + bold(deltaStr) + ' pts) · Range ' + minV + '-' + maxV + (ann ? ' · ' + ann : '');
+  } else if (range === 'week') {
     msg = 'This week: Score moved from ' + bold(first) + ' to ' + bold(last) + ' (' + bold(deltaStr) + ' pts) · Range ' + minV + '-' + maxV + (ann ? ' · ' + ann : '');
   } else if (range === 'month') {
     msg = 'This month: Score moved from ' + bold(first) + ' to ' + bold(last) + ' (' + bold(deltaStr) + ' pts) · Range ' + minV + '-' + maxV + (ann ? ' · Key event: ' + ann : '');
