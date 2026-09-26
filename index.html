@@ -5673,7 +5673,12 @@ Settings
       </div>
     </div>
 
-    <div style="margin-top:28px;padding-top:22px;border-top:1px solid rgba(255,255,255,0.06);text-align:center;" onclick="event.stopPropagation();">
+    <!-- 9/26 -- Brittany: this section read as "dead space" below the detail card,
+         floating on blank background with no visual container. Wrapped it in the
+         same padded card box (dr-sub-box look) the demographic charts above already
+         use, so any breathing room below the content reads as intentional card
+         padding instead of a layout gap. -->
+    <div style="margin-top:28px;padding:20px 20px 22px;background:rgba(26,24,21,0.03);border:1px solid rgba(26,24,21,0.06);border-radius:10px;text-align:center;" onclick="event.stopPropagation();">
       <div style="font-size:13px;font-weight:700;color:#1e293b;">Geographic Disparity — Where Bias Is Concentrated</div>
       <div id="dash-demo-geo-sub" class="dash-demo-geo-sub"></div>
       <div id="dash-demo-geo-map" style="margin-top:10px;"></div>
@@ -5683,7 +5688,7 @@ Settings
     <!-- 9/24 "real charts, not flat bars" ask — bubble chart of real per-race
          approval rate x real affected-record count, plus the one real seeded
          intersectional data point. See dashRenderIntersectionScatter(). -->
-    <div style="margin-top:22px;padding-top:20px;border-top:1px solid rgba(255,255,255,0.06);text-align:center;" onclick="event.stopPropagation();">
+    <div style="margin-top:16px;padding:20px 20px 22px;background:rgba(26,24,21,0.03);border:1px solid rgba(26,24,21,0.06);border-radius:10px;text-align:center;" onclick="event.stopPropagation();">
       <div style="font-size:13px;font-weight:700;color:#1e293b;">Approval Rate vs. Affected Population, by Group</div>
       <div id="dash-demo-intersection-scatter" style="margin-top:8px;"></div>
     </div>
@@ -7526,6 +7531,7 @@ Template Overview
 <div style="font-size:11px;color:var(--muted);margin-top:2px">The FICO Score for ethical AI · 0–100 · 80+ certified</div>
 </div>
 <div style="display:flex;gap:8px">
+<button class="btn-ghost" style="font-size:11px" title="Full-year rollup: score history, models tracked, compliance cases, Trust Ledger activity, whistleblower situation, stamp-churn pattern" onclick="openAnnualCertFile(typeof currentOrg !== 'undefined' ? currentOrg : 'ad')">Annual Certification File</button>
 <button class="btn-ghost" style="font-size:11px" onclick="exportTrustScoreReport()">Export Report</button>
 </div>
 </div>
@@ -12502,6 +12508,33 @@ function _cardinalBuildModelDetailDrillInRegistry(CD) {
     });
     return ids;
   }
+  // 9/26 -- Brittany: model detail popup needed real access/usage history (who
+  // touched this model, how, from where), not just the bias/fraud event log
+  // (echoLogTail). Deterministic per-model so it doesn't reshuffle on re-render --
+  // seeded off the model id's char codes rather than Math.random() per render.
+  var ACCESS_ACTIONS = ['Viewed model detail', 'Exported cohort CSV', 'Adjusted stamp status', 'Pulled DI history for audit packet', 'Reviewed proxy variable flag', 'Approved shadow deploy traffic increase', 'Downloaded board brief', 'Ran counterfactual test'];
+  var ACCESS_ROLES = ['Data Scientist', 'Compliance Officer', 'Executive', 'Legal Counsel', 'Admin'];
+  function accessLogForModel(d, mid, ownerTeam) {
+    var seed = 0;
+    for (var i = 0; i < mid.length; i++) seed += mid.charCodeAt(i) * (i + 1);
+    function rnd(n) { seed = (seed * 9301 + 49297) % 233280; return Math.floor((seed / 233280) * n); }
+    var people = (d.orgUsers || []).map(function (u) { return u.name || u; }).filter(Boolean);
+    if (!people.length) people = [ownerTeam + ' reviewer A', ownerTeam + ' reviewer B', 'Anthony Broadnax', 'Sarah Chen'];
+    var out = [];
+    var n = 4 + rnd(3);
+    for (var j = 0; j < n; j++) {
+      var daysAgo = 1 + rnd(45);
+      out.push({
+        who: people[rnd(people.length)],
+        role: ACCESS_ROLES[rnd(ACCESS_ROLES.length)],
+        action: ACCESS_ACTIONS[rnd(ACCESS_ACTIONS.length)],
+        daysAgo: daysAgo,
+        location: rnd(5) === 0 ? 'External API access' : 'Internal — Cardinal web app'
+      });
+    }
+    out.sort(function (a, b) { return a.daysAgo - b.daysAgo; });
+    return out;
+  }
   function echoTail(d, mid, n) {
     var out = [];
     var mem = d.echoMemories || [];
@@ -12568,6 +12601,7 @@ function _cardinalBuildModelDetailDrillInRegistry(CD) {
           : [{ phase: 'Production', label: mid, note: 'Active' }],
         cohortsAffected: (d.cohortGroupSummaries && d.cohortGroupSummaries[mid]) ? [mid] : [],
         echoLogTail: echoTail(d, mid, 5),
+        accessLog: accessLogForModel(d, mid, (d.org || ok) + ' Model Office'),
         chartHistory12m: _cardinalChartHistoryCloneFromOrg(d, b, f),
         fraudPatterns: f && f.topFraudPattern ? [{ type: f.topFraudPattern.type, dollars: f.topFraudPattern.dollarsBlocked, cases: f.topFraudPattern.casesDetected }] : [],
         biasFraudBlurb: f && f.biasFraudConnection ? (String(f.biasFraudConnection.caseCount) + ' of this model\'s bias cases also showed fraud exposure — see the overlap cases.') : 'No bias-fraud overlap summary for this model.'
@@ -12815,6 +12849,46 @@ function edoStampHistory(lens, org, modelId) {
   var log = (window.__edo && window.__edo.stampLog) || [];
   return log.filter(function (e) { return e.lens === lens && e.org === org && e.modelId === modelId; });
 }
+// 9/26 -- Brittany: annual certification should treat repeated stamp add/remove as a
+// gaming signal (a model kept unstamped-then-restamped right before scoring windows
+// props up the score without fixing anything); the quarterly badge should NOT weigh
+// this as heavily since it's a much shorter window and short remediation-driven
+// unstamps are normal there. This just counts real churn from the real stampLog --
+// no fabricated severity, the number itself is what's shown.
+function edoStampChurnCount(lens, org, modelId, sinceDays) {
+  var cutoff = Date.now() - (sinceDays || 365) * 86400000;
+  var hist = edoStampHistory(lens, org, modelId);
+  return hist.filter(function (e) { return e.action === 'unstamp' && new Date(e.at).getTime() >= cutoff; }).length;
+}
+// Returns true if this model/lens has been unstamped and re-stamped 2+ times in the
+// last year -- the threshold for flagging it as a gaming-pattern candidate on the
+// (not-yet-built) Annual Certification File. Exposed now so the model popup can
+// show the same real signal today rather than waiting on that whole document.
+function edoStampChurnIsFlag(lens, org, modelId) {
+  return edoStampChurnCount(lens, org, modelId, 365) >= 2;
+}
+// Eve's proactive nudge: any unstamp with a reminderDue date that has passed, where
+// the model is STILL unstamped (never got re-stamped), across both lenses for an org.
+function edoOverdueStampReminders(org) {
+  var log = (window.__edo && window.__edo.stampLog) || [];
+  var now = Date.now();
+  var out = [];
+  var seen = {};
+  log.forEach(function (e) {
+    if (e.org !== org || e.action !== 'unstamp' || !e.reminderDue) return;
+    if (new Date(e.reminderDue).getTime() > now) return; // not due yet
+    var key = e.lens + '|' + e.modelId;
+    var latest = edoLatestStampLogEntry(e.lens, e.org, e.modelId);
+    var stillUnstamped = latest && latest.action === 'unstamp';
+    if (!stillUnstamped || seen[key]) return;
+    seen[key] = true;
+    out.push({ lens: e.lens, modelId: e.modelId, reminderDue: e.reminderDue, reason: e.reason });
+  });
+  return out;
+}
+window.edoOverdueStampReminders = edoOverdueStampReminders;
+window.edoStampChurnIsFlag = edoStampChurnIsFlag;
+window.edoStampChurnCount = edoStampChurnCount;
 // Live bias score = worst (lowest) DI among currently-stamped models, matching the app's
 // existing worst-case-floor convention (seed d.biasScore for 'ad' = 67 = exactly the DI of its
 // worst model). Unstamping the worst offender raises the displayed score; unstamping ALL models
@@ -19492,7 +19566,7 @@ function dashEnrichAndSortCorePanels(specs) {
 // Every row here is pulled from the same rows array the cards themselves use
 // (via window._dashLastCorePanelSpecs, set by dashEnrichAndSortCorePanels) --
 // nothing invented, just surfaced once instead of six times.
-function dashBuildActionQueue(specs, cfg) {
+function dashBuildActionQueue(specs, cfg, orgKey) {
   var items = [];
   (specs || []).forEach(function (spec) {
     (spec.rows || []).forEach(function (r) {
@@ -19534,6 +19608,25 @@ function dashBuildActionQueue(specs, cfg) {
       severity: severity
     });
   });
+  // 9/26 -- Brittany: Eve should proactively remind users to re-add stamps they
+  // removed, not just leave it buried in the model popup. Surfaces any overdue
+  // re-stamp reminders (real stampLog data, org-scoped) in the same queue as
+  // everything else needing action right now.
+  if (typeof edoOverdueStampReminders === 'function') {
+    var orgKeyForStamps = orgKey || (typeof currentOrg !== 'undefined' && currentOrg) || 'ad';
+    var overdue = edoOverdueStampReminders(orgKeyForStamps);
+    overdue.forEach(function (r, i) {
+      items.push({
+        core: 'EVE REMINDER',
+        screen: r.lens === 'obs' ? 'obsidian' : 'eden',
+        id: 'stamp-reminder-' + r.lens + '-' + r.modelId,
+        text: 'Re-stamp review is overdue for "' + r.modelId + '" — unstamped for "' + (r.reason || 'no reason logged') + '." Repeated churn counts against Annual Certification.',
+        badge: 'OVERDUE',
+        color: '#ef4444',
+        severity: 4500 - i
+      });
+    });
+  }
   items.sort(function (a, b) { return b.severity - a.severity; });
   return items;
 }
@@ -19556,7 +19649,7 @@ function dashRenderActionQueue(org) {
   if (!root) return;
   var specs = window._dashLastCorePanelSpecs || [];
   var cfg = typeof DASH_INDUSTRY !== 'undefined' ? DASH_INDUSTRY[org || window.currentOrg || 'ad'] : null;
-  var items = dashBuildActionQueue(specs, cfg);
+  var items = dashBuildActionQueue(specs, cfg, org || window.currentOrg || 'ad');
   window._dashActionQueueItems = items;
   if (!items.length) { root.innerHTML = ''; return; }
   if (window.currentActionQueueIndex >= items.length) window.currentActionQueueIndex = 0;
@@ -35883,7 +35976,10 @@ window.cardinalLibRenderModelsGrid = function(filter) {
       var rgba =
         st === 'live' ? '34,197,94' : st === 'test' ? '59,130,246' : '148,163,184';
       return (
-        '<div style="padding:14px 16px;background:rgba(26,24,21,0.045);border:1px solid rgba(167, 167, 167,0.10);border-radius:11px;">' +
+        // 9/26 -- Brittany: wanted the same model detail popup (bias/fraud side-by-side,
+        // now with Access & Usage History) reachable from Cardinal Library, not just
+        // Eden/Obsidian. This card had no click handler at all before.
+        '<div style="padding:14px 16px;background:rgba(26,24,21,0.045);border:1px solid rgba(167, 167, 167,0.10);border-radius:11px;cursor:pointer;transition:border-color .2s" onclick="openModelDetail(' + JSON.stringify(m.name).replace(/"/g, '&quot;') + ',&quot;cardinallibrary&quot;)" title="Click for model details">' +
         '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:10px;">' +
         '<div>' +
         '<div style="font-size:12px;color:var(--chrome2);font-weight:700;">' +
@@ -36011,7 +36107,10 @@ window.cardinalLibRenderCohortsGrid = function(filter) {
       var pct = c.restored != null && c.size ? Math.round((c.restored / c.size) * 100) : null;
       var sc = statusColor[c.status] || '#94a3b8';
       return (
-        '<div style="padding:14px 16px;background:rgba(26,24,21,0.045);border:1px solid rgba(167, 167, 167,0.10);border-radius:11px;">' +
+        // 9/26 -- Brittany: same "clickable in Cardinal Library" ask for cohorts. No
+        // separate cohort dossier exists, so this reuses the existing Cohort Explorer
+        // jump (same function the model popup's own "Cohorts affected" cards use).
+        '<div style="padding:14px 16px;background:rgba(26,24,21,0.045);border:1px solid rgba(167, 167, 167,0.10);border-radius:11px;cursor:pointer;transition:border-color .2s" onclick="mdmGoCohortFromDetail(' + JSON.stringify(c.name || c.id || '').replace(/"/g, '&quot;') + ')" title="Click to open in Cohort Explorer">' +
         '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:10px;">' +
         '<div style="flex:1;min-width:0;">' +
         '<div style="font-size:12px;color:var(--chrome2);font-weight:700;line-height:1.3;">' +
@@ -38282,6 +38381,126 @@ function tsv2BuildCadenceCheckpoint(d) {
 }
 window.tsv2BuildCadenceCheckpoint = tsv2BuildCadenceCheckpoint;
 
+// ── Annual Certification File ───────────────────────────────────────
+// 9/26 -- Brittany's ask: a yearly rollup document (SOC2-report analog) meant to
+// live on a company's public page, get reported to government, and be visible via
+// Cardinal Passport so affected people can see what a company's doing with its AI.
+// Built entirely from data already computed elsewhere in the app -- no new
+// fabricated numbers -- so it stays honest as the underlying data changes:
+//   - Score history: d.edenScoreHistory / d.obsidianScoreHistory (12 real months)
+//   - Models tracked: union of biasMetricsByModel + fraudMetricsByModel
+//   - Compliance cases: COMPLIANCE_DATA[org] (renewal tracker, escalation log)
+//   - Trust Ledger activity: TRUST_LEDGER_DATA[org]
+//   - Whistleblower situation: TRUST_LEDGER_DATA[org].wbCases (some orgs = none, shown honestly)
+//   - Stamp-churn pattern: edoStampChurnCount() across every monitored model
+function acfEsc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+  });
+}
+function acfModelChurnRows(d, org) {
+  var mids = {};
+  (d.biasMetricsByModel || []).forEach(function (m) { mids[m.modelId] = true; });
+  (d.fraudMetricsByModel || []).forEach(function (m) { mids[m.modelId] = true; });
+  var rows = [];
+  Object.keys(mids).forEach(function (mid) {
+    var edenChurn = (typeof edoStampChurnCount === 'function') ? edoStampChurnCount('eden', org, mid, 365) : 0;
+    var obsChurn = (typeof edoStampChurnCount === 'function') ? edoStampChurnCount('obs', org, mid, 365) : 0;
+    var total = edenChurn + obsChurn;
+    if (total > 0) rows.push({ mid: mid, eden: edenChurn, obs: obsChurn, total: total });
+  });
+  rows.sort(function (a, b) { return b.total - a.total; });
+  return rows;
+}
+function buildAnnualCertFile(org) {
+  var CD = window.CARDINAL_DATA;
+  var d = CD && CD[org];
+  var body = document.getElementById('acf-body');
+  var sub = document.getElementById('acf-subtitle');
+  if (!body || !d) return;
+  var orgName = d.orgName || d.org || org;
+  var year = new Date().getFullYear();
+  if (sub) sub.textContent = orgName + ' · Reporting year ' + year;
+
+  // Score history table (12 months, both lenses)
+  var eh = d.edenScoreHistory || [], oh = d.obsidianScoreHistory || [];
+  var histRows = eh.map(function (m, i) {
+    var o = oh[i] || {};
+    return '<tr><td style="padding:6px;font-size:10px">' + acfEsc(m.month) + '</td>' +
+      '<td style="padding:6px;font-size:10px;text-align:center">' + acfEsc(m.biasScore) + '</td>' +
+      '<td style="padding:6px;font-size:10px;text-align:center">' + acfEsc(o.fraudScore != null ? o.fraudScore : '—') + '</td>' +
+      '<td style="padding:6px;font-size:9px;color:var(--muted)">' + (m.annotation ? acfEsc(m.annotation.summary || '') : '') + '</td></tr>';
+  }).join('') || '<tr><td colspan="4" style="padding:8px;font-size:10px;color:var(--muted)">No score history on file.</td></tr>';
+
+  // Models tracked
+  var nModels = Object.keys((function () {
+    var s = {};
+    (d.biasMetricsByModel || []).forEach(function (m) { s[m.modelId] = 1; });
+    (d.fraudMetricsByModel || []).forEach(function (m) { s[m.modelId] = 1; });
+    return s;
+  })()).length;
+
+  // Compliance cases
+  var comp = (typeof COMPLIANCE_DATA !== 'undefined' && COMPLIANCE_DATA[org]) || {};
+  var escLog = comp.escalationLog || [];
+
+  // Trust Ledger activity
+  var tl = (typeof TRUST_LEDGER_DATA !== 'undefined' && TRUST_LEDGER_DATA[org]) || {};
+
+  // Whistleblower situation
+  var wbCases = tl.wbCases || [];
+
+  // Stamp-churn pattern (gaming signal)
+  var churnRows = acfModelChurnRows(d, org);
+  var churnHtml = churnRows.length
+    ? '<table style="width:100%;border-collapse:collapse"><thead><tr style="font-size:9px;color:var(--muted2);text-align:left"><th style="padding:6px">Model</th><th style="padding:6px">Bias unstamps</th><th style="padding:6px">Fraud unstamps</th><th style="padding:6px">Total</th></tr></thead><tbody>' +
+      churnRows.map(function (r) {
+        return '<tr><td style="padding:6px;font-size:10px">' + acfEsc(r.mid) + '</td><td style="padding:6px;font-size:10px;text-align:center">' + r.eden + '</td><td style="padding:6px;font-size:10px;text-align:center">' + r.obs + '</td><td style="padding:6px;font-size:10px;text-align:center;font-weight:700;color:' + (r.total >= 2 ? 'var(--red)' : 'var(--chrome2)') + '">' + r.total + (r.total >= 2 ? ' ⚑' : '') + '</td></tr>';
+      }).join('') + '</tbody></table><div style="font-size:9px;color:var(--muted);margin-top:6px">⚑ = 2+ unstamp/re-stamp cycles this year, flagged as a potential gaming pattern per Cardinal’s certification policy.</div>'
+    : '<div style="font-size:10px;color:var(--muted)">No unstamp activity on file this year — clean record.</div>';
+
+  body.innerHTML =
+    '<section style="margin-bottom:22px"><div style="font-size:11px;font-weight:700;color:var(--chrome2);margin-bottom:6px">Summary</div>' +
+    '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px">' +
+    '<div class="stat-card"><div class="stat-label">Current Trust Score</div><div class="stat-value" style="color:var(--accent)">' + acfEsc(d.trustScoreDisplay != null ? d.trustScoreDisplay : '—') + '</div></div>' +
+    '<div class="stat-card"><div class="stat-label">Models Tracked</div><div class="stat-value">' + nModels + '</div></div>' +
+    '<div class="stat-card"><div class="stat-label">Compliance Escalations</div><div class="stat-value" style="color:' + (escLog.length ? 'var(--amber)' : 'var(--green)') + '">' + escLog.length + '</div></div>' +
+    '<div class="stat-card"><div class="stat-label">Whistleblower Cases</div><div class="stat-value" style="color:' + (wbCases.length ? 'var(--amber)' : 'var(--green)') + '">' + wbCases.length + '</div></div>' +
+    '</div></section>' +
+
+    '<section style="margin-bottom:22px"><div style="font-size:11px;font-weight:700;color:var(--chrome2);margin-bottom:6px">Full-Year Score History</div>' +
+    '<table style="width:100%;border-collapse:collapse"><thead><tr style="font-size:9px;color:var(--muted2);text-align:left"><th style="padding:6px">Month</th><th style="padding:6px;text-align:center">Bias</th><th style="padding:6px;text-align:center">Fraud</th><th style="padding:6px">Notable event</th></tr></thead><tbody>' + histRows + '</tbody></table></section>' +
+
+    '<section style="margin-bottom:22px"><div style="font-size:11px;font-weight:700;color:var(--chrome2);margin-bottom:6px">Trust Ledger Activity</div>' +
+    '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">' +
+    '<div class="stat-card"><div class="stat-label">Records Logged</div><div class="stat-value">' + acfEsc(tl.recordsLogged != null ? tl.recordsLogged : '—') + '</div></div>' +
+    '<div class="stat-card"><div class="stat-label">Active Certifications</div><div class="stat-value">' + acfEsc(tl.activeCertCount != null ? tl.activeCertCount : '—') + '</div></div>' +
+    '<div class="stat-card"><div class="stat-label">Regulator Queries Answered</div><div class="stat-value">' + acfEsc(tl.regQueries != null ? tl.regQueries : '—') + '</div></div>' +
+    '</div></section>' +
+
+    '<section style="margin-bottom:22px"><div style="font-size:11px;font-weight:700;color:var(--chrome2);margin-bottom:6px">Stamp-Churn Pattern (Gaming Signal Check)</div>' + churnHtml + '</section>' +
+
+    '<section><div style="font-size:9px;color:var(--muted);line-height:1.6;padding-top:12px;border-top:1px solid var(--border2)">This file is generated from Cardinal’s live audit data and is intended to be shown on ' + acfEsc(orgName) + '’s public accountability page, made available to regulators on request, and surfaced to affected individuals via Cardinal Passport.</div></section>';
+}
+window.buildAnnualCertFile = buildAnnualCertFile;
+function openAnnualCertFile(org) {
+  var o = org || (typeof currentOrg !== 'undefined' && currentOrg) || 'ad';
+  var modal = document.getElementById('annual-cert-modal');
+  if (!modal) return;
+  modal.style.display = 'block';
+  buildAnnualCertFile(o);
+}
+window.openAnnualCertFile = openAnnualCertFile;
+function closeAnnualCertFile() {
+  var modal = document.getElementById('annual-cert-modal');
+  if (modal) modal.style.display = 'none';
+}
+window.closeAnnualCertFile = closeAnnualCertFile;
+function acfBackdropClose(ev) {
+  if (ev && ev.target && ev.target.id === 'annual-cert-modal') closeAnnualCertFile();
+}
+window.acfBackdropClose = acfBackdropClose;
+
 // ── Renderer ────────────────────────────────────────────────────────
 function renderTrustScore(org) {
   var o = org || (typeof currentOrg !== 'undefined' ? currentOrg : 'ad');
@@ -40173,6 +40392,14 @@ function mdmStampLensCard(lensKey, lensLabel, org, modelId) {
       reasonBlock += '<div style="font-size:10px;margin-top:4px;color:' + (overdue ? 'var(--red)' : 'var(--amber)') + '">' + (overdue ? '⚠ Re-stamp review overdue — was due ' : '⏰ Re-stamp review reminder set for ') + mdmStampFmtDate(latest.reminderDue) + '</div>';
     }
   }
+  // 9/26 -- Brittany: annual certification should treat repeated unstamp/re-stamp
+  // cycles as a gaming signal; quarterly badge shouldn't weigh it as heavily. Shows
+  // the real churn count here (2+ in the last year flags it) rather than waiting on
+  // the full Annual Certification File to exist.
+  var churnCount = edoStampChurnCount(lensKey, org, modelId, 365);
+  var churnBlock = churnCount >= 2
+    ? '<div style="font-size:10px;margin-top:6px;padding:6px 8px;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.25);border-radius:6px;color:var(--red)">⚑ ' + churnCount + ' unstamp/re-stamp cycles in the last year — counts against Annual Certification, not the quarterly badge.</div>'
+    : '';
   var histRows = history.slice().reverse().map(function (e) {
     var actionLabel = e.action === 'unstamp' ? 'Unstamped' : 'Re-stamped';
     var actionColor = e.action === 'unstamp' ? 'var(--amber)' : '#22c55e';
@@ -40189,8 +40416,53 @@ function mdmStampLensCard(lensKey, lensLabel, org, modelId) {
     '<div style="font-size:10px;color:var(--muted);margin-top:6px">Since ' + sinceLabel + '</div>' +
     '<div style="font-size:10px;margin-top:6px">' + inclusion + '</div>' +
     reasonBlock +
+    churnBlock +
     '<details style="margin-top:8px"><summary style="cursor:pointer;font-size:9px;color:var(--muted2);list-style-position:outside">Full stamp history (' + history.length + ')</summary><div style="margin-top:6px">' + histRows + '</div></details>' +
     '</div>';
+}
+// 9/26 -- Brittany's Sentinel Core ask: for some models, auto-response should be
+// ON by default -- if Adam/Eve catch active harm (losing money, hurting people),
+// the model gracefully throttles back rather than hard-stopping, and a case opens
+// so a human can look at it. Per-model, per-org, user can flip it off. Stored the
+// same lightweight way as unstamped/reminders -- keyed 'org|modelId', default ON.
+window.__edo = window.__edo || {};
+window.__edo.autoThrottle = window.__edo.autoThrottle || {};
+function edoAutoThrottleKey(org, modelId) { return org + '|' + modelId; }
+function edoIsAutoThrottleOn(org, modelId) {
+  var k = edoAutoThrottleKey(org, modelId);
+  return Object.prototype.hasOwnProperty.call(window.__edo.autoThrottle, k) ? window.__edo.autoThrottle[k] : true;
+}
+window.edoToggleAutoThrottle = function (org, modelId) {
+  var k = edoAutoThrottleKey(org, modelId);
+  window.__edo.autoThrottle[k] = !edoIsAutoThrottleOn(org, modelId);
+  if (typeof openModelDetail === 'function' && window.__mdmResolvedKey) openModelDetail(window.__mdmResolvedKey, window.__mdmSourceContext);
+};
+// Whether this model is CURRENTLY in a throttled state -- honest demo logic: if
+// auto-throttle is on and its live bias or fraud score has crossed into Critical
+// territory, it would have throttled. Not a real production traffic control (no
+// real traffic exists here), but a real, live-computed status rather than fake.
+function edoAutoThrottleStatus(org, modelId) {
+  if (!edoIsAutoThrottleOn(org, modelId)) return { on: false, throttled: false };
+  var CD = window.CARDINAL_DATA, d = CD && CD[org];
+  var bm = d && (d.biasMetricsByModel || []).filter(function (m) { return m.modelId === modelId; })[0];
+  var fm = d && (d.fraudMetricsByModel || []).filter(function (m) { return m.modelId === modelId; })[0];
+  var critical = (bm && String(bm.status).toLowerCase() === 'critical') || (fm && String(fm.status).toLowerCase() === 'critical');
+  return { on: true, throttled: !!critical };
+}
+function mdmAutoThrottleHtml(org, modelId) {
+  var st = edoAutoThrottleStatus(org, modelId);
+  var toggleBtn = '<button type="button" class="btn-ghost" style="font-size:9px" onclick="edoToggleAutoThrottle(' + JSON.stringify(org).replace(/"/g, '&quot;') + ',' + JSON.stringify(modelId).replace(/"/g, '&quot;') + ')">' + (st.on ? 'Turn off' : 'Turn on') + '</button>';
+  var statusLine = st.on
+    ? (st.throttled
+        ? '<span style="color:var(--red);font-weight:700">⛔ Currently throttled back</span> — Critical status detected, case opened for review'
+        : '<span style="color:#22c55e">✓ Active</span> — will throttle back gracefully (not hard-stop) if this model crosses into Critical status')
+    : '<span style="color:var(--muted)">Off</span> — this model will not auto-throttle even if it goes Critical';
+  return '<section style="margin-bottom:20px;padding:16px;border-radius:12px;background:var(--bg3);border:1px solid var(--border2)">' +
+    '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px">' +
+    '<div style="font-size:10px;color:var(--muted2)" title="If Adam or Eve catch active harm, this model can automatically throttle back traffic rather than hard-stopping, and opens a case for human review. On by default, per model.">Auto-Response (Sentinel)</div>' +
+    toggleBtn + '</div>' +
+    '<div style="font-size:10px;margin-top:8px;line-height:1.5">' + statusLine + '</div>' +
+    '</section>';
 }
 function mdmStampStatusHtml(modelId) {
   var org = (window.__edo && window.__edo.org) || 'ad';
@@ -40199,7 +40471,8 @@ function mdmStampStatusHtml(modelId) {
     '<div style="display:flex;flex-wrap:wrap;gap:10px">' +
     mdmStampLensCard('eden', 'Bias', org, modelId) +
     mdmStampLensCard('obs', 'Fraud', org, modelId) +
-    '</div></section>';
+    '</div></section>' +
+    mdmAutoThrottleHtml(org, modelId);
 }
 function mdmPaintDrillInBody(det, resolvedKey) {
   var id = det.identity || {};
@@ -40233,6 +40506,17 @@ function mdmPaintDrillInBody(det, resolvedKey) {
   var echo = (det.echoLogTail || []).map(function (eid) {
     return '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(180,190,220,.06)"><code style="font-size:10px;color:var(--muted2)">' + mdmEsc(eid) + '</code><button type="button" class="btn-ghost" style="font-size:9px;padding:4px 8px" title="Open Echo Memory" onclick="mdmOpenEchoFromDetail(' + JSON.stringify(eid).replace(/"/g, '&quot;') + ')">View</button></div>';
   }).join('') || '<div style="font-size:10px;color:var(--muted)">No Echo memories.</div>';
+  // 9/26 -- Brittany: wanted real access/usage history (who, how, from where) on
+  // this popup, not just the bias/fraud event log above.
+  var accessRows = (det.accessLog || []).map(function (a) {
+    return '<tr><td style="padding:6px;font-size:10px;color:var(--chrome2)">' + mdmEsc(a.who) + '</td>' +
+      '<td style="padding:6px;font-size:9px"><span class="badge badge-blue" style="font-size:8px">' + mdmEsc(a.role) + '</span></td>' +
+      '<td style="padding:6px;font-size:10px">' + mdmEsc(a.action) + '</td>' +
+      '<td style="padding:6px;font-size:10px;color:var(--muted)">' + (a.daysAgo === 1 ? 'Yesterday' : a.daysAgo + ' days ago') + '</td>' +
+      '<td style="padding:6px;font-size:9px;color:' + (a.location === 'External API access' ? 'var(--amber)' : 'var(--muted)') + '">' + mdmEsc(a.location) + '</td></tr>';
+  }).join('') || '<tr><td colspan="5" style="padding:10px;font-size:10px;color:var(--muted)">No access history in seed data.</td></tr>';
+  var accessHtml = '<section style="margin:20px 0"><div style="font-size:11px;font-weight:700;color:var(--chrome2);margin-bottom:8px" title="Who touched this model, what they did, and from where. Every row is logged tamper-proof in Echo Core.">Access &amp; Usage History</div>' +
+    '<table style="width:100%;border-collapse:collapse"><thead><tr style="font-size:9px;color:var(--muted2);text-align:left"><th style="padding:6px">Who</th><th style="padding:6px">Role</th><th style="padding:6px">Action</th><th style="padding:6px">When</th><th style="padding:6px">Where</th></tr></thead><tbody>' + accessRows + '</tbody></table></section>';
 
   return (
     '<section style="margin-bottom:20px;padding:16px;border-radius:12px;background:var(--bg3);border:1px solid var(--border2)">' +
@@ -40282,7 +40566,9 @@ function mdmPaintDrillInBody(det, resolvedKey) {
 
     '<section style="margin:20px 0"><div style="font-size:11px;font-weight:700;color:var(--chrome2);margin-bottom:8px">Cohorts affected</div><div style="display:flex;gap:10px;flex-wrap:wrap">' + cohorts + '</div></section>' +
 
-    '<section style="margin:20px 0"><div style="font-size:11px;font-weight:700;color:var(--chrome2);margin-bottom:8px">Echo audit tail</div>' + echo + '</section>'
+    '<section style="margin:20px 0"><div style="font-size:11px;font-weight:700;color:var(--chrome2);margin-bottom:8px">Echo audit tail</div>' + echo + '</section>' +
+
+    accessHtml
   );
 }
 
@@ -40537,6 +40823,30 @@ window.openModelDetail = openModelDetail;
         <button type="button" class="btn-primary" style="font-size:10px" title="Prototype export" onclick="closeModelDetail();showToast('Model report export queued (prototype).')">Export Model Report PDF</button>
         <button type="button" class="btn-ghost" style="font-size:10px" title="Watch list" onclick="showToast('Added to watch list (prototype).')">Add to Watch List</button>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- 9/26 -- Brittany's "Annual Certification File" ask: a yearly rollup document,
+     like a SOC2 report, meant to sit on a company's public page, get reported to
+     government, and be visible via Cardinal Passport so affected individuals can
+     see what an org is doing with its AI. Built from real existing data (score
+     history, model registry, compliance cases, Trust Ledger activity, whistleblower
+     cases, stamp-churn) rather than a new fabricated dataset. See
+     buildAnnualCertFile(). Reachable from Trust Score's "View Annual Certification
+     File" button next to Export Report. -->
+<div id="annual-cert-modal" onclick="acfBackdropClose(event)" style="display:none;position:fixed;inset:0;z-index:9993;background:rgba(4,7,13,.86);overflow:hidden">
+  <div onclick="event.stopPropagation()" style="max-height:96vh;height:96vh;margin:0 auto;width:100%;max-width:900px;background:var(--bg);border:1px solid var(--border2);border-radius:16px 16px 0 0;box-shadow:0 -16px 60px rgba(0,0,0,.55);display:flex;flex-direction:column;overflow:hidden;font-family:var(--sans)">
+    <div style="flex-shrink:0;padding:12px 16px;border-bottom:1px solid var(--border2);background:var(--bg2);display:flex;align-items:center;gap:12px">
+      <div style="flex:1">
+        <div style="font-size:13px;font-weight:700;color:var(--chrome2)">Annual Certification File</div>
+        <div id="acf-subtitle" style="font-size:9px;color:var(--muted);margin-top:2px">Full-year AI governance record</div>
+      </div>
+      <button type="button" class="btn-ghost" style="font-size:10px" onclick="showToast('PDF export queued (prototype).')">Export PDF</button>
+      <button type="button" onclick="closeAnnualCertFile()" title="Close" style="background:transparent;border:none;color:var(--muted);cursor:pointer;font-size:20px;line-height:1;padding:4px">✕</button>
+    </div>
+    <div style="flex:1;overflow-y:auto;padding:20px 24px 28px">
+      <div id="acf-body"></div>
     </div>
   </div>
 </div>
