@@ -7546,10 +7546,9 @@ Template Overview
           <circle cx="100" cy="100" r="86" fill="none" stroke="rgba(167, 167, 167,.06)" stroke-width="14"/>
           <circle id="tsv2-gauge-ring" cx="100" cy="100" r="86" fill="none" stroke="#f59e0b" stroke-width="14" stroke-linecap="round" stroke-dasharray="540.35" stroke-dashoffset="140" transform="rotate(-90 100 100)" style="transition: stroke-dashoffset 1.2s ease, stroke 0.4s ease;filter:drop-shadow(0 6px 10px rgba(0,0,0,.30))"/>
           <line x1="100" y1="6" x2="100" y2="20" stroke="rgba(34,197,94,.65)" stroke-width="2" transform="rotate(108 100 100)"/>
-          <text id="tsv2-gauge-num" class="tsv2-gauge-num" x="100" y="105" text-anchor="middle" dominant-baseline="middle" fill="#f59e0b">74</text>
-          <rect x="78" y="126" width="44" height="16" rx="8" fill="var(--card)" opacity="0.9"/>
-          <text id="tsv2-score-range-tip" x="100" y="135" text-anchor="middle" font-size="11" fill="rgba(180,190,220,.85)" font-family="var(--sans)" style="cursor:help">/ 100</text>
+          <text id="tsv2-gauge-num" class="tsv2-gauge-num" x="100" y="102" text-anchor="middle" dominant-baseline="middle" fill="#f59e0b">74</text>
         </svg>
+        <div id="tsv2-score-range-tip" style="position:absolute;left:50%;bottom:20px;transform:translateX(-50%);font-size:11px;color:rgba(180,190,220,.85);font-family:var(--sans);cursor:help;background:var(--card);padding:1px 8px;border-radius:8px;z-index:2">/ 100</div>
       </div>
       <div style="width:100%;max-width:360px">
         <div class="tsv2-status" id="tsv2-status" style="text-align:center;margin-top:10px">Below Threshold — Not Certified</div>
@@ -13562,8 +13561,18 @@ function edoRenderEveBodyCore(lens, d) {
     p3clean = p3.slice(0, m.index).trim();
     bfCloser = p3.slice(m.index).trim();
   }
+  // 9/26 -- same stale-date fix as tsv2RenderEveBody: the "daily" narrative opens
+  // with a literal hardcoded date ("As of today, September 25"). Swap in today's
+  // real date at render time rather than re-writing the seed string every day.
+  var para1 = block.para1 || '';
+  try {
+    var todayForEdo = new Date();
+    var edoMonthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    var todayLabelForEdo = edoMonthNames[todayForEdo.getMonth()] + ' ' + todayForEdo.getDate();
+    para1 = String(para1).replace(/As of today, [A-Z][a-z]+ \d{1,2}/, 'As of today, ' + todayLabelForEdo);
+  } catch (_edoDate) {}
   var html = '';
-  if (block.para1) html += '<p>' + block.para1 + '</p>';
+  if (para1) html += '<p>' + para1 + '</p>';
   if (block.para2) html += '<p>' + block.para2 + '</p>';
   if (p3) {
     if (m) {
@@ -13581,7 +13590,8 @@ function edoRenderEveBodyCore(lens, d) {
 function edoBuildEveExecutiveSection(lens, d, org) {
   var idP = lens === 'obsidian' ? 'obs' : 'eden';
   var tf = lens === 'obsidian' ? window.__edo.eveTfObsidian : window.__edo.eveTfEden;
-  var tabs = [['daily', 'Daily · Sep 25'], ['monthly', 'Monthly · September 2026'], ['quarterly', 'Quarterly · Q3 2026'], ['ytd', 'YTD · 12 Months']];
+  var edoTodayShort = (function () { try { var t = new Date(); var mm = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']; return mm[t.getMonth()] + ' ' + t.getDate(); } catch (_e) { return 'Sep 25'; } })();
+  var tabs = [['daily', 'Daily · ' + edoTodayShort], ['monthly', 'Monthly · September 2026'], ['quarterly', 'Quarterly · Q3 2026'], ['ytd', 'YTD · 12 Months']];
   var tabHtml = tabs.map(function (t) {
     var on = tf === t[0];
     return '<button type="button" class="' + (on ? 'active' : '') + '" data-tf="' + t[0] + '"' + edoOn('edoSetEveTimeframeCore', [lens, t[0]]) + edoT('Reporting Period', 'Reporting Period / Switch between monthly, quarterly, or YTD analysis. Each timeframe pulls fresh data from Echo Core.') + '>' + t[1] + '</button>';
@@ -15338,14 +15348,20 @@ function applyCardinalData(org) {
     dtl.innerHTML = formatDashTrustStatusHtml(d);
     dtl.style.color = d.trustScore >= 0.80 ? '#22c55e' : d.trustColor;
   }
-  setT('dr-bias-det-num', d.biasDetection);
-  setS('dr-bias-det-num', 'color', d.biasScore >= 80 ? '#22c55e' : (d.biasScore >= 70 ? '#f59e0b' : '#ef4444'));
+  // 9/26 -- same "two writers, one stale" bug as the Trust Score hero pills: this
+  // Dashboard panel was reading d.biasDetection/d.fraudPrevention directly (static
+  // seed strings), so unstamping a model in Eden/Obsidian never moved these numbers.
+  // Route through the live-score helpers, falling back to the seed if Stamps isn't loaded.
+  var dashLiveBias = (typeof edoLiveBiasScore === 'function') ? edoLiveBiasScore(d, org) : d.biasScore;
+  var dashLiveFraud = (typeof edoLiveFraudScore === 'function') ? edoLiveFraudScore(d, org) : d.fraudScore;
+  setT('dr-bias-det-num', dashLiveBias + '%');
+  setS('dr-bias-det-num', 'color', dashLiveBias >= 80 ? '#22c55e' : (dashLiveBias >= 70 ? '#f59e0b' : '#ef4444'));
   var bd = document.getElementById('dr-bias-det-bar');
-  if (bd) { bd.style.width = d.biasScore + '%'; bd.style.background = d.biasScore >= 80 ? '#22c55e' : (d.biasScore >= 70 ? '#f59e0b' : '#ef4444'); }
-  setT('dr-fraud-num', d.fraudPrevention);
-  setS('dr-fraud-num', 'color', d.fraudScore >= 85 ? '#22c55e' : '#f59e0b');
+  if (bd) { bd.style.width = dashLiveBias + '%'; bd.style.background = dashLiveBias >= 80 ? '#22c55e' : (dashLiveBias >= 70 ? '#f59e0b' : '#ef4444'); }
+  setT('dr-fraud-num', dashLiveFraud + '%');
+  setS('dr-fraud-num', 'color', dashLiveFraud >= 85 ? '#22c55e' : '#f59e0b');
   var fb = document.getElementById('dr-fraud-bar');
-  if (fb) { fb.style.width = d.fraudScore + '%'; fb.style.background = d.fraudScore >= 85 ? '#22c55e' : '#f59e0b'; }
+  if (fb) { fb.style.width = dashLiveFraud + '%'; fb.style.background = dashLiveFraud >= 85 ? '#22c55e' : '#f59e0b'; }
   setT('dr-comp-num', d.compliance);
   setS('dr-comp-num', 'color', d.complianceScore >= 80 ? '#22c55e' : '#f59e0b');
   var cb = document.getElementById('dr-comp-bar');
@@ -36644,8 +36660,9 @@ function tsv2OrdSuffix(n) {
 }
 
 // ── Section 1: Hero (with Score Confidence) ─────────────────────────
-function tsv2BuildHero(d) {
+function tsv2BuildHero(d, org) {
   if (!d) return;
+  var __tsv2Org = org || window.currentOrg || 'ad';
   // 9/26 -- read the live drift value (same source the sidebar/dashboard use)
   // when it's running for the org actually on screen, instead of the static
   // seed number, so the ring doesn't paint a stale value for one frame before
@@ -36724,8 +36741,15 @@ function tsv2BuildHero(d) {
   }
 
   var setT = function (id, v) { var e = document.getElementById(id); if (e) e.textContent = v; };
-  setT('tsv2-pill-bias-num', (d.biasScore != null ? d.biasScore + '%' : '—'));
-  setT('tsv2-pill-fraud-num', (d.fraudScore != null ? d.fraudScore + '%' : '—'));
+  // 9/26 -- another "two writers, one stale" instance: these pills were still reading
+  // d.biasScore/d.fraudScore directly, so unstamping a model in Eden/Obsidian moved
+  // the ring on THOSE screens but never touched the Trust Score hero's own pills.
+  // Route through the same live-score helpers Eden/Obsidian use (edoLiveBiasScore/
+  // edoLiveFraudScore), falling back to the static seed if Stamps hasn't loaded yet.
+  var liveBias = (typeof edoLiveBiasScore === 'function') ? edoLiveBiasScore(d, __tsv2Org) : d.biasScore;
+  var liveFraud = (typeof edoLiveFraudScore === 'function') ? edoLiveFraudScore(d, __tsv2Org) : d.fraudScore;
+  setT('tsv2-pill-bias-num', (liveBias != null ? liveBias + '%' : '—'));
+  setT('tsv2-pill-fraud-num', (liveFraud != null ? liveFraud + '%' : '—'));
   setT('tsv2-pill-comp-num', (d.complianceScore != null ? d.complianceScore + '%' : '—'));
 
   var pd = d.peerData || {};
@@ -37401,6 +37425,16 @@ function tsv2RenderEveBody(d) {
       }
     }
   } catch (_eveLive) {}
+  // 9/26 -- Brittany: exec summaries showed a stale hardcoded date ("As of today,
+  // September 25") even after the calendar moved to the 26th. The "daily" narrative
+  // is the only timeframe that opens with a literal date, so swap it for today's
+  // real date at render time instead of re-writing the seed string every day.
+  try {
+    var todayForEve = new Date();
+    var eveMonthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    var todayLabelForEve = eveMonthNames[todayForEve.getMonth()] + ' ' + todayForEve.getDate();
+    text = String(text || '').replace(/As of today, [A-Z][a-z]+ \d{1,2}/, 'As of today, ' + todayLabelForEve);
+  } catch (_eveDate) {}
   // Split on blank lines first; if only one paragraph, split sentences into 2-3 chunks.
   var paras = String(text || '').split(/\n\n+/).map(function (p) { return p.trim(); }).filter(Boolean);
   if (paras.length === 1) {
@@ -38261,6 +38295,17 @@ function renderTrustScore(org) {
   if (tfRow) tfRow.querySelectorAll('button').forEach(function (b) { b.classList.toggle('active', b.getAttribute('data-range') === 'year'); });
   var seriesRow = document.getElementById('tsv2-history-toggle');
   if (seriesRow) seriesRow.querySelectorAll('button').forEach(function (b) { b.classList.toggle('active', b.getAttribute('data-series') === 'score'); });
+  // 9/26 -- Brittany: the "Daily" exec-summary tab was hardcoded "Sep 25" and went
+  // stale the moment the calendar turned over. Refresh it to today's real date
+  // every time this screen renders instead of baking a date into the markup.
+  try {
+    var dailyTabBtn = document.querySelector('#tsv2-eve-tabs button[data-tf="daily"]');
+    if (dailyTabBtn) {
+      var tsToday = new Date();
+      var tsMonthShort = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      dailyTabBtn.textContent = 'Daily · ' + tsMonthShort[tsToday.getMonth()] + ' ' + tsToday.getDate();
+    }
+  } catch (_tsDateTab) {}
 
   var d = tsv2Data(o);
   if (!d) {
@@ -38280,7 +38325,7 @@ function renderTrustScore(org) {
       window.TSV2_MODEL_FILTER = 'all';
     }
   } catch (_mff) { window.TSV2_MODEL_FILTER = 'all'; }
-  try { tsv2BuildHero(d); }            catch (e) { if (window.console) console.warn('tsv2BuildHero', e); }
+  try { tsv2BuildHero(d, o); }         catch (e) { if (window.console) console.warn('tsv2BuildHero', e); }
   try { tsv2BuildCadenceCheckpoint(d); } catch (e) { if (window.console) console.warn('tsv2BuildCadenceCheckpoint', e); }
   try { tsv2BuildSummary(d); }         catch (e) { if (window.console) console.warn('tsv2BuildSummary', e); }
   try { tsv2BuildHistoryChart(d); }    catch (e) { if (window.console) console.warn('tsv2BuildHistoryChart', e); }
