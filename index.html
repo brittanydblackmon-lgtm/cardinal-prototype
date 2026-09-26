@@ -12900,15 +12900,15 @@ function edoWireHeroGauge(prefix, score, color) {
   var sweep = document.getElementById(prefix + '-sweep');
   if (sweep) sweep.setAttribute('transform', 'rotate(' + (-90 + score * 3.6) + ' 100 100)');
 }
-function edoEdenHeroTopPillHtml(d) {
-  var bias = d.biasScore;
+function edoEdenHeroTopPillHtml(d, liveBias) {
+  var bias = liveBias != null ? liveBias : d.biasScore;
   if (bias >= 80) {
     return '<div class="tsv2-cert-badge green"' + edoT('Within Compliance', 'Bias score meets the 80+ Cardinal certification floor and EEOC-aligned monitoring band.') + '><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 4v6c0 5-3.5 9-8 10-4.5-1-8-5-8-10V6l8-4z"/><path d="M9 12l2 2 4-4"/></svg><span>Within Compliance</span></div>';
   }
   return '<div class="tsv2-cert-badge amber"' + edoT('Below EEOC Threshold', 'Bias score is below the 80 certification floor. Remediation is required before Cardinal certification and EEOC four-fifths assurance.') + '><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/></svg><span>Below EEOC Threshold \u2014 Remediation Required</span></div>';
 }
-function edoObsidianHeroTopPillHtml(d) {
-  var fraud = d.fraudScore;
+function edoObsidianHeroTopPillHtml(d, liveFraud) {
+  var fraud = liveFraud != null ? liveFraud : d.fraudScore;
   if (fraud >= 80) {
     return '<div class="tsv2-cert-badge green"' + edoT('Strong Fraud Posture', 'Fraud detection score is at or above the 80 threshold. Obsidian monitoring coverage is strong across synthetic identity, behavioral, cluster, and velocity lenses.') + '><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 4v6c0 5-3.5 9-8 10-4.5-1-8-5-8-10V6l8-4z"/><path d="M9 12l2 2 4-4"/></svg><span>Above Detection Threshold \u2014 Strong Posture</span></div>';
   }
@@ -12921,7 +12921,7 @@ function edoBuildEdenHeroSection(d, org, bfN) {
   var sweepDeg = -90 + bias * 3.6;
   var threshDeg = -90 + 80 * 3.6;
   var bip = d.biasIndustryPosition || {};
-  var ySc = bip.yourScore != null ? bip.yourScore : bias;
+  var ySc = bias;
   var indAvg = bip.industryAvg != null ? bip.industryAvg : 0;
   var pct = bip.percentile != null ? bip.percentile : 0;
   var bc = d.biasDetectionConfidence || {};
@@ -12929,10 +12929,10 @@ function edoBuildEdenHeroSection(d, org, bfN) {
   var scov = bc.sampleCoverage != null ? bc.sampleCoverage : 0;
   var dlat = bc.detectionLatency != null ? bc.detectionLatency : 0;
   var cstr = bc.counterfactualStrength != null ? bc.counterfactualStrength : 0;
-  var statusLong = d.edenHeroStatusLong || d.edenHeroSub || '';
+  var statusLong = bias >= 80 ? 'Within Compliance — Certification Floor Met' : 'Below Threshold — Below EEOC Floor';
   var lens = 'Eden';
   return '<section id="eden-sec-hero" class="tsv2-section" style="margin-bottom:20px;padding:16px 18px 20px;border:1px solid rgba(167, 167, 167,.14);border-radius:14px;background:rgba(167, 167, 167,.04)">' +
-    '<div style="display:flex;justify-content:flex-end;margin-bottom:10px">' + edoEdenHeroTopPillHtml(d) + '</div>' +
+    '<div style="display:flex;justify-content:flex-end;margin-bottom:10px">' + edoEdenHeroTopPillHtml(d, bias) + '</div>' +
     '<div class="edo-ts-hero">' +
     '<div class="edo-ts-hero-left-col">' +
     '<div style="text-align:center;width:100%"' + edoT('Bias Detection Score', 'Composite measure of fairness across all monitored models. Below 70 = active violations.') + '>' +
@@ -12968,7 +12968,7 @@ function edoBuildObsidianHeroSection(d, org, bfN) {
   var sweepDeg = -90 + fraud * 3.6;
   var threshDeg = -90 + 80 * 3.6;
   var fip = d.fraudIndustryPosition || {};
-  var ySc = fip.yourScore != null ? fip.yourScore : fraud;
+  var ySc = fraud;
   var indAvg = fip.industryAvg != null ? fip.industryAvg : 0;
   var pct = fip.percentile != null ? fip.percentile : 0;
   var fr = d.fraudDetectionReliability || {};
@@ -12976,10 +12976,10 @@ function edoBuildObsidianHeroSection(d, org, bfN) {
   var dcov = fr.detectionCoverage != null ? fr.detectionCoverage : 0;
   var fpr = fr.falsePositiveRate != null ? fr.falsePositiveRate : 0;
   var cres = fr.clusterResolution != null ? fr.clusterResolution : 0;
-  var statusLong = d.obsidianHeroStatusLong || d.obsidianHeroSub || '';
+  var statusLong = fraud >= 80 ? 'Above Detection Threshold — Strong Posture' : 'Below Threshold — Detection Gap';
   var lens = 'Obsidian';
   return '<section id="obs-sec-hero" class="tsv2-section" style="margin-bottom:16px;padding:16px 18px 20px;border:1px solid rgba(251,146,60,.2);border-radius:14px;background:rgba(251,146,60,.05)">' +
-    '<div style="display:flex;justify-content:flex-end;margin-bottom:10px">' + edoObsidianHeroTopPillHtml(d) + '</div>' +
+    '<div style="display:flex;justify-content:flex-end;margin-bottom:10px">' + edoObsidianHeroTopPillHtml(d, fraud) + '</div>' +
     '<div class="edo-ts-hero">' +
     '<div class="edo-ts-hero-left-col">' +
     '<div style="text-align:center;width:100%"' + edoT('Fraud Detection Score', 'Composite measure of fraud catch rate across synthetic identity, behavioral anomaly, cluster, and velocity patterns.') + '>' +
@@ -14186,7 +14186,7 @@ window.renderEden = function (org) {
   try { if (typeof cardinalRenderCorePinsPanel === 'function') cardinalRenderCorePinsPanel('eden', 'eden-core-pins'); } catch(_e) {}
   var d = CD[org];
   var bfN = d.biasFraudStats ? d.biasFraudStats.overlapCount : 0;
-  var bias = d.biasScore;
+  var bias = edoLiveBiasScore(d, org);
   var cases = d.biasIncidentsActive || [];
   var sev = String(window.__edo.caseSev || 'all').toLowerCase();
   if (sev !== 'all' && sev !== 'critical' && sev !== 'high' && sev !== 'medium') sev = 'all';
@@ -14339,7 +14339,7 @@ window.renderObsidian = function (org) {
   var root = document.getElementById('obsidian-core-root');
   if (!root) return;
   var d = CD[org];
-  var fraud = d.fraudScore;
+  var fraud = edoLiveFraudScore(d, org);
   var bfN = d.biasFraudStats ? d.biasFraudStats.overlapCount : 0;
   var cases = d.fraudIncidentsActive || [];
   var sev = String(window.__edo.caseSev || 'all').toLowerCase();
