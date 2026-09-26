@@ -3841,7 +3841,7 @@ animation:waveform var(--dur) ease-in-out infinite alternate;
   inset: 0;
   border-radius: 50%;
   pointer-events: none;
-  box-shadow: 0 0 60px 2px rgba(245, 158, 11, 0.25);
+  box-shadow: 0 0 60px 2px rgba(245, 158, 11, 0.25), 0 18px 34px -12px rgba(0, 0, 0, 0.35);
   opacity: 0.6;
   animation: tsv2GaugePulse 3.4s ease-in-out infinite;
 }
@@ -12812,7 +12812,7 @@ function edoHeroGaugeInner(prefix, col, circ, sweepDeg, threshDeg) {
   return '<div class="tsv2-gauge-pulse" id="' + prefix + '-gauge-pulse"></div>' +
     '<svg viewBox="0 0 200 200">' +
     '<circle cx="100" cy="100" r="86" fill="none" stroke="rgba(167, 167, 167,.06)" stroke-width="14"/>' +
-    '<circle id="' + prefix + '-gauge-ring" cx="100" cy="100" r="86" fill="none" stroke="' + col + '" stroke-width="14" stroke-linecap="round" stroke-dasharray="' + circ.toFixed(2) + '" stroke-dashoffset="' + circ.toFixed(2) + '" transform="rotate(-90 100 100)" style="transition: stroke-dashoffset 1.2s ease, stroke 0.4s ease"/>' +
+    '<circle id="' + prefix + '-gauge-ring" cx="100" cy="100" r="86" fill="none" stroke="' + col + '" stroke-width="14" stroke-linecap="round" stroke-dasharray="' + circ.toFixed(2) + '" stroke-dashoffset="' + circ.toFixed(2) + '" transform="rotate(-90 100 100)" style="transition: stroke-dashoffset 1.2s ease, stroke 0.4s ease;filter:drop-shadow(0 6px 10px rgba(0,0,0,.30))"/>' +
     '<line x1="100" y1="14" x2="100" y2="28" stroke="rgba(34,197,94,.9)" stroke-width="2.5" transform="rotate(' + threshDeg + ' 100 100)"' + edoT('Threshold', 'Threshold / Cardinal certification floor + EEOC compliance target.') + '/>' +
     '<line id="' + prefix + '-sweep" x1="100" y1="10" x2="100" y2="24" stroke="rgba(255,255,255,.82)" stroke-width="2" transform="rotate(' + sweepDeg + ' 100 100)" style="transition: transform 1.2s ease"/>' +
     '<text id="' + prefix + '-gauge-num" class="tsv2-gauge-num" x="100" y="102" text-anchor="middle" dominant-baseline="middle" fill="' + col + '">0</text>' +
@@ -12837,7 +12837,7 @@ function edoWireHeroGauge(prefix, score, color) {
     else num.textContent = score;
   }
   var pulse = document.getElementById(prefix + '-gauge-pulse');
-  if (pulse && typeof tsv2HexA === 'function') pulse.style.boxShadow = '0 0 60px 2px ' + tsv2HexA(color, 0.30);
+  if (pulse && typeof tsv2HexA === 'function') pulse.style.boxShadow = '0 0 60px 2px ' + tsv2HexA(color, 0.30) + ', 0 18px 34px -12px rgba(0,0,0,0.35)';
   var sweep = document.getElementById(prefix + '-sweep');
   if (sweep) sweep.setAttribute('transform', 'rotate(' + (-90 + score * 3.6) + ' 100 100)');
 }
@@ -12899,7 +12899,7 @@ function edoBuildEdenHeroSection(d, org, bfN) {
     '<div class="tsv2-conf-row"><span' + edoT('Sample Coverage', 'Share of recent model decisions included in this bias score calculation.') + '>Sample Coverage</span><span class="v">' + scov + '%</span></div>' +
     '<div class="tsv2-conf-row"><span' + edoT('Detection Latency', 'Hours since the last material bias signal was confirmed across all monitored models.') + '>Detection Latency</span><span class="v">' + dlat + ' hours</span></div>' +
     '<div class="tsv2-conf-row"><span' + edoT('Counterfactual Strength', 'Confidence in Genesis counterfactual proofs backing active bias findings.') + '>Counterfactual Strength</span><span class="v">' + cstr + '%</span></div></div></div></div>' +
-    '<div style="margin-top:16px;padding:14px;border-radius:12px;border:1px solid rgba(245,158,11,.45);cursor:pointer;background:linear-gradient(100deg,rgba(245,158,11,.14),rgba(251,191,36,.08))" onclick="edoScrollBf()"' + edoT('Bias-Fraud Connection', 'Bias creates blind spots; fraudsters exploit blind spots. Jump to the overlap cases.') + '><strong>Bias\u2011Fraud Connection:</strong> ' + bfN + ' cases where bias blind spots created fraud exposure \u2192 see overlap cases</div>' +
+    '<div style="margin-top:16px;padding:14px;border-radius:12px;border:1px solid rgba(245,158,11,.45);cursor:pointer;background:linear-gradient(100deg,rgba(245,158,11,.14),rgba(251,191,36,.08))" onclick="edoScrollBf()"' + edoT('Bias-Fraud Connection', 'Bias creates blind spots; fraudsters exploit blind spots. Jump to the overlap cases.') + '><strong>Bias\u2011Fraud Connection:</strong> ' + bfN + ' active overlap cases \u2192 jump to detail</div>' +
     '<button type="button" class="btn-primary" style="margin-top:10px;font-size:11px" onclick="document.getElementById(\'eden-sec-cases\').scrollIntoView({behavior:\'smooth\'})"' + edoT('View Live Detections', 'Scroll to active bias cases.') + '>View Live Detections \u2192</button></section>';
 }
 function edoBuildObsidianHeroSection(d, org, bfN) {
@@ -12946,7 +12946,7 @@ function edoBuildObsidianHeroSection(d, org, bfN) {
     '<div class="tsv2-conf-row"><span' + edoT('Detection Coverage', 'Share of model decisions actively monitored for fraud typologies in this scoring window.') + '>Detection Coverage</span><span class="v">' + dcov + '%</span></div>' +
     '<div class="tsv2-conf-row"><span' + edoT('False Positive Rate', 'Share of escalated fraud alerts cleared as benign on review. Lower is better.') + '>False Positive Rate</span><span class="v">' + fpr + '%</span></div>' +
     '<div class="tsv2-conf-row"><span' + edoT('Cluster Resolution', 'Completeness of identified fraud ring membership vs Ground truth simulation — higher means fewer missed members.') + '>Cluster Resolution</span><span class="v">' + cres + '%</span></div></div></div></div>' +
-    '<div style="margin-top:16px;padding:14px;border-radius:12px;border:1px solid rgba(251,146,60,.45);cursor:pointer;background:linear-gradient(100deg,rgba(251,146,60,.14),rgba(245,158,11,.08))" onclick="edoScrollBf()"' + edoT('Bias-Fraud Connection', 'Obsidian view of Eden-linked overlap cases. Jump to the overlap cases.') + '><strong>Bias\u2011Fraud Connection:</strong> ' + bfN + ' overlap cases \u2014 Obsidian view of these \u2192 see overlap cases</div></section>';
+    '<div style="margin-top:16px;padding:14px;border-radius:12px;border:1px solid rgba(251,146,60,.45);cursor:pointer;background:linear-gradient(100deg,rgba(251,146,60,.14),rgba(245,158,11,.08))" onclick="edoScrollBf()"' + edoT('Bias-Fraud Connection', 'Obsidian view of Eden-linked overlap cases. Jump to the overlap cases.') + '><strong>Bias\u2011Fraud Connection:</strong> ' + bfN + ' cases tie back to Eden bias findings \u2192 jump to detail</div></section>';
 }
 function edoRaceBarsHtml(d, org) {
   var bm = d.biasMetricsByModel || [];
@@ -14240,14 +14240,15 @@ window.renderEden = function (org) {
     sec3b +
     '<section style="margin-bottom:20px"><h2 style="font-size:14px"' + edoT('Models Monitored for Bias', 'Coverage grid from biasMetricsByModel.') + '>Models Monitored for Bias</h2>' +
     edoModelFilterPillsHtml() +
-    '<div style="overflow-x:auto"><table class="data-table"><thead><tr><th onclick="edoSortModels(\'model\')"' + edoT('Model', 'Monitored model name and version.') + '>Model</th><th onclick="edoSortModels(\'di\')"' + edoT('Disparate Impact (DI)', 'Ratio of favorable rates — EEOC 0.80 floor.') + '>DI</th><th ' + edoT('Equalized Odds', 'Should be <0.10.') + '>EO</th><th ' + edoT('Proxy Variable', 'Feature correlating with protected class.') + '>Top Proxy</th><th>Affected</th><th ' + edoT('Status', 'Critical / Watch / Passing.') + '>Status</th><th ' + edoT('Trend (30d)', 'Direction of bias metric over last 30 days.') + '>Trend</th></tr></thead><tbody>' + mrows + '</tbody></table></div></section>' +
+    '<div style="max-height:340px;overflow-y:auto;overflow-x:auto;border:1px solid var(--border2);border-radius:10px;margin-top:8px;background:var(--card)"><table class="data-table"><thead style="position:sticky;top:0;background:var(--card);z-index:1"><tr><th onclick="edoSortModels(\'model\')"' + edoT('Model', 'Monitored model name and version.') + '>Model</th><th onclick="edoSortModels(\'di\')"' + edoT('Disparate Impact (DI)', 'Ratio of favorable rates — EEOC 0.80 floor.') + '>DI</th><th ' + edoT('Equalized Odds', 'Should be <0.10.') + '>EO</th><th ' + edoT('Proxy Variable', 'Feature correlating with protected class.') + '>Top Proxy</th><th>Affected</th><th ' + edoT('Status', 'Critical / Watch / Passing.') + '>Status</th><th ' + edoT('Trend (30d)', 'Direction of bias metric over last 30 days.') + '>Trend</th></tr></thead><tbody>' + mrows + '</tbody></table></div></section>' +
     '<section id="edo-sec-cohort" style="margin-bottom:20px"><h2 style="font-size:14px"' + edoT('Cohort Explorer', 'Search affected groups and individuals.') + '>Cohort Explorer — Affected Individuals</h2><p style="font-size:11px;color:var(--muted)">Search and filter across ' + nAff + ' affected individuals (aggregated).</p>' +
     '<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:10px 0"><span class="badge badge-blue" style="font-size:10px"' + edoT('Cohort View', 'Aggregated group-level statistics. No PII.') + '>Cohort View</span>' + (edoCanPii() ? '<span class="badge badge-green" style="font-size:10px"' + edoT('Individual View', 'PII drill-in enabled for your role.') + '>Individual View</span>' : '<span class="badge badge-amber" style="font-size:10px"' + edoT('Restricted Access', 'This view shows individual PII and requires Admin or Legal Counsel role.') + '>\ud83d\udd12 Admin Access Required</span>') +
     '<span style="margin-left:auto;font-size:10px;color:var(--muted)">Demo as:</span>' +
     '<button type="button" class="btn-ghost" style="font-size:9px" onclick="edoSetDemoRole(\'Compliance Officer\')">Compliance</button><button type="button" class="btn-ghost" style="font-size:9px" onclick="edoSetDemoRole(\'Data Scientist\')">Data Scientist</button><button type="button" class="btn-ghost" style="font-size:9px" onclick="edoSetDemoRole(\'Executive\')">Executive</button><button type="button" class="btn-ghost" style="font-size:9px" onclick="edoSetDemoRole(\'Legal Counsel\')">Legal Counsel</button><button type="button" class="btn-ghost" style="font-size:9px" onclick="edoSetDemoRole(\'Admin\')">Admin</button></div>' +
     '<div style="display:flex;gap:8px;margin-bottom:10px"><button type="button" class="btn-ghost" style="font-size:10px' + (window.__edo.cohortSummary ? ';border-color:var(--accent)' : '') + '"' + edoT('Cohort Summary', 'Aggregated cohort statistics. Available to all roles. No PII shown.') + ' onclick="edoCohortToggle(true)">Cohort Summary</button><button type="button" class="btn-ghost" style="font-size:10px' + (!window.__edo.cohortSummary ? ';border-color:var(--accent)' : '') + '"' + edoT('Individual Drill-In', 'Per-person record with PII. Admin and Legal Counsel only. Every access logged to Echo Core.') + ' onclick="if(window.edoCanPii())window.edoCohortToggle(false)">Individual Drill\u2011In ' + (!edoCanPii() ? '\ud83d\udd12' : '') + '</button><button type="button" class="btn-ghost" style="font-size:10px;margin-left:auto"' + edoT('Export Cohort CSV', 'Downloads anonymized cohort data; Admin export adds individual IDs only, not full names.') + ' onclick="edoExportCsv()">Export Cohort CSV</button></div>' +
-    (window.__edo.cohortSummary ? '<table class="data-table"><thead><tr><th>Group</th><th>Affected</th><th>DI</th><th>Fraud Conn</th><th>Case</th></tr></thead><tbody>' + cohortRows + '</tbody></table>' : piiBlock) +
-    '</section>' +
+    '<div style="max-height:340px;overflow-y:auto;border:1px solid var(--border2);border-radius:10px;background:var(--card)">' +
+    (window.__edo.cohortSummary ? '<table class="data-table"><thead style="position:sticky;top:0;background:var(--card);z-index:1"><tr><th>Group</th><th>Affected</th><th>DI</th><th>Fraud Conn</th><th>Case</th></tr></thead><tbody>' + cohortRows + '</tbody></table>' : piiBlock) +
+    '</div></section>' +
     sec7 +
     '<section><h2 style="font-size:14px"' + edoT('Echo Footer', 'Tamper-proof audit trail.') + '>Echo Core</h2><p style="font-size:11px;color:var(--muted)"' + edoT('Tamper-proof', 'Cryptographic, court-admissible, regulator-ready.') + '>Every bias detection logged tamper\u2011proof in Echo Core.</p><p style="font-size:11px">Most recent: ' + edoEchoRecent(d) + '</p>' +
     '<button type="button" class="btn-ghost" style="font-size:11px" onclick="openEchoCoreFiltered(\'eden\')"' + edoT('Echo Core', 'Filtered timeline to Eden-classified events.') + '>View Full Bias Audit Log \u2192</button></section></div>' +
@@ -14373,13 +14374,14 @@ window.renderObsidian = function (org) {
     sec3f +
     '<section style="margin-top:20px"><h2 style="font-size:14px">Models — Fraud Coverage</h2>' +
     edoModelFilterPillsHtml() +
-    '<div style="overflow-x:auto;margin-top:10px"><table class="data-table"><thead><tr><th ' + edoT('Model', 'Monitored model.') + '>Model</th><th ' + edoT('Synthetic Identity Rate', 'Percent caught / blocked in monitor.') + '>Syn ID</th><th ' + edoT('Behavioral Anomaly', 'Behavioral fraud detection rate.') + '>Behav</th><th ' + edoT('Cluster Fraud', 'Ring detection rate.') + '>Cluster</th><th ' + edoT('Top Pattern', 'Dominant fraud typology.') + '>Pattern</th><th ' + edoT('Bias\u2011Fraud', 'Linked cases count.') + '>B\u2011F</th><th>Status</th><th ' + edoT('Trend (30d)', '30-day trajectory.') + '>Tr</th></tr></thead><tbody>' + mrows + '</tbody></table></div></section>' +
+    '<div style="max-height:340px;overflow-y:auto;overflow-x:auto;margin-top:10px;border:1px solid var(--border2);border-radius:10px;background:var(--card)"><table class="data-table"><thead style="position:sticky;top:0;background:var(--card);z-index:1"><tr><th ' + edoT('Model', 'Monitored model.') + '>Model</th><th ' + edoT('Synthetic Identity Rate', 'Percent caught / blocked in monitor.') + '>Syn ID</th><th ' + edoT('Behavioral Anomaly', 'Behavioral fraud detection rate.') + '>Behav</th><th ' + edoT('Cluster Fraud', 'Ring detection rate.') + '>Cluster</th><th ' + edoT('Top Pattern', 'Dominant fraud typology.') + '>Pattern</th><th ' + edoT('Bias\u2011Fraud', 'Linked cases count.') + '>B\u2011F</th><th>Status</th><th ' + edoT('Trend (30d)', '30-day trajectory.') + '>Tr</th></tr></thead><tbody>' + mrows + '</tbody></table></div></section>' +
     '<section id="edo-sec-cohort" style="margin-top:20px"><h2 style="font-size:14px">Cohort Explorer — Fraud Lens</h2><p style="font-size:11px;color:var(--muted)">' + nAff + ' individuals in monitored cohorts (aggregated).</p>' +
     '<div style="display:flex;flex-wrap:wrap;gap:8px;margin:8px 0"><span class="badge badge-blue" style="font-size:10px">Cohort View</span>' + (edoCanPii() ? '<span class="badge badge-green" style="font-size:10px">Individual View</span>' : '<span class="badge badge-amber" style="font-size:10px">\ud83d\udd12 Admin Access Required</span>') +
     '<span style="margin-left:auto;font-size:10px">Demo:</span><button type="button" class="btn-ghost" style="font-size:9px" onclick="edoSetDemoRole(\'Compliance Officer\')">Compliance</button><button type="button" class="btn-ghost" style="font-size:9px" onclick="edoSetDemoRole(\'Admin\')">Admin</button></div>' +
     '<div style="display:flex;gap:8px"><button type="button" class="btn-ghost" style="font-size:10px' + (window.__edo.cohortSummary ? ';border-color:#fb923c' : '') + '" onclick="edoCohortToggle(true)">Cohort Summary</button><button type="button" class="btn-ghost" style="font-size:10px' + (!window.__edo.cohortSummary ? ';border-color:#fb923c' : '') + '" onclick="edoCanPii()&&edoCohortToggle(false)">Individual Drill\u2011In</button><button type="button" class="btn-ghost" style="font-size:10px;margin-left:auto" onclick="edoExportCsv()">Export CSV</button></div>' +
-    (window.__edo.cohortSummary ? '<table class="data-table"><thead><tr><th>Cohort</th><th>Note</th></tr></thead><tbody>' + cohortRows + '</tbody></table>' : piiBlock) +
-    '</section>' +
+    '<div style="max-height:340px;overflow-y:auto;border:1px solid var(--border2);border-radius:10px;background:var(--card)">' +
+    (window.__edo.cohortSummary ? '<table class="data-table"><thead style="position:sticky;top:0;background:var(--card);z-index:1"><tr><th>Cohort</th><th>Note</th></tr></thead><tbody>' + cohortRows + '</tbody></table>' : piiBlock) +
+    '</div></section>' +
     sec7o +
     '<section style="margin-top:20px"><p style="font-size:11px;color:var(--muted)">Obsidian events anchored to Echo Core.</p><p style="font-size:11px">Most recent: ' + edoEchoRecentObs(d) + '</p>' +
     '<button type="button" class="btn-ghost" style="font-size:11px" onclick="openEchoCoreFiltered(\'obsidian\')"' + edoT('Obsidian audit log', 'Echo filtered to fraud-class events.') + '>View Obsidian Audit Log \u2192</button></section></div>' +
@@ -36054,7 +36056,7 @@ function renderTrustScoreStandalone(org) {
     '<div style="position:relative;width:200px;height:200px;flex-shrink:0;">' +
       '<svg viewBox="0 0 200 200" style="width:100%;height:100%;">' +
         '<circle cx="100" cy="100" r="86" fill="none" stroke="rgba(167, 167, 167,0.06)" stroke-width="14"/>' +
-        '<circle cx="100" cy="100" r="86" fill="none" stroke="' + scoreColor + '" stroke-width="14" stroke-linecap="round" stroke-dasharray="540" stroke-dashoffset="' + dashOffset + '" transform="rotate(-90 100 100)" style="filter:drop-shadow(0 0 12px ' + scoreColor + '60);"/>' +
+        '<circle cx="100" cy="100" r="86" fill="none" stroke="' + scoreColor + '" stroke-width="14" stroke-linecap="round" stroke-dasharray="540" stroke-dashoffset="' + dashOffset + '" transform="rotate(-90 100 100)" style="filter:drop-shadow(0 0 12px ' + scoreColor + '60) drop-shadow(0 6px 10px rgba(0,0,0,.30));"/>' +
         '<text x="100" y="105" text-anchor="middle" dominant-baseline="middle" fill="' + scoreColor + '" font-size="64" font-weight="800" font-family="inherit">' + d.global + '</text>' +
         '<text x="100" y="138" text-anchor="middle" font-size="11" fill="rgba(180,190,220,0.55)" font-family="inherit">/ 100</text>' +
       '</svg>' +
