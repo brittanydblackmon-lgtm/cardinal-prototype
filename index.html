@@ -9000,6 +9000,18 @@ Access Control
 <div id="lucid-events"></div>
 </div>
 </div>
+<!-- 9/26 -- Brittany's ask: the AI agents/models Cardinal governs should file daily
+     activity reports here, with Eve/Adam reviewing and able to flag or step in --
+     distinct from the "Agent Sync" tab above, which is Eve and Adam talking to
+     EACH OTHER, not the monitored agents reporting up. Built from real per-model
+     status (bias/fraud state, last review) rather than a new fabricated feed. -->
+<div class="card" style="margin-top:14px">
+<div class="section-hdr" style="margin-bottom:12px">
+<div><div class="section-title">Monitored Agent Daily Reports</div>
+<div style="font-size:10px;color:var(--muted);margin-top:2px">Each production model reports its status daily. Eve/Adam review and flag anything needing attention.</div></div>
+</div>
+<div id="lucid-agent-reports"></div>
+</div>
 </div>
 <!-- ADAM TECHNICAL TAB -->
 <div id="lucid-tab-adam" class="gen-tab-content" style="display:none">
@@ -28880,6 +28892,40 @@ function buildLucid(org) {
  </div>
  </div>`).join('');
 
+ // 9/26 -- Brittany: the models/agents Cardinal governs should file daily reports
+ // here for Eve/Adam to review. Built from real per-org model status (bias/fraud
+ // metrics + last review date already in CARDINAL_DATA), not a new fabricated feed.
+ const lagrEl = document.getElementById('lucid-agent-reports');
+ if (lagrEl) {
+   const CD = window.CARDINAL_DATA, d = CD && CD[org];
+   const bias = (d && d.biasMetricsByModel) || [];
+   const fraud = (d && d.fraudMetricsByModel) || [];
+   const rows = [];
+   const seenIds = {};
+   bias.concat(fraud).forEach(m => {
+     if (seenIds[m.modelId]) return;
+     seenIds[m.modelId] = true;
+     const b = bias.filter(x => x.modelId === m.modelId)[0];
+     const f = fraud.filter(x => x.modelId === m.modelId)[0];
+     const status = (b && b.status) || (f && f.status) || 'Passing';
+     const c = status === 'Critical' ? 'red' : status === 'Watch' ? 'amber' : 'green';
+     const flagged = status === 'Critical';
+     const line = b
+       ? `DI ${b.di} · ${b.affectedCohort ? (b.affectedCohort.totalCount || 0).toLocaleString() + ' affected' : 'monitored'}`
+       : (f ? `Fraud posture nominal · ${f.status}` : 'No incidents to report');
+     rows.push({ mid: m.modelId, status, c, flagged, line });
+   });
+   lagrEl.innerHTML = rows.length ? rows.map(r => `
+     <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid rgba(180,190,220,.05)">
+       <div style="flex:1;min-width:0">
+         <div style="font-size:11px;color:var(--chrome2);font-weight:600">${r.mid}</div>
+         <div style="font-size:9px;color:var(--muted);margin-top:2px">${r.line}</div>
+       </div>
+       <span class="badge" style="font-size:9px;background:var(--${r.c === 'red' ? 'red' : r.c === 'amber' ? 'amber' : 'green'});opacity:.15;color:var(--${r.c === 'red' ? 'red' : r.c === 'amber' ? 'amber' : 'green'})">${r.status}</span>
+       ${r.flagged ? `<button type="button" class="btn-ghost" style="font-size:9px" onclick="showToast('Eve/Adam flagged this for review — see War Room.')">⚡ Flagged</button>` : ''}
+     </div>`).join('') : '<div style="font-size:11px;color:var(--muted);padding:12px 0">No monitored agents reporting for this org yet.</div>';
+ }
+
  setEl('lucid-adam-summary', l.adamSummary);
  const afEl = document.getElementById('lucid-adam-features');
  if(afEl) afEl.innerHTML = l.adamFeatures.map(f=>`
@@ -38501,6 +38547,82 @@ function acfBackdropClose(ev) {
 }
 window.acfBackdropClose = acfBackdropClose;
 
+// ── Model Facts Report (Halo pre-stamp first look) ──────────────────
+// 9/26 -- Brittany: "like a car facts of like on first look before it's even
+// being used, this is what's going on... to know if we need to stamp this or
+// not just yet." Pulls from the same modelDetailDrillIn registry the model
+// popup already uses (real DI/EO/proxy/fraud metrics), so it's consistent with
+// everything else shown about the model -- just framed as a pre-decision brief
+// instead of an ongoing monitoring view.
+function mfrEsc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+  });
+}
+function buildModelFactsReport(modelId) {
+  var CD = window.CARDINAL_DATA;
+  var body = document.getElementById('mfr-body');
+  var sub = document.getElementById('mfr-subtitle');
+  if (!body || !CD || !CD.modelDetailDrillIn) return;
+  var resolved = (typeof window.cardinalResolveModelDetailKey === 'function') ? window.cardinalResolveModelDetailKey(modelId) : modelId;
+  var det = resolved ? CD.modelDetailDrillIn[resolved] : null;
+  if (!det) { body.innerHTML = '<div style="font-size:11px;color:var(--muted)">No data on file for this model yet.</div>'; return; }
+  var id = det.identity || {};
+  var bm = det.biasMetrics || {};
+  var fm = det.fraudMetrics || {};
+  if (sub) sub.textContent = mfrEsc(id.name) + ' · Halo Core pre-stamp first look';
+
+  var diPass = bm.di && bm.di.current >= (bm.di.threshold || 0.8);
+  var eoPass = bm.equalizedOdds && bm.equalizedOdds.current <= (bm.equalizedOdds.threshold != null ? bm.equalizedOdds.threshold : 0.1);
+  var fraudScores = [fm.syntheticId, fm.behavioralAnomaly, fm.clusterFraud, fm.velocity].filter(Boolean);
+  var fraudAvg = fraudScores.length ? Math.round(fraudScores.reduce(function (s, x) { return s + (x.current || 0); }, 0) / fraudScores.length) : null;
+  var fraudPass = fraudAvg != null && fraudAvg >= 85;
+  var proxies = det.proxyVariables || [];
+  var overallReady = diPass && eoPass && fraudPass && proxies.length === 0;
+
+  var verdictHtml = overallReady
+    ? '<div style="padding:12px 16px;background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.3);border-radius:10px"><strong style="color:#22c55e">Ready to stamp</strong> — passes bias and fraud thresholds with no flagged proxy variables. Standard ongoing monitoring recommended.</div>'
+    : '<div style="padding:12px 16px;background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.3);border-radius:10px"><strong style="color:var(--amber)">Hold before stamping</strong> — one or more checks below need review first. See flagged items.</div>';
+
+  var checksHtml = '<table style="width:100%;border-collapse:collapse"><thead><tr style="font-size:9px;color:var(--muted2);text-align:left"><th style="padding:6px">Check</th><th style="padding:6px">Result</th><th style="padding:6px">Status</th></tr></thead><tbody>' +
+    '<tr><td style="padding:6px;font-size:10px">Disparate Impact</td><td style="padding:6px;font-size:10px">' + (bm.di ? bm.di.current.toFixed(2) : '—') + ' (floor ' + (bm.di ? bm.di.threshold : '0.80') + ')</td><td style="padding:6px;font-size:10px;font-weight:700;color:' + (diPass ? '#22c55e' : 'var(--red)') + '">' + (diPass ? 'Pass' : 'Below floor') + '</td></tr>' +
+    '<tr><td style="padding:6px;font-size:10px">Equalized Odds</td><td style="padding:6px;font-size:10px">' + (bm.equalizedOdds ? bm.equalizedOdds.current.toFixed(2) : '—') + ' (max ' + (bm.equalizedOdds ? bm.equalizedOdds.threshold : '0.10') + ')</td><td style="padding:6px;font-size:10px;font-weight:700;color:' + (eoPass ? '#22c55e' : 'var(--red)') + '">' + (eoPass ? 'Pass' : 'Above max') + '</td></tr>' +
+    '<tr><td style="padding:6px;font-size:10px">Fraud posture (avg of 4 sub-metrics)</td><td style="padding:6px;font-size:10px">' + (fraudAvg != null ? fraudAvg : '—') + ' (floor 85)</td><td style="padding:6px;font-size:10px;font-weight:700;color:' + (fraudPass ? '#22c55e' : 'var(--red)') + '">' + (fraudPass ? 'Pass' : 'Below floor') + '</td></tr>' +
+    '<tr><td style="padding:6px;font-size:10px">Proxy variables flagged</td><td style="padding:6px;font-size:10px">' + proxies.length + '</td><td style="padding:6px;font-size:10px;font-weight:700;color:' + (proxies.length === 0 ? '#22c55e' : 'var(--amber)') + '">' + (proxies.length === 0 ? 'Clean' : 'Review needed') + '</td></tr>' +
+    '</tbody></table>';
+
+  var proxyHtml = proxies.length
+    ? '<div style="font-size:10px;color:var(--muted2);margin-top:8px">' + proxies.map(function (pv) { return mfrEsc(pv.feature || pv.name || '') + ' (r=' + mfrEsc(pv.correlation) + ', correlates with ' + mfrEsc(pv.correlatesWith || 'a protected class') + ')'; }).join('; ') + '</div>'
+    : '';
+
+  body.innerHTML =
+    '<section style="margin-bottom:20px"><div style="font-size:15px;font-weight:700;color:var(--chrome2)">' + mfrEsc(id.name) + '</div>' +
+    '<div style="font-size:10px;color:var(--muted);margin-top:4px">' + mfrEsc(id.description || 'Model summary not on file.') + '</div></section>' +
+
+    '<section style="margin-bottom:20px">' + verdictHtml + '</section>' +
+
+    '<section style="margin-bottom:20px"><div style="font-size:11px;font-weight:700;color:var(--chrome2);margin-bottom:8px">First-Look Checks</div>' + checksHtml + proxyHtml + '</section>' +
+
+    '<section><div style="font-size:9px;color:var(--muted);line-height:1.6;padding-top:12px;border-top:1px solid var(--border2)">Generated by Halo Core before this model has been stamped. This is a first-look read based on current metrics, not a substitute for full Eden/Obsidian monitoring once the model is live.</div></section>';
+}
+window.buildModelFactsReport = buildModelFactsReport;
+function openModelFactsReport(modelId) {
+  var modal = document.getElementById('model-facts-modal');
+  if (!modal) return;
+  modal.style.display = 'block';
+  buildModelFactsReport(modelId);
+}
+window.openModelFactsReport = openModelFactsReport;
+function closeModelFactsReport() {
+  var modal = document.getElementById('model-facts-modal');
+  if (modal) modal.style.display = 'none';
+}
+window.closeModelFactsReport = closeModelFactsReport;
+function mfrBackdropClose(ev) {
+  if (ev && ev.target && ev.target.id === 'model-facts-modal') closeModelFactsReport();
+}
+window.mfrBackdropClose = mfrBackdropClose;
+
 // ── Renderer ────────────────────────────────────────────────────────
 function renderTrustScore(org) {
   var o = org || (typeof currentOrg !== 'undefined' ? currentOrg : 'ad');
@@ -40172,13 +40294,19 @@ function mdmBadgeClass(st) {
   return 'badge badge-green';
 }
 
+// 9/26 -- found while verifying the Sentinel auto-throttle work: this was reading
+// each entry as a plain number, but _edoGenHeroSparkline30 (the shared generator)
+// actually returns {date, value} objects -- so Math.round() on the whole object
+// silently produced NaN for every single point. Same "two writers, one stale"
+// pattern as earlier bugs this session, just on a data shape instead of a score.
 function mdmMiniSpark(arr, goodHigh) {
   if (!arr || !arr.length) return '';
-  var last = arr[arr.length - 1];
-  var first = arr[0];
+  var nums = arr.map(function (n) { return (n && typeof n === 'object') ? n.value : n; });
+  var last = nums[nums.length - 1];
+  var first = nums[0];
   var up = last >= first;
   var col = goodHigh ? (up ? 'var(--green)' : 'var(--amber)') : (!up ? 'var(--green)' : 'var(--amber)');
-  return '<span style="font-size:9px;color:' + col + '">30d: ' + arr.map(function (n) { return Math.round(n); }).join(' \u2192 ') + '</span>';
+  return '<span style="font-size:9px;color:' + col + '">30d: ' + nums.map(function (n) { return Math.round(n); }).join(' \u2192 ') + '</span>';
 }
 
 function mdmBiasGaugeHtml(label, pack, tipTitle, goodAbove) {
@@ -40821,6 +40949,7 @@ window.openModelDetail = openModelDetail;
         <button type="button" class="btn-ghost" style="font-size:10px" title="Open Genesis workspace" onclick="mdmFooterRoute('genesis')">View in Genesis</button>
         <button type="button" class="btn-ghost" style="font-size:10px" title="Compliance Exchange" onclick="mdmFooterRoute('compliance')">Compliance Exchange</button>
         <button type="button" class="btn-primary" style="font-size:10px" title="Prototype export" onclick="closeModelDetail();showToast('Model report export queued (prototype).')">Export Model Report PDF</button>
+        <button type="button" class="btn-ghost" style="font-size:10px" title="Halo Core pre-stamp first-look brief" onclick="openModelFactsReport(window.__mdmResolvedKey)">Model Facts Report</button>
         <button type="button" class="btn-ghost" style="font-size:10px" title="Watch list" onclick="showToast('Added to watch list (prototype).')">Add to Watch List</button>
       </div>
     </div>
@@ -40847,6 +40976,29 @@ window.openModelDetail = openModelDetail;
     </div>
     <div style="flex:1;overflow-y:auto;padding:20px 24px 28px">
       <div id="acf-body"></div>
+    </div>
+  </div>
+</div>
+
+<!-- 9/26 -- Brittany's Halo pre-stamp "Model Facts" ask: a Carfax/passport-style
+     first-look report for a model, generated from what Halo/Eden/Obsidian already
+     know about it, meant to inform the stamp decision before a model is fully
+     trusted. Built from real existing metrics (DI, EO, proxy variables, fraud
+     sub-scores, affected cohort size) -- no fabricated revenue/dollar figures,
+     since no honest per-model revenue data exists in this seed. See
+     buildModelFactsReport(). Reachable from the model detail popup. -->
+<div id="model-facts-modal" onclick="mfrBackdropClose(event)" style="display:none;position:fixed;inset:0;z-index:9992;background:rgba(4,7,13,.86);overflow:hidden">
+  <div onclick="event.stopPropagation()" style="max-height:92vh;height:92vh;margin:0 auto;width:100%;max-width:720px;background:var(--bg);border:1px solid var(--border2);border-radius:16px 16px 0 0;box-shadow:0 -16px 60px rgba(0,0,0,.55);display:flex;flex-direction:column;overflow:hidden;font-family:var(--sans)">
+    <div style="flex-shrink:0;padding:12px 16px;border-bottom:1px solid var(--border2);background:var(--bg2);display:flex;align-items:center;gap:12px">
+      <div style="flex:1">
+        <div style="font-size:13px;font-weight:700;color:var(--chrome2)">Model Facts Report</div>
+        <div id="mfr-subtitle" style="font-size:9px;color:var(--muted);margin-top:2px">Halo Core pre-stamp first look</div>
+      </div>
+      <button type="button" class="btn-ghost" style="font-size:10px" onclick="showToast('PDF export queued (prototype).')">Export PDF</button>
+      <button type="button" onclick="closeModelFactsReport()" title="Close" style="background:transparent;border:none;color:var(--muted);cursor:pointer;font-size:20px;line-height:1;padding:4px">✕</button>
+    </div>
+    <div style="flex:1;overflow-y:auto;padding:20px 24px 28px">
+      <div id="mfr-body"></div>
     </div>
   </div>
 </div>
