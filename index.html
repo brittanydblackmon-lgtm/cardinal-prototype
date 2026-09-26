@@ -38505,10 +38505,17 @@ function buildAnnualCertFile(org) {
       }).join('') + '</tbody></table><div style="font-size:9px;color:var(--muted);margin-top:6px">⚑ = 2+ unstamp/re-stamp cycles this year, flagged as a potential gaming pattern per Cardinal’s certification policy.</div>'
     : '<div style="font-size:10px;color:var(--muted)">No unstamp activity on file this year — clean record.</div>';
 
+  // 9/26 -- same live-drift fix as the hero ring (tsv2BuildHero): read the
+  // live score value when it's running for this org, instead of the static
+  // seed number, so this doesn't show a stale score next to the live ring.
+  var acfLiveScore = (typeof window._dashTrustDriftValue === 'number' && window.currentOrg === org)
+    ? Math.round(window._dashTrustDriftValue)
+    : (parseInt(d.trustScoreDisplay, 10) || d.trustScoreDisplay);
+
   body.innerHTML =
     '<section style="margin-bottom:22px"><div style="font-size:11px;font-weight:700;color:var(--chrome2);margin-bottom:6px">Summary</div>' +
     '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px">' +
-    '<div class="stat-card"><div class="stat-label">Current Trust Score</div><div class="stat-value" style="color:var(--accent)">' + acfEsc(d.trustScoreDisplay != null ? d.trustScoreDisplay : '—') + '</div></div>' +
+    '<div class="stat-card"><div class="stat-label">Current Trust Score</div><div class="stat-value" style="color:var(--accent)">' + acfEsc(acfLiveScore != null ? acfLiveScore : '—') + '</div></div>' +
     '<div class="stat-card"><div class="stat-label">Models Tracked</div><div class="stat-value">' + nModels + '</div></div>' +
     '<div class="stat-card"><div class="stat-label">Compliance Escalations</div><div class="stat-value" style="color:' + (escLog.length ? 'var(--amber)' : 'var(--green)') + '">' + escLog.length + '</div></div>' +
     '<div class="stat-card"><div class="stat-label">Whistleblower Cases</div><div class="stat-value" style="color:' + (wbCases.length ? 'var(--amber)' : 'var(--green)') + '">' + wbCases.length + '</div></div>' +
