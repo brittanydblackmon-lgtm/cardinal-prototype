@@ -5971,6 +5971,16 @@ Settings
 <div style="font-size:11px;color:var(--muted2);line-height:1.7">Adam doesn't wait for instructions. When Eden or Obsidian detect a fraud pattern or bias cluster, Adam automatically generates synthetic profiles matching that pattern and runs them through your models in Genesis. If a fix works — Adam stores the prevention model in the Model Library. The library grows with every pattern caught.</div>
 </div>
 </div>
+<div class="card" style="margin-bottom:14px">
+<div class="section-hdr" style="margin-bottom:12px">
+<div>
+<div class="section-title">Adam's Proposed Personas — Awaiting Your Review</div>
+<div style="font-size:10px;color:var(--muted);margin-top:2px">Adam also scans for attack patterns nobody has detected yet in your data — these aren't reactive to a case, so they need your review before they run.</div>
+</div>
+<span class="badge badge-amber" id="adam-proposal-badge">0 Pending</span>
+</div>
+<div id="adam-proposed-personas"></div>
+</div>
 <div class="grid-2" style="margin-bottom:14px">
 <div class="card">
 <div class="section-hdr" style="margin-bottom:12px">
@@ -24398,6 +24408,10 @@ const GENESIS_DATA = {
  {id:'AT-001',trigger:'Obsidian: Synthetic credential ring (23 apps)',status:'Running',profiles:200,finding:'Testing if model catches coordinated submissions'},
  {id:'AT-002',trigger:'Eden: Demographic classification bias',status:'Complete',profiles:500,finding:'Proven: model fails on 3 demographic combinations'},
  ],
+ adamProposals:[
+ {id:'AP-014',persona:'Insider Credential Harvesting Ring',rationale:'DoD contractor breach reporting (public disclosures, 2026) shows a rise in departing-employee credential reuse against personnel systems. No test cohort currently covers this pattern.',profiles:150,source:'Adam — proactive scan, not tied to a detected case'},
+ {id:'AP-015',persona:'MCP / Agent-Tool Interception Probe',rationale:'Simulates a compromised AI agent tool call attempting to exfiltrate personnel assignment decisions via a chained tool-call pattern. Tests whether Eden/Obsidian flag the anomalous access, not whether the model itself is biased.',profiles:80,source:'Adam — proactive scan, not tied to a detected case'},
+ ],
  adamProfiles:[
  {type:'Synthetic Credential Ring',count:23,criteria:'Shared device + IP, staggered timing, varied names',goal:'Test if model detects coordinated pattern'},
  {type:'Demographic Edge Cases',count:150,criteria:'Age 55+ from remote postings, minority technicians',goal:'Test fairness across underrepresented groups'},
@@ -24474,6 +24488,9 @@ const GENESIS_DATA = {
  adamTests:[
  {id:'AT-011',trigger:'Obsidian: 47 applications from 1 iPhone',status:'Complete',profiles:200,finding:'Model catches device fingerprint ring. Prevention model stored.'},
  {id:'AT-012',trigger:'Eden: ZIP code racial proxy',status:'Running',profiles:600,finding:'Testing whether fix prevents fraudster ZIP exploitation'},
+ ],
+ adamProposals:[
+ {id:'AP-033',persona:'Synthetic Thin-File Identity Ring',rationale:'Industry fraud reporting shows rings building thin-file synthetic identities specifically to exploit new-account lending models. No current test cohort targets this pattern.',profiles:200,source:'Adam — proactive scan, not tied to a detected case'},
  ],
  adamProfiles:[
  {type:'Synthetic Identity Ring',count:47,criteria:'Same iPhone device ID, varied names and SSNs, staggered timing',goal:'Prove model catches coordinated device-based fraud'},
@@ -24554,6 +24571,9 @@ const GENESIS_DATA = {
  adamTests:[
  {id:'AT-021',trigger:'Obsidian: Prescription fraud ring (31 providers)',status:'Complete',profiles:300,finding:'Model catches rotating provider pattern. Prevention model stored.'},
  {id:'AT-022',trigger:'Eden: Age-cost proxy bias (patients 65+)',status:'Running',profiles:800,finding:'Testing if clinical severity replacement catches fraud without age bias'},
+ ],
+ adamProposals:[
+ {id:'AP-052',persona:'Telehealth Billing Identity Ring',rationale:'CMS fraud alerts flag a rise in synthetic-patient telehealth billing rings targeting claims models with no prior exposure to that channel. No current test cohort covers telehealth-specific patterns.',profiles:180,source:'Adam — proactive scan, not tied to a detected case'},
  ],
  adamProfiles:[
  {type:'Prescription Fraud Network',count:31,criteria:'Rotating providers, shared patients, same 8 medications, timing patterns',goal:'Prove model catches coordinated prescription fraud'},
@@ -27326,6 +27346,12 @@ function buildGenesis(org) {
  const cab=document.getElementById('cohort-alert-badge');
  if(cab){const n=g.preDeployment.filter(p=>p.c==='red').length;cab.textContent=n>0?`${n} Blocked`:'All Clear';cab.className=`badge badge-${n>0?'red':'green'}`;}
 
+ // 9/26 -- Brittany: Adam should also proactively propose adversarial personas for
+ // attack patterns nobody has flagged yet, not just react to cases Eden/Obsidian
+ // already caught. These need her review/approval before they run (genuine judgment
+ // call on what threat model to test), so they render separately with Approve/Reject.
+ renderAdamProposals(org);
+
  const aat=document.getElementById('adam-active-tests');
  if(aat) aat.innerHTML=g.adamTests.map(t=>`
  <div style="background:var(--bg3);border-radius:9px;padding:12px;margin-bottom:8px;border:1px solid rgba(180,190,220,.06)">
@@ -27403,6 +27429,68 @@ function runAdamTest() {
  newTest.innerHTML=`<div style="display:flex;justify-content:space-between;margin-bottom:5px"><span style="font-size:10px;color:var(--muted)">User-initiated test</span><span class="badge badge-blue">Running</span></div><div style="font-size:10px;color:var(--accent)">Trigger: Manual user request</div><div style="font-size:10px;color:var(--muted2);margin-top:3px">Generating 200 synthetic profiles based on current bias pattern...</div>`;
  at.insertBefore(newTest, at.firstChild);
 }
+
+// 9/26 -- Adam's proactive persona proposals (not tied to a case Eden/Obsidian already
+// caught). Rendered from GENESIS_DATA[org].adamProposals; approving moves the proposal
+// into the Active Tests list (same shape as an adamTests entry) and removes it here;
+// rejecting just dismisses it. Neither mutates GENESIS_DATA itself (demo-session only),
+// which matches how runAdamTest() above already behaves for user-initiated tests.
+function renderAdamProposals(org) {
+ var g = GENESIS_DATA[org];
+ var host = document.getElementById('adam-proposed-personas');
+ var badge = document.getElementById('adam-proposal-badge');
+ if (!g || !host) return;
+ var proposals = g.adamProposals || [];
+ if (badge) {
+   badge.textContent = proposals.length + ' Pending';
+   badge.className = 'badge badge-' + (proposals.length ? 'amber' : 'green');
+ }
+ host.innerHTML = proposals.length
+   ? proposals.map(function (p) {
+       return '<div class="adam-proposal-row" data-proposal-id="' + p.id + '" style="background:var(--bg3);border:1px solid rgba(167,167,167,.12);border-radius:9px;padding:12px;margin-bottom:8px">' +
+         '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:5px">' +
+         '<span style="font-size:11px;font-weight:600;color:var(--chrome2)">' + p.persona + '</span>' +
+         '<span class="badge badge-amber">Awaiting Review</span></div>' +
+         '<div style="font-size:10px;color:var(--muted2);line-height:1.5;margin-bottom:6px">' + p.rationale + '</div>' +
+         '<div style="font-size:10px;color:var(--muted);margin-bottom:8px">' + p.id + ' · ' + p.profiles + ' synthetic profiles proposed · ' + p.source + '</div>' +
+         '<div style="display:flex;gap:8px">' +
+         '<button type="button" class="btn-ghost" style="font-size:10px;flex:1" onclick="approveAdamProposal(\'' + org + '\',\'' + p.id + '\')">Approve &amp; Run</button>' +
+         '<button type="button" class="btn-ghost" style="font-size:10px;flex:1;color:var(--muted)" onclick="rejectAdamProposal(\'' + org + '\',\'' + p.id + '\')">Reject</button>' +
+         '</div></div>';
+     }).join('')
+   : '<div style="font-size:10px;color:var(--muted)">No proposals pending review — Adam is still scanning.</div>';
+}
+window.renderAdamProposals = renderAdamProposals;
+
+function approveAdamProposal(org, id) {
+ var g = GENESIS_DATA[org];
+ if (!g) return;
+ var idx = (g.adamProposals || []).findIndex(function (p) { return p.id === id; });
+ if (idx === -1) return;
+ var p = g.adamProposals[idx];
+ g.adamProposals.splice(idx, 1);
+ g.adamTests = g.adamTests || [];
+ g.adamTests.unshift({ id: p.id.replace('AP-', 'AT-'), trigger: 'Adam proposal, approved by user — ' + p.persona, status: 'Running', profiles: p.profiles, finding: 'Just started — no result yet.' });
+ renderAdamProposals(org);
+ var aat = document.getElementById('adam-active-tests');
+ if (aat) aat.innerHTML = g.adamTests.map(function (t) {
+   return '<div style="background:var(--bg3);border-radius:9px;padding:12px;margin-bottom:8px;border:1px solid rgba(180,190,220,.06)">' +
+     '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:5px">' +
+     '<span style="font-size:10px;color:var(--muted)">Test ' + t.id + '</span>' +
+     '<span class="badge badge-' + (t.status === 'Running' ? 'blue' : 'green') + '">' + t.status + '</span></div>' +
+     '<div style="font-size:10px;color:var(--amber);margin-bottom:4px">Trigger: ' + t.trigger + '</div>' +
+     '<div style="font-size:10px;color:var(--muted2)">Profiles: ' + t.profiles + ' synthetic · Finding: ' + t.finding + '</div></div>';
+ }).join('');
+}
+window.approveAdamProposal = approveAdamProposal;
+
+function rejectAdamProposal(org, id) {
+ var g = GENESIS_DATA[org];
+ if (!g) return;
+ g.adamProposals = (g.adamProposals || []).filter(function (p) { return p.id !== id; });
+ renderAdamProposals(org);
+}
+window.rejectAdamProposal = rejectAdamProposal;
 
 const ATONEMENT_DATA = {
  ad:{
