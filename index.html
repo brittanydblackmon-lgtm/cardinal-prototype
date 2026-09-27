@@ -7801,10 +7801,19 @@ Template Overview
 </div>
 <div class="grid-4" style="margin-bottom:14px"><div class="stat-card"  style=";"><div class="stat-label">Records Logged</div><div class="stat-value" style="color:var(--accent);font-size:22px" id="tl-hero-records">—</div><div class="stat-change ">Cryptographic proofs</div></div><div class="stat-card"  style=";"><div class="stat-label">Verifications Today</div><div class="stat-value" style="color:#22C55E;font-size:22px" id="tl-hero-verifications">—</div><div class="stat-change up">External parties</div></div><div class="stat-card"  style=";"><div class="stat-label">Active Certifications</div><div class="stat-value" style="color:#22C55E;font-size:22px" id="tl-hero-certcount">—</div><div class="stat-change " id="tl-hero-certlabels">—</div></div><div class="stat-card"  style=";"><div class="stat-label">Whistleblower Cases</div><div class="stat-value" style="color:var(--accent);font-size:22px" id="tl-hero-wbcount">—</div><div class="stat-change ">Sealed · Tamper-proof</div></div></div>
 
-<div style="display:flex;gap:8px">
+<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
 <button class="btn-ghost" style="font-size:11px" onclick="queryLedger()"> Query Ledger</button>
-<button class="btn-primary" style="font-size:11px" onclick="pushToLedger()">Push Update →</button>
+<button class="btn-primary" style="font-size:11px" id="tl-push-update-btn" onclick="pushToLedger()">Push Update →</button>
+<div style="flex:1"></div>
+<span style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em">Preview as</span>
+<div style="display:flex;gap:2px;background:var(--bg2);border-radius:8px;padding:3px" id="tl-preview-tier-pills">
+<button class="gen-tab active" onclick="tlSetPreviewTier('lead')" data-tier="lead" style="font-size:10px;padding:6px 10px">Compliance Lead</button>
+<button class="gen-tab" onclick="tlSetPreviewTier('regulator')" data-tier="regulator" style="font-size:10px;padding:6px 10px">Regulator</button>
+<button class="gen-tab" onclick="tlSetPreviewTier('auditor')" data-tier="auditor" style="font-size:10px;padding:6px 10px">Third-Party Auditor</button>
+<button class="gen-tab" onclick="tlSetPreviewTier('public')" data-tier="public" style="font-size:10px;padding:6px 10px">Public &amp; Press</button>
 </div>
+</div>
+<div id="tl-preview-tier-banner" style="display:none;margin-top:10px;background:rgba(167,167,167,.06);border:1px solid rgba(167,167,167,.15);border-radius:8px;padding:10px 14px;font-size:11px;color:var(--muted2)"></div>
 </div>
 <!-- WHAT IS THE TRUST LEDGER -->
 <div style="background:rgba(167, 167, 167,.04);border:1px solid rgba(167, 167, 167,.12);border-radius:10px;padding:16px;margin-bottom:18px">
@@ -7854,7 +7863,7 @@ Template Overview
 <button class="gen-tab" onclick="switchTLTopTab('access',1)">Access Levels</button>
 <button class="gen-tab" onclick="switchTLTopTab('whistleblower',2)">WB Verification</button>
 <button class="gen-tab" onclick="switchTLTopTab('privacy',3)">Privacy & Crypto</button>
-<button class="gen-tab" onclick="switchTLTopTab('query',4)">Query Ledger</button>
+<button class="gen-tab" data-tl-toptab="query" onclick="switchTLTopTab('query',4)">Query Ledger</button>
 </div>
 <!-- LEDGER ENTRIES TAB -->
 <div id="tl-tab-entries" class="gen-tab-content">
@@ -7892,9 +7901,9 @@ Template Overview
 <div style="display:flex;gap:2px;margin-bottom:16px;background:var(--bg3);border-radius:10px;padding:4px" id="tl-tabs-access">
 <button class="gen-tab active" onclick="switchTLTab(this,0)" style="flex:1;padding:8px;border-radius:8px;border:none;background:var(--card);color:var(--text);font-size:11px;font-weight:600;cursor:pointer;font-family:var(--sans)">Overview</button>
 <button class="gen-tab" onclick="switchTLTab(this,1)" style="flex:1;padding:8px;border-radius:8px;border:none;background:transparent;color:var(--muted);font-size:11px;cursor:pointer;font-family:var(--sans)">Certifications</button>
-<button class="gen-tab" onclick="switchTLTab(this,2)" style="flex:1;padding:8px;border-radius:8px;border:none;background:transparent;color:var(--muted);font-size:11px;cursor:pointer;font-family:var(--sans)">Reported Issues</button>
+<button class="gen-tab" data-tl-subtab="2" onclick="switchTLTab(this,2)" style="flex:1;padding:8px;border-radius:8px;border:none;background:transparent;color:var(--muted);font-size:11px;cursor:pointer;font-family:var(--sans)">Reported Issues</button>
 <button class="gen-tab" onclick="switchTLTab(this,3)" style="flex:1;padding:8px;border-radius:8px;border:none;background:transparent;color:var(--muted);font-size:11px;cursor:pointer;font-family:var(--sans)">Verification Log</button>
-<button class="gen-tab" onclick="switchTLTab(this,4)" style="flex:1;padding:8px;border-radius:8px;border:none;background:transparent;color:var(--muted);font-size:11px;cursor:pointer;font-family:var(--sans)">Whistleblower</button>
+<button class="gen-tab" data-tl-subtab="4" onclick="switchTLTab(this,4)" style="flex:1;padding:8px;border-radius:8px;border:none;background:transparent;color:var(--muted);font-size:11px;cursor:pointer;font-family:var(--sans)">Whistleblower</button>
 </div>
 
 <!-- OVERVIEW TAB -->
@@ -22167,8 +22176,65 @@ function buildTrustLedger(org) {
       '<div>SLA requirement: ' + w.slaLabel + ' · Status: <span style="color:' + (w.met ? 'var(--green)' : 'var(--red)') + '">' + (w.met ? 'MET ✓' : 'MISSED') + '</span></div>' +
       '<div style="margin-top:8px;color:var(--accent)">Regulators can query this hash to verify response time without accessing case contents.</div></div></div>';
   }).join('') : '<div class="card" style="padding:20px;text-align:center;font-size:11px;color:var(--muted)">No whistleblower cases on file for this organization.</div>';
+
+  // Re-apply whatever "Preview as" tier was active, so switching orgs doesn't leave
+  // a stale filtered view (or the wrong org's entries) showing under that tier.
+  try { tlSetPreviewTier(window.__tlPreviewTier || 'lead'); } catch (_tlp) {}
 }
 window.buildTrustLedger = buildTrustLedger;
+
+// 9/26 -- Brittany: the Trust Ledger's whole design intent was always to be the
+// external-facing layer (regulators/press/third-party auditors like Deloitte see
+// a scoped view, same underlying data, no separate login/persona needed). This was
+// already documented (TRUST_LEDGER_ACCESS_TIERS, the "What IS/ISN'T stored" panel)
+// but never actually interactive -- you couldn't SEE what each audience sees. This
+// adds a "Preview as" selector so the same real per-org data gets shown/hidden per
+// tier, live, for demo purposes -- no new login system, no separate data source.
+var TL_PREVIEW_TIER_DEFS = {
+  lead: { label: 'Compliance Lead', banner: null, canPush: true, hideSubtabs: [], hideTopTabs: [], entriesFilter: 'all' },
+  regulator: { label: 'Regulator', banner: 'Viewing as a verified regulator would: full audit trail and reported cases, no ability to push updates to the ledger.', canPush: false, hideSubtabs: [], hideTopTabs: [], entriesFilter: 'all' },
+  auditor: { label: 'Third-Party Auditor', banner: 'Viewing as an outside auditor (e.g. Deloitte, on an annual review engagement) would: certifications, audit trail summary, and whistleblower case counts — not the full sealed case detail regulators get.', canPush: false, hideSubtabs: [4], hideTopTabs: [], entriesFilter: 'all' },
+  public: { label: 'Public & Press', banner: 'Viewing as the public or press would, from the same public Trust Ledger page: Trust Score, certification status, and audit confirmations only — no open case detail, no whistleblower data, no ledger tools.', canPush: false, hideSubtabs: [2, 4], hideTopTabs: ['query'], entriesFilter: 'verified-only' }
+};
+window.__tlPreviewTier = 'lead';
+
+function tlSetPreviewTier(tier) {
+  var def = TL_PREVIEW_TIER_DEFS[tier];
+  if (!def) return;
+  window.__tlPreviewTier = tier;
+
+  document.querySelectorAll('#tl-preview-tier-pills .gen-tab').forEach(function (b) {
+    b.classList.toggle('active', b.getAttribute('data-tier') === tier);
+  });
+
+  var pushBtn = document.getElementById('tl-push-update-btn');
+  if (pushBtn) pushBtn.style.display = def.canPush ? '' : 'none';
+
+  var banner = document.getElementById('tl-preview-tier-banner');
+  if (banner) {
+    if (def.banner) { banner.style.display = ''; banner.textContent = def.banner; }
+    else { banner.style.display = 'none'; }
+  }
+
+  document.querySelectorAll('[data-tl-toptab]').forEach(function (b) {
+    b.style.display = def.hideTopTabs.indexOf(b.getAttribute('data-tl-toptab')) !== -1 ? 'none' : '';
+  });
+  document.querySelectorAll('[data-tl-subtab]').forEach(function (b) {
+    var idx = parseInt(b.getAttribute('data-tl-subtab'), 10);
+    b.style.display = def.hideSubtabs.indexOf(idx) !== -1 ? 'none' : '';
+  });
+
+  // Re-render the entries list filtered for this tier -- Public/Press shouldn't see
+  // raw "Active Case" entries with case IDs, only verified/completed audit entries.
+  var org = (typeof currentOrg !== 'undefined' && currentOrg) ? currentOrg : window.currentOrg || 'ad';
+  var tl = TRUST_LEDGER_DATA[org] || TRUST_LEDGER_DATA.ad;
+  var visibleEntries = def.entriesFilter === 'verified-only' ? tl.entries.filter(function (e) { return e.badgeColor !== 'red'; }) : tl.entries;
+  var entriesListEl = document.getElementById('tl-entries-list');
+  if (entriesListEl) entriesListEl.innerHTML = visibleEntries.length ? visibleEntries.map(tlEntryCardHtml).join('') : '<div style="font-size:11px;color:var(--muted);padding:16px;text-align:center">No entries visible at this access tier.</div>';
+  var overviewRecentEl = document.getElementById('tl-overview-recent');
+  if (overviewRecentEl) overviewRecentEl.innerHTML = visibleEntries.map(tlEntryCardHtml).join('');
+}
+window.tlSetPreviewTier = tlSetPreviewTier;
 
 function showScreen(name, navEl) {
   try { if (typeof eveStopNarration === 'function') eveStopNarration(); } catch (_n) {}
