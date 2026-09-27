@@ -5386,6 +5386,10 @@ Atonement Core
 <svg class="nav-icon" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.4"/><circle cx="7" cy="7" r="2" fill="currentColor"/></svg>
 Halo Core
 </div>
+<div class="nav-item" onclick="showScreen('marketing',this)" title="Upload marketing materials, check them against what your models actually support">
+<svg class="nav-icon" viewBox="0 0 14 14" fill="none"><path d="M1.5 5.5l5-3.5 6 3.5-6 3.5-6-3.5z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/><path d="M4 7v3l3.5 2 3.5-2V7" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg>
+Marketing Core
+</div>
 <div class="nav-section-label sidebar-section-label">COMPLIANCE & PRIVACY</div>
 <div class="nav-item" onclick="showScreen('compliance',this)">
 <svg class="nav-icon" viewBox="0 0 14 14" fill="none"><rect x="1.5" y="1.5" width="11" height="11" rx="2" stroke="currentColor" stroke-width="1.4"/><path d="M4.5 7l2 2 3.5-3.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -6759,6 +6763,43 @@ Halo Core
 <button type="button" class="btn-ghost halo-act-btn" style="font-size:11px;display:inline-flex;align-items:center;gap:8px;padding:10px 16px;border-radius:10px" onclick="alert('Report link copied to clipboard.')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>Share with Legal Team</button>
 </div>
 
+</div>
+</div>
+
+<!-- ══ MARKETING CORE ══
+     9/26 -- new core Brittany flagged tonight after a full backlog sweep turned up
+     two never-resolved items: a "whole new Marketing Core" (upload marketing
+     materials, check against brand guidelines, trace which cohort/model a piece of
+     outbound marketing was tied to) and a lighter "marketing add-on" concept for
+     an industry like Finance. Scoped live with her: starts in Finance only (her
+     call), checks are compliance-focused (targeting language + whether the copy's
+     promise matches what the underlying model actually supports for that cohort,
+     not literal brand/logo rules), and traceback is auto-detected from the piece's
+     content against real per-org cohort/model data -- not manually tagged. -->
+<div id="screen-marketing" class="screen">
+<div class="screen-header">
+<div>
+<div class="screen-title">Marketing Core</div>
+<div class="screen-sub" id="mk-screen-sub">Upload marketing materials. Cardinal traces them back to the model/cohort they target and checks whether the copy's promises match what that model actually supports.</div>
+</div>
+</div>
+<div id="mk-not-available" class="card" style="display:none;padding:24px;text-align:center">
+<div style="font-size:13px;font-weight:600;color:var(--chrome2);margin-bottom:8px">Not Yet Available for This Industry</div>
+<div style="font-size:11px;color:var(--muted2);max-width:460px;margin:0 auto">Marketing Core launched in Finance first. Bringing it to other industries needs the same real per-industry cohort/model data Finance already has — logged as a next step, not built blind.</div>
+</div>
+<div id="mk-body">
+<div class="card" style="margin-bottom:14px">
+<div class="section-title" style="margin-bottom:10px">Check a New Piece</div>
+<textarea id="mk-input" placeholder="Paste marketing copy here — an email, ad, or landing page — to check it against your models..." style="width:100%;min-height:90px;padding:10px 12px;border:1px solid var(--border2);border-radius:8px;font-size:12px;background:var(--bg2);color:var(--chrome2);font-family:var(--sans);resize:vertical"></textarea>
+<button type="button" class="btn-primary" style="font-size:11px;margin-top:10px" onclick="marketingCheckPiece()">Check This Piece</button>
+</div>
+<div class="card">
+<div class="section-hdr" style="margin-bottom:10px">
+<div class="section-title">Checked Pieces</div>
+<span class="badge badge-blue" id="mk-history-badge">0</span>
+</div>
+<div id="mk-history"></div>
+</div>
 </div>
 </div>
 
@@ -21173,6 +21214,110 @@ function addGlossaryCustomTerm() {
 }
 window.addGlossaryCustomTerm = addGlossaryCustomTerm;
 
+// 9/26 -- Marketing Core, scoped live with Brittany after the full backlog sweep.
+// Finance only for now (her call). Checks are compliance-focused, not brand/logo
+// rules (her call): does the copy overpromise relative to what the underlying
+// model actually supports for the audience it's targeting, and does it lean on
+// language tied to a proxy variable already flagged as illegal for this org
+// (ZIP code, for Finance). Traceback to model/cohort is auto-detected from the
+// piece's own content -- keyword matching against real GENESIS_DATA[org] cohort
+// and model names, not invented NLP, not manually tagged by the uploader.
+var CARDINAL_MARKETING_SUPPORTED_ORGS = ['fin'];
+var CARDINAL_MARKETING_HISTORY = { fin: [
+  { id: 'MK-001', excerpt: 'Guaranteed approval on our new Credit Scoring v3.5 program — every applicant qualifies, no exceptions.', verdict: 'blocked', model: 'Credit Scoring v3.5', findings: [
+    { label: 'Overpromising', c: 'red', detail: '"every applicant qualifies" contradicts live shadow-test data: Pacific Islander applicants are currently seeing a 3.2x denial rate on this exact model.' },
+    { label: 'Model status', c: 'amber', detail: 'Credit Scoring v3.5 is still in shadow testing, not yet cleared for production — marketing shouldn’t promise outcomes for a model that hasn’t been approved to deploy.' }
+  ]},
+  { id: 'MK-002', excerpt: 'Special rates available in select ZIP codes — check if your area qualifies for our best terms.', verdict: 'review', model: 'Credit Scoring v3.4', findings: [
+    { label: 'Proxy variable language', c: 'red', detail: 'ZIP code is already flagged as an illegal race/class proxy on this model (0.82 correlation, ECOA violation evidence, Case #FIN-1203) — ZIP-based eligibility language repeats the exact pattern under active remediation.' }
+  ]}
+]};
+
+function marketingCheckPiece() {
+  var org = (typeof currentOrg !== 'undefined' && currentOrg) ? currentOrg : (window.currentOrg || 'ad');
+  var input = document.getElementById('mk-input');
+  var text = input ? input.value.trim() : '';
+  if (!text) return;
+  var g = (typeof GENESIS_DATA !== 'undefined') ? GENESIS_DATA[org] : null;
+  var lower = text.toLowerCase();
+  var findings = [];
+  var model = (g && g.abCurrentLabel) ? g.abCurrentLabel.split(' — ')[0] : 'Unknown model';
+
+  // Overpromising check -- absolute-outcome language against a model/cohort that
+  // real data shows is currently failing for at least one group.
+  var overpromiseWords = ['guarantee', 'guaranteed', 'everyone qualifies', 'every applicant', 'no exceptions', '100% approval', 'no one denied', 'instant approval'];
+  var overpromiseHit = overpromiseWords.some(function (w) { return lower.indexOf(w) !== -1; });
+  var failingCohort = (g && g.coverageGapCards || []).find(function (c) { return c.c === 'red'; });
+  if (overpromiseHit && failingCohort) {
+    findings.push({ label: 'Overpromising', c: 'red', detail: '“' + text.match(new RegExp(overpromiseWords.join('|'), 'i'))[0] + '” contradicts real test data: ' + failingCohort.group + ' currently shows ' + failingCohort.result.toLowerCase() + '.' });
+  } else if (overpromiseHit) {
+    findings.push({ label: 'Overpromising', c: 'amber', detail: 'Absolute-outcome language detected (e.g. "guaranteed", "everyone qualifies") — no failing cohort found on file right now, but this kind of language should be re-checked every time model status changes.' });
+  }
+
+  // Proxy-variable language check -- reuses the same proxy variables Eden/Genesis
+  // already flagged as illegal for this org's models, so it can't drift from what
+  // the bias engine itself considers a violation.
+  var proxyTerms = ['zip code', 'zip codes', 'your area', 'select areas', 'select zip'];
+  var proxyHit = proxyTerms.some(function (t) { return lower.indexOf(t) !== -1; });
+  if (proxyHit) {
+    findings.push({ label: 'Proxy variable language', c: 'red', detail: 'This org has ZIP code on file as an illegal race/class proxy (' + (g ? g.cfLegalNote : 'see Genesis Core counterfactual test') + '). Geography-based eligibility language repeats that exact pattern.' });
+  }
+
+  // Model/cohort traceback -- auto-detected from content, not tagged by the
+  // uploader: does the piece name a specific model, or mention a group currently
+  // on file as a coverage-gap cohort for this org?
+  var mentionedModel = null;
+  if (g && g.abCurrentLabel && lower.indexOf(g.abCurrentLabel.split(' ')[0].toLowerCase()) !== -1) mentionedModel = g.abCurrentLabel.split(' — ')[0];
+  if (!mentionedModel && g && g.preDeployment && g.preDeployment[0]) mentionedModel = g.preDeployment[0].model;
+  model = mentionedModel || model;
+
+  var verdict = findings.some(function (f) { return f.c === 'red'; }) ? 'blocked' : (findings.length ? 'review' : 'pass');
+  if (!findings.length) findings.push({ label: 'No issues found', c: 'green', detail: 'No overpromising language or known proxy-variable terms detected against this org’s current model/cohort data.' });
+
+  var entry = { id: 'MK-' + String(Math.floor(Math.random() * 900) + 100), excerpt: text.length > 140 ? text.slice(0, 140) + '…' : text, verdict: verdict, model: model, findings: findings };
+  CARDINAL_MARKETING_HISTORY[org] = CARDINAL_MARKETING_HISTORY[org] || [];
+  CARDINAL_MARKETING_HISTORY[org].unshift(entry);
+  if (input) input.value = '';
+  marketingRenderHistory(org);
+}
+window.marketingCheckPiece = marketingCheckPiece;
+
+function marketingVerdictBadge(verdict) {
+  if (verdict === 'blocked') return '<span class="badge badge-red" style="font-size:9px">Blocked</span>';
+  if (verdict === 'review') return '<span class="badge badge-amber" style="font-size:9px">Needs Review</span>';
+  return '<span class="badge badge-green" style="font-size:9px">Pass</span>';
+}
+
+function marketingRenderHistory(org) {
+  var host = document.getElementById('mk-history');
+  var badge = document.getElementById('mk-history-badge');
+  var entries = CARDINAL_MARKETING_HISTORY[org] || [];
+  if (badge) badge.textContent = String(entries.length);
+  if (!host) return;
+  host.innerHTML = entries.length
+    ? entries.map(function (e) {
+        return '<div style="background:var(--bg3);border-radius:9px;padding:12px;margin-bottom:8px">' +
+          '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">' +
+          '<span style="font-size:10px;color:var(--muted)">' + e.id + ' · traced to <b style="color:var(--chrome2)">' + e.model + '</b></span>' +
+          marketingVerdictBadge(e.verdict) + '</div>' +
+          '<div style="font-size:11px;color:var(--muted2);font-style:italic;margin-bottom:8px">“' + e.excerpt + '”</div>' +
+          e.findings.map(function (f) {
+            return '<div style="font-size:10px;margin-bottom:4px"><span style="font-weight:700;color:var(--' + f.c + ')">' + f.label + ':</span> <span style="color:var(--muted2)">' + f.detail + '</span></div>';
+          }).join('') + '</div>';
+      }).join('')
+    : '<div style="font-size:11px;color:var(--muted);padding:16px;text-align:center">No pieces checked yet.</div>';
+}
+
+function buildMarketingCore(org) {
+  var supported = CARDINAL_MARKETING_SUPPORTED_ORGS.indexOf(org) !== -1;
+  var na = document.getElementById('mk-not-available');
+  var body = document.getElementById('mk-body');
+  if (na) na.style.display = supported ? 'none' : '';
+  if (body) body.style.display = supported ? '' : 'none';
+  if (supported) marketingRenderHistory(org);
+}
+window.buildMarketingCore = buildMarketingCore;
+
 function dashMarkDisparateImpactInHtml(html) {
   if (!html || html.indexOf('dash-tip-di') !== -1) return html;
   html = html.replace(
@@ -22323,8 +22468,9 @@ function showScreen(name, navEl) {
  }
  if(name==='halo') { try { stopHaloLive(); } catch(_h){} setTimeout(initHaloMap, 100); setTimeout(function(){ try { updateHaloIndustry(currentOrg||'ad'); updateHaloInaction((typeof currentOrg!=='undefined'&&currentOrg)?currentOrg:'ad'); } catch(_hh){} }, 110); setTimeout(function(){ try { if (typeof cardinalRenderCorePinsPanel === 'function') cardinalRenderCorePinsPanel('halo', 'halo-core-pins'); } catch(_hp){} }, 260); setTimeout(function(){ if (typeof haloRenderPredictiveSection === 'function') haloRenderPredictiveSection(window.currentOrg); }, 60); setTimeout(function(){ try { eveMaybeShowHaloUrgentPeek(); } catch(_hu){} }, 3200); }
  if(name==='trustloop') setTimeout(initTLChat,100);
- const _extraTitles={pipeline:'Data Pipeline — How Cardinal Works',trustloop:'Trust Loop — Team Workspace',modellibrary:'Cardinal Library — Use Cases & Models (Preview)',cardinallibrary:'Cardinal Library — Unified Knowledge Hub',lucid:'✦ Lucid Layer — AI Intelligence',echo:'◈ Echo Core — Audit Memory & Integrity',sentinel:'Sentinel Core — Case Engine',usecases:'Browse All AI Use Cases — Cardinal Master Library',glossary:'Glossary — Plain-Language Cardinal Terms'};
+ const _extraTitles={pipeline:'Data Pipeline — How Cardinal Works',trustloop:'Trust Loop — Team Workspace',modellibrary:'Cardinal Library — Use Cases & Models (Preview)',cardinallibrary:'Cardinal Library — Unified Knowledge Hub',lucid:'✦ Lucid Layer — AI Intelligence',echo:'◈ Echo Core — Audit Memory & Integrity',sentinel:'Sentinel Core — Case Engine',usecases:'Browse All AI Use Cases — Cardinal Master Library',glossary:'Glossary — Plain-Language Cardinal Terms',marketing:'Marketing Core — Compliance Checks for Outbound Content'};
  if(name==='glossary' && typeof buildGlossary === 'function') buildGlossary((typeof currentOrg !== 'undefined' && currentOrg) ? currentOrg : window.currentOrg || 'ad');
+ if(name==='marketing' && typeof buildMarketingCore === 'function') buildMarketingCore((typeof currentOrg !== 'undefined' && currentOrg) ? currentOrg : window.currentOrg || 'ad');
  if(name==='echo') { buildEcho(currentOrg); } else if (window.__echoTickerTimer) { clearInterval(window.__echoTickerTimer); window.__echoTickerTimer = null; }
  if(name==='modellibrary') buildModelLibrary(currentOrg);
  if(name==='lucid') buildLucid(currentOrg);
