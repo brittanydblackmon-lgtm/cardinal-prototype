@@ -5428,6 +5428,10 @@ Trust Loop
 My Workspace
 <span class="nav-badge" id="myws-nav-badge" style="background:rgba(245,158,11,0.15);color:#f59e0b;border:1px solid rgba(245,158,11,0.3);">0</span>
 </div>
+<div class="nav-item" onclick="showScreen('glossary',this)" title="Every Cardinal term in plain language, plus your org's own terminology">
+<svg class="nav-icon" viewBox="0 0 14 14" fill="none"><path d="M2 2.5h7a2 2 0 0 1 2 2v7a2 2 0 0 0-2-2H2z" stroke="currentColor" stroke-width="1.2"/><path d="M4 5h5M4 7h5" stroke="currentColor" stroke-width="1" stroke-linecap="round"/></svg>
+Glossary
+</div>
 <div class="nav-item" onclick="showScreen('settings',this)">
 <svg class="nav-icon" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="2" stroke="currentColor" stroke-width="1.4"/><path d="M7 1v1M7 12v1M1 7h1M12 7h1M2.9 2.9l.7.7M10.4 10.4l.7.7M2.9 11.1l.7-.7M10.4 3.6l.7-.7" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
 Settings
@@ -8713,6 +8717,43 @@ Template Overview
 <div class="critical-title" id="critical-title">Critical — Action Required</div>
 <div class="critical-body" id="critical-body">Eve requires your immediate attention.</div>
 <button class="critical-dismiss" onclick="document.getElementById('critical-overlay').classList.remove('show');showScreen('atonement',null)">Acknowledged — Take me there</button>
+</div>
+</div>
+
+<!-- ══ GLOSSARY SCREEN ══ -->
+<div id="screen-glossary" class="screen">
+<div class="screen-header">
+<div>
+<div class="screen-title">Glossary</div>
+<div class="screen-sub">Every Cardinal term, in plain language — plus your org's own terminology, so Eve talks the way your team actually talks.</div>
+</div>
+</div>
+<div class="card" style="margin-bottom:14px">
+<div style="display:flex;gap:10px;align-items:center">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#A7A7A7" stroke-width="2" style="flex-shrink:0"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+<input id="glossary-search-input" type="text" placeholder="Search any Cardinal term — try 'Disparate Impact' or 'Stamp'" autocomplete="off" style="flex:1;border:none;outline:none;background:transparent;font-size:13px;color:var(--chrome2)" oninput="glossaryRunSearch(this.value)" />
+</div>
+</div>
+<div class="card" style="margin-bottom:14px">
+<div class="section-hdr" style="margin-bottom:10px">
+<div class="section-title">Terms</div>
+<span class="badge badge-blue" id="glossary-count-badge">0 terms</span>
+</div>
+<div id="glossary-results"></div>
+</div>
+<div class="card">
+<div class="section-hdr" style="margin-bottom:10px">
+<div>
+<div class="section-title">Your Org's Custom Terminology</div>
+<div style="font-size:10px;color:var(--muted);margin-top:2px">Add your own internal terms so Eve explains things using the words your team already uses.</div>
+</div>
+</div>
+<div id="glossary-custom-terms"></div>
+<div style="display:flex;gap:8px;margin-top:10px">
+<input id="glossary-custom-term-input" type="text" placeholder="Term (e.g. 'Fairness Ratio')" style="flex:1;padding:8px 10px;border:1px solid var(--border2);border-radius:7px;font-size:11px;background:var(--bg2);color:var(--chrome2)" />
+<input id="glossary-custom-def-input" type="text" placeholder="What your org means by it" style="flex:2;padding:8px 10px;border:1px solid var(--border2);border-radius:7px;font-size:11px;background:var(--bg2);color:var(--chrome2)" />
+<button type="button" class="btn-ghost" style="font-size:11px" onclick="addGlossaryCustomTerm()">+ Add</button>
+</div>
 </div>
 </div>
 
@@ -20968,6 +21009,121 @@ function bindEchoGlossaryIn(root) {
 }
 window.bindEchoGlossaryIn = bindEchoGlossaryIn;
 
+// 9/26 -- Brittany: searchable glossary with Eve integration + org-custom terms,
+// so orgs can add their own internal terminology and Eve's language matches how
+// that company actually talks. Reuses the plain-English defs already written for
+// the dimension tooltips (DASH_TRUST_DIM_DEFS) and the Echo glossary above rather
+// than duplicating them, plus new entries covering Stamps/Certification/Sentinel/
+// the cores, so this is the one place all of Cardinal's terminology lives.
+var CARDINAL_GLOSSARY_DATA = [
+  { term: 'Trust Score', category: 'Scoring', def: 'Cardinal’s 0–100 composite score for a model or company, built from fairness, fraud, transparency, privacy, governance, and monitoring.' },
+  { term: 'Disparate Impact (DI)', category: 'Bias', def: 'The ratio of favorable-outcome rates between a protected group and the baseline group. Below 0.80 is generally treated as evidence of adverse impact under EEOC guidance.' },
+  { term: 'Equalized Odds', category: 'Bias', def: 'Whether a model’s true-positive and false-positive rates are the same across protected groups — catches bias that Disparate Impact alone can miss.' },
+  { term: 'Demographic Parity', category: 'Bias', def: 'Whether groups receive positive outcomes at the same overall rate, regardless of whether that rate is actually justified by real risk factors.' },
+  { term: 'Calibration', category: 'Bias', def: 'Whether a predicted risk score means the same thing across groups — e.g. a "70% risk" score should carry the same real-world odds for every group.' },
+  { term: 'Proxy Variable', category: 'Bias', def: 'A feature that looks neutral (like ZIP code) but is highly correlated with a protected class (like race), so it re-introduces bias the model was supposed to avoid.' },
+  { term: 'Fairness', category: 'Trust Score dimension', def: DASH_TRUST_DIM_DEFS.fairness },
+  { term: 'Fraud (dimension)', category: 'Trust Score dimension', def: DASH_TRUST_DIM_DEFS.fraud },
+  { term: 'Transparency', category: 'Trust Score dimension', def: DASH_TRUST_DIM_DEFS.transparency },
+  { term: 'Privacy (dimension)', category: 'Trust Score dimension', def: DASH_TRUST_DIM_DEFS.privacy },
+  { term: 'Governance (dimension)', category: 'Trust Score dimension', def: DASH_TRUST_DIM_DEFS.governance },
+  { term: 'Monitoring (dimension)', category: 'Trust Score dimension', def: DASH_TRUST_DIM_DEFS.monitoring },
+  { term: 'Stamp / Stamped', category: 'Certification', def: 'Marks a model as actively included in the live Bias or Fraud score, badges, and certifications. A model must be stamped to count toward your Trust Score.' },
+  { term: 'Unstamp', category: 'Certification', def: 'Temporarily excludes a model from the live score — requires a reason and is logged permanently in the stamp audit history, since repeated unstamp/re-stamp cycles right before a reporting date are treated as a gaming signal.' },
+  { term: 'Quarterly Badge', category: 'Certification', def: 'A lighter, more forgiving checkpoint every 90 days. Doesn’t weigh stamp churn as heavily since short remediation-driven unstamps are normal within a quarter.' },
+  { term: 'Annual Certification', category: 'Certification', def: 'The real yearly accountability document — stamp-churn counts against it as a gaming signal, and it’s meant to be shown on your public accountability page and made available to regulators.' },
+  { term: 'Model Facts Report', category: 'Certification', def: 'Halo Core’s pre-stamp first-look brief — real pass/fail checks (Disparate Impact, Equalized Odds, fraud posture, flagged proxy variables) generated before a model has been stamped.' },
+  { term: 'Cohort', category: 'Testing', def: 'A defined group of affected individuals (e.g. "Hispanic technicians at Camp Pendleton") used to isolate and measure bias or fraud patterns without exposing individual identities.' },
+  { term: 'Counterfactual Test', category: 'Testing', def: 'Changes one variable at a time (e.g. race, ZIP code) while holding everything else constant, to prove whether that variable is actually causing a model’s decision to flip.' },
+  { term: 'Synthetic Persona', category: 'Testing', def: 'A fake profile Adam generates to safely test a model without using real customer data — used both for internal bias/fraud patterns and, since 9/26, for proactively simulating external attackers.' },
+  { term: 'Eden Core', category: 'Cores', def: 'Cardinal’s bias detection engine — monitors models for disparate impact, equalized odds, and demographic disparities in real time.' },
+  { term: 'Obsidian Core', category: 'Cores', def: 'Cardinal’s fraud detection engine, run alongside Eden so bias and fraud patterns that share a root cause (like a proxy variable) get caught together.' },
+  { term: 'Genesis Core', category: 'Cores', def: 'The testing workspace — cohort analysis, A/B testing, and counterfactual/causal testing to diagnose problems before they’re shipped to remediation.' },
+  { term: 'Atonement Core', category: 'Cores', def: 'The remediation engine — simulates fixes, runs them in safe shadow deployment, and auto-rolls back if a fix doesn’t hold up.' },
+  { term: 'Halo Core', category: 'Cores', def: 'Predictive forecasting — projects regulatory and financial risk before it happens, including the pre-stamp Model Facts Report.' },
+  { term: 'Sentinel Core', category: 'Cores', def: 'The real-time catching engine for bias, fraud, and AI-agent/transparency issues as they happen — not just after the fact. Can auto-throttle a model showing active harm and opens a case, routed to Genesis or Atonement.' },
+  { term: 'Echo Core', category: 'Cores', def: 'Historical memory and audit logging — tamper-proof, cryptographically signed records of every governance event, court-admissible.' },
+  { term: 'Auto-Response (Sentinel)', category: 'Sentinel', def: 'When Sentinel Core detects active harm from a model (losing money, hurting people), it can automatically throttle that model back and open a case — on by default, toggleable per model.' },
+  { term: 'Trust Ledger', category: 'Compliance', def: 'The external/public verification layer — cryptographic proofs only, no PII, so regulators and the public can verify a company’s AI governance claims without seeing sensitive data.' },
+  { term: 'Decision Receipt', category: 'Compliance', def: 'A tamper-proof record of a single AI decision (Decision ID, model version + hash, timestamp), stored in Echo Core and hash-anchored to Trust Ledger.' },
+  { term: 'Cardinal Passport', category: 'Compliance', def: 'What lets an individual affected by an AI decision see what a company is doing about it — public accountability infrastructure, not just an internal compliance checkbox.' }
+].concat(Object.keys(window.CARDINAL_ECHO_GLOSSARY || {}).map(function (k) {
+  var pair = window.CARDINAL_ECHO_GLOSSARY[k];
+  return { term: pair[0], category: 'Echo Core', def: pair[1] };
+}));
+window.CARDINAL_GLOSSARY_DATA = CARDINAL_GLOSSARY_DATA;
+
+// Org-custom terminology -- session-mutable, same pattern as Adam's proposals.
+// Seeded with one example per org so the concept is visible without Brittany
+// having to add one herself first.
+var CARDINAL_GLOSSARY_CUSTOM = {
+  ad: [{ term: 'Fairness Ratio', def: 'What Atlas Defense’s Model Office calls Disparate Impact internally — same metric, their own name for it.' }],
+  finance: [{ term: 'Thin-File', def: 'Blackmoor Wealth’s term for an applicant with limited credit history — relevant to the synthetic identity risk patterns Adam tests for.' }],
+  health: [{ term: 'Section 1557', def: 'Sterling Health’s shorthand for the ACA nondiscrimination provision most of their age/disability bias cases get evaluated against.' }]
+};
+window.CARDINAL_GLOSSARY_CUSTOM = CARDINAL_GLOSSARY_CUSTOM;
+
+function glossaryEsc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+
+function buildGlossary(org) {
+  window.__glossaryOrg = org;
+  glossaryRunSearch(document.getElementById('glossary-search-input') ? document.getElementById('glossary-search-input').value : '');
+  glossaryRenderCustomTerms(org);
+}
+window.buildGlossary = buildGlossary;
+
+function glossaryRunSearch(query) {
+  var q = (query || '').trim().toLowerCase();
+  var org = window.__glossaryOrg || 'ad';
+  var all = CARDINAL_GLOSSARY_DATA.slice();
+  (CARDINAL_GLOSSARY_CUSTOM[org] || []).forEach(function (c) { all.push({ term: c.term, category: 'Your org’s terms', def: c.def }); });
+  var results = q ? all.filter(function (t) { return t.term.toLowerCase().indexOf(q) !== -1 || t.def.toLowerCase().indexOf(q) !== -1; }) : all;
+  results.sort(function (a, b) { return a.term.localeCompare(b.term); });
+  var host = document.getElementById('glossary-results');
+  var badge = document.getElementById('glossary-count-badge');
+  if (badge) badge.textContent = results.length + ' term' + (results.length === 1 ? '' : 's');
+  if (!host) return;
+  host.innerHTML = results.length
+    ? results.map(function (t) {
+        return '<div style="padding:10px 0;border-bottom:1px solid rgba(180,190,220,.06)">' +
+          '<div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px">' +
+          '<span style="font-size:12px;font-weight:600;color:var(--chrome2)">' + glossaryEsc(t.term) + '</span>' +
+          '<span style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em">' + glossaryEsc(t.category) + '</span></div>' +
+          '<div style="font-size:11px;color:var(--muted2);line-height:1.5;margin-top:3px">' + glossaryEsc(t.def) + '</div></div>';
+      }).join('')
+    : '<div style="font-size:11px;color:var(--muted)">No terms match "' + glossaryEsc(query) + '". Try a different word, or add it as one of your org’s own terms below.</div>';
+}
+window.glossaryRunSearch = glossaryRunSearch;
+
+function glossaryRenderCustomTerms(org) {
+  var host = document.getElementById('glossary-custom-terms');
+  if (!host) return;
+  var terms = CARDINAL_GLOSSARY_CUSTOM[org] || [];
+  host.innerHTML = terms.length
+    ? terms.map(function (t) {
+        return '<div style="background:var(--bg3);border-radius:8px;padding:10px 12px;margin-bottom:6px">' +
+          '<div style="font-size:11px;font-weight:600;color:var(--chrome2)">' + glossaryEsc(t.term) + '</div>' +
+          '<div style="font-size:10px;color:var(--muted2);margin-top:2px">' + glossaryEsc(t.def) + '</div></div>';
+      }).join('')
+    : '<div style="font-size:10px;color:var(--muted)">No custom terms yet for this org.</div>';
+}
+
+function addGlossaryCustomTerm() {
+  var org = window.__glossaryOrg || 'ad';
+  var termEl = document.getElementById('glossary-custom-term-input');
+  var defEl = document.getElementById('glossary-custom-def-input');
+  var term = termEl ? termEl.value.trim() : '';
+  var def = defEl ? defEl.value.trim() : '';
+  if (!term || !def) return;
+  CARDINAL_GLOSSARY_CUSTOM[org] = CARDINAL_GLOSSARY_CUSTOM[org] || [];
+  CARDINAL_GLOSSARY_CUSTOM[org].push({ term: term, def: def });
+  if (termEl) termEl.value = '';
+  if (defEl) defEl.value = '';
+  glossaryRenderCustomTerms(org);
+  glossaryRunSearch(document.getElementById('glossary-search-input') ? document.getElementById('glossary-search-input').value : '');
+}
+window.addGlossaryCustomTerm = addGlossaryCustomTerm;
+
 function dashMarkDisparateImpactInHtml(html) {
   if (!html || html.indexOf('dash-tip-di') !== -1) return html;
   html = html.replace(
@@ -22061,7 +22217,8 @@ function showScreen(name, navEl) {
  }
  if(name==='halo') { try { stopHaloLive(); } catch(_h){} setTimeout(initHaloMap, 100); setTimeout(function(){ try { updateHaloIndustry(currentOrg||'ad'); updateHaloInaction((typeof currentOrg!=='undefined'&&currentOrg)?currentOrg:'ad'); } catch(_hh){} }, 110); setTimeout(function(){ try { if (typeof cardinalRenderCorePinsPanel === 'function') cardinalRenderCorePinsPanel('halo', 'halo-core-pins'); } catch(_hp){} }, 260); setTimeout(function(){ if (typeof haloRenderPredictiveSection === 'function') haloRenderPredictiveSection(window.currentOrg); }, 60); setTimeout(function(){ try { eveMaybeShowHaloUrgentPeek(); } catch(_hu){} }, 3200); }
  if(name==='trustloop') setTimeout(initTLChat,100);
- const _extraTitles={pipeline:'Data Pipeline — How Cardinal Works',trustloop:'Trust Loop — Team Workspace',modellibrary:'Cardinal Library — Use Cases & Models (Preview)',cardinallibrary:'Cardinal Library — Unified Knowledge Hub',lucid:'✦ Lucid Layer — AI Intelligence',echo:'◈ Echo Core — Audit Memory & Integrity',sentinel:'Sentinel Core — Case Engine',usecases:'Browse All AI Use Cases — Cardinal Master Library'};
+ const _extraTitles={pipeline:'Data Pipeline — How Cardinal Works',trustloop:'Trust Loop — Team Workspace',modellibrary:'Cardinal Library — Use Cases & Models (Preview)',cardinallibrary:'Cardinal Library — Unified Knowledge Hub',lucid:'✦ Lucid Layer — AI Intelligence',echo:'◈ Echo Core — Audit Memory & Integrity',sentinel:'Sentinel Core — Case Engine',usecases:'Browse All AI Use Cases — Cardinal Master Library',glossary:'Glossary — Plain-Language Cardinal Terms'};
+ if(name==='glossary' && typeof buildGlossary === 'function') buildGlossary((typeof currentOrg !== 'undefined' && currentOrg) ? currentOrg : window.currentOrg || 'ad');
  if(name==='echo') { buildEcho(currentOrg); } else if (window.__echoTickerTimer) { clearInterval(window.__echoTickerTimer); window.__echoTickerTimer = null; }
  if(name==='modellibrary') buildModelLibrary(currentOrg);
  if(name==='lucid') buildLucid(currentOrg);
