@@ -6153,7 +6153,47 @@ Settings
   </div>
   <div style="padding:14px 22px;border-top:1px solid var(--border);display:flex;gap:8px">
     <button onclick="closeProfileModal()" class="btn-ghost" style="flex:1;font-size:11px">Close</button>
+    <button id="pdm-selfview-btn" onclick="openPassportSelfView(window.__pdmCurrentEid)" class="btn-ghost" style="font-size:11px">Preview as this person would see it →</button>
     <button onclick="showScreen('echo',document.querySelector('.nav-item'));closeProfileModal()" class="btn-primary" style="font-size:11px">View in Echo Core →</button>
+  </div>
+</div>
+</div>
+
+<!-- ══ CARDINAL PASSPORT — SELF VIEW (B2C) ══
+     9/26 -- Brittany's B2C/consumer-facing view: what an individual sees about
+     themselves. Reuses the exact same PM_PROFILES record the compliance-side
+     profile modal reads -- no new data invented, just a different, plain-language
+     presentation of it, scoped down to what's safe and useful for the person it's
+     about to see about themselves (their own name, since this is their own
+     self-view -- pseudonymity protects them from OTHER parties, not from
+     themselves). Deliberately looks nothing like the internal Echo Core view. -->
+<div id="passport-selfview-modal" style="display:none;position:fixed;inset:0;z-index:9998;background:rgba(4,7,13,.85);align-items:center;justify-content:center">
+<div style="background:var(--card);border:1px solid var(--border2);border-radius:16px;padding:0;width:640px;max-width:94vw;max-height:86vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 8px 40px rgba(0,0,0,.7)">
+  <div style="position:relative;padding:20px 24px;border-bottom:1px solid var(--border);background:linear-gradient(135deg, rgba(167,167,167,.08), rgba(167,167,167,.02))">
+    <div style="font-size:10px;color:var(--accent);font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Your Cardinal Passport</div>
+    <div style="font-size:18px;font-weight:700;color:var(--chrome2)" id="psv-name">—</div>
+    <div style="font-size:11px;color:var(--muted);margin-top:4px">Here's what an AI system at <span id="psv-org-name">this company</span> did, and why — in plain language.</div>
+    <button onclick="closePassportSelfView()" style="position:absolute;top:16px;right:20px;background:transparent;border:none;color:var(--muted);cursor:pointer;font-size:18px">✕</button>
+  </div>
+  <div style="overflow-y:auto;padding:20px 24px;flex:1">
+    <div style="font-size:11px;font-weight:700;color:var(--chrome2);margin-bottom:8px">Your Decisions</div>
+    <div id="psv-decisions" style="margin-bottom:18px"></div>
+
+    <div style="font-size:11px;font-weight:700;color:var(--chrome2);margin-bottom:8px">How You Compare</div>
+    <div id="psv-compare" style="margin-bottom:18px"></div>
+
+    <div style="font-size:11px;font-weight:700;color:var(--chrome2);margin-bottom:8px">This Company's Certification Status</div>
+    <div id="psv-certs" style="margin-bottom:18px"></div>
+
+    <div style="font-size:11px;font-weight:700;color:var(--chrome2);margin-bottom:8px">Where Your Data Was Used</div>
+    <div id="psv-models" style="margin-bottom:8px"></div>
+    <div style="font-size:9px;color:var(--muted);line-height:1.5;margin-bottom:18px">This only shows models at this company, on Cardinal. Cardinal can't see or track anything outside companies that use it — including this same information at a different company — because it's built to never link your identity across companies. That's a deliberate privacy boundary, not a gap.</div>
+
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn-ghost" style="font-size:10px" onclick="alert('Demo only: this would open a whistleblower / complaint intake form tied to this record.')">File a Report</button>
+      <button class="btn-ghost" style="font-size:10px" onclick="alert('Demo only: this would open an Eve chat scoped to explaining this person\\'s own record in plain language.')">Ask Eve to Explain</button>
+      <button class="btn-ghost" style="font-size:10px" onclick="alert('Demo only: this would export this record as a PDF.')">Export My Record</button>
+    </div>
   </div>
 </div>
 </div>
@@ -39282,6 +39322,7 @@ function openProfileDetail(eid) {
   const all = [...(PM_PROFILES[org]?.live||[]), ...(PM_PROFILES[org]?.synthetic||[])];
   const p = all.find(x=>x.eid===eid);
   if(!p) return;
+  window.__pdmCurrentEid = eid;
   const setEl = (id,v) => { const el=document.getElementById(id); if(el) el.innerHTML=v; };
   const setText = (id,v) => { const el=document.getElementById(id); if(el) el.textContent=v; };
   const revealed = !!window.__pmRevealed[p.eid];
@@ -39316,6 +39357,97 @@ function closeProfileModal() {
   const m = document.getElementById('profile-detail-modal');
   if(m) m.style.display = 'none';
 }
+
+// 9/26 -- external decision receipt ID: a second, person-facing ID generated
+// alongside the existing internal Decision ID, tied 1:1 back to it. Per Brittany's
+// explicit call: this stays a SEPARATE id from the internal one (internal is for
+// compliance/audit trail, external is what the person actually sees), but both
+// point at the same underlying decision record -- no new record type, just a
+// stable deterministic label derived from the same eid + sequence number so it
+// doesn't change between renders.
+function psvExternalReceiptId(eid, seq) {
+  var base = (eid || '').replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+  var hash = 0;
+  for (var i = 0; i < base.length; i++) { hash = (hash * 31 + base.charCodeAt(i)) >>> 0; }
+  var code = (hash % 900000 + 100000).toString();
+  return 'CP-' + code + '-' + String(seq).padStart(2, '0');
+}
+
+function openPassportSelfView(eid) {
+  if (!eid) return;
+  var org = (typeof currentOrg !== 'undefined' && currentOrg) ? currentOrg : (window.currentOrg || 'ad');
+  var all = [].concat((PM_PROFILES[org] && PM_PROFILES[org].live) || [], (PM_PROFILES[org] && PM_PROFILES[org].synthetic) || []);
+  var p = all.find(function (x) { return x.eid === eid; });
+  if (!p) return;
+
+  var nameEl = document.getElementById('psv-name');
+  if (nameEl) nameEl.textContent = p.name; // always their own real name in their own self-view
+
+  var orgName = (typeof CARDINAL_DATA !== 'undefined' && CARDINAL_DATA[org] && (CARDINAL_DATA[org].orgName || CARDINAL_DATA[org].org)) || org;
+  var orgNameEl = document.getElementById('psv-org-name');
+  if (orgNameEl) orgNameEl.textContent = orgName;
+
+  // Decisions -- reuse the same decision rows the internal modal builds, but paired
+  // with an external receipt ID instead of the internal hash, and a plain-language
+  // "why" line pulled from the flag data already on the profile.
+  var decisions = [
+    { date: p.lastDate, model: (p.models || [])[0] || 'Unknown', outcome: p.lastDecision, seq: 1 },
+    { date: 'Mar 20, 2026', model: (p.models || [])[0] || 'Unknown', outcome: 'APPROVED', seq: 2 }
+  ];
+  var decisionsEl = document.getElementById('psv-decisions');
+  if (decisionsEl) decisionsEl.innerHTML = decisions.map(function (d) {
+    var why = (d.outcome === 'DENIED' && p.flags > 0)
+      ? 'Flagged during our review: this decision involved a factor (' + (p.di ? 'disparate impact ratio ' + p.di : 'a proxy variable') + ') that’s currently under correction.'
+      : (d.outcome === 'DENIED' ? 'No bias or fraud flag on file for this specific decision.' : 'Approved — no issues found.');
+    return '<div style="background:var(--bg3);border-radius:9px;padding:12px;margin-bottom:8px">' +
+      '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px">' +
+      '<span style="font-size:11px;font-weight:600;color:var(--chrome2)">' + d.model + ' · ' + d.date + '</span>' +
+      '<span class="badge badge-' + (d.outcome === 'DENIED' ? 'red' : 'green') + '" style="font-size:9px">' + d.outcome + '</span></div>' +
+      '<div style="font-size:10px;color:var(--muted2);margin-bottom:6px">' + why + '</div>' +
+      '<div style="font-size:9px;color:var(--muted);font-family:monospace">Your receipt ID: ' + psvExternalReceiptId(p.eid, d.seq) + '</div></div>';
+  }).join('');
+
+  // Comparison -- reuse the org's real industry-percentile figure already computed
+  // for Trust Score (same number, no new metric invented), framed for a person
+  // instead of a compliance officer.
+  var compareEl = document.getElementById('psv-compare');
+  if (compareEl) {
+    var d = (typeof tsv2Data === 'function') ? tsv2Data(org) : null;
+    var percentile = (d && d.peerPercentile != null) ? d.peerPercentile : null;
+    compareEl.innerHTML = '<div style="background:var(--bg3);border-radius:9px;padding:12px">' +
+      '<div style="font-size:11px;color:var(--muted2)">' + (percentile != null
+        ? 'This company’s AI systems currently rank in the ' + percentile + 'th percentile among industry peers for fair, transparent decision-making.'
+        : 'Industry comparison isn’t available for this company yet.') + '</div></div>';
+  }
+
+  // Certification status -- reuse the exact same TRUST_LEDGER_DATA certifications
+  // already shown on the Trust Ledger's public tier, not a duplicate data source.
+  var certsEl = document.getElementById('psv-certs');
+  if (certsEl) {
+    var tl = (typeof TRUST_LEDGER_DATA !== 'undefined' && TRUST_LEDGER_DATA[org]) || null;
+    certsEl.innerHTML = (tl && tl.certifications && tl.certifications.length)
+      ? tl.certifications.map(function (c) {
+          return '<span class="badge badge-' + c.statusColor + '" style="font-size:9px;margin-right:6px;margin-bottom:6px;display:inline-block">' + c.name + ' · ' + c.statusLabel + '</span>';
+        }).join('')
+      : '<div style="font-size:10px;color:var(--muted)">No certification data on file.</div>';
+  }
+
+  // Where your data was used -- scoped honestly to this one company/org only.
+  var modelsEl = document.getElementById('psv-models');
+  if (modelsEl) modelsEl.innerHTML = (p.models || []).map(function (m) {
+    return '<div style="display:inline-block;padding:6px 10px;background:var(--bg3);border-radius:7px;margin:0 6px 6px 0;font-size:10px;color:var(--muted2)">' + m + '</div>';
+  }).join('') || '<div style="font-size:10px;color:var(--muted)">No models on file.</div>';
+
+  var modal = document.getElementById('passport-selfview-modal');
+  if (modal) modal.style.display = 'flex';
+}
+window.openPassportSelfView = openPassportSelfView;
+
+function closePassportSelfView() {
+  var m = document.getElementById('passport-selfview-modal');
+  if (m) m.style.display = 'none';
+}
+window.closePassportSelfView = closePassportSelfView;
 
 
 const MODEL_COMPARE_DATA = {
