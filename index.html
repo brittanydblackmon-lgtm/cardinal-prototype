@@ -14325,7 +14325,10 @@ function edoBuildBfVennHtml(d, org, screenIsObsidian) {
   var biasP = flow.biasPattern || { text: 'Bias blind spot flagged by Eden on the monitored cohort.', metric: '' };
   var verG = flow.verificationGap || { text: 'Downstream verification deprioritized the cohort where bias concentrated.', metric: '' };
   var frE = flow.fraudExploit || { text: 'Fraud operators exploited the lighter verification path.', metric: '' };
-  var subMirror = screenIsObsidian ? 'Obsidian shows the same overlap set; Eve summaries stay lens-pure above.' : '';
+  var subMirror = screenIsObsidian ? 'Same overlap set Eden flagged first — here it’s read from the fraud side: what got through, and why.' : 'This is the bias signal before it becomes a fraud story — see it from the fraud side in Obsidian.';
+  var lensHeroLine = screenIsObsidian
+    ? ((frE.metric || 'Fraud caught') + ' traced back to a bias gap Eden already flagged — ' + (flow.overlapCases || oCount) + ' cases this quarter on ' + (flow.primaryModel || 'the primary model') + '.')
+    : (heroLine);
   var sid = screenIsObsidian ? 'obs' : 'eden';
   var opL = vf === 'bias' ? 1 : 0.42;
   var opR = vf === 'fraud' ? 1 : 0.42;
@@ -14335,7 +14338,7 @@ function edoBuildBfVennHtml(d, org, screenIsObsidian) {
   var pathR = 'M 400 ' + (200 + hTop) + ' A 180 180 0 1 0 400 ' + (200 - hTop) + ' Z';
   var heroBand = '<div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding:16px 18px;border-radius:14px;margin-bottom:18px;background:linear-gradient(95deg,rgba(239,68,68,.24),rgba(245,158,11,.18));border:1px solid rgba(251,146,60,.38);cursor:default"' + edoT('Bias-Fraud Connection', 'Bias-Fraud Connection / The structural overlap between bias and fraud detection. Cases here are where bias blind spots created fraud exposure simultaneously. The only platform monitoring both lenses on the same model decisions.') + '>' +
     '<div style="font-size:30px;line-height:1;opacity:.95" aria-hidden="true">\u2693</div>' +
-    '<div style="flex:1;min-width:220px"><div style="font-size:12px;font-weight:800;line-height:1.4;color:var(--chrome2)">' + heroLine + '</div></div>' +
+    '<div style="flex:1;min-width:220px"><div style="font-size:12px;font-weight:800;line-height:1.4;color:var(--chrome2)">' + lensHeroLine + '</div></div>' +
     '<div style="display:flex;align-items:center;gap:8px;font-size:10px;color:var(--muted2)"><span class="tsv2-live-dot" style="flex-shrink:0"' + edoT('Live indicator', 'Echo Core streaming indicators — shows narrative freshness for this section.') + '></span><span' + edoT('Updated', 'Live / Updated ' + fresh + '.') + '>Live · updated ' + fresh + '</span></div></div>';
   var stepGrid = '<div style="margin-bottom:18px">' +
     '<div style="font-size:10px;font-weight:800;color:var(--muted);margin-bottom:10px;text-transform:uppercase;letter-spacing:.06em"' + edoT('Visual story', 'Three-step causality: bias signal, verification gap, fraud exploit.') + '>Visual story</div>' +
@@ -14357,7 +14360,7 @@ function edoBuildBfVennHtml(d, org, screenIsObsidian) {
     '<div style="flex:1;min-width:240px"><div style="font-size:11px;font-weight:800;margin-bottom:6px;color:#F5F3EF">Why this matters</div><div style="font-size:10px;color:rgba(245,243,239,0.72);line-height:1.55">Bias detection tools see Step 1. Fraud detection tools see Step 3. Cardinal is the only platform that connects them. Every overlap case here was caught because Eden and Obsidian share the same audit core.</div></div>' +
     '<div style="font-size:12px;font-weight:900;letter-spacing:.12em;color:var(--accent);opacity:.9"' + edoT('Cardinal', 'Unified Eden + Obsidian core.') + '>CARDINAL</div></div>';
   return '<section id="' + (screenIsObsidian ? 'obs-sec-bf' : 'eden-sec-bf') + '" style="margin-bottom:24px">' +
-    '<h2 style="font-size:15px;margin:0 0 6px"' + edoT('Bias-Fraud Overlap', 'Visualization of cases where bias and fraud share the same root proxy variable. The only platform monitoring both lenses on the same model decisions.') + '>Where Bias Creates Fraud Exposure</h2>' +
+    '<h2 style="font-size:15px;margin:0 0 6px"' + edoT('Bias-Fraud Overlap', 'Visualization of cases where bias and fraud share the same root proxy variable. The only platform monitoring both lenses on the same model decisions.') + '>' + (screenIsObsidian ? 'Where Fraud Traces Back to Bias' : 'Where Bias Creates Fraud Exposure') + '</h2>' +
     '<p style="font-size:11px;color:var(--muted);margin:0 0 10px;max-width:760px">The only dual-lens view where bias signals and fraud telemetry converge on the same model decisions. ' + subMirror + '</p>' +
     heroBand + stepGrid +
     '<div style="display:flex;justify-content:center;margin:8px 0 20px;overflow-x:auto"' + edoT('Venn Diagram', 'Click a region to filter the case list: bias-only left lobe, fraud-only right lobe, or overlap (Bias-Fraud Connection).') + '>' +
@@ -14567,6 +14570,7 @@ window.renderEden = function (org) {
     heroEden +
     eveSec +
     histSec +
+    sec7 +
     '<section id="eden-sec-cases" style="margin-bottom:20px"><h2 style="font-size:14px;margin:0 0 8px"' + edoT('Active Bias Cases', 'Open bias remediation cases from CARDINAL_DATA.') + '>Active Bias Cases — ' + (d.biasIncidentsActive || []).length + ' open</h2>' +
     edoActiveCasePillsHtml() +
     cardsRow +
@@ -14583,7 +14587,6 @@ window.renderEden = function (org) {
     '<div style="max-height:340px;overflow-y:auto;border:1px solid var(--border2);border-radius:10px;background:var(--card)">' +
     (window.__edo.cohortSummary ? '<table class="data-table"><thead style="position:sticky;top:0;background:var(--card);z-index:1"><tr><th>Group</th><th>Affected</th><th>DI</th><th>Fraud Conn</th><th>Case</th></tr></thead><tbody>' + cohortRows + '</tbody></table>' : piiBlock) +
     '</div></section>' +
-    sec7 +
     '<section><h2 style="font-size:14px"' + edoT('Echo Footer', 'Tamper-proof audit trail.') + '>Echo Core</h2><p style="font-size:11px;color:var(--muted)"' + edoT('Tamper-proof', 'Cryptographic, court-admissible, regulator-ready.') + '>Every bias detection logged tamper\u2011proof in Echo Core.</p><p style="font-size:11px">Most recent: ' + edoEchoRecent(d) + '</p>' +
     '<button type="button" class="btn-ghost" style="font-size:11px" onclick="openEchoCoreFiltered(\'eden\')"' + edoT('Echo Core', 'Filtered timeline to Eden-classified events.') + '>View Full Bias Audit Log \u2192</button></section></div>' +
     edoBuildModelDrawer(d, org, 'eden') + (window.__edo.piiInd ? edoIndPanel(d, org, window.__edo.piiInd, 'eden') : '');
@@ -14704,6 +14707,7 @@ window.renderObsidian = function (org) {
     heroObs +
     eveSecO +
     histSecO +
+    sec7o +
     '<section id="obs-sec-cases" style="margin-top:20px"><h2 style="font-size:14px"' + edoT('Active Fraud Cases', 'Open fraud remediation cases from CARDINAL_DATA.') + '>Active Fraud Cases — ' + (d.fraudIncidentsActive || []).length + ' open</h2>' +
     edoActiveCasePillsHtml() +
     cardsRowObs +
@@ -14719,7 +14723,6 @@ window.renderObsidian = function (org) {
     '<div style="max-height:340px;overflow-y:auto;border:1px solid var(--border2);border-radius:10px;background:var(--card)">' +
     (window.__edo.cohortSummary ? '<table class="data-table"><thead style="position:sticky;top:0;background:var(--card);z-index:1"><tr><th>Cohort</th><th>Note</th></tr></thead><tbody>' + cohortRows + '</tbody></table>' : piiBlock) +
     '</div></section>' +
-    sec7o +
     '<section style="margin-top:20px"><p style="font-size:11px;color:var(--muted)">Obsidian events anchored to Echo Core.</p><p style="font-size:11px">Most recent: ' + edoEchoRecentObs(d) + '</p>' +
     '<button type="button" class="btn-ghost" style="font-size:11px" onclick="openEchoCoreFiltered(\'obsidian\')"' + edoT('Obsidian audit log', 'Echo filtered to fraud-class events.') + '>View Obsidian Audit Log \u2192</button></section></div>' +
     edoBuildModelDrawer(d, org, 'obs') + (window.__edo.piiInd ? edoIndPanel(d, org, window.__edo.piiInd, 'obsidian') : '');
@@ -41966,7 +41969,7 @@ function cardinalAskRenderThread() {
         '<button type="button" onclick="cardinalAskDismiss(' + idx + ')" title="Dismiss" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:13px;line-height:1;flex-shrink:0;padding:0 2px">×</button>' +
       '</div>' +
       '<div class="cardinal-ask-card-a" style="margin-top:6px">' + aSafe + '</div>' +
-      '<div class="cardinal-ask-card-foot"><button type="button" class="cardinal-ask-continue" onclick="cardinalAskContinueInEve(' + JSON.stringify(item.q).replace(/"/g, '&quot;') + ')">Continue in Eve →</button>' +
+      '<div class="cardinal-ask-card-foot"><button type="button" class="cardinal-ask-continue" onclick="cardinalAskContinueInEve(' + JSON.stringify(item.q).replace(/"/g, '&quot;') + ')">Continue the conversation →</button>' +
       '<span style="font-size:10px;color:var(--muted)">or just keep typing above</span></div>' +
     '</div>';
   }).join('');
