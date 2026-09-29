@@ -7623,11 +7623,12 @@ Template Overview
 <div style="font-size:15px;font-weight:600;color:var(--chrome2);display:flex;align-items:center;gap:8px">Trust Score
 <span class="ts-info-trigger" data-tip="A 0–100 standardized score measuring AI system trustworthiness across bias, fraud, and compliance. Cardinal's 6-dimension methodology with industry-tailored weights. 80+ qualifies for certification. Goal: become the NIST of AI ethics — Year 1 build with Research Scientists; Year 2–3 publish & seek regulatory adoption.">i</span>
 </div>
-<div style="font-size:11px;color:var(--muted);margin-top:2px">The FICO Score for ethical AI · 0–100 · 80+ certified</div>
+<div style="font-size:11px;color:var(--muted);margin-top:2px">0–100 standardized score · 80+ certified</div>
 </div>
 <div style="display:flex;gap:8px">
 <button class="btn-ghost" style="font-size:11px" title="Full-year rollup: score history, models tracked, compliance cases, Trust Ledger activity, whistleblower situation, stamp-churn pattern" onclick="openAnnualCertFile(typeof currentOrg !== 'undefined' ? currentOrg : 'ad')">Annual Certification File</button>
 <button class="btn-ghost" style="font-size:11px" onclick="exportTrustScoreReport()">Export Report</button>
+<button class="btn-ghost" style="font-size:11px" onclick="tsv2OpenEchoCoreAuditLog()">View Full Score Audit Log →</button>
 </div>
 </div>
 
@@ -7658,6 +7659,10 @@ Template Overview
           <span id="tsv2-live-text">Last calculated <strong id="tsv2-last-calc" style="color:var(--chrome2)">2 minutes ago</strong></span>
         </div>
         <div id="tsv2-week-delta" style="margin-top:6px;font-size:11px;color:var(--muted);text-align:center"></div>
+        <div id="tsv2-projected-top" style="margin-top:10px;display:flex;align-items:center;justify-content:center;gap:8px;font-size:11px;color:var(--muted);cursor:pointer" onclick="document.getElementById('tsv2-projected-mini') && document.getElementById('tsv2-projected-mini').scrollIntoView({behavior:'smooth',block:'center'})" title="See the full breakdown below">
+          Projected: <strong id="tsv2-projected-top-num" style="font-size:13px;color:var(--chrome2)">—</strong>
+          <span id="tsv2-projected-top-sub" style="color:var(--muted)"></span>
+        </div>
         <div class="tsv2-subscores" style="margin-top:14px;justify-content:center">
           <div class="tsv2-sub-pill" id="tsv2-pill-bias" onclick="showScreen('eden', null)">
             <span class="pill-label" id="tsv2-pill-bias-label">Bias Detection</span>
@@ -37117,7 +37122,7 @@ function renderTrustScoreStandalone(org) {
   // ── PAGE HEADER ──
   html += '<div style="margin-bottom:18px;">' +
     '<div style="font-size:18px;font-weight:700;color:var(--chrome2);">Trust Score — Cardinal AI Trust Index</div>' +
-    '<div style="font-size:11px;color:var(--muted);margin-top:4px;">The FICO score for ethical AI · 0–100 · 80+ certified · ' + d.orgName + ' · ' + d.pilot + '</div>' +
+    '<div style="font-size:11px;color:var(--muted);margin-top:4px;">0–100 standardized score · 80+ certified · ' + d.orgName + ' · ' + d.pilot + '</div>' +
   '</div>';
 
   // ── SECTION 1: HERO (gauge + status) ──
@@ -38032,6 +38037,19 @@ function tsv2BuildPath(d) {
       else if (!isCertified) msg += ' Crosses the 80 threshold and unlocks Cardinal Certified.';
       miniSub.innerHTML = msg.replace(/Up (\d+)/, 'Up <strong>$1</strong>');
     }
+  }
+  // 9/29 -- Brittany: move Projected Score up near the hero so it's a one-glance
+  // "here's where you are, here's where you could be" moment, not just something
+  // you find after scrolling past the whole page. Keeps the full breakdown (why,
+  // what raises it, what lowers it) down in its original spot -- this top pill is
+  // a live-synced summary of the same computed projected/current values, not a
+  // separate calculation, so it can't disagree with the detail below it.
+  var topNum = document.getElementById('tsv2-projected-top-num');
+  var topSub = document.getElementById('tsv2-projected-top-sub');
+  if (topNum && projected) {
+    topNum.textContent = projected;
+    topNum.style.color = tsv2ScoreColor(projected);
+    if (topSub) topSub.textContent = '(+' + Math.max(0, projected - current) + ' pts possible)';
   }
 }
 
