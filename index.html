@@ -23618,6 +23618,49 @@ function initHaloMap() {
         .attr('stroke', 'rgba(255,255,255,0.04)')
         .attr('stroke-width', 0.5);
 
+      // 9/29 -- Halo polish: country intel was one static block for every industry (a
+      // Finance user hovering the US saw "DoD AI Ethics"), and its dates disagreed with the
+      // Halo deadline list ("EU AI Act: Filing Jun 15" vs Nov 22). Now org-aware, pulled
+      // from the same deadlines (live countdowns via the shared helper), incidents, and
+      // exposure numbers the rest of Halo uses.
+      var HALO_US_REGS = {
+        ad: [['DoD Annual AI Ethics Review', 'Sep 23, 2026'], ['ITAR Compliance Audit', 'Oct 3, 2026'], ['EO 13960 Report', 'Dec 9, 2026']],
+        fin: [['NYC Local Law 144 Audit', 'Oct 8, 2026'], ['ECOA Quarterly Report', 'Oct 12, 2026'], ['CFPB Fair Lending Report', 'Jan 30, 2027']],
+        health: [['ACA 1557 Remediation Deadline', 'Sep 29, 2026'], ['CMS AI Oversight Audit', 'Oct 25, 2026'], ['Joint Commission AI', 'Nov 20, 2026']],
+        fed: [['IRS agency briefing, OMB packet', 'Oct 18, 2026'], ['EO section 3(c) disclosure checkpoint', 'Oct 22, 2026'], ['OMB / OIRA submission target', 'Oct 24, 2026']]
+      };
+      var EU_NAMES = { 'Germany': 1, 'France': 1, 'Spain': 1, 'Italy': 1 };
+      function haloCountryIntel(name) {
+        var org = (typeof currentOrg !== 'undefined' && currentOrg) ? currentOrg : 'ad';
+        var dl = function (pair) { var c = cardinalCountdownLabel(pair[1]); return pair[0] + ': ' + (/Overdue/.test(c) ? c.toLowerCase() : c === 'Today' ? 'due today' : 'in ' + c) + ' (' + cardinalFormatDeadline(pair[1]) + ')'; };
+        if (name === 'United States of America') {
+          var regs = HALO_US_REGS[org] || HALO_US_REGS.ad;
+          var incs = (typeof incidentData !== 'undefined' && (incidentData[org] || incidentData.ad)) || [];
+          var open = incs.filter(function (i) { return i.stage !== 'FIXED'; });
+          var people = open.reduce(function (s, i) { var lead = String(i.affected || '').match(/^\s*([\d,]+)/); var n = lead ? parseInt(lead[1].replace(/,/g, ''), 10) : NaN; return s + (isNaN(n) ? 0 : n); }, 0);
+          var inact = ((window.CARDINAL_HALO_INACTION || {})[org] || {}).wk2 || {};
+          var soonest = Math.min.apply(null, regs.map(function (r) { return cardinalDaysUntil(r[1]); }));
+          return {
+            regs: regs.map(dl),
+            deadline: dl(regs.slice().sort(function (a, b) { return cardinalDaysUntil(a[1]) - cardinalDaysUntil(b[1]); })[0]),
+            stats: open.length + ' open incident' + (open.length === 1 ? '' : 's') + (people ? ' · ' + people.toLocaleString() + ' people affected' : '') + (inact.amount ? ' · ' + inact.amount + ' exposure if the next deadline is missed' : ''),
+            risk: soonest <= 14 ? 'CRITICAL' : 'WATCH'
+          };
+        }
+        if (EU_NAMES[name]) {
+          var eu = ['EU AI Act Tier 2 Filing', 'Nov 22, 2026'], iso = ['ISO 42001 Renewal', 'Oct 29, 2026'];
+          return { regs: [dl(eu), dl(iso), 'GDPR: Compliant'], deadline: dl(cardinalDaysUntil(iso[1]) < cardinalDaysUntil(eu[1]) ? iso : eu), stats: 'EU AI Act high-risk obligations apply to every model Cardinal monitors for you here', risk: 'WATCH' };
+        }
+        return countryInfo[name] || null;
+      }
+      function haloIntelHtml(name, info, pinned) {
+        var riskColor = info.risk === 'CRITICAL' ? '#ef4444' : info.risk === 'WATCH' ? '#f59e0b' : '#22c55e';
+        return '<div style="font-size:13px;font-weight:700;color:#e2e8f0;margin-bottom:6px;">' + name + ' <span style="font-size:10px;background:' + riskColor + '22;color:' + riskColor + ';border:1px solid ' + riskColor + '44;border-radius:4px;padding:1px 6px;">' + info.risk + '</span></div>' +
+          (info.stats ? '<div style="font-size:11px;color:#e2e8f0;font-weight:600;margin-bottom:6px;line-height:1.45">' + info.stats + '</div>' : '') +
+          '<div style="font-size:10px;color:#f59e0b;margin-bottom:8px;">⏱ Next: ' + info.deadline + '</div>' +
+          info.regs.map(function (r) { return '<div style="font-size:11px;color:#94a3b8;margin-bottom:3px;">• ' + r + '</div>'; }).join('');
+      }
+
       mapGroup.append('g')
         .selectAll('path')
         .data(countries.features)
@@ -23639,14 +23682,12 @@ function initHaloMap() {
         .style('cursor', 'pointer')
         .on('mouseover', function(event, d) {
           var name = countryNames[String(d.id)] || '';
-          var info = countryInfo[name];
+          var info = haloCountryIntel(name);
           if (!info) return;
           var tooltip = document.getElementById('halo-map-tooltip');
           if (!tooltip) return;
-          var riskColor = info.risk === 'CRITICAL' ? '#ef4444' : info.risk === 'WATCH' ? '#f59e0b' : '#22c55e';
-          tooltip.innerHTML = '<div style="font-size:13px;font-weight:700;color:#e2e8f0;margin-bottom:6px;">' + name + ' <span style="font-size:10px;background:' + riskColor + '22;color:' + riskColor + ';border:1px solid ' + riskColor + '44;border-radius:4px;padding:1px 6px;">' + info.risk + '</span></div>' +
-            '<div style="font-size:10px;color:#f59e0b;margin-bottom:8px;">⏱ ' + info.deadline + '</div>' +
-            info.regs.map(function(r){ return '<div style="font-size:11px;color:#94a3b8;margin-bottom:3px;">• ' + r + '</div>'; }).join('');
+          if (String(tooltip.dataset.haloPinned) === '1') return;
+          tooltip.innerHTML = haloIntelHtml(name, info);
           tooltip.style.display = 'block';
           tooltip.style.pointerEvents = 'none';
           tooltip.style.transform = '';
@@ -23669,7 +23710,7 @@ function initHaloMap() {
         .on('click', function(event, d) {
           event.stopPropagation();
           var name = countryNames[String(d.id)] || '';
-          if (!countryInfo[name]) return;
+          if (!haloCountryIntel(name)) return;
           var bounds = path.bounds(d);
           var dx = bounds[1][0] - bounds[0][0];
           var dy = bounds[1][1] - bounds[0][1];
@@ -23684,14 +23725,11 @@ function initHaloMap() {
           );
 
           setTimeout(function() {
-            var info = countryInfo[name];
+            var info = haloCountryIntel(name);
             if (!info) return;
             var tooltip = document.getElementById('halo-map-tooltip');
             if (!tooltip) return;
-            var riskColor = info.risk === 'CRITICAL' ? '#ef4444' : info.risk === 'WATCH' ? '#f59e0b' : '#22c55e';
-            tooltip.innerHTML = '<div style="font-size:13px;font-weight:700;color:#e2e8f0;margin-bottom:8px;">' + name + ' <span style="font-size:10px;background:' + riskColor + '22;color:' + riskColor + ';border:1px solid ' + riskColor + '44;border-radius:4px;padding:2px 8px;">' + info.risk + '</span></div>' +
-              '<div style="font-size:10px;color:#f59e0b;margin-bottom:10px;">⏱ ' + info.deadline + '</div>' +
-              info.regs.map(function(r){ return '<div style="font-size:11px;color:#94a3b8;margin-bottom:4px;">• ' + r + '</div>'; }).join('') +
+            tooltip.innerHTML = haloIntelHtml(name, info) +
               '<div style="margin-top:10px;font-size:10px;color:#60a5fa;cursor:pointer;" onclick="document.getElementById(\'halo-map-tooltip\').style.display=\'none\';document.getElementById(\'halo-map-tooltip\').dataset.haloPinned=\'\';document.getElementById(\'halo-map-tooltip\').style.pointerEvents=\'none\';document.getElementById(\'halo-map-tooltip\').style.transform=\'\';">✕ Close</div>';
             tooltip.style.display = 'block';
             tooltip.style.pointerEvents = 'auto';
