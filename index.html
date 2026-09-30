@@ -34849,12 +34849,89 @@ function pipelineRenderDiagnostics() {
     (!ready ? '<div style="font-size:9px;color:var(--muted);text-align:center;margin-top:6px;">Add at least one asset or connect a source first</div>' : '');
 }
 
+// 9/29 -- backlog: "Run Audit just scrolls to the pipeline diagram with a toast; it doesn't
+// animate the diagram processing your specific uploaded/connected asset." Now it runs a
+// staged audit over exactly what was added (each file by name, each connected source),
+// then shows per-asset results. Results are seeded from the file name so the same demo
+// file always produces the same findings (no reshuffle between runs). Still a prototype:
+// nothing leaves the browser.
+function pipelineAuditSeed(s) { var h = 0; for (var i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0; return function (n) { h = (h * 1103515245 + 12345) >>> 0; return h % n; }; }
+function pipelineAuditResult(name, type) {
+  var r = pipelineAuditSeed(name + '|' + type);
+  var di = (0.58 + r(35) / 100).toFixed(2);
+  var pass = +di >= 0.8;
+  var proxies = [['zip_code', 'surname', 'first_language'], ['home_zip', 'birth_year', 'marital_status'], ['home_region', 'first_name', 'age_band']][r(3)];
+  if (type === 'datasets') {
+    var gap = 4 + r(19);
+    return { verdict: gap > 12 ? 'Needs work' : 'Pass', lines: ['Representation gap: ' + gap + '% of protected groups underrepresented vs. census baseline', 'Label imbalance: ' + (1.1 + r(12) / 10).toFixed(1) + 'x more negative labels for the smallest cohort', proxies.length + ' likely proxy columns found: ' + proxies.join(', ')] };
+  }
+  if (type === 'cohorts') {
+    var groups = 6 + r(9);
+    return { verdict: pass ? 'Pass' : 'Disparity found', lines: [groups + ' cohorts matched to model outputs', 'Worst disparate impact ratio: ' + di + ' (threshold 0.80)', 'Largest affected group: ' + (200 + r(1800)).toLocaleString() + ' people'] };
+  }
+  if (type === 'pipelines') {
+    var tests = 120 + r(200), bypass = r(4);
+    return { verdict: bypass ? 'Vulnerable' : 'Pass', lines: [tests + ' prompt-injection and jailbreak tests run', bypass + ' instruction bypass' + (bypass === 1 ? '' : 'es') + ' found' + (bypass ? ', logged to Sentinel Security Watch' : ''), 'Tool permissions: ' + (bypass ? 'agent can call 1 tool it doesn\'t need' : 'least-privilege confirmed')] };
+  }
+  return { verdict: pass ? 'Pass' : 'Bias found', lines: ['Disparate impact ratio: ' + di + ' (threshold 0.80)', 'Top proxy features: ' + proxies.slice(0, 2).join(', '), 'Fraud blind spots: ' + r(4) + ' synthetic-identity patterns the model scores as low risk'] };
+}
 function pipelineRunAudit() {
-  if (typeof showToast === 'function') showToast('Certification audit started, routing to Eden + Obsidian');
-  var target = document.querySelector('#screen-pipeline .pipeline-layer');
-  if (target) target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  var w = window._pipelineWizard;
+  var diag = document.getElementById('pipeline-diagnostics');
+  if (!diag) return;
+  var box = document.getElementById('pipeline-audit-run');
+  if (!box) { box = document.createElement('div'); box.id = 'pipeline-audit-run'; diag.parentNode.insertBefore(box, diag.nextSibling); }
+  var items = w.assets.map(function (a) { return { name: a.name, type: a.type }; });
+  Object.keys(w.connectors).forEach(function (cid) {
+    var c = w.connectors[cid]; if (!c || !c.connected) return;
+    var def = PIPELINE_CONNECTORS.filter(function (x) { return x.id === cid; })[0];
+    items.push({ name: def ? def.label : cid, type: 'connector' });
+  });
+  var TYPE_LABEL = { models: 'Model', datasets: 'Dataset', cohorts: 'Cohorts', pipelines: 'Agent / prompts', connector: 'Live source' };
+  var stages = ['Secure enclave initialized' + (w.masking ? ', PII masked' : '')]
+    .concat(items.map(function (it) { return 'Ingesting ' + it.name; }))
+    .concat(['Eden Core: bias scan', 'Obsidian Core: fraud scan', 'Genesis Core: counterfactual test', 'Echo Core: sealing results']);
+  var esc = function (s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;'); };
+  var render = function (done) {
+    box.innerHTML = '<div style="margin-top:12px;background:#1a1815;border-radius:10px;padding:12px;font-family:monospace">' +
+      '<div style="font-size:9px;color:#94a3b8;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">Certification Audit · ' + items.length + ' asset' + (items.length === 1 ? '' : 's') + '</div>' +
+      stages.map(function (s, i) {
+        var st = i < done ? '#22c55e' : i === done ? '#f59e0b' : '#475569';
+        return '<div style="font-size:10.5px;color:' + st + ';margin-bottom:4px">' + (i < done ? '[✓]' : i === done ? '[…]' : '[ ]') + ' ' + esc(s) + '</div>';
+      }).join('') + '</div>';
+  };
+  var step = 0;
+  render(0);
+  if (window.__pipelineAuditTimer) clearInterval(window.__pipelineAuditTimer);
+  window.__pipelineAuditTimer = setInterval(function () {
+    step++;
+    render(step);
+    if (step < stages.length) return;
+    clearInterval(window.__pipelineAuditTimer);
+    var org = (typeof currentOrg !== 'undefined' && currentOrg) || window.currentOrg || 'ad';
+    var d = new Date();
+    var rid = String(org).toUpperCase().replace('HEALTH', 'HS') + '-AUDIT-' + d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0') + '-' + Math.random().toString(16).slice(2, 6).toUpperCase();
+    var cards = items.map(function (it) {
+      var res = it.type === 'connector'
+        ? (function () { return { verdict: 'Scanned', lines: [(40000 + pipelineAuditSeed(it.name + 'n')(160000)).toLocaleString() + ' records scanned', (function (n) { return 'Feeds ' + n + ' monitored model' + (n === 1 ? '' : 's'); })(1 + pipelineAuditSeed(it.name + 'm')(3)), 'Continuous monitoring on (re-scans nightly)'] }; })()
+        : pipelineAuditResult(it.name, it.type);
+      var good = /Pass|Scanned/.test(res.verdict);
+      var c = good ? '#22c55e' : '#ef4444';
+      return '<div style="border:1px solid var(--border2);border-left:3px solid ' + c + ';border-radius:9px;padding:10px 12px;margin-top:8px;background:var(--card)">' +
+        '<div style="display:flex;justify-content:space-between;gap:8px;align-items:center"><div style="font-size:11.5px;font-weight:700;color:var(--chrome2)">' + esc(it.name) + ' <span style="font-size:9.5px;color:var(--muted);font-weight:500">' + (TYPE_LABEL[it.type] || it.type) + '</span></div>' +
+        '<span style="font-size:9px;font-weight:800;text-transform:uppercase;color:' + c + '">' + esc(res.verdict) + '</span></div>' +
+        res.lines.map(function (l) { return '<div style="font-size:10.5px;color:var(--muted2);margin-top:3px">' + esc(l) + '</div>'; }).join('') + '</div>';
+    }).join('');
+    box.innerHTML += '<div style="margin-top:10px">' + cards +
+      '<div style="font-size:10px;color:var(--muted);margin-top:10px">Receipt <strong style="font-family:monospace;color:var(--chrome2)">' + rid + '</strong> sealed in Echo Core.</div>' +
+      '<div style="display:flex;gap:6px;margin-top:8px"><button type="button" onclick="showScreen(\'eden\',null)" style="flex:1;padding:8px;border-radius:8px;border:1px solid rgba(167,167,167,.3);background:transparent;color:var(--accent);font-size:10.5px;font-weight:700;cursor:pointer">Open in Eden →</button>' +
+      '<button type="button" onclick="showScreen(\'obsidian\',null)" style="flex:1;padding:8px;border-radius:8px;border:1px solid rgba(167,167,167,.3);background:transparent;color:var(--accent);font-size:10.5px;font-weight:700;cursor:pointer">Open in Obsidian →</button></div></div>';
+    if (typeof showToast === 'function') showToast('Audit complete. ' + rid + ' sealed in Echo Core.');
+  }, 650);
+  box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 window.pipelineRunAudit = pipelineRunAudit;
+
 
 (function pipelineWizardBoot() {
   function boot() { try { pipelineInitWizard(); } catch (e) { if (window.console) console.warn('pipelineInitWizard', e); } }
