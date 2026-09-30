@@ -7597,6 +7597,7 @@ Template Overview
   </div>
 
   <!-- Filter bar -->
+  <div id="echo-archive-nav"></div>
   <div id="echo-filter-bar" title="Filter logged events by time, core, case, model, person, event type, severity, and visibility" style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:18px;padding:14px;background:rgba(26,24,21,0.045);border:1px solid rgba(167, 167, 167,0.06);border-radius:10px;"></div>
 
   <!-- Two-column: feed + pinned sidebar -->
@@ -30601,8 +30602,106 @@ function renderEchoCardinalHero(org) {
 }
 
 
+// 9/29 -- backlog: "Echo Core needs an organizational structure for jumping to a specific
+// slice (similar to Genesis's sub-nav) since it holds every memory from company inception
+// and will get very large." Archive Navigator: a year > quarter > month timeline with event
+// counts, plus one-click jump chips by case, model, and core. Every click just drives the
+// existing Echo filters (custom date range / case / model / core), so the feed, filter bar,
+// and Reset all stay in sync with it.
+window.__echoNavOpen = window.__echoNavOpen || { year: null };
+function renderEchoArchiveNav(org) {
+  var el = document.getElementById('echo-archive-nav');
+  if (!el) return;
+  var mems = (window.CARDINAL_DATA && window.CARDINAL_DATA[org] && window.CARDINAL_DATA[org].echoMemories) || [];
+  if (!mems.length) { el.innerHTML = ''; return; }
+  var esc = echoEscapeHtml, js = echoEscapeJsAttr;
+  var MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  var years = {}, cases = {}, models = {}, cores = {};
+  mems.forEach(function (m) {
+    var d = new Date(m.timestamp);
+    if (!isNaN(d)) {
+      var y = d.getFullYear(), mo = d.getMonth(); // local time, same as echoApplyFilters
+      var Y = years[y] || (years[y] = { n: 0, months: {} });
+      Y.n++; Y.months[mo] = (Y.months[mo] || 0) + 1;
+    }
+    if (m.caseId) cases[m.caseId] = (cases[m.caseId] || 0) + 1;
+    if (m.modelId) models[m.modelId] = (models[m.modelId] || 0) + 1;
+    if (m.core) cores[m.core] = (cores[m.core] || 0) + 1;
+  });
+  var yearKeys = Object.keys(years).sort();
+  var openY = window.__echoNavOpen.year && years[window.__echoNavOpen.year] ? window.__echoNavOpen.year : yearKeys[yearKeys.length - 1];
+  var f = window.__echoFilters || {};
+  var cr = (window.__echoCustomDateRange || {})['main:timePeriod'];
+  var activeRange = f.timePeriod === 'custom' && cr ? cr.from + '|' + cr.to : '';
+  var pad = function (n) { return (n < 10 ? '0' : '') + n; };
+  var lastDay = function (y, mo) { return new Date(y, mo + 1, 0).getDate(); };
+  var btn = function (label, count, onclick, active, strong) {
+    return '<button type="button" onclick="' + onclick + '" style="padding:5px 10px;border-radius:7px;font-size:10.5px;font-weight:' + (strong ? 700 : 600) + ';cursor:pointer;white-space:nowrap;border:1px solid ' + (active ? 'rgba(168,85,247,.5)' : 'rgba(167,167,167,.18)') + ';background:' + (active ? 'rgba(168,85,247,.12)' : 'rgba(26,24,21,0.03)') + ';color:' + (active ? '#a855f7' : 'var(--chrome2)') + '">' + esc(label) + (count != null ? ' <span style="color:var(--muted);font-weight:500">' + count + '</span>' : '') + '</button>';
+  };
+  var rangeBtn = function (label, count, from, to, strong) {
+    return btn(label, count, "echoNavSetRange('" + from + "','" + to + "')", activeRange === from + '|' + to, strong);
+  };
+  // Timeline: years, then the open year's quarters and months
+  var yRow = yearKeys.map(function (y) {
+    return btn(y, years[y].n, "echoNavOpenYear('" + y + "')", String(openY) === y && !activeRange, true);
+  }).join('');
+  var Y = years[openY] || { months: {} };
+  var qRow = [0, 1, 2, 3].map(function (q) {
+    var n = 0; for (var k = q * 3; k < q * 3 + 3; k++) n += Y.months[k] || 0;
+    if (!n) return '';
+    return rangeBtn('Q' + (q + 1), n, openY + '-' + pad(q * 3 + 1) + '-01', openY + '-' + pad(q * 3 + 3) + '-' + lastDay(+openY, q * 3 + 2));
+  }).join('');
+  var mRow = Object.keys(Y.months).map(Number).sort(function (a, b) { return a - b; }).map(function (mo) {
+    return rangeBtn(MON[mo], Y.months[mo], openY + '-' + pad(mo + 1) + '-01', openY + '-' + pad(mo + 1) + '-' + lastDay(+openY, mo));
+  }).join('');
+  var jump = function (label, key, map, fmt) {
+    var ks = Object.keys(map).sort(function (a, b) { return map[b] - map[a]; });
+    if (!ks.length) return '';
+    return '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:8px"><span style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;font-weight:700;min-width:54px">' + label + '</span>' +
+      ks.map(function (k) { return btn(fmt ? fmt(k) : k, map[k], "echoNavJump('" + key + "','" + js(k) + "')", f[key] === k); }).join('') + '</div>';
+  };
+  el.innerHTML = '<div style="padding:14px;background:rgba(168,85,247,0.03);border:1px solid rgba(168,85,247,0.16);border-radius:10px;margin-bottom:12px">' +
+    '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px">' +
+    '<div><div style="font-size:11px;color:#a855f7;font-weight:800;letter-spacing:.8px;text-transform:uppercase">Archive Navigator</div>' +
+    '<div style="font-size:10px;color:var(--muted);margin-top:2px">' + mems.length + ' logged events since ' + esc(yearKeys[0]) + '. Jump straight to a period, case, model, or core.</div></div>' +
+    (activeRange || ['case', 'model', 'core'].some(function (k) { return f[k] && f[k] !== 'all'; }) ? '<button type="button" onclick="echoResetFilters()" style="padding:5px 10px;border-radius:7px;font-size:10px;font-weight:600;cursor:pointer;border:1px solid rgba(239,68,68,.25);background:rgba(239,68,68,.06);color:var(--red)">Show everything</button>' : '') +
+    '</div>' +
+    '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap"><span style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;font-weight:700;min-width:54px">Year</span>' + yRow + '</div>' +
+    '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:8px"><span style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;font-weight:700;min-width:54px">' + esc(openY) + '</span>' + qRow + '<span style="width:1px;height:16px;background:rgba(167,167,167,.2);margin:0 4px"></span>' + mRow + '</div>' +
+    jump('Case', 'case', cases, function (k) { return '#' + String(k).replace(/^#/, ''); }) +
+    jump('Model', 'model', models) +
+    jump('Core', 'core', cores, function (k) { return { trustloop: 'Trust Loop', warroom: 'War Room', trustledger: 'Trust Ledger' }[k] || (k.charAt(0).toUpperCase() + k.slice(1)); }) +
+    '</div>';
+}
+function echoNavRefresh() {
+  var org = (typeof currentOrg !== 'undefined' && currentOrg) ? currentOrg : (window.currentOrg || 'ad');
+  try { renderEchoFilterBar(org); } catch (_a) {}
+  try { echoApplyFilters(); } catch (_b) {}
+  renderEchoArchiveNav(org);
+  var bar = document.getElementById('echo-filter-bar');
+  if (bar && bar.scrollIntoView) bar.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+window.echoNavOpenYear = function (y) {
+  window.__echoNavOpen.year = y;
+  window.echoNavSetRange(y + '-01-01', y + '-12-31');
+};
+window.echoNavSetRange = function (from, to) {
+  window.__echoCustomDateRange = window.__echoCustomDateRange || {};
+  window.__echoCustomDateRange['main:timePeriod'] = { from: from, to: to };
+  window.__echoFilters = window.__echoFilters || {};
+  window.__echoFilters.timePeriod = 'custom';
+  echoNavRefresh();
+};
+window.echoNavJump = function (key, value) {
+  window.__echoFilters = window.__echoFilters || {};
+  window.__echoFilters[key] = window.__echoFilters[key] === value ? 'all' : value;
+  echoNavRefresh();
+};
+window.renderEchoArchiveNav = renderEchoArchiveNav;
+
 function renderEchoMemoryFeed(org) {
   if (!window.__echoFilters) window.__echoFilters = { timePeriod: 'all', core: 'all', case: 'all', model: 'all', person: 'all', eventType: 'all', severity: 'all', accessTier: 'all' };
+  try { renderEchoArchiveNav(org); } catch (_ean) {}
   renderEchoFilterBar(org);
   echoApplyFilters();
   renderEchoPinnedSidebar(org);
@@ -30678,6 +30777,7 @@ function echoSetFilter(key, value, opts) {
   if (!window.__echoFilters) window.__echoFilters = {};
   window.__echoFilters[key] = value;
   echoApplyFilters();
+  try { renderEchoArchiveNav((typeof currentOrg !== 'undefined' && currentOrg) || window.currentOrg || 'ad'); } catch (_ean2) {}
 }
 
 function echoResetFilters() {
@@ -30692,6 +30792,7 @@ function echoResetFilters() {
   renderEchoFilterBar(org);
   echoApplyFilters();
   renderEchoPinnedSidebar(org);
+  try { renderEchoArchiveNav(org); } catch (_ean3) {}
 }
 
 function echoApplyFilters() {
