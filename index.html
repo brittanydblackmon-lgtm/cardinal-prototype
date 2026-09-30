@@ -8978,13 +8978,13 @@ Template Overview
 </div>
 <div class="stat-card" style="cursor:default">
 <div class="stat-label">Last Login</div>
-<div style="font-size:14px;font-weight:600;color:var(--chrome2)">Today, 9:41 AM</div>
-<div class="stat-change">Via 2FA — Verified</div>
+<div style="font-size:14px;font-weight:600;color:var(--chrome2)" id="settings-last-login">Today, 9:41 AM</div>
+<div class="stat-change" id="settings-last-login-sub">Via 2FA — Verified</div>
 </div>
 <div class="stat-card" style="cursor:default">
 <div class="stat-label">Session</div>
 <div style="font-size:14px;font-weight:600;color:var(--green)">Active</div>
-<div class="stat-change">Expires in 8 hours</div>
+<div class="stat-change" id="settings-session-expiry">Expires in 8 hours</div>
 </div>
 </div>
 
@@ -16488,7 +16488,29 @@ function otpMove(el, idx) {
  if(vals.length === 7) setTimeout(doLogin, 300);
 }
 
+// 9/29 -- Settings "Last Login" and session expiry were hardcoded ("Today, 9:41 AM",
+// "Expires in 8 hours"). Now stamped at real login and ticked every 30s, same live
+// feel as the Eve icon's timing.
+function cardinalTickLoginClock() {
+  var at = window.__cardinalLoginAt;
+  if (!at) return;
+  var now = new Date();
+  var mins = Math.max(0, Math.floor((now - at) / 60000));
+  var ago = mins < 1 ? 'just now' : mins < 60 ? mins + ' min ago' : Math.floor(mins / 60) + 'h ' + (mins % 60) + 'm ago';
+  var el = document.getElementById('settings-last-login');
+  if (el) el.textContent = (at.toDateString() === now.toDateString() ? 'Today, ' : at.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ', ') + at.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+  var sub = document.getElementById('settings-last-login-sub');
+  if (sub) sub.textContent = 'Via 2FA, verified · ' + ago;
+  var left = Math.max(0, 8 * 60 - mins);
+  var ex = document.getElementById('settings-session-expiry');
+  if (ex) ex.textContent = left === 0 ? 'Expired, sign in again' : 'Expires in ' + (left >= 60 ? Math.floor(left / 60) + 'h ' : '') + (left % 60) + 'm';
+}
 function doLogin() {
+  try {
+    window.__cardinalLoginAt = new Date();
+    cardinalTickLoginClock();
+    if (!window.__cardinalLoginClock) window.__cardinalLoginClock = setInterval(cardinalTickLoginClock, 30000);
+  } catch (_llc) {}
   try {
     window.__cardinalUnlocked = true; // security: only allow Eve/Adam voice after real login completes
     // Identity should not persist across a fresh login -- a saved persona from a prior
