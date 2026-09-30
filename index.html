@@ -31774,6 +31774,7 @@ window.renderBigWorkspacePage = function() {
   }
   html += '</div>';
 
+  try { html += wbWorkspaceHtml(persona); } catch (_mwb) {}
   try { html += myWorkspaceActivityHtml(persona, myMems); } catch (_mwa) {}
 
   html += '</div>';
@@ -34171,6 +34172,150 @@ function echoRenderModelLineage(org) {
   echoFilterTabResults('lineage', '');
 }
 
+
+// ══ WHISTLEBLOWER: ANONYMOUS TWO-WAY CHANNEL (9/29) ══
+// Brittany's 9/24 requirements: every user gets a personal spot in their own workspace
+// to file a report; the aggregated view lives in Echo Core, only for permissioned roles
+// (HR / Legal / Compliance); reviewers see content but never the submitter's name; it's
+// two-way; and anonymity runs BOTH directions -- the reporter never learns which HR/legal
+// person is replying either. So messages are labeled only "Reporter" / "Reviewer", and
+// every timestamp is rounded to the day so send-time can't be used to guess who's typing.
+// Prototype storage is this browser (localStorage); the real product would hold threads
+// server-side keyed by the report ID + private key, with no account link at all.
+var WB_SEED = {
+  ad: [
+    { id: 'WB-2026-0917-A4C', category: 'Override of a required sign-off', status: 'Under review', messages: [
+      { from: 'reporter', day: 'Sep 17, 2026', text: 'A program manager approved the Personnel v2.5 traffic increase in Atonement without the Compliance sign-off the policy requires. The approval shows in Echo, the sign-off does not.' },
+      { from: 'reviewer', day: 'Sep 18, 2026', text: 'Thank you. We have confirmed the approval record in Echo and opened a review. Do you know whether this has happened on other releases?' },
+      { from: 'reporter', day: 'Sep 19, 2026', text: 'I believe it also happened on Maintenance Routing in July, but I did not see it myself.' }
+    ] },
+    { id: 'WB-2026-0908-F21', category: 'Data used for the wrong purpose', status: 'Closed', messages: [
+      { from: 'reporter', day: 'Sep 8, 2026', text: 'Medical flags from Mission Readiness were shared in a promotions meeting.' },
+      { from: 'reviewer', day: 'Sep 10, 2026', text: 'Confirmed and addressed. Access to that feed has been narrowed and the meeting attendees retrained. Closing this report. You can reopen it any time with your report ID.' }
+    ] }
+  ],
+  fin: [
+    { id: 'WB-2026-0915-B7E', category: 'Pressure to change a model result', status: 'Under review', messages: [
+      { from: 'reporter', day: 'Sep 15, 2026', text: 'Sales leadership asked the credit team to "tune down" ZIP-based denials before the NYC audit instead of fixing the model.' },
+      { from: 'reviewer', day: 'Sep 16, 2026', text: 'We take this seriously. Legal has placed a hold on any threshold changes to Credit Scoring v3.4 until the audit closes.' }
+    ] }
+  ],
+  health: [
+    { id: 'WB-2026-0912-C03', category: 'Patient harm risk', status: 'Open', messages: [
+      { from: 'reporter', day: 'Sep 12, 2026', text: 'Claims denials for patients 65+ are being auto-closed without the clinical review step while the fix waits on sign-off.' }
+    ] }
+  ],
+  fed: [
+    { id: 'WB-2026-0920-D9A', category: 'Improper records access', status: 'Under review', messages: [
+      { from: 'reporter', day: 'Sep 20, 2026', text: 'An examiner in my office looked up a relative\'s return through the fraud model. I don\'t want to be identified.' },
+      { from: 'reviewer', day: 'Sep 21, 2026', text: 'Understood. Your identity is not visible to us. This has been referred to the Inspector General. Is there anything else we should know?' }
+    ] }
+  ]
+};
+var WB_CATEGORIES = ['Override of a required sign-off', 'Pressure to change a model result', 'Data used for the wrong purpose', 'Improper records access', 'Harassment or retaliation', 'Patient or customer harm risk', 'Something else'];
+function wbToday() { return new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }); }
+function wbThreads(org) {
+  var saved = [];
+  try { saved = JSON.parse(localStorage.getItem('cardinal-wb-threads-' + org) || '[]'); } catch (_e) {}
+  var seed = (WB_SEED[org] || []).map(function (t) {
+    var s = saved.filter(function (x) { return x.id === t.id; })[0];
+    return s || JSON.parse(JSON.stringify(t));
+  });
+  return saved.filter(function (x) { return !seed.some(function (t) { return t.id === x.id; }); }).concat(seed);
+}
+function wbSave(org, thread) {
+  var saved = [];
+  try { saved = JSON.parse(localStorage.getItem('cardinal-wb-threads-' + org) || '[]'); } catch (_e) {}
+  saved = saved.filter(function (x) { return x.id !== thread.id; });
+  saved.unshift(thread);
+  try { localStorage.setItem('cardinal-wb-threads-' + org, JSON.stringify(saved)); } catch (_s) {}
+}
+function wbMine() { try { return JSON.parse(localStorage.getItem('cardinal-wb-mine') || '[]'); } catch (_e) { return []; } }
+function wbEsc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+function wbThreadHtml(org, t, side) {
+  var bubble = function (m) {
+    var mine = m.from === side;
+    return '<div style="display:flex;justify-content:' + (mine ? 'flex-end' : 'flex-start') + ';margin-bottom:6px"><div style="max-width:82%;padding:8px 11px;border-radius:10px;font-size:11px;line-height:1.5;color:var(--chrome2);background:' + (m.from === 'reporter' ? 'rgba(239,68,68,0.06)' : 'rgba(59,130,246,0.07)') + ';border:1px solid ' + (m.from === 'reporter' ? 'rgba(239,68,68,0.18)' : 'rgba(59,130,246,0.2)') + '">' +
+      '<div style="font-size:8.5px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:3px">' + (m.from === 'reporter' ? 'Reporter' : 'Reviewer (Legal / HR)') + ' · ' + wbEsc(m.day) + '</div>' + wbEsc(m.text) + '</div></div>';
+  };
+  var sc = { Open: '#ef4444', 'Under review': '#f59e0b', Closed: '#22c55e' }[t.status] || '#94a3b8';
+  return '<div style="border:1px solid var(--border2);border-radius:10px;padding:12px 14px;margin-bottom:10px;background:rgba(26,24,21,0.03)">' +
+    '<div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:8px">' +
+    '<div><span style="font-family:monospace;font-size:11px;font-weight:700;color:var(--chrome2)">' + wbEsc(t.id) + '</span> <span style="font-size:10.5px;color:var(--muted)">· ' + wbEsc(t.category) + '</span></div>' +
+    '<span style="font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:' + sc + ';border:1px solid ' + sc + '55;padding:2px 7px;border-radius:5px">' + wbEsc(t.status) + '</span></div>' +
+    t.messages.map(bubble).join('') +
+    '<div style="display:flex;gap:6px;margin-top:8px"><input id="wb-reply-' + wbEsc(t.id) + '" placeholder="' + (side === 'reviewer' ? 'Reply to the reporter (your name is never shown)…' : 'Reply to the reviewer (your name is never shown)…') + '" style="flex:1;padding:8px 10px;border-radius:7px;border:1px solid var(--border2);background:var(--bg3);color:var(--text);font-size:11px"/>' +
+    '<button type="button" onclick="wbReply(\'' + org + '\',\'' + wbEsc(t.id) + '\',\'' + side + '\')" style="padding:7px 12px;border-radius:7px;border:1px solid rgba(167,167,167,.3);background:rgba(167,167,167,.08);color:var(--accent);font-size:11px;font-weight:700;cursor:pointer">Send</button>' +
+    (side === 'reviewer' && t.status !== 'Closed' ? '<button type="button" onclick="wbSetStatus(\'' + org + '\',\'' + wbEsc(t.id) + '\',\'Closed\')" style="padding:7px 10px;border-radius:7px;border:1px solid rgba(34,197,94,.3);background:transparent;color:var(--green);font-size:10.5px;font-weight:600;cursor:pointer">Close</button>' : '') +
+    '</div></div>';
+}
+window.wbReply = function (org, id, side) {
+  var inp = document.getElementById('wb-reply-' + id);
+  var text = inp ? inp.value.trim() : '';
+  if (!text) return;
+  var t = wbThreads(org).filter(function (x) { return x.id === id; })[0];
+  if (!t) return;
+  t.messages.push({ from: side, day: wbToday(), text: text });
+  if (side === 'reviewer' && t.status === 'Open') t.status = 'Under review';
+  wbSave(org, t);
+  if (side === 'reviewer') { try { echoRenderWhistleblower(org); } catch (_r) {} } else { try { renderBigWorkspacePage(); } catch (_w) {} }
+  if (typeof cardinalShowToast === 'function') cardinalShowToast('Sent anonymously. Logged in Echo without either name.');
+};
+window.wbSetStatus = function (org, id, status) {
+  var t = wbThreads(org).filter(function (x) { return x.id === id; })[0];
+  if (!t) return;
+  t.status = status; wbSave(org, t);
+  try { echoRenderWhistleblower(org); } catch (_r) {}
+};
+window.wbSubmit = function () {
+  var org = window.currentOrg || 'ad';
+  var body = document.getElementById('wb-new-text');
+  var cat = document.getElementById('wb-new-cat');
+  if (!body || !body.value.trim()) { if (body) body.focus(); return; }
+  var d = new Date();
+  var id = 'WB-' + d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + String(d.getDate()).padStart(2, '0') + '-' + Math.random().toString(16).slice(2, 5).toUpperCase();
+  var key = Math.random().toString(36).slice(2, 6) + '-' + Math.random().toString(36).slice(2, 6) + '-' + Math.random().toString(36).slice(2, 6);
+  // Note: no persona / author field is ever written onto the thread itself
+  wbSave(org, { id: id, category: cat ? cat.value : 'Something else', status: 'Open', messages: [{ from: 'reporter', day: wbToday(), text: body.value.trim() }] });
+  var mine = wbMine(); mine.unshift({ org: org, id: id, key: key });
+  try { localStorage.setItem('cardinal-wb-mine', JSON.stringify(mine)); } catch (_m) {}
+  window.__wbJustFiled = { id: id, key: key };
+  try { renderBigWorkspacePage(); } catch (_w) {}
+};
+function wbWorkspaceHtml(persona) {
+  var org = window.currentOrg || 'ad';
+  if (persona && persona.canSubmitWhistleblower === false) return '';
+  var mineIds = wbMine().filter(function (m) { return m.org === org; }).map(function (m) { return m.id; });
+  var mine = wbThreads(org).filter(function (t) { return mineIds.indexOf(t.id) !== -1; });
+  var jf = window.__wbJustFiled; window.__wbJustFiled = null;
+  return '<div style="background:rgba(239,68,68,0.03);border:1px solid rgba(239,68,68,0.2);border-radius:14px;padding:18px 20px">' +
+    '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px">' +
+    '<div style="font-size:11px;color:#ef4444;text-transform:uppercase;letter-spacing:0.8px;font-weight:700">🔒 Report a Concern Anonymously</div>' +
+    '<div style="font-size:9.5px;color:var(--muted)">Your name is never attached. Reviewers stay anonymous too.</div></div>' +
+    '<div style="font-size:10.5px;color:var(--muted2);line-height:1.5;margin-bottom:10px">Goes to a restricted Legal / HR inbox in Echo Core. You get a private report ID to follow the conversation. Dates are shown by day only, so timing can\'t identify you.</div>' +
+    (jf ? '<div style="padding:10px 12px;border-radius:9px;background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.3);font-size:11px;color:var(--chrome2);margin-bottom:10px">✓ Filed as <strong style="font-family:monospace">' + wbEsc(jf.id) + '</strong>. Private key: <strong style="font-family:monospace">' + wbEsc(jf.key) + '</strong>. Keep it somewhere safe. It\'s the only way back to this thread from another device.</div>' : '') +
+    '<select id="wb-new-cat" style="width:100%;padding:9px 10px;border-radius:8px;border:1px solid rgba(239,68,68,0.2);background:var(--bg3);color:var(--text);font-size:12px;margin-bottom:8px">' + WB_CATEGORIES.map(function (c) { return '<option>' + wbEsc(c) + '</option>'; }).join('') + '</select>' +
+    '<textarea id="wb-new-text" placeholder="What\'s going on? Include what you saw and where (model, case, screen). Leave out anything that points to you." style="width:100%;min-height:90px;padding:10px 12px;border-radius:8px;border:1px solid rgba(239,68,68,0.2);background:var(--bg3);color:var(--text);font-size:12px;line-height:1.6;box-sizing:border-box;resize:vertical"></textarea>' +
+    '<div style="display:flex;justify-content:flex-end;margin-top:8px"><button type="button" onclick="wbSubmit()" style="padding:9px 18px;border-radius:8px;border:0;background:#ef4444;color:#fff;font-size:12px;font-weight:700;cursor:pointer">Submit Anonymously</button></div>' +
+    (mine.length ? '<div style="margin-top:14px"><div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;font-weight:700;margin-bottom:8px">Your anonymous reports (' + mine.length + ')</div>' + mine.map(function (t) { return wbThreadHtml(org, t, 'reporter'); }).join('') + '</div>' : '') +
+    '</div>';
+}
+function wbInboxHtml(org) {
+  var p = window.getActivePersona ? window.getActivePersona() : null;
+  if (p && !p.canSeeWhistleblower) {
+    return '<div style="padding:18px;border-radius:12px;border:1px dashed rgba(239,68,68,0.3);background:rgba(239,68,68,0.03);margin-bottom:16px;font-size:11.5px;color:var(--muted2)">🔒 <strong style="color:var(--chrome2)">Anonymous Inbox is restricted.</strong> Only Legal, HR, and Compliance roles can read reports. ' + wbEsc(p.name) + ' (' + wbEsc(p.role) + ') can still file one from My Workspace.</div>';
+  }
+  var ts = wbThreads(org);
+  var open = ts.filter(function (t) { return t.status !== 'Closed'; }).length;
+  return '<div style="margin-bottom:18px">' +
+    '<div style="display:flex;justify-content:space-between;align-items:flex-end;gap:10px;flex-wrap:wrap;margin-bottom:10px"><div><div style="font-size:14px;font-weight:700;color:var(--chrome2)">Anonymous Inbox</div>' +
+    '<div style="font-size:10.5px;color:var(--muted);margin-top:2px">' + ts.length + ' reports · ' + open + ' open. You see what was reported, never who. The reporter sees "Reviewer", never your name.</div></div></div>' +
+    (ts.length ? ts.map(function (t) { return wbThreadHtml(org, t, 'reviewer'); }).join('') : '<div style="font-size:11px;color:var(--muted)">No reports.</div>') +
+    '</div>';
+}
+window.wbWorkspaceHtml = wbWorkspaceHtml;
+window.wbInboxHtml = wbInboxHtml;
+
 function echoRenderWhistleblower(org) {
   var el = document.getElementById('echo-tab-content-whistleblower');
   if (!el) return;
@@ -34182,7 +34327,9 @@ function echoRenderWhistleblower(org) {
 
   el.innerHTML = '<div style="padding:8px 0 20px;">' +
     '<div style="font-size:18px;font-weight:700;color:var(--chrome2);margin-bottom:6px;">Whistleblower — Anonymized Submissions</div>' +
-    '<div style="font-size:11px;color:var(--muted);margin-bottom:14px;">Sealed routing audit. PII-stripped. Role-restricted access (Legal + Compliance + Admin). Submitters cannot view their own or others\' submissions.</div>' +
+    wbInboxHtml(org) +
+    '<div style="font-size:14px;font-weight:700;color:var(--chrome2);margin:6px 0 4px">Sealed Routing Receipts</div>' +
+    '<div style="font-size:11px;color:var(--muted);margin-bottom:14px;">Sealed routing audit. PII-stripped. Role-restricted access (Legal + Compliance + Admin). Submitters see only their own reports, from My Workspace.</div>' +
     '<div style="background:rgba(239,68,68,0.04);border:1px solid rgba(239,68,68,0.15);border-radius:10px;padding:14px 16px;margin-bottom:14px;display:flex;align-items:center;gap:10px;">' +
     '<span style="font-size:14px;">🔒</span><span style="font-size:11px;color:var(--muted);">' + receipts.length + ' whistleblower seal' + (receipts.length === 1 ? '' : 's') + ' on file. Black-box pattern: submission → seal → routing → Legal/Compliance review.</span>' +
     '</div>' +
