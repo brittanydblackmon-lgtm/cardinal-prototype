@@ -5308,6 +5308,12 @@ window.CARDINAL_DEADLINE_MODE = 'rolling';
   window.cardinalDeadlinePhrase = phrase;
   window.cardinalPluralDays = plural;
   window.cardinalDaysBetween = dayDiff;
+  // Rolls any "Mon D, YYYY" inside a sentence the same way (for titles that have the
+  // date typed into them, e.g. "DoD AI Ethics Audit — Overdue Sep 23, 2026")
+  window.cardinalRollDatesInText = function (s) {
+    if (typeof s !== 'string' || window.CARDINAL_DEADLINE_MODE !== 'rolling') return s;
+    return s.replace(/\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec) (\d{1,2}), (20\d\d)\b/g, function (m) { return formatDate(m); });
+  };
 })();
 </script>
 <!-- ══════════════════ LOGIN ══════════════════ -->
@@ -15510,13 +15516,16 @@ function goToModel(modelName, org) {
   var data = cd(org);
   var list = data.modelLevelScores || [];
   var byLevel = list.find(function (x) { return x.name === modelName; });
+  var focus = function (screen) { setTimeout(function () { try { cardinalFocusRow('screen-' + screen, [modelName]); } catch (_f) {} }, 450); };
   if (byLevel && byLevel.lifecycleStage) {
     try { showScreen(byLevel.lifecycleStage, null); } catch (e) {}
+    focus(byLevel.lifecycleStage);
     return;
   }
   var m = (data.modelsAtRiskList || []).find(function (x) { return x.name === modelName; });
   var stage = m && m.stage ? m.stage : 'eden';
   try { showScreen(stage, null); } catch (e) {}
+  focus(stage);
 }
 window.goToModel = goToModel;
 
@@ -15529,6 +15538,7 @@ function goToModelLevelRow(idx) {
   } else {
     try { showScreen('modellibrary', null); } catch (e2) {}
   }
+  if (m && m.name) setTimeout(function () { try { cardinalFocusRow('screen-' + (m.lifecycleStage || 'modellibrary'), [m.name]); } catch (_f2) {} }, 450);
 }
 window.goToModelLevelRow = goToModelLevelRow;
 
@@ -16920,14 +16930,18 @@ function renderAlert(index) {
             var secId = routeScreen === 'eden' ? 'eden-sec-cases' : 'obs-sec-cases';
             var el = document.getElementById(secId);
             if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            setTimeout(function () { cardinalFocusRow('screen-' + routeScreen, cardinalNeedlesFromTitle(a.title)); }, 450);
           }, 120);
         } catch (_dl) {}
       } else if (alertType === 'MODEL') {
         try {
           setTimeout(function () {
             if (typeof switchMLTab === 'function') switchMLTab('models', 1);
+            setTimeout(function () { cardinalFocusRow('screen-modellibrary', cardinalNeedlesFromTitle(a.title)); }, 350);
           }, 120);
         } catch (_dl2) {}
+      } else {
+        setTimeout(function () { try { cardinalFocusRow('screen-' + routeScreen, cardinalNeedlesFromTitle(a.title)); } catch (_dl3) {} }, 500);
       }
     };
   }
@@ -16962,6 +16976,49 @@ function cycleAlert(dir) {
   window.currentAlertIndex = (window.currentAlertIndex + dir + alerts.length) % alerts.length;
   renderAlert(window.currentAlertIndex);
 }
+
+// 9/29 -- row-level deep linking. Section-level links already landed on the right
+// section with the right filter; this finds the exact row/card inside it (smallest
+// row-like element whose text contains every needle), scrolls it to center, and pulses
+// a highlight so the eye lands on it. Falls back to the first needle alone, then to
+// doing nothing (the section scroll that already happened stays as-is).
+window.cardinalFocusRow = function (scope, needles, opts) {
+  var root = typeof scope === 'string' ? document.getElementById(scope) : scope;
+  needles = (needles || []).filter(Boolean).map(function (n) { return String(n).toLowerCase(); });
+  if (!root || !needles.length) return null;
+  var sel = 'tr, .edo-case-card, [data-case-id], [data-model-id], .card, .stat-card, [onclick]';
+  var find = function (ns) {
+    var best = null, bestLen = Infinity;
+    root.querySelectorAll(sel).forEach(function (el) {
+      if (el.offsetParent === null) return;
+      var t = (el.innerText || '').toLowerCase();
+      if (t.length > 1200) return;
+      if (ns.every(function (n) { return t.indexOf(n) !== -1; }) && t.length < bestLen) { best = el; bestLen = t.length; }
+    });
+    return best;
+  };
+  var hit = find(needles) || (needles.length > 1 ? find(needles.slice(0, 1)) : null);
+  if (!hit) return null;
+  // Prefer the row/card itself over a tiny inner button
+  if (hit.tagName === 'BUTTON' && hit.parentElement) hit = hit.closest('tr, .edo-case-card, .card') || hit;
+  hit.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  var prevOutline = hit.style.outline, prevShadow = hit.style.boxShadow, prevTrans = hit.style.transition;
+  hit.style.transition = 'box-shadow .4s ease, outline-color .4s ease';
+  hit.style.outline = '2px solid #a855f7';
+  hit.style.outlineOffset = '2px';
+  hit.style.boxShadow = '0 0 0 6px rgba(168,85,247,.18)';
+  setTimeout(function () { hit.style.outline = prevOutline; hit.style.boxShadow = prevShadow; hit.style.transition = prevTrans; }, (opts && opts.ms) || 2600);
+  return hit;
+};
+// Pull "what row is this about" out of an alert title, e.g.
+// "Bias Detected — Personnel Assignment Model v2.4" -> ['Personnel Assignment', 'v2.4']
+window.cardinalNeedlesFromTitle = function (title) {
+  var t = String(title || '');
+  var m = t.match(/([A-Z][\w&]*(?: [A-Z][\w&]*)*?)(?: Model)? (v\d+(?:\.\d+)?)/);
+  if (m) return [m[1].replace(/^(Bias|Fraud|Drift|Violation|Risk) (Detected )?/, ''), m[2]];
+  var head = t.split(/\s[—-]\s/)[0].replace(/\b(Audit|Detected|Review|Deadline)\b/g, '').trim();
+  return head ? [head] : [];
+};
 
 function dashNavCardClick(ev, screen) {
   if (ev && ev.target && ev.target.closest && ev.target.closest('.dr-card-foot')) return;
@@ -19866,10 +19923,11 @@ function dashBuildActionQueue(specs, cfg, orgKey) {
       core: 'REGULATORY',
       screen: it.screen || 'compliance',
       id: it.statuteId || it.caseId || ('reg-' + i),
-      text: it.title || it.detail || '',
+      text: cardinalRollDatesInText(it.title || it.detail || ''),
       badge: it.badge || '',
       color: color,
-      severity: severity
+      severity: severity,
+      caseId: it.caseId || null
     });
   });
   // 9/26 -- Brittany: Eve should proactively remind users to re-add stamps they
@@ -19989,6 +20047,10 @@ function renderActionAlert(index) {
     btnEl.onclick = function (ev) {
       if (ev) { ev.preventDefault(); ev.stopPropagation(); }
       try { if (typeof showScreen === 'function') showScreen(it.screen, null); } catch (_e) {}
+      // Land on the exact case/model row, not just the top of the screen
+      var cm = String(it.text || '').match(/#?([A-Z]{2,6}-(?:[A-Z]+-)?\d{3,})/);
+      var needles = it.caseId ? [it.caseId] : cm ? [cm[1]] : cardinalNeedlesFromTitle(it.text);
+      setTimeout(function () { try { cardinalFocusRow('screen-' + it.screen, needles); } catch (_f3) {} }, 500);
     };
   }
 
@@ -21663,7 +21725,17 @@ function initDashboardTooltips() {
 function buildDashRegulatoryDeadlines(org) {
   var cfg = typeof DASH_INDUSTRY !== 'undefined' ? DASH_INDUSTRY[org] : null;
   if (!cfg || !cfg.regulatoryPanel) return;
-  var rp = cfg.regulatoryPanel;
+  // Titles/subs have dates typed in; roll them with the shared deadline helper so this
+  // panel agrees with Halo and the countdowns elsewhere
+  var rp = {};
+  Object.keys(cfg.regulatoryPanel).forEach(function (k) {
+    var v = cfg.regulatoryPanel[k];
+    rp[k] = Array.isArray(v) ? v.map(function (it) {
+      var o = Object.assign({}, it);
+      ['title', 'sub', 'dateLine'].forEach(function (f) { if (typeof o[f] === 'string') o[f] = cardinalRollDatesInText(o[f]); });
+      return o;
+    }) : v;
+  });
   var elA = document.getElementById('dash-reg-section-action');
   var elB = document.getElementById('dash-reg-section-coming');
   var elC = document.getElementById('dash-reg-section-active');
