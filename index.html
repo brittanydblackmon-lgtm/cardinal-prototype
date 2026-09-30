@@ -16505,6 +16505,15 @@ function doLogin() {
     } catch (_evLogin) {}
     currentOrg = selectedOrg || 'ad';
     window.currentOrg = currentOrg;
+    // 9/29 -- the page restores the last-viewed industry pill on load (localStorage),
+    // then login switches content to the signed-in org without touching the pills, so
+    // e.g. the Finance pill stayed highlighted over A&D content. Sync them here.
+    try {
+      document.querySelectorAll('.ind-btn').forEach(function (b) {
+        b.classList.toggle('active', (b.getAttribute('onclick') || '').indexOf("'" + currentOrg + "'") !== -1);
+      });
+      localStorage.setItem('cardinal-active-industry', currentOrg);
+    } catch (_pillSync) {}
     // Re-render Trust Score if it's the active screen
     try {
       var tsActive = document.getElementById('screen-trustscore');
