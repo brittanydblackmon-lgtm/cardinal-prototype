@@ -12747,14 +12747,19 @@ function _cardinalBuildModelDetailDrillInRegistry(CD) {
     for (var i = 0; i < mid.length; i++) seed += mid.charCodeAt(i) * (i + 1);
     function rnd(n) { seed = (seed * 9301 + 49297) % 233280; return Math.floor((seed / 233280) * n); }
     var people = (d.orgUsers || []).map(function (u) { return u.name || u; }).filter(Boolean);
+    // Real people from this org's personas before falling back to generic reviewer labels
+    if (!people.length) people = (window.CARDINAL_PERSONAS || []).filter(function (p) { return p.org === d.org; }).map(function (p) { return p.name; });
     if (!people.length) people = [ownerTeam + ' reviewer A', ownerTeam + ' reviewer B', 'Anthony Broadnax', 'Sarah Chen'];
     var out = [];
     var n = 4 + rnd(3);
     for (var j = 0; j < n; j++) {
       var daysAgo = 1 + rnd(45);
+      var whoName = people[rnd(people.length)];
+      var whoP = (window.CARDINAL_PERSONAS || []).filter(function (p) { return p.name === whoName; })[0];
+      var randRole = ACCESS_ROLES[rnd(ACCESS_ROLES.length)];
       out.push({
-        who: people[rnd(people.length)],
-        role: ACCESS_ROLES[rnd(ACCESS_ROLES.length)],
+        who: whoName,
+        role: whoP ? whoP.role : randRole,
         action: ACCESS_ACTIONS[rnd(ACCESS_ACTIONS.length)],
         daysAgo: daysAgo,
         location: rnd(5) === 0 ? 'External API access' : 'Internal: Cardinal web app'
@@ -42387,7 +42392,39 @@ function mdmPaintDrillInBody(det, resolvedKey) {
   var accessHtml = '<section style="margin:20px 0"><div style="font-size:11px;font-weight:700;color:var(--chrome2);margin-bottom:8px" title="Who touched this model, what they did, and from where. Every row is logged tamper-proof in Echo Core.">Access &amp; Usage History</div>' +
     '<table style="width:100%;border-collapse:collapse"><thead><tr style="font-size:9px;color:var(--muted2);text-align:left"><th style="padding:6px">Who</th><th style="padding:6px">Role</th><th style="padding:6px">Action</th><th style="padding:6px">When</th><th style="padding:6px">Where</th></tr></thead><tbody>' + accessRows + '</tbody></table></section>';
 
+  // 9/29 -- backlog: "Eden/Obsidian: add story context (bias-fraud overlap, Eve commentary,
+  // pipeline connections, 'who last touched this' log) so each model reads as a narrative,
+  // not just numbers." One short story block at the top of the model popup (reachable from
+  // Eden, Obsidian, and Cardinal Library), stitched only from data that already exists.
+  var storyHtml = '';
+  try {
+    var sOrg = det.industryOrg || (typeof currentOrg !== 'undefined' && currentOrg) || 'ad';
+    var sD = (window.CARDINAL_DATA || {})[sOrg] || {};
+    var sName = id.name || resolvedKey;
+    var reg = (window.CARDINAL_MODELS || []).filter(function (m) { return m.name === sName; })[0];
+    var mems = (sD.echoMemories || []).filter(function (m) { return m.modelId === sName || (m.summary && m.summary.indexOf(sName) !== -1); })
+      .sort(function (a, b) { return new Date(b.timestamp) - new Date(a.timestamp); });
+    var humanMem = mems.filter(function (m) { return m.authorRole !== 'system' && !/Core$|^Cardinal|^(Eve|Adam)\b/.test(m.author || ''); })[0];
+    var lastAccess = (det.accessLog || [])[0];
+    var src = ((typeof PIPELINE_SOURCE_STATUS !== 'undefined' && PIPELINE_SOURCE_STATUS[sOrg]) || []).filter(function (s) { return s.status === 'connected'; })[0];
+    var inc = (sD.biasIncidentsActive || []).concat(sD.fraudIncidentsActive || []).filter(function (c) { return c.modelId === sName; })[0];
+    var fmtD = function (iso) { return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }); };
+    var bits = [];
+    if (reg) bits.push((reg.deployedDate ? 'Deployed ' + fmtD(reg.deployedDate) : 'Still in testing') + ', owned by <strong>' + mdmEsc(reg.owner) + '</strong>.');
+    if (src) bits.push('Fed by <strong>' + mdmEsc(src.connector) + '</strong> (' + Number(src.records).toLocaleString() + ' records, ' + mdmEsc(src.format) + ').');
+    if (inc) bits.push('Open case <strong>' + mdmEsc(inc.caseId) + '</strong> (' + mdmEsc(inc.metricViolation || inc.cohortDescription || '') + '), led by ' + mdmEsc(inc.leadAssignee || 'unassigned') + '.');
+    else bits.push('No open case on this model right now.');
+    if (humanMem) bits.push('Last touched by <strong>' + mdmEsc(humanMem.author) + '</strong> on ' + fmtD(humanMem.timestamp) + ': ' + mdmEsc(humanMem.summary) + '.');
+    if (lastAccess) bits.push('Most recent access: ' + mdmEsc(lastAccess.who) + ' (' + mdmEsc(lastAccess.role) + '), ' + mdmEsc(String(lastAccess.action).charAt(0).toLowerCase() + String(lastAccess.action).slice(1)) + ', ' + (lastAccess.daysAgo === 1 ? 'yesterday' : lastAccess.daysAgo + ' days ago') + '.');
+    var eveLine = inc ? (/approval|sign/i.test(inc.status || '') ? 'Eve: waiting on sign-off; she re-pings approvers daily.' : 'Eve: tracking the fix; she escalates if there is no update in 3 days.') : 'Eve: monitoring only. Nothing needs a human right now.';
+    storyHtml = '<section style="margin-bottom:16px;padding:14px 16px;border-radius:12px;background:rgba(168,85,247,0.04);border:1px solid rgba(168,85,247,0.2)">' +
+      '<div style="font-size:10px;color:#a855f7;text-transform:uppercase;letter-spacing:.7px;font-weight:800;margin-bottom:6px">The story so far</div>' +
+      '<div style="font-size:11.5px;color:var(--chrome2);line-height:1.65">' + bits.join(' ') + '</div>' +
+      '<div style="font-size:10.5px;color:var(--muted2);margin-top:6px">' + mdmEsc(eveLine) + '</div></section>';
+  } catch (_story) { storyHtml = ''; }
+
   return (
+    storyHtml +
     '<section style="margin-bottom:20px;padding:16px;border-radius:12px;background:var(--bg3);border:1px solid var(--border2)">' +
     '<div style="font-size:10px;color:var(--muted2);margin-bottom:6px">Model identity</div>' +
     '<div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center"><div style="font-size:15px;font-weight:700;color:var(--chrome2)">' + mdmEsc(id.name) + '</div>' +
