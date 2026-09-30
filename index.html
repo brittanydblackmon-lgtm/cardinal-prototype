@@ -5247,6 +5247,69 @@ body.cardinal-cleanup-mode .screen > div:empty:not(.cardinal-collapse-if-empty):
   }
 })();
 </script>
+<script>
+// Shared deadline helper. Every countdown ("13 days", "Overdue") used to be a literal
+// string computed by hand against whatever "today" was when it was written, which is
+// how the stale/conflicting dates kept coming back. Deadline displays now go through
+// these functions instead.
+//
+// Mode 'rolling' (default): seeded deadlines were authored against Sep 25, 2026. Each
+// one keeps its authored distance from today and its displayed date moves forward with
+// the real calendar, so the demo story ("NYC audit in 13 days") never goes stale.
+// Mode 'fixed': literal calendar dates; countdowns shrink for real and go overdue.
+window.CARDINAL_AUTHORED_TODAY = new Date(2026, 8, 25);
+window.CARDINAL_DEADLINE_MODE = 'rolling';
+(function () {
+  var MONTHS = { jan:0, feb:1, mar:2, apr:3, may:4, jun:5, jul:6, aug:7, sep:8, oct:9, nov:10, dec:11 };
+  function midnight(d) { return new Date(d.getFullYear(), d.getMonth(), d.getDate()); }
+  function parse(s) {
+    if (s instanceof Date) return midnight(s);
+    if (typeof s !== 'string') return null;
+    var m = s.match(/([A-Za-z]{3})[a-z]*\.?\s+(\d{1,2})(?:,\s*(\d{4}))?/);
+    if (!m || MONTHS[m[1].toLowerCase()] === undefined) return null;
+    return new Date(m[3] ? +m[3] : 2026, MONTHS[m[1].toLowerCase()], +m[2]);
+  }
+  function today() { return midnight(new Date()); }
+  function dayDiff(a, b) { return Math.round((midnight(a) - midnight(b)) / 86400000); }
+  function effective(s) {
+    var d = parse(s);
+    if (!d) return null;
+    if (window.CARDINAL_DEADLINE_MODE !== 'rolling') return d;
+    var shift = dayDiff(today(), window.CARDINAL_AUTHORED_TODAY);
+    return new Date(d.getFullYear(), d.getMonth(), d.getDate() + shift);
+  }
+  function daysUntil(s) { var d = effective(s); return d ? dayDiff(d, today()) : null; }
+  function formatDate(s) {
+    var d = effective(s);
+    return d ? d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : (s || '');
+  }
+  function plural(n) { return n + (n === 1 ? ' day' : ' days'); }
+  function countdownLabel(s) {
+    var n = daysUntil(s);
+    if (n === null) return '';
+    if (n === 0) return 'Today';
+    if (n < 0) return 'Overdue ' + plural(-n);
+    return plural(n);
+  }
+  // Prose form: "in 13 days", "tomorrow", "today", "2 days ago"
+  function phrase(s) {
+    var n = daysUntil(s);
+    if (n === null) return '';
+    if (n === 0) return 'today';
+    if (n === 1) return 'tomorrow';
+    if (n < 0) return plural(-n) + ' ago';
+    return 'in ' + plural(n);
+  }
+  window.cardinalParseDate = parse;
+  window.cardinalDeadlineDate = effective;
+  window.cardinalDaysUntil = daysUntil;
+  window.cardinalFormatDeadline = formatDate;
+  window.cardinalCountdownLabel = countdownLabel;
+  window.cardinalDeadlinePhrase = phrase;
+  window.cardinalPluralDays = plural;
+  window.cardinalDaysBetween = dayDiff;
+})();
+</script>
 <!-- ══════════════════ LOGIN ══════════════════ -->
 <div id="login-screen">
 <div class="login-box">
@@ -12612,7 +12675,7 @@ var EXT = {
         cohortDescription: 'Self-employed filers in 5 metro ZIP clusters (NYC, Chicago, Atlanta, Miami, LA)',
         metricViolation: '1.84x disparate flag rate vs baseline · DI 0.54',
         detectedDate: '2026-04-18T09:00:00Z',
-        slaDeadline: '2026-05-26T17:00:00Z',
+        slaDeadline: _iso(21),
         status: 'open',
         leadAssignee: 'Patricia Alvarez',
         echoMemoryId: 'echo-FED-2026-04-26-1400-wr01'
@@ -14489,7 +14552,7 @@ window.renderEden = function (org) {
       '<div style="display:flex;justify-content:space-between"><span class="badge ' + se + '" style="font-size:9px"' + edoT(c.severity, c.severity + ' severity — remediation priority.') + '>' + c.severity + '</span></div>' +
       '<div style="font-size:12px;font-weight:700;margin-top:6px"' + edoT(c.caseId, 'War Room case identifier.') + '>' + c.caseId + ' · ' + c.modelId + '</div>' +
       '<div style="font-size:10px;color:var(--muted);margin-top:4px">' + c.affectedCount + ' affected · ' + c.metricViolation + '</div>' +
-      '<div style="font-size:10px;color:var(--amber);margin-top:4px"' + edoT('SLA Countdown', 'Cardinal enforces Critical 14d / High 30d / Medium 60d fix deadlines. Echo Core logs SLA events.') + '>' + sla + ' days remaining</div>' +
+      '<div style="font-size:10px;color:var(--amber);margin-top:4px"' + edoT('SLA Countdown', 'Cardinal enforces Critical 14d / High 30d / Medium 60d fix deadlines. Echo Core logs SLA events.') + '>' + cardinalPluralDays(sla) + ' remaining</div>' +
       '<div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px"><span style="font-size:10px"' + edoT('Lead Assignee', 'Case owner — ' + c.leadAssignee) + '>' + c.leadAssignee + '</span>' +
       '<button type="button" class="btn-primary" style="font-size:10px;padding:4px 10px"' + edoOn('cardinalRouteCase', [edoCaseId(c.caseId), c.caseType || 'lifecycle', c.status || 'open']) + edoT(c.caseType === 'incident' ? 'Open Incident' : 'View Case', c.caseType === 'incident' ? 'Incident — opens Sentinel case detail with embedded channel for collaboration.' : 'Lifecycle case — opens ' + (['remediation-in-progress','shadow-deploy','awaiting-approval','escalated'].indexOf(String(c.status||'').toLowerCase())>=0 ? 'Atonement Core' : 'Genesis Core') + ' filtered to this case.') + '>' + (c.caseType === 'incident' ? 'Open Incident' : 'View Case') + '</button></div></div>';
   }).join('');
@@ -14641,7 +14704,7 @@ window.renderObsidian = function (org) {
       '<span class="badge ' + se + '" style="font-size:9px"' + edoT(c.severity, 'Fraud case severity.') + '>' + c.severity + '</span>' +
       '<div style="font-size:12px;font-weight:700;margin-top:6px"' + edoT(c.caseId, 'War Room case.') + '>' + c.caseId + ' · ' + c.modelId + '</div>' +
       '<div style="font-size:10px;color:var(--muted)">' + c.metricViolation + '</div>' +
-      '<div style="font-size:10px;color:var(--amber);margin-top:4px"' + edoT('SLA Countdown', 'Cardinal enforces SLA deadlines on fraud remediation.') + '>' + sla + ' days remaining</div>' +
+      '<div style="font-size:10px;color:var(--amber);margin-top:4px"' + edoT('SLA Countdown', 'Cardinal enforces SLA deadlines on fraud remediation.') + '>' + cardinalPluralDays(sla) + ' remaining</div>' +
       '<div style="margin-top:8px"><button type="button" class="btn-primary" style="font-size:10px;padding:4px 10px"' + edoOn('cardinalRouteCase', [edoCaseId(c.caseId), c.caseType || 'lifecycle', c.status || 'open']) + edoT(c.caseType === 'incident' ? 'Open Incident' : 'View Case', c.caseType === 'incident' ? 'Incident — opens Sentinel case detail with embedded channel for collaboration.' : 'Lifecycle case — opens ' + (['remediation-in-progress','shadow-deploy','awaiting-approval','escalated'].indexOf(String(c.status||'').toLowerCase())>=0 ? 'Atonement Core' : 'Genesis Core') + ' filtered to this case.') + '>' + (c.caseType === 'incident' ? 'Open Incident' : 'View Case') + '</button></div></div>';
   }).join('');
   var cardsRowObs = cases.length
@@ -22855,6 +22918,7 @@ function buildCompCalendar() {
    {name:'EU AI Act Conformity Assessment',type:'Regulatory',priority:'High',days:47,due:'2026-12-20',progress:15,open:false},
    {name:'DoD RAI Annual Review',type:'Defense Contract',priority:'Low',days:120,due:'2027-03-15',progress:0,open:false},
  ];
+ items.forEach(function (item) { var a = window.CARDINAL_AUTHORED_TODAY; var dd = new Date(a.getFullYear(), a.getMonth(), a.getDate() + item.days); item.due = cardinalFormatDeadline(dd); item.days = cardinalDaysUntil(dd); });
  container.innerHTML = items.map((item,i)=>`
    <div style="background:var(--card);border:1px solid ${item.days<=10?'rgba(239,68,68,.3)':item.days<=30?'rgba(245,158,11,.3)':'var(--border2)'};border-radius:12px;padding:16px">
      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
@@ -22863,7 +22927,7 @@ function buildCompCalendar() {
          <div style="font-size:10px;color:var(--muted)">${item.type}</div>
        </div>
        <div style="text-align:right">
-         <div style="font-size:12px;font-weight:700;color:${item.days<=10?'var(--red)':item.days<=30?'var(--amber)':'var(--muted)'}">${item.days} days remaining</div>
+         <div style="font-size:12px;font-weight:700;color:${item.days<=10?'var(--red)':item.days<=30?'var(--amber)':'var(--muted)'}">${cardinalPluralDays(item.days)} remaining</div>
          <div style="font-size:9px;color:var(--muted)">Due: ${item.due}</div>
        </div>
      </div>
@@ -23255,6 +23319,10 @@ window.CARDINAL_HALO_INACTION = {
 // Neither is invented -- if no real target exists, the item renders with no
 // link at all rather than a fake one.
 function haloDd(opts) {
+ if (opts.dt && typeof cardinalFormatDeadline === 'function' && cardinalParseDate(opts.dt)) {
+   if (opts.countdown && opts.countdown !== 'Scheduled') opts.countdown = cardinalCountdownLabel(opts.dt);
+   opts.dt = cardinalFormatDeadline(opts.dt);
+ }
  var stripe = opts.stripe;
  var sp=stripe==='amber'?'halo-dd-stripe-amber':stripe==='gray'?'halo-dd-stripe-gray':'halo-dd-stripe-red';
  var extra=haloPulseFromCount(opts.countdown,stripe);
@@ -25034,7 +25102,7 @@ const OBSIDIAN_DATA = {
  nameA:'Jamal Washington',nameB:'James Washington',
  edenResult:'ZIP code correlates 0.82 with race. 1,203 applicants affected.',
  obsResult:'Synthetic ID ring blocked (47 apps, 1 device). $2.3M protected.',
- eveOutput:'1,203 families denied loans they qualify for. ECOA exposure $40M. NYC Law 144 audit in 14 days.',
+ eveOutput:'1,203 families denied loans they qualify for. ECOA exposure $40M. NYC Law 144 audit in 13 days.',
  adamOutput:'ZIP-race correlation: 0.82 (ECOA violation). Remove: zip_code_5digit. Add: verified_income_12mo, employment_stability.',
  },
  health:{
@@ -25058,9 +25126,9 @@ const EVE_ALERTS = {
  {level:3,badge:'l3',label:'Urgent \u00b7 Q4 Consequence',msg:"I need your attention. This has not been addressed in 5 days. If not corrected before Q4, DoD penalty exposure reaches $28M. More importantly, 847 people are still being wrongly denied. The fix takes 14 days. That window is closing."},
  ],
  fin:[
- {level:1,badge:'l1',label:'Morning Briefing',msg:"Good morning. Your Credit Scoring model has a ZIP code feature correlating 0.82 with race, an ECOA proxy violation. 1,203 applicants affected. NYC Law 144 audit due in 14 days. No changes logged overnight."},
+ {level:1,badge:'l1',label:'Morning Briefing',msg:"Good morning. Your Credit Scoring model has a ZIP code feature correlating 0.82 with race, an ECOA proxy violation. 1,203 applicants affected. NYC Law 144 audit due in 13 days. No changes logged overnight."},
  {level:2,badge:'l2',label:'No Movement \u00b7 3 Days',msg:"Three days, no updates. 1,203 families are being denied loans they qualify for right now. Generational wealth is being blocked by a ZIP code that is a proxy for race. The fix is built and ready."},
- {level:3,badge:'l3',label:'Urgent \u00b7 Q4 Consequence',msg:"ECOA enforcement action becomes significantly more likely if no corrective action is taken before the NYC Law 144 audit in 14 days. Penalty exposure: $40M. 1,203 families are still being denied. What's blocking us?"},
+ {level:3,badge:'l3',label:'Urgent \u00b7 Q4 Consequence',msg:"ECOA enforcement action becomes significantly more likely if no corrective action is taken before the NYC Law 144 audit in 13 days. Penalty exposure: $40M. 1,203 families are still being denied. What's blocking us?"},
  ],
  health:[
  {level:1,badge:'l1',label:'Morning Briefing',msg:"Good morning. Your Claims Adjudication model is denying patients 65+ at 2.3x the rate of younger patients with identical conditions. 2,847 claims affected. CMS audit initiated. No updates made overnight."},
@@ -25088,11 +25156,11 @@ const EVE_RESPONSES = {
  human:"847 personnel are being denied mission assignments they qualify for. The right skills, the right qualifications — blocked by a feature that correlates with demographic data, not performance.",
  },
  fin:{
- default:"Watching your models. Credit Scoring model is the priority — ZIP code creates both ECOA exposure and fraud vulnerability. NYC Law 144 audit in 14 days.",
+ default:"Watching your models. Credit Scoring model is the priority — ZIP code creates both ECOA exposure and fraud vulnerability. NYC Law 144 audit in 13 days.",
  bias:"Credit Scoring v3.4 uses ZIP code correlating 0.82 with race — ECOA proxy violation. 1,203 applicants affected. Fix: replace ZIP with verified_income_12mo and employment_stability.",
  fraud:"ZIP code does not just create bias — it creates a fraud vector. Fraudsters use high-class ZIP codes on applications to game the system. We also blocked a synthetic identity ring: 47 apps from one iPhone.",
  fix:"Replace ZIP code with income stability and employment verification. Eliminates ECOA violation, closes fraud vector, improves credit accuracy. Ready in Atonement Core.",
- penalty:"ECOA penalty exposure: $40M. NYC Law 144 audit in 14 days. Optimal fix reduces to $8M — 80% reduction. Fix cost: $50K. ROI: 140x.",
+ penalty:"ECOA penalty exposure: $40M. NYC Law 144 audit in 13 days. Optimal fix reduces to $8M — 80% reduction. Fix cost: $50K. ROI: 140x.",
  human:"1,203 families denied loans they qualify for. For many, this is the house, the business, the next chapter. A ZIP code is making that decision instead of their creditworthiness.",
  },
  health:{
@@ -25115,7 +25183,7 @@ const EVE_DEFAULTS_ROTATION = {
   "Quiet morning so far. Halo's heatmap shows no new affected cohorts overnight. Case #2847 still open — 7 days remaining on the regulatory clock."
  ],
  fin:[
-  "Watching your models. Credit Scoring is the priority — ZIP code creates both ECOA exposure and a fraud vector. NYC Law 144 audit in 14 days.",
+  "Watching your models. Credit Scoring is the priority — ZIP code creates both ECOA exposure and a fraud vector. NYC Law 144 audit in 13 days.",
   "Adam's technical read is correct: ZIP-race correlation 0.82, well above ECOA's 0.75 threshold. 1,203 applicants affected. The replacement features are ready in Atonement.",
   "Heads-up: Sentinel caught another synthetic-credential cluster overnight — 47 apps from one device, $1.2M protected. Same demographic features that drive the bias enable the fraud.",
   "Trust Score 74, Bias 67, Fraud 91. Eight days until ECOA quarterly review. As Adam noted, replacing ZIP with verified_income_12mo lifts DI to 0.88.",
@@ -26406,7 +26474,7 @@ const TL_SEED = {
  {who:'eve',text:"The fix is ready. Adam has it packaged. 14-day implementation. I would recommend we start today."},
  ],
  fin:[
- {who:'eve',text:"Morning. NYC Law 144 audit is 14 days away. Credit Scoring model ZIP issue — no updates in 3 days. 1,203 applicants still affected."},
+ {who:'eve',text:"Morning. NYC Law 144 audit is 13 days away. Credit Scoring model ZIP issue — no updates in 3 days. 1,203 applicants still affected."},
  {who:'adam',text:"ZIP-race correlation: 0.82. ECOA violation confirmed. Proposed replacement: verified_income_12mo (DI projection: 0.91), employment_stability (DI: 0.89). Equal or better predictive accuracy."},
  {who:'eve',text:"Adam, will fixing the bias affect our fraud detection?"},
  {who:'adam',text:"Negative. ZIP code removal improves fraud detection. Fraudsters currently exploit ZIP-based scoring. Removing it closes that vector. Net fraud detection improvement: estimated +3.2%."},
@@ -28490,7 +28558,7 @@ const HALO_DATA = {
  },
  fin:{
  penaltyExposure:'$40M', projectedAffected:'18,200', revLost:'$5.0M',
- validationDesc:'Credit Scoring v3.5 deployed March 25. Monitoring 72 hours to confirm DI improvement from 0.74→0.91 holds. NYC Law 144 audit in 14 days — validation must complete before audit.',
+ validationDesc:'Credit Scoring v3.5 deployed March 25. Monitoring 72 hours to confirm DI improvement from 0.74→0.91 holds. NYC Law 144 audit in 13 days — validation must complete before audit.',
  valMetrics:[
  {label:'Disparate Impact',predicted:'0.91',actual:'0.91',status:'green',note:'✓ Matches prediction'},
  {label:'Fraud Detection',predicted:'+3%',actual:'+3.2%',status:'green',note:'✓ Better than predicted'},
@@ -29029,7 +29097,7 @@ const checkinConfig = {
 
 const MORNING_BRIEFS = {
  ad:"Good morning. Personnel Assignment model: bias score 67, below the DoD threshold. 847 personnel affected. No changes logged overnight. Three regulatory deadlines are active in the next 60 days. Trust Score: 74. Most important today: the fix is ready in Atonement Core.",
- fin:"Good morning. Credit Scoring model: ZIP code bias affecting 1,203 applicants. NYC Law 144 audit in 14 days. No updates overnight. A fraud ring was blocked yesterday, protecting $890K. Trust Score: 81. Priority today: shadow deployment has processed 3,241 decisions and is ready to escalate to full deployment.",
+ fin:"Good morning. Credit Scoring model: ZIP code bias affecting 1,203 applicants. NYC Law 144 audit in 13 days. No updates overnight. A fraud ring was blocked yesterday, protecting $890K. Trust Score: 81. Priority today: shadow deployment has processed 3,241 decisions and is ready to escalate to full deployment.",
  health:"Good morning. Claims Adjudication model: age bias affecting 2,847 patients. CMS audit initiated, 30 days remaining. 1,847 re-evaluations completed overnight. Trust Score: 71. Priority today: the CMS audit report is ready for your review in Atonement Core.",
 };
 
@@ -29198,7 +29266,7 @@ const LUCID_DATA = {
  {time:'3d ago',event:'Shadow deployment initiated — Credit v3.5',type:'success',c:'green'},
  {time:'1d ago',event:'3,241 shadow decisions — all ECOA metrics passing',type:'success',c:'green'},
  ],
- adamSummary:'ZIP code feature — race correlation 0.82. ECOA violation confirmed (threshold: >0.75 = illegal proxy). Disparate impact 0.74. Features to remove: [zip_code_5digit, phone_area_code]. Replace with: [verified_income_12mo (DI: 0.91, default correlation: 0.41), employment_stability (DI: 0.89, default correlation: 0.38)]. Expected DI post-fix: 0.91 ±0.02. Fraud detection improves +3.2% — ZIP removal closes exploitation vector. NYC Law 144 audit in 14 days.',
+ adamSummary:'ZIP code feature — race correlation 0.82. ECOA violation confirmed (threshold: >0.75 = illegal proxy). Disparate impact 0.74. Features to remove: [zip_code_5digit, phone_area_code]. Replace with: [verified_income_12mo (DI: 0.91, default correlation: 0.41), employment_stability (DI: 0.89, default correlation: 0.38)]. Expected DI post-fix: 0.91 ±0.02. Fraud detection improves +3.2% — ZIP removal closes exploitation vector. NYC Law 144 audit in 13 days.',
  adamFeatures:[
  {name:'zip_code_5digit',correlation:0.82,impact:'Critical',decision:'Remove — ECOA illegal proxy'},
  {name:'phone_area_code',correlation:0.71,impact:'High',decision:'Remove — geographic proxy'},
@@ -29210,25 +29278,25 @@ const LUCID_DATA = {
  {rec:'Remove zip_code_5digit immediately',rationale:'Race correlation 0.82 — ECOA Section 701 violation. Fraudsters also exploit this feature.',priority:'Critical'},
  {rec:'Remove phone_area_code',rationale:'Geographic proxy correlation 0.71. Same demographic bias pattern as ZIP.',priority:'Critical'},
  {rec:'Add verified_income_12mo',rationale:'Best replacement. Default prediction correlation 0.41. Zero race correlation. Closes fraud vector.',priority:'High'},
- {rec:'Complete before NYC Law 144 audit',rationale:'Audit in 14 days. Shadow deployment at 3,241 decisions — escalate to full deployment now.',priority:'Critical'},
+ {rec:'Complete before NYC Law 144 audit',rationale:'Audit in 13 days. Shadow deployment at 3,241 decisions — escalate to full deployment now.',priority:'Critical'},
  ],
  adamCompliance:[
  {reg:'ECOA (Equal Credit Opportunity Act)',status:'Violating',di:'0.74',threshold:'0.80',note:'ZIP code is illegal proxy'},
- {reg:'NYC Local Law 144',status:'Audit Due',di:'0.74',threshold:'0.80',note:'14 days remaining'},
+ {reg:'NYC Local Law 144',status:'Audit Due',di:'0.74',threshold:'0.80',note:'13 days remaining'},
  {reg:'California AB 2930',status:'Compliant',di:'0.74',threshold:'N/A',note:'Documented testing satisfies'},
  ],
  eveSummary:'Your credit model is denying 1,203 families loans they qualify for — because of their ZIP code. The ZIP code correlates with race, which means the model is making lending decisions based on where people live, which is a proxy for who they are. This is illegal under federal law and it is wrong. The fix removes the ZIP code and replaces it with verified income data. It makes the model more accurate and more fair.',
  eveBrief:[
  {heading:'What happened',body:'The credit scoring model uses ZIP code as a feature. ZIP code correlates 0.82 with race — making it an illegal proxy under ECOA. 1,203 families were denied loans they qualify for.'},
  {heading:'Who is affected',body:'Hispanic and Black applicants in low-income zip codes, ages 25-35, income $40K-$60K. Many of these are first-time homebuyers and small business applicants. These are creditworthy people being blocked by a zip code.'},
- {heading:'What it costs',body:'$40M in ECOA penalty exposure. NYC Law 144 audit in 14 days. $5M in lost revenue from denied legitimate customers. Plus a fraud vector: fraudsters exploit ZIP-based scoring by using upscale ZIP codes on applications.'},
+ {heading:'What it costs',body:'$40M in ECOA penalty exposure. NYC Law 144 audit in 13 days. $5M in lost revenue from denied legitimate customers. Plus a fraud vector: fraudsters exploit ZIP-based scoring by using upscale ZIP codes on applications.'},
  {heading:'What we are doing',body:'Fix is built and shadow-deployed. Remove ZIP code, replace with verified income stability. 14-day implementation. Remediation Cohort #AT-1203 is re-evaluating 1,203 applicants — 687 already approved.'},
  ],
  eveHuman:'1,203 families were denied loans they qualify for. For many of them, this is not just a loan — it is the house, the business, the future. A ZIP code is making that decision instead of their actual creditworthiness. We are fixing this. 687 families have already been re-evaluated and approved.',
  eveSuggestedQA:[
  {q:'How many customers affected by bias this year?',a:'3 incidents in 2026. 3,350 total applicants affected. 687 already re-approved. $2.1M revenue recovered. Trend improving — remediation rate up to 57%.'},
  {q:'Show me all Hispanic applicants denied in Q1 2026',a:'Cohort #AT-1203 — 1,203 applicants. 847 Hispanic, 356 Black. Q1 2026. CSV ready to download.'},
- {q:'What is the status of the NYC audit?',a:'14 days remaining. Shadow deployment at 3,241 decisions — all ECOA metrics passing. Documentation complete. Recommend escalating to full deployment today.'},
+ {q:'What is the status of the NYC audit?',a:'13 days remaining. Shadow deployment at 3,241 decisions — all ECOA metrics passing. Documentation complete. Recommend escalating to full deployment today.'},
  ],
  cohortSuggestions:[
  {query:'Show me all Hispanic applicants denied in Q1',cohort:'Cohort #AT-1203',size:1203,ready:true},
@@ -29236,7 +29304,7 @@ const LUCID_DATA = {
  {query:'Status of credit bias remediation',cohort:'Cohort #AT-1203',size:1203,done:687,ready:true},
  ],
  proactiveRecs:[
- {type:'warning',title:'NYC Law 144 audit in 14 days',body:'Shadow deployment is passing. Recommend escalating to full deployment now to complete before audit.',action:'Escalate in Atonement'},
+ {type:'warning',title:'NYC Law 144 audit in 13 days',body:'Shadow deployment is passing. Recommend escalating to full deployment now to complete before audit.',action:'Escalate in Atonement'},
  {type:'info',title:'687 of 1,203 re-evaluations complete',body:'57.1% remediation rate. 516 remaining. Estimated completion: April 20.',action:'View Cohort'},
  {type:'success',title:'Fraud detection improved +3.2%',body:'ZIP code removal also closed the fraud exploitation vector. Adam confirmed no new bias introduced.',action:'View in Halo'},
  ],
@@ -29246,8 +29314,8 @@ const LUCID_DATA = {
  ],
  boardAffected:'1,203',boardExposure:'$40M',boardIssues:'1',
  boardContent:[
- {section:'Executive Summary',body:'Credit Scoring model ZIP code bias: 1,203 applicants affected, $40M ECOA penalty exposure. Shadow fix deployed — ECOA metrics passing. NYC Law 144 audit in 14 days. 687 applicants already re-approved ($2.1M revenue recovered). Trust Score: 81.'},
- {section:'Action Required',body:'Escalate Credit v3.5 from shadow (3,241 decisions) to full deployment before NYC Law 144 audit in 14 days. Engineering sign-off needed. Estimated risk reduction: $40M → $4M exposure.'},
+ {section:'Executive Summary',body:'Credit Scoring model ZIP code bias: 1,203 applicants affected, $40M ECOA penalty exposure. Shadow fix deployed — ECOA metrics passing. NYC Law 144 audit in 13 days. 687 applicants already re-approved ($2.1M revenue recovered). Trust Score: 81.'},
+ {section:'Action Required',body:'Escalate Credit v3.5 from shadow (3,241 decisions) to full deployment before NYC Law 144 audit in 13 days. Engineering sign-off needed. Estimated risk reduction: $40M → $4M exposure.'},
  {section:'Trend',body:'Two bias incidents remediated this quarter. Auto Loan geographic bias: fully resolved, 1,294 of 2,147 approved (60.3%). Credit ZIP bias: 57.1% complete. Cardinal detecting and remediating faster each quarter.'},
  ],
  },
@@ -29753,7 +29821,7 @@ const ECHO_DATA = {
  driftAlertTitle:'ZIP Code Proxy Drift — ECOA Violation Worsening',
  driftAlertBody:'Credit model disparate impact worsened 9% since Q2 2025. ZIP code weight increased 3 quarters. Fraud detection declined 8% simultaneously.',
  timeline:[
- {ts:'Apr 5, 2026 09:14',event:'Eve morning briefing — NYC Law 144 audit 14 days',type:'info',who:'Eve — Cardinal',ref:'BRIEF-2026-0405',hash:'f3a1d892'},
+ {ts:'Apr 5, 2026 09:14',event:'Eve morning briefing — NYC Law 144 audit 13 days',type:'info',who:'Eve — Cardinal',ref:'BRIEF-2026-0405',hash:'f3a1d892'},
  {ts:'Mar 25, 2026 09:00',event:'Shadow deployment — Credit v3.5 at 5% traffic',type:'deploy',who:'Eng: A. Johnson',ref:'DEPLOY-SD-189',hash:'c4b7e231'},
  {ts:'Jan 15, 2026 11:22',event:'ZIP code bias detected — Credit v3.4 — DI 0.74',type:'bias',who:'Cardinal Eden',ref:'CASE-FIN-1203',hash:'b6c8f342'},
  {ts:'Dec 1, 2025 09:00',event:'Credit v3.4 deployed — no ECOA proxy check',type:'deploy',who:'Eng: B. Martinez',ref:'DEPLOY-CR-034',hash:'e7a1d289'},
@@ -35261,7 +35329,7 @@ const WAR_ROOM_DATA = {
  {pct:'100%',day:'Day 14',date:'Apr 16',action:'SLA breach — regulatory exposure unlocked · Automatic Trust Ledger flag',status:'upcoming',c:'red'},
  ],
  regDeadlines:[
- {reg:'DoD AI Ethics — Remediation',deadline:'Apr 16 (14 days)',daysLeft:9,c:'amber'},
+ {reg:'DoD AI Ethics — Remediation',deadline:'Oct 4, 2026',daysLeft:9,c:'amber'},
  {reg:'EO 13960 Annual Inventory',deadline:'Dec 9, 2026',daysLeft:75,c:'green'},
  ],
  disclosureContents:[
@@ -35284,7 +35352,7 @@ const WAR_ROOM_DATA = {
  },
  fin:{
  incidentTitle:'CRITICAL — Credit Scoring v3.4 ECOA Violation — ZIP Code Proxy',
- incidentBody:'ZIP code race correlation 0.82. Disparate impact 0.74. 1,203 applicants affected. $40M ECOA penalty exposure. NYC Law 144 audit in 14 days.',
+ incidentBody:'ZIP code race correlation 0.82. Disparate impact 0.74. 1,203 applicants affected. $40M ECOA penalty exposure. NYC Law 144 audit in 13 days.',
  severity:'Critical', teamCount:4, affected:1203, exposure:'$40M',
  deadline:'14 days (NYC Law 144 audit)', deadlineDays:14, elapsed:14,
  details:[
@@ -35401,7 +35469,7 @@ const WAR_ROOM_DATA = {
  {pct:'100%',day:'Day 30',date:'May 2',action:'CMS audit date — all documentation must be in place',status:'upcoming',c:'red'},
  ],
  regDeadlines:[
- {reg:'CMS ACA 1557 Audit',deadline:'Oct 20, 2026',daysLeft:25,c:'amber'},
+ {reg:'CMS AI Oversight Audit',deadline:'Oct 25, 2026',daysLeft:30,c:'amber'},
  {reg:'HIPAA Annual Review',deadline:'Dec 31, 2026',daysLeft:97,c:'green'},
  ],
  disclosureContents:[
@@ -35507,12 +35575,13 @@ function buildWarRoom(org) {
  </div>`).join('');
 
  const rdl = document.getElementById('wr-reg-deadlines');
+ var wrDue = function (d) { var a = window.CARDINAL_AUTHORED_TODAY; return new Date(a.getFullYear(), a.getMonth(), a.getDate() + d.daysLeft); };
  if(rdl) rdl.innerHTML = wr.regDeadlines.map(d=>`
  <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid rgba(180,190,220,.05)">
  <span style="font-size:11px;color:var(--chrome2)">${d.reg}</span>
  <div style="text-align:right">
- <div style="font-size:11px;font-weight:600;color:var(--${d.c})">${d.deadline}</div>
- <div style="font-size:10px;color:var(--muted)">${d.daysLeft} days remaining</div>
+ <div style="font-size:11px;font-weight:600;color:var(--${d.c})">${cardinalFormatDeadline(wrDue(d))}</div>
+ <div style="font-size:10px;color:var(--muted)">${cardinalCountdownLabel(wrDue(d))} remaining</div>
  </div>
  </div>`).join('');
 
@@ -38940,12 +39009,12 @@ function tsv2BuildCadenceCheckpoint(d) {
     candidates.push(new Date(now.getFullYear() + 1, m, 1));
   });
   var next = candidates.filter(function (dt) { return dt > now; }).sort(function (a, b) { return a - b; })[0];
-  var daysOut = Math.round((next - now) / 86400000);
+  var daysOut = cardinalDaysBetween(next, now);
   var dateStr = next.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   wrap.innerHTML =
     '<div style="margin-top:10px;padding:10px 12px;border:1px solid rgba(148,163,184,.25);border-radius:10px;background:rgba(148,163,184,.05);">' +
     '<div style="font-size:10.5px;font-weight:800;letter-spacing:.02em;color:var(--muted2,#64748b);text-transform:uppercase;">Quarterly Bias &amp; Fraud Checkpoint</div>' +
-    '<div style="font-size:11px;color:var(--muted,#94a3b8);margin-top:3px;">Next checkpoint: <strong style="color:var(--chrome2,#334155)">' + dateStr + '</strong> (' + daysOut + ' days) — annual Global Trust Score recert is separate</div>' +
+    '<div style="font-size:11px;color:var(--muted,#94a3b8);margin-top:3px;">Next checkpoint: <strong style="color:var(--chrome2,#334155)">' + dateStr + '</strong> (' + cardinalPluralDays(daysOut) + ') — annual Global Trust Score recert is separate</div>' +
     '<div style="display:flex;gap:8px;margin-top:8px;">' +
     '<div style="flex:1;padding:6px 8px;border-radius:8px;background:' + biasTier.bg + '"><div style="font-size:10px;color:var(--muted2,#64748b)">Fairness</div><div style="font-size:12px;font-weight:700;color:' + biasTier.color + '">' + biasTier.label + '</div></div>' +
     '<div style="flex:1;padding:6px 8px;border-radius:8px;background:' + fraudTier.bg + '"><div style="font-size:10px;color:var(--muted2,#64748b)">Fraud Integrity</div><div style="font-size:12px;font-weight:700;color:' + fraudTier.color + '">' + fraudTier.label + '</div></div>' +
