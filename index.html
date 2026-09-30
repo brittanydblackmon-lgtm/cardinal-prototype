@@ -40461,6 +40461,10 @@ window.renderSentinelUnifiedCaseDetail = function(caseId) {
 
   var owner = caseMems.slice().reverse().filter(function(m){ return m.authorRole === 'user'; })[0];
   var ownerName = owner ? owner.author : 'unassigned';
+  // Header "Owner" was just whoever last touched the case in Echo, which contradicted the
+  // case lead shown in Eve's Case Routing. Prefer the assigned lead.
+  var leadRec = (orgData.biasIncidentsActive || []).concat(orgData.fraudIncidentsActive || []).filter(function (c) { return String(c.caseId || '').replace(/^#/, '') === cleanCaseId; })[0];
+  var headerLead = leadRec && leadRec.leadAssignee && !/^(Eve|Adam)\b/.test(leadRec.leadAssignee) ? leadRec.leadAssignee : ownerName;
 
   var daysLeft = attribution ? attribution.daysToImpact : null;
 
@@ -40478,7 +40482,7 @@ window.renderSentinelUnifiedCaseDetail = function(caseId) {
       '</div>' +
       '<div style="font-size:13px;color:var(--chrome2);font-weight:600;line-height:1.5;">' + escHtml(firstMem.summary || '') + '</div>' +
       '<div style="font-size:10px;color:var(--muted);margin-top:6px;display:flex;gap:14px;flex-wrap:wrap;">' +
-        '<span>Owner: <span style="color:var(--chrome2);font-weight:600;">' + escHtml(ownerName) + '</span></span>' +
+        '<span>Lead: <span style="color:var(--chrome2);font-weight:600;">' + escHtml(headerLead) + '</span></span>' +
         '<span>· Opened: <span style="color:var(--chrome2);">' + escHtml(new Date(firstMem.timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })) + '</span></span>' +
         '<span>· Last update: <span style="color:var(--chrome2);">' + escHtml(new Date(lastMem.timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })) + '</span></span>' +
         '<span>· Memories: <span style="color:var(--accent);font-weight:600;">' + caseMems.length + '</span></span>' +
@@ -40491,6 +40495,63 @@ window.renderSentinelUnifiedCaseDetail = function(caseId) {
       '<button type="button" onclick="showScreen(\'compliance\', null);" style="background:rgba(167, 167, 167,0.06);border:1px solid rgba(167, 167, 167,0.2);color:var(--accent);padding:6px 12px;border-radius:6px;cursor:pointer;font-size:11px;font-weight:600;">Compliance →</button>' +
     '</div>' +
   '</div>';
+
+  // 9/29 -- backlog: "case detail should show how Eve is assigning people / who's driving
+  // the case forward, not just static fields." Built from what's already in the data: the
+  // case's lead (active-incident record), the model's registry owner, and everyone who has
+  // actually acted on this case in Echo. Nothing invented beyond the routing sentence.
+  (function () {
+    var incident = (orgData.biasIncidentsActive || []).concat(orgData.fraudIncidentsActive || []).filter(function (c) { return String(c.caseId || '').replace(/^#/, '') === cleanCaseId; })[0] || {};
+    var lead = incident.leadAssignee || (ownerName !== 'unassigned' ? ownerName : '');
+    var agentLead = /^(Eve|Adam)\b/.test(lead) ? lead : '';
+    if (agentLead) lead = '';
+    var model = incident.modelId || firstMem.modelId || '';
+    var reg = (window.CARDINAL_MODELS || []).filter(function (x) { return x.name === model; })[0];
+    var personaOf = function (n) { return (window.CARDINAL_PERSONAS || []).filter(function (p) { return p.name === n; })[0]; };
+    var people = {};
+    caseMems.forEach(function (mm) {
+      if (mm.authorRole === 'system' || !mm.author || /Core$|^Cardinal|^(Eve|Adam)\b/.test(mm.author)) return;
+      var p = people[mm.author] || (people[mm.author] = { n: 0, last: null, lastType: '' });
+      p.n++; p.last = mm.timestamp; p.lastType = mm.eventType || '';
+    });
+    var names = Object.keys(people).filter(function (n) { return n !== lead; });
+    var why = reg && reg.owner === lead ? 'owns ' + model + ' in the model registry'
+      : reg && reg.owner ? 'is the case lead for ' + (incident.severity || maxSeverity) + ' cases here; model owner ' + reg.owner + ' is looped in'
+      : 'is the case lead for ' + (incident.severity || maxSeverity) + ' cases in this org';
+    var slaTxt = '';
+    if (incident.slaDeadline && !isClosed) {
+      var sd = cardinalDaysBetween(new Date(incident.slaDeadline), new Date());
+      slaTxt = sd < 0 ? 'SLA missed ' + cardinalPluralDays(-sd) + ' ago' : cardinalPluralDays(sd) + ' left on the SLA';
+    }
+    var nextStep = isClosed ? 'Closed. Eve has sealed the timeline in Echo.'
+      : agentLead ? agentLead + ' keeps monitoring and hands the case to a human owner if the metric crosses its threshold.'
+      : /approval|sign-?off/i.test(String(incident.status || lastMem.eventType || '')) ? 'Waiting on sign-off. Eve re-pings approvers every 24 hours until it lands.'
+      : /shadow/i.test(String(incident.status || '')) ? 'Shadow deploy running. Eve checks DI daily and escalates if it slips.'
+      : 'Eve nudges ' + (lead || 'the lead') + ' if there is no update in 3 days, then escalates to leadership.';
+    var chip = function (n, tag, sub) {
+      var p = personaOf(n);
+      return '<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:rgba(26,24,21,0.045);border:1px solid rgba(167,167,167,0.12);border-radius:8px">' +
+        '<div style="width:24px;height:24px;border-radius:50%;background:' + ((p && p.color) || '#94a3b8') + '22;color:' + ((p && p.color) || '#64748b') + ';display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800">' + escHtml(n.split(' ').map(function (w) { return w[0]; }).join('').slice(0, 2)) + '</div>' +
+        '<div><div style="font-size:11px;color:var(--chrome2);font-weight:700">' + escHtml(n) + (tag ? ' <span style="font-size:8.5px;color:#a855f7;font-weight:800;text-transform:uppercase;letter-spacing:.5px">' + tag + '</span>' : '') + '</div>' +
+        '<div style="font-size:9.5px;color:var(--muted)">' + escHtml(sub || (p ? p.role : '')) + '</div></div></div>';
+    };
+    if (!lead && !agentLead && !names.length) return;
+    html += '<div style="padding:12px 14px;background:rgba(168,85,247,0.04);border:1px solid rgba(168,85,247,0.22);border-radius:10px;margin-bottom:14px">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px">' +
+      '<div style="font-size:10px;color:#a855f7;text-transform:uppercase;letter-spacing:0.8px;font-weight:700">✦ Eve\'s Case Routing</div>' +
+      (slaTxt ? '<span style="font-size:10px;color:#f59e0b;font-weight:700">⏱ ' + escHtml(slaTxt) + '</span>' : '') + '</div>' +
+      (agentLead ? '<div style="font-size:11px;color:var(--chrome2);line-height:1.55;margin-bottom:10px"><strong>' + escHtml(agentLead) + '</strong> is handling this case on its own (monitoring only, no human action needed yet)' + (reg && reg.owner ? '. If it escalates, Eve routes it to model owner <strong>' + escHtml(reg.owner) + '</strong>' : '') + '.</div>'
+        : lead ? '<div style="font-size:11px;color:var(--chrome2);line-height:1.55;margin-bottom:10px">Eve routed this case to <strong>' + escHtml(lead) + '</strong>, who ' + escHtml(why) + '.</div>' : '') +
+      '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px">' +
+      (lead ? chip(lead, 'Lead', (personaOf(lead) ? personaOf(lead).role + ' · ' : '') + 'driving the case') : '') +
+      (reg && reg.owner && reg.owner !== lead ? chip(reg.owner, 'Model owner', 'owns ' + model) : '') +
+      names.filter(function (n) { return !(reg && n === reg.owner); }).slice(0, 4).map(function (n) {
+        return chip(n, '', people[n].n + ' action' + (people[n].n === 1 ? '' : 's') + ' · last: ' + people[n].lastType.replace(/-/g, ' '));
+      }).join('') +
+      '</div>' +
+      '<div style="font-size:10.5px;color:var(--muted2);margin-top:10px;line-height:1.5"><strong style="color:var(--chrome2)">Next:</strong> ' + escHtml(nextStep) + '</div>' +
+      '</div>';
+  })();
 
   if (attribution && !isClosed) {
     html += '<div style="display:grid;grid-template-columns:repeat(3, minmax(0,1fr));gap:10px;margin-bottom:14px;">' +
@@ -40896,7 +40957,11 @@ function buildSentinel(org) {
       var cid = String(c.caseId || '').replace(/^#/, '');
       var adamMon = /Eve|Adam|Cardinal/i.test(String(c.leadAssignee || ''));
       var chOk = hasChannel(cid);
-      var slaCell = c.slaDeadline ? esc(String(c.slaDeadline).slice(0, 10)) : '\u2014';
+      var slaCell = '\u2014';
+      if (c.slaDeadline) {
+        var slaD = new Date(c.slaDeadline), slaN = cardinalDaysBetween(slaD, new Date());
+        slaCell = '<span title="' + esc(slaD.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })) + '" style="font-weight:600;color:' + (slaN < 0 ? 'var(--red)' : slaN <= 7 ? 'var(--amber)' : 'var(--muted2)') + '">' + (slaN < 0 ? 'Missed ' + cardinalPluralDays(-slaN) + ' ago' : slaN === 0 ? 'Due today' : cardinalPluralDays(slaN)) + '</span>';
+      }
       var ty = c.sentinelCaseType || '';
       var sevClass = c.severity === 'Critical' ? 'red' : c.severity === 'High' ? 'amber' : 'yellow';
       return (
