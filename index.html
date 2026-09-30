@@ -35954,7 +35954,90 @@ function getStorageStatus() {
 function openNewTestModal() {
   const m = document.getElementById('new-test-modal');
   if(m) { m.style.display = 'flex'; }
+  // Model list follows the org you're viewing (was a fixed A&D/Finance/Health mix)
+  try {
+    var org = window.currentOrg || 'ad';
+    var sel = document.getElementById('new-test-model');
+    var names = (window.CARDINAL_MODELS || []).filter(function (x) { return x.industry === org; }).map(function (x) { return x.name; });
+    ((window.CARDINAL_DATA || {})[org] && window.CARDINAL_DATA[org].biasMetricsByModel || []).forEach(function (b) { if (names.indexOf(b.modelId) === -1) names.push(b.modelId); });
+    if (sel && names.length) sel.innerHTML = names.map(function (n) { return '<option>' + cardinalLibEsc(n) + '</option>'; }).join('');
+  } catch (_ntm) {}
+  ntSetSource('pick');
 }
+// 9/29 -- "Create a New Test": pick from the existing list OR upload your own dataset
+// (Brittany: both, with the upload spot separate from Data Pipeline). Parsing happens
+// in the browser; nothing is sent anywhere. Protected-attribute and known proxy columns
+// are flagged so the test types below have something real to point at.
+window.__ntSource = 'pick';
+window.__ntUpload = null;
+function ntSetSource(src) {
+  window.__ntSource = src;
+  [['nt-src-pick', 'pick'], ['nt-src-upload', 'upload']].forEach(function (p) {
+    var el = document.getElementById(p[0]);
+    if (!el) return;
+    el.style.background = src === p[1] ? 'rgba(167,167,167,.16)' : 'transparent';
+    el.style.color = src === p[1] ? 'var(--accent)' : 'var(--muted)';
+  });
+  var up = document.getElementById('nt-upload-panel');
+  if (up) up.style.display = src === 'upload' ? 'block' : 'none';
+  var mw = document.getElementById('nt-model-wrap');
+  if (mw) mw.querySelector('label').textContent = src === 'upload' ? 'Model to test this data against' : 'Model';
+}
+function ntParseCsvLine(line) {
+  var out = [], cur = '', q = false;
+  for (var i = 0; i < line.length; i++) {
+    var ch = line[i];
+    if (ch === '"') { if (q && line[i + 1] === '"') { cur += '"'; i++; } else q = !q; }
+    else if (ch === ',' && !q) { out.push(cur); cur = ''; }
+    else cur += ch;
+  }
+  out.push(cur);
+  return out.map(function (s) { return s.trim(); });
+}
+var NT_PROTECTED = /^(race|ethnicity|gender|sex|age|dob|birth|religion|disability|veteran|marital|national_?origin|citizenship)/i;
+var NT_PROXY = /(zip|postal|postcode|surname|last_?name|first_?name|language|neighborhood|census|county|metro)/i;
+function ntHandleUpload(file) {
+  var prev = document.getElementById('nt-upload-preview');
+  if (!file || !prev) return;
+  var reader = new FileReader();
+  reader.onload = function () {
+    var text = String(reader.result || '');
+    var header = [], rows = [];
+    try {
+      if (/\.json$/i.test(file.name)) {
+        var data = JSON.parse(text);
+        if (!Array.isArray(data)) data = [data];
+        header = Object.keys(data[0] || {});
+        rows = data.map(function (r) { return header.map(function (h) { return r[h] == null ? '' : String(r[h]); }); });
+      } else {
+        var lines = text.split(/\r?\n/).filter(function (l) { return l.trim(); });
+        header = ntParseCsvLine(lines[0] || '');
+        rows = lines.slice(1).map(ntParseCsvLine);
+      }
+    } catch (e) {
+      prev.innerHTML = '<div style="font-size:11px;color:var(--red)">Could not read this file: ' + cardinalLibEsc(e.message) + '</div>';
+      return;
+    }
+    var prot = header.filter(function (h) { return NT_PROTECTED.test(h); });
+    var prox = header.filter(function (h) { return !NT_PROTECTED.test(h) && NT_PROXY.test(h); });
+    window.__ntUpload = { name: file.name, rows: rows.length, cols: header.length, protectedCols: prot, proxyCols: prox, uploadedBy: (document.querySelector('.sidebar-user-name, #sidebar-user-name') || {}).textContent || 'You', at: new Date() };
+    var esc = cardinalLibEsc;
+    var tag = function (t, c) { return '<span style="display:inline-block;font-size:9px;font-weight:700;padding:2px 6px;border-radius:5px;margin:0 4px 4px 0;color:' + c + ';border:1px solid ' + c + '55;background:' + c + '14">' + esc(t) + '</span>'; };
+    prev.innerHTML =
+      '<div style="padding:10px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:10px">' +
+      '<div style="display:flex;justify-content:space-between;font-size:11px;color:var(--chrome2);font-weight:600"><span>' + esc(file.name) + '</span><span style="color:var(--muted)">' + rows.length.toLocaleString() + ' rows · ' + header.length + ' columns</span></div>' +
+      (prot.length ? '<div style="margin-top:8px;font-size:10px;color:var(--muted)">Protected attributes found (used for disparate-impact math, never as model inputs):</div><div style="margin-top:4px">' + prot.map(function (h) { return tag(h, '#3b82f6'); }).join('') + '</div>' : '<div style="margin-top:8px;font-size:10px;color:#f59e0b">No protected-attribute columns found. Bias tests will need Genesis to infer cohorts.</div>') +
+      (prox.length ? '<div style="margin-top:6px;font-size:10px;color:var(--muted)">Possible proxy variables (Eden will check these first):</div><div style="margin-top:4px">' + prox.map(function (h) { return tag(h, '#ef4444'); }).join('') + '</div>' : '') +
+      '<div style="overflow-x:auto;margin-top:8px"><table style="border-collapse:collapse;font-size:9.5px;width:100%"><tr>' + header.slice(0, 8).map(function (h) { return '<th style="text-align:left;padding:4px 6px;color:var(--muted);border-bottom:1px solid var(--border)">' + esc(h) + '</th>'; }).join('') + '</tr>' +
+      rows.slice(0, 3).map(function (r) { return '<tr>' + r.slice(0, 8).map(function (c) { return '<td style="padding:4px 6px;color:var(--chrome2);border-bottom:1px solid var(--border)">' + esc(c) + '</td>'; }).join('') + '</tr>'; }).join('') +
+      '</table></div></div>';
+    var nameEl = document.getElementById('new-test-name');
+    if (nameEl && !nameEl.value) nameEl.value = file.name.replace(/\.[^.]+$/, '') + ' — Bias Scan';
+  };
+  reader.readAsText(file);
+}
+window.ntSetSource = ntSetSource;
+window.ntHandleUpload = ntHandleUpload;
 function closeNewTestModal() {
   const m = document.getElementById('new-test-modal');
   if(m) { m.style.display = 'none'; }
@@ -35962,8 +36045,10 @@ function closeNewTestModal() {
 function launchNewTest() {
   const name = document.getElementById('new-test-name')?.value || 'New Test';
   const model = document.getElementById('new-test-model')?.value || 'Unknown';
+  const up = window.__ntSource === 'upload' ? window.__ntUpload : null;
+  if (window.__ntSource === 'upload' && !up) { showToast('Choose a dataset to upload first, or switch to "Pick existing model".'); return; }
   closeNewTestModal();
-  showToast('Test launched: ' + name + ' on ' + model + '. Results in Eden Core within 60 seconds.');
+  showToast('Test launched: ' + name + ' on ' + model + (up ? ' using ' + up.name + ' (' + up.rows.toLocaleString() + ' rows)' : '') + '. Results in Eden Core within 60 seconds.');
   // Add to genesis log
   const logEntries = document.getElementById('genesis-log-entries');
   if(logEntries) {
@@ -41656,7 +41741,7 @@ window.openModelDetail = openModelDetail;
 
 <!-- ══ NEW TEST MODAL ══ -->
 <div id="new-test-modal" style="display:none;position:fixed;inset:0;z-index:9998;background:rgba(4,7,13,.85);align-items:center;justify-content:center">
-<div style="background:var(--card);border:1px solid var(--border2);border-radius:16px;padding:28px;width:480px;max-width:90vw;box-shadow:0 8px 40px rgba(0,0,0,.6)">
+<div style="background:var(--card);border:1px solid var(--border2);border-radius:16px;padding:28px;width:480px;max-width:90vw;max-height:90vh;overflow-y:auto;box-sizing:border-box;box-shadow:0 8px 40px rgba(0,0,0,.6)">
 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
 <div>
 <div style="font-size:15px;font-weight:600;color:var(--chrome2)">New Test</div>
@@ -41669,6 +41754,21 @@ window.openModelDetail = openModelDetail;
 <input id="new-test-name" placeholder="e.g. Personnel Assignment Bias Scan" style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:10px 12px;color:var(--text);font-size:12px;font-family:var(--sans);outline:none;box-sizing:border-box"/>
 </div>
 <div style="margin-bottom:16px">
+<label style="font-size:11px;color:var(--muted2);font-weight:500;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px">Test Data</label>
+<div style="display:flex;gap:2px;background:var(--bg3);border-radius:8px;padding:3px;margin-bottom:10px">
+<button type="button" id="nt-src-pick" onclick="ntSetSource('pick')" style="flex:1;padding:7px;border:0;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;background:rgba(167,167,167,.16);color:var(--accent)">Pick existing model</button>
+<button type="button" id="nt-src-upload" onclick="ntSetSource('upload')" style="flex:1;padding:7px;border:0;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;background:transparent;color:var(--muted)">Upload a dataset</button>
+</div>
+<div id="nt-upload-panel" style="display:none">
+<label for="nt-upload-file" style="display:block;padding:16px;border:1px dashed var(--border2);border-radius:10px;text-align:center;cursor:pointer;background:var(--bg3)">
+<div style="font-size:12px;color:var(--chrome2);font-weight:600">Drop a CSV here or click to choose</div>
+<div style="font-size:10px;color:var(--muted);margin-top:3px">CSV or JSON · stays in your browser for this test only · separate from Data Pipeline ingestion</div>
+<input type="file" id="nt-upload-file" accept=".csv,.json,.txt" onchange="ntHandleUpload(this.files[0])" style="display:none"/>
+</label>
+<div id="nt-upload-preview" style="margin-top:10px"></div>
+</div>
+</div>
+<div style="margin-bottom:16px" id="nt-model-wrap">
 <label style="font-size:11px;color:var(--muted2);font-weight:500;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px">Model</label>
 <select id="new-test-model" style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:10px 12px;color:var(--text);font-size:12px;font-family:var(--sans);outline:none;box-sizing:border-box">
 <option>Personnel Assignment v2.4</option>
