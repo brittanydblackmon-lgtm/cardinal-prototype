@@ -36399,6 +36399,7 @@ window.renderLibUseCases = function() {
   html += '</div>';
   html += '</div>';
 
+  html += cardinalLibToolbarHtml('usecases');
   html += '<div id="lib-usecases-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px;"></div>';
 
   container.innerHTML = html;
@@ -36446,6 +36447,9 @@ window.cardinalLibRenderUseCaseGrid = function() {
     if (!f.statuses[tag.status]) return false;
     return true;
   });
+  filtered = cardinalLibApply('usecases', filtered);
+  grid.style.display = window.__libView.usecases.view === 'list' ? 'block' : 'grid';
+  if (filtered.length && window.__libView.usecases.view === 'list') { grid.innerHTML = cardinalLibListHtml('usecases', filtered); return; }
 
   if (filtered.length === 0) {
     grid.innerHTML =
@@ -36507,9 +36511,6 @@ window.cardinalLibRenderUseCaseGrid = function() {
     .join('');
 };
 
-window.cardinalLibOpenUseCase = function(tagId) {
-  console.log('[Cardinal Library] open use case:', tagId);
-};
 
 window.renderLibModels = function() {
   var container = document.getElementById('lib-tab-content-models');
@@ -36518,7 +36519,7 @@ window.renderLibModels = function() {
   var html = '<div style="display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap;">';
   ['all', 'live', 'test', 'archive'].forEach(function(s) {
     var label = { all: 'All Models', live: 'Live', test: 'Test', archive: 'Archive' }[s];
-    var isActive = s === 'all';
+    var isActive = s === window.__libModelFilter;
     html +=
       '<button data-lib-model-filter="' +
       s +
@@ -36536,10 +36537,11 @@ window.renderLibModels = function() {
   });
   html += '</div>';
 
+  html += cardinalLibToolbarHtml('models');
   html += '<div id="lib-models-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:12px;"></div>';
 
   container.innerHTML = html;
-  cardinalLibRenderModelsGrid('all');
+  cardinalLibRenderModelsGrid(window.__libModelFilter);
 };
 
 window.cardinalLibFilterModels = function(filter, btn) {
@@ -36582,10 +36584,14 @@ function cardinalLibStampBadgesHtml(m) {
 window.cardinalLibRenderModelsGrid = function(filter) {
   var grid = document.getElementById('lib-models-grid');
   if (!grid) return;
+  window.__libModelFilter = filter || 'all';
   var models = (window.CARDINAL_MODELS || []).filter(function(m) {
     if (filter === 'all') return true;
     return m.status === filter;
   });
+  models = cardinalLibApply('models', models);
+  grid.style.display = window.__libView.models.view === 'list' ? 'block' : 'grid';
+  if (models.length && window.__libView.models.view === 'list') { grid.innerHTML = cardinalLibListHtml('models', models); return; }
 
   if (models.length === 0) {
     grid.innerHTML =
@@ -36675,7 +36681,7 @@ window.renderLibCohorts = function() {
         synthetic: 'Synthetic',
         'gap-report': 'Gap Reports'
       }[t];
-    var isActive = t === 'all';
+    var isActive = t === window.__libCohortFilter;
     html +=
       '<button data-lib-cohort-filter="' +
       t +
@@ -36693,10 +36699,11 @@ window.renderLibCohorts = function() {
   });
   html += '</div>';
 
+  html += cardinalLibToolbarHtml('cohorts');
   html += '<div id="lib-cohorts-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:12px;"></div>';
 
   container.innerHTML = html;
-  cardinalLibRenderCohortsGrid('all');
+  cardinalLibRenderCohortsGrid(window.__libCohortFilter);
 };
 
 window.cardinalLibFilterCohorts = function(filter, btn) {
@@ -36716,10 +36723,14 @@ window.cardinalLibFilterCohorts = function(filter, btn) {
 window.cardinalLibRenderCohortsGrid = function(filter) {
   var grid = document.getElementById('lib-cohorts-grid');
   if (!grid) return;
+  window.__libCohortFilter = filter || 'all';
   var cohorts = (window.CARDINAL_COHORTS || []).filter(function(c) {
     if (filter === 'all') return true;
     return c.type === filter;
   });
+  cohorts = cardinalLibApply('cohorts', cohorts);
+  grid.style.display = window.__libView.cohorts.view === 'list' ? 'block' : 'grid';
+  if (cohorts.length && window.__libView.cohorts.view === 'list') { grid.innerHTML = cardinalLibListHtml('cohorts', cohorts); return; }
 
   if (cohorts.length === 0) {
     grid.innerHTML =
@@ -36784,6 +36795,158 @@ window.cardinalLibRenderCohortsGrid = function(filter) {
     })
     .join('');
 };
+
+// 9/29 overnight -- Cardinal Library sort / filter / list view / click-through (backlog:
+// "sort/filter by case number, alphabetical, last updated, uploaded by, created by; add
+// list view as alternative to the current spread card view"). One shared toolbar per tab,
+// state kept per tab so switching tabs doesn't reset your sort or view.
+window.__libView = window.__libView || {
+  usecases: { sort: 'az', view: 'cards', q: '' },
+  models: { sort: 'az', view: 'cards', q: '' },
+  cohorts: { sort: 'az', view: 'cards', q: '' }
+};
+window.__libModelFilter = window.__libModelFilter || 'all';
+window.__libCohortFilter = window.__libCohortFilter || 'all';
+
+var CARDINAL_LIB_SORTS = {
+  usecases: [
+    ['az', 'Name A–Z', function (a, b) { return String(a.name).localeCompare(String(b.name)); }],
+    ['za', 'Name Z–A', function (a, b) { return String(b.name).localeCompare(String(a.name)); }],
+    ['status', 'Status (Active first)', function (a, b) { var o = { active: 0, placeholder: 1, roadmap: 2 }; return (o[a.status] - o[b.status]) || String(a.name).localeCompare(String(b.name)); }],
+    ['cases', 'Most linked cases', function (a, b) { return (b.demoCases || []).length - (a.demoCases || []).length; }]
+  ],
+  models: [
+    ['az', 'Name A–Z', function (a, b) { return a.name.localeCompare(b.name); }],
+    ['case', 'Case number', function (a, b) { var x = (a.cases || [])[0] || '~', y = (b.cases || [])[0] || '~'; return x.localeCompare(y); }],
+    ['updated', 'Last reviewed (newest)', function (a, b) { return String(b.lastReview || '').localeCompare(String(a.lastReview || '')); }],
+    ['owner', 'Owner (created by)', function (a, b) { return String(a.owner).localeCompare(String(b.owner)); }],
+    ['trust', 'Trust Score (lowest first)', function (a, b) { return a.trustScore - b.trustScore; }],
+    ['deployed', 'Deployed (newest)', function (a, b) { return String(b.deployedDate || '').localeCompare(String(a.deployedDate || '')); }]
+  ],
+  cohorts: [
+    ['az', 'Name A–Z', function (a, b) { return String(a.name).localeCompare(String(b.name)); }],
+    ['case', 'Case number', function (a, b) { return String(a.linkedCase || '~').localeCompare(String(b.linkedCase || '~')); }],
+    ['updated', 'Created (newest)', function (a, b) { return String(b.created || '').localeCompare(String(a.created || '')); }],
+    ['owner', 'Owner (created by)', function (a, b) { return String(a.owner).localeCompare(String(b.owner)); }],
+    ['size', 'Size (largest first)', function (a, b) { return (b.size || 0) - (a.size || 0); }]
+  ]
+};
+
+function cardinalLibToolbarHtml(tab) {
+  var st = window.__libView[tab];
+  var esc = window.cardinalLibEsc;
+  var pill = function (v, label) {
+    var on = st.view === v;
+    return '<button type="button" onclick="cardinalLibSetView(\'' + tab + '\',\'' + v + '\')" style="padding:5px 11px;border:0;border-radius:6px;font-size:10px;font-weight:600;cursor:pointer;background:' + (on ? 'rgba(167,167,167,0.16)' : 'transparent') + ';color:' + (on ? 'var(--accent)' : 'var(--muted)') + '">' + label + '</button>';
+  };
+  return '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px">' +
+    '<input type="text" id="lib-q-' + tab + '" value="' + esc(st.q) + '" placeholder="Filter by name, ID, owner, case…" oninput="cardinalLibSetQuery(\'' + tab + '\',this.value)" style="flex:1;min-width:200px;max-width:340px;padding:7px 11px;background:rgba(26,24,21,0.045);border:1px solid rgba(167,167,167,0.22);border-radius:8px;font-size:11px;color:var(--chrome2);outline:none" />' +
+    '<label style="font-size:10px;color:var(--muted);font-weight:600">Sort ' +
+    '<select onchange="cardinalLibSetSort(\'' + tab + '\',this.value)" style="margin-left:4px;padding:6px 8px;background:var(--card);border:1px solid rgba(167,167,167,0.22);border-radius:7px;font-size:10px;color:var(--chrome2)">' +
+    CARDINAL_LIB_SORTS[tab].map(function (s) { return '<option value="' + s[0] + '"' + (s[0] === st.sort ? ' selected' : '') + '>' + s[1] + '</option>'; }).join('') +
+    '</select></label>' +
+    '<div style="display:flex;gap:2px;background:var(--bg2);border-radius:8px;padding:2px;margin-left:auto">' + pill('cards', 'Cards') + pill('list', 'List') + '</div>' +
+    '<span id="lib-count-' + tab + '" style="font-size:10px;color:var(--muted)"></span>' +
+    '</div>';
+}
+window.cardinalLibToolbarHtml = cardinalLibToolbarHtml;
+
+function cardinalLibRerender(tab) {
+  if (tab === 'usecases') cardinalLibRenderUseCaseGrid();
+  else if (tab === 'models') cardinalLibRenderModelsGrid(window.__libModelFilter);
+  else if (tab === 'cohorts') cardinalLibRenderCohortsGrid(window.__libCohortFilter);
+}
+window.cardinalLibSetSort = function (tab, v) { window.__libView[tab].sort = v; cardinalLibRerender(tab); };
+window.cardinalLibSetQuery = function (tab, v) { window.__libView[tab].q = v; cardinalLibRerender(tab); };
+window.cardinalLibSetView = function (tab, v) {
+  window.__libView[tab].view = v;
+  if (tab === 'usecases') renderLibUseCases();
+  else if (tab === 'models') renderLibModels();
+  else renderLibCohorts();
+};
+
+// Text filter + sort, shared by all three tabs
+window.cardinalLibApply = function (tab, arr) {
+  var st = window.__libView[tab];
+  var q = String(st.q || '').toLowerCase().trim();
+  var out = arr.filter(function (x) {
+    if (!q) return true;
+    var hay = [x.name, x.id, x.owner, x.description, x.linkedCase, (x.cases || []).join(' '), (x.demoCases || []).join(' ')].join(' ').toLowerCase();
+    return hay.indexOf(q) !== -1;
+  });
+  var def = CARDINAL_LIB_SORTS[tab].filter(function (s) { return s[0] === st.sort; })[0] || CARDINAL_LIB_SORTS[tab][0];
+  out.sort(def[2]);
+  var cnt = document.getElementById('lib-count-' + tab);
+  if (cnt) cnt.textContent = out.length + ' of ' + arr.length;
+  return out;
+};
+
+// List view: one compact table per tab
+window.cardinalLibListHtml = function (tab, rows) {
+  var esc = window.cardinalLibEsc;
+  var ind = { ad: 'A&D', fin: 'Finance', health: 'Healthcare', fed: 'Federal' };
+  var th = function (cols) { return '<tr>' + cols.map(function (c) { return '<th style="text-align:left;padding:8px 10px;font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;font-weight:700;border-bottom:1px solid rgba(167,167,167,0.18)">' + c + '</th>'; }).join('') + '</tr>'; };
+  var td = function (v, extra) { return '<td style="padding:9px 10px;font-size:11px;color:var(--chrome2);border-bottom:1px solid rgba(167,167,167,0.08);' + (extra || '') + '">' + v + '</td>'; };
+  var rowAttr = function (onclick) { return '<tr onclick="' + onclick + '" style="cursor:pointer" onmouseover="this.style.background=\'rgba(167,167,167,0.06)\'" onmouseout="this.style.background=\'\'">'; };
+  var html = '<div style="overflow-x:auto;border:1px solid rgba(167,167,167,0.12);border-radius:10px"><table style="width:100%;border-collapse:collapse">';
+  if (tab === 'usecases') {
+    html += th(['Use case', 'Industry', 'Status', 'Regulations', 'Linked cases']);
+    rows.forEach(function (t) {
+      html += rowAttr('cardinalLibOpenUseCase(&quot;' + esc(t.id) + '&quot;)') + td('<strong>' + esc(t.name) + '</strong>') + td(ind[t.industry] || t.industry) + td(String(t.status).toUpperCase(), 'font-size:9px;font-weight:700') + td(esc(t.description), 'color:var(--muted);font-size:10px') + td(esc((t.demoCases || []).join(', ') || '—'), 'color:var(--accent);font-size:10px') + '</tr>';
+    });
+  } else if (tab === 'models') {
+    html += th(['Model', 'ID', 'Industry', 'Status', 'Trust', 'DI', 'Owner', 'Last reviewed', 'Cases']);
+    rows.forEach(function (m) {
+      html += rowAttr('openModelDetail(' + JSON.stringify(m.name).replace(/"/g, '&quot;') + ',&quot;cardinallibrary&quot;)') + td('<strong>' + esc(m.name) + '</strong>') + td(esc(m.id), 'font-family:monospace;font-size:10px;color:var(--muted)') + td(ind[m.industry] || m.industry) + td(String(m.status || 'live').toUpperCase(), 'font-size:9px;font-weight:700') + td(m.trustScore, 'font-weight:700;color:' + (m.trustScore >= 80 ? '#22c55e' : m.trustScore >= 70 ? '#f59e0b' : '#ef4444')) + td(m.di.toFixed(2)) + td(esc(m.owner)) + td(esc(m.lastReview || '—')) + td(esc((m.cases || []).join(', ') || '—'), 'color:var(--accent);font-size:10px') + '</tr>';
+    });
+  } else {
+    html += th(['Cohort', 'ID', 'Type', 'Status', 'Members', 'Restored', 'Owner', 'Created', 'Case']);
+    rows.forEach(function (c) {
+      html += rowAttr('mdmGoCohortFromDetail(' + JSON.stringify(c.name || c.id || '').replace(/"/g, '&quot;') + ')') + td('<strong>' + esc(c.name) + '</strong>') + td(esc(c.id), 'font-family:monospace;font-size:10px;color:var(--muted)') + td(esc(c.type)) + td(String(c.status).toUpperCase(), 'font-size:9px;font-weight:700') + td((c.size || 0).toLocaleString()) + td(c.restored != null && c.size ? Math.round(c.restored / c.size * 100) + '%' : '—') + td(esc(c.owner)) + td(esc(c.created || '—')) + td(esc(c.linkedCase || '—'), 'color:var(--accent);font-size:10px') + '</tr>';
+    });
+  }
+  return html + '</table></div>';
+};
+
+// Use case click-through (was a console.log stub): detail panel with regulations,
+// linked demo cases (each jumps to the case in Sentinel) and the industry's models.
+window.cardinalLibOpenUseCase = function (tagId) {
+  var esc = window.cardinalLibEsc;
+  var tag = window.cardinalLibFlattenUseCaseTags().filter(function (t) { return t.id === tagId; })[0];
+  if (!tag) return;
+  var lib = (window.MASTER_TAG_LIBRARY && window.MASTER_TAG_LIBRARY.industries || []).filter(function (i) { return i.id === tag.industry; })[0] || {};
+  var models = (window.CARDINAL_MODELS || []).filter(function (m) { return m.industry === tag.industry; });
+  var linkedModels = models.filter(function (m) { return (m.cases || []).some(function (c) { return (tag.demoCases || []).indexOf(c) !== -1; }); });
+  var statusText = {
+    active: 'Active: Cardinal governs this use case today, with a live demo case attached.',
+    placeholder: 'Placeholder: a real regulated use case Cardinal maps to. No demo case built yet.',
+    roadmap: 'Roadmap: not yet supported. Listed so buyers can see where coverage is headed.'
+  }[tag.status] || '';
+  var sec = function (title, body) { return '<div style="margin-top:16px"><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;font-weight:700;margin-bottom:6px">' + title + '</div>' + body + '</div>'; };
+  var chip = function (label, onclick) { return '<button type="button" onclick="' + onclick + '" style="padding:5px 10px;margin:0 6px 6px 0;background:rgba(167,167,167,0.08);border:1px solid rgba(167,167,167,0.25);border-radius:7px;font-size:10px;color:var(--accent);font-weight:600;cursor:pointer">' + label + '</button>'; };
+  var m = document.getElementById('lib-uc-modal');
+  if (!m) {
+    m = document.createElement('div');
+    m.id = 'lib-uc-modal';
+    m.style.cssText = 'display:none;position:fixed;inset:0;z-index:9996;background:rgba(4,7,13,.85);align-items:center;justify-content:center';
+    m.onclick = function (e) { if (e.target === m) cardinalLibCloseUseCase(); };
+    document.body.appendChild(m);
+  }
+  m.innerHTML = '<div style="background:var(--card);border:1px solid var(--border2);border-radius:16px;width:620px;max-width:92vw;max-height:82vh;overflow:auto;box-shadow:0 8px 40px rgba(0,0,0,.7)">' +
+    '<div style="position:relative;padding:18px 22px;border-bottom:1px solid var(--border);background:var(--bg2)">' +
+    '<div style="font-size:10px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.6px">' + esc(lib.name || tag.industry) + ' · Use Case</div>' +
+    '<div style="font-size:16px;font-weight:700;color:var(--chrome2);margin-top:3px">' + esc(tag.name) + '</div>' +
+    '<button type="button" onclick="cardinalLibCloseUseCase()" style="position:absolute;top:14px;right:16px;background:none;border:0;font-size:18px;color:var(--muted);cursor:pointer">×</button>' +
+    '</div><div style="padding:6px 22px 22px">' +
+    sec('Status', '<div style="font-size:11px;color:var(--chrome2);line-height:1.5">' + statusText + '</div>') +
+    sec('Regulations in scope', '<div style="font-size:11px;color:var(--chrome2);line-height:1.6">' + esc(tag.description) + '</div>') +
+    (lib.regulators ? sec('Regulators', '<div style="font-size:11px;color:var(--muted);line-height:1.6">' + esc(lib.regulators) + '</div>') : '') +
+    sec('Linked cases', (tag.demoCases || []).length ? tag.demoCases.map(function (c) { return chip(esc(c) + ' →', 'cardinalLibCloseUseCase();cardinalNavigateToCase(&quot;' + esc(c) + '&quot;)'); }).join('') : '<div style="font-size:11px;color:var(--muted)">No cases linked yet.</div>') +
+    sec(linkedModels.length ? 'Models on these cases' : 'Models in this industry', (linkedModels.length ? linkedModels : models).map(function (x) { return chip(esc(x.name), 'cardinalLibCloseUseCase();openModelDetail(' + JSON.stringify(x.name).replace(/"/g, '&quot;') + ',&quot;cardinallibrary&quot;)'); }).join('') || '<div style="font-size:11px;color:var(--muted)">No models registered.</div>') +
+    '</div></div>';
+  m.style.display = 'flex';
+};
+window.cardinalLibCloseUseCase = function () { var m = document.getElementById('lib-uc-modal'); if (m) m.style.display = 'none'; };
 
 window.renderLibSearch = function() {
   var container = document.getElementById('lib-tab-content-search');
