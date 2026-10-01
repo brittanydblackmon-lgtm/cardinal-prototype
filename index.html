@@ -14551,6 +14551,78 @@ function edoIndPanel(d, org, indId, core) {
     '<button type="button" class="btn-ghost" style="font-size:10px" onclick="edoCloseInd()">Close</button></div></div></div>';
 }
 
+// ══ EDEN: WORKFORCE IMPACT (Google-issue backlog item: "jobs") ══
+// AI that makes decisions about a company's own people (hiring, scheduling, performance)
+// and roles changed by automation. Same bias lens Eden uses on customers, turned inward.
+// Impact ratio = selection/approval rate of the affected group vs. the highest group;
+// under 0.80 fails the EEOC four-fifths rule of thumb.
+window.CARDINAL_WORKFORCE = {
+  fin: {
+    decisions: [
+      { system: 'Collector performance scoring', decides: 'Quarterly review scores for 140 collectors', who: 140, group: 'Age 40+', ratio: 0.78, review: 'Manager reviews', notice: false, why: 'Feeds raises and terminations. Age 40+ collectors score lower on the call-tone model (ADEA risk). Illinois staff were not told AI is used (HB 3773).' },
+      { system: 'Resume screener (vendor)', decides: 'Shortlists ~2,300 analyst applicants a quarter', who: 2300, group: 'Women', ratio: 0.86, review: 'Recruiter reviews shortlist', notice: true, why: 'Used for New York City roles: needs an annual independent bias audit under Local Law 144. Not scheduled.' }
+    ],
+    automation: [
+      { change: 'Pre-qual Chatbot handles 62% of loan intake', roles: 18, title: 'Intake specialists', plan: '12 moved to fraud review after training, 6 open roles not backfilled', status: 'track' }
+    ]
+  },
+  ad: {
+    decisions: [
+      { system: 'Personnel Assignment v2.4', decides: 'Shift and site assignments for 847 technicians', who: 847, group: 'Hispanic technicians', ratio: 0.67, review: 'Supervisor can override', notice: false, why: 'Same model as case #AD-2847. Assignments drive overtime pay and promotion eligibility, so the bias reaches paychecks.' },
+      { system: 'Hiring screen (NYC roles)', decides: 'Ranks applicants for NYC engineering roles', who: 640, group: 'Women', ratio: 0.88, review: 'Recruiter reviews', notice: true, why: 'Local Law 144 audit published. Passing.' }
+    ],
+    automation: [
+      { change: 'Maintenance Routing automated dispatch', roles: 22, title: 'Dispatchers', plan: '15 retrained as reliability analysts, 7 voluntary retirements', status: 'track' }
+    ]
+  },
+  health: {
+    decisions: [
+      { system: 'Nurse shift scheduler', decides: 'Assigns shifts for 1,100 nurses', who: 1100, group: 'Nurses with disability accommodations', ratio: 0.74, review: 'Charge nurse approves', notice: false, why: 'Accommodated nurses get night shifts more often. Possible ADA issue, and nurses were not told scheduling is automated.' }
+    ],
+    automation: [
+      { change: 'Claims Triage Agent automated first-pass review', roles: 35, title: 'Claims reviewers', plan: 'All 35 moved to appeals and clinical review queues', status: 'track' }
+    ]
+  },
+  fed: {
+    decisions: [
+      { system: 'Examiner caseload balancer', decides: 'Routes audit cases to 300 examiners', who: 300, group: 'Remote examiners', ratio: 0.91, review: 'Group manager approves', notice: true, why: 'Passing. Logged because caseload affects performance ratings.' }
+    ],
+    automation: [
+      { change: 'Taxpayer Help Assistant answers 55% of calls', roles: 120, title: 'Phone representatives', plan: '80 reassigned to correspondence and identity verification; 40 positions still unplanned', status: 'gap' }
+    ]
+  }
+};
+window.edenWorkforcePanel = function (org) {
+  var W = window.CARDINAL_WORKFORCE[org] || window.CARDINAL_WORKFORCE.ad;
+  var esc = function (s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;'); };
+  var workers = W.decisions.reduce(function (s, d) { return s + d.who; }, 0);
+  var fails = W.decisions.filter(function (d) { return d.ratio < 0.8; }).length;
+  var noNotice = W.decisions.filter(function (d) { return !d.notice; }).length;
+  var roles = W.automation.reduce(function (s, a) { return s + a.roles; }, 0);
+  var stat = function (l, v, c, tip) { return '<div class="stat-card" title="' + esc(tip || '') + '"><div class="stat-label">' + l + '</div><div class="stat-value" style="font-size:20px;color:' + (c || 'var(--chrome2)') + '">' + v + '</div></div>'; };
+  return '<section id="eden-sec-workforce" style="margin-bottom:20px"><h2 style="font-size:14px;margin:0 0 4px">Workforce Impact: AI Decisions About Your Own People</h2>' +
+    '<p style="font-size:11px;color:var(--muted);margin:0 0 10px">The same bias checks Eden runs on customers, turned on the AI that hires, schedules, and rates your employees, plus the jobs automation is changing.</p>' +
+    '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:10px">' +
+    stat('Employees Affected', workers.toLocaleString()) +
+    stat('Failing Four-Fifths Rule', fails + ' of ' + W.decisions.length, fails ? 'var(--red)' : 'var(--green)', 'Impact ratio under 0.80 (EEOC rule of thumb)') +
+    stat('Workers Not Told', noNotice, noNotice ? 'var(--amber)' : 'var(--green)', 'Systems where employees were not notified that AI is used') +
+    stat('Roles Changed by Automation', roles, 'var(--chrome2)') + '</div>' +
+    '<div style="border:1px solid var(--border2);border-radius:10px;overflow-x:auto;background:var(--card);margin-bottom:10px"><table class="data-table" style="width:100%"><thead><tr><th>AI system</th><th>What it decides</th><th>Impact ratio</th><th>Human review</th><th>Workers told?</th><th>What Cardinal sees</th></tr></thead><tbody>' +
+    W.decisions.map(function (d) {
+      var c = d.ratio < 0.8 ? '#DC2626' : '#15803D';
+      return '<tr style="vertical-align:top"><td style="font-weight:700;color:var(--chrome2)">' + esc(d.system) + '</td><td style="font-size:10.5px">' + esc(d.decides) + '</td>' +
+        '<td><span style="font-weight:800;color:' + c + '">' + d.ratio.toFixed(2) + '</span><div style="font-size:9.5px;color:var(--muted)">' + esc(d.group) + '</div></td>' +
+        '<td style="font-size:10.5px">' + esc(d.review) + '</td><td style="font-weight:700;color:' + (d.notice ? '#15803D' : '#B45309') + '">' + (d.notice ? 'Yes' : 'No') + '</td>' +
+        '<td style="font-size:10.5px;color:var(--muted2);max-width:300px;line-height:1.45">' + esc(d.why) + '</td></tr>';
+    }).join('') + '</tbody></table></div>' +
+    W.automation.map(function (a) {
+      var c = a.status === 'gap' ? '#B45309' : '#15803D';
+      return '<div style="border:1px solid var(--border2);border-left:3px solid ' + c + ';border-radius:9px;padding:9px 12px;background:var(--card);margin-bottom:6px;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;font-size:10.5px">' +
+        '<div><strong style="color:var(--chrome2)">' + esc(a.change) + '</strong><div style="color:var(--muted);margin-top:2px">' + a.roles + ' ' + esc(a.title) + ' affected</div></div>' +
+        '<div style="max-width:420px;color:' + (a.status === 'gap' ? '#B45309' : 'var(--muted2)') + '"><strong style="color:var(--chrome2)">Transition plan:</strong> ' + esc(a.plan) + '</div></div>';
+    }).join('') + '</section>';
+};
+
 window.renderEden = function (org) {
   var CD = window.CARDINAL_DATA;
   if (!CD || !CD[org]) org = 'ad';
@@ -14678,6 +14750,7 @@ window.renderEden = function (org) {
     cardsRow +
     '<button type="button" class="btn-ghost" style="font-size:11px;margin-top:8px" onclick="showScreen(\'warroom\',null)"' + edoT('War Room', 'Open case command center.') + '>View All in War Room \u2192</button></section>' +
     sec3b +
+    (typeof edenWorkforcePanel === 'function' ? edenWorkforcePanel(org) : '') +
     '<section id="eden-sec-models" style="margin-bottom:20px"><h2 style="font-size:14px"' + edoT('Models Monitored for Bias', 'Coverage grid from biasMetricsByModel.') + '>Models Monitored for Bias</h2>' +
     edoModelFilterPillsHtml() +
     '<div style="max-height:340px;overflow-y:auto;overflow-x:auto;border:1px solid var(--border2);border-radius:10px;margin-top:8px;background:var(--card)"><table class="data-table"><thead style="position:sticky;top:0;background:var(--card);z-index:1"><tr><th onclick="edoSortModels(\'model\')"' + edoT('Model', 'Monitored model name and version.') + '>Model</th><th onclick="edoSortModels(\'di\')"' + edoT('Disparate Impact (DI)', 'Ratio of favorable rates: EEOC 0.80 floor.') + '>DI</th><th ' + edoT('Equalized Odds', 'Should be <0.10.') + '>EO</th><th ' + edoT('Proxy Variable', 'Feature correlating with protected class.') + '>Top Proxy</th><th>Affected</th><th ' + edoT('Status', 'Critical / Watch / Passing.') + '>Status</th><th ' + edoT('Trend (30d)', 'Direction of bias metric over last 30 days.') + '>Trend</th><th ' + edoT('Stamp', 'Whether this model is actively counted in the live Trust Score. Unstamp during remediation to exclude it.') + '>Stamp</th></tr></thead><tbody>' + mrows + '</tbody></table></div></section>' +
