@@ -16857,9 +16857,9 @@ window.updateSidebarTrustScoreChip = function() {
     : (fallback[org] || 74);
   // 10/1: the dashboard number counts up from 0 after an industry switch. Reading it
   // mid-animation froze the sidebar on values like 19. The live drift never moves more
-  // than 9 from baseline, so anything further out is a mid-animation read: use baseline.
+  // than 3 from baseline, so anything further out is a mid-animation read: use baseline.
   var base = fallback[org] || 74;
-  if (window._dashTrustScoreRaf || Math.abs(current - base) > 10) current = base;
+  if (window._dashTrustScoreRaf || Math.abs(current - base) > 4) current = base;
   if (typeof dashSyncAllTrustScoreDisplays === 'function') {
     dashSyncAllTrustScoreDisplays(current);
   }
@@ -17580,7 +17580,8 @@ function dashStartTrustScoreDrift(baseline) {
   // as-is, and only the hold time at each stop is doubled (6s -> 12s) so the
   // number sits still and readable for real, instead of feeling like it's
   // constantly dropping/climbing.
-  var keyframes = [baseline, Math.min(100, baseline + 9), Math.max(0, baseline - 9), baseline];
+  // 10/1 -- Brittany: tightened from +/-9 to +/-3 so it reads like real monitoring, not an 18-point swing.
+  var keyframes = [baseline, Math.min(100, baseline + 3), Math.max(0, baseline - 3), baseline];
   var stepMs = 650;
   var holdTicks = Math.round(12000 / stepMs);
 
@@ -39943,7 +39944,7 @@ function tsv2RenderEveBody(d) {
   // ring/sidebar right next to it now move live with the "let it breathe" drift, so the
   // two could read as contradicting each other. The written scenario's other numbers
   // (percentiles, DI ratios, dollar exposure, affected-record counts) are part of the
-  // story and don't move with a live ±9 drift -- only the score itself does. The
+  // story and don't move with a live ±3 drift -- only the score itself does. The
   // quarterly summaries all open with an explicit "sits at NN" / "score is NN" lead
   // sentence, but the monthly summaries don't (they open with a point-delta like
   // "April saw a 2-point drop") -- so this only fires on that specific phrase, matched
