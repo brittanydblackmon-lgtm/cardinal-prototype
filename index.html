@@ -20006,6 +20006,9 @@ function dashBuildActionQueue(specs, cfg, orgKey) {
       sw.misuse.filter(function (m) { return m.severity === 'critical'; }).forEach(function (m, i) {
         items.push({ core: 'SECURITY', screen: 'sentinel', secTab: true, id: 'sec-misuse-' + i, text: m.technique + ' on ' + m.system + ': ' + m.action.toLowerCase(), badge: 'MISUSE', color: '#ef4444', severity: 4500 - i });
       });
+      (sw.agentActions || []).filter(function (x) { return x.sev === 'critical'; }).forEach(function (x, i) {
+        items.push({ core: 'SECURITY', screen: 'sentinel', secTab: true, secView: 'agents', id: 'sec-agent-' + i, text: 'AI agent ' + x.agent + ' acted without approval: ' + x.outcome.toLowerCase(), badge: 'AGENT', color: '#ef4444', severity: 4450 - i });
+      });
       sw.access.filter(function (a) { return a.flag === 'departed'; }).forEach(function (a, i) {
         items.push({ core: 'SECURITY', screen: 'sentinel', secTab: true, id: 'sec-access-' + i, text: 'Departed user ' + a.who + ' still has ' + a.level.toLowerCase() + ' access to ' + a.feed, badge: 'REVOKE', color: '#ef4444', severity: 4400 - i });
       });
@@ -20127,7 +20130,7 @@ function renderActionAlert(index) {
     btnEl.innerHTML = 'View Details <span class="arrow">→</span>';
     btnEl.onclick = function (ev) {
       if (ev) { ev.preventDefault(); ev.stopPropagation(); }
-      if (it.secTab) { window.__sentinelTab = 'security'; window.__sentinelFocusCaseId = null; window.__secWatchView = /^sec-misuse/.test(it.id) ? 'misuse' : 'access'; }
+      if (it.secTab) { window.__sentinelTab = 'security'; window.__sentinelFocusCaseId = null; window.__secWatchView = it.secView || (/^sec-misuse/.test(it.id) ? 'misuse' : 'access'); }
       try { if (typeof showScreen === 'function') showScreen(it.screen, null); } catch (_e) {}
       // Land on the exact case/model row, not just the top of the screen
       var cm = String(it.text || '').match(/#?([A-Z]{2,6}-(?:[A-Z]+-)?\d{3,})/);
@@ -42029,6 +42032,66 @@ window.CARDINAL_SECURITY_WATCH = {
   }
 };
 
+// 9/30 -- AI agents as governed identities (approved after the 9/30 questions). Agents get
+// their own access grants and owners, and every action an agent took that needed a human
+// sign-off is listed with what Cardinal did about it. Cardinal's own Eve and Adam are on
+// the list too: they're governed by the same rules as everyone else.
+(function () {
+  var A = {
+    ad: {
+      agents: [
+        { name: 'Eve', kind: 'Cardinal assistant', owner: 'James Martinez (Compliance)', canReach: 'Case files, Echo, Trust Loop', uses: 'All granted', flag: null },
+        { name: 'Adam', kind: 'Cardinal test agent', owner: 'David Park (Data Science)', canReach: 'Synthetic profiles, Genesis sandbox', uses: 'All granted', flag: null },
+        { name: 'RosterBot', kind: 'Scheduling agent (vendor)', owner: 'None assigned', canReach: 'Personnel records incl. protected attributes', uses: 'Names + shift data only', flag: 'no-owner', why: 'No human owner on file, and it can read race and veteran status it never uses.' },
+        { name: 'Procurement Copilot', kind: 'Internal LLM agent', owner: 'Marcus Williams (Engineering)', canReach: 'Vendor contracts, payment approvals', uses: 'Contracts only', flag: 'unused-access', why: 'Holds payment-approval rights it has never used. Remove before it does.' }
+      ],
+      actions: [
+        { when: '6h ago', agent: 'RosterBot', did: 'Tried to reassign 14 technicians based on Personnel Assignment v2.4 scores', needed: 'Shift-lead approval', outcome: 'Blocked before it ran', sev: 'critical' },
+        { when: 'Yesterday', agent: 'Procurement Copilot', did: 'Drafted and queued a $48K vendor payment', needed: 'Finance sign-off', outcome: 'Held for approval', sev: 'high' },
+        { when: '3 days ago', agent: 'Eve', did: 'Auto-escalated Case #AD-2847 to leadership after 5 days of no action', needed: 'Pre-approved escalation rule', outcome: 'Allowed (policy)', sev: 'info' }
+      ]
+    },
+    fin: {
+      agents: [
+        { name: 'Eve', kind: 'Cardinal assistant', owner: 'Riley Whitmore (Compliance)', canReach: 'Case files, Echo, Trust Loop', uses: 'All granted', flag: null },
+        { name: 'Adam', kind: 'Cardinal test agent', owner: 'Sarah Chen (Data Science)', canReach: 'Synthetic profiles, Genesis sandbox', uses: 'All granted', flag: null },
+        { name: 'Pre-qual Chatbot', kind: 'Customer-facing agent', owner: 'Digital Lending', canReach: 'Applicant intake, credit pull trigger', uses: 'Intake only', flag: 'unused-access', why: 'Can trigger hard credit pulls. It has never needed to, and an injection attempt could make it.' },
+        { name: 'Collections Agent', kind: 'Outbound messaging agent (vendor)', owner: 'None assigned', canReach: 'Delinquent accounts, contact info', uses: 'All granted', flag: 'no-owner', why: 'Vendor agent with no named owner. FDCPA exposure if it messages outside allowed hours.' }
+      ],
+      actions: [
+        { when: '2h ago', agent: 'Collections Agent', did: 'Sent 212 payment reminders at 9:40 PM local time', needed: 'FDCPA calling-hours check', outcome: 'Flagged after, paused, rolled back', sev: 'critical' },
+        { when: 'Yesterday', agent: 'Pre-qual Chatbot', did: 'Offered a rate quote outside approved pricing bands', needed: 'Pricing desk approval', outcome: 'Blocked before it ran', sev: 'high' }
+      ]
+    },
+    health: {
+      agents: [
+        { name: 'Eve', kind: 'Cardinal assistant', owner: 'Elena Ruiz (Compliance)', canReach: 'Case files, Echo, Trust Loop', uses: 'All granted', flag: null },
+        { name: 'Adam', kind: 'Cardinal test agent', owner: 'Dr. Aisha Patel (Clinical AI)', canReach: 'Synthetic patients, Genesis sandbox', uses: 'All granted', flag: null },
+        { name: 'Claims Triage Agent', kind: 'Internal LLM agent', owner: 'Claims Operations', canReach: 'Full patient records (PHI), claim decisions', uses: 'Claim codes + amounts', flag: 'unused-access', why: 'Reads full PHI to make code-level decisions. HIPAA minimum-necessary says narrow it.' }
+      ],
+      actions: [
+        { when: '4h ago', agent: 'Claims Triage Agent', did: 'Auto-closed 31 denials for patients 65+ without clinical review', needed: 'Clinical reviewer sign-off', outcome: 'Flagged after, reopened all 31', sev: 'critical' },
+        { when: '2 days ago', agent: 'Adam', did: 'Requested real patient records to seed a synthetic test', needed: 'Privacy officer approval', outcome: 'Blocked before it ran', sev: 'high' }
+      ]
+    },
+    fed: {
+      agents: [
+        { name: 'Eve', kind: 'Cardinal assistant', owner: 'Patricia Alvarez (Privacy)', canReach: 'Case files, Echo, Trust Loop', uses: 'All granted', flag: null },
+        { name: 'Taxpayer Help Assistant', kind: 'Public-facing agent', owner: 'Taxpayer Services', canReach: 'Account status lookups', uses: 'All granted', flag: null },
+        { name: 'Audit Selection Agent', kind: 'Internal agent', owner: 'None assigned', canReach: 'Returns, audit queue', uses: 'All granted', flag: 'no-owner', why: 'Can add returns to the audit queue with no named owner. The EO requires a human accountable for every selection.' }
+      ],
+      actions: [
+        { when: '8h ago', agent: 'Audit Selection Agent', did: 'Added 40 self-employed returns to the audit queue', needed: 'Examiner review (EO section 3(b))', outcome: 'Held for approval', sev: 'critical' }
+      ]
+    }
+  };
+  Object.keys(A).forEach(function (o) {
+    if (!window.CARDINAL_SECURITY_WATCH[o]) return;
+    window.CARDINAL_SECURITY_WATCH[o].agents = A[o].agents;
+    window.CARDINAL_SECURITY_WATCH[o].agentActions = A[o].actions;
+  });
+})();
+
 window.__secWatchView = window.__secWatchView || 'access';
 window.sentinelSecSetView = function (v) { window.__secWatchView = v; if (typeof buildSentinel === 'function') buildSentinel(window.currentOrg || 'ad'); };
 
@@ -42043,7 +42106,7 @@ function sentinelSecurityWatchPanel(org) {
     external: ['External', '#a855f7'],
     departed: ['Departed user', '#ef4444']
   };
-  var SEV = { critical: '#ef4444', high: '#f59e0b', medium: '#3b82f6' };
+  var SEV = { critical: '#ef4444', high: '#f59e0b', medium: '#3b82f6', info: '#94a3b8' };
   var blocked = d.misuse.filter(function (m) { return /Blocked|suspended|Throttled/i.test(m.action); }).length;
   var pill = function (v, label, n) {
     var on = view === v;
@@ -42061,8 +42124,26 @@ function sentinelSecurityWatchPanel(org) {
     stat('Misuse Attempts (7d)', d.misuse.length, d.misuse.length ? 'var(--amber)' : 'var(--green)') +
     stat('Stopped Automatically', blocked + ' of ' + d.misuse.length, 'var(--green)', 'Blocked, throttled, or key suspended without waiting on a human') +
     '</div>' +
-    '<div style="display:flex;gap:2px;background:var(--bg2);border-radius:9px;padding:3px;width:fit-content;margin-bottom:12px">' + pill('access', 'Data Access', d.access.length) + pill('misuse', 'Misuse &amp; Prompt Injection', d.misuse.length) + '</div>';
-  if (view === 'misuse') {
+    '<div style="display:flex;gap:2px;background:var(--bg2);border-radius:9px;padding:3px;width:fit-content;margin-bottom:12px">' + pill('access', 'Data Access', d.access.length) + pill('misuse', 'Misuse &amp; Prompt Injection', d.misuse.length) + pill('agents', 'AI Agents', (d.agents || []).length) + '</div>';
+  if (view === 'agents') {
+    var AFLAG = { 'no-owner': ['No human owner', '#ef4444'], 'unused-access': ['Unused access', '#f59e0b'] };
+    var OUT = function (o) { return /Blocked/.test(o) ? '#15803d' : /Held/.test(o) ? '#b45309' : /Flagged/.test(o) ? '#dc2626' : '#64748b'; };
+    html += '<div style="font-size:10.5px;color:var(--muted2);margin-bottom:8px">Every AI agent is its own identity: what it can reach, what it actually uses, and the human accountable for it. Cardinal\'s own agents (Eve, Adam) follow the same rules.</div>' +
+      '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:11px"><thead><tr style="text-align:left;color:var(--muted);border-bottom:1px solid var(--border2);font-size:9.5px;text-transform:uppercase;letter-spacing:.5px"><th style="padding:7px 6px">Agent</th><th style="padding:7px 6px">Owner</th><th style="padding:7px 6px">Can reach</th><th style="padding:7px 6px">Actually uses</th><th style="padding:7px 6px">Flag</th></tr></thead><tbody>' +
+      (d.agents || []).slice().sort(function (a, b) { return (b.flag ? 1 : 0) - (a.flag ? 1 : 0); }).map(function (a) {
+        var f = a.flag ? AFLAG[a.flag] : null;
+        return '<tr style="border-bottom:1px solid rgba(180,190,220,.08);vertical-align:top"><td style="padding:8px 6px"><div style="font-weight:700;color:var(--chrome2)">' + esc(a.name) + '</div><div style="font-size:9.5px;color:var(--muted)">' + esc(a.kind) + '</div></td>' +
+          '<td style="padding:8px 6px;color:' + (/None/.test(a.owner) ? '#dc2626' : 'var(--chrome2)') + '">' + esc(a.owner) + '</td><td style="padding:8px 6px;color:var(--chrome2)">' + esc(a.canReach) + '</td><td style="padding:8px 6px;color:var(--muted2)">' + esc(a.uses) + '</td>' +
+          '<td style="padding:8px 6px;max-width:260px">' + (f ? '<span style="font-size:9px;font-weight:800;text-transform:uppercase;color:' + f[1] + ';border:1px solid ' + f[1] + '55;background:' + f[1] + '12;padding:2px 6px;border-radius:5px">' + f[0] + '</span><div style="font-size:10px;color:var(--muted2);margin-top:4px;line-height:1.45">' + esc(a.why) + '</div>' : '<span style="font-size:10px;color:var(--green)">✓ Scoped and owned</span>') + '</td></tr>';
+      }).join('') + '</tbody></table></div>' +
+      '<div style="font-size:12px;font-weight:700;color:var(--chrome2);margin:16px 0 8px">Agent Actions Without Approval</div>' +
+      (d.agentActions || []).map(function (x) {
+        var c = SEV[x.sev] || '#94a3b8';
+        return '<div style="padding:10px 12px;border:1px solid var(--border2);border-left:3px solid ' + c + ';border-radius:9px;margin-bottom:8px;background:rgba(26,24,21,0.03)">' +
+          '<div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap"><div style="font-size:11.5px;color:var(--chrome2)"><strong>' + esc(x.agent) + '</strong> ' + esc(x.did.charAt(0).toLowerCase() + x.did.slice(1)) + '</div><span style="font-size:10px;color:var(--muted)">' + esc(x.when) + '</span></div>' +
+          '<div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-top:5px;font-size:10px"><span style="color:var(--muted)">Needed: ' + esc(x.needed) + '</span><span style="font-weight:700;color:' + OUT(x.outcome) + '">' + esc(x.outcome) + '</span></div></div>';
+      }).join('');
+  } else if (view === 'misuse') {
     html += d.misuse.map(function (m) {
       var c = SEV[m.severity] || '#94a3b8';
       return '<div style="padding:11px 13px;border:1px solid var(--border2);border-left:3px solid ' + c + ';border-radius:9px;margin-bottom:8px;background:rgba(26,24,21,0.03)">' +
