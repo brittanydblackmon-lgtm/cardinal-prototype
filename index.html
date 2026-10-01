@@ -5259,6 +5259,17 @@ body.cardinal-cleanup-mode .screen > div:empty:not(.cardinal-collapse-if-empty):
 // Mode 'fixed': literal calendar dates; countdowns shrink for real and go overdue.
 window.CARDINAL_AUTHORED_TODAY = new Date(2026, 8, 25);
 window.CARDINAL_DEADLINE_MODE = 'rolling';
+// 10/1: whole days since the story was authored, for recent-history dates written as
+// literals (pipeline syncs, whistleblower message days). Never moves a date into the future.
+window.cardinalAuthoredShiftDays = function () {
+  if (window.CARDINAL_DEADLINE_MODE !== 'rolling') return 0;
+  var t = new Date(); t = new Date(t.getFullYear(), t.getMonth(), t.getDate());
+  return Math.max(0, Math.round((t - window.CARDINAL_AUTHORED_TODAY) / 86400000));
+};
+window.cardinalShiftPast = function (d, days) {
+  var n = new Date(d.getTime() + days * 86400000), now = new Date();
+  return n > now ? new Date(now.getTime() - 40 * 60000) : n;
+};
 (function () {
   var MONTHS = { jan:0, feb:1, mar:2, apr:3, may:4, jun:5, jul:6, aug:7, sep:8, oct:9, nov:10, dec:11 };
   function midnight(d) { return new Date(d.getFullYear(), d.getMonth(), d.getDate()); }
@@ -34948,6 +34959,9 @@ var WB_SEED = {
     { id: 'WB-2026-0915-B7E', category: 'Pressure to change a model result', status: 'Under review', messages: [
       { from: 'reporter', day: 'Sep 15, 2026', text: 'Sales leadership asked the credit team to "tune down" ZIP-based denials before the CFPB exam instead of fixing the model.' },
       { from: 'reviewer', day: 'Sep 16, 2026', text: 'We take this seriously. Legal has placed a hold on any threshold changes to Credit Scoring v3.4 until the audit closes.' }
+    ] },
+    { id: 'WB-2026-0923-E5K', category: 'Override of a required sign-off', status: 'Open', messages: [
+      { from: 'reporter', day: 'Sep 23, 2026', text: 'The Collections AI late-night message batch was approved without the FDCPA calling-hours check. Riley Whitmore signed off without opening the review.' }
     ] }
   ],
   health: [
@@ -34962,6 +34976,19 @@ var WB_SEED = {
     ] }
   ]
 };
+// 10/1: seeded message days roll with the calendar (authored Sep 25, 2026).
+(function () {
+  var n = window.cardinalAuthoredShiftDays ? cardinalAuthoredShiftDays() : 0;
+  if (!n) return;
+  Object.keys(WB_SEED).forEach(function (o) {
+    WB_SEED[o].forEach(function (t) {
+      t.messages.forEach(function (m) {
+        var d = new Date(m.day);
+        if (!isNaN(d)) m.day = cardinalShiftPast(d, n).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+      });
+    });
+  });
+})();
 var WB_CATEGORIES = ['Override of a required sign-off', 'Pressure to change a model result', 'Data used for the wrong purpose', 'Improper records access', 'Harassment or retaliation', 'Patient or customer harm risk', 'Something else'];
 // 9/30 -- Brittany: reports go to a standing cross-functional Review Committee (Legal, HR,
 // Compliance, Engineering/Data Science) so no single department's bias decides a report.
@@ -34970,19 +34997,19 @@ var WB_CATEGORIES = ['Override of a required sign-off', 'Pressure to change a mo
 // The reporter only ever sees "Review Committee"; internally members show by function.
 var WB_COMMITTEE = {
   ad: { leader: { id: 'james-martinez', name: 'James Martinez', fn: 'Compliance' }, members: [
-    { id: 'kevin-obrien', name: "Kevin O'Brien", fn: 'Legal' },
+    { id: 'kevin-obrien', name: "Kevin O'Brien", fn: 'Legal', backup: true },
     { id: 'hr-atlas', name: 'Dana Whitfield', fn: 'HR' },
     { id: 'david-park', name: 'David Park', fn: 'Data Science' } ] },
   fin: { leader: { id: 'riley-whitmore', name: 'Riley Whitmore', fn: 'Compliance' }, members: [
-    { id: 'legal-fin', name: 'Morgan Hale', fn: 'Legal' },
+    { id: 'legal-fin', name: 'Morgan Hale', fn: 'Legal', backup: true },
     { id: 'hr-fin', name: 'Priya Desai', fn: 'HR' },
     { id: 'sarah-chen-fin', name: 'Sarah Chen', fn: 'Data Science' } ] },
   health: { leader: { id: 'compliance-health', name: 'Elena Ruiz', fn: 'Compliance' }, members: [
-    { id: 'legal-health', name: 'Marcus Bell', fn: 'Legal' },
+    { id: 'legal-health', name: 'Marcus Bell', fn: 'Legal', backup: true },
     { id: 'hr-health', name: 'Tasha Greene', fn: 'HR' },
     { id: 'aisha-patel', name: 'Dr. Aisha Patel', fn: 'Clinical AI / Data Science' } ] },
   fed: { leader: { id: 'patricia-alvarez', name: 'Patricia Alvarez', fn: 'Privacy & Compliance' }, members: [
-    { id: 'legal-fed', name: 'Owen Clarke', fn: 'Legal' },
+    { id: 'legal-fed', name: 'Owen Clarke', fn: 'Legal', backup: true },
     { id: 'hr-fed', name: 'Renee Morales', fn: 'HR' },
     { id: 'james-martinez-fed', name: 'James Martinez', fn: 'Data Science' } ] }
 };
@@ -34991,6 +35018,25 @@ function wbRecused(org, t) {
   var txt = t.messages.map(function (m) { return m.text; }).join(' ').toLowerCase();
   var c = wbCommittee(org);
   return [c.leader].concat(c.members).filter(function (p) { var last = p.name.split(' ').slice(-1)[0].toLowerCase(); return txt.indexOf(p.name.toLowerCase()) !== -1 || (last.length > 3 && txt.indexOf(last) !== -1); }).map(function (p) { return p.id; });
+}
+// 10/1 -- backup leader: if the committee leader is named in a report, the designated
+// backup (Legal) leads that report instead. If both are named, it escalates to the board's
+// audit committee. A recused person can't see the report at all.
+function wbLeaderFor(org, t) {
+  var c = wbCommittee(org), rec = t ? wbRecused(org, t) : [];
+  if (rec.indexOf(c.leader.id) === -1) return { p: c.leader, acting: false };
+  var b = c.members.filter(function (m) { return m.backup && rec.indexOf(m.id) === -1; })[0];
+  return b ? { p: b, acting: true } : null;
+}
+function wbIsLeaderFor(org, t) {
+  var p = window.getActivePersona ? window.getActivePersona() : null, L = wbLeaderFor(org, t);
+  return !!(p && L && (p.id === L.p.id || p.name === L.p.name));
+}
+function wbViewerRecused(org, t) {
+  var p = window.getActivePersona ? window.getActivePersona() : null;
+  if (!p) return false;
+  var c = wbCommittee(org), rec = wbRecused(org, t);
+  return [c.leader].concat(c.members).some(function (m) { return rec.indexOf(m.id) !== -1 && (m.id === p.id || m.name === p.name); });
 }
 function wbMyRole(org) {
   var p = window.getActivePersona ? window.getActivePersona() : null;
@@ -35030,9 +35076,12 @@ function wbThreadHtml(org, t, side) {
     var c = wbCommittee(org), rec = wbRecused(org, t), me = wbMyRole(org);
     var pill = function (p, lead) {
       var r = rec.indexOf(p.id) !== -1;
-      return '<span style="display:inline-block;font-size:9.5px;padding:3px 8px;border-radius:6px;margin:0 4px 4px 0;border:1px solid ' + (r ? 'rgba(220,38,38,.35)' : lead ? 'rgba(126,34,206,.35)' : 'var(--border2)') + ';color:' + (r ? '#DC2626' : 'var(--chrome2)') + ';' + (r ? 'text-decoration:line-through;' : '') + '">' + (lead ? '★ Leader · ' : '') + wbEsc(p.fn) + ': ' + wbEsc(p.name) + (r ? ' (recused, named in report)' : '') + '</span>';
+      return '<span style="display:inline-block;font-size:9.5px;padding:3px 8px;border-radius:6px;margin:0 4px 4px 0;border:1px solid ' + (r ? 'rgba(220,38,38,.35)' : lead ? 'rgba(126,34,206,.35)' : 'var(--border2)') + ';color:' + (r ? '#DC2626' : 'var(--chrome2)') + ';' + (r ? 'text-decoration:line-through;' : '') + '">' + (lead ? '★ Leader · ' : p.backup ? (L && L.acting && !r ? '★ Acting leader · ' : 'Backup · ') : '') + wbEsc(p.fn) + ': ' + wbEsc(p.name) + (r ? ' (recused, named in report)' : '') + '</span>';
     };
-    committeeHtml = '<div style="margin:2px 0 10px">' + pill(c.leader, true) + c.members.map(function (m) { return pill(m, false); }).join('') + '</div>';
+    var L = wbLeaderFor(org, t);
+    committeeHtml = '<div style="margin:2px 0 10px">' + pill(c.leader, !L || !L.acting) + c.members.map(function (m) { return pill(m, false); }).join('') + '</div>' +
+      (L && L.acting ? '<div style="font-size:10px;color:#7E22CE;font-weight:700;margin:-4px 0 10px">★ ' + wbEsc(L.p.name) + ' (' + wbEsc(L.p.fn) + ') is acting leader on this report because the committee leader is named in it.</div>' : '') +
+      (!L ? '<div style="font-size:10px;color:#DC2626;font-weight:700;margin:-4px 0 10px">Leader and backup are both named. Escalated to the board audit committee.</div>' : '');
     var notes = (t.notes || []).map(function (n) {
       return '<div style="font-size:10.5px;color:var(--chrome2);padding:6px 9px;border-left:2px solid rgba(126,34,206,.4);background:rgba(126,34,206,.04);border-radius:0 6px 6px 0;margin-bottom:5px"><span style="font-size:8.5px;font-weight:800;text-transform:uppercase;color:var(--muted)">' + wbEsc(n.fn) + ' reviewer · ' + wbEsc(n.day) + ' · committee only</span><br>' + wbEsc(n.text) + '</div>';
     }).join('');
@@ -35048,7 +35097,7 @@ function wbThreadHtml(org, t, side) {
     t.messages.map(bubble).join('') +
     '<div style="display:flex;gap:6px;margin-top:8px"><input id="wb-reply-' + wbEsc(t.id) + '" placeholder="' + (side === 'reviewer' ? 'Reply to the reporter as the Review Committee…' : 'Reply to the Review Committee (your name is never shown)…') + '" style="flex:1;padding:8px 10px;border-radius:7px;border:1px solid var(--border2);background:var(--bg3);color:var(--text);font-size:11px"/>' +
     '<button type="button" onclick="wbReply(\'' + org + '\',\'' + wbEsc(t.id) + '\',\'' + side + '\')" style="padding:7px 12px;border-radius:7px;border:1px solid rgba(167,167,167,.3);background:rgba(167,167,167,.08);color:var(--accent);font-size:11px;font-weight:700;cursor:pointer">Send</button>' +
-    (side === 'reviewer' && t.status !== 'Closed' ? ((wbMyRole(org) || {}).leader
+    (side === 'reviewer' && t.status !== 'Closed' ? (wbIsLeaderFor(org, t)
       ? '<button type="button" onclick="wbSetStatus(\'' + org + '\',\'' + wbEsc(t.id) + '\',\'Closed\')" style="padding:7px 10px;border-radius:7px;border:1px solid rgba(34,197,94,.3);background:transparent;color:var(--green);font-size:10.5px;font-weight:600;cursor:pointer">Close (leader)</button>'
       : '<span title="Only the committee leader can close a report" style="align-self:center;font-size:9.5px;color:var(--muted)">Leader closes</span>') : '') +
     '</div></div>';
@@ -35126,7 +35175,8 @@ function wbInboxHtml(org) {
   return '<div style="margin-bottom:18px">' +
     '<div style="display:flex;justify-content:space-between;align-items:flex-end;gap:10px;flex-wrap:wrap;margin-bottom:10px"><div><div style="font-size:14px;font-weight:700;color:var(--chrome2)">Anonymous Inbox</div>' +
     '<div style="font-size:10.5px;color:var(--muted);margin-top:2px">' + ts.length + ' reports · ' + open + ' open. Reviewed by a cross-functional committee so no single department decides. You see what was reported, never who; the reporter sees only "Review Committee". Anyone named in a report is recused from it.</div></div></div>' +
-    (ts.length ? ts.map(function (t) { return wbThreadHtml(org, t, 'reviewer'); }).join('') : '<div style="font-size:11px;color:var(--muted)">No reports.</div>') +
+    (function () { var hid = ts.filter(function (t) { return wbViewerRecused(org, t); }).length; return hid ? '<div style="font-size:10.5px;color:var(--muted2);padding:8px 10px;border:1px dashed var(--border2);border-radius:8px;margin-bottom:10px">' + hid + ' report' + (hid === 1 ? ' is' : 's are') + ' hidden from you because you are named in ' + (hid === 1 ? 'it' : 'them') + '. The rest of the committee handles ' + (hid === 1 ? 'it' : 'them') + '.</div>' : ''; })() +
+    (ts.length ? ts.filter(function (t) { return !wbViewerRecused(org, t); }).map(function (t) { return wbThreadHtml(org, t, 'reviewer'); }).join('') : '<div style="font-size:11px;color:var(--muted)">No reports.</div>') +
     '</div>';
 }
 window.wbWorkspaceHtml = wbWorkspaceHtml;
@@ -35377,6 +35427,14 @@ var PIPELINE_SOURCE_STATUS = {
     { connector: 'Azure OpenAI', status: 'not_connected', lastSync: null, records: 0, format: '—' }
   ]
 };
+// 10/1: syncs were authored around Sep 25; roll them with the calendar like the rest of the story.
+(function () {
+  var n = window.cardinalAuthoredShiftDays ? cardinalAuthoredShiftDays() : 0;
+  if (!n) return;
+  Object.keys(PIPELINE_SOURCE_STATUS).forEach(function (o) {
+    PIPELINE_SOURCE_STATUS[o].forEach(function (r) { if (r.lastSync) r.lastSync = cardinalShiftPast(new Date(r.lastSync), n).toISOString(); });
+  });
+})();
 function pipelineFmtSync(iso) {
   if (!iso) return '—';
   var d = new Date(iso);
