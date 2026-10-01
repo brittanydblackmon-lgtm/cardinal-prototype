@@ -38480,6 +38480,20 @@ window.cardinalLibRenderUseCaseGrid = function() {
 };
 
 
+// 10/1 -- industry filter for the Models and Cohorts tabs (it only existed on Use Cases).
+window.__libInd = window.__libInd || { models: 'all', cohorts: 'all' };
+window.cardinalLibIndPills = function (tab) {
+  var cur = window.__libInd[tab] || 'all';
+  return '<div style="display:flex;gap:4px;margin-bottom:10px;flex-wrap:wrap;align-items:center"><span style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-right:4px">Industry</span>' +
+    [['all', 'All'], ['fin', 'Finance'], ['health', 'Healthcare'], ['ad', 'A&amp;D'], ['fed', 'Federal']].map(function (x) {
+      var on = cur === x[0];
+      return '<button type="button" onclick="cardinalLibSetInd(\'' + tab + '\',\'' + x[0] + '\')" style="padding:4px 10px;background:' + (on ? 'rgba(167,167,167,0.10)' : 'transparent') + ';border:1px solid ' + (on ? 'rgba(167,167,167,0.30)' : 'rgba(167,167,167,0.18)') + ';border-radius:7px;font-size:10px;color:' + (on ? 'var(--accent)' : 'var(--muted)') + ';font-weight:600;cursor:pointer">' + x[1] + '</button>';
+    }).join('') + '</div>';
+};
+window.cardinalLibSetInd = function (tab, ind) {
+  window.__libInd[tab] = ind;
+  if (tab === 'models') renderLibModels(); else renderLibCohorts();
+};
 window.renderLibModels = function() {
   var container = document.getElementById('lib-tab-content-models');
   if (!container) return;
@@ -38505,6 +38519,7 @@ window.renderLibModels = function() {
   });
   html += '</div>';
 
+  html += cardinalLibIndPills('models');
   html += cardinalLibToolbarHtml('models');
   html += '<div id="lib-models-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:12px;"></div>';
 
@@ -38553,7 +38568,9 @@ window.cardinalLibRenderModelsGrid = function(filter) {
   var grid = document.getElementById('lib-models-grid');
   if (!grid) return;
   window.__libModelFilter = filter || 'all';
+  var _mi = (window.__libInd || {}).models || 'all';
   var models = (window.CARDINAL_MODELS || []).filter(function(m) {
+    if (_mi !== 'all' && m.industry !== _mi) return false;
     if (filter === 'all') return true;
     return m.status === filter;
   });
@@ -38667,6 +38684,7 @@ window.renderLibCohorts = function() {
   });
   html += '</div>';
 
+  html += cardinalLibIndPills('cohorts');
   html += cardinalLibToolbarHtml('cohorts');
   html += '<div id="lib-cohorts-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:12px;"></div>';
 
@@ -38692,7 +38710,9 @@ window.cardinalLibRenderCohortsGrid = function(filter) {
   var grid = document.getElementById('lib-cohorts-grid');
   if (!grid) return;
   window.__libCohortFilter = filter || 'all';
+  var _ci = (window.__libInd || {}).cohorts || 'all';
   var cohorts = (window.CARDINAL_COHORTS || []).filter(function(c) {
+    if (_ci !== 'all' && c.industry !== _ci && c.industry !== 'all') return false;
     if (filter === 'all') return true;
     return c.type === filter;
   });
