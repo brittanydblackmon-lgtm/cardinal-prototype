@@ -5501,6 +5501,10 @@ Trust Loop
 My Workspace
 <span class="nav-badge" id="myws-nav-badge" style="background:rgba(245,158,11,0.15);color:#f59e0b;border:1px solid rgba(245,158,11,0.3);">0</span>
 </div>
+<div class="nav-item" onclick="showScreen('workqueue',this)" title="Tickets for Data Science, Engineering, Legal, Compliance, Eve, and Adam">
+<svg class="nav-icon" viewBox="0 0 14 14" fill="none"><rect x="1.5" y="2" width="11" height="10" rx="1.5" stroke="currentColor" stroke-width="1.2"/><path d="M5 2v10M9 2v10" stroke="currentColor" stroke-width="1"/></svg>
+Work Queue
+</div>
 <div class="nav-item" onclick="showScreen('glossary',this)" title="Every Cardinal term in plain language, plus your org's own terminology">
 <svg class="nav-icon" viewBox="0 0 14 14" fill="none"><path d="M2 2.5h7a2 2 0 0 1 2 2v7a2 2 0 0 0-2-2H2z" stroke="currentColor" stroke-width="1.2"/><path d="M4 5h5M4 7h5" stroke="currentColor" stroke-width="1" stroke-linecap="round"/></svg>
 Glossary
@@ -8887,6 +8891,7 @@ Template Overview
 </div>
 
 <!-- ══ GLOSSARY SCREEN ══ -->
+<div id="screen-workqueue" class="screen"><div id="workqueue-content"></div></div>
 <div id="screen-glossary" class="screen">
 <div class="screen-header">
 <div>
@@ -16793,6 +16798,10 @@ function switchIndustry(org, btn) {
    if (mktScr && mktScr.classList.contains('active') && typeof buildMarketingCore === 'function') buildMarketingCore(org);
  } catch (_mktSw) {}
  try {
+   var wqScr = document.getElementById('screen-workqueue');
+   if (wqScr && wqScr.classList.contains('active') && typeof buildWorkQueue === 'function') buildWorkQueue(org);
+ } catch (_wqSw) {}
+ try {
    var glosScr = document.getElementById('screen-glossary');
    if (glosScr && glosScr.classList.contains('active') && typeof buildGlossary === 'function') buildGlossary(org);
  } catch (_glosSw) {}
@@ -21566,6 +21575,200 @@ function marketingRenderHistory(org) {
     : '<div style="font-size:11px;color:var(--muted);padding:16px;text-align:center">No pieces checked yet.</div>';
 }
 
+// ════ WORK QUEUE (9/30) ════
+// One place to assign work to Data Science, Engineering, Legal, Compliance, or to Cardinal's
+// agents. Brittany's rule for agents: Eve/Adam draft, a named human approves before anything
+// goes live (same governance as Security Watch's "actions without approval"). Create Ticket is
+// available here, from any Sentinel case, and from any model popup, with details pre-filled
+// (pattern borrowed from BigID's Jira modal). Due dates roll with the shared deadline helper.
+var WQ_TEAMS = {
+  ad: { 'Data Science': ['Sarah Chen', 'David Park', 'Anthony Broadnax'], 'Engineering': ['Ryan Bennett', 'Marcus Williams'], 'Legal': ["Kevin O'Brien"], 'Compliance': ['James Martinez', 'Amanda Clark'] },
+  fin: { 'Data Science': ['Sarah Chen'], 'Engineering': ['Jordan Lee'], 'Legal': ['Morgan Hale'], 'Compliance': ['Riley Whitmore'] },
+  health: { 'Data Science': ['Dr. Aisha Patel'], 'Engineering': ['Sam Ortiz'], 'Legal': ['Marcus Bell'], 'Compliance': ['Elena Ruiz', 'Dr. Maya Osei'] },
+  fed: { 'Data Science': ['James Martinez'], 'Engineering': ['Kim Tran'], 'Legal': ['Owen Clarke'], 'Compliance': ['Patricia Alvarez'] }
+};
+// due: days from the authored "today" (rolls via CARDINAL_AUTHORED_TODAY)
+var WQ_SEED = {
+  ad: [
+    { id: 'TKT-2103', title: 'DoD AI Ethics attestation package', team: 'Legal', assignee: "Kevin O'Brien", priority: 'Critical', status: 'In progress', due: -2, source: 'case:AD-2847' },
+    { id: 'TKT-2101', title: 'Retrain Personnel Assignment v2.5 without the ZIP proxy', team: 'Data Science', assignee: 'Sarah Chen', priority: 'High', status: 'In progress', due: 5, source: 'case:AD-2847' },
+    { id: 'TKT-2104', title: 'Revoke R. Delgado warehouse access (departed user)', team: 'Compliance', assignee: 'James Martinez', priority: 'High', status: 'Open', due: 1, source: 'security' },
+    { id: 'TKT-2102', title: 'Ship v2.5 traffic 5% to 25% after Compliance sign-off', team: 'Engineering', assignee: 'Ryan Bennett', priority: 'High', status: 'Open', due: 3, source: 'model:Personnel Assignment v2.5' },
+    { id: 'TKT-2105', title: 'Generate 400 synthetic Hispanic technician profiles for the v2.5 counterfactual', team: 'Adam', assignee: 'Adam', approver: 'David Park', priority: 'Medium', status: 'Awaiting approval', due: 2, source: 'case:AD-2847', draft: '400 profiles built from Genesis templates, matched to the real cohort on rank, tenure, and base. No real records used. Ready to run once approved.' },
+    { id: 'TKT-2106', title: 'Draft board brief on AD-2847 remediation', team: 'Eve', assignee: 'Eve', approver: 'James Martinez', priority: 'Medium', status: 'Awaiting approval', due: 4, source: 'case:AD-2847', draft: 'One-page brief: what happened (DI 0.67), who is affected (847), the fix (v2.5 in shadow at 5%), what it costs to wait, and the one decision the board needs to make.' },
+    { id: 'TKT-2099', title: 'Close Mission Readiness drift review (AD-2889)', team: 'Data Science', assignee: 'David Park', priority: 'Medium', status: 'Done', due: -6, source: 'case:AD-2889' }
+  ],
+  fin: [
+    { id: 'TKT-3201', title: 'Replace ZIP with verified income in Credit Scoring v3.5', team: 'Data Science', assignee: 'Sarah Chen', priority: 'Critical', status: 'In progress', due: 6, source: 'case:FIN-1203' },
+    { id: 'TKT-3202', title: 'NYC Local Law 144 audit packet', team: 'Legal', assignee: 'Morgan Hale', priority: 'High', status: 'In progress', due: 13, source: 'case:FIN-1203' },
+    { id: 'TKT-3203', title: 'Pause Collections Agent after-hours sends', team: 'Engineering', assignee: 'Jordan Lee', priority: 'Critical', status: 'In progress', due: 0, source: 'security' },
+    { id: 'TKT-3204', title: 'Narrow Marketing Analytics to aggregate approval rates', team: 'Compliance', assignee: 'Riley Whitmore', priority: 'High', status: 'Open', due: 7, source: 'security' },
+    { id: 'TKT-3205', title: 'Synthetic thin-file applicants for the v3.5 test', team: 'Adam', assignee: 'Adam', approver: 'Sarah Chen', priority: 'Medium', status: 'Awaiting approval', due: 3, source: 'model:Credit Scoring v3.5', draft: '1,500 synthetic thin-file applicants across 12 ZIP clusters, income held constant, so v3.5 can prove ZIP no longer moves the decision.' },
+    { id: 'TKT-3206', title: 'Draft updated adverse-action notice language', team: 'Eve', assignee: 'Eve', approver: 'Riley Whitmore', priority: 'Medium', status: 'Awaiting approval', due: 9, source: 'case:FIN-1203', draft: 'Plain-language reasons for denial that name the actual top factors (income stability, credit utilization) instead of "ZIP code area".' }
+  ],
+  health: [
+    { id: 'TKT-4301', title: 'Deploy the Claims v1.10 age-proxy fix', team: 'Engineering', assignee: 'Sam Ortiz', approver: 'Dr. Maya Osei', priority: 'Critical', status: 'Awaiting approval', due: 4, source: 'case:HS-2847', draft: 'Fix is tested in shadow. Deploying lifts Fairness above the 70 floor, which earns certification. Needs CMO sign-off.' },
+    { id: 'TKT-4302', title: 'Reopen 31 auto-closed 65+ denials for clinical review', team: 'Compliance', assignee: 'Elena Ruiz', priority: 'Critical', status: 'In progress', due: 1, source: 'security' },
+    { id: 'TKT-4303', title: 'ACA Section 1557 remediation filing', team: 'Legal', assignee: 'Marcus Bell', priority: 'High', status: 'In progress', due: 4, source: 'case:HS-2847' },
+    { id: 'TKT-4304', title: 'Synthetic 65+ patient cohort for the v1.10 test', team: 'Adam', assignee: 'Adam', approver: 'Dr. Aisha Patel', priority: 'Medium', status: 'Awaiting approval', due: 2, source: 'model:Claims Adjudication v1.9', draft: '2,200 synthetic patients 65+ with matched diagnoses and costs. No real PHI used.' },
+    { id: 'TKT-4305', title: 'Draft CMS audit packet, section 2 (testing evidence)', team: 'Eve', assignee: 'Eve', approver: 'Elena Ruiz', priority: 'Medium', status: 'Awaiting approval', due: 10, source: 'case:HS-2847', draft: 'Pulls the Genesis counterfactual receipt, the shadow-deploy results, and the appeals process into CMS format.' }
+  ],
+  fed: [
+    { id: 'TKT-5401', title: 'Complete the M-25-21 impact assessment for IRS Fraud v3.1', team: 'Compliance', assignee: 'Patricia Alvarez', priority: 'Critical', status: 'In progress', due: 23, source: 'case:FED-PDV-001' },
+    { id: 'TKT-5402', title: 'Design the taxpayer appeals process', team: 'Legal', assignee: 'Owen Clarke', priority: 'High', status: 'In progress', due: 27, source: 'case:FED-PDV-001' },
+    { id: 'TKT-5403', title: 'Remove the metro ZIP cluster feature', team: 'Data Science', assignee: 'James Martinez', priority: 'High', status: 'In progress', due: 10, source: 'model:IRS Tax Fraud Detection v3.1' },
+    { id: 'TKT-5404', title: 'Assign a human owner to the Audit Selection Agent', team: 'Engineering', assignee: 'Kim Tran', priority: 'Critical', status: 'Open', due: 1, source: 'security' },
+    { id: 'TKT-5405', title: 'Draft the public AI use case inventory entry', team: 'Eve', assignee: 'Eve', approver: 'Patricia Alvarez', priority: 'Medium', status: 'Awaiting approval', due: 5, source: 'case:FED-PDV-001', draft: 'Inventory entry for IRS Tax Fraud Detection v3.1: purpose, high-impact designation, testing status, and appeals contact.' },
+    { id: 'TKT-5400', title: 'Counterfactual: salaried vs. gig filers in the same ZIP', team: 'Adam', assignee: 'Adam', approver: 'James Martinez', priority: 'Medium', status: 'Done', due: -8, source: 'case:FED-PDV-001' }
+  ]
+};
+var WQ_COLS = ['Open', 'In progress', 'Awaiting approval', 'Done'];
+window.__wqFilter = window.__wqFilter || 'All';
+function wqEsc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+function wqTickets(org) {
+  var saved = [];
+  try { saved = JSON.parse(localStorage.getItem('cardinal-wq-' + org) || '[]'); } catch (_e) {}
+  var seed = (WQ_SEED[org] || []).map(function (t) { var s = saved.filter(function (x) { return x.id === t.id; })[0]; return s || JSON.parse(JSON.stringify(t)); });
+  return saved.filter(function (x) { return !seed.some(function (t) { return t.id === x.id; }); }).concat(seed);
+}
+function wqSave(org, t) {
+  var saved = [];
+  try { saved = JSON.parse(localStorage.getItem('cardinal-wq-' + org) || '[]'); } catch (_e) {}
+  saved = saved.filter(function (x) { return x.id !== t.id; }); saved.unshift(t);
+  try { localStorage.setItem('cardinal-wq-' + org, JSON.stringify(saved)); } catch (_s) {}
+}
+function wqDue(t) {
+  var d;
+  if (t.dueISO) d = new Date(t.dueISO);
+  else { var a = window.CARDINAL_AUTHORED_TODAY; d = new Date(a.getFullYear(), a.getMonth(), a.getDate() + (t.due || 0)); d = cardinalDeadlineDate(d); }
+  var n = cardinalDaysBetween(d, new Date());
+  return { label: t.status === 'Done' ? 'Done' : n < 0 ? 'Overdue ' + cardinalPluralDays(-n) : n === 0 ? 'Due today' : 'Due in ' + cardinalPluralDays(n), late: t.status !== 'Done' && n < 0, soon: n <= 2 };
+}
+function wqMe() { var p = window.getActivePersona ? window.getActivePersona() : null; return p ? p.name : ''; }
+function wqSourceHtml(src) {
+  if (!src) return '';
+  var p = String(src).split(':'), kind = p[0], val = p.slice(1).join(':');
+  if (kind === 'case') return '<span style="cursor:pointer;color:var(--accent);font-weight:600" onclick="event.stopPropagation();cardinalNavigateToCase(\'' + wqEsc(val) + '\')">#' + wqEsc(val) + '</span>';
+  if (kind === 'model') return '<span style="cursor:pointer;color:var(--accent);font-weight:600" onclick="event.stopPropagation();openModelDetail(' + wqEsc(JSON.stringify(val)) + ',\'workqueue\')">' + wqEsc(val) + '</span>';
+  if (kind === 'security') return '<span style="cursor:pointer;color:var(--accent);font-weight:600" onclick="event.stopPropagation();cardinalSentinelUiSetMainTab(\'security\')">Security Watch</span>';
+  return wqEsc(val || kind);
+}
+function buildWorkQueue(org) {
+  var el = document.getElementById('workqueue-content');
+  if (!el) return;
+  org = org || window.currentOrg || 'ad';
+  var all = wqTickets(org), f = window.__wqFilter, me = wqMe();
+  var list = all.filter(function (t) { return f === 'All' || t.team === f || (f === 'Mine' && (t.assignee === me || t.approver === me)); });
+  var PRI = { Critical: '#DC2626', High: '#B45309', Medium: '#2563EB', Low: '#64748B' };
+  var TEAMC = { 'Data Science': '#2563EB', Engineering: '#0369A1', Legal: '#7E22CE', Compliance: '#15803D', Eve: '#a855f7', Adam: '#6D28D9' };
+  var chip = function (k) { var on = f === k; var n = k === 'All' ? all.length : k === 'Mine' ? all.filter(function (t) { return t.assignee === me || t.approver === me; }).length : all.filter(function (t) { return t.team === k; }).length;
+    return '<button type="button" onclick="window.__wqFilter=\'' + k + '\';buildWorkQueue()" style="padding:5px 11px;border-radius:7px;font-size:10.5px;font-weight:600;cursor:pointer;border:1px solid ' + (on ? 'rgba(167,167,167,.45)' : 'rgba(167,167,167,.18)') + ';background:' + (on ? 'rgba(167,167,167,.14)' : 'transparent') + ';color:' + (on ? 'var(--accent)' : 'var(--muted)') + '">' + (k === 'Mine' ? 'Mine (' + wqEsc(me.split(' ')[0]) + ')' : k) + ' <span style="color:var(--muted);font-weight:500">' + n + '</span></button>'; };
+  var awaitingMine = all.filter(function (t) { return t.status === 'Awaiting approval' && t.approver === me; }).length;
+  var card = function (t) {
+    var d = wqDue(t), agent = t.team === 'Eve' || t.team === 'Adam';
+    return '<div onclick="wqOpen(\'' + wqEsc(t.id) + '\')" style="cursor:pointer;padding:10px 11px;border:1px solid var(--border2);border-left:3px solid ' + (PRI[t.priority] || '#94a3b8') + ';border-radius:9px;background:var(--card);margin-bottom:8px">' +
+      '<div style="display:flex;justify-content:space-between;gap:6px;font-size:9.5px;color:var(--muted)"><span style="font-family:monospace">' + wqEsc(t.id) + '</span><span style="font-weight:700;color:' + (PRI[t.priority] || '#64748b') + '">' + wqEsc(t.priority) + '</span></div>' +
+      '<div style="font-size:11.5px;font-weight:700;color:var(--chrome2);margin:4px 0 6px;line-height:1.35">' + wqEsc(t.title) + '</div>' +
+      '<div style="display:flex;justify-content:space-between;gap:6px;align-items:center;flex-wrap:wrap;font-size:10px">' +
+      '<span style="color:' + (TEAMC[t.team] || '#64748b') + ';font-weight:700">' + (agent ? '✦ ' : '') + wqEsc(t.team) + (agent ? '' : ' · ' + wqEsc(t.assignee)) + '</span>' +
+      '<span style="color:' + (d.late ? '#DC2626' : d.soon ? '#B45309' : 'var(--muted)') + ';font-weight:600">' + d.label + '</span></div>' +
+      (t.status === 'Awaiting approval' && t.approver ? '<div style="font-size:9.5px;color:var(--muted2);margin-top:5px">Needs approval from <strong>' + wqEsc(t.approver) + '</strong></div>' : '') + '</div>';
+  };
+  el.innerHTML =
+    '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:12px">' +
+    '<div><div style="font-size:15px;font-weight:700;color:var(--chrome2)">Work Queue</div><div style="font-size:11px;color:var(--muted);margin-top:3px">Every fix, filing, and review, assigned to a team or an agent. Agents draft; a named person approves before anything goes live.</div></div>' +
+    '<div style="display:flex;gap:8px"><button type="button" class="btn-ghost" style="font-size:11px" onclick="cardinalShowToast&&cardinalShowToast(\'Synced to Jira (demo): ' + list.length + ' tickets\')">Sync to Jira / ServiceNow</button><button type="button" class="btn-primary" style="font-size:11px" onclick="wqCreateOpen()">+ Create Ticket</button></div></div>' +
+    (awaitingMine ? '<div style="padding:9px 12px;border-radius:9px;background:rgba(168,85,247,.06);border:1px solid rgba(168,85,247,.25);font-size:11px;color:var(--chrome2);margin-bottom:10px">✦ <strong>' + awaitingMine + '</strong> agent draft' + (awaitingMine === 1 ? ' is' : 's are') + ' waiting on your approval.</div>' : '') +
+    '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">' + ['All', 'Mine', 'Data Science', 'Engineering', 'Legal', 'Compliance', 'Eve', 'Adam'].map(chip).join('') + '</div>' +
+    '<div style="display:grid;grid-template-columns:repeat(4,minmax(200px,1fr));gap:10px;overflow-x:auto">' +
+    WQ_COLS.map(function (c) {
+      var items = list.filter(function (t) { return t.status === c; });
+      return '<div style="background:var(--bg2);border-radius:11px;padding:10px;min-height:120px"><div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:var(--muted2);margin-bottom:8px">' + c + ' · ' + items.length + '</div>' +
+        (items.map(card).join('') || '<div style="font-size:10.5px;color:var(--muted);padding:6px">Nothing here.</div>') + '</div>';
+    }).join('') + '</div>';
+}
+function wqModalShell(html) {
+  var m = document.getElementById('wq-modal');
+  if (!m) { m = document.createElement('div'); m.id = 'wq-modal'; m.style.cssText = 'display:none;position:fixed;inset:0;z-index:9996;background:rgba(4,7,13,.8);align-items:center;justify-content:center'; m.onclick = function (e) { if (e.target === m) m.style.display = 'none'; }; document.body.appendChild(m); }
+  m.innerHTML = '<div style="background:var(--card);border:1px solid var(--border2);border-radius:16px;width:560px;max-width:94vw;max-height:88vh;overflow:auto;box-shadow:0 8px 40px rgba(0,0,0,.5)">' + html + '</div>';
+  m.style.display = 'flex';
+}
+window.wqClose = function () { var m = document.getElementById('wq-modal'); if (m) m.style.display = 'none'; };
+window.wqOpen = function (id) {
+  var org = window.currentOrg || 'ad', t = wqTickets(org).filter(function (x) { return x.id === id; })[0];
+  if (!t) return;
+  var me = wqMe(), d = wqDue(t), agent = t.team === 'Eve' || t.team === 'Adam';
+  var canApprove = t.status === 'Awaiting approval' && t.approver === me;
+  var btn = function (label, onclick, primary) { return '<button type="button" onclick="' + onclick + '" style="padding:7px 13px;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;border:' + (primary ? '0' : '1px solid var(--border2)') + ';background:' + (primary ? '#4c1d95' : 'transparent') + ';color:' + (primary ? '#fff' : 'var(--chrome2)') + '">' + label + '</button>'; };
+  wqModalShell('<div style="position:relative;padding:16px 20px;border-bottom:1px solid var(--border);background:var(--bg2)"><div style="font-size:10px;color:var(--muted);font-family:monospace">' + wqEsc(t.id) + ' · ' + wqEsc(t.priority) + ' · ' + wqEsc(t.status) + '</div><div style="font-size:15px;font-weight:700;color:var(--chrome2);margin-top:3px">' + wqEsc(t.title) + '</div><button type="button" onclick="wqClose()" style="position:absolute;top:12px;right:14px;background:none;border:0;font-size:18px;color:var(--muted);cursor:pointer">×</button></div>' +
+    '<div style="padding:14px 20px 18px;font-size:11.5px;color:var(--chrome2);line-height:1.6">' +
+    '<div><strong>Assigned to:</strong> ' + (agent ? '✦ ' + wqEsc(t.team) + ' (agent)' : wqEsc(t.assignee) + ' · ' + wqEsc(t.team)) + '</div>' +
+    (t.approver ? '<div><strong>Approver:</strong> ' + wqEsc(t.approver) + '</div>' : '') +
+    '<div><strong>Due:</strong> ' + d.label + '</div>' +
+    (t.source ? '<div><strong>From:</strong> ' + wqSourceHtml(t.source) + '</div>' : '') +
+    (t.desc ? '<div style="margin-top:8px;white-space:pre-wrap;color:var(--muted2)">' + wqEsc(t.desc) + '</div>' : '') +
+    (t.draft ? '<div style="margin-top:10px;padding:10px 12px;border-radius:9px;background:rgba(168,85,247,.05);border:1px solid rgba(168,85,247,.22)"><div style="font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:#7E22CE;margin-bottom:4px">' + (agent ? wqEsc(t.team) + '\'s draft' : 'Ready for sign-off') + '</div>' + wqEsc(t.draft) + '</div>' : '') +
+    (t.status === 'Awaiting approval' && !canApprove ? '<div style="margin-top:8px;font-size:10.5px;color:var(--muted)">Only ' + wqEsc(t.approver) + ' can approve this. You\'re viewing as ' + wqEsc(me) + '.</div>' : '') +
+    '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:14px">' +
+    (canApprove ? btn('✓ Approve', 'wqMove(\'' + wqEsc(t.id) + '\',\'Done\',true)', true) + btn('Send back', 'wqMove(\'' + wqEsc(t.id) + '\',\'In progress\')') : '') +
+    (t.status === 'Open' ? btn('Start', 'wqMove(\'' + wqEsc(t.id) + '\',\'In progress\')', true) : '') +
+    (t.status === 'In progress' && !agent && !t.approver ? btn('Mark done', 'wqMove(\'' + wqEsc(t.id) + '\',\'Done\')', true) : '') +
+    (t.status === 'In progress' && t.approver && !agent ? btn('Request approval', 'wqMove(\'' + wqEsc(t.id) + '\',\'Awaiting approval\')', true) : '') +
+    btn('Export to Jira', 'cardinalShowToast&&cardinalShowToast(\'' + wqEsc(t.id) + ' exported to Jira (demo)\')') + '</div></div>');
+};
+window.wqMove = function (id, status, approved) {
+  var org = window.currentOrg || 'ad', t = wqTickets(org).filter(function (x) { return x.id === id; })[0];
+  if (!t) return;
+  t.status = status; wqSave(org, t);
+  try {
+    var mems = CARDINAL_DATA[org] && CARDINAL_DATA[org].echoMemories;
+    if (mems) mems.push({ id: 'echo-tkt-' + Date.now(), timestamp: new Date().toISOString(), author: wqMe() || 'Cardinal', authorRole: 'user', eventType: approved ? 'agent-action-approved' : 'ticket-updated', core: 'workqueue', severity: 'informational', summary: (approved ? 'Approved ' : 'Moved ') + id + ' (' + t.title + ')' + (approved ? '' : ' to ' + status), content: '', isSealed: true, addendums: [], linkedMemories: [], comments: [], accessTier: 'org-wide', accessRoles: [], caseId: (String(t.source || '').indexOf('case:') === 0 ? t.source.slice(5) : null), modelId: null, userId: wqMe(), industryContext: org });
+  } catch (_wm) {}
+  if (typeof cardinalLogActivity === 'function') cardinalLogActivity('edit', (approved ? 'Approved ' : 'Updated ') + id, id);
+  wqClose(); buildWorkQueue(org);
+  if (typeof cardinalShowToast === 'function') cardinalShowToast(approved ? id + ' approved. Logged in Echo.' : id + ' moved to ' + status);
+};
+// Create Ticket: prefill from wherever it was opened (case / model / blank)
+window.wqCreateOpen = function (source, title, desc) {
+  var org = window.currentOrg || 'ad', teams = WQ_TEAMS[org] || WQ_TEAMS.ad;
+  var people = function (team) { return (teams[team] || []).map(function (n) { return '<option>' + wqEsc(n) + '</option>'; }).join(''); };
+  var allPeople = Object.keys(teams).reduce(function (a, k) { return a.concat(teams[k]); }, []);
+  var input = 'width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--border2);background:var(--bg3);color:var(--text);font-size:12px;box-sizing:border-box';
+  var lab = function (t) { return '<div style="font-size:10px;color:var(--muted2);font-weight:700;margin:10px 0 4px">' + t + '</div>'; };
+  wqModalShell('<div style="position:relative;padding:16px 20px;border-bottom:1px solid var(--border);background:var(--bg2)"><div style="font-size:15px;font-weight:700;color:var(--chrome2)">Create Ticket</div><div style="font-size:10.5px;color:var(--muted);margin-top:2px">Tracked in Work Queue · syncs to Jira or ServiceNow</div><button type="button" onclick="wqClose()" style="position:absolute;top:12px;right:14px;background:none;border:0;font-size:18px;color:var(--muted);cursor:pointer">×</button></div>' +
+    '<div style="padding:4px 20px 18px">' +
+    lab('Summary') + '<input id="wq-new-title" style="' + input + '" value="' + wqEsc(title || '') + '" placeholder="What needs to happen?"/>' +
+    lab('Assign to') + '<select id="wq-new-team" style="' + input + '" onchange="wqTeamChanged()">' + Object.keys(teams).map(function (k) { return '<option>' + k + '</option>'; }).join('') + '<option value="Eve">✦ Eve (agent drafts, you pick the approver)</option><option value="Adam">✦ Adam (agent drafts, you pick the approver)</option></select>' +
+    '<div id="wq-new-person-wrap">' + lab('Person') + '<select id="wq-new-person" style="' + input + '">' + people(Object.keys(teams)[0]) + '</select></div>' +
+    '<div id="wq-new-approver-wrap" style="display:none">' + lab('Approver (must sign off before the agent\'s work goes live)') + '<select id="wq-new-approver" style="' + input + '">' + allPeople.map(function (n) { return '<option>' + wqEsc(n) + '</option>'; }).join('') + '</select></div>' +
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><div>' + lab('Priority') + '<select id="wq-new-pri" style="' + input + '"><option>Critical</option><option selected>High</option><option>Medium</option><option>Low</option></select></div><div>' + lab('Due in (days)') + '<input id="wq-new-due" type="number" min="0" value="7" style="' + input + '"/></div></div>' +
+    lab('Description') + '<textarea id="wq-new-desc" style="' + input + ';min-height:90px;line-height:1.5">' + wqEsc(desc || '') + '</textarea>' +
+    '<input type="hidden" id="wq-new-source" value="' + wqEsc(source || '') + '"/>' +
+    '<div style="display:flex;justify-content:flex-end;gap:8px;margin-top:14px"><button type="button" onclick="wqClose()" style="padding:8px 14px;border-radius:8px;border:1px solid var(--border2);background:transparent;color:var(--chrome2);font-size:11.5px;cursor:pointer">Cancel</button><button type="button" onclick="wqCreateSave()" style="padding:8px 16px;border-radius:8px;border:0;background:#4c1d95;color:#fff;font-size:11.5px;font-weight:700;cursor:pointer">Create</button></div></div>');
+};
+window.wqTeamChanged = function () {
+  var org = window.currentOrg || 'ad', team = document.getElementById('wq-new-team').value, agent = team === 'Eve' || team === 'Adam';
+  document.getElementById('wq-new-person-wrap').style.display = agent ? 'none' : '';
+  document.getElementById('wq-new-approver-wrap').style.display = agent ? '' : 'none';
+  if (!agent) document.getElementById('wq-new-person').innerHTML = ((WQ_TEAMS[org] || WQ_TEAMS.ad)[team] || []).map(function (n) { return '<option>' + wqEsc(n) + '</option>'; }).join('');
+};
+window.wqCreateSave = function () {
+  var org = window.currentOrg || 'ad';
+  var title = document.getElementById('wq-new-title').value.trim();
+  if (!title) { document.getElementById('wq-new-title').focus(); return; }
+  var team = document.getElementById('wq-new-team').value, agent = team === 'Eve' || team === 'Adam';
+  var days = Math.max(0, parseInt(document.getElementById('wq-new-due').value, 10) || 0);
+  var t = { id: 'TKT-' + (6000 + Math.floor(Math.random() * 3000)), title: title, team: team, assignee: agent ? team : document.getElementById('wq-new-person').value, approver: agent ? document.getElementById('wq-new-approver').value : null,
+    priority: document.getElementById('wq-new-pri').value, status: agent ? 'Awaiting approval' : 'Open', dueISO: new Date(Date.now() + days * 86400000).toISOString(), source: document.getElementById('wq-new-source').value || null, desc: document.getElementById('wq-new-desc').value.trim(),
+    draft: agent ? (team + ' drafted this from the ticket details. Review before it goes live.') : null };
+  wqSave(org, t);
+  if (typeof cardinalLogActivity === 'function') cardinalLogActivity('edit', 'Created ' + t.id + ': ' + title, t.id);
+  wqClose();
+  if (document.getElementById('screen-workqueue') && document.getElementById('screen-workqueue').classList.contains('active')) buildWorkQueue(org);
+  if (typeof cardinalShowToast === 'function') cardinalShowToast(t.id + ' created and assigned to ' + (agent ? team + ' (approver: ' + t.approver + ')' : t.assignee));
+};
+window.buildWorkQueue = buildWorkQueue;
+
 function buildMarketingCore(org) {
   var supported = CARDINAL_MARKETING_SUPPORTED_ORGS.indexOf(org) !== -1;
   var na = document.getElementById('mk-not-available');
@@ -22738,8 +22941,9 @@ function showScreen(name, navEl) {
  }
  if(name==='halo') { try { stopHaloLive(); } catch(_h){} setTimeout(initHaloMap, 100); setTimeout(function(){ try { updateHaloIndustry(currentOrg||'ad'); updateHaloInaction((typeof currentOrg!=='undefined'&&currentOrg)?currentOrg:'ad'); } catch(_hh){} }, 110); setTimeout(function(){ try { if (typeof cardinalRenderCorePinsPanel === 'function') cardinalRenderCorePinsPanel('halo', 'halo-core-pins'); } catch(_hp){} }, 260); setTimeout(function(){ if (typeof haloRenderPredictiveSection === 'function') haloRenderPredictiveSection(window.currentOrg); }, 60); setTimeout(function(){ try { eveMaybeShowHaloUrgentPeek(); } catch(_hu){} }, 3200); }
  if(name==='trustloop') setTimeout(initTLChat,100);
- const _extraTitles={pipeline:'Data Pipeline: How Cardinal Works',trustloop:'Trust Loop: Team Workspace',modellibrary:'Cardinal Library: Use Cases & Models (Preview)',cardinallibrary:'Cardinal Library: Unified Knowledge Hub',lucid:'✦ Lucid Layer: AI Intelligence',echo:'◈ Echo Core: Audit Memory & Integrity',sentinel:'Sentinel Core: Case Engine',usecases:'Browse All AI Use Cases: Cardinal Master Library',glossary:'Glossary: Plain-Language Cardinal Terms',marketing:'Marketing Core: Compliance Checks for Outbound Content'};
+ const _extraTitles={pipeline:'Data Pipeline: How Cardinal Works',trustloop:'Trust Loop: Team Workspace',modellibrary:'Cardinal Library: Use Cases & Models (Preview)',cardinallibrary:'Cardinal Library: Unified Knowledge Hub',lucid:'✦ Lucid Layer: AI Intelligence',echo:'◈ Echo Core: Audit Memory & Integrity',sentinel:'Sentinel Core: Case Engine',usecases:'Browse All AI Use Cases: Cardinal Master Library',glossary:'Glossary: Plain-Language Cardinal Terms',workqueue:'Work Queue: Tickets for Every Team and Agent',marketing:'Marketing Core: Compliance Checks for Outbound Content'};
  if(name==='glossary' && typeof buildGlossary === 'function') buildGlossary((typeof currentOrg !== 'undefined' && currentOrg) ? currentOrg : window.currentOrg || 'ad');
+ if(name==='workqueue' && typeof buildWorkQueue === 'function') buildWorkQueue((typeof currentOrg !== 'undefined' && currentOrg) ? currentOrg : window.currentOrg || 'ad');
  if(name==='marketing' && typeof buildMarketingCore === 'function') buildMarketingCore((typeof currentOrg !== 'undefined' && currentOrg) ? currentOrg : window.currentOrg || 'ad');
  if(name==='echo') { buildEcho(currentOrg); } else if (window.__echoTickerTimer) { clearInterval(window.__echoTickerTimer); window.__echoTickerTimer = null; }
  if(name==='modellibrary') buildModelLibrary(currentOrg);
@@ -41328,6 +41532,7 @@ window.renderSentinelUnifiedCaseDetail = function(caseId) {
     '<div style="display:flex;gap:6px;flex-wrap:wrap;">' +
       (typeof echoTogglePersonalPin === 'function' ? '<button type="button" onclick="echoTogglePersonalPin(\'ctx:case:' + cidJs + '\');typeof cardinalShowToast===\'function\'&&cardinalShowToast(\'' + toastPinJs + '\');" style="background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3);color:#f59e0b;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:11px;font-weight:600;">Pin</button>' : '') +
       '<button type="button" onclick="typeof cardinalOpenContextNote===\'function\'&&cardinalOpenContextNote(\'case\', \'' + cidJs + '\');" style="background:rgba(168,85,247,0.1);border:1px solid rgba(168,85,247,0.3);color:#a855f7;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:11px;font-weight:600;">Note</button>' +
+      '<button type="button" onclick="wqCreateOpen(\'case:' + cidJs + '\',\'Follow-up on #' + cidJs + '\',\'' + escJs(String(firstMem.summary || '').slice(0, 160)) + '\')" style="background:rgba(76,29,149,0.08);border:1px solid rgba(76,29,149,0.3);color:#4c1d95;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:11px;font-weight:600;">+ Create Ticket</button>' +
       '<button type="button" onclick="typeof cardinalShowToast===\'function\'&&cardinalShowToast(\'Case packet prepared for export (demo)\');" style="background:rgba(26,24,21,0.045);border:1px solid rgba(167, 167, 167,0.15);color:var(--chrome2);padding:6px 12px;border-radius:6px;cursor:pointer;font-size:11px;font-weight:600;">Export packet</button>' +
       '<button type="button" onclick="showScreen(\'compliance\', null);" style="background:rgba(167, 167, 167,0.06);border:1px solid rgba(167, 167, 167,0.2);color:var(--accent);padding:6px 12px;border-radius:6px;cursor:pointer;font-size:11px;font-weight:600;">Compliance →</button>' +
     '</div>' +
@@ -42592,7 +42797,7 @@ function mdmStampLensCard(lensKey, lensLabel, org, modelId) {
   var stamped = edoIsStamped(lensKey, org, model);
   var latest = edoLatestStampLogEntry(lensKey, org, modelId);
   var history = edoStampHistory(lensKey, org, modelId);
-  var sinceLabel = latest ? mdmStampFmtDate(latest.at) : (stamped ? 'Since onboarding (no changes logged this session)' : '—');
+  var sinceLabel = latest ? mdmStampFmtDate(latest.at) : (stamped ? 'onboarding (no changes logged this session)' : '—');
   var statusBadge = stamped
     ? '<span class="badge badge-green" style="font-size:9px">✓ Stamped</span>'
     : '<span class="badge" style="font-size:9px;background:rgba(180,190,220,.12);color:var(--muted)">Unstamped</span>';
@@ -42763,7 +42968,8 @@ function mdmPaintDrillInBody(det, resolvedKey) {
     storyHtml = '<section style="margin-bottom:16px;padding:14px 16px;border-radius:12px;background:rgba(168,85,247,0.04);border:1px solid rgba(168,85,247,0.2)">' +
       '<div style="font-size:10px;color:#a855f7;text-transform:uppercase;letter-spacing:.7px;font-weight:800;margin-bottom:6px">The story so far</div>' +
       '<div style="font-size:11.5px;color:var(--chrome2);line-height:1.65">' + bits.join(' ') + '</div>' +
-      '<div style="font-size:10.5px;color:var(--muted2);margin-top:6px">' + mdmEsc(eveLine) + '</div></section>';
+      '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-top:6px"><div style="font-size:10.5px;color:var(--muted2)">' + mdmEsc(eveLine) + '</div>' +
+      '<button type="button" onclick="wqCreateOpen(' + mdmEsc(JSON.stringify('model:' + sName)) + ',' + mdmEsc(JSON.stringify('Review ' + sName)) + ',' + mdmEsc(JSON.stringify(inc ? 'Open case ' + inc.caseId + ': ' + (inc.metricViolation || '') : '')) + ')" style="font-size:10.5px;padding:5px 10px;border-radius:7px;border:1px solid rgba(76,29,149,.3);background:rgba(76,29,149,.06);color:#4c1d95;font-weight:700;cursor:pointer">+ Create Ticket</button></div></section>';
   } catch (_story) { storyHtml = ''; }
 
   return (
@@ -43120,7 +43326,7 @@ window.openModelDetail = openModelDetail;
       <div id="mdm-breadcrumb" style="flex:0 0 auto;min-width:120px"></div>
       <div style="flex:1;min-width:200px;text-align:center">
         <div id="mdm-header-title" style="font-size:13px;font-weight:700;color:var(--chrome2)">Model</div>
-        <div style="font-size:9px;color:var(--muted);margin-top:2px">Cmd+K search \u00b7 Esc close</div>
+        <div style="font-size:9px;color:var(--muted);margin-top:2px">Cmd+K search · Esc close</div>
       </div>
       <div style="flex:0 1 280px;position:relative;min-width:200px">
         <input id="mdm-search-input" type="search" placeholder="Search models..." title="Search all models (Cmd+K)"
@@ -43129,7 +43335,7 @@ window.openModelDetail = openModelDetail;
         <div id="mdm-search-dd" style="display:none;position:absolute;left:0;right:0;top:100%;margin-top:4px;max-height:200px;overflow-y:auto;background:var(--card);border:1px solid var(--border2);border-radius:8px;z-index:10;box-shadow:0 8px 32px rgba(0,0,0,.45)"></div>
       </div>
       <span class="badge badge-green" id="mdm-header-badge" style="font-size:9px">Status</span>
-      <button type="button" onclick="closeModelDetail()" title="Close" style="background:transparent;border:none;color:var(--muted);cursor:pointer;font-size:20px;line-height:1;padding:4px">\u2715</button>
+      <button type="button" onclick="closeModelDetail()" title="Close" style="background:transparent;border:none;color:var(--muted);cursor:pointer;font-size:20px;line-height:1;padding:4px">✕</button>
     </div>
     <div id="mdm-body-scroll" style="flex:1;overflow-y:auto;padding:16px 18px 24px">
       <div id="mdm-body-inner"></div>
