@@ -23978,7 +23978,7 @@ function initHaloMap() {
 
       var countryNames = {
         '840':'United States of America','826':'United Kingdom','276':'Germany',
-        '250':'France','124':'Canada','392':'Japan','036':'Australia','36':'Australia',
+        '250':'France','124':'Canada','392':'Japan','036':'Australia','36':'Australia','372':'Ireland','702':'Singapore','410':'South Korea',
         '076':'Brazil','356':'India','156':'China','724':'Spain',
         '380':'Italy','643':'Russia','710':'South Africa','484':'Mexico'
       };
@@ -24003,6 +24003,13 @@ function initHaloMap() {
         fed: [['IRS agency briefing, OMB packet', 'Oct 18, 2026'], ['OMB M-25-21 impact assessment checkpoint', 'Oct 22, 2026'], ['OMB / OIRA submission target', 'Oct 24, 2026']]
       };
       var EU_NAMES = { 'Germany': 1, 'France': 1, 'Spain': 1, 'Italy': 1 };
+      function haloFootprint(name) {
+        var orgNow = (typeof currentOrg !== 'undefined' && currentOrg) || 'ad';
+        var r = (typeof cardinalGlobalFor === 'function') ? cardinalGlobalFor(orgNow, name) : null;
+        if (!r || !r.region) return null;
+        var c = { Heavy: [239, 68, 68], Moderate: [245, 158, 11], Light: [34, 197, 94] }[r.weight] || [148, 163, 184];
+        return { fill: 'rgba(' + c.join(',') + ',0.42)', stroke: 'rgb(' + c.join(',') + ')' };
+      }
       function haloCountryIntel(name) {
         var org = (typeof currentOrg !== 'undefined' && currentOrg) ? currentOrg : 'ad';
         var dl = function (pair) { var c = cardinalCountdownLabel(pair[1]); return pair[0] + ': ' + (/Overdue/.test(c) ? c.toLowerCase() : c === 'Today' ? 'due today' : 'in ' + c) + ' (' + cardinalFormatDeadline(pair[1]) + ')'; };
@@ -24020,6 +24027,17 @@ function initHaloMap() {
             risk: soonest <= 14 ? 'CRITICAL' : 'WATCH'
           };
         }
+        var fpRow = (typeof cardinalGlobalFor === 'function') ? cardinalGlobalFor(org, name) : null;
+        if (fpRow && fpRow.region) {
+          var laws = (typeof GL_LAW !== 'undefined' && GL_LAW[fpRow.region]) || [];
+          var nextLaw = laws.filter(function (l) { return l.status === 'Upcoming'; })[0];
+          return {
+            regs: laws.map(function (l) { return l.name + ': ' + l.status + (l.date ? ' (' + l.date + ')' : ''); }),
+            deadline: nextLaw ? nextLaw.name + ' (' + nextLaw.date + ')' : 'No upcoming deadline',
+            stats: fpRow.ops + ' · ' + fpRow.weight + ' regulation · ' + fpRow.applies,
+            risk: fpRow.status === 'Gap' ? 'GAP' : 'ON TRACK'
+          };
+        }
         if (EU_NAMES[name]) {
           var iso = ['ISO 42001 Renewal', 'Oct 29, 2026'];
           return { regs: ['EU AI Act transparency duties (Article 50): in force since Aug 2, 2026', 'EU AI Act high-risk obligations: Dec 2, 2027 (moved by the Digital Omnibus)', dl(iso), 'GDPR Article 22: in force'], deadline: dl(iso), stats: 'See Compliance, Global for what applies to your models here', risk: 'WATCH' };
@@ -24027,7 +24045,7 @@ function initHaloMap() {
         return countryInfo[name] || null;
       }
       function haloIntelHtml(name, info, pinned) {
-        var riskColor = info.risk === 'CRITICAL' ? '#ef4444' : info.risk === 'WATCH' ? '#f59e0b' : '#22c55e';
+        var riskColor = (info.risk === 'CRITICAL' || info.risk === 'GAP') ? '#ef4444' : info.risk === 'WATCH' ? '#f59e0b' : '#22c55e';
         return '<div style="font-size:13px;font-weight:700;color:#e2e8f0;margin-bottom:6px;">' + name + ' <span style="font-size:10px;background:' + riskColor + '22;color:' + riskColor + ';border:1px solid ' + riskColor + '44;border-radius:4px;padding:1px 6px;">' + info.risk + '</span></div>' +
           (info.stats ? '<div style="font-size:11px;color:#e2e8f0;font-weight:600;margin-bottom:6px;line-height:1.45">' + info.stats + '</div>' : '') +
           '<div style="font-size:10px;color:#f59e0b;margin-bottom:8px;">⏱ Next: ' + info.deadline + '</div>' +
@@ -24040,16 +24058,23 @@ function initHaloMap() {
         .enter()
         .append('path')
         .attr('d', path)
+        // 10/1 -- countries this org actually operates in (Compliance, Global) are colored by
+        // how heavily they regulate AI; everything else keeps the original styling.
         .attr('fill', function(d) {
           var name = countryNames[String(d.id)] || '';
+          var fp = haloFootprint(name);
+          if (fp) return fp.fill;
           return countryRisk[name] ? countryRisk[name].color : 'rgba(255,255,255,0.03)';
         })
         .attr('stroke', function(d) {
           var name = countryNames[String(d.id)] || '';
+          var fp = haloFootprint(name);
+          if (fp) return fp.stroke;
           return countryRisk[name] ? countryRisk[name].stroke : 'rgba(255,255,255,0.08)';
         })
         .attr('stroke-width', function(d) {
           var name = countryNames[String(d.id)] || '';
+          if (haloFootprint(name)) return 1.8;
           return countryRisk[name] && countryRisk[name].risk !== 'none' ? 1.5 : 0.5;
         })
         .style('cursor', 'pointer')
