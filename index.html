@@ -7845,6 +7845,7 @@ Template Overview
         <div class="tsv2-q-sub" id="tsv2-comp-sub">Composite score across 6 governance dimensions. Hover any dimension for methodology. Weights vary by industry. Click any dimension to expand rich detail or use the core link to navigate.</div>
       </div>
       <div style="display:flex;gap:8px;align-items:center;flex-shrink:0;flex-wrap:wrap">
+        <button type="button" class="btn-ghost" id="tsv2-comp-method" onclick="tsMethodOpen()" style="font-size:10px;padding:6px 10px">How it's calculated →</button>
         <button type="button" class="btn-ghost" id="tsv2-comp-expand-all" onclick="tsv2ExpandAllCompositionDims()" style="font-size:10px;padding:6px 10px">Expand All</button>
         <button type="button" class="btn-ghost" id="tsv2-comp-collapse-all" onclick="tsv2CollapseAllCompositionDims()" style="font-size:10px;padding:6px 10px">Collapse All</button>
       </div>
@@ -11351,8 +11352,8 @@ var CARDINAL_DATA = {
   health: {
     org: 'Sterling Health', user: 'Dr. Maya Osei', initials: 'MO',
     trustScore: 0.83, trustScoreDisplay: '83', trustColor: '#22c55e',
-    trustStatus: 'Within Compliance',
-    certStatus: 'Certified Cardinal: ACA 1557 Compliant',
+    trustStatus: 'Not Certified: Fairness Below Floor',
+    certStatus: 'Not certified: Fairness 64 is below the 70 floor',
     sentinelKpis: { leadLabel: '7.1 days', prevented: '18', exposureQ: '$2.4M' },
     biasScore: 64, fraudScore: 84, complianceScore: 77,
     biasDetection: '81%', fraudPrevention: '84%', compliance: '77%',
@@ -11376,7 +11377,7 @@ var CARDINAL_DATA = {
     disparity: '2.3x',
     regulation: 'ACA Section 1557: CMS audit in 30 days',
     certBlockers: [
-      {text:'Claims Adjudication v1.9: ACA 1557 violation → Awaiting CMO approval', fixScreen:'atonement'}
+      {text:'Fairness 64 is below the 70 certification floor: Claims Adjudication v1.9 ACA 1557 fix → Awaiting CMO approval', fixScreen:'atonement'}
     ],
     certProjected: null,
     peerComparison: 'Industry avg: 79 · Your score: 83 · 71st percentile',
@@ -11428,9 +11429,9 @@ var CARDINAL_DATA = {
     quarterlySummary: {
       quarter:'Q1 2026',
       paragraphs:[
-        'Sterling Health\'s Trust Score sits at 83, above certification threshold and 4 points above industry median. Claims Adjudication v1.9 was flagged in November for an ACA 1557 disparate impact concern: age_cost_proxy is producing a DI of 0.77, with 2,847 patient claims affected and 65+ patients carrying 2.1x denial concentration. Estimated regulatory exposure: $150M.',
+        'Sterling Health\'s Trust Score sits at 83, 4 points above industry median, but it is not certified: Fairness is at 64, below Cardinal\'s 70 floor. Claims Adjudication v1.9 was flagged in November for an ACA 1557 disparate impact concern: age_cost_proxy is producing a DI of 0.77, with 2,847 patient claims affected and 65+ patients carrying 2.1x denial concentration. Estimated regulatory exposure: $150M.',
         'Remediation is gated on CMO approval: Atonement has v1.10 ready to enter shadow deploy. CMS audit is 30 days out and the audit package is 70% prepared. HIPAA remains strong at 91.2%, and Triage Priority v2.0 is being watched closely for proxy drift but is not actively non-compliant.',
-        'What the board needs to know: certification is intact, but the ACA 1557 issue requires CMO sign-off this week to keep the CMS audit path clean. Recommend escalating CMO approval and finalizing CMS bundle.'
+        'What the board needs to know: one CMO sign-off on the Claims v1.9 fix lifts Fairness above the floor and earns certification, and it keeps the CMS audit path clean. Recommend escalating CMO approval and finalizing CMS bundle.'
       ]
     },
     disparityHeatmap: {
@@ -15006,7 +15007,7 @@ var CARDINAL_DATA_TS_EXT = {
     heatmapAxes: { rowLabel:'Age Bracket', colLabel:'Claim Type',
       rows:['18-30','31-50','51-64','65-74','75+'],
       cols:['Inpatient','Outpatient','Specialty','Emergency','Preventive'] },
-    quarterlySummary: 'Sterling Health Q1 2026 Trust Score is 83, above the 80 certification threshold and in the 71st percentile of healthcare peers. Cardinal ACA Section 1557 certification is active. The current open issue is Claims Adjudication v1.9, which Eden Core flagged in March for a 0.81 correlation between an age_cost_proxy feature and claim adjudication outcomes. 2,847 patient claims were affected, with a 2.3x disparity for patients 65 and older receiving specialty care. Total exposure is $150M ($65M ACA penalties, $85M CMS exclusion risk).\n\nRemediation is currently blocked awaiting CMO sign-off to begin shadow deployment: 0 of 2,847 claims re-evaluated to date. CMS audit deadline is in 30 days.\n\nRecommended board action: escalate CMO approval this week to start the Atonement shadow deploy and unblock the remediation cohort. Estimated full remediation completion June 1.',
+    quarterlySummary: 'Sterling Health Q1 2026 Trust Score is 83, in the 71st percentile of healthcare peers, but not yet certified because Fairness (64) is below the 70 floor. Cardinal ACA Section 1557 certification is active. The current open issue is Claims Adjudication v1.9, which Eden Core flagged in March for a 0.81 correlation between an age_cost_proxy feature and claim adjudication outcomes. 2,847 patient claims were affected, with a 2.3x disparity for patients 65 and older receiving specialty care. Total exposure is $150M ($65M ACA penalties, $85M CMS exclusion risk).\n\nRemediation is currently blocked awaiting CMO sign-off to begin shadow deployment: 0 of 2,847 claims re-evaluated to date. CMS audit deadline is in 30 days.\n\nRecommended board action: escalate CMO approval this week to start the Atonement shadow deploy and unblock the remediation cohort. Estimated full remediation completion June 1.',
     biasFactors: [
       {label:'age_cost_proxy correlation 0.81: DI 0.77 below threshold', proxyTerm:'age_cost_proxy'},
       {label:'Patients 65+ in specialty care: 2.3x claim denial'},
@@ -15197,8 +15198,8 @@ var CARDINAL_DATA_TS_V2 = {
     eveNarrativeByTimeframe: {
       daily:'As of today, September 25, Sterling Health’s Trust Score is 83. Claims Adjudication v1.9 remains in CMO-approved remediation with no new incidents in the last 24 hours. The CMS audit packet was submitted in August and is awaiting review.',
       monthly:'September held steady at 83. Claims Adjudication v1.9 received CMO sign-off in May and has been in active Atonement remediation since; the CMS audit packet was submitted in August. Recommend monitoring for the CMS response, expected within 45 days.',
-      quarterly:'Sterling Health Q3 2026 Trust Score is 83, above the 80 certification threshold and in the 71st percentile of healthcare peers. Cardinal ACA Section 1557 certification is active. Claims Adjudication v1.9, flagged in March for a 0.81 correlation between an age_cost_proxy feature and claim adjudication outcomes, received CMO sign-off in May and has been in active remediation since. The CMS audit packet was submitted in August, ahead of the internal review deadline.\n\nRemaining work: await CMS review response and complete final re-evaluation of the affected claims cohort.',
-      ytd:'Year-to-date, Trust Score has moved from 80 (May 2025) to 83 (September 2026), net +3 points despite an active ACA 1557 violation resolved mid-year. Cardinal certification is active. Sterling Health has been on Cardinal for 16 months; the platform caught the Claims v1.9 age_cost_proxy issue 9.4 days before any patient complaint surfaced, and CMO approval in May unblocked full remediation.'
+      quarterly:'Sterling Health Q3 2026 Trust Score is 83, in the 71st percentile of healthcare peers. Certification is on hold: Fairness (64) is below the 70 floor until the Claims v1.9 fix deploys. Claims Adjudication v1.9, flagged in March for a 0.81 correlation between an age_cost_proxy feature and claim adjudication outcomes, received CMO sign-off in May and has been in active remediation since. The CMS audit packet was submitted in August, ahead of the internal review deadline.\n\nRemaining work: await CMS review response and complete final re-evaluation of the affected claims cohort.',
+      ytd:'Year-to-date, Trust Score has moved from 80 (May 2025) to 83 (September 2026), net +3 points despite an active ACA 1557 violation. Certification is on hold until Fairness clears the 70 floor. Sterling Health has been on Cardinal for 16 months; the platform caught the Claims v1.9 age_cost_proxy issue 9.4 days before any patient complaint surfaced, and CMO approval in May unblocked full remediation.'
     }
   }
 };
@@ -15221,6 +15222,66 @@ var CARDINAL_DATA_TS_V2 = {
   } catch(_e) { if (window.console) console.warn('mergeCardinalDataV2', _e); }
 })();
 window.CARDINAL_DATA_TS_V2 = CARDINAL_DATA_TS_V2;
+
+// ════ ONE SCORECARD (9/30, Brittany's call) ════
+// Same yardstick in every industry (fairness is always the 0.80 disparate-impact rule, etc.).
+// Only the MIX changes by industry, and Cardinal sets it, not the client: FICO Auto/Bankcard
+// and MSCI ESG materiality both work this way. Part scores are tuned so weights x parts lands
+// exactly on each org's headline score. Certification = 80+ overall AND no part below 70
+// ("nothing Critical", the same 0.70 line Eden already uses), SOC 2 style: you can't hide
+// a critical fairness problem behind great privacy. Every screen reads from here.
+window.CARDINAL_SCORE_MODEL = {
+  threshold: 80,
+  floor: 70,
+  orgs: {
+    ad: { weights: { fairness: 25, fraud: 15, transparency: 10, privacy: 10, governance: 25, monitoring: 15 },
+      parts: { fairness: 67, fraud: 91, transparency: 78, privacy: 82, governance: 70, monitoring: 68 },
+      why: 'Defense: Title VII and DoD AI Ethics put fairness and governance (attestations, change control) at the top.' },
+    fin: { weights: { fairness: 30, fraud: 25, transparency: 15, privacy: 10, governance: 10, monitoring: 10 },
+      parts: { fairness: 74, fraud: 88, transparency: 85, privacy: 85, governance: 76, monitoring: 79 },
+      why: 'Lending: ECOA and fair-lending law make fairness count most, fraud close behind, and adverse-action notices drive transparency.' },
+    health: { weights: { fairness: 20, fraud: 15, transparency: 15, privacy: 30, governance: 10, monitoring: 10 },
+      parts: { fairness: 64, fraud: 84, transparency: 90, privacy: 89, governance: 88, monitoring: 86 },
+      why: 'Healthcare: HIPAA makes privacy count most; ACA Section 1557 keeps fairness close behind.' },
+    fed: { weights: { fairness: 25, fraud: 15, transparency: 25, privacy: 15, governance: 10, monitoring: 10 },
+      parts: { fairness: 54, fraud: 80, transparency: 74, privacy: 84, governance: 70, monitoring: 75 },
+      why: 'Federal: the May 2026 EO and OMB guidance put fairness and public transparency on equal footing.' }
+  }
+};
+window.cardinalScoreModel = function (org) { var M = window.CARDINAL_SCORE_MODEL; return M.orgs[org] || M.orgs.ad; };
+window.cardinalScoreFromParts = function (org, parts, weights) {
+  var m = cardinalScoreModel(org); parts = parts || m.parts; weights = weights || m.weights;
+  var tw = 0, s = 0;
+  Object.keys(weights).forEach(function (k) { tw += weights[k]; s += weights[k] * (parts[k] || 0); });
+  return tw ? s / tw : 0;
+};
+var CARDINAL_PART_NAMES = { fairness: 'Fairness', fraud: 'Fraud Integrity', transparency: 'Transparency', privacy: 'Privacy', governance: 'Governance', monitoring: 'Monitoring' };
+// score: optional live score (drifts); defaults to the org's headline
+window.cardinalCertStatus = function (org, score) {
+  var M = window.CARDINAL_SCORE_MODEL, m = cardinalScoreModel(org);
+  if (score == null) { var d = (window.CARDINAL_DATA || {})[org]; score = d ? parseInt(d.trustScoreDisplay, 10) : Math.round(cardinalScoreFromParts(org)); }
+  if (score > 0 && score <= 1) score = score * 100;
+  var below = Object.keys(m.parts).filter(function (k) { return m.parts[k] < M.floor; }).map(function (k) { return { key: k, name: CARDINAL_PART_NAMES[k] || k, score: m.parts[k] }; });
+  var overOk = score >= M.threshold;
+  var certified = overOk && !below.length;
+  var reason = certified ? 'Certified' : !overOk ? 'Below ' + M.threshold + ': Not Certified' : 'Not Certified: ' + below.map(function (b) { return b.name + ' ' + b.score; }).join(', ') + ' below the ' + M.floor + ' floor';
+  return { certified: certified, overOk: overOk, below: below, reason: reason, score: score };
+};
+(function applyCardinalScoreModel() {
+  try {
+    Object.keys(window.CARDINAL_SCORE_MODEL.orgs).forEach(function (o) {
+      var m = window.CARDINAL_SCORE_MODEL.orgs[o];
+      if (window.CARDINAL_DATA && CARDINAL_DATA[o]) {
+        CARDINAL_DATA[o].scoreWeights = Object.assign({}, m.weights);
+        CARDINAL_DATA[o].dimensionScores = Object.assign({}, m.parts);
+      }
+      if (typeof INDUSTRY_SCORES !== 'undefined') INDUSTRY_SCORES[o] = Object.assign({}, m.parts);
+      if (typeof INDUSTRY_DIMENSIONS !== 'undefined' && INDUSTRY_DIMENSIONS[o]) {
+        INDUSTRY_DIMENSIONS[o].forEach(function (dim) { if (m.weights[dim.id] != null) dim.weight = m.weights[dim.id] / 100; });
+      }
+    });
+  } catch (_sm) { if (window.console) console.warn('applyCardinalScoreModel', _sm); }
+})();
 
 // ════ Master revision — workspace data (May 1, 2026 afternoon) ════
 function _buildCardinalDataMaster() {
@@ -15558,7 +15619,7 @@ function cdCriticalCasesLabel(n) {
 // (sidebar, topbar, trust score panel, certification card etc.)
 function formatDashTrustStatusHtml(d) {
   if (!d) return '';
-  var certified = d.trustScore >= 0.80;
+  var certified = cardinalCertStatus(window.currentOrg || 'ad', Math.round(d.trustScore * 100)).certified;
   var cs = d.certStatus != null ? String(d.certStatus) : '';
   var posCert = cs && /^certified/i.test(cs) && !/^not\b/i.test(cs.trim());
   var esc = function (s) {
@@ -15685,7 +15746,7 @@ function applyCardinalData(org) {
   try { animateTrustScore(d.trustScore, d.trustColor); } catch(_a) {}
   try { dashAnimateTrustBar(parseInt(d.trustScoreDisplay, 10), d.trustColor); } catch(_b) {}
 
-  var certified = d.trustScore >= 0.80;
+  var certified = cardinalCertStatus(window.currentOrg || 'ad', Math.round(d.trustScore * 100)).certified;
   var blkWrap = document.getElementById('dr-trust-blocking-wrap');
   if (blkWrap) {
     var blockers = Array.isArray(d.certBlockers) ? d.certBlockers : [];
@@ -17267,11 +17328,12 @@ function dashSyncAllTrustScoreDisplays(value, delta) {
     navBadge.style.background = tier.bg || 'rgba(148,163,184,0.15)';
   }
   var trustSub = document.getElementById('dash-trust-sub');
-  if (trustSub) trustSub.textContent = v >= 80 ? '✓ Certified' : 'Below 80: Not Certified';
+  var vCert = cardinalCertStatus(window.currentOrg || 'ad', v);
+  if (trustSub) trustSub.textContent = vCert.certified ? '✓ Certified' : vCert.reason;
   var tsCertBadge = document.getElementById('ts-cert-badge');
   if (tsCertBadge) {
-    tsCertBadge.textContent = v >= 80 ? 'Certified ✓' : 'Not Certified';
-    tsCertBadge.className = 'badge ' + (v >= 80 ? 'badge-green' : 'badge-amber');
+    tsCertBadge.textContent = vCert.certified ? 'Certified ✓' : 'Not Certified';
+    tsCertBadge.className = 'badge ' + (vCert.certified ? 'badge-green' : 'badge-amber');
   }
   // The progress bar and status line on the Dashboard's Global Trust Score panel weren't
   // wired to the drift/cycle at all — the number and label would change color but the bar
@@ -17284,8 +17346,9 @@ function dashSyncAllTrustScoreDisplays(value, delta) {
   if (trustLabel) {
     var iconWarn = '<svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true" style="flex-shrink:0"><path d="M7 1.5L1.5 12.5h11L7 1.5z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M7 5.5v3M7 10v.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>';
     var iconCheck = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" style="flex-shrink:0"><path d="M20 6L9 17l-5-5"/></svg>';
-    var certified = v >= 80;
-    trustLabel.innerHTML = '<span class="dash-trust-status-inner" style="display:inline-flex;align-items:center;gap:8px">' + (certified ? iconCheck : iconWarn) + '<span>' + (certified ? 'Certified' : (v >= 70 ? 'Below Threshold: Not Certified' : 'Critical: Immediate Action Required')) + '</span></span>';
+    var vc2 = cardinalCertStatus(window.currentOrg || 'ad', v);
+    var certified = vc2.certified;
+    trustLabel.innerHTML = '<span class="dash-trust-status-inner" style="display:inline-flex;align-items:center;gap:8px">' + (certified ? iconCheck : iconWarn) + '<span>' + (certified ? 'Certified' : (vc2.overOk ? vc2.reason : v >= 70 ? 'Below Threshold: Not Certified' : 'Critical: Immediate Action Required')) + '</span></span>';
     trustLabel.style.color = color;
   }
   // Bias/fraud/compliance move together with the headline number, by the same absolute
@@ -17591,7 +17654,7 @@ function dashApplyExecutiveCards(org) {
       );
     }
     var score = parseInt(cdata.trustScoreDisplay, 10);
-    var certified = score >= 80;
+    var certified = cardinalCertStatus(window.currentOrg || 'ad', score).certified;
     var hasWarning = certified && cdata.activeIncidents && cdata.activeIncidents > 0;
     var borderStyle = '';
     var inner = '';
@@ -22118,12 +22181,13 @@ function loadIndustry(org) {
    safeSet('computed-score', score);
    safeStyle('computed-score', 'color', sc);
  }
- safeSet('dash-trust-sub', score >= 80 ? '✓ Certified' : 'Below 80: Not Certified');
+ var scCert = cardinalCertStatus(currentOrg || 'ad', score);
+ safeSet('dash-trust-sub', scCert.certified ? '✓ Certified' : scCert.reason);
 
  // cert-badge is a hidden placeholder — write to ts-cert-badge instead (the visible one in trustscore screen)
  const tsCertBadge = document.getElementById('ts-cert-badge');
  if (tsCertBadge) {
-   if (score >= 80) {
+   if (scCert.certified) {
      tsCertBadge.textContent = 'Certified ✓';
      tsCertBadge.className = 'badge badge-green';
    } else {
@@ -22237,12 +22301,13 @@ function updateDim(id, val) {
  if(el) { el.textContent = score; el.style.color = sc; }
  });
 
- document.getElementById('dash-trust-sub').textContent = score>=80?'✓ Certified':'Below 80: Not Certified';
+ const lcCert = cardinalCertStatus(currentOrg || 'ad', score);
+ document.getElementById('dash-trust-sub').textContent = lcCert.certified?'✓ Certified':lcCert.reason;
 
  const cb = document.getElementById('cert-badge');
  if(cb) {
- cb.textContent = score>=80?'Certified ✓':'Not Certified';
- cb.style.cssText = score>=80?'background:rgba(34,197,94,0.12);color:#22C55E;border:1px solid rgba(34,197,94,0.2)':'background:rgba(245,158,11,0.12);color:#F59E0B;border:1px solid rgba(245,158,11,0.2)';
+ cb.textContent = lcCert.certified?'Certified ✓':'Not Certified';
+ cb.style.cssText = lcCert.certified?'background:rgba(34,197,94,0.12);color:#22C55E;border:1px solid rgba(34,197,94,0.2)':'background:rgba(245,158,11,0.12);color:#F59E0B;border:1px solid rgba(245,158,11,0.2)';
  }
 
  if(id==='fairness') {
@@ -31360,7 +31425,7 @@ function echoRenderScoreHistoryTab() {
     },
     health: {
       orgName: 'Mercy Health Network',
-      currentScore: 83, certThreshold: 80, certified: true,
+      currentScore: 83, certThreshold: 80, certified: false,
       months: [
         { m: '2025-06', score: 79, event: 'Baseline · pre-ACA §1557 attestation' },
         { m: '2025-07', score: 80, event: 'Triage v1.8 deployed · monitoring uplift' },
@@ -36734,7 +36799,7 @@ function buildTrustScore(org) {
         {text:'New ACA 1557 enforcement',risk:-2.5},
         {text:'Diagnostic Assist drift',risk:-1.5}
       ],
-      monthly:'April improved +1 on transparency gains. Claims Adjudication remediation is two-thirds complete. Score remains certified throughout the quarter.',
+      monthly:'April improved +1 on transparency gains. Claims Adjudication remediation is two-thirds complete. Score stays above 80, but certification is on hold while Fairness sits below the 70 floor.',
       quarterly:'Q2 is the strongest quarter on record, score has moved from 80 to 83 with no regressions. ACA 1557 is the only durable risk to monitor.',
       models:[{name:'Claims Adjudication v1.9',score:79,di:'0.89',status:'Watch',c:'amber',weight:'40%'},{name:'Diagnostic Assist v2.3',score:88,di:'0.94',status:'Passing',c:'green',weight:'35%'},{name:'Drug Interaction v1.0',score:91,di:'0.96',status:'Passing',c:'green',weight:'25%'}],
       week:[82,82,83,83,82,83,83],
@@ -36761,7 +36826,7 @@ function buildTrustScore(org) {
       d.fairness = cdata.biasScore;
       d.fraud = cdata.fraudScore;
       d.governance = cdata.complianceScore;
-      d.certified = d.global >= 80;
+      d.certified = cardinalCertStatus(org, d.global).certified;
     }
   } catch (_cdo) {}
   window.__tsData = d;
@@ -37979,7 +38044,7 @@ function renderTrustScoreStandalone(org) {
         { name: 'Triage Priority v2.0', score: 86, di: '0.88', status: 'Passing', c: '#22c55e', weight: '30%' },
         { name: 'Diagnosis Support v2.4', score: 91, di: '0.95', status: 'Passing', c: '#22c55e', weight: '30%' }
       ],
-      monthly: 'May continues healthcare\'s upward trajectory: Claims v1.10 promotion held DI improvements through full production. Mercy Health remains the only certified Cardinal pilot. Next certification renewal: July 7.',
+      monthly: 'May continues healthcare\'s upward trajectory: Claims v1.10 promotion held DI improvements through full production. Certification waits on Fairness clearing the 70 floor. Next certification renewal: July 7.',
       year: [76, 77, 78, 79, 80, 80, 81, 82, 82, 83, 83, 83]
     },
     fed: {
@@ -38009,6 +38074,7 @@ function renderTrustScoreStandalone(org) {
   };
 
   var d = DATA_BY_ORG[o] || DATA_BY_ORG.ad;
+  try { d.dims = Object.assign({}, cardinalScoreModel(o).parts); d.certified = cardinalCertStatus(o, d.global).certified; } catch (_dbo) {}
   var scoreColor = d.global >= 80 ? '#22c55e' : d.global >= 70 ? '#f59e0b' : '#ef4444';
   var statusLabel = d.certified ? 'Certified' : (d.global >= 80 ? 'Certifiable' : 'Below Threshold: Not Certified');
   var trendArrow = d.trend > 0 ? '↑' : d.trend < 0 ? '↓' : '→';
@@ -38279,7 +38345,8 @@ function tsv2BuildHero(d, org) {
 
   var certWrap = document.getElementById('tsv2-cert-badge-wrap');
   if (certWrap) {
-    var isCertified = !!(d.certStatus && /^certified/i.test(d.certStatus) && !/not.+certified/i.test(d.certStatus));
+    var tsCert = cardinalCertStatus(window.__tsv2Org || window.currentOrg || 'ad');
+    var isCertified = tsCert.certified && !!(d.certStatus && /^certified/i.test(d.certStatus) && !/not.+certified/i.test(d.certStatus));
     if (isCertified) {
       var renewLine = d.certRenewal ? ' · Active, renews ' + d.certRenewal : ' · Active';
       certWrap.innerHTML =
@@ -38291,7 +38358,7 @@ function tsv2BuildHero(d, org) {
       certWrap.innerHTML =
         '<div class="tsv2-cert-badge amber" id="tsv2-cert-badge-el">' +
           '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/></svg>' +
-          '<span>Not Certified: 80+ Required</span>' +
+          '<span>' + (tsCert.overOk ? tsCert.reason : 'Not Certified: 80+ Required') + '</span>' +
         '</div>';
     }
   }
@@ -38592,6 +38659,71 @@ function tsv2CollapseAllCompositionDims() {
   });
 }
 window.tsv2CollapseAllCompositionDims = tsv2CollapseAllCompositionDims;
+
+// 9/30 -- "How it's calculated": the methodology made visible, plus a what-if simulator.
+// The certified score always uses Cardinal's published industry weights (comparable across
+// companies, like FICO); the simulator is an internal lens only and never changes the score.
+window.__tsMethodSim = null;
+function tsMethodOpen() {
+  var org = window.currentOrg || 'ad';
+  var m = cardinalScoreModel(org);
+  window.__tsMethodSim = Object.assign({}, m.weights);
+  var el = document.getElementById('ts-method-modal');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'ts-method-modal';
+    el.style.cssText = 'display:none;position:fixed;inset:0;z-index:9996;background:rgba(4,7,13,.85);align-items:center;justify-content:center';
+    el.onclick = function (e) { if (e.target === el) el.style.display = 'none'; };
+    document.body.appendChild(el);
+  }
+  el.style.display = 'flex';
+  tsMethodRender();
+}
+function tsMethodRender() {
+  var org = window.currentOrg || 'ad';
+  var M = window.CARDINAL_SCORE_MODEL, m = cardinalScoreModel(org), sim = window.__tsMethodSim;
+  var cert = cardinalCertStatus(org);
+  var orgName = { ad: 'Atlas Defense Systems', fin: 'Blackmoor Wealth Group', health: 'Sterling Health', fed: 'IRS Tax Compliance Division' }[org] || '';
+  var keys = Object.keys(m.weights);
+  var official = cardinalScoreFromParts(org);
+  var simScore = cardinalScoreFromParts(org, null, sim);
+  var simTotal = keys.reduce(function (s, k) { return s + (+sim[k] || 0); }, 0);
+  var col = function (s) { return s >= 80 ? '#16a34a' : s >= 70 ? '#b45309' : '#dc2626'; };
+  var rows = keys.map(function (k) {
+    var p = m.parts[k], w = m.weights[k];
+    return '<tr style="border-bottom:1px solid var(--border2)">' +
+      '<td style="padding:7px 6px;font-weight:600;color:var(--chrome2)">' + CARDINAL_PART_NAMES[k] + (p < M.floor ? ' <span style="font-size:9px;color:#dc2626;font-weight:800">BELOW FLOOR</span>' : '') + '</td>' +
+      '<td style="padding:7px 6px;text-align:right;font-weight:700;color:' + col(p) + '">' + p + '</td>' +
+      '<td style="padding:7px 6px;text-align:right;color:var(--muted2)">× ' + w + '%</td>' +
+      '<td style="padding:7px 6px;text-align:right;color:var(--chrome2)">= ' + (p * w / 100).toFixed(1) + '</td>' +
+      '<td style="padding:7px 6px;width:150px"><input type="range" min="0" max="50" value="' + sim[k] + '" oninput="window.__tsMethodSim[\'' + k + '\']=+this.value;tsMethodRender()" style="width:100%"></td>' +
+      '<td style="padding:7px 6px;text-align:right;color:var(--muted);font-size:10px;width:34px">' + sim[k] + '%</td></tr>';
+  }).join('');
+  var simCert = simScore >= M.threshold && !cert.below.length;
+  document.getElementById('ts-method-modal').innerHTML =
+    '<div style="background:var(--card);border:1px solid var(--border2);border-radius:16px;width:760px;max-width:94vw;max-height:88vh;overflow:auto;box-shadow:0 8px 40px rgba(0,0,0,.6)">' +
+    '<div style="position:relative;padding:18px 22px;border-bottom:1px solid var(--border);background:var(--bg2)">' +
+    '<div style="font-size:10px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.6px">' + orgName + ' · Trust Score methodology</div>' +
+    '<div style="font-size:16px;font-weight:700;color:var(--chrome2);margin-top:3px">How your ' + Math.round(official) + ' is calculated</div>' +
+    '<button type="button" onclick="document.getElementById(\'ts-method-modal\').style.display=\'none\'" style="position:absolute;top:14px;right:16px;background:none;border:0;font-size:18px;color:var(--muted);cursor:pointer">×</button></div>' +
+    '<div style="padding:16px 22px 22px">' +
+    '<div style="font-size:11.5px;color:var(--chrome2);line-height:1.6;margin-bottom:12px"><strong>Same yardstick, industry-specific mix.</strong> Every company is measured on the same six parts, the same way (fairness is always the 0.80 disparate-impact rule). Only how much each part counts changes by industry, set by Cardinal, never by the client. Credit scores (FICO Auto vs. Bankcard) and ESG ratings (MSCI) work the same way. ' + m.why + '</div>' +
+    '<table style="width:100%;border-collapse:collapse;font-size:11.5px"><thead><tr style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;text-align:left">' +
+    '<th style="padding:6px">Part</th><th style="padding:6px;text-align:right">Score</th><th style="padding:6px;text-align:right">Weight</th><th style="padding:6px;text-align:right">Counts</th><th style="padding:6px" colspan="2">What-if weight</th></tr></thead><tbody>' + rows +
+    '<tr><td style="padding:9px 6px;font-weight:800;color:var(--chrome2)">Trust Score</td><td></td><td></td><td style="padding:9px 6px;text-align:right;font-weight:800;font-size:14px;color:' + col(official) + '">' + Math.round(official) + '</td><td colspan="2"></td></tr></tbody></table>' +
+    '<div style="margin-top:14px;padding:12px 14px;border-radius:10px;border:1px solid ' + (cert.certified ? 'rgba(22,163,74,.3)' : 'rgba(220,38,38,.3)') + ';background:' + (cert.certified ? 'rgba(22,163,74,.05)' : 'rgba(220,38,38,.04)') + '">' +
+    '<div style="font-size:11px;font-weight:800;color:' + (cert.certified ? '#16a34a' : '#dc2626') + '">' + (cert.certified ? '✓ Certified' : '✕ ' + cert.reason) + '</div>' +
+    '<div style="font-size:11px;color:var(--muted2);margin-top:4px;line-height:1.55">Certification needs <strong>both</strong>: ' + M.threshold + '+ overall, and <strong>no part below ' + M.floor + '</strong> (nothing Critical). A strong score can\'t hide one critical problem.' +
+    (cert.below.length ? ' To certify: bring ' + cert.below.map(function (b) { return b.name + ' from ' + b.score + ' to ' + M.floor; }).join(' and ') + '.' : '') + '</div></div>' +
+    '<div style="margin-top:14px;padding:12px 14px;border-radius:10px;background:var(--bg3);border:1px solid var(--border2)">' +
+    '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><div style="font-size:11px;font-weight:800;color:var(--chrome2)">What if you weighted it differently?</div>' +
+    '<button type="button" onclick="window.__tsMethodSim=Object.assign({},cardinalScoreModel(window.currentOrg||\'ad\').weights);tsMethodRender()" style="font-size:10px;padding:4px 10px;border-radius:6px;border:1px solid var(--border2);background:transparent;color:var(--accent);cursor:pointer">Reset to Cardinal weights</button></div>' +
+    '<div style="font-size:12px;color:var(--chrome2);margin-top:6px">Your what-if score: <strong style="font-size:16px;color:' + col(simScore) + '">' + simScore.toFixed(1) + '</strong> <span style="color:var(--muted);font-size:10.5px">(weights total ' + simTotal + '%, rescaled to 100)</span>' + (simCert !== cert.certified ? ' · <span style="color:var(--muted2)">would ' + (simCert ? '' : 'not ') + 'clear certification</span>' : '') + '</div>' +
+    '<div style="font-size:10.5px;color:var(--muted);margin-top:6px;line-height:1.5">Internal view only. Your official, certified score always uses Cardinal\'s published weights so it means the same thing as every other company\'s, and the 70 floor applies no matter how you weight it.</div></div>' +
+    '</div></div>';
+}
+window.tsMethodOpen = tsMethodOpen;
+window.tsMethodRender = tsMethodRender;
 
 function tsv2BuildComposition(d) {
   var list = document.getElementById('tsv2-dim-list');
@@ -43124,7 +43256,8 @@ function cardinalAskAnswer(msgRaw, org) {
     return orgModels.length + ' models registered: ' + orgModels.map(function (m) { return m.name + ' (' + m.status + ', Trust ' + m.trustScore + ')'; }).join(', ') + '.';
   }
   if (/certif/.test(msg) && d) {
-    return 'Trust Score ' + d.trustScoreDisplay + ': ' + (Number(d.trustScoreDisplay) >= 80 ? 'certified (80+ required).' : 'not certified yet. 80 is required, so you need ' + (80 - Number(d.trustScoreDisplay)) + ' more points.') + (d.penaltyBasis ? ' Main drag: ' + d.penaltyBasis + '.' : '');
+    var akc = cardinalCertStatus(org, Number(d.trustScoreDisplay));
+    return 'Trust Score ' + d.trustScoreDisplay + ': ' + (akc.certified ? 'certified (80+ overall, nothing below 70).' : !akc.overOk ? 'not certified yet. 80 is required, so you need ' + (80 - Number(d.trustScoreDisplay)) + ' more points.' : 'not certified. The score clears 80, but ' + akc.below.map(function (b) { return b.name.toLowerCase() + ' (' + b.score + ')'; }).join(' and ') + ' is below the 70 floor. Cardinal won\'t certify while any part is Critical.') + (d.penaltyBasis ? ' Main drag: ' + d.penaltyBasis + '.' : '');
   }
   if (msg.indexOf('bias') !== -1 || msg.indexOf('discriminat') !== -1) { if (r) return r.bias; }
   if (msg.indexOf('fraud') !== -1) { if (r) return r.fraud; }
