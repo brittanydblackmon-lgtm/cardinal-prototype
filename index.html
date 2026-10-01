@@ -6954,6 +6954,7 @@ Halo Core
 <div style="display:flex;gap:2px;margin-bottom:16px;background:var(--bg3);border-radius:10px;padding:4px">
 <button class="comp-tab active" id="comp-tab-overview" onclick="switchCompTab('overview')" style="flex:1;padding:8px;border-radius:8px;border:none;background:var(--card);color:var(--text);font-size:11px;font-weight:600;cursor:pointer;font-family:var(--sans)">Overview</button>
 <button class="comp-tab" id="comp-tab-regulations" onclick="switchCompTabLegacy('regulations')" style="flex:1;padding:8px;border-radius:8px;border:none;background:transparent;color:var(--muted);font-size:11px;cursor:pointer;font-family:var(--sans)">Regulations</button>
+<button class="comp-tab" id="comp-tab-global" onclick="switchCompTab('global')" style="flex:1;padding:8px;border-radius:8px;border:none;background:transparent;color:var(--muted);font-size:11px;cursor:pointer;font-family:var(--sans)">Global</button>
 <button class="comp-tab" id="comp-tab-calendar" onclick="switchCompTab('calendar')" style="flex:1;padding:8px;border-radius:8px;border:none;background:transparent;color:var(--muted);font-size:11px;cursor:pointer;font-family:var(--sans)">Compliance Calendar</button>
 <button class="comp-tab" id="comp-tab-reporting" onclick="switchCompTab('reporting')" style="flex:1;padding:8px;border-radius:8px;border:none;background:transparent;color:var(--muted);font-size:11px;cursor:pointer;font-family:var(--sans)">Reporting</button>
 <button class="comp-tab" id="comp-tab-audit" onclick="switchCompTab('audit')" style="flex:1;padding:8px;border-radius:8px;border:none;background:transparent;color:var(--muted);font-size:11px;cursor:pointer;font-family:var(--sans)">Audit Trail</button>
@@ -7216,6 +7217,7 @@ Showing: <span id="comp-map-filter-region">All</span>
 </div>
 
 <!-- COMPLIANCE CALENDAR TAB -->
+<div id="comp-content-global" style="display:none"></div>
 <div id="comp-content-calendar" style="display:none">
 <div style="font-size:13px;font-weight:600;color:var(--chrome2);margin-bottom:4px">Compliance Calendar</div>
 <div style="font-size:10px;color:var(--muted);margin-bottom:14px">Upcoming regulatory deadlines and compliance milestones</div>
@@ -23225,8 +23227,101 @@ function buildDashHeatmap() {
 }
 
 
+// ════ GLOBAL COMPLIANCE MAP (10/1) ════
+// Where each demo company operates outside the US, how heavily each place regulates AI, which
+// rules actually apply to that company's models, and what Cardinal covers. Law facts and
+// dates are real (White & Case AI Watch; EU Digital Omnibus in force Jul 27, 2026) and are
+// shown as fixed calendar dates, not the rolling demo deadlines.
+var GL_LAW = {
+  eu: [
+    { name: 'EU AI Act: prohibited practices', status: 'In force', date: 'Feb 2, 2025' },
+    { name: 'EU AI Act: general-purpose AI rules', status: 'In force', date: 'Aug 2, 2025' },
+    { name: 'EU AI Act: transparency duties (Article 50)', status: 'In force', date: 'Aug 2, 2026' },
+    { name: 'EU AI Act: high-risk obligations (Annex III)', status: 'Upcoming', date: 'Dec 2, 2027', note: 'Moved from Aug 2, 2026 by the Digital Omnibus (in force Jul 27, 2026)' },
+    { name: 'GDPR Article 22: limits on solely automated decisions', status: 'In force', date: 'May 25, 2018' }
+  ],
+  uk: [
+    { name: 'No AI-specific law: five principles applied by existing regulators (ICO, FCA, CMA, MHRA)', status: 'In force', date: '' },
+    { name: 'UK GDPR automated decision rules, updated by the Data (Use and Access) Act 2025', status: 'In force', date: 'Jun 19, 2025' }
+  ],
+  ca: [
+    { name: 'No federal AI law: AIDA died with Bill C-27', status: 'Lapsed', date: 'Jan 6, 2025' },
+    { name: 'Quebec Law 25: tell people when a decision is made solely by automated processing', status: 'In force', date: 'Sep 22, 2023' },
+    { name: 'PIPEDA + voluntary code for generative AI', status: 'In force', date: '' }
+  ],
+  sg: [
+    { name: 'No AI law: Model AI Governance Framework + AI Verify testing (voluntary)', status: 'Voluntary', date: '' },
+    { name: 'MAS FEAT principles for AI in financial services', status: 'Supervisory', date: '' }
+  ],
+  au: [
+    { name: 'No AI law: voluntary AI safety standard', status: 'Voluntary', date: '' },
+    { name: 'Privacy Act: automated decision transparency in privacy policies', status: 'Upcoming', date: 'Dec 10, 2026' }
+  ],
+  kr: [
+    { name: 'AI Basic Act: high-impact AI duties, transparency, local representative for foreign firms', status: 'In force', date: 'Jan 22, 2026' }
+  ]
+};
+var GL_WEIGHT = { Heavy: '#DC2626', Moderate: '#B45309', Light: '#15803D', 'US only': '#64748B' };
+var CARDINAL_GLOBAL_FOOTPRINT = {
+  ad: [
+    { country: 'Germany', iso: '276', region: 'eu', weight: 'Heavy', ops: 'NATO program office, 140 civilian staff', applies: 'Military uses are outside the EU AI Act, but Personnel Assignment for civilian staff counts as high-risk (employment, Annex III).', covers: 'Eden bias testing and Trust Ledger records produce the high-risk technical file before Dec 2, 2027.', status: 'On track' },
+    { country: 'United Kingdom', iso: '826', region: 'uk', weight: 'Moderate', ops: 'Joint program with UK MOD', applies: 'UK GDPR automated-decision rules for assignment decisions, plus MOD JSP 936 (dependable AI in defence) expectations.', covers: 'Decision Receipts show the human review and reasons behind each assignment.', status: 'On track' },
+    { country: 'Australia', iso: '036', region: 'au', weight: 'Light', ops: 'AUKUS maintenance partner', applies: 'Privacy policies must explain automated decisions from Dec 10, 2026.', covers: 'Lucid Layer generates the plain-language disclosure for Maintenance Routing.', status: 'Gap' }
+  ],
+  fin: [
+    { country: 'Ireland', iso: '372', region: 'eu', weight: 'Heavy', ops: 'EU lending hub (Dublin)', applies: 'Credit Scoring is high-risk under the EU AI Act (creditworthiness, Annex III) and covered by GDPR Article 22.', covers: 'Eden fairness testing, Genesis counterfactual proof, and Trust Ledger records map to the Annex III technical file.', status: 'Gap' },
+    { country: 'United Kingdom', iso: '826', region: 'uk', weight: 'Moderate', ops: 'Wealth management (London)', applies: 'FCA Consumer Duty fair-outcome testing plus UK GDPR automated-decision rules.', covers: 'Protected-group outcome reports from Eden support the Consumer Duty evidence pack.', status: 'On track' },
+    { country: 'Singapore', iso: '702', region: 'sg', weight: 'Light', ops: 'APAC private banking', applies: 'MAS FEAT principles (fairness, ethics, accountability, transparency) for credit models.', covers: 'Trust Score dimensions map one-to-one to FEAT; AI Verify-style test results export from Genesis.', status: 'On track' },
+    { country: 'Canada', iso: '124', region: 'ca', weight: 'Moderate', ops: 'Montreal client office', applies: 'Quebec Law 25: applicants must be told when a credit decision is made solely by automated processing.', covers: 'Adverse-action notices from Decision Receipts include the automated-decision disclosure.', status: 'On track' }
+  ],
+  health: [
+    { country: 'Ireland', iso: '372', region: 'eu', weight: 'Heavy', ops: 'EU claims operations', applies: 'Health insurance risk and pricing models are high-risk under Annex III (Dec 2, 2027); AI in medical devices follows Annex I (Aug 2, 2028).', covers: 'Claims Adjudication fairness testing and shadow-deploy evidence feed the conformity file.', status: 'Gap' },
+    { country: 'Canada', iso: '124', region: 'ca', weight: 'Moderate', ops: 'Ontario and Quebec networks', applies: 'Quebec Law 25 automated-decision notice, plus provincial health privacy law.', covers: 'Cardinal Passport gives each patient their decision record and reasons.', status: 'On track' },
+    { country: 'United Kingdom', iso: '826', region: 'uk', weight: 'Moderate', ops: 'Diagnostic partnership', applies: 'MHRA rules for AI as a medical device, plus UK GDPR automated-decision rules.', covers: 'Model lineage in Echo documents every Diagnostic Assist version.', status: 'On track' }
+  ],
+  fed: [
+    { country: 'United States only', iso: '840', region: null, weight: 'US only', ops: 'No foreign operations', applies: 'Federal agencies follow OMB M-25-21. The US signed the Council of Europe AI Framework Convention (Sept 2024); its status under the current administration is unclear.', covers: 'Impact assessment, pre-deployment testing, and appeals evidence for M-25-21.', status: 'On track' }
+  ]
+};
+function glDateTag(d) {
+  if (!d) return '';
+  var dt = cardinalParseDate(d);
+  if (!dt) return d;
+  var n = cardinalDaysBetween(dt, new Date());
+  return d + (n > 0 ? ' (in ' + cardinalPluralDays(n) + ')' : '');
+}
+function buildCompGlobal(org) {
+  var el = document.getElementById('comp-content-global');
+  if (!el) return;
+  org = org || window.currentOrg || 'ad';
+  var rows = CARDINAL_GLOBAL_FOOTPRINT[org] || [];
+  var esc = function (s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;'); };
+  var SC = { 'In force': '#15803D', Upcoming: '#B45309', Lapsed: '#64748B', Voluntary: '#2563EB', Supervisory: '#2563EB' };
+  var gaps = rows.filter(function (r) { return r.status === 'Gap'; }).length;
+  el.innerHTML = '<div style="margin-bottom:12px"><div style="font-size:14px;font-weight:700;color:var(--chrome2)">Global Compliance: where you operate outside the US</div>' +
+    '<div style="font-size:11px;color:var(--muted);margin-top:3px">' + rows.length + ' jurisdiction' + (rows.length === 1 ? '' : 's') + (gaps ? ' · <strong style="color:#DC2626">' + gaps + ' gap' + (gaps === 1 ? '' : 's') + '</strong>' : ' · no gaps') + '. Real laws and dates (source: White &amp; Case AI Watch, EU Digital Omnibus).</div></div>' +
+    rows.map(function (r) {
+      var laws = r.region ? (GL_LAW[r.region] || []) : [];
+      return '<div style="border:1px solid var(--border2);border-left:3px solid ' + GL_WEIGHT[r.weight] + ';border-radius:10px;padding:12px 14px;margin-bottom:10px;background:var(--card)">' +
+        '<div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center"><div><span style="font-size:13px;font-weight:700;color:var(--chrome2)">' + esc(r.country) + '</span> <span style="font-size:10.5px;color:var(--muted)">· ' + esc(r.ops) + '</span></div>' +
+        '<div style="display:flex;gap:6px"><span style="font-size:9px;font-weight:800;text-transform:uppercase;color:' + GL_WEIGHT[r.weight] + ';border:1px solid ' + GL_WEIGHT[r.weight] + '55;padding:2px 7px;border-radius:5px">' + (r.weight === 'US only' ? 'US only' : r.weight + ' regulation') + '</span>' +
+        '<span style="font-size:9px;font-weight:800;text-transform:uppercase;color:' + (r.status === 'Gap' ? '#DC2626' : '#15803D') + ';border:1px solid ' + (r.status === 'Gap' ? '#DC262655' : '#15803D55') + ';padding:2px 7px;border-radius:5px">' + esc(r.status) + '</span></div></div>' +
+        '<div style="font-size:11px;color:var(--chrome2);margin-top:8px;line-height:1.5"><strong>What applies to you:</strong> ' + esc(r.applies) + '</div>' +
+        '<div style="font-size:11px;color:var(--muted2);margin-top:4px;line-height:1.5"><strong style="color:var(--chrome2)">What Cardinal covers:</strong> ' + esc(r.covers) + '</div>' +
+        (laws.length ? '<div style="margin-top:8px;border-top:1px solid var(--border);padding-top:6px">' + laws.map(function (l) {
+          return '<div style="display:flex;justify-content:space-between;gap:10px;font-size:10.5px;padding:3px 0"><span style="color:var(--chrome2)">' + esc(l.name) + (l.note ? ' <span style="color:var(--muted)">(' + esc(l.note) + ')</span>' : '') + '</span>' +
+            '<span style="white-space:nowrap;font-weight:600;color:' + (SC[l.status] || '#64748b') + '">' + esc(l.status) + (l.date ? ' · ' + esc(glDateTag(l.date)) : '') + '</span></div>';
+        }).join('') + '</div>' : '') + '</div>';
+    }).join('');
+}
+window.buildCompGlobal = buildCompGlobal;
+// For the Halo map: footprint lookup by country name
+window.cardinalGlobalFor = function (org, name) {
+  return (CARDINAL_GLOBAL_FOOTPRINT[org] || []).filter(function (r) { return r.country === name; })[0] || null;
+};
+
 function switchCompTab(tab) {
- const tabs = ['overview','regulations','calendar','reporting','audit','whistleblower'];
+ const tabs = ['overview','regulations','global','calendar','reporting','audit','whistleblower'];
  tabs.forEach(t => {
    const btn = document.getElementById('comp-tab-'+t);
    const content = document.getElementById('comp-content-'+t);
@@ -23235,6 +23330,7 @@ function switchCompTab(tab) {
  });
  if(tab==='regulations') buildCompRegulations('All');
  if(tab==='calendar') buildCompCalendar();
+ if(tab==='global') buildCompGlobal((typeof currentOrg !== 'undefined' && currentOrg) || window.currentOrg || 'ad');
 }
 
 var COMP_REGS_LIST = [
@@ -23243,7 +23339,7 @@ var COMP_REGS_LIST = [
    {name:'FCRA Compliance',loc:'United States',region:'North America',status:'Compliant',color:'green',action:'Jan 15, 2027',detail:'Fair Credit Reporting Act, accurate consumer reporting.'},
    {name:'Colorado SB 189',loc:'Colorado, USA',region:'North America',status:'Pending',color:'blue',action:'Jan 1, 2027',detail:'Replaced the Colorado AI Act in May 2026. Automated decision-making rules for consequential decisions, with a 60-day cure period.'},
    {name:'Illinois BIPA',loc:'Illinois, USA',region:'North America',status:'Compliant',color:'green',action:'Ongoing',detail:'Biometric Information Privacy Act compliance.'},
-   {name:'EU AI Act',loc:'European Union',region:'Europe',status:'In Review',color:'blue',action:'August 2026',detail:'High-risk AI system provisions, enforcement active.'},
+   {name:'EU AI Act',loc:'European Union',region:'Europe',status:'In Review',color:'blue',action:'Dec 2, 2027',detail:'High-risk obligations moved from Aug 2, 2026 to Dec 2, 2027 by the Digital Omnibus. Transparency duties (Article 50) in force since Aug 2, 2026.'},
    {name:'GDPR Article 22',loc:'European Union',region:'Europe',status:'Compliant',color:'green',action:'Ongoing',detail:'Automated decision-making and profiling protections.'},
    {name:'UK AI Regulation',loc:'United Kingdom',region:'Europe',status:'Compliant',color:'green',action:'Mar 30, 2027',detail:'Pro-innovation AI regulatory framework.'},
    {name:'DPDP Act',loc:'India',region:'Asia Pacific',status:'In Review',color:'blue',action:'Jun 1, 2027',detail:'Digital Personal Data Protection Act, new requirements.'},
@@ -23741,7 +23837,7 @@ function haloDeadlineHtml(org) {
  dd30:haloDd({name:'NYC Local Law 144 Audit',dt:'Oct 8, 2026',stripe:'red',countdown:'13 days',jur:'NYC Municipal (New York)',statuteId:'nyc-ll144',expAmount:inact.wk2.amount,expText:inact.wk2.text})+
       haloDd({name:'ECOA Quarterly Report',dt:'Oct 12, 2026',stripe:'amber',countdown:'17 days',jur:'US Federal (CFPB)',statuteId:'ecoa'}),
  dd60:haloDd({name:'ISO 42001 Renewal',dt:'Oct 29, 2026',stripe:'amber',countdown:'34 days',jur:'International standard (voluntary)'})+
-      haloDd({name:'EU AI Act Tier 2 Filing',dt:'Nov 22, 2026',stripe:'amber',countdown:'58 days',jur:'European Union'}),
+      haloDd({name:'EU AI Act high-risk obligations (Annex III)',dt:'Dec 2, 2027',stripe:'gray',countdown:'Scheduled',jur:'European Union (moved by the Digital Omnibus)'}),
  dd90:haloDd({name:'NIST AI RMF Annual Review',dt:'Jan 15, 2027',stripe:'gray',countdown:'',jur:'US Federal (voluntary framework)'})+
       haloDd({name:'CFPB Fair Lending Report',dt:'Jan 30, 2027',stripe:'gray',countdown:'Scheduled',jur:'US Federal (CFPB)',statuteId:'ecoa'})
  };
@@ -23749,7 +23845,7 @@ function haloDeadlineHtml(org) {
  dd30:haloDd({name:'ACA 1557 Remediation Deadline',dt:'Sep 29, 2026',stripe:'red',countdown:'4 days',jur:'US Federal (HHS OCR)',statuteId:'aca-1557',expAmount:inact.wk2.amount,expText:inact.wk2.text})+
       haloDd({name:'CMS AI Oversight Audit',dt:'Oct 25, 2026',stripe:'red',countdown:'30 days',jur:'US Federal (CMS)',caseId:'HS-2847'}),
  dd60:haloDd({name:'ISO 42001 Renewal',dt:'Oct 29, 2026',stripe:'amber',countdown:'34 days',jur:'International standard (voluntary)'})+
-      haloDd({name:'EU AI Act Tier 2 Filing',dt:'Nov 22, 2026',stripe:'amber',countdown:'58 days',jur:'European Union'})+
+      haloDd({name:'EU AI Act high-risk obligations (Annex III)',dt:'Dec 2, 2027',stripe:'gray',countdown:'Scheduled',jur:'European Union (moved by the Digital Omnibus)'})+
       haloDd({name:'Joint Commission AI',dt:'Nov 20, 2026',stripe:'amber',countdown:'56 days',jur:'US (healthcare accreditation)'}),
  dd90:haloDd({name:'NIST AI RMF Annual Review',dt:'Jan 15, 2027',stripe:'gray',countdown:'Scheduled',jur:'US Federal (voluntary framework)'})
  };
@@ -23925,8 +24021,8 @@ function initHaloMap() {
           };
         }
         if (EU_NAMES[name]) {
-          var eu = ['EU AI Act Tier 2 Filing', 'Nov 22, 2026'], iso = ['ISO 42001 Renewal', 'Oct 29, 2026'];
-          return { regs: [dl(eu), dl(iso), 'GDPR: Compliant'], deadline: dl(cardinalDaysUntil(iso[1]) < cardinalDaysUntil(eu[1]) ? iso : eu), stats: 'EU AI Act high-risk obligations apply to every model Cardinal monitors for you here', risk: 'WATCH' };
+          var iso = ['ISO 42001 Renewal', 'Oct 29, 2026'];
+          return { regs: ['EU AI Act transparency duties (Article 50): in force since Aug 2, 2026', 'EU AI Act high-risk obligations: Dec 2, 2027 (moved by the Digital Omnibus)', dl(iso), 'GDPR Article 22: in force'], deadline: dl(iso), stats: 'See Compliance, Global for what applies to your models here', risk: 'WATCH' };
         }
         return countryInfo[name] || null;
       }
