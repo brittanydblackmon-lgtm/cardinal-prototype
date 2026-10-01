@@ -15974,11 +15974,9 @@ function dashBuildActivityTicker(org) {
     .sort(function (a, b) { return new Date(b.issuedDate).getTime() - new Date(a.issuedDate).getTime(); });
   if (!rows.length) { wrap.style.display = 'none'; if (window.__dashTickerTimer) { clearInterval(window.__dashTickerTimer); window.__dashTickerTimer = null; } return; }
 
-  var latestTs = rows.reduce(function (max, r) {
-    var t = new Date(r.issuedDate).getTime();
-    return (!isNaN(t) && t > max) ? t : max;
-  }, 0);
-  var nowAnchor = latestTs > 0 ? latestTs : Date.now();
+  // Story dates now roll with the real calendar (cardinalRollStoryTimeline), so "ago" is
+  // measured from the real clock, not from the newest receipt.
+  var nowAnchor = Date.now();
 
   function relTime(iso) {
     var t = new Date(iso).getTime();
@@ -30519,7 +30517,7 @@ function renderEchoCardinalHero(org) {
   var headlineEl2 = document.getElementById('echo-activity-headline');
   if (headlineEl2) {
     var last24Cnt = memories.filter(function(m){ return (now - new Date(m.timestamp).getTime()) <= 86400000; }).length;
-    headlineEl2.textContent = last24Cnt + ' events logged in the last 24 hours';
+    headlineEl2.textContent = last24Cnt + (last24Cnt === 1 ? ' event' : ' events') + ' logged in the last 24 hours';
   }
   if (window.__echoChart) {
     try { window.__echoChart.destroy(); } catch(_) {}
@@ -42688,6 +42686,59 @@ function closeModelDetail() {
 }
 window.openModelDetail = openModelDetail;
 
+
+// ════ ROLLING STORY TIMELINE (9/30, Brittany: "real time data going forward, in case someone
+// looks at this in October") ════
+// The seeded story (case history, Echo memories, decision receipts, model reviews) was written
+// in April-May 2026, so by September Echo read "4mo ago" and "0 events in the last 24 hours".
+// At load, every story-authored date is shifted forward by whole days so each org's most recent
+// event lands a few hours ago. Spacing and order between events never change. Dates already
+// computed from the real "now" (SLA clocks, recent decisions, anything on/after Aug 1, 2026)
+// are left alone, and future deadlines roll separately via the shared deadline helper.
+(function cardinalRollStoryTimeline() {
+  try {
+    var CUTOFF = Date.parse('2026-08-01T00:00:00Z');
+    var DAY = 86400000;
+    var ISO = /^(\d{4}-\d{2}-\d{2})(T[\d:.]+Z?)?$/;
+    var now = Date.now();
+    var orgs = ['ad', 'fin', 'health', 'fed'];
+    var shiftDays = {};
+    orgs.forEach(function (o) {
+      var d = (window.CARDINAL_DATA || {})[o];
+      var latest = 0;
+      ((d && d.echoMemories) || []).forEach(function (m) { var t = Date.parse(m.timestamp); if (t < CUTOFF && t > latest) latest = t; });
+      shiftDays[o] = latest ? Math.max(0, Math.floor((now - 3 * 3600000 - latest) / DAY)) : 0;
+    });
+    window.CARDINAL_STORY_SHIFT_DAYS = shiftDays;
+    function shiftStr(s, days) {
+      var m = ISO.exec(s);
+      if (!m || !days) return s;
+      var t = Date.parse(m[2] ? s : m[1] + 'T12:00:00Z');
+      if (isNaN(t) || t >= CUTOFF) return s;
+      var n = new Date(t + days * DAY).toISOString();
+      return m[2] ? n : n.slice(0, 10);
+    }
+    function walk(obj, days, depth, seen) {
+      if (!obj || typeof obj !== 'object' || depth > 9 || seen.indexOf(obj) !== -1) return;
+      seen.push(obj);
+      Object.keys(obj).forEach(function (k) {
+        var v = obj[k];
+        if (typeof v === 'string') { var nv = shiftStr(v, days); if (nv !== v) obj[k] = nv; }
+        else if (v && typeof v === 'object') walk(v, days, depth + 1, seen);
+      });
+    }
+    orgs.forEach(function (o) { if (window.CARDINAL_DATA && CARDINAL_DATA[o]) walk(CARDINAL_DATA[o], shiftDays[o], 0, []); });
+    var orgOf = function (x) {
+      if (x.industryContext && shiftDays[x.industryContext] != null) return x.industryContext;
+      if (x.industry && shiftDays[x.industry] != null) return x.industry;
+      var id = String(x.receiptId || x.id || x.linkedCaseId || '');
+      return /^FIN/.test(id) ? 'fin' : /^HS/.test(id) ? 'health' : /^FED/.test(id) ? 'fed' : 'ad';
+    };
+    [window.DECISION_RECEIPTS, window.CARDINAL_MODELS, window.CARDINAL_COHORTS].forEach(function (list) {
+      (list || []).forEach(function (x) { walk(x, shiftDays[orgOf(x)], 0, []); });
+    });
+  } catch (_rst) { if (window.console) console.warn('cardinalRollStoryTimeline', _rst); }
+})();
 </script>
 
 <!-- ══ NEW TEST MODAL ══ -->
