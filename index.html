@@ -8531,6 +8531,7 @@ Template Overview
 <th style="padding:10px 12px">Source</th><th style="padding:10px 8px">Status</th><th style="padding:10px 8px">Last Sync</th><th style="padding:10px 8px">Format</th><th style="padding:10px 8px">Records Ingested</th><th style="padding:10px 8px">Models Fed</th>
 </tr></thead><tbody id="pipeline-sources-tbody"></tbody></table>
 </div>
+<div id="pipeline-provenance"></div>
 
 <div class="section-hdr" style="margin-bottom:18px">
 <div>
@@ -23555,6 +23556,8 @@ window.buildCompStates = buildCompStates;
       var g = document.getElementById('comp-content-global'), s = document.getElementById('comp-content-states');
       if (g && g.style.display === 'block') buildCompGlobal(o);
       if (s && s.style.display === 'block') { window.__slState = null; buildCompStates(o); }
+      var p = document.getElementById('screen-pipeline');
+      if (p && p.offsetParent !== null && typeof pipelineInitWizard === 'function') pipelineInitWizard();
     } catch (e) {}
     return r;
   };
@@ -35395,6 +35398,77 @@ function pipelineRenderSourcesTable(org) {
       '<td style="padding:8px;font-size:10px;color:var(--chrome2)">' + (modelsFed || '—') + '</td></tr>';
   }).join('');
 }
+// ══ DATA PIPELINE: TRAINING DATA PROVENANCE (Google-issue backlog item: IP / training data) ══
+// Where each model's training data came from, whether the company has the right to train
+// on it, the consent basis, and what sensitive fields it carries. Flags:
+//   license: contract doesn't clearly grant model-training rights (IP exposure)
+//   consent: people weren't clearly told their data would train AI
+//   proxy:   training data encodes a known bias proxy or past biased decisions
+//   vendor:  vendor model whose training data isn't documented to you
+// CA AB 2013 (in effect Jan 1, 2026) requires developers of public generative AI to post a
+// training data summary; Cardinal tracks whether each vendor has.
+window.CARDINAL_PROVENANCE = {
+  fin: [
+    { model: 'Credit Scoring v3.4', data: 'Blackmoor loan history, 2018 to 2025 (1.2M applications)', origin: 'Your own data', rights: 'Owned', consent: 'GLBA privacy notice', sensitive: 'ZIP code (0.82 correlation with race)', flag: 'proxy', why: 'The training data carries the ZIP proxy Eden is already flagging. Retraining without fixing the data brings it back.' },
+    { model: 'Underwriting v4.1', data: 'Credit bureau attributes, monthly feed', origin: 'Licensed vendor', rights: 'Licensed for credit decisions. Model training is not listed in the contract.', consent: 'FCRA permissible purpose', sensitive: 'None direct', flag: 'license', why: 'If training is not a permitted use, every model built on this feed is exposed. Legal should confirm with the bureau.' },
+    { model: 'Fraud Screening v2.7', data: 'Transaction history + industry fraud consortium labels + 2,000 synthetic fraud personas (Adam)', origin: 'Own + licensed + synthetic', rights: 'Consortium license includes model training', consent: 'Account terms', sensitive: 'None', flag: null },
+    { model: 'Collections AI v1.3', data: 'Recorded collection calls, 2023 to 2025 (tone and timing model)', origin: 'Your own data', rights: 'Owned', consent: '"Calls may be recorded for quality and training"', sensitive: 'Voiceprints', flag: 'consent', why: '"Training" in the call script meant staff training, not AI. Illinois callers\' voiceprints may also need written consent under BIPA.' },
+    { model: 'Pre-qual Chatbot', data: 'Vendor foundation model, fine-tuned on Blackmoor FAQs', origin: 'Vendor model', rights: 'Vendor terms', consent: 'n/a', sensitive: 'Unknown', flag: 'vendor', why: 'Vendor has not posted the training data summary California AB 2013 requires for public generative AI.' }
+  ],
+  ad: [
+    { model: 'Personnel Assignment v2.4', data: 'Assignment history, 2019 to 2024 (past human decisions) + home ZIP', origin: 'Your own data', rights: 'Owned', consent: 'Employee privacy notice', sensitive: 'Race, ethnicity, veteran status, ZIP', flag: 'proxy', why: 'The model learned from past assignments that already showed the same 2.3x gap. The data, not just the model, needs fixing.' },
+    { model: 'Mission Readiness v1.1', data: 'Readiness scores + fitness-for-duty codes', origin: 'Your own data', rights: 'Owned', consent: 'Employee privacy notice', sensitive: 'Medical codes (fitness-for-duty only)', flag: null },
+    { model: 'Maintenance Routing v1.2', data: 'Base roster + home ZIP via TechServe LLC ETL', origin: 'Licensed vendor', rights: 'License ends Dec 31, 2026. No retraining rights after it ends.', consent: 'Contractor agreement', sensitive: 'ZIP', flag: 'license', why: 'After Dec 31 you can still run the model but not retrain it on this data. Plan the replacement source now.' },
+    { model: 'Fraud Detection v3.2', data: 'Procurement records + synthetic fraud cases (Adam)', origin: 'Own + synthetic', rights: 'Owned', consent: 'n/a', sensitive: 'None', flag: null }
+  ],
+  health: [
+    { model: 'Claims Adjudication v1.9', data: 'Sterling claims, 2017 to 2025', origin: 'Your own data', rights: 'Owned', consent: 'HIPAA health care operations', sensitive: 'PHI, age', flag: null },
+    { model: 'Diagnosis Support v2.3', data: 'De-identified records from a partner hospital + medical literature text gathered from the web', origin: 'Partner + public web', rights: 'Hospital: data use agreement allows training. Web text: mixed licenses, 18% unknown.', consent: 'De-identified (HIPAA Safe Harbor)', sensitive: 'None after de-identification', flag: 'license', why: 'Some of the web-gathered literature is under licenses that bar commercial reuse. This is the same issue behind the AI copyright lawsuits.' },
+    { model: 'Prior Auth v1.5', data: 'Sterling prior auth history + licensed clinical criteria', origin: 'Own + licensed', rights: 'Criteria license includes model training', consent: 'HIPAA health care operations', sensitive: 'PHI', flag: null }
+  ],
+  fed: [
+    { model: 'IRS Tax Fraud Detection v3.1', data: 'Return data, tax years 2019 to 2024', origin: 'Agency data', rights: 'Use for tax administration permitted (IRC 6103)', consent: 'Statutory', sensitive: 'Return information (confidential by law)', flag: null },
+    { model: 'Taxpayer Help Assistant', data: 'Vendor foundation model, fine-tuned on public IRS guidance', origin: 'Vendor model', rights: 'Contract terms', consent: 'n/a', sensitive: 'Unknown', flag: 'vendor', why: 'The agency asked the vendor for training data documentation. Not received yet.' }
+  ]
+};
+window.__provDone = window.__provDone || {};
+window.pipelineProvAct = function (org, i) {
+  window.__provDone[org + ':' + i] = true;
+  pipelineRenderProvenance(org);
+  try { if (typeof cardinalLogActivity === 'function') cardinalLogActivity('Training data provenance: review requested', 'pipeline'); } catch (e) {}
+};
+function pipelineRenderProvenance(org) {
+  var el = document.getElementById('pipeline-provenance');
+  if (!el) return;
+  var rows = window.CARDINAL_PROVENANCE[org] || window.CARDINAL_PROVENANCE.ad;
+  var esc = function (s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;'); };
+  var FL = { license: ['Training rights unclear', '#DC2626', 'Legal'], consent: ['Consent gap', '#DC2626', 'Legal'], proxy: ['Bias in the data', '#B45309', 'Data Science'], vendor: ['Vendor undocumented', '#7C3AED', 'Compliance'] };
+  var flagged = rows.filter(function (r) { return r.flag; });
+  var clean = rows.length - flagged.length;
+  var stat = function (l, v, c) { return '<div class="stat-card"><div class="stat-label">' + l + '</div><div class="stat-value" style="font-size:20px;color:' + (c || 'var(--chrome2)') + '">' + v + '</div></div>'; };
+  el.innerHTML = '<div class="section-hdr" style="margin-bottom:10px"><div><div style="font-size:15px;font-weight:600;color:var(--chrome2)">Training Data Provenance</div>' +
+    '<div style="font-size:11px;color:var(--muted);margin-top:2px">Where each model learned from, whether you have the right to train on it, and whether people were told. Sealed in Echo per model version.</div></div></div>' +
+    '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:10px">' +
+    stat('Models Documented', rows.length + ' of ' + rows.length, 'var(--green)') +
+    stat('Clean Provenance', clean, 'var(--green)') +
+    stat('Rights or Consent Gaps', rows.filter(function (r) { return r.flag === 'license' || r.flag === 'consent'; }).length, 'var(--red)') +
+    stat('Bias or Vendor Flags', rows.filter(function (r) { return r.flag === 'proxy' || r.flag === 'vendor'; }).length, 'var(--amber)') + '</div>' +
+    '<div style="border:1px solid var(--border2);border-radius:10px;overflow-x:auto;margin-bottom:26px"><table class="data-table" style="width:100%"><thead style="background:var(--bg3)"><tr>' +
+    '<th style="padding:9px 12px">Model</th><th style="padding:9px 8px">Trained on</th><th style="padding:9px 8px">Rights</th><th style="padding:9px 8px">Consent basis</th><th style="padding:9px 8px">Sensitive fields</th><th style="padding:9px 8px">Status</th></tr></thead><tbody>' +
+    rows.slice().sort(function (a, b) { return (b.flag ? 1 : 0) - (a.flag ? 1 : 0); }).map(function (r) {
+      var i = rows.indexOf(r), f = r.flag ? FL[r.flag] : null, done = window.__provDone[org + ':' + i];
+      return '<tr style="vertical-align:top"><td style="padding:9px 12px;font-size:11px;font-weight:700;color:var(--chrome2)">' + esc(r.model) + '<div style="font-size:9.5px;font-weight:500;color:var(--muted)">' + esc(r.origin) + '</div></td>' +
+        '<td style="padding:9px 8px;font-size:10.5px;color:var(--chrome2);max-width:220px">' + esc(r.data) + '</td>' +
+        '<td style="padding:9px 8px;font-size:10.5px;color:' + (r.flag === 'license' ? '#B91C1C' : 'var(--muted2)') + ';max-width:180px">' + esc(r.rights) + '</td>' +
+        '<td style="padding:9px 8px;font-size:10.5px;color:' + (r.flag === 'consent' ? '#B91C1C' : 'var(--muted2)') + ';max-width:150px">' + esc(r.consent) + '</td>' +
+        '<td style="padding:9px 8px;font-size:10.5px;color:var(--muted2);max-width:140px">' + esc(r.sensitive) + '</td>' +
+        '<td style="padding:9px 8px;max-width:250px">' + (f ? '<span style="font-size:9px;font-weight:800;text-transform:uppercase;color:' + f[1] + ';border:1px solid ' + f[1] + '55;background:' + f[1] + '12;padding:2px 6px;border-radius:5px;white-space:nowrap">' + f[0] + '</span><div style="font-size:10px;color:var(--muted2);margin-top:4px;line-height:1.45">' + esc(r.why) + '</div>' +
+          (done ? '<div style="font-size:10px;color:#15803D;font-weight:700;margin-top:4px">✓ Ticket sent to ' + f[2] + ' in Work Queue. Logged in Echo.</div>' : '<button type="button" onclick="pipelineProvAct(\'' + org + '\',' + i + ')" style="margin-top:5px;font-size:10px;padding:3px 9px;border-radius:6px;border:1px solid rgba(167,167,167,.3);background:transparent;color:var(--accent);cursor:pointer;font-weight:600">Send to ' + f[2] + ' →</button>')
+          : '<span style="font-size:10px;color:var(--green)">✓ Rights and consent documented</span>') + '</td></tr>';
+    }).join('') + '</tbody></table></div>';
+}
+window.pipelineRenderProvenance = pipelineRenderProvenance;
+
 function pipelineRenderHealthStats(org) {
   var rows = PIPELINE_SOURCE_STATUS[org] || PIPELINE_SOURCE_STATUS.ad;
   var totalRecords = rows.reduce(function (sum, r) { return sum + (r.records || 0); }, 0);
@@ -35425,6 +35499,7 @@ function pipelineInitWizard() {
   pipelineRenderCanvas();
   pipelineRenderDiagnostics();
   pipelineRenderSourcesTable(org);
+  try { pipelineRenderProvenance(org); } catch (_prov) {}
   pipelineRenderHealthStats(org);
 }
 
