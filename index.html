@@ -6954,6 +6954,7 @@ Halo Core
 <div style="display:flex;gap:2px;margin-bottom:16px;background:var(--bg3);border-radius:10px;padding:4px">
 <button class="comp-tab active" id="comp-tab-overview" onclick="switchCompTab('overview')" style="flex:1;padding:8px;border-radius:8px;border:none;background:var(--card);color:var(--text);font-size:11px;font-weight:600;cursor:pointer;font-family:var(--sans)">Overview</button>
 <button class="comp-tab" id="comp-tab-regulations" onclick="switchCompTabLegacy('regulations')" style="flex:1;padding:8px;border-radius:8px;border:none;background:transparent;color:var(--muted);font-size:11px;cursor:pointer;font-family:var(--sans)">Regulations</button>
+<button class="comp-tab" id="comp-tab-states" onclick="switchCompTab('states')" style="flex:1;padding:8px;border-radius:8px;border:none;background:transparent;color:var(--muted);font-size:11px;cursor:pointer;font-family:var(--sans)">US States</button>
 <button class="comp-tab" id="comp-tab-global" onclick="switchCompTab('global')" style="flex:1;padding:8px;border-radius:8px;border:none;background:transparent;color:var(--muted);font-size:11px;cursor:pointer;font-family:var(--sans)">Global</button>
 <button class="comp-tab" id="comp-tab-calendar" onclick="switchCompTab('calendar')" style="flex:1;padding:8px;border-radius:8px;border:none;background:transparent;color:var(--muted);font-size:11px;cursor:pointer;font-family:var(--sans)">Compliance Calendar</button>
 <button class="comp-tab" id="comp-tab-reporting" onclick="switchCompTab('reporting')" style="flex:1;padding:8px;border-radius:8px;border:none;background:transparent;color:var(--muted);font-size:11px;cursor:pointer;font-family:var(--sans)">Reporting</button>
@@ -7217,6 +7218,7 @@ Showing: <span id="comp-map-filter-region">All</span>
 </div>
 
 <!-- COMPLIANCE CALENDAR TAB -->
+<div id="comp-content-states" style="display:none"></div>
 <div id="comp-content-global" style="display:none"></div>
 <div id="comp-content-calendar" style="display:none">
 <div style="font-size:13px;font-weight:600;color:var(--chrome2);margin-bottom:4px">Compliance Calendar</div>
@@ -23430,13 +23432,140 @@ function buildCompGlobal(org) {
     }).join('');
 }
 window.buildCompGlobal = buildCompGlobal;
+// ══ COMPLIANCE: US STATE LAW NAVIGATOR (Google-issue backlog item: "the state patchwork") ══
+// Which state AI rules apply to THIS company, which don't and why, with real dates.
+// Sources (verified Oct 1, 2026): White & Case AI Watch US tracker (updated Jun 30, 2026);
+// CO SB 26-189 signed May 14, 2026, effective Jan 1, 2027 (repeals/replaces the CO AI Act);
+// CA CPPA ADMT regulations, compliance Jan 1, 2027; CA Civil Rights Council ADS employment
+// regs (Oct 1, 2025); CA SB 1120 and AB 3030 (Jan 1, 2025); IL HB 3773 (Jan 1, 2026);
+// TX HB 149 TRAIGA (Jan 1, 2026); UT AI Policy Act (May 1, 2024); NY RAISE Act (Jan 1, 2027);
+// NYC LL144; MA AG $2.5M AI lending settlement (Jul 2025).
+window.SL_LAWS = [
+  { id: 'co-189', st: 'CO', name: 'Colorado SB 26-189 (automated decisions)', date: 'Jan 1, 2027', live: false,
+    req: 'Notice when automated tech materially influences a consequential decision (lending, jobs, housing, insurance, health care, education, government services), and a disclosure to the person within 30 days after an adverse outcome.',
+    ind: { fin: 'Credit and underwriting decisions', ad: 'Hiring and assignment decisions', health: 'Coverage and care decisions' } },
+  { id: 'ca-admt', st: 'CA', name: 'California CCPA rules on automated decision-making (ADMT)', date: 'Jan 1, 2027', live: false,
+    req: 'Pre-use notice, opt-out or human review, access to the logic behind a significant decision, and the right to appeal.',
+    ind: { fin: 'Credit decisions are "significant decisions"', ad: 'Employment decisions about California workers', health: 'Health care decisions' } },
+  { id: 'ca-crc', st: 'CA', name: 'California Civil Rights Council rules on automated systems in employment', date: 'Oct 1, 2025', live: true,
+    req: 'Employers are liable for discrimination by automated decision systems; anti-bias testing counts as evidence of good faith; records kept 4 years.',
+    ind: { ad: 'Personnel and hiring models' } },
+  { id: 'ca-1120', st: 'CA', name: 'California SB 1120 (physicians make medical necessity calls)', date: 'Jan 1, 2025', live: true,
+    req: 'AI cannot deny, delay, or change care for medical necessity reasons; a licensed clinician must decide.',
+    ind: { health: 'Prior authorization and claims models' } },
+  { id: 'ca-3030', st: 'CA', name: 'California AB 3030 (AI in patient messages)', date: 'Jan 1, 2025', live: true,
+    req: 'Generative AI patient communications about clinical information need a disclaimer and a way to reach a human.',
+    ind: { health: 'Patient messaging assistants' } },
+  { id: 'il-3773', st: 'IL', name: 'Illinois HB 3773 (Human Rights Act, AI in employment)', date: 'Jan 1, 2026', live: true,
+    req: 'No AI in hiring, firing, discipline, or promotion that discriminates; ZIP code may not be used as a proxy for protected traits; workers must be notified.',
+    ind: { ad: 'Personnel Assignment v2.4 uses ZIP-level data' } },
+  { id: 'il-bipa', st: 'IL', name: 'Illinois BIPA (biometric privacy)', date: 'In effect since 2008', live: true,
+    req: 'Written consent before collecting faceprints or voiceprints; private right of action.',
+    ind: { fin: 'Selfie and voice-print identity checks', health: 'Voice and face identity checks' } },
+  { id: 'tx-149', st: 'TX', name: 'Texas TRAIGA (HB 149)', date: 'Jan 1, 2026', live: true,
+    req: 'Bans AI built or used with intent to discriminate or manipulate; voiceprints and faceprints covered; Attorney General enforcement with a 60-day cure period.',
+    ind: { fin: 'All Texas-facing models', ad: 'All Texas-facing models', health: 'All Texas-facing models' } },
+  { id: 'ut-aipa', st: 'UT', name: 'Utah AI Policy Act', date: 'May 1, 2024', live: true,
+    req: 'Disclose generative AI use when a person asks, and up front in high-risk interactions in regulated professions.',
+    ind: { health: 'Patient-facing assistants', fin: 'Customer-facing chatbots' } },
+  { id: 'nyc-144', st: 'NY', name: 'NYC Local Law 144 (hiring tools)', date: 'In effect since Jul 2023', live: true,
+    req: 'Annual independent bias audit and candidate notice for automated hiring tools used for NYC jobs.',
+    ind: { ad: 'Hiring screen for NYC roles' } },
+  { id: 'ny-raise', st: 'NY', name: 'New York RAISE Act (frontier models)', date: 'Jan 1, 2027', live: false,
+    req: 'Safety plans and 72-hour incident reports for developers of the largest frontier AI models.',
+    ind: {} },
+  { id: 'ma-ag', st: 'MA', name: 'Massachusetts AG enforcement (no AI statute)', date: 'Jul 2025 settlement', live: true,
+    req: 'Existing fair lending and consumer protection law. The AG settled with a lender for $2.5M over an AI model with disparate impact.',
+    ind: { fin: 'Credit and underwriting models' } }
+];
+// Each org's state footprint and per-law status. gap = Cardinal sees missing evidence today.
+window.SL_FOOTPRINT = {
+  fin: { states: ['CA', 'NY', 'TX', 'IL', 'CO', 'MA', 'FL', 'UT'], note: 'Lends to consumers in 8 states.',
+    status: { 'co-189': ['gap', 'No 30-day adverse-outcome disclosure is generated yet for FIN-1203 denials.'], 'ca-admt': ['track', 'Decision Receipts already carry the logic, inputs, and appeal path.'], 'il-bipa': ['gap', 'Selfie liveness vendor consent language has not been checked for BIPA.'], 'tx-149': ['track', 'Eden bias testing documents no intent to discriminate.'], 'ut-aipa': ['track', 'Pre-qual Chatbot discloses it is AI on first message.'], 'ma-ag': ['gap', 'Credit Scoring v3.4 has a disparate impact ratio of 0.74 (below 0.80), with ZIP code as the top proxy: the same pattern the AG settled.'] } },
+  ad: { states: ['CA', 'TX', 'CO', 'IL', 'NY', 'VA', 'AL', 'FL', 'WA'], note: 'Employees and contractors in 9 states.',
+    status: { 'co-189': ['track', 'Assignment decisions already logged in Echo with reasons.'], 'ca-admt': ['track', 'Personnel notices drafted.'], 'ca-crc': ['track', 'Eden anti-bias testing kept 4 years in Echo.'], 'il-3773': ['gap', 'Personnel Assignment v2.4 still uses home ZIP, the exact proxy Illinois bans.'], 'tx-149': ['track', 'No intent issues found.'], 'nyc-144': ['gap', 'Annual independent bias audit for the NYC hiring screen is not scheduled.'] } },
+  health: { states: ['CA', 'TX', 'IL', 'NY', 'CO', 'UT', 'AZ'], note: 'Members and patients in 7 states.',
+    status: { 'co-189': ['track', 'Coverage decisions logged with reasons.'], 'ca-admt': ['track', 'Notice templates ready.'], 'ca-1120': ['gap', '31 denials auto-closed by Claims Triage Agent without clinician review (see Security Watch).'], 'ca-3030': ['track', 'Patient messages carry the AI disclaimer.'], 'il-bipa': ['track', 'Consent on file for voice ID.'], 'tx-149': ['track', 'No intent issues found.'], 'ut-aipa': ['track', 'Assistant discloses AI use.'] } },
+  fed: { states: [], note: 'Federal agency. State AI laws do not bind federal agencies; OMB M-25-21 governs', status: {} }
+};
+window.SL_TILES = [['AK',0,0],['ME',0,10],['WI',1,5],['VT',1,9],['NH',1,10],['WA',2,0],['ID',2,1],['MT',2,2],['ND',2,3],['MN',2,4],['IL',2,5],['MI',2,6],['NY',2,8],['MA',2,9],
+  ['OR',3,0],['NV',3,1],['WY',3,2],['SD',3,3],['IA',3,4],['IN',3,5],['OH',3,6],['PA',3,7],['NJ',3,8],['CT',3,9],['RI',3,10],
+  ['CA',4,0],['UT',4,1],['CO',4,2],['NE',4,3],['MO',4,4],['KY',4,5],['WV',4,6],['VA',4,7],['MD',4,8],['DE',4,9],
+  ['AZ',5,1],['NM',5,2],['KS',5,3],['AR',5,4],['TN',5,5],['NC',5,6],['SC',5,7],['DC',5,8],['OK',6,3],['LA',6,4],['MS',6,5],['AL',6,6],['GA',6,7],['HI',7,0],['TX',7,3],['FL',7,8]];
+window.__slState = window.__slState || null;
+window.slPickState = function (st) { window.__slState = window.__slState === st ? null : st; buildCompStates(window.currentOrg || 'ad'); };
+function buildCompStates(org) {
+  var el = document.getElementById('comp-content-states');
+  if (!el) return;
+  org = org || window.currentOrg || 'ad';
+  var F = SL_FOOTPRINT[org] || SL_FOOTPRINT.fin;
+  var esc = function (s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;'); };
+  var applies = SL_LAWS.filter(function (l) { return F.states.indexOf(l.st) !== -1 && l.ind[org]; });
+  var notApply = SL_LAWS.filter(function (l) { return F.states.indexOf(l.st) !== -1 && !l.ind[org]; });
+  var stOf = function (l) { return (F.status[l.id] || [l.live ? 'track' : 'upcoming', ''])[0]; };
+  var gapN = applies.filter(function (l) { return stOf(l) === 'gap'; }).length;
+  var COL = { gap: '#DC2626', track: '#15803D', upcoming: '#B45309' };
+  var stateColor = function (st) {
+    if (F.states.indexOf(st) === -1) return null;
+    var ls = applies.filter(function (l) { return l.st === st; });
+    if (!ls.length) return '#94A3B8';
+    return ls.some(function (l) { return stOf(l) === 'gap'; }) ? COL.gap : ls.some(function (l) { return !l.live; }) ? COL.upcoming : COL.track;
+  };
+  var sel = window.__slState && F.states.indexOf(window.__slState) !== -1 ? window.__slState : null;
+  var tile = 30, gapPx = 3;
+  var map = '<div style="position:relative;width:' + (11 * (tile + gapPx)) + 'px;height:' + (8 * (tile + gapPx)) + 'px;flex-shrink:0">' + SL_TILES.map(function (t) {
+    var c = stateColor(t[0]), on = sel === t[0];
+    return '<div ' + (c ? 'onclick="slPickState(\'' + t[0] + '\')" title="' + t[0] + ': click to filter"' : '') + ' style="position:absolute;left:' + t[2] * (tile + gapPx) + 'px;top:' + t[1] * (tile + gapPx) + 'px;width:' + tile + 'px;height:' + tile + 'px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;' +
+      (c ? 'background:' + c + ';color:#fff;cursor:pointer;' + (on ? 'outline:2px solid var(--chrome2);outline-offset:1px;' : '') : 'background:rgba(148,163,184,.14);color:var(--muted);') + '">' + t[0] + '</div>';
+  }).join('') + '</div>';
+  var legend = [['Gap today', COL.gap], ['Starts soon', COL.upcoming], ['On track', COL.track], ['You operate, no AI-specific law', '#94A3B8']].map(function (x) {
+    return '<span style="display:inline-flex;align-items:center;gap:5px;margin-right:12px;font-size:10px;color:var(--muted2)"><span style="width:10px;height:10px;border-radius:3px;background:' + x[1] + '"></span>' + x[0] + '</span>';
+  }).join('');
+  var list = applies.filter(function (l) { return !sel || l.st === sel; }).sort(function (a, b) { var o = { gap: 0, upcoming: 1, track: 2 }; return o[stOf(a)] - o[stOf(b)]; });
+  var card = function (l) {
+    var s = F.status[l.id] || [l.live ? 'track' : 'upcoming', l.live ? '' : 'Not in effect yet. Cardinal will start checking evidence 90 days before.'];
+    var c = COL[s[0]];
+    return '<div style="border:1px solid var(--border2);border-left:3px solid ' + c + ';border-radius:10px;padding:10px 12px;margin-bottom:8px;background:var(--card)">' +
+      '<div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:center"><div><span style="font-size:9px;font-weight:800;background:rgba(71,85,105,.1);color:#334155;padding:2px 6px;border-radius:4px;margin-right:6px">' + l.st + '</span><span style="font-size:12px;font-weight:700;color:var(--chrome2)">' + esc(l.name) + '</span></div>' +
+      '<span style="font-size:10px;font-weight:700;color:' + c + ';white-space:nowrap">' + (s[0] === 'gap' ? 'GAP' : s[0] === 'upcoming' ? 'STARTS' : l.live ? 'IN EFFECT' : 'READY') + ' · ' + esc(/^[A-Z][a-z]{2} \d/.test(l.date) && !l.live ? glDateTag(l.date) : l.date) + '</span></div>' +
+      '<div style="font-size:11px;color:var(--chrome2);margin-top:6px;line-height:1.5"><strong>Why it applies to you:</strong> ' + esc(l.ind[org]) + '</div>' +
+      '<div style="font-size:10.5px;color:var(--muted2);margin-top:3px;line-height:1.5"><strong style="color:var(--chrome2)">What it requires:</strong> ' + esc(l.req) + '</div>' +
+      (s[1] ? '<div style="font-size:10.5px;margin-top:3px;line-height:1.5;color:' + (s[0] === 'gap' ? '#B91C1C' : 'var(--muted2)') + '"><strong style="color:var(--chrome2)">Cardinal sees:</strong> ' + esc(s[1]) + '</div>' : '') + '</div>';
+  };
+  el.innerHTML = '<div style="margin-bottom:12px"><div style="font-size:14px;font-weight:700;color:var(--chrome2)">US State Law Navigator: the patchwork, sorted for you</div>' +
+    '<div style="font-size:11px;color:var(--muted);margin-top:3px">' + esc(F.note) + (F.states.length ? ' ' + applies.length + ' state AI rule' + (applies.length === 1 ? '' : 's') + ' apply' + (applies.length === 1 ? 'ies' : '') + (gapN ? ' · <strong style="color:#DC2626">' + gapN + ' gap' + (gapN === 1 ? '' : 's') + '</strong>' : ' · no gaps') : '') + '. Sources: White &amp; Case AI Watch (Jun 30, 2026) and state texts.</div></div>' +
+    '<div style="font-size:10.5px;color:var(--chrome2);background:rgba(180,83,9,.06);border:1px solid rgba(180,83,9,.22);border-radius:8px;padding:7px 10px;margin-bottom:12px"><strong>Moving target:</strong> a federal AI Litigation Task Force is challenging some state AI laws in court. Cardinal keeps the evidence for every state rule either way, so a ruling never leaves you without a record.</div>' +
+    (F.states.length ? '<div style="display:flex;gap:18px;flex-wrap:wrap;align-items:flex-start;margin-bottom:12px">' + map +
+      '<div style="flex:1;min-width:220px"><div style="margin-bottom:8px">' + legend + '</div>' +
+      '<div style="font-size:11px;color:var(--muted2);line-height:1.5">Click a state to see only its rules' + (sel ? '. Showing <strong style="color:var(--chrome2)">' + sel + '</strong> · <span style="cursor:pointer;color:var(--accent);font-weight:600" onclick="slPickState(\'' + sel + '\')">show all</span>' : '') + '.</div></div></div>' +
+      (list.length ? list.map(card).join('') : '<div style="font-size:11px;color:var(--muted);padding:10px 0">No AI-specific state rule here yet. Federal law (ECOA, FCRA, FTC Act) still applies.</div>') +
+      (notApply.length && !sel ? '<div style="font-size:11px;font-weight:700;color:var(--chrome2);margin:14px 0 6px">In your states, but does not apply to you</div>' + notApply.map(function (l) {
+        return '<div style="font-size:10.5px;color:var(--muted2);padding:4px 0;border-bottom:1px solid var(--border)"><strong style="color:var(--chrome2)">' + l.st + ' · ' + esc(l.name) + '</strong> (' + esc(l.date) + '): ' + esc(l.req) + ' <em>You don\'t build or use a model it covers.</em></div>';
+      }).join('') : '')
+    : '<div style="border:1px solid var(--border2);border-radius:10px;padding:14px;background:var(--card);font-size:11.5px;color:var(--chrome2);line-height:1.6">State AI laws like Colorado SB 26-189 and California\'s ADMT rules regulate private businesses, not federal agencies. Your binding standard is <strong>OMB M-25-21</strong> (Apr 3, 2025): pre-deployment testing, impact assessments, and an appeal path for high-impact AI. See the Regulations tab.</div>');
+}
+window.buildCompStates = buildCompStates;
+(function () {
+  var orig = window.switchIndustry;
+  if (typeof orig !== 'function') return;
+  window.switchIndustry = function () {
+    var r = orig.apply(this, arguments);
+    try {
+      var o = window.currentOrg || 'ad';
+      var g = document.getElementById('comp-content-global'), s = document.getElementById('comp-content-states');
+      if (g && g.style.display === 'block') buildCompGlobal(o);
+      if (s && s.style.display === 'block') { window.__slState = null; buildCompStates(o); }
+    } catch (e) {}
+    return r;
+  };
+})();
 // For the Halo map: footprint lookup by country name
 window.cardinalGlobalFor = function (org, name) {
   return (CARDINAL_GLOBAL_FOOTPRINT[org] || []).filter(function (r) { return r.country === name; })[0] || null;
 };
 
 function switchCompTab(tab) {
- const tabs = ['overview','regulations','global','calendar','reporting','audit','whistleblower'];
+ const tabs = ['overview','regulations','states','global','calendar','reporting','audit','whistleblower'];
  tabs.forEach(t => {
    const btn = document.getElementById('comp-tab-'+t);
    const content = document.getElementById('comp-content-'+t);
@@ -23445,6 +23574,7 @@ function switchCompTab(tab) {
  });
  if(tab==='regulations') buildCompRegulations('All');
  if(tab==='calendar') buildCompCalendar();
+ if(tab==='states') buildCompStates((typeof currentOrg !== 'undefined' && currentOrg) || window.currentOrg || 'ad');
  if(tab==='global') buildCompGlobal((typeof currentOrg !== 'undefined' && currentOrg) || window.currentOrg || 'ad');
 }
 
