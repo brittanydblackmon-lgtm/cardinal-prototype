@@ -31595,6 +31595,7 @@ function echoRenderMyWorkspaceTab() {
   window.__userNotes = window.__userNotes || {};
   var notesKey = 'notes:' + persona.id;
   var myNotes = window.__userNotes[notesKey] || [];
+  var myNotesShown = myNotes.filter(function (n) { return !n.deleted; }).length;
 
   var myCases = Array.from(new Set(myMems.map(function(m){ return m.caseId; }).filter(Boolean)));
 
@@ -31621,7 +31622,7 @@ function echoRenderMyWorkspaceTab() {
     '<div style="padding:12px 14px;background:rgba(26,24,21,0.045);border:1px solid rgba(167, 167, 167,0.08);border-radius:10px;"><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;font-weight:700;margin-bottom:6px;">My Events</div><div style="font-size:22px;color:' + persona.color + ';font-weight:800;line-height:1;">' + myMems.length + '</div><div style="font-size:9px;color:var(--muted);margin-top:4px;">total logged</div></div>' +
     '<div style="padding:12px 14px;background:rgba(26,24,21,0.045);border:1px solid rgba(167, 167, 167,0.08);border-radius:10px;"><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;font-weight:700;margin-bottom:6px;">My Cases</div><div style="font-size:22px;color:var(--accent);font-weight:800;line-height:1;">' + myCases.length + '</div><div style="font-size:9px;color:var(--muted);margin-top:4px;">touched</div></div>' +
     '<div style="padding:12px 14px;background:rgba(26,24,21,0.045);border:1px solid rgba(245,158,11,0.2);border-radius:10px;"><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;font-weight:700;margin-bottom:6px;">My Pins</div><div style="font-size:22px;color:#f59e0b;font-weight:800;line-height:1;">' + myPins.length + '</div><div style="font-size:9px;color:var(--muted);margin-top:4px;">items pinned</div></div>' +
-    '<div style="padding:12px 14px;background:rgba(26,24,21,0.045);border:1px solid rgba(168,85,247,0.2);border-radius:10px;"><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;font-weight:700;margin-bottom:6px;">My Notes</div><div style="font-size:22px;color:#a855f7;font-weight:800;line-height:1;">' + myNotes.length + '</div><div style="font-size:9px;color:var(--muted);margin-top:4px;">personal notes</div></div>' +
+    '<div style="padding:12px 14px;background:rgba(26,24,21,0.045);border:1px solid rgba(168,85,247,0.2);border-radius:10px;"><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;font-weight:700;margin-bottom:6px;">My Notes</div><div style="font-size:22px;color:#a855f7;font-weight:800;line-height:1;">' + myNotesShown + '</div><div style="font-size:9px;color:var(--muted);margin-top:4px;">personal notes</div></div>' +
   '</div>';
 
   html += '<div style="background:rgba(168,85,247,0.04);border:1px dashed rgba(168,85,247,0.25);border-radius:10px;padding:14px 16px;margin-bottom:16px;">' +
@@ -31652,9 +31653,9 @@ function echoRenderMyWorkspaceTab() {
   }
   html += '</div>';
 
-  if (myNotes.length > 0) {
+  if (myNotesShown > 0) {
     html += '<div style="margin-bottom:18px;">' +
-      '<div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;font-weight:700;margin-bottom:10px;">My Notes (' + myNotes.length + ')</div>' +
+      '<div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;font-weight:700;margin-bottom:10px;">My Notes (' + myNotesShown + ')</div>' +
       '<div style="display:flex;flex-direction:column;gap:6px;">' +
       myNotes.slice().reverse().map(function(n, idx){
         var nts = new Date(n.timestamp);
@@ -31670,6 +31671,7 @@ function echoRenderMyWorkspaceTab() {
           }
         }
         var delIdx = myNotes.length - 1 - idx;
+        if (n.deleted) return '';
         var sumLinked = linkedMem ? ((linkedMem.summary || '').substring(0, 80) + ((linkedMem.summary || '').length > 80 ? '...' : '')) : '';
         var memContext = linkedMem
           ? '<div onclick="echoOpenMemoryDetail(\'' + escJs(linkedMem.id) + '\')" style="cursor:pointer;padding:8px 10px;background:rgba(26,24,21,0.045);border:1px solid rgba(167, 167, 167,0.1);border-radius:6px;margin-bottom:8px;font-size:10px;"><span style="color:var(--muted);">Linked to: </span><span style="color:var(--accent);">' + esc(sumLinked) + '</span>' + (linkedMem.caseId ? '<span style="margin-left:8px;color:var(--accent);font-family:monospace;">#' + esc(String(linkedMem.caseId)) + '</span>' : '') + '</div>'
@@ -31677,7 +31679,7 @@ function echoRenderMyWorkspaceTab() {
         return '<div style="padding:10px 14px;background:rgba(168,85,247,0.04);border:1px solid rgba(168,85,247,0.2);border-radius:8px;">' +
           '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">' +
             '<span style="font-size:9px;color:#a855f7;text-transform:uppercase;letter-spacing:0.8px;font-weight:700;">Note · ' + esc(nts.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })) + '</span>' +
-            '<button type="button" onclick="echoDeletePersonalNote(' + delIdx + ')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:13px;line-height:1;">×</button>' +
+            (bigNoteEditable(n) ? '<button type="button" onclick="echoDeletePersonalNote(' + delIdx + ')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:13px;line-height:1;" title="Delete (hidden from you, kept in Echo)">×</button>' : '<span style="font-size:9px;color:var(--muted)">🔒 Locked</span>') +
           '</div>' +
           memContext +
           '<div style="font-size:12px;color:var(--chrome2);line-height:1.6;">' + esc(n.text) + '</div>' +
@@ -31731,8 +31733,12 @@ function echoDeletePersonalNote(idx) {
   if (!persona) return;
   var key = 'notes:' + persona.id;
   if (!window.__userNotes || !window.__userNotes[key]) return;
-  window.__userNotes[key].splice(idx, 1);
+  // Same 24-hour rule as My Workspace: soft delete only, inside the window
+  var n = window.__userNotes[key][idx];
+  if (!bigNoteEditable(n)) return;
+  n.deleted = true; n.deletedAt = new Date().toISOString();
   try { localStorage.setItem('cardinal-notes-' + persona.id, JSON.stringify(window.__userNotes[key])); } catch(_e) {}
+  bigNoteEchoLog(persona, 'note-deleted', n);
   echoRenderMyWorkspaceTab();
   try { updateMyWsNavBadge(); } catch(_nw) {}
 }
@@ -31750,7 +31756,7 @@ function updateMyWsNavBadge() {
   var pinKey = 'pins:' + persona.id;
   var notesKey = 'notes:' + persona.id;
   var pins = (window.__userPins[pinKey] || []).length;
-  var notes = (window.__userNotes[notesKey] || []).length;
+  var notes = (window.__userNotes[notesKey] || []).filter(function (n) { return !n.deleted; }).length;
   badgeEl.textContent = String(pins + notes);
 }
 
@@ -31775,6 +31781,7 @@ window.renderBigWorkspacePage = function() {
   var notesKey = 'notes:' + persona.id;
   var myPinIds = window.__userPins[pinKey] || [];
   var myNotes = window.__userNotes[notesKey] || [];
+  var myNotesShown = myNotes.filter(function (n) { return !n.deleted; }).length;
 
   var allMems = [];
   ['ad', 'fin', 'health', 'fed'].forEach(function(o){
@@ -31800,7 +31807,7 @@ window.renderBigWorkspacePage = function() {
 
   html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">' +
     '<div style="padding:12px;background:rgba(245,158,11,0.06);border:1px solid rgba(245,158,11,0.2);border-radius:10px;text-align:center;"><div style="font-size:22px;color:#f59e0b;font-weight:800;line-height:1;">' + myPinnedMems.length + '</div><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.6px;font-weight:700;margin-top:6px;">Pins</div></div>' +
-    '<div style="padding:12px;background:rgba(168,85,247,0.06);border:1px solid rgba(168,85,247,0.2);border-radius:10px;text-align:center;"><div style="font-size:22px;color:#a855f7;font-weight:800;line-height:1;">' + myNotes.length + '</div><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.6px;font-weight:700;margin-top:6px;">Notes</div></div>' +
+    '<div style="padding:12px;background:rgba(168,85,247,0.06);border:1px solid rgba(168,85,247,0.2);border-radius:10px;text-align:center;"><div style="font-size:22px;color:#a855f7;font-weight:800;line-height:1;">' + myNotesShown + '</div><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.6px;font-weight:700;margin-top:6px;">Notes</div></div>' +
     '<div style="padding:12px;background:rgba(167, 167, 167,0.06);border:1px solid rgba(167, 167, 167,0.15);border-radius:10px;text-align:center;"><div style="font-size:22px;color:var(--accent);font-weight:800;line-height:1;">' + myMems.length + '</div><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.6px;font-weight:700;margin-top:6px;">Events</div></div>' +
     '<div style="padding:12px;background:rgba(34,197,94,0.06);border:1px solid rgba(34,197,94,0.2);border-radius:10px;text-align:center;"><div style="font-size:22px;color:#22c55e;font-weight:800;line-height:1;">' + Array.from(new Set(myMems.map(function(m){ return m.caseId; }).filter(Boolean))).length + '</div><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.6px;font-weight:700;margin-top:6px;">Cases</div></div>' +
   '</div>';
@@ -31852,14 +31859,26 @@ window.renderBigWorkspacePage = function() {
   html += '</div>';
 
   html += '<div>' +
-    '<div style="font-size:12px;color:#a855f7;text-transform:uppercase;letter-spacing:0.8px;font-weight:700;margin-bottom:10px;">My Notes (' + myNotes.length + ')</div>';
-  if (myNotes.length === 0) {
+    '<div style="font-size:12px;color:#a855f7;text-transform:uppercase;letter-spacing:0.8px;font-weight:700;margin-bottom:10px;">My Notes (' + myNotesShown + ')</div>';
+  if (myNotesShown === 0) {
     html += '<div style="padding:24px;background:rgba(26,24,21,0.045);border:1px dashed rgba(168,85,247,0.2);border-radius:10px;text-align:center;color:var(--muted);font-size:11px;">No notes yet. Use the composer above, or right-click anywhere in Cardinal to add a contextual note.</div>';
   } else {
     html += '<div style="display:flex;flex-direction:column;gap:8px;">' +
       myNotes.slice().reverse().map(function(n, idx){
         var nts = new Date(n.timestamp);
         var realIdx = myNotes.length - 1 - idx;
+        // 9/30 -- Brittany's rule: notes can be edited or deleted for 24 hours, then they lock.
+        // Every version is kept (n.versions) and logged to Echo; deletes are soft (hidden,
+        // never erased) so edits can't be used to quietly change the record.
+        if (n.deleted) return '';
+        var editable = (Date.now() - nts.getTime()) < 24 * 3600000;
+        var hrsLeft = Math.max(0, Math.ceil(24 - (Date.now() - nts.getTime()) / 3600000));
+        var versions = n.versions || [];
+        var histHtml = versions.length ? '<details style="margin-top:8px"><summary style="cursor:pointer;font-size:9.5px;color:var(--muted2);font-weight:700">Edited · ' + versions.length + ' earlier version' + (versions.length === 1 ? '' : 's') + ' kept in Echo</summary>' +
+          versions.slice().reverse().map(function (v) { return '<div style="margin-top:6px;padding:6px 9px;border-left:2px solid var(--border2);font-size:10.5px;color:var(--muted2);white-space:pre-wrap"><span style="font-size:9px;font-family:monospace">' + new Date(v.at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) + '</span><br>' + (v.title ? '<strong>' + String(v.title).replace(/</g, '&lt;') + '</strong><br>' : '') + String(v.text || '').replace(/</g, '&lt;') + '</div>'; }).join('') + '</details>' : '';
+        var lockHtml = editable
+          ? '<button type="button" onclick="editBigNote(' + realIdx + ')" style="background:none;border:1px solid rgba(168,85,247,.3);border-radius:6px;color:#7E22CE;cursor:pointer;font-size:10px;padding:2px 8px" title="Editable for ' + hrsLeft + ' more hour' + (hrsLeft === 1 ? '' : 's') + '">Edit</button>'
+          : '<span style="font-size:9.5px;color:var(--muted)" title="Notes lock 24 hours after saving so the record can\'t be quietly changed">🔒 Locked</span>';
         var escTitle = (n.title || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
         var escText = (n.text || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
         var linkMem = n.linkedMemoryId ? escJs(n.linkedMemoryId) : '';
@@ -31871,9 +31890,10 @@ window.renderBigWorkspacePage = function() {
               (n.title ? '<div style="font-size:13px;color:var(--chrome2);font-weight:700;line-height:1.3;">' + escTitle + '</div>' : '') +
               '<div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.6px;font-weight:600;font-family:monospace;margin-top:' + (n.title ? '4px' : '0') + ';">' + nts.toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' }) + '</div>' +
             '</div>' +
-            '<button type="button" onclick="deleteBigNote(' + realIdx + ')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;line-height:1;" title="Delete note">×</button>' +
+            '<div style="display:flex;gap:6px;align-items:center">' + lockHtml + (editable ? '<button type="button" onclick="deleteBigNote(' + realIdx + ')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;line-height:1;" title="Delete (hidden from you, kept in Echo)">×</button>' : '') + '</div>' +
           '</div>' +
-          '<div style="font-size:12px;color:var(--chrome2);line-height:1.7;white-space:pre-wrap;">' + escText + '</div>' +
+          '<div id="big-note-body-' + realIdx + '" style="font-size:12px;color:var(--chrome2);line-height:1.7;white-space:pre-wrap;">' + escText + '</div>' +
+          histHtml +
           linkBlock +
           ctxLine +
         '</div>';
@@ -31912,13 +31932,56 @@ window.saveBigNote = function() {
   renderBigWorkspacePage();
 };
 
+function bigNoteEchoLog(persona, eventType, n) {
+  try {
+    var org = window.currentOrg || 'ad';
+    var mems = window.CARDINAL_DATA && window.CARDINAL_DATA[org] && window.CARDINAL_DATA[org].echoMemories;
+    if (!mems) return;
+    mems.push({ id: 'echo-note-' + Date.now(), timestamp: new Date().toISOString(), author: persona.name, authorRole: 'user-note', eventType: eventType, core: 'myworkspace', severity: 'informational',
+      summary: (eventType === 'note-edited' ? 'Note edited' : 'Note deleted') + ' by ' + persona.name + (n.title ? ': ' + n.title : ''), content: 'Original preserved. Versions on file: ' + ((n.versions || []).length + 1) + '.', isSealed: true, addendums: [], linkedMemories: [], comments: [], accessTier: 'role-restricted', accessRoles: [], caseId: null, modelId: null, userId: persona.name, industryContext: org });
+  } catch (_nl) {}
+}
+function bigNoteEditable(n) { return n && !n.deleted && (Date.now() - new Date(n.timestamp).getTime()) < 24 * 3600000; }
+window.editBigNote = function (idx) {
+  var persona = window.getActivePersona ? window.getActivePersona() : null;
+  if (!persona) return;
+  var n = (window.__userNotes['notes:' + persona.id] || [])[idx];
+  var body = document.getElementById('big-note-body-' + idx);
+  if (!bigNoteEditable(n) || !body) return;
+  body.innerHTML = '<textarea id="big-note-edit-' + idx + '" style="width:100%;min-height:90px;padding:8px 10px;border-radius:8px;border:1px solid rgba(168,85,247,.3);background:var(--bg3);color:var(--text);font-size:12px;line-height:1.6;box-sizing:border-box"></textarea>' +
+    '<div style="display:flex;gap:6px;justify-content:flex-end;margin-top:6px"><button type="button" onclick="renderBigWorkspacePage()" style="font-size:11px;padding:5px 12px;border-radius:7px;border:1px solid var(--border2);background:transparent;color:var(--muted2);cursor:pointer">Cancel</button>' +
+    '<button type="button" onclick="saveBigNoteEdit(' + idx + ')" style="font-size:11px;padding:5px 12px;border-radius:7px;border:0;background:#7E22CE;color:#fff;font-weight:700;cursor:pointer">Save edit</button></div>' +
+    '<div style="font-size:9.5px;color:var(--muted);margin-top:4px">The original stays on file in Echo Core.</div>';
+  document.getElementById('big-note-edit-' + idx).value = n.text || '';
+};
+window.saveBigNoteEdit = function (idx) {
+  var persona = window.getActivePersona ? window.getActivePersona() : null;
+  if (!persona) return;
+  var key = 'notes:' + persona.id;
+  var n = (window.__userNotes[key] || [])[idx];
+  var ta = document.getElementById('big-note-edit-' + idx);
+  if (!bigNoteEditable(n) || !ta) return;
+  var text = ta.value.trim();
+  if (!text || text === n.text) { renderBigWorkspacePage(); return; }
+  n.versions = n.versions || [];
+  n.versions.push({ title: n.title, text: n.text, at: n.editedAt || n.timestamp });
+  n.text = text; n.editedAt = new Date().toISOString();
+  try { localStorage.setItem('cardinal-notes-' + persona.id, JSON.stringify(window.__userNotes[key])); } catch(_e) {}
+  bigNoteEchoLog(persona, 'note-edited', n);
+  if (typeof cardinalLogActivity === 'function') cardinalLogActivity('edit', 'Edited a note' + (n.title ? ': ' + n.title : ''), null);
+  renderBigWorkspacePage();
+};
 window.deleteBigNote = function(idx) {
   var persona = window.getActivePersona ? window.getActivePersona() : null;
   if (!persona) return;
   var key = 'notes:' + persona.id;
   if (!window.__userNotes || !window.__userNotes[key]) return;
-  window.__userNotes[key].splice(idx, 1);
+  var n = window.__userNotes[key][idx];
+  if (!bigNoteEditable(n)) return;
+  // Soft delete: hidden from the author, never erased
+  n.deleted = true; n.deletedAt = new Date().toISOString();
   try { localStorage.setItem('cardinal-notes-' + persona.id, JSON.stringify(window.__userNotes[key])); } catch(_e) {}
+  bigNoteEchoLog(persona, 'note-deleted', n);
   renderBigWorkspacePage();
 };
 
