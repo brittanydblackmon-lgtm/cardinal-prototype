@@ -27018,7 +27018,7 @@ function renderTrustLoopWorkspace(org) {
  var rightHtml = '';
  if (dmPeer) {
    var sortedDm = dmMsgs.slice().sort(function (a, b) { return new Date(a.timestamp) - new Date(b.timestamp); });
-   rightHtml = '<div style="flex:1;display:flex;flex-direction:column;min-width:0;background:rgba(20,24,36,.5);border:1px solid rgba(167, 167, 167,.1);border-radius:12px;overflow:hidden">' +
+   rightHtml = '<div style="flex:1;display:flex;flex-direction:column;min-width:0;background:var(--card);border:1px solid rgba(167, 167, 167,.1);border-radius:12px;overflow:hidden">' +
      '<div style="padding:12px 14px;border-bottom:1px solid rgba(167, 167, 167,.08);display:flex;justify-content:space-between;align-items:center;gap:8px">' +
      '<div><div style="font-size:13px;font-weight:700;color:var(--chrome2)">DM · ' + tlwEsc(dmPeer) + '</div>' +
      '<div style="font-size:10px;color:var(--muted)">' + sortedDm.length + ' messages · Echo-logged</div></div></div>' +
@@ -27038,7 +27038,7 @@ function renderTrustLoopWorkspace(org) {
    var merged = tlwMergeMsgs(curCh.messages || [], curCh.id);
    var pins = rowPins(merged).sort(function (a, b) { return new Date(a.timestamp) - new Date(b.timestamp); });
    var rest = rowRest(merged).sort(function (a, b) { return new Date(a.timestamp) - new Date(b.timestamp); });
-   rightHtml = '<div style="flex:1;display:flex;flex-direction:column;min-width:0;background:rgba(20,24,36,.5);border:1px solid rgba(167, 167, 167,.12);border-radius:12px;overflow:hidden">' +
+   rightHtml = '<div style="flex:1;display:flex;flex-direction:column;min-width:0;background:var(--card);border:1px solid rgba(167, 167, 167,.12);border-radius:12px;overflow:hidden">' +
      '<div style="padding:12px 14px;border-bottom:1px solid rgba(167, 167, 167,.08);display:flex;justify-content:space-between;align-items:flex-start;gap:8px">' +
      '<div><div style="font-size:13px;font-weight:700;color:var(--chrome2)" onclick="showTooltip(\'' + tlwEsc(curCh.name) + '\',\'' + tlwEsc((curCh.description || 'Governance channel').replace(/'/g, "\\'")) + '\',event)">' + tlwEsc(curCh.name) + '</div>' +
      '<div style="font-size:10px;color:var(--muted);margin-top:2px">' + tlwEsc(curCh.description || '') + ' · ' + (curCh.members || []).length + ' members</div></div>' +
@@ -43479,5 +43479,95 @@ window.__cardinalScaffoldDiagnostic = function() {
 console.log('[Cardinal] Run window.__cardinalScaffoldDiagnostic() to audit all screens for empty/sparse content.');
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+// 9/30 -- Readability pass (Brittany: "darker text shades"). The palette stays exactly as-is
+// for backgrounds, badges and borders; only palette colors used as TEXT on a LIGHT surface
+// get swapped for a darker shade of the same hue when they're hard to read (contrast under
+// 4.5:1). Done at render time rather than find-and-replace because (a) many colors are
+// assigned dynamically in JS, and (b) some panels are dark (Halo map, pipeline terminal),
+// where darkening would make text worse. Those are detected and left alone.
+(function () {
+  var DARK = {
+    '167,167,167': '#6B6B6B', // accent gray
+    '245,158,11': '#B45309',  // amber
+    '251,191,36': '#B45309',
+    '34,197,94': '#15803D',   // green
+    '16,185,129': '#047857',
+    '59,130,246': '#2563EB',  // blue
+    '96,165,250': '#2563EB',
+    '239,68,68': '#DC2626',   // red
+    '168,85,247': '#7E22CE',  // purple
+    '148,163,184': '#64748B', // slate
+    '180,190,220': '#64748B',
+    '226,232,240': '#475569', // near-white text meant for dark panels
+    '203,213,225': '#475569',
+    '241,245,249': '#475569',
+    '248,113,113': '#DC2626', // light red
+    '252,165,165': '#DC2626',
+    '253,164,175': '#BE123C',
+    '167,139,250': '#6D28D9', // violet
+    '196,181,253': '#6D28D9',
+    '134,239,172': '#15803D', // light green
+    '125,211,252': '#0369A1', // sky
+    '147,197,253': '#2563EB'
+  };
+  function parse(c) { var m = c && c.match(/[\d.]+/g); return m ? m.map(Number) : null; }
+  function lum(c) { var a = c.slice(0, 3).map(function (v) { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }); return 0.2126 * a[0] + 0.7152 * a[1] + 0.0722 * a[2]; }
+  function bgOf(el) {
+    var layers = [], e = el;
+    while (e && e.nodeType === 1) {
+      var c = parse(getComputedStyle(e).backgroundColor);
+      if (c && (c[3] === undefined || c[3] > 0)) { layers.push(c); if (c[3] === undefined || c[3] >= 0.95) break; }
+      e = e.parentElement;
+    }
+    var base = [255, 255, 255];
+    for (var i = layers.length - 1; i >= 0; i--) { var l = layers[i], a = l[3] === undefined ? 1 : l[3]; base = base.map(function (b, k) { return b * (1 - a) + l[k] * a; }); }
+    return base;
+  }
+  function pass(root) {
+    if (!root) return;
+    var els = root.querySelectorAll('*');
+    for (var i = 0; i < els.length; i++) {
+      var el = els[i];
+      if (el.__legibleDone === el.style.color + '|' + el.className) continue;
+      var hasText = false;
+      for (var j = 0; j < el.childNodes.length; j++) { var n = el.childNodes[j]; if (n.nodeType === 3 && n.textContent.trim()) { hasText = true; break; } }
+      if (!hasText || el.offsetParent === null) continue;
+      var fg = parse(getComputedStyle(el).color);
+      if (!fg) continue;
+      var dark = DARK[fg.slice(0, 3).join(',')];
+      el.__legibleDone = el.style.color + '|' + el.className;
+      if (!dark || (fg[3] !== undefined && fg[3] < 0.45)) continue;
+      var bg = bgOf(el);
+      var Lb = lum(bg);
+      if (Lb < 0.5) continue; // dark panel: leave the bright color alone
+      var cr = (Lb + 0.05) / (lum(fg) + 0.05);
+      // 'important' because some stylesheet rules set text color with !important
+      if (cr < 4.5) { el.style.setProperty('color', dark, 'important'); el.__legibleDone = el.style.color + '|' + el.className; }
+    }
+  }
+  var timer = null;
+  // Throttle, not debounce: Echo's continuously scrolling ticker mutates every frame, which
+  // would postpone a debounced pass forever.
+  function schedule() {
+    if (timer) return;
+    timer = setTimeout(function () {
+      timer = null;
+      try {
+        pass(document.querySelector('.screen.active'));
+        document.querySelectorAll('[id$="-modal"], #eve-panel').forEach(function (m) { if (m.offsetParent !== null || getComputedStyle(m).display !== 'none') pass(m); });
+        pass(document.querySelector('.sidebar, #sidebar'));
+      } catch (_lp) {}
+    }, 250);
+  }
+  window.cardinalLegibilityPass = schedule;
+  document.addEventListener('DOMContentLoaded', function () {
+    // childList: new content; class/style: screen switches and live tickers recoloring text
+    new MutationObserver(schedule).observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['class', 'style'] });
+    schedule();
+  });
+})();
+</script>
 </body>
+
 </html>
