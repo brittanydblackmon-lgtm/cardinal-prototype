@@ -23570,6 +23570,9 @@ window.buildCompStates = buildCompStates;
       var g = document.getElementById('comp-content-global'), s = document.getElementById('comp-content-states');
       if (g && g.style.display === 'block') buildCompGlobal(o);
       if (s && s.style.display === 'block') { window.__slState = null; buildCompStates(o); }
+      var rg = document.getElementById('comp-content-regulations'), cl = document.getElementById('comp-content-calendar');
+      if (rg && rg.style.display === 'block') buildCompRegulations(window._compRegRegion || 'All');
+      if (cl && cl.style.display === 'block') buildCompCalendar();
       var p = document.getElementById('screen-pipeline');
       if (p && p.offsetParent !== null && typeof pipelineInitWizard === 'function') pipelineInitWizard();
     } catch (e) {}
@@ -23595,6 +23598,96 @@ function switchCompTab(tab) {
  if(tab==='global') buildCompGlobal((typeof currentOrg !== 'undefined' && currentOrg) || window.currentOrg || 'ad');
 }
 
+// ══ COMPLIANCE: PER-ORG REGULATIONS + CALENDAR (10/1) ══
+// The Regulations cards and Calendar used to show one fixed list (ECOA, DoD, EU) to every
+// company, with an invented "$10,000 per violation" penalty on everything. Now each org
+// gets its own laws (matching the US States, Global, Halo and Trust Ledger views) and each
+// calendar item names its real requirement and consequence.
+// Deadline kinds: d = authored days from Sep 25 (rolls with the demo), t = days from today
+// (clocks started by recent events), fixed = a real legal date that never moves.
+var COMP_REGS_BY_ORG = {
+  fin: [
+    { name: 'ECOA / Reg B', loc: 'United States', region: 'North America', status: 'Due Soon', color: 'amber', action: 'CFPB fair lending exam · evidence packet for #FIN-1203', detail: 'Credit decisions cannot discriminate, and every denial needs specific reasons. Credit Scoring v3.4 is at DI 0.74.' },
+    { name: 'FCRA adverse action', loc: 'United States', region: 'North America', status: 'Compliant', color: 'green', action: 'Quarterly notice sample review', detail: 'Every AI-driven denial carries principal reasons in its Decision Receipt.' },
+    { name: 'FinCEN deepfake alert (FIN-2024-Alert004)', loc: 'United States', region: 'North America', status: 'In Review', color: 'blue', action: 'SAR for the voice-clone wire attempt', detail: 'Deepfake-related SARs use key term FIN-2024-DEEPFAKEFRAUD, filed within 30 days of detection.' },
+    { name: 'Colorado SB 26-189', loc: 'Colorado, USA', region: 'North America', status: 'Pending', color: 'blue', action: 'Effective Jan 1, 2027', detail: 'Notice at the point of decision and a disclosure within 30 days after an adverse outcome. Disclosure not generated yet.' },
+    { name: 'California ADMT rules', loc: 'California, USA', region: 'North America', status: 'Pending', color: 'blue', action: 'Effective Jan 1, 2027', detail: 'Pre-use notice, opt-out or human review, and access to decision logic for credit decisions.' },
+    { name: 'Illinois BIPA', loc: 'Illinois, USA', region: 'North America', status: 'Gap', color: 'red', action: 'Review selfie and voice-print consent language', detail: 'Written consent before collecting faceprints or voiceprints. The liveness vendor\'s consent language has not been checked.' },
+    { name: 'EU AI Act (high-risk credit scoring)', loc: 'Ireland', region: 'Europe', status: 'Gap', color: 'red', action: 'Dec 2, 2027', detail: 'Creditworthiness models are high-risk under Annex III: risk management, data governance, human oversight, logging.' },
+    { name: 'FCA Consumer Duty', loc: 'United Kingdom', region: 'Europe', status: 'Compliant', color: 'green', action: 'Annual fair-outcome board report', detail: 'Firms must test and evidence good outcomes for retail customers, including groups with characteristics of vulnerability.' },
+    { name: 'MAS FEAT principles', loc: 'Singapore', region: 'Asia Pacific', status: 'Compliant', color: 'green', action: 'Ongoing', detail: 'Fairness, ethics, accountability, transparency for credit models.' }
+  ],
+  ad: [
+    { name: 'DoD Responsible AI assessment', loc: 'United States', region: 'North America', status: 'Overdue', color: 'red', action: 'Blocked by #AD-2847 · required for contract renewal', detail: 'RAI Toolkit assessment for Personnel Assignment. Can\'t close while DI is 0.67.' },
+    { name: 'Title VII (adverse impact)', loc: 'United States', region: 'North America', status: 'Gap', color: 'red', action: 'Fix v2.5 in shadow deployment', detail: 'Employment decisions with adverse impact on a protected group need a business-necessity defense. DI 0.67 is well under the four-fifths rule.' },
+    { name: 'Illinois HB 3773', loc: 'Illinois, USA', region: 'North America', status: 'Gap', color: 'red', action: 'Remove home ZIP from Personnel Assignment', detail: 'In effect since Jan 1, 2026. Bans ZIP code as a proxy for protected traits in employment AI.' },
+    { name: 'NYC Local Law 144', loc: 'New York City', region: 'North America', status: 'Compliant', color: 'green', action: 'Next annual audit in 12 months', detail: 'Independent bias audit of the NYC hiring screen, published with candidate notice.' },
+    { name: 'ITAR', loc: 'United States', region: 'North America', status: 'Due Soon', color: 'amber', action: 'Annual compliance audit', detail: 'Export-controlled technical data must stay with authorized persons, including data feeding AI models.' },
+    { name: 'ISO/IEC 42001', loc: 'International', region: 'Europe', status: 'Compliant', color: 'green', action: 'Surveillance audit in ~2 months', detail: 'AI management system standard. Third-party certified.' },
+    { name: 'UK MOD JSP 936', loc: 'United Kingdom', region: 'Europe', status: 'Compliant', color: 'green', action: 'Ongoing', detail: 'Dependable AI in defence: assurance for AI used on UK MOD programs.' },
+    { name: 'Australia Privacy Act (automated decisions)', loc: 'Australia', region: 'Asia Pacific', status: 'Gap', color: 'red', action: 'Dec 10, 2026', detail: 'Privacy policies must explain automated decisions that significantly affect people.' }
+  ],
+  health: [
+    { name: 'ACA Section 1557', loc: 'United States', region: 'North America', status: 'Due Soon', color: 'amber', action: 'Close #HS-2847 before next attestation', detail: 'Nondiscrimination rule for patient care decision support tools. Claims Adjudication under-approves care for patients 75+.' },
+    { name: 'CMS Medicare Advantage coverage rules', loc: 'United States', region: 'North America', status: 'In Review', color: 'blue', action: 'Program audit', detail: 'Coverage decisions must be based on the individual patient, not an algorithm alone.' },
+    { name: 'California SB 1120', loc: 'California, USA', region: 'North America', status: 'Gap', color: 'red', action: 'Clinician review on all AI-driven denials', detail: 'Only a licensed clinician can deny care for medical necessity. Claims Triage Agent auto-closed 31 denials.' },
+    { name: 'HIPAA Security + Breach Notification', loc: 'United States', region: 'North America', status: 'Due Soon', color: 'amber', action: 'Patient notice for voice-clone account takeover', detail: 'Annual risk assessment done. A breach notice is due within 60 days of discovery.' },
+    { name: 'California AB 3030', loc: 'California, USA', region: 'North America', status: 'Compliant', color: 'green', action: 'Ongoing', detail: 'AI-generated patient messages carry a disclaimer and a way to reach a human.' },
+    { name: 'EU AI Act (high-risk health insurance)', loc: 'Ireland', region: 'Europe', status: 'Gap', color: 'red', action: 'Dec 2, 2027', detail: 'Health insurance risk and pricing models are high-risk under Annex III.' },
+    { name: 'UK MHRA (AI as a medical device)', loc: 'United Kingdom', region: 'Europe', status: 'Compliant', color: 'green', action: 'Ongoing', detail: 'Diagnostic Assist versions documented through Echo model lineage.' }
+  ],
+  fed: [
+    { name: 'OMB M-25-21 (high-impact AI)', loc: 'United States', region: 'North America', status: 'Gap', color: 'red', action: 'Name a human owner for Audit Selection Agent', detail: 'Pre-deployment testing, impact assessment, human oversight, and an appeal path. Human oversight is missing.' },
+    { name: 'AI use case inventory', loc: 'United States', region: 'North America', status: 'Compliant', color: 'green', action: 'Annual update', detail: 'IRS Tax Fraud Detection v3.1 listed and marked high-impact.' },
+    { name: 'FISMA', loc: 'United States', region: 'North America', status: 'Compliant', color: 'green', action: 'Continuous monitoring', detail: 'Authority to operate for the fraud detection system.' },
+    { name: 'Privacy Act', loc: 'United States', region: 'North America', status: 'Compliant', color: 'green', action: 'System notice review', detail: 'Published notice covers the records the model uses.' },
+    { name: 'IRC 6103 (return confidentiality)', loc: 'United States', region: 'North America', status: 'In Review', color: 'blue', action: 'Examiner lookup reported via whistleblower', detail: 'Return information may be used only for tax administration. One report alleges a personal lookup.' }
+  ]
+};
+var COMP_CAL_BY_ORG = {
+  fin: [
+    { name: 'CFPB fair lending exam (ECOA / Reg B)', type: 'Regulatory exam', d: 13, progress: 55, req: 'Fair lending evidence packet: bias testing, #FIN-1203 remediation, adverse action samples', scope: 'Credit Scoring v3.4, Underwriting v4.1', pen: 'Consent order, restitution, civil money penalties. ECOA lets individuals recover punitive damages up to $10,000; classes up to $500,000 or 1% of net worth.' },
+    { name: 'SAR: voice-clone wire attempt', type: 'FinCEN filing', t: 28, progress: 20, req: 'File a SAR with key term FIN-2024-DEEPFAKEFRAUD', scope: '$480,000 wire held · Fraud Screening v2.7', pen: 'Bank Secrecy Act civil and criminal penalties for failing to file.' },
+    { name: 'FCRA adverse action sample review', type: 'Internal audit', d: 40, progress: 70, req: 'Sample 200 denials and confirm each notice names specific reasons', scope: 'All credit denials', pen: 'Willful violations: $100 to $1,000 per consumer plus punitive damages (FCRA).' },
+    { name: 'California ADMT compliance', type: 'State law', fixed: 'Jan 1, 2027', progress: 40, req: 'Pre-use notice, opt-out or human review, logic access, appeal', scope: 'Credit decisions for California applicants', pen: 'CCPA fines up to $7,988 per intentional violation (2025 adjusted).' },
+    { name: 'Colorado SB 26-189 readiness', type: 'State law', fixed: 'Jan 1, 2027', progress: 25, req: 'Point-of-decision notice and 30-day adverse-outcome disclosure', scope: 'Credit decisions for Colorado applicants', pen: 'Enforced by the Colorado Attorney General.' },
+    { name: 'SOC 2 Type II renewal', type: 'Certification', d: 330, progress: 5, req: 'Annual controls audit', scope: 'Platform and data environment', pen: 'Lost certification blocks sponsor bank and enterprise deals.' }
+  ],
+  ad: [
+    { name: 'DoD Responsible AI assessment', type: 'Defense contract', d: -2, progress: 65, req: 'RAI Toolkit assessment for Personnel Assignment', scope: 'Personnel Assignment v2.4 / v2.5', pen: 'Contract renewal at risk.' },
+    { name: 'ITAR compliance audit', type: 'Export control', d: 8, progress: 60, req: 'Confirm controlled technical data reaches only authorized persons, including AI training data', scope: 'Maintenance Routing, Mission Readiness', pen: 'Civil penalties per violation and possible debarment.' },
+    { name: 'Illinois HB 3773 gap: remove ZIP proxy', type: 'State law, in effect since Jan 1, 2026 (fix target set by Legal)', t: 21, progress: 50, req: 'Remove home ZIP from Personnel Assignment; notify workers about AI use', scope: 'Illinois employees', pen: 'Illinois Human Rights Act charges and damages.' },
+    { name: 'ISO/IEC 42001 surveillance audit', type: 'Certification', d: 75, progress: 30, req: 'Corrective actions and management review evidence', scope: 'AI management system', pen: 'Certification suspended if findings stay open.' },
+    { name: 'NYC Local Law 144 annual audit', type: 'Local law', d: 360, progress: 0, req: 'Independent bias audit, published summary, candidate notice', scope: 'NYC hiring screen', pen: '$500 to $1,500 per violation, per day.' }
+  ],
+  health: [
+    { name: 'ACA 1557 remediation (#HS-2847)', type: 'Federal civil rights', d: 4, progress: 70, req: 'Close the calibration gap for patients 75+ and document mitigation', scope: 'Claims Adjudication v1.9 / v2.0', pen: 'HHS OCR enforcement, corrective action plan, loss of federal funding in serious cases.' },
+    { name: 'California SB 1120 gap: clinician review', type: 'State law, in effect since Jan 1, 2025 (fix target set by Legal)', t: 10, progress: 40, req: 'A licensed clinician decides every medical-necessity denial', scope: 'Claims Triage Agent, Prior Auth v1.5', pen: 'Enforced by California health plan regulators.' },
+    { name: 'CMS Medicare Advantage program audit', type: 'Federal audit', d: 30, progress: 35, req: 'Show coverage decisions are based on each patient, not an algorithm alone', scope: 'Prior Auth v1.5, Claims Adjudication', pen: 'Civil money penalties and enrollment sanctions.' },
+    { name: 'HIPAA breach notice: voice-clone takeover', type: 'Breach notification', t: 57, progress: 10, req: 'Notify the affected patient; log for the annual HHS report', scope: '1 member account', pen: 'Tiered HIPAA civil money penalties per violation.' },
+    { name: 'Joint Commission accreditation survey', type: 'Accreditation', d: 56, progress: 20, req: 'AI governance evidence for the survey team', scope: 'All clinical AI', pen: 'Accreditation conditions or loss.' }
+  ],
+  fed: [
+    { name: 'Name an owner for Audit Selection Agent', type: 'OMB M-25-21', t: 7, progress: 0, req: 'Assign an accountable official with authority to stop the agent', scope: 'Audit Selection Agent', pen: 'High-impact AI that misses the minimum practices must stop being used.' },
+    { name: 'Agency briefing: OMB packet', type: 'Internal', d: 23, progress: 45, req: 'Brief leadership on high-impact AI status and open gaps', scope: 'All high-impact AI', pen: 'Delays the OMB checkpoint.' },
+    { name: 'M-25-21 impact assessment checkpoint', type: 'OMB', d: 27, progress: 50, req: 'Updated impact assessment and testing evidence', scope: 'IRS Tax Fraud Detection v3.1', pen: 'Use must pause if the assessment lapses.' },
+    { name: 'TIGTA referral package', type: 'Inspector General', t: 12, progress: 60, req: 'Sealed evidence for 37 deepfake identity refund cases', scope: 'Refund fraud ring', pen: 'Delays recovery of $29,400 paid out.' }
+  ]
+};
+function compCalItems(org) {
+  var list = COMP_CAL_BY_ORG[org] || COMP_CAL_BY_ORG.fin;
+  var a = window.CARDINAL_AUTHORED_TODAY, n = new Date(), today = new Date(n.getFullYear(), n.getMonth(), n.getDate());
+  var MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  var fmt = function (d) { return MON[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear(); };
+  return list.map(function (x) {
+    var y = Object.assign({}, x);
+    if (x.fixed) { var f = cardinalParseDate(x.fixed); y.due = x.fixed; y.days = Math.round((f - today) / 86400000); }
+    else if (x.t != null) { y.due = fmt(new Date(today.getTime() + x.t * 86400000)); y.days = x.t; }
+    else { var dd = new Date(a.getFullYear(), a.getMonth(), a.getDate() + x.d); y.due = cardinalFormatDeadline(dd); y.days = cardinalDaysUntil(dd); }
+    return y;
+  }).sort(function (p, q) { return p.days - q.days; });
+}
+
 var COMP_REGS_LIST = [
    {name:'NYC Local Law 144',loc:'New York City',region:'North America',status:'Compliant',color:'green',action:'Dec 31, 2026',detail:'Annual bias audit for automated employment decision tools. Tests disparate impact across race, ethnicity, sex.'},
    {name:'ECOA Annual Review',loc:'United States',region:'North America',status:'Due Soon',color:'amber',action:'Nov 11, 2026: 47 days',detail:'Equal Credit Opportunity Act lending practices review.'},
@@ -23612,7 +23705,7 @@ window._compRegQuery = '';
 function buildCompRegulations(region) {
  const grid = document.getElementById('comp-regs-grid');
  if(!grid) return;
- const regs = COMP_REGS_LIST;
+ const regs = COMP_REGS_BY_ORG[(typeof currentOrg !== 'undefined' && currentOrg) || window.currentOrg || 'ad'] || COMP_REGS_LIST;
  var byRegion = region === 'All' ? regs : regs.filter(r=>r.region===region);
  var q = String(window._compRegQuery || '').trim().toLowerCase();
  const filtered = q ? byRegion.filter(function (r) {
@@ -23664,14 +23757,8 @@ window.filterRegsBySearch = filterRegsBySearch;
 function buildCompCalendar() {
  const container = document.getElementById('comp-calendar-items');
  if(!container) return;
- const items = [
-   {name:'ECOA Compliance Review',type:'Internal Audit',priority:'High',days:8,due:'2026-11-11',progress:65,open:false},
-   {name:'ECOA (Reg B) Annual Audit',type:'External Audit',priority:'Medium',days:23,due:'2026-11-26',progress:40,open:false},
-   {name:'ISO 42001 Evidence Package',type:'Certification',priority:'Medium',days:23,due:'2026-11-26',progress:30,open:false},
-   {name:'EU AI Act Conformity Assessment',type:'Regulatory',priority:'High',days:47,due:'2026-12-20',progress:15,open:false},
-   {name:'DoD RAI Annual Review',type:'Defense Contract',priority:'Low',days:120,due:'2027-03-15',progress:0,open:false},
- ];
- items.forEach(function (item) { var a = window.CARDINAL_AUTHORED_TODAY; var dd = new Date(a.getFullYear(), a.getMonth(), a.getDate() + item.days); item.due = cardinalFormatDeadline(dd); item.days = cardinalDaysUntil(dd); });
+ var _calOrg = (typeof currentOrg !== 'undefined' && currentOrg) || window.currentOrg || 'ad';
+ const items = compCalItems(_calOrg);
  container.innerHTML = items.map((item,i)=>`
    <div style="background:var(--card);border:1px solid ${item.days<=10?'rgba(239,68,68,.3)':item.days<=30?'rgba(245,158,11,.3)':'var(--border2)'};border-radius:12px;padding:16px">
      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
@@ -23680,7 +23767,7 @@ function buildCompCalendar() {
          <div style="font-size:10px;color:var(--muted)">${item.type}</div>
        </div>
        <div style="text-align:right">
-         <div style="font-size:12px;font-weight:700;color:${item.days<=10?'var(--red)':item.days<=30?'var(--amber)':'var(--muted)'}">${cardinalPluralDays(item.days)} remaining</div>
+         <div style="font-size:12px;font-weight:700;color:${item.days<=10?'var(--red)':item.days<=30?'var(--amber)':'var(--muted)'}">${item.days<0?'Overdue by '+cardinalPluralDays(-item.days):cardinalPluralDays(item.days)+' remaining'}</div>
          <div style="font-size:9px;color:var(--muted)">Due: ${item.due}</div>
        </div>
      </div>
@@ -23704,20 +23791,20 @@ function buildCompCalendar() {
          Policy Overview
        </div>
        <div style="font-size:10px;color:var(--muted);margin-bottom:10px;line-height:1.5">
-         ${item.name} requires documentation and evidence of AI governance compliance. Non-compliance can result in penalties up to $10,000 per violation plus class action exposure.
+         ${item.type}. Cardinal assembles the evidence from Echo and the Trust Ledger.
        </div>
        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px">
          <div style="background:var(--card);border-radius:8px;padding:8px">
            <div style="font-size:9px;color:var(--muted);margin-bottom:4px">Requirements</div>
-           <div style="font-size:9px;color:var(--text);line-height:1.4">Review all AI models for disparate impact<br/>Document remediation actions<br/>Submit to compliance committee</div>
+           <div style="font-size:9px;color:var(--text);line-height:1.4">${item.req}</div>
          </div>
          <div style="background:var(--card);border-radius:8px;padding:8px">
            <div style="font-size:9px;color:var(--muted);margin-bottom:4px">Scope</div>
-           <div style="font-size:9px;color:var(--text);line-height:1.4">All AI systems making personnel, lending, or operational decisions</div>
+           <div style="font-size:9px;color:var(--text);line-height:1.4">${item.scope}</div>
          </div>
          <div style="background:var(--card);border-radius:8px;padding:8px">
            <div style="font-size:9px;color:var(--muted);margin-bottom:4px">Non-Compliance</div>
-           <div style="font-size:9px;color:var(--red);line-height:1.4">Up to $10,000 per violation<br/>Potential class action<br/>Contract termination risk</div>
+           <div style="font-size:9px;color:var(--red);line-height:1.4">${item.pen}</div>
          </div>
        </div>
        <div style="display:flex;gap:6px">
@@ -23730,7 +23817,8 @@ function buildCompCalendar() {
  `).join('');
  // Eve warning for 8-day deadline
  setTimeout(()=>{
-   addEveMsg('eve', 'Heads up, the ECOA Compliance Review is due in 8 days and is only 65 percent complete. I can generate the remaining sections automatically. Want me to start on Sections 4 through 7?', null, null, true);
+   var _n = items[0];
+   addEveMsg('eve', 'Heads up: ' + _n.name + (_n.days < 0 ? ' is overdue by ' + cardinalPluralDays(-_n.days) : ' is due in ' + cardinalPluralDays(_n.days)) + ' and is ' + _n.progress + ' percent complete. I can draft the missing evidence for a named approver to sign off. Want me to start?', null, null, true);
    const panel = document.getElementById('eve-panel');
    if(panel) panel.classList.add('open');
  }, 1500);
