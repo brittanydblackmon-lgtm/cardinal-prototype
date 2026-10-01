@@ -42421,6 +42421,48 @@ window.CARDINAL_SECURITY_WATCH = {
 window.__secWatchView = window.__secWatchView || 'access';
 window.sentinelSecSetView = function (v) { window.__secWatchView = v; if (typeof buildSentinel === 'function') buildSentinel(window.currentOrg || 'ad'); };
 
+// OWASP mapping (backlog item): tags every misuse attempt and agent finding with the
+// industry-standard category, so a CISO can map Cardinal's findings to their own program.
+// Sources: OWASP Top 10 for LLM Applications 2025 (LLM01-LLM10) and OWASP Top 10 for
+// Agentic Applications (ASI01-ASI10, published Dec 9, 2025 by the OWASP GenAI Security Project).
+window.CARDINAL_OWASP = {
+  LLM01: 'Prompt Injection', LLM02: 'Sensitive Information Disclosure', LLM10: 'Unbounded Consumption (incl. model extraction)',
+  ASI01: 'Agent Goal Hijack', ASI02: 'Tool Misuse', ASI03: 'Identity and Privilege Abuse', ASI04: 'Agentic Supply Chain',
+  ASI05: 'Unexpected Code Execution', ASI06: 'Memory and Context Poisoning', ASI07: 'Insecure Inter-Agent Communication',
+  ASI08: 'Cascading Failures', ASI09: 'Human-Agent Trust Exploitation', ASI10: 'Rogue Agents'
+};
+// What Cardinal watches today, honestly: governance-layer coverage, not a runtime firewall.
+window.CARDINAL_OWASP_AGENTIC_COVERAGE = [
+  ['ASI01', 'covered', 'Prompt injection and jailbreak attempts against agents are logged and blocked (Misuse tab).'],
+  ['ASI02', 'covered', 'Agent Actions Without Approval: every action that skipped its required human sign-off.'],
+  ['ASI03', 'covered', 'Each agent is its own identity: owner, what it can reach vs. what it uses.'],
+  ['ASI04', 'partial', 'Vendor agents and service accounts are flagged. Cardinal does not scan agent code or plugins.'],
+  ['ASI05', 'gap', 'Code execution sandboxing belongs to the security stack. Cardinal logs the outcome in Echo.'],
+  ['ASI06', 'gap', 'Memory and context poisoning detection is on the roadmap.'],
+  ['ASI07', 'gap', 'Agent-to-agent message checks are on the roadmap.'],
+  ['ASI08', 'partial', 'Halo forecasts knock-on risk across models. No live circuit breaker yet.'],
+  ['ASI09', 'covered', 'Agents draft, a named human approves. Agents cannot approve their own work.'],
+  ['ASI10', 'covered', 'Agents with no owner, or acting outside scope, are flagged and paused.']
+];
+window.cardinalOwaspFor = function (kind, x) {
+  var agentic = function (s) { return /Eve|Adam|agent|assistant|chatbot|bot\b/i.test(s || ''); };
+  if (kind === 'misuse') {
+    var t = x.technique || '', out = [];
+    if (/injection|jailbreak/i.test(t)) { out.push('LLM01'); if (agentic(x.system)) out.push('ASI01'); }
+    else if (/extraction \(probing\)|model extraction/i.test(t)) out.push('LLM10');
+    else out.push('LLM02');
+    return out;
+  }
+  if (kind === 'agent') return x.flag === 'no-owner' ? ['ASI03', 'ASI10'] : x.flag === 'unused-access' ? ['ASI03'] : [];
+  if (kind === 'action') return /request|records|data/i.test(x.did) && !/sent|offered|closed|added/i.test(x.did) ? ['ASI03'] : ['ASI02', 'ASI10'];
+  return [];
+};
+window.cardinalOwaspChips = function (codes) {
+  return (codes || []).map(function (c) {
+    return '<span title="OWASP ' + c + ': ' + (window.CARDINAL_OWASP[c] || '') + '" style="font-size:9px;font-weight:700;font-family:monospace;color:#475569;border:1px solid rgba(71,85,105,.35);background:rgba(71,85,105,.07);padding:1px 6px;border-radius:5px;white-space:nowrap">OWASP ' + c + ' · ' + (window.CARDINAL_OWASP[c] || '') + '</span>';
+  }).join(' ');
+};
+
 function sentinelSecurityWatchPanel(org) {
   var d = (window.CARDINAL_SECURITY_WATCH || {})[org] || window.CARDINAL_SECURITY_WATCH.ad;
   var esc = function (s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;'); };
@@ -42454,20 +42496,34 @@ function sentinelSecurityWatchPanel(org) {
   if (view === 'agents') {
     var AFLAG = { 'no-owner': ['No human owner', '#ef4444'], 'unused-access': ['Unused access', '#f59e0b'] };
     var OUT = function (o) { return /Blocked/.test(o) ? '#15803d' : /Held/.test(o) ? '#b45309' : /Flagged/.test(o) ? '#dc2626' : '#64748b'; };
+    var COV = { covered: ['Watched', '#15803d'], partial: ['Partial', '#b45309'], gap: ['Not yet', '#64748b'] };
+    var covList = window.CARDINAL_OWASP_AGENTIC_COVERAGE;
+    var nCov = covList.filter(function (c) { return c[1] === 'covered'; }).length, nPart = covList.filter(function (c) { return c[1] === 'partial'; }).length;
+    html += '<div style="border:1px solid var(--border2);border-radius:10px;padding:10px 12px;margin-bottom:12px;background:rgba(26,24,21,0.02)">' +
+      '<div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px;margin-bottom:8px"><div style="font-size:11.5px;font-weight:700;color:var(--chrome2)">OWASP Top 10 for Agentic Applications: what Cardinal watches</div>' +
+      '<div style="font-size:10px;color:var(--muted)">' + nCov + ' watched · ' + nPart + ' partial · ' + (covList.length - nCov - nPart) + ' not yet</div></div>' +
+      '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px">' +
+      covList.map(function (c) {
+        var s = COV[c[1]];
+        return '<div title="' + esc(c[2]) + '" style="border:1px solid ' + s[1] + '40;border-left:3px solid ' + s[1] + ';border-radius:7px;padding:5px 8px;background:' + s[1] + '0d;cursor:help">' +
+          '<div style="font-size:9px;font-family:monospace;font-weight:700;color:' + s[1] + '">' + c[0] + ' · ' + s[0] + '</div>' +
+          '<div style="font-size:10px;color:var(--chrome2);line-height:1.3">' + esc(window.CARDINAL_OWASP[c[0]]) + '</div></div>';
+      }).join('') + '</div>' +
+      '<div style="font-size:9.5px;color:var(--muted);margin-top:6px">Hover a box for detail. Cardinal is the oversight and evidence layer; runtime blocking of code execution stays with your security tools.</div></div>';
     html += '<div style="font-size:10.5px;color:var(--muted2);margin-bottom:8px">Every AI agent is its own identity: what it can reach, what it actually uses, and the human accountable for it. Cardinal\'s own agents (Eve, Adam) follow the same rules.</div>' +
       '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:11px"><thead><tr style="text-align:left;color:var(--muted);border-bottom:1px solid var(--border2);font-size:9.5px;text-transform:uppercase;letter-spacing:.5px"><th style="padding:7px 6px">Agent</th><th style="padding:7px 6px">Owner</th><th style="padding:7px 6px">Can reach</th><th style="padding:7px 6px">Actually uses</th><th style="padding:7px 6px">Flag</th></tr></thead><tbody>' +
       (d.agents || []).slice().sort(function (a, b) { return (b.flag ? 1 : 0) - (a.flag ? 1 : 0); }).map(function (a) {
         var f = a.flag ? AFLAG[a.flag] : null;
         return '<tr style="border-bottom:1px solid rgba(180,190,220,.08);vertical-align:top"><td style="padding:8px 6px"><div style="font-weight:700;color:var(--chrome2)">' + esc(a.name) + '</div><div style="font-size:9.5px;color:var(--muted)">' + esc(a.kind) + '</div></td>' +
           '<td style="padding:8px 6px;color:' + (/None/.test(a.owner) ? '#dc2626' : 'var(--chrome2)') + '">' + esc(a.owner) + '</td><td style="padding:8px 6px;color:var(--chrome2)">' + esc(a.canReach) + '</td><td style="padding:8px 6px;color:var(--muted2)">' + esc(a.uses) + '</td>' +
-          '<td style="padding:8px 6px;max-width:260px">' + (f ? '<span style="font-size:9px;font-weight:800;text-transform:uppercase;color:' + f[1] + ';border:1px solid ' + f[1] + '55;background:' + f[1] + '12;padding:2px 6px;border-radius:5px">' + f[0] + '</span><div style="font-size:10px;color:var(--muted2);margin-top:4px;line-height:1.45">' + esc(a.why) + '</div>' : '<span style="font-size:10px;color:var(--green)">✓ Scoped and owned</span>') + '</td></tr>';
+          '<td style="padding:8px 6px;max-width:260px">' + (f ? '<span style="font-size:9px;font-weight:800;text-transform:uppercase;color:' + f[1] + ';border:1px solid ' + f[1] + '55;background:' + f[1] + '12;padding:2px 6px;border-radius:5px">' + f[0] + '</span><div style="font-size:10px;color:var(--muted2);margin-top:4px;line-height:1.45">' + esc(a.why) + '</div><div style="margin-top:4px;display:flex;gap:4px;flex-wrap:wrap">' + cardinalOwaspChips(cardinalOwaspFor('agent', a)) + '</div>' : '<span style="font-size:10px;color:var(--green)">✓ Scoped and owned</span>') + '</td></tr>';
       }).join('') + '</tbody></table></div>' +
       '<div style="font-size:12px;font-weight:700;color:var(--chrome2);margin:16px 0 8px">Agent Actions Without Approval</div>' +
       (d.agentActions || []).map(function (x) {
         var c = SEV[x.sev] || '#94a3b8';
         return '<div style="padding:10px 12px;border:1px solid var(--border2);border-left:3px solid ' + c + ';border-radius:9px;margin-bottom:8px;background:rgba(26,24,21,0.03)">' +
           '<div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap"><div style="font-size:11.5px;color:var(--chrome2)"><strong>' + esc(x.agent) + '</strong> ' + esc(x.did.charAt(0).toLowerCase() + x.did.slice(1)) + '</div><span style="font-size:10px;color:var(--muted)">' + esc(x.when) + '</span></div>' +
-          '<div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-top:5px;font-size:10px"><span style="color:var(--muted)">Needed: ' + esc(x.needed) + '</span><span style="font-weight:700;color:' + OUT(x.outcome) + '">' + esc(x.outcome) + '</span></div></div>';
+          '<div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-top:5px;font-size:10px"><span style="color:var(--muted)">Needed: ' + esc(x.needed) + '</span><span style="font-weight:700;color:' + OUT(x.outcome) + '">' + esc(x.outcome) + '</span></div><div style="margin-top:5px;display:flex;gap:4px;flex-wrap:wrap">' + cardinalOwaspChips(cardinalOwaspFor('action', x)) + '</div></div>';
       }).join('');
   } else if (view === 'misuse') {
     html += d.misuse.map(function (m) {
@@ -42479,7 +42535,7 @@ function sentinelSecurityWatchPanel(org) {
         '<span style="font-size:10px;color:var(--muted)">' + esc(m.when) + '</span></div>' +
         '<div style="font-size:11px;color:var(--chrome2);margin-top:5px;line-height:1.5">' + esc(m.detail) + '</div>' +
         '<div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:6px;font-size:10px"><span style="color:var(--muted)">Source: ' + esc(m.source) + '</span>' +
-        '<span style="font-weight:700;color:' + (/Blocked|suspended|Throttled/i.test(m.action) ? 'var(--green)' : 'var(--amber)') + '">' + esc(m.action) + '</span></div></div>';
+        '<span style="font-weight:700;color:' + (/Blocked|suspended|Throttled/i.test(m.action) ? 'var(--green)' : 'var(--amber)') + '">' + esc(m.action) + '</span></div><div style="margin-top:5px;display:flex;gap:4px;flex-wrap:wrap">' + cardinalOwaspChips(cardinalOwaspFor('misuse', m)) + '</div></div>';
     }).join('');
   } else {
     var rows = d.access.slice().sort(function (a, b) { return (b.flag ? 1 : 0) - (a.flag ? 1 : 0); });
