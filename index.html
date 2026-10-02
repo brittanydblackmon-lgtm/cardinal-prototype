@@ -23766,6 +23766,32 @@ window.buildCompGlobal = buildCompGlobal;
 // regs (Oct 1, 2025); CA SB 1120 and AB 3030 (Jan 1, 2025); IL HB 3773 (Jan 1, 2026);
 // TX HB 149 TRAIGA (Jan 1, 2026); UT AI Policy Act (May 1, 2024); NY RAISE Act (Jan 1, 2027);
 // NYC LL144; MA AG $2.5M AI lending settlement (Jul 2025).
+// ══ REGULATOR DIRECTORY (10/2, backlog): who oversees each rule in this company's states, and
+// what goes to them. Real agency names only; no phone numbers or invented contacts.
+window.SL_REGULATORS = {
+  US: [['CFPB', 'Fair lending (ECOA / Reg B), FCRA, consumer complaints', ['fin']], ['FinCEN', 'Suspicious activity reports (SARs)', ['fin']], ['EEOC', 'Title VII adverse impact in employment', ['ad', 'fin', 'health']], ['HHS Office for Civil Rights', 'ACA Section 1557, HIPAA breaches', ['health']], ['CMS', 'Medicare Advantage coverage rules', ['health']], ['DCSA', 'Cleared-contractor suspicious contact reports', ['ad']], ['DoD (DIBNet)', 'DFARS 252.204-7012 cyber incidents (72 hours)', ['ad']], ['OMB / agency Chief AI Officer', 'M-25-21 high-impact AI', ['fed']], ['CISA', 'Federal incident reporting (1 hour for PII breaches)', ['fed']], ['TIGTA', 'Tax administration fraud and unauthorized inspection', ['fed']]],
+  CA: [['California Privacy Protection Agency', 'CCPA rules on automated decision-making'], ['California Civil Rights Department', 'Automated-decision rules in employment'], ['California Department of Financial Protection and Innovation', 'Consumer lending licenses'], ['California Department of Managed Health Care', 'Health plan rules incl. SB 1120']],
+  CO: [['Colorado Attorney General', 'SB 26-189 automated decision-making (from Jan 1, 2027)']],
+  IL: [['Illinois Department of Human Rights', 'HB 3773 (AI in employment)'], ['Illinois Attorney General', 'BIPA and consumer protection'], ['Illinois Department of Financial and Professional Regulation', 'Consumer lending licenses']],
+  NY: [['New York Department of Financial Services', 'Licensed lenders and insurers, cybersecurity (Part 500)'], ['NYC Department of Consumer and Worker Protection', 'Local Law 144 hiring tools']],
+  TX: [['Texas Attorney General', 'TRAIGA (HB 149) enforcement'], ['Texas Office of Consumer Credit Commissioner', 'Consumer lending licenses']],
+  MA: [['Massachusetts Attorney General', 'Fair lending and consumer protection (2025 AI lending settlement)']],
+  UT: [['Utah Office of Artificial Intelligence Policy', 'AI Policy Act and regulatory sandbox']],
+  FL: [['Florida Office of Financial Regulation', 'Consumer lending licenses']],
+  AZ: [['Arizona Department of Insurance and Financial Institutions', 'Health insurers and lenders']],
+  VA: [['Virginia Attorney General', 'Consumer protection']], WA: [['Washington Attorney General', 'Consumer protection']], AL: [['Alabama Attorney General', 'Consumer protection']]
+};
+function slRegDirectoryHtml(org, states) {
+  var esc = function (s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;'); };
+  var fed = SL_REGULATORS.US.filter(function (r) { return r[2].indexOf(org) !== -1; });
+  var rows = fed.map(function (r) { return ['Federal', r[0], r[1]]; });
+  (states || []).forEach(function (s) { (SL_REGULATORS[s] || []).forEach(function (r) { rows.push([s, r[0], r[1]]); }); });
+  return '<div style="font-size:12px;font-weight:700;color:var(--chrome2);margin:16px 0 6px">Who oversees you</div>' +
+    '<div style="font-size:10.5px;color:var(--muted2);margin-bottom:6px">The agency behind each rule above, and what goes to them. Incident clocks and filing packets live in Sentinel → Incident Reporting.</div>' +
+    '<div style="border:1px solid var(--border2);border-radius:10px;overflow-x:auto;background:var(--card)"><table class="data-table" style="width:100%"><thead><tr><th>Where</th><th>Agency</th><th>What goes to them</th></tr></thead><tbody>' +
+    rows.map(function (r) { return '<tr><td style="font-weight:700;width:70px">' + esc(r[0]) + '</td><td style="font-weight:600;color:var(--chrome2)">' + esc(r[1]) + '</td><td style="font-size:10.5px;color:var(--muted2)">' + esc(r[2]) + '</td></tr>'; }).join('') + '</tbody></table></div>';
+}
+
 window.SL_LAWS = [
   { id: 'co-189', st: 'CO', name: 'Colorado SB 26-189 (automated decisions)', date: 'Jan 1, 2027', live: false,
     req: 'Notice when automated tech materially influences a consequential decision (lending, jobs, housing, insurance, health care, education, government services), and a disclosure to the person within 30 days after an adverse outcome.',
@@ -23870,6 +23896,7 @@ function buildCompStates(org) {
       }).join('') : '')
     : '<div style="border:1px solid var(--border2);border-radius:10px;padding:14px;background:var(--card);font-size:11.5px;color:var(--chrome2);line-height:1.6">State AI laws like Colorado SB 26-189 and California\'s ADMT rules regulate private businesses, not federal agencies. Your binding standard is <strong>OMB M-25-21</strong> (Apr 3, 2025): pre-deployment testing, impact assessments, and an appeal path for high-impact AI. See the Regulations tab.</div>');
 }
+(function () { var ob = buildCompStates; buildCompStates = function (org) { ob(org); try { org = org || window.currentOrg || 'ad'; var el = document.getElementById('comp-content-states'); var F = SL_FOOTPRINT[org] || SL_FOOTPRINT.fin; if (el) el.insertAdjacentHTML('beforeend', slRegDirectoryHtml(org, F.states)); } catch (e) {} }; })();
 window.buildCompStates = buildCompStates;
 (function () {
   var orig = window.switchIndustry;
