@@ -27706,6 +27706,20 @@ function sendEveMessage() {
    setTimeout(function() { try { generateRemediationDoc(); } catch(_g) {} }, 1500);
    return;
  }
+ // 10/2 -- Eve explains any Glossary term (platform terms plus this org's own terminology).
+ try {
+   var gq = /^(?:what(?:'s| is| are| does)|define|explain|meaning of)\s+(?:an? |the )?(.+?)(?:\s+mean)?\??$/i.exec(msg);
+   if (gq && typeof CARDINAL_GLOSSARY_DATA !== 'undefined') {
+     var want = gq[1].toLowerCase().replace(/[?.!]/g, '').trim();
+     var orgG = (typeof currentOrg !== 'undefined' && currentOrg) || 'ad';
+     var pool = CARDINAL_GLOSSARY_DATA.concat(((window.CARDINAL_GLOSSARY_CUSTOM || {})[orgG] || []).map(function (c) { return { term: c.term, def: c.def, custom: true }; }));
+     var hit = pool.filter(function (t) { return t.term.toLowerCase() === want; })[0] || pool.filter(function (t) { var k = t.term.toLowerCase(); return k.indexOf(want) !== -1 || want.indexOf(k) !== -1; })[0];
+     if (hit) {
+       setTimeout(function () { addEveMsg('eve', hit.term + ': ' + hit.def + (hit.custom ? ' (This is how your organization uses the term.)' : '') + ' You can see every term in the Glossary.', null, null, true); }, 400);
+       return;
+     }
+   }
+ } catch (_gl) {}
  // ── Prefer CARDINAL_DATA-grounded smart responses ──
  try {
    var cardinalResp = cardinalEveResponse(msg);
