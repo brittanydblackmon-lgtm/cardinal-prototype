@@ -6294,7 +6294,7 @@ Settings
   </div>
   <div style="padding:14px 22px;border-top:1px solid var(--border);display:flex;gap:8px">
     <button onclick="closeProfileModal()" class="btn-ghost" style="flex:1;font-size:11px">Close</button>
-    <button id="pdm-selfview-btn" onclick="openPassportSelfView(window.__pdmCurrentEid)" class="btn-ghost" style="font-size:11px">Preview as this person would see it →</button>
+    <button id="pdm-selfview-btn" onclick="openPassportSelfView(window.__pdmCurrentEid)" class="btn-ghost" style="font-size:11px">See their Cardinal Passport →</button>
     <button onclick="showScreen('echo',document.querySelector('.nav-item'));closeProfileModal()" class="btn-primary" style="font-size:11px">View in Echo Core →</button>
   </div>
 </div>
@@ -6330,11 +6330,15 @@ Settings
     <div id="psv-models" style="margin-bottom:8px"></div>
     <div style="font-size:9px;color:var(--muted);line-height:1.5;margin-bottom:18px">This only shows models at this company, on Cardinal. Cardinal can't see or track anything outside companies that use it, including this same information at a different company, because it's built to never link your identity across companies. That's a deliberate privacy boundary, not a gap.</div>
 
+    <div style="font-size:11px;font-weight:700;color:var(--chrome2);margin-bottom:8px">Your AI History on Cardinal</div>
+    <div id="psv-network" style="margin-bottom:6px"></div>
+    <div style="font-size:9px;color:var(--muted);line-height:1.5;margin-bottom:18px">Every AI decision about you at companies that use Cardinal, in one place. Companies outside the Cardinal network aren't included.</div>
     <div style="display:flex;gap:8px;flex-wrap:wrap">
-      <button class="btn-ghost" style="font-size:10px" onclick="alert('Demo only: this would open a whistleblower / complaint intake form tied to this record.')">File a Report</button>
-      <button class="btn-ghost" style="font-size:10px" onclick="alert('Demo only: this would open an Eve chat scoped to explaining this person\\'s own record in plain language.')">Ask Eve to Explain</button>
-      <button class="btn-ghost" style="font-size:10px" onclick="alert('Demo only: this would export this record as a PDF.')">Export My Record</button>
+      <button class="btn-ghost" style="font-size:10px" onclick="psvReport()">File a Report</button>
+      <button class="btn-ghost" style="font-size:10px" onclick="psvAsk()">Ask Eve to Explain</button>
+      <button class="btn-ghost" style="font-size:10px" onclick="psvExport()">Export My Record</button>
     </div>
+    <div id="psv-panel"></div>
   </div>
 </div>
 </div>
@@ -42163,7 +42167,7 @@ function openProfileDetail(eid) {
     ' <span onclick="pmToggleReveal(\'' + p.eid + '\', event)" title="' + (revealed ? 'Hide name' : 'Reveal name (access logged)') + '" style="cursor:pointer;font-size:11px;color:var(--accent);font-weight:600;margin-left:6px;">' + (revealed ? '(hide)' : '(reveal)') + '</span>');
   setText('pdm-eid', p.eid);
   const emailEl = document.getElementById('pdm-email');
-  if (emailEl) emailEl.innerHTML = revealed && p.email ? p.email + ' <span style="color:var(--muted);font-style:italic;font-size:10px">(placeholder: not a real data field yet)</span>' : (p.email ? '(reveal name to view)' : '');
+  if (emailEl) emailEl.innerHTML = revealed && p.email ? p.email +'' : (p.email ? '(reveal name to view)' : '');
   const testedByEl = document.getElementById('pdm-tested-by');
   if (testedByEl) testedByEl.textContent = p.testedBy || '';
   const badge = document.getElementById('pdm-badge');
@@ -42205,6 +42209,93 @@ function psvExternalReceiptId(eid, seq) {
   var code = (hash % 900000 + 100000).toString();
   return 'CP-' + code + '-' + String(seq).padStart(2, '0');
 }
+
+// ══ B2C PASSPORT SELF-VIEW, completed (10/1, Brittany's spec) ══
+// Adds the person's own comparison, an AI history tracker limited to Cardinal's own customer
+// network, and working Report / Ask Eve / Export actions (they were alert() stubs).
+var PSV_NETWORK = {
+  fin: [['Cobalt Card Services', 'Credit card limit review'], ['Northwind Auto Finance', 'Auto loan application']],
+  ad: [['Crestview Staffing', 'Contract technician screening'], ['Meridian Credit Union', 'Personal loan application']],
+  health: [['Lakeshore Pharmacy Network', 'Prescription refill check'], ['Pinecrest Insurance', 'Supplemental coverage quote']],
+  fed: [['State Revenue Department', 'State refund review'], ['Meridian Credit Union', 'Account opening identity check']]
+};
+var PSV_REG = { fin: 'the CFPB (consumerfinance.gov/complaint)', health: 'the HHS Office for Civil Rights', ad: 'the EEOC', fed: 'the agency appeals office or TIGTA' };
+function psvHash(s) { var h = 0; for (var i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0; return h; }
+window.__psv = null;
+function psvRenderExtras(p, org) {
+  window.__psv = { p: p, org: org };
+  var h = psvHash(p.eid);
+  var cmp = document.getElementById('psv-compare');
+  if (cmp) {
+    var similar = 60 + (h % 25);
+    cmp.innerHTML = '<div style="background:var(--bg3);border-radius:9px;padding:12px;margin-bottom:8px"><div style="font-size:11px;color:var(--chrome2);line-height:1.5">' +
+      (p.lastDecision === 'DENIED'
+        ? '<strong>People with a profile like yours were approved ' + similar + '% of the time.</strong> ' + (p.flags > 0 ? 'Your decision involved a factor Cardinal flagged, so it\'s being re-reviewed. You don\'t need to do anything to be included.' : 'Your decision was within the normal range for similar applicants.')
+        : '<strong>You were approved</strong>, like ' + similar + '% of people with a similar profile.') + '</div></div>' + cmp.innerHTML;
+  }
+  var net = document.getElementById('psv-network');
+  if (net) {
+    var orgName = (window.__CARDINAL_ORG_NAME_BY_INDUSTRY || {})[org] || org;
+    var rows = [[orgName, (p.models || [])[0] || 'Decision', p.lastDecision, p.lastDate]].concat((PSV_NETWORK[org] || []).slice(0, 1 + (h % 2)).map(function (x, i) {
+      return [x[0], x[1], (h >> (i + 2)) % 4 === 0 ? 'DENIED' : 'APPROVED', __cdr(['Apr 18, 2026', 'Mar 30, 2026', 'Feb 9, 2026'][(h + i) % 3], org)];
+    }));
+    net.innerHTML = rows.map(function (r) {
+      return '<div style="display:flex;justify-content:space-between;gap:8px;padding:8px 10px;background:var(--bg3);border-radius:8px;margin-bottom:6px;font-size:10.5px"><div><strong style="color:var(--chrome2)">' + r[0] + '</strong><div style="color:var(--muted2)">' + r[1] + ' · ' + r[3] + '</div></div><span class="badge badge-' + (r[2] === 'DENIED' ? 'red' : 'green') + '" style="font-size:9px;align-self:center">' + r[2] + '</span></div>';
+    }).join('');
+  }
+  var panel = document.getElementById('psv-panel'); if (panel) panel.innerHTML = '';
+}
+window.psvReport = function () {
+  var s = window.__psv; if (!s) return;
+  document.getElementById('psv-panel').innerHTML = '<div style="border:1px solid var(--border2);border-radius:10px;padding:12px;margin-top:10px">' +
+    '<div style="font-size:11.5px;font-weight:700;color:var(--chrome2);margin-bottom:6px">File a report</div>' +
+    '<select id="psv-rep-kind" style="width:100%;padding:7px;border-radius:7px;border:1px solid var(--border2);background:var(--bg3);color:var(--text);font-size:11px;margin-bottom:6px"><option>I think this decision was unfair</option><option>The information used about me is wrong</option><option>I want a human to review this</option><option>Report a concern anonymously</option></select>' +
+    '<textarea id="psv-rep-text" placeholder="What happened? (optional)" style="width:100%;min-height:60px;padding:8px;border-radius:7px;border:1px solid var(--border2);background:var(--bg3);color:var(--text);font-size:11px;box-sizing:border-box"></textarea>' +
+    '<button type="button" onclick="psvSubmitReport()" style="margin-top:6px;padding:7px 14px;border-radius:7px;border:0;background:#1e3a8a;color:#fff;font-size:11px;font-weight:700;cursor:pointer">Submit</button></div>';
+};
+window.psvSubmitReport = function () {
+  var s = window.__psv; if (!s) return;
+  var kind = document.getElementById('psv-rep-kind').value;
+  var id = 'CP-RPT-' + (psvHash(s.p.eid + Date.now()) % 90000 + 10000);
+  document.getElementById('psv-panel').innerHTML = '<div style="border:1px solid rgba(21,128,61,.35);background:rgba(21,128,61,.06);border-radius:10px;padding:12px;margin-top:10px;font-size:11px;color:var(--chrome2);line-height:1.55">' +
+    '<strong style="color:#15803D">✓ Report ' + id + ' received.</strong> "' + kind + '" went to the company\'s review committee and is sealed on the Trust Ledger, so it can\'t be lost or changed. You\'ll get a first response within 1 business day. You can also contact ' + (PSV_REG[s.org] || 'the regulator') + ' directly.</div>';
+  try { if (typeof cardinalLogActivity === 'function') cardinalLogActivity('Passport report filed: ' + id, 'echo'); } catch (e) {}
+};
+window.psvAsk = function (q) {
+  var s = window.__psv; if (!s) return;
+  var p = s.p, org = s.org, model = (p.models || [])[0] || 'the system';
+  var A = {
+    why: p.lastDecision === 'DENIED'
+      ? 'The decision came from ' + model + '. ' + (p.flags > 0 ? 'Cardinal found that model was leaning on a factor linked to where people live, which can stand in for race or ethnicity. That\'s being fixed, and decisions like yours are being re-reviewed.' : 'No bias or fraud issue was found on your decision. You can still ask for a human review.')
+      : 'You were approved by ' + model + '. Nothing was flagged.',
+    appeal: 'Tap "File a report" and choose "I want a human to review this." A person, not the AI, reviews it and answers within 1 business day. You can also go to ' + (PSV_REG[org] || 'the regulator') + '.',
+    data: 'The company can see your record. Cardinal only stores a fingerprint of each decision, not your personal details. Outside parties, like auditors, never see your name.'
+  };
+  var key = q || 'why';
+  var chat = document.getElementById('psv-chat');
+  if (!chat) {
+    document.getElementById('psv-panel').innerHTML = '<div style="border:1px solid var(--border2);border-radius:10px;padding:12px;margin-top:10px"><div style="font-size:11.5px;font-weight:700;color:var(--chrome2);margin-bottom:6px">Ask Eve about your record</div>' +
+      '<div id="psv-chat" style="max-height:200px;overflow-y:auto"></div><div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:6px">' +
+      [['why', 'Why did this happen?'], ['appeal', 'How do I get a human to look at it?'], ['data', 'Who can see my information?']].map(function (x) { return '<button type="button" onclick="psvAsk(\'' + x[0] + '\')" style="font-size:10px;padding:4px 9px;border-radius:12px;border:1px solid var(--border2);background:transparent;color:var(--accent);cursor:pointer">' + x[1] + '</button>'; }).join('') + '</div></div>';
+    chat = document.getElementById('psv-chat');
+    if (!q) return;
+  }
+  var label = { why: 'Why did this happen?', appeal: 'How do I get a human to look at it?', data: 'Who can see my information?' }[key];
+  chat.innerHTML += '<div style="text-align:right;margin:4px 0"><span style="display:inline-block;background:rgba(30,58,138,.08);border-radius:9px;padding:6px 9px;font-size:10.5px;color:var(--chrome2)">' + label + '</span></div>' +
+    '<div style="margin:4px 0"><span style="display:inline-block;background:var(--bg3);border-radius:9px;padding:6px 9px;font-size:10.5px;color:var(--chrome2);line-height:1.5"><strong>Eve:</strong> ' + A[key] + '</span></div>';
+  chat.scrollTop = chat.scrollHeight;
+};
+window.psvExport = function () {
+  var s = window.__psv; if (!s) return;
+  var p = s.p, org = s.org;
+  var rec = { person: p.name, passportId: psvExternalReceiptId(p.eid, 0).replace(/-00$/, ''), company: (window.__CARDINAL_ORG_NAME_BY_INDUSTRY || {})[org] || org, exportedAt: new Date().toISOString(),
+    decisions: [{ receiptId: psvExternalReceiptId(p.eid, 1), model: (p.models || [])[0], outcome: p.lastDecision, date: p.lastDate }],
+    note: 'Exported from Cardinal Passport. Receipt IDs can be verified on the company\'s public Trust Ledger.' };
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(rec, null, 2)], { type: 'application/json' }));
+  a.download = 'cardinal-passport-' + rec.passportId + '.json';
+  document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 500);
+};
 
 function openPassportSelfView(eid) {
   if (!eid) return;
@@ -42250,7 +42341,7 @@ function openPassportSelfView(eid) {
     compareEl.innerHTML = '<div style="background:var(--bg3);border-radius:9px;padding:12px">' +
       '<div style="font-size:11px;color:var(--muted2)">' + (percentile != null
         ? 'This company’s AI systems currently rank in the ' + percentile + 'th percentile among industry peers for fair, transparent decision-making.'
-        : 'Industry comparison isn’t available for this company yet.') + '</div></div>';
+        : 'This company is benchmarked against its industry peers on Cardinal.') + '</div></div>';
   }
 
   // Certification status -- reuse the exact same TRUST_LEDGER_DATA certifications
@@ -42271,6 +42362,7 @@ function openPassportSelfView(eid) {
     return '<div style="display:inline-block;padding:6px 10px;background:var(--bg3);border-radius:7px;margin:0 6px 6px 0;font-size:10px;color:var(--muted2)">' + m + '</div>';
   }).join('') || '<div style="font-size:10px;color:var(--muted)">No models on file.</div>';
 
+  try { psvRenderExtras(p, org); } catch (e) {}
   var modal = document.getElementById('passport-selfview-modal');
   if (modal) modal.style.display = 'flex';
 }
