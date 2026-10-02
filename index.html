@@ -8988,6 +8988,7 @@ Template Overview
 <div class="screen-sub">Platform preferences and account configuration</div>
 </div>
 </div>
+<div class="card" id="settings-client-access" style="padding:22px;margin-bottom:20px;width:100%;box-sizing:border-box"></div>
 
 <div class="card" style="padding:22px;margin-bottom:20px;width:100%;box-sizing:border-box">
 <div style="font-size:15px;font-weight:700;color:var(--chrome2);margin-bottom:4px">Customize Your Dashboard</div>
@@ -45388,6 +45389,109 @@ console.log('[Cardinal] Run window.__cardinalScaffoldDiagnostic() to audit all s
   });
 })();
 </script>
+<script>
+// ══ B2B CLIENT ACCESS TIER (10/1, Brittany's spec) ══
+// An outside company that buys part of Cardinal (a sponsor bank, an audit firm, a prime
+// contractor, an oversight office) sees only the cores it was granted. Starting package per
+// Brittany: Dashboard, Trust Score, Compliance, Trust Ledger, Echo Core, Trust Loop, Lucid Layer.
+// Grants are editable per client; "View as" hides everything else in the sidebar and blocks it.
+window.CARDINAL_CORE_LABELS = { dashboard: 'Dashboard', trustscore: 'Trust Score', pipeline: 'Data Pipeline', eden: 'Eden (bias)', obsidian: 'Obsidian (fraud)', genesis: 'Genesis (testing)', atonement: 'Atonement (fixes)', halo: 'Halo (forecasting)', marketing: 'Marketing', compliance: 'Compliance', trustledger: 'Trust Ledger', echo: 'Echo (audit memory)', sentinel: 'Sentinel (cases)', lucid: 'Lucid Layer', cardinallibrary: 'Cardinal Library', trustloop: 'Trust Loop' };
+var CLIENT_STD = ['dashboard', 'trustscore', 'compliance', 'trustledger', 'echo', 'trustloop', 'lucid'];
+window.CARDINAL_CLIENTS = {
+  fin: [
+    { name: 'Harbor Point Bank', kind: 'Sponsor bank', why: 'Third-party risk oversight of the lending partnership', cores: ['dashboard', 'trustscore', 'compliance', 'trustledger', 'echo'], seats: 4, since: 140 },
+    { name: 'Crestline Assurance LLP', kind: 'External auditor', why: 'Annual SOC 2 and fair lending review', cores: CLIENT_STD.slice(), seats: 6, since: 60 }
+  ],
+  ad: [
+    { name: 'Northgate Aerospace', kind: 'Prime contractor', why: 'Flow-down AI requirements on the subcontract', cores: ['dashboard', 'trustscore', 'compliance', 'trustledger'], seats: 3, since: 200 },
+    { name: 'Crestline Assurance LLP', kind: 'External auditor', why: 'ISO/IEC 42001 surveillance audit', cores: CLIENT_STD.slice(), seats: 5, since: 90 }
+  ],
+  health: [
+    { name: 'Valley Regional Hospital System', kind: 'Provider partner', why: 'Shared claims and prior-auth oversight', cores: ['dashboard', 'trustscore', 'compliance', 'trustledger', 'trustloop'], seats: 8, since: 120 },
+    { name: 'Crestline Assurance LLP', kind: 'External auditor', why: 'HIPAA and Section 1557 review', cores: CLIENT_STD.slice(), seats: 4, since: 45 }
+  ],
+  fed: [
+    { name: 'Office of Inspector General', kind: 'Oversight office', why: 'Audit of high-impact AI use', cores: ['trustscore', 'compliance', 'trustledger', 'echo'], seats: 3, since: 75 },
+    { name: 'GAO audit team', kind: 'Legislative auditor', why: 'AI accountability review', cores: ['trustscore', 'compliance', 'trustledger'], seats: 2, since: 15 }
+  ]
+};
+window.__clientView = null;
+function clientOrg() { return (typeof currentOrg !== 'undefined' && currentOrg) || window.currentOrg || 'ad'; }
+window.clientToggleCore = function (i, core) {
+  var c = CARDINAL_CLIENTS[clientOrg()][i], k = c.cores.indexOf(core);
+  if (k === -1) c.cores.push(core); else c.cores.splice(k, 1);
+  try { if (typeof cardinalLogActivity === 'function') cardinalLogActivity('Client access changed: ' + c.name + (k === -1 ? ' granted ' : ' removed ') + CARDINAL_CORE_LABELS[core], 'settings'); } catch (e) {}
+  renderClientAccess();
+};
+window.clientViewAs = function (i) {
+  var c = i == null ? null : CARDINAL_CLIENTS[clientOrg()][i];
+  window.__clientView = c ? { name: c.name, kind: c.kind, cores: c.cores.slice(), org: clientOrg() } : null;
+  applyClientView();
+  if (c) showScreen(c.cores[0] || 'trustscore', null); else showScreen('settings', null);
+};
+function applyClientView() {
+  var v = window.__clientView;
+  document.querySelectorAll('.nav-item').forEach(function (n) {
+    var m = /showScreen\('([a-z]+)'/.exec(n.getAttribute('onclick') || '');
+    if (!m) return;
+    n.style.display = !v || v.cores.indexOf(m[1]) !== -1 ? '' : 'none';
+  });
+  var bar = document.getElementById('client-view-bar');
+  if (!bar) {
+    bar = document.createElement('div'); bar.id = 'client-view-bar';
+    bar.style.cssText = 'position:fixed;top:0;left:50%;transform:translateX(-50%);z-index:9990;background:#1e3a8a;color:#fff;font-size:12px;font-weight:600;padding:7px 14px;border-radius:0 0 10px 10px;box-shadow:0 4px 14px rgba(0,0,0,.25);display:none;gap:12px;align-items:center';
+    document.body.appendChild(bar);
+  }
+  if (v) {
+    bar.innerHTML = 'Viewing as <strong style="margin:0 4px">' + v.name + '</strong> (' + v.kind + ') · ' + v.cores.length + ' cores · they never see anything else <button type="button" onclick="clientViewAs(null)" style="margin-left:10px;background:#fff;color:#1e3a8a;border:0;border-radius:6px;padding:3px 10px;font-size:11px;font-weight:700;cursor:pointer">Exit client view</button>';
+    bar.style.display = 'flex';
+  } else bar.style.display = 'none';
+}
+// Block navigation to cores the client wasn't granted.
+(function () {
+  var orig = window.showScreen;
+  if (typeof orig !== 'function') return;
+  window.showScreen = showScreen = function (name, el) {
+    var v = window.__clientView;
+    if (v && CARDINAL_CORE_LABELS[name] && v.cores.indexOf(name) === -1) {
+      if (typeof cardinalShowToast === 'function') cardinalShowToast(v.name + ' does not have access to ' + CARDINAL_CORE_LABELS[name]);
+      return;
+    }
+    var r = orig.apply(this, arguments);
+    if (name === 'settings') { try { renderClientAccess(); } catch (e) {} }
+    return r;
+  };
+  var osi = window.switchIndustry;
+  if (typeof osi === 'function') window.switchIndustry = switchIndustry = function () {
+    var r = osi.apply(this, arguments);
+    try {
+      if (window.__clientView && window.__clientView.org !== clientOrg()) { window.__clientView = null; applyClientView(); }
+      var st = document.getElementById('screen-settings'); if (st && st.offsetParent !== null) renderClientAccess();
+    } catch (e) {}
+    return r;
+  };
+})();
+window.renderClientAccess = function () {
+  var el = document.getElementById('settings-client-access');
+  if (!el) return;
+  var org = clientOrg(), list = CARDINAL_CLIENTS[org] || [];
+  var esc = function (s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;'); };
+  var cores = Object.keys(CARDINAL_CORE_LABELS);
+  el.innerHTML = '<div style="font-size:15px;font-weight:700;color:var(--chrome2);margin-bottom:4px">Client Access</div>' +
+    '<div style="font-size:12px;color:var(--muted2);margin-bottom:14px">Outside companies that use part of Cardinal with you. Each sees only the cores you grant; every change is logged in Echo. Standard client package: Dashboard, Trust Score, Compliance, Trust Ledger, Echo, Trust Loop, Lucid Layer.</div>' +
+    list.map(function (c, i) {
+      return '<div style="border:1px solid var(--border2);border-radius:10px;padding:12px 14px;margin-bottom:10px;background:var(--bg3)">' +
+        '<div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:flex-start;margin-bottom:8px"><div><div style="font-size:13px;font-weight:700;color:var(--chrome2)">' + esc(c.name) + ' <span style="font-size:10.5px;font-weight:500;color:var(--muted)">· ' + esc(c.kind) + '</span></div>' +
+        '<div style="font-size:10.5px;color:var(--muted2);margin-top:2px">' + esc(c.why) + ' · ' + c.seats + ' seats · client for ' + c.since + ' days</div></div>' +
+        '<button type="button" onclick="clientViewAs(' + i + ')" style="font-size:11px;padding:6px 12px;border-radius:7px;border:1px solid rgba(30,58,138,.35);background:rgba(30,58,138,.07);color:#1e3a8a;font-weight:700;cursor:pointer">View as ' + esc(c.name.split(' ')[0]) + ' →</button></div>' +
+        '<div style="display:flex;flex-wrap:wrap;gap:5px">' + cores.map(function (k) {
+          var on = c.cores.indexOf(k) !== -1;
+          return '<button type="button" onclick="clientToggleCore(' + i + ',\'' + k + '\')" title="' + (on ? 'Click to remove access' : 'Click to grant access') + '" style="font-size:10px;padding:3px 9px;border-radius:12px;cursor:pointer;border:1px solid ' + (on ? 'rgba(21,128,61,.45)' : 'var(--border2)') + ';background:' + (on ? 'rgba(21,128,61,.09)' : 'transparent') + ';color:' + (on ? '#15803D' : 'var(--muted)') + ';font-weight:' + (on ? '700' : '500') + '">' + (on ? '✓ ' : '') + CARDINAL_CORE_LABELS[k] + '</button>';
+        }).join('') + '</div></div>';
+    }).join('');
+};
+</script>
+
 </body>
 
 </html>
