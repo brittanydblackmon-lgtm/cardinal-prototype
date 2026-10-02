@@ -46544,6 +46544,43 @@ window.genRenderScenarios = function () {
 })();
 </script>
 
+<script>
+// ══ REMEMBERED PREFERENCES (10/2, Brittany: remember preferences between visits) ══
+// Notes, pins, panel layout, dashboard toggles, work queue, and whistleblower threads were
+// already saved. This adds Library filters, last Sentinel / Security Watch view, stamp changes,
+// suppression rules, and client access grants. Persona and industry still reset at login so
+// every demo starts the same way. Browser storage only; private windows start fresh.
+(function () {
+  var KEY = 'cardinal-prefs-v1';
+  function snapshot() {
+    return {
+      libInd: window.__libInd, sentinelTab: window.__sentinelTab, secView: window.__secWatchView,
+      unstamped: (window.__edo || {}).unstamped, stampLog: (window.__edo || {}).stampLog,
+      supp: window.CARDINAL_SUPPRESSIONS, clientCores: Object.keys(window.CARDINAL_CLIENTS || {}).reduce(function (a, o) { a[o] = CARDINAL_CLIENTS[o].map(function (c) { return c.cores; }); return a; }, {})
+    };
+  }
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(snapshot())); } catch (e) {} }
+  function restore() {
+    var s; try { s = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (e) { s = null; }
+    if (!s) return;
+    try {
+      if (s.libInd) window.__libInd = s.libInd;
+      if (s.sentinelTab) window.__sentinelTab = s.sentinelTab;
+      if (s.secView) window.__secWatchView = s.secView;
+      if (s.unstamped && window.__edo) window.__edo.unstamped = s.unstamped;
+      if (s.stampLog && window.__edo && s.stampLog.length) window.__edo.stampLog = s.stampLog;
+      if (s.supp) window.CARDINAL_SUPPRESSIONS = s.supp;
+      if (s.clientCores) Object.keys(s.clientCores).forEach(function (o) { (CARDINAL_CLIENTS[o] || []).forEach(function (c, i) { if (s.clientCores[o][i]) c.cores = s.clientCores[o][i]; }); });
+    } catch (e) {}
+  }
+  restore();
+  window.addEventListener('beforeunload', save);
+  document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'hidden') save(); });
+  setInterval(save, 15000);
+  window.cardinalResetPreferences = function () { try { localStorage.removeItem(KEY); } catch (e) {} };
+})();
+</script>
+
 </body>
 
 </html>
