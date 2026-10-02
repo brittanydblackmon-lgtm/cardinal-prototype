@@ -5613,6 +5613,9 @@ Settings
 <button class="ind-btn" onclick="switchIndustry('fin',this)" title="Finance: Blackmoor Wealth · ECOA + CA ADMT rules + CO SB 189">Finance</button>
 <button class="ind-btn" onclick="switchIndustry('health',this)" title="Healthcare: Sterling Health · ACA §1557 + HIPAA">Healthcare</button>
 <button class="ind-btn" onclick="switchIndustry('fed',this)" title="Federal Civilian, pre-deployment vetting under OMB M-25-21">Federal</button>
+<span style="width:1px;align-self:stretch;background:var(--border2);margin:4px 4px"></span>
+<button class="ind-btn top-view-btn" data-view="client" onclick="event.stopPropagation();topClientMenu(this)" title="B2B: see the platform as an outside client sees it (sponsor bank, auditor, prime contractor, oversight office)">Client View ▾</button>
+<button class="ind-btn top-view-btn" data-view="consumer" onclick="topConsumerView()" title="B2C: Cardinal Passport, what an affected person sees about their own AI decisions">Consumer View</button>
 </div>
 <div class="topbar-alert" id="topbar-critical-cases" onclick="cardinalOpenSentinelCases('critical')" title="Open Sentinel: Critical Cases">
 <span class="alert-dot"></span>
@@ -46578,6 +46581,75 @@ window.genRenderScenarios = function () {
   document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'hidden') save(); });
   setInterval(save, 15000);
   window.cardinalResetPreferences = function () { try { localStorage.removeItem(KEY); } catch (e) {} };
+})();
+</script>
+
+<script>
+// ══ TOP-BAR VIEWS (10/2, Brittany: the B2B client view and the B2C consumer view belong at the top,
+// next to the industries, not buried in Settings and Echo). ══
+(function () {
+  function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;'); }
+  var ORG_NAME = window.__CARDINAL_ORG_NAME_BY_INDUSTRY || {};
+  window.topClientMenu = function (btn) {
+    var m = document.getElementById('top-client-menu');
+    if (m) { m.remove(); return; }
+    m = document.createElement('div'); m.id = 'top-client-menu';
+    var r = btn.getBoundingClientRect();
+    m.style.cssText = 'position:fixed;top:' + (r.bottom + 6) + 'px;left:' + Math.max(8, r.right - 330) + 'px;width:330px;z-index:9995;background:var(--card);border:1px solid var(--border2);border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.18);padding:10px';
+    var html = '<div style="font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:2px 4px 8px">View as an outside client</div>';
+    ['fin', 'ad', 'health', 'fed'].forEach(function (o) {
+      (window.CARDINAL_CLIENTS[o] || []).forEach(function (c, i) {
+        html += '<button type="button" onclick="topEnterClient(\'' + o + '\',' + i + ')" style="display:block;width:100%;text-align:left;padding:8px 10px;margin-bottom:4px;border:1px solid transparent;border-radius:8px;background:transparent;cursor:pointer;font-family:var(--sans)" onmouseover="this.style.background=\'rgba(30,58,138,.06)\'" onmouseout="this.style.background=\'transparent\'">' +
+          '<div style="font-size:12px;font-weight:700;color:var(--chrome2)">' + esc(c.name) + '</div><div style="font-size:10.5px;color:var(--muted2)">' + esc(c.kind) + ' for ' + esc(ORG_NAME[o] || o) + ' · ' + c.cores.length + ' cores</div></button>';
+      });
+    });
+    html += '<div style="font-size:10px;color:var(--muted);margin:6px 4px 2px">Grant or remove cores per client in Settings → Client Access.</div>';
+    m.innerHTML = html;
+    document.body.appendChild(m);
+    setTimeout(function () { document.addEventListener('click', function off(e) { if (!m.contains(e.target) && e.target !== btn) { m.remove(); document.removeEventListener('click', off); } }); }, 0);
+  };
+  window.topEnterClient = function (o, i) {
+    var m = document.getElementById('top-client-menu'); if (m) m.remove();
+    if ((window.currentOrg || 'ad') !== o) switchIndustry(o, document.querySelector('.ind-btn[onclick*="switchIndustry(\'' + o + '\'"]'));
+    clientViewAs(i);
+    markTopView('client');
+  };
+  window.topConsumerView = function () {
+    var o = window.currentOrg || 'ad', live = ((typeof PM_PROFILES !== 'undefined' ? PM_PROFILES : {})[o] || {}).live || [];
+    var p = live.filter(function (x) { return x.lastDecision === 'DENIED'; })[0] || live[0];
+    if (p) openPassportSelfView(p.eid);
+    markTopView('consumer');
+  };
+  window.markTopView = function (v) {
+    document.querySelectorAll('.top-view-btn').forEach(function (b) { b.classList.toggle('active', b.getAttribute('data-view') === v); });
+  };
+  // Consumer view: let the viewer switch which person's Passport they're seeing.
+  var ops = window.openPassportSelfView;
+  window.openPassportSelfView = openPassportSelfView = function (eid) {
+    var r = ops.apply(this, arguments);
+    try {
+      var o = window.currentOrg || 'ad', live = ((typeof PM_PROFILES !== 'undefined' ? PM_PROFILES : {})[o] || {}).live || [];
+      var nameEl = document.getElementById('psv-name'), sel = document.getElementById('psv-person-pick');
+      if (nameEl && !sel) {
+        sel = document.createElement('select'); sel.id = 'psv-person-pick';
+        sel.style.cssText = 'margin-top:8px;font-size:11px;padding:4px 8px;border-radius:7px;border:1px solid var(--border2);background:var(--bg3);color:var(--text)';
+        sel.onchange = function () { openPassportSelfView(sel.value); };
+        nameEl.parentNode.appendChild(sel);
+      }
+      if (sel) sel.innerHTML = '<option disabled>Switch person</option>' + live.map(function (x) { return '<option value="' + esc(x.eid) + '"' + (x.eid === eid ? ' selected' : '') + '>' + esc(x.name) + ' · ' + esc(x.lastDecision) + '</option>'; }).join('');
+    } catch (e) {}
+    return r;
+  };
+  // Ask Cardinal hint matches the company on screen (Finance used to suggest "the NYC audit").
+  var HINT = { ad: "try 'Why is my Trust Score 74?' or 'What do I fix before the DoD assessment?'", fin: "try 'Am I ready for the CFPB exam?' or 'Why is Credit Scoring flagged?'", health: "try 'Why am I not certified at 83?' or 'Which claims need clinician review?'", fed: "try 'Why is deployment blocked?' or 'What does OMB M-25-21 need from us?'" };
+  function setHint() { var i = document.getElementById('cardinal-ask-input'); if (i) i.placeholder = 'Ask Cardinal anything, ' + (HINT[window.currentOrg || 'ad'] || HINT.ad); }
+  var osiH = window.switchIndustry;
+  window.switchIndustry = switchIndustry = function () { var r = osiH.apply(this, arguments); try { setHint(); } catch (e) {} return r; };
+  setHint();
+  var ocp = window.closePassportSelfView;
+  window.closePassportSelfView = closePassportSelfView = function () { var r = ocp.apply(this, arguments); markTopView(''); return r; };
+  var ocv = window.clientViewAs;
+  window.clientViewAs = function (i) { var r = ocv.apply(this, arguments); if (i == null) markTopView(''); return r; };
 })();
 </script>
 
