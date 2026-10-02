@@ -46758,7 +46758,7 @@ window.genRenderScenarios = function () {
     if (ev) ev.stopPropagation();
     var g = ((window.CARDINAL_ITEM_ACCESS[key] || 0) + 1) % GROUPS.length;
     window.CARDINAL_ITEM_ACCESS[key] = g;
-    try { if (typeof cardinalLogActivity === 'function') cardinalLogActivity('Access changed: ' + key.replace(/^\w+:/, '') + ' → ' + GROUPS[g], 'settings'); } catch (e) {}
+    try { if (typeof cardinalLogActivity === 'function') cardinalLogActivity('edit', 'Access changed: ' + key.replace(/^\w+:/, '') + ' → ' + GROUPS[g], null); } catch (e) {}
     try { if (key.indexOf('model:') === 0) cardinalLibRenderModelsGrid(window.__libModelFilter); else renderTrustLoopWorkspace(window.currentOrg || 'ad'); } catch (e) {}
   };
   function chip(key) {
@@ -46794,6 +46794,88 @@ window.genRenderScenarios = function () {
       if (gear) { var s = document.createElement('span'); s.style.marginRight = '6px'; s.innerHTML = chip(key); gear.parentNode.insertBefore(s, gear); }
       if (!cardinalCanSeeItem(key)) { var th = document.getElementById('tlw-thread'); if (th) th.innerHTML = '<div style="margin:40px auto;text-align:center;font-size:12px;color:var(--muted2)">🔒 This conversation is restricted to ' + GROUPS[window.CARDINAL_ITEM_ACCESS[key]] + '.</div>'; }
     } catch (e) {}
+    return r;
+  };
+})();
+</script>
+
+<script>
+// ══ OUT-OF-OFFICE HANDOFF (10/2, backlog: "out of office, Eve hands your work to whoever covers").
+// My Workspace gets an Out of office card. Eve suggests the closest teammate by role, writes a
+// handoff brief from your open Work Queue items, and reassigns them for the dates you set.
+// "I'm back" returns everything that wasn't finished.
+(function () {
+  // Activity log takes (kind, label, ref). A few add-on calls pass the label first; normalize them.
+  var oLog = window.cardinalLogActivity, KINDS = ['edit', 'case', 'screen', 'model', 'login', 'conversation'];
+  if (typeof oLog === 'function') window.cardinalLogActivity = cardinalLogActivity = function (k, l, r) {
+    return KINDS.indexOf(k) === -1 ? oLog.call(this, 'edit', k, null) : oLog.apply(this, arguments);
+  };
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function load() { try { return JSON.parse(localStorage.getItem('cardinal-ooo') || '{}'); } catch (e) { return {}; } }
+  function save(s) { try { localStorage.setItem('cardinal-ooo', JSON.stringify(s)); } catch (e) {} }
+  function iso(d) { return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
+  function nice(s) { var d = new Date(s + 'T12:00'); return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); }
+  function teammates(me) { return (window.CARDINAL_PERSONAS || []).filter(function (p) { return p.org === me.org && p.id !== me.id; }); }
+  function suggest(me) {
+    var words = String(me.role || '').toLowerCase().split(/[^a-z]+/).filter(function (w) { return w.length > 3; });
+    var best = null, bs = -1;
+    teammates(me).forEach(function (p) {
+      var r = String(p.role || '').toLowerCase(), s = words.filter(function (w) { return r.indexOf(w) > -1; }).length * 2;
+      if (/backup/i.test(p.bio || p.desc || '')) s += 1;
+      var cl = function (x) { x = String(x).toLowerCase(); return /complian|counsel|legal|fair lending|risk|privacy|audit/.test(x) ? 1 : /data|ml |engineer|scien|model/.test(x) ? 2 : /fraud|security|investig/.test(x) ? 3 : 4; };
+      if (cl(r) === cl(me.role)) s += 3;
+      if (/chief|general counsel|head of/.test(r) === /chief|general counsel|head of/.test(String(me.role).toLowerCase())) s += 1;
+      if (s > bs) { bs = s; best = p; }
+    });
+    return best;
+  }
+  function mine(org, name) { return (typeof wqTickets === 'function' ? wqTickets(org) : []).filter(function (t) { return t.status !== 'Done' && (t.assignee === name || t.approver === name); }); }
+  function card(me) {
+    var org = window.currentOrg || 'ad', st = load()[me.id], today = new Date();
+    if (st) {
+      var moved = (typeof wqTickets === 'function' ? wqTickets(org) : []).filter(function (t) { return t.coverFor === me.name; });
+      return '<div id="ooo-card" style="padding:14px 16px;border-radius:12px;border:1px solid rgba(180,83,9,.35);background:rgba(180,83,9,.05);margin-bottom:14px">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><div style="font-size:13px;font-weight:700;color:var(--chrome2)">🌴 Out of office, ' + nice(st.from) + ' to ' + nice(st.to) + '</div>' +
+        '<button type="button" class="btn-ghost" style="font-size:11px" onclick="cardinalOooBack()">I\'m back</button></div>' +
+        '<div style="font-size:11.5px;color:var(--muted);margin-top:6px"><strong style="color:var(--chrome2)">' + esc(st.cover) + '</strong> is covering. ' + moved.length + ' open item' + (moved.length === 1 ? '' : 's') + ' handed off. Approvals that need you route to them until ' + nice(st.to) + '.</div>' +
+        '<div style="margin-top:10px;padding:10px 12px;border-radius:9px;background:rgba(168,85,247,.05);border:1px solid rgba(168,85,247,.22);font-size:11px;color:var(--chrome2);line-height:1.55">✦ <strong>Eve\'s handoff brief</strong><br>' + st.brief + '</div></div>';
+    }
+    var sug = suggest(me), list = mine(org, me.name), end = new Date(today); end.setDate(end.getDate() + 7);
+    var opts = teammates(me).map(function (p) { return '<option value="' + esc(p.name) + '"' + (sug && p.id === sug.id ? ' selected' : '') + '>' + esc(p.name) + ' · ' + esc(p.role) + (sug && p.id === sug.id ? ' (Eve suggests)' : '') + '</option>'; }).join('');
+    return '<div id="ooo-card" style="padding:14px 16px;border-radius:12px;border:1px solid var(--border2);background:var(--card);margin-bottom:14px">' +
+      '<div style="font-size:13px;font-weight:700;color:var(--chrome2)">🌴 Going out of office?</div>' +
+      '<div style="font-size:11px;color:var(--muted);margin:4px 0 10px">Eve hands your ' + list.length + ' open item' + (list.length === 1 ? '' : 's') + ' to whoever covers, with a brief, and gives them back when you return.</div>' +
+      '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;font-size:11px;color:var(--muted)">From <input id="ooo-from" type="date" value="' + iso(today) + '" style="font-size:11px;padding:4px 6px;border:1px solid var(--border2);border-radius:6px;background:var(--bg);color:var(--text)"> to <input id="ooo-to" type="date" value="' + iso(end) + '" style="font-size:11px;padding:4px 6px;border:1px solid var(--border2);border-radius:6px;background:var(--bg);color:var(--text)">' +
+      ' Covering: <select id="ooo-cover" style="font-size:11px;padding:4px 6px;border:1px solid var(--border2);border-radius:6px;background:var(--bg);color:var(--text);max-width:300px">' + opts + '</select>' +
+      '<button type="button" class="btn-primary" style="font-size:11px;padding:6px 12px" onclick="cardinalOooSet()">Hand off with Eve</button></div></div>';
+  }
+  window.cardinalOooSet = function () {
+    var me = getActivePersona(), org = window.currentOrg || 'ad', from = document.getElementById('ooo-from').value, to = document.getElementById('ooo-to').value, cover = document.getElementById('ooo-cover').value;
+    if (!from || !to || to < from) { alert('Pick an end date on or after the start date.'); return; }
+    var list = mine(org, me.name);
+    list.forEach(function (t) { t.coverFor = me.name; if (t.assignee === me.name) t.assignee = cover; if (t.approver === me.name) t.approver = cover; wqSave(org, t); });
+    var crit = list.filter(function (t) { return t.priority === 'Critical' || t.priority === 'High'; });
+    var brief = list.length ? list.slice(0, 5).map(function (t) { var d = typeof wqDue === 'function' ? wqDue(t) : { label: '' }; return '• <strong>' + esc(t.id) + '</strong> ' + esc(t.title) + ' <span style="color:var(--muted)">(' + esc(t.priority) + ', ' + esc(d.label) + ')</span>'; }).join('<br>') + (list.length > 5 ? '<br>• and ' + (list.length - 5) + ' more in the Work Queue' : '') +
+      '<br><span style="color:var(--muted)">' + (crit.length ? 'Start with ' + esc(crit[0].id) + '. ' : '') + 'Every reassignment is logged in your activity history.</span>' : 'No open items. ' + esc(cover) + ' is listed as your contact for anything new.';
+    var s = load(); s[me.id] = { from: from, to: to, cover: cover, brief: brief }; save(s);
+    try { cardinalLogActivity('edit', 'Out of office ' + nice(from) + ' to ' + nice(to) + ', ' + list.length + ' items handed to ' + cover, null); } catch (e) {}
+    renderBigWorkspacePage();
+  };
+  window.cardinalOooBack = function () {
+    var me = getActivePersona(), org = window.currentOrg || 'ad', s = load(), st = s[me.id], n = 0;
+    (typeof wqTickets === 'function' ? wqTickets(org) : []).forEach(function (t) {
+      if (t.coverFor !== me.name) return;
+      if (t.status !== 'Done') { if (st && t.assignee === st.cover) t.assignee = me.name; if (st && t.approver === st.cover) t.approver = me.name; n++; }
+      delete t.coverFor; wqSave(org, t);
+    });
+    delete s[me.id]; save(s);
+    try { cardinalLogActivity('edit', 'Back in office, ' + n + ' open items returned', null); } catch (e) {}
+    renderBigWorkspacePage();
+  };
+  var oR = window.renderBigWorkspacePage;
+  if (typeof oR === 'function') window.renderBigWorkspacePage = function () {
+    var r = oR.apply(this, arguments);
+    try { var me = getActivePersona(), c = document.getElementById('myworkspace-content'); if (me && c && !document.getElementById('ooo-card')) c.insertAdjacentHTML('afterbegin', card(me)); } catch (e) {}
     return r;
   };
 })();
