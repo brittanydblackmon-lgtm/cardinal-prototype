@@ -45911,6 +45911,63 @@ applyClientView = window.applyClientView = (function (orig) {
 })();
 </script>
 
+<script>
+// ══ ECHO CORE ROOMS (10/1, Brittany's "house of the memory") ══
+// The same 10 Echo views, grouped into rooms by subject. The hallway (all events + Archive
+// Navigator) connects them. Nothing removed; deep links to any view light up the right room.
+(function () {
+  var ROOMS = [
+    { id: 'hall', label: 'Hallway', sub: 'Every sealed event and the archive', tabs: ['memories', 'scorehistory'] },
+    { id: 'cases', label: 'Cases', sub: 'Case conversations and dismissed flags', tabs: ['conversations', 'ignored'] },
+    { id: 'models', label: 'Models', sub: 'Every version and change', tabs: ['lineage'] },
+    { id: 'people', label: 'People', sub: 'Cardinal Passport and activity', tabs: ['pmprofiles', 'peoplelog'] },
+    { id: 'decisions', label: 'Decisions', sub: 'Cryptographic receipts', tabs: ['receipts'] },
+    { id: 'wb', label: 'Whistleblower', sub: 'Sealed reports', tabs: ['whistleblower'] },
+    { id: 'desk', label: 'Your Desk', sub: 'Your notes and pins', tabs: ['myworkspace'] }
+  ];
+  function roomOf(tab) { for (var i = 0; i < ROOMS.length; i++) if (ROOMS[i].tabs.indexOf(tab) !== -1) return ROOMS[i]; return ROOMS[0]; }
+  function paint(room) {
+    var bar = document.getElementById('echo-rooms-bar'), tabs = document.getElementById('echo-feed-tabs');
+    if (!bar || !tabs) return;
+    bar.querySelectorAll('[data-room]').forEach(function (b) {
+      var on = b.getAttribute('data-room') === room.id;
+      b.style.background = on ? 'var(--card)' : 'transparent';
+      b.style.borderColor = on ? 'rgba(167,167,167,.35)' : 'transparent';
+      b.style.boxShadow = on ? '0 1px 4px rgba(0,0,0,.08)' : 'none';
+      b.querySelector('.rl').style.color = on ? 'var(--chrome2)' : 'var(--muted2)';
+    });
+    tabs.querySelectorAll('.echo-feed-tab').forEach(function (b) { b.style.display = room.tabs.indexOf(b.getAttribute('data-echo-tab')) !== -1 ? '' : 'none'; });
+    tabs.style.display = room.tabs.length > 1 ? 'flex' : 'none';
+  }
+  function build() {
+    var tabs = document.getElementById('echo-feed-tabs');
+    if (!tabs || document.getElementById('echo-rooms-bar')) return;
+    var bar = document.createElement('div');
+    bar.id = 'echo-rooms-bar';
+    bar.style.cssText = 'display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px;margin-bottom:12px;background:var(--bg2);border-radius:12px;padding:5px';
+    bar.innerHTML = ROOMS.map(function (r) {
+      return '<button type="button" data-room="' + r.id + '" onclick="echoEnterRoom(\'' + r.id + '\')" style="text-align:left;padding:8px 10px;border-radius:9px;border:1px solid transparent;background:transparent;cursor:pointer;font-family:var(--sans)"><div class="rl" style="font-size:12px;font-weight:700">' + r.label + '</div><div style="font-size:9.5px;color:var(--muted);margin-top:2px;line-height:1.3">' + r.sub + '</div></button>';
+    }).join('');
+    tabs.parentNode.insertBefore(bar, tabs);
+    var cur = (tabs.querySelector('.echo-feed-tab.active') || {}).getAttribute ? tabs.querySelector('.echo-feed-tab.active').getAttribute('data-echo-tab') : 'memories';
+    paint(roomOf(cur));
+  }
+  window.echoEnterRoom = function (id) {
+    var r = ROOMS.filter(function (x) { return x.id === id; })[0] || ROOMS[0];
+    echoSwitchTab(r.tabs[0]);
+  };
+  var orig = window.echoSwitchTab;
+  if (typeof orig === 'function') {
+    window.echoSwitchTab = echoSwitchTab = function (tab) {
+      var res = orig.apply(this, arguments);
+      try { build(); paint(roomOf(tab)); } catch (e) {}
+      return res;
+    };
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', build); else build();
+})();
+</script>
+
 </body>
 
 </html>
