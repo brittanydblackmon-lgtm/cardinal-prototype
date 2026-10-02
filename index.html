@@ -7030,7 +7030,8 @@ Halo Core
 <button class="comp-tab" id="comp-tab-calendar" onclick="switchCompTab('calendar')" style="flex:1;padding:8px;border-radius:8px;border:none;background:transparent;color:var(--muted);font-size:11px;cursor:pointer;font-family:var(--sans)">Compliance Calendar</button>
 <button class="comp-tab" id="comp-tab-reporting" onclick="switchCompTab('reporting')" style="flex:1;padding:8px;border-radius:8px;border:none;background:transparent;color:var(--muted);font-size:11px;cursor:pointer;font-family:var(--sans)">Reporting</button>
 <button class="comp-tab" id="comp-tab-audit" onclick="switchCompTab('audit')" style="flex:1;padding:8px;border-radius:8px;border:none;background:transparent;color:var(--muted);font-size:11px;cursor:pointer;font-family:var(--sans)">Audit Trail</button>
-<button class="comp-tab" id="comp-tab-whistleblower" onclick="switchCompTabLegacy('whistleblower')" style="flex:1;padding:8px;border-radius:8px;border:none;background:transparent;color:var(--muted);font-size:11px;cursor:pointer;font-family:var(--sans)">Whistleblower</button>
+<button class="comp-tab" id="comp-tab-packets" onclick="switchCompTab('packets')" style="flex:1;padding:8px;border-radius:8px;border:none;background:transparent;color:var(--muted);font-size:11px;cursor:pointer;font-family:var(--sans)">Policy Packets</button>
+<button class="comp-tab" id="comp-tab-whistleblower" onclick="switchCompTab('whistleblower')" style="flex:1;padding:8px;border-radius:8px;border:none;background:transparent;color:var(--muted);font-size:11px;cursor:pointer;font-family:var(--sans)">Whistleblower</button>
 </div>
 
 <!-- TAB CONTENT -->
@@ -7442,6 +7443,7 @@ Showing: <span id="comp-map-filter-region">All</span>
 </div>
 
 <!-- WHISTLEBLOWER TAB -->
+<div id="comp-content-packets" style="display:none"></div>
 <div id="comp-content-whistleblower" style="display:none">
 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
 <div>
@@ -23792,6 +23794,89 @@ function slRegDirectoryHtml(org, states) {
     rows.map(function (r) { return '<tr><td style="font-weight:700;width:70px">' + esc(r[0]) + '</td><td style="font-weight:600;color:var(--chrome2)">' + esc(r[1]) + '</td><td style="font-size:10.5px;color:var(--muted2)">' + esc(r[2]) + '</td></tr>'; }).join('') + '</tbody></table></div>';
 }
 
+// ══ POLICY PACKETS (10/2, designed from auditor-evidence research; Brittany will refine after her
+// own research). One packet per audience. Each maps policy -> control -> owner -> enforcement ->
+// evidence -> status, crosswalked to NIST AI RMF (Govern/Map/Measure/Manage) and ISO/IEC 42001,
+// with the AI inventory, open gaps with fix dates, and a signed, sealed attestation.
+window.CARDINAL_PACKETS = {
+  fin: [
+    { name: 'CFPB Fair Lending Exam', audience: 'CFPB examiners', signer: 'Riley Whitmore, Chief Compliance Officer', controls: [
+      ['Credit models are tested for disparate impact before and after launch', 'Disparate impact test on every model version', 'Sarah Chen', 'Eden + Genesis', 'DI history; counterfactual receipt FIN-CF (Credit Scoring v3.4)', 'Gap', 'Measure', '9.1'],
+      ['Every denial carries specific principal reasons', 'Reason-code accuracy check on adverse action notices', 'Lisa Torres', 'Genesis scenario test', '98.6% accuracy on 1,000 denials', 'Operating', 'Manage', '8.3'],
+      ['Proxy variables for protected traits are prohibited', 'Proxy scan on every feature', 'Sarah Chen', 'Eden proxy detection + Training Data Provenance', 'ZIP code flagged at 0.82 correlation; removed in v3.5', 'Gap', 'Map', '6.1'],
+      ['Fixes are tested on live traffic before full rollout', 'Shadow deployment with automatic rollback', 'Grace Liu', 'Atonement', 'v3.5 at 5% traffic, DI 0.83', 'Operating', 'Manage', '8.2'],
+      ['Affected applicants are re-reviewed and told the outcome', 'Remediation cohort tracking + Passport notice', 'Riley Whitmore', 'Atonement + Cardinal Passport', '687 of 1,203 re-reviewed', 'Operating', 'Manage', '10.2']
+    ], gaps: [['Credit Scoring v3.4 below the 0.80 line', 'Ship v3.5', 21], ['ZIP proxy still in production model', 'Same release', 21]] },
+    { name: 'Sponsor Bank Third-Party Risk Review', audience: 'Harbor Point Bank', signer: 'Jordan Ellis, Chief Risk Officer', controls: [
+      ['A complete inventory of AI in use is maintained', 'Live model and system registry', 'Jordan Ellis', 'Cardinal Library (models + AI Systems)', '15 model versions, 3 systems, 3 newly discovered and registered', 'Operating', 'Govern', '4.1'],
+      ['Every AI agent has a named human owner', 'Agent ownership check', 'Daniel Okafor', 'Security Watch > AI Agents', 'Collections Agent had no owner; now assigned', 'Operating', 'Govern', '5.3'],
+      ['Third-party AI is vetted and documented', 'Vendor AI registry with attestations', 'Morgan Hale', 'Sentinel > Vendor AI', '4 vendors; 2 gaps (BIPA terms, training rights)', 'Gap', 'Govern', '8.4'],
+      ['Incidents are reported on time', 'Regulator clocks + sealed packets', 'Riley Whitmore', 'Sentinel > Incident Reporting', 'SAR clock running (28 days left)', 'Operating', 'Manage', '10.1']
+    ], gaps: [['Selfie vendor consent language (BIPA)', 'Legal approval', 10]] }
+  ],
+  ad: [
+    { name: 'DoD Responsible AI Assessment', audience: 'DoD contracting officer', signer: 'James Martinez, Compliance Lead', controls: [
+      ['Personnel AI is equitable (DoD AI Ethical Principles)', 'Adverse impact testing on assignment models', 'Sarah Chen', 'Eden + Genesis', 'Personnel Assignment v2.4 DI 0.67; v2.5 0.84 in shadow', 'Gap', 'Measure', '9.1'],
+      ['AI decisions are traceable', 'Sealed decision receipts and model lineage', 'James Martinez', 'Echo + Trust Ledger', 'Hash chain verifies; receipts AD-CF / AD-DEPLOY', 'Operating', 'Govern', '7.5'],
+      ['AI is governable: humans can stop it', 'Auto-stop rules and runtime enforcement', 'Lisa Walker', 'Sentinel > Runtime Enforcement', 'Scheduling bot stopped before 14 reassignments', 'Operating', 'Manage', '8.1'],
+      ['Classified-equivalent leakage is tested', 'Unclassified Leak Simulation', 'Ryan Bennett', 'Genesis scenario test', 'Failed at 87%; aggregation guardrail added', 'Gap', 'Measure', '6.1']
+    ], gaps: [['Personnel Assignment below the 0.80 line', 'Complete v2.5 rollout', 18], ['Aggregation guardrail validation', 'Re-run leak simulation', 7]] },
+    { name: 'ISO/IEC 42001 Surveillance Audit', audience: 'Certification body', signer: 'James Martinez, Compliance Lead', controls: [
+      ['AI policy is approved and reviewed', 'Annual management review', 'Lisa Walker', 'Echo (sealed minutes)', 'Last review sealed this quarter', 'Operating', 'Govern', '5.2'],
+      ['Corrective actions are tracked to closure', 'Work Queue tickets with approvers', 'Amanda Clark', 'Work Queue', '2 minor findings closed', 'Operating', 'Manage', '10.2']
+    ], gaps: [] }
+  ],
+  health: [
+    { name: 'HHS OCR Section 1557 Review', audience: 'HHS Office for Civil Rights', signer: 'Elena Ruiz, Chief Compliance Officer', controls: [
+      ['Patient care decision tools are checked for discrimination', 'Fairness testing by age, race, sex', 'Dr. Aisha Patel', 'Eden + Genesis (Diagnostic Variance Test)', 'Claims Adjudication v1.9: patients 75+ under-approved; Diagnosis Support failed variance test', 'Gap', 'Measure', '9.1'],
+      ['A clinician decides medical necessity', 'Hard gate on AI denials', 'Dr. Maya Osei', 'Runtime Enforcement (CA SB 1120)', '31 auto-closed denials reopened; gate now enforced', 'Operating', 'Manage', '8.1'],
+      ['Patients are told AI was used and can reach a human', 'AI disclosure in patient messages', 'Olivia Grant', 'Marketing Core + messaging checks', 'AB 3030 disclaimer on all AI messages', 'Operating', 'Govern', '7.4']
+    ], gaps: [['Fairness 64 under the 70 floor', 'Finish v2.0 ramp', 30]] }
+  ],
+  fed: [
+    { name: 'OMB M-25-21 High-Impact AI Review', audience: 'Agency Chief AI Officer / OMB', signer: 'Patricia Alvarez, Chief Privacy Officer', controls: [
+      ['High-impact AI is tested before deployment', 'Pre-deployment testing', 'James Martinez', 'Genesis', 'Disparity found; deployment blocked', 'Operating', 'Measure', '8.2'],
+      ['An impact assessment is completed', 'Impact assessment on file', 'Dana Kim', 'Compliance Exchange', 'Assessment sealed; update due', 'Operating', 'Map', '6.1'],
+      ['Every AI agent has accountable human oversight', 'Named owner + examiner review of actions', 'Dana Kim', 'Security Watch + Auto-Stop', 'Audit Selection Agent has no owner; actions held', 'Gap', 'Govern', '5.3'],
+      ['People can appeal AI-informed decisions', 'Appeal path documented', 'Luis Ortega', 'Cardinal Passport', 'Appeal path live', 'Operating', 'Manage', '9.4']
+    ], gaps: [['Audit Selection Agent owner', 'Name an accountable official', 7]] }
+  ]
+};
+window.__packSel = window.__packSel || {};
+window.__packBuilt = window.__packBuilt || {};
+window.compPackSelect = function (i) { window.__packSel[window.currentOrg || 'ad'] = i; buildCompPackets(); };
+window.compPackAssemble = function () {
+  var o = window.currentOrg || 'ad', i = window.__packSel[o] || 0;
+  window.__packBuilt[o + ':' + i] = 'building'; buildCompPackets();
+  setTimeout(function () { window.__packBuilt[o + ':' + i] = new Date(); buildCompPackets(); try { cardinalLogActivity('Policy packet assembled: ' + CARDINAL_PACKETS[o][i].name, 'compliance'); } catch (e) {} }, 1300);
+};
+window.compPackPrint = function () {
+  var o = window.currentOrg || 'ad', p = CARDINAL_PACKETS[o][window.__packSel[o] || 0], org = (window.__CARDINAL_ORG_NAME_BY_INDUSTRY || {})[o] || o;
+  var esc = function (s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;'); };
+  var w = window.open('', '_blank'); if (!w) return;
+  w.document.write('<!doctype html><meta charset="utf-8"><title>' + esc(p.name) + ' — ' + esc(org) + '</title><style>body{font-family:system-ui,sans-serif;max-width:860px;margin:30px auto;color:#1e293b;font-size:12px}h1{font-size:20px;margin:0}h2{font-size:14px;margin:22px 0 6px}table{width:100%;border-collapse:collapse}td,th{border:1px solid #cbd5e1;padding:6px;text-align:left;vertical-align:top}th{background:#f1f5f9}.gap{color:#b91c1c;font-weight:700}.ok{color:#15803d;font-weight:700}</style>' +
+    '<h1>' + esc(p.name) + '</h1><div>' + esc(org) + ' · prepared for ' + esc(p.audience) + ' · ' + new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) + '</div>' +
+    '<h2>1. Policies, controls, and evidence</h2><table><tr><th>Policy</th><th>Control</th><th>Owner</th><th>Enforced by</th><th>Evidence</th><th>Status</th><th>NIST AI RMF</th><th>ISO 42001</th></tr>' + p.controls.map(function (c) { return '<tr><td>' + c.slice(0, 5).map(esc).join('</td><td>') + '</td><td class="' + (c[5] === 'Gap' ? 'gap' : 'ok') + '">' + c[5] + '</td><td>' + c[6] + '</td><td>Clause ' + c[7] + '</td></tr>'; }).join('') + '</table>' +
+    '<h2>2. Open gaps</h2>' + (p.gaps.length ? '<table><tr><th>Gap</th><th>Fix</th><th>Target</th></tr>' + p.gaps.map(function (g) { return '<tr><td>' + esc(g[0]) + '</td><td>' + esc(g[1]) + '</td><td>' + g[2] + ' days</td></tr>'; }).join('') + '</table>' : '<p>None.</p>') +
+    '<h2>3. Attestation</h2><p>I attest that the controls above operated as described for the review period. Signed: <b>' + esc(p.signer) + '</b>. Sealed on the Trust Ledger; any change to this packet breaks its fingerprint.</p>');
+  w.document.close();
+};
+function buildCompPackets() {
+  var el = document.getElementById('comp-content-packets'); if (!el) return;
+  var o = window.currentOrg || 'ad', list = CARDINAL_PACKETS[o] || [], i = Math.min(window.__packSel[o] || 0, list.length - 1), p = list[i];
+  var esc = function (s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;'); };
+  if (!p) { el.innerHTML = ''; return; }
+  var ok = p.controls.filter(function (c) { return c[5] !== 'Gap'; }).length, st = window.__packBuilt[o + ':' + i];
+  el.innerHTML = '<div style="margin-bottom:12px"><div style="font-size:14px;font-weight:700;color:var(--chrome2)">Policy Packets: proof your policies actually run</div><div style="font-size:11px;color:var(--muted);margin-top:3px">Each packet maps every policy to the control that enforces it, its owner, the evidence, and its status, crosswalked to NIST AI RMF and ISO/IEC 42001, then signed and sealed.</div></div>' +
+    '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">' + list.map(function (x, k) { return '<button type="button" onclick="compPackSelect(' + k + ')" style="font-size:11px;padding:6px 12px;border-radius:8px;cursor:pointer;border:1px solid ' + (k === i ? 'rgba(30,58,138,.4)' : 'var(--border2)') + ';background:' + (k === i ? 'rgba(30,58,138,.08)' : 'transparent') + ';color:' + (k === i ? '#1e3a8a' : 'var(--chrome2)') + ';font-weight:' + (k === i ? '700' : '500') + '">' + esc(x.name) + '</button>'; }).join('') + '</div>' +
+    '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:12px">' + [['Prepared for', esc(p.audience)], ['Controls operating', ok + ' of ' + p.controls.length], ['Open gaps', p.gaps.length], ['Signer', esc(p.signer.split(',')[0])]].map(function (s) { return '<div class="stat-card"><div class="stat-label">' + s[0] + '</div><div class="stat-value" style="font-size:15px">' + s[1] + '</div></div>'; }).join('') + '</div>' +
+    '<div style="border:1px solid var(--border2);border-radius:10px;overflow-x:auto;background:var(--card)"><table class="data-table" style="width:100%"><thead><tr><th>Policy</th><th>Control</th><th>Owner</th><th>Enforced by</th><th>Evidence</th><th>Status</th><th>NIST / ISO</th></tr></thead><tbody>' +
+    p.controls.map(function (c) { return '<tr style="vertical-align:top"><td style="font-weight:600;color:var(--chrome2);max-width:200px">' + esc(c[0]) + '</td><td style="font-size:10.5px">' + esc(c[1]) + '</td><td style="font-size:10.5px">' + esc(c[2]) + '</td><td style="font-size:10.5px">' + esc(c[3]) + '</td><td style="font-size:10.5px;color:var(--muted2);max-width:200px">' + esc(c[4]) + '</td><td style="font-weight:700;color:' + (c[5] === 'Gap' ? '#DC2626' : '#15803D') + '">' + c[5] + '</td><td style="font-size:10px;font-family:monospace">' + c[6] + ' · ' + c[7] + '</td></tr>'; }).join('') + '</tbody></table></div>' +
+    (p.gaps.length ? '<div style="margin-top:10px;font-size:11px"><b style="color:var(--chrome2)">Open gaps:</b> ' + p.gaps.map(function (g) { return esc(g[0]) + ' (fix: ' + esc(g[1]) + ', ' + g[2] + ' days)'; }).join(' · ') + '</div>' : '') +
+    '<div style="display:flex;gap:8px;margin-top:12px;align-items:center;flex-wrap:wrap">' + (st === 'building' ? '<span style="font-size:11px;color:#1d4ed8;font-weight:700">Assembling evidence from Eden, Genesis, Echo, and the Trust Ledger…</span>' : st ? '<span style="font-size:11px;color:#15803D;font-weight:700">✓ Assembled ' + st.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) + ', signed by ' + esc(p.signer.split(',')[0]) + ', sealed on the Trust Ledger</span><button type="button" class="btn-ghost" style="font-size:11px" onclick="compPackPrint()">Open printable packet →</button>' : '<button type="button" class="btn-primary" style="font-size:11px" onclick="compPackAssemble()">Assemble packet</button>') + '</div>';
+}
+window.buildCompPackets = buildCompPackets;
+
 window.SL_LAWS = [
   { id: 'co-189', st: 'CO', name: 'Colorado SB 26-189 (automated decisions)', date: 'Jan 1, 2027', live: false,
     req: 'Notice when automated tech materially influences a consequential decision (lending, jobs, housing, insurance, health care, education, government services), and a disclosure to the person within 30 days after an adverse outcome.',
@@ -23913,6 +23998,8 @@ window.buildCompStates = buildCompStates;
       if (cl && cl.style.display === 'block') buildCompCalendar();
       var lsy = document.getElementById('lib-tab-content-systems');
       if (lsy && lsy.style.display !== 'none' && lsy.offsetParent !== null) renderLibSystems();
+      var cp = document.getElementById('comp-content-packets');
+      if (cp && cp.style.display === 'block') buildCompPackets();
       var ls = document.getElementById('lib-tab-content-suppressions');
       if (ls && ls.style.display !== 'none' && ls.offsetParent !== null) renderLibSuppressions();
       var p = document.getElementById('screen-pipeline');
@@ -23927,7 +24014,7 @@ window.cardinalGlobalFor = function (org, name) {
 };
 
 function switchCompTab(tab) {
- const tabs = ['overview','regulations','states','global','calendar','reporting','audit','whistleblower'];
+ const tabs = ['overview','regulations','states','global','calendar','reporting','audit','packets','whistleblower'];
  tabs.forEach(t => {
    const btn = document.getElementById('comp-tab-'+t);
    const content = document.getElementById('comp-content-'+t);
@@ -23936,6 +24023,7 @@ function switchCompTab(tab) {
  });
  if(tab==='regulations') buildCompRegulations('All');
  if(tab==='calendar') buildCompCalendar();
+ if(tab==='packets') buildCompPackets();
  if(tab==='states') buildCompStates((typeof currentOrg !== 'undefined' && currentOrg) || window.currentOrg || 'ad');
  if(tab==='global') buildCompGlobal((typeof currentOrg !== 'undefined' && currentOrg) || window.currentOrg || 'ad');
 }
