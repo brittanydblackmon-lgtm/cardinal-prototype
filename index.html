@@ -7748,6 +7748,7 @@ Template Overview
     <button class="lib-tab active" data-lib-tab="usecases" onclick="cardinalLibrarySwitchTab('usecases', this)" style="padding:8px 18px;background:rgba(167, 167, 167,0.12);border:1px solid rgba(167, 167, 167,0.28);border-radius:7px;font-size:11px;font-weight:600;color:var(--accent);cursor:pointer;">Use Cases · <span id="lib-tab-count-usecases">95</span></button>
     <button class="lib-tab" data-lib-tab="models" onclick="cardinalLibrarySwitchTab('models', this)" style="padding:8px 18px;background:transparent;border:1px solid transparent;border-radius:7px;font-size:11px;font-weight:600;color:var(--muted);cursor:pointer;">Models · <span id="lib-tab-count-models">—</span></button>
     <button class="lib-tab" data-lib-tab="cohorts" onclick="cardinalLibrarySwitchTab('cohorts', this)" style="padding:8px 18px;background:transparent;border:1px solid transparent;border-radius:7px;font-size:11px;font-weight:600;color:var(--muted);cursor:pointer;">Cohorts · <span id="lib-tab-count-cohorts">—</span></button>
+    <button class="lib-tab" data-lib-tab="suppressions" onclick="cardinalLibrarySwitchTab('suppressions', this)" style="padding:8px 18px;background:transparent;border:1px solid transparent;border-radius:7px;font-size:11px;font-weight:600;color:var(--muted);cursor:pointer;">Suppressions</button>
     <button class="lib-tab" data-lib-tab="search" onclick="cardinalLibrarySwitchTab('search', this)" style="padding:8px 18px;background:transparent;border:1px solid transparent;border-radius:7px;font-size:11px;font-weight:600;color:var(--muted);cursor:pointer;">Search</button>
   </div>
 
@@ -7755,6 +7756,7 @@ Template Overview
   <div id="lib-tab-content-usecases" class="cardinal-collapse-if-empty"></div>
   <div id="lib-tab-content-models" style="display:none;" class="cardinal-collapse-if-empty"></div>
   <div id="lib-tab-content-cohorts" style="display:none;" class="cardinal-collapse-if-empty"></div>
+  <div id="lib-tab-content-suppressions" style="display:none;"></div>
   <div id="lib-tab-content-search" style="display:none;"></div>
 </div>
 <div id="screen-usecases" class="screen">
@@ -23869,6 +23871,8 @@ window.buildCompStates = buildCompStates;
       var rg = document.getElementById('comp-content-regulations'), cl = document.getElementById('comp-content-calendar');
       if (rg && rg.style.display === 'block') buildCompRegulations(window._compRegRegion || 'All');
       if (cl && cl.style.display === 'block') buildCompCalendar();
+      var ls = document.getElementById('lib-tab-content-suppressions');
+      if (ls && ls.style.display !== 'none' && ls.offsetParent !== null) renderLibSuppressions();
       var p = document.getElementById('screen-pipeline');
       if (p && p.offsetParent !== null && typeof pipelineInitWizard === 'function') pipelineInitWizard();
     } catch (e) {}
@@ -38684,6 +38688,105 @@ window.cardinalLibFlattenUseCaseTags = function() {
   return out;
 };
 
+// ══ CARDINAL LIBRARY: SUPPRESSION RULES (10/1, Brittany's definition) ══
+// Segmentation, independent of stamps: keep a cohort or segment from being reached by a model,
+// campaign, or outreach it shouldn't get, and stop two models from hitting the same people at
+// the same time. Cardinal also finds overlaps on its own and offers a one-click rule.
+window.CARDINAL_SUPPRESSIONS = {
+  fin: {
+    rules: [
+      { who: 'FIN-1203 re-review cohort', n: 1203, from: 'Collections AI v1.3 outbound reminders', until: 'Re-review closes', why: 'People being re-reviewed for a possibly biased denial should not get collections pressure in the meantime.', owner: 'Riley Whitmore', blocked: 214, on: true },
+      { who: 'FIN-1203 re-review cohort', n: 1203, from: 'Credit Scoring v3.5 pre-approval offers', until: 'v3.5 cleared for production', why: 'The fix is still in shadow testing; an offer now would promise an outcome (see Marketing Core MK-001).', owner: 'Hannah Brooks', blocked: 0, on: true },
+      { who: 'Accounts on fraud hold (Fraud Screening v2.7)', n: 342, from: 'Pre-qual Chatbot credit-line increase prompts', until: 'Fraud hold lifted', why: 'Never market more credit to an account under fraud investigation.', owner: 'Daniel Okafor', blocked: 61, on: true },
+      { who: 'Illinois applicants without BIPA consent', n: 1870, from: 'Selfie liveness check (vendor)', until: 'Consent language approved', why: 'Faceprints need written consent under Illinois BIPA first.', owner: 'Morgan Hale', blocked: 1870, on: true }
+    ],
+    conflicts: [
+      { text: '56 people in Collections AI\'s next batch have an open fair lending complaint.', who: 'Open fair lending complaints', n: 56, from: 'Collections AI v1.3 outbound reminders', why: 'Contacting complainants about payments during an open complaint looks like retaliation.' },
+      { text: 'Underwriting v4.1 and Credit Scoring v3.4 are both about to send adverse action notices to the same 38 applicants.', who: 'Applicants decided by both models', n: 38, from: 'Underwriting v4.1 adverse action notices', why: 'Send one combined notice with all reasons, not two conflicting ones (FCRA / Reg B).' }
+    ]
+  },
+  ad: {
+    rules: [
+      { who: 'AD-2847 affected technicians', n: 847, from: 'Scheduling bot automatic reassignments', until: 'v2.5 fully deployed', why: 'Don\'t let an agent move the same people the biased model already disadvantaged.', owner: 'James Martinez', blocked: 14, on: true },
+      { who: 'Technicians with accommodations', n: 63, from: 'Maintenance Routing night-shift auto-assign', until: 'Ongoing', why: 'Accommodation schedules are set by HR, not the routing model.', owner: 'Dana Whitfield', blocked: 22, on: true }
+    ],
+    conflicts: [
+      { text: 'Mission Readiness v1.2 and Personnel Assignment v2.5 shadow tests are both ramping on the same 112 technicians.', who: 'Technicians in both shadow tests', n: 112, from: 'Mission Readiness v1.2 shadow ramp', why: 'Two shadow tests on the same people muddy both results. Stagger them.' }
+    ]
+  },
+  health: {
+    rules: [
+      { who: 'HS-2847 cohort (patients 75+)', n: 2847, from: 'Claims Triage Agent auto-close', until: 'Claims Adjudication v2.0 at 100%', why: 'These claims need clinician review (CA SB 1120), not automatic closure.', owner: 'Elena Ruiz', blocked: 31, on: true },
+      { who: 'Members with an open appeal', n: 418, from: 'Medicare Advantage upsell emails', until: 'Appeal resolved', why: 'Marketing to someone mid-appeal reads as pressure and breaks CMS marketing rules.', owner: 'Olivia Grant', blocked: 96, on: true }
+    ],
+    conflicts: [
+      { text: 'Prior Auth v1.5 and Claims Adjudication v1.9 are both deciding 64 of the same claims.', who: 'Claims routed to both models', n: 64, from: 'Claims Adjudication v1.9 (duplicate decision)', why: 'One claim, one decision path, one explanation to the patient.' }
+    ]
+  },
+  fed: {
+    rules: [
+      { who: 'FED-PDV-001 test cohort (self-employed filers)', n: 1200, from: 'Audit Selection Agent queue', until: 'Disparity testing complete', why: 'People in an active fairness test shouldn\'t be selected by the model being tested.', owner: 'Patricia Alvarez', blocked: 40, on: true },
+      { who: 'Confirmed identity-theft victims', n: 37, from: 'Refund offset notices', until: 'Identity restored', why: 'Don\'t send offset notices for refunds a fraud ring diverted.', owner: 'Luis Ortega', blocked: 37, on: true }
+    ],
+    conflicts: [
+      { text: 'Refund fraud holds and audit selection both target the same 37 taxpayers.', who: 'Taxpayers on fraud hold', n: 37, from: 'Audit Selection Agent queue', why: 'Victims of identity theft shouldn\'t also be picked for audit.' }
+    ]
+  }
+};
+function suppOrg() { return (typeof currentOrg !== 'undefined' && currentOrg) || window.currentOrg || 'ad'; }
+window.suppCreateFromConflict = function (i) {
+  var S = CARDINAL_SUPPRESSIONS[suppOrg()], c = S.conflicts.splice(i, 1)[0];
+  var p = window.getActivePersona ? getActivePersona() : null;
+  S.rules.unshift({ who: c.who, n: c.n, from: c.from, until: 'Until reviewed', why: c.why, owner: p ? p.name : 'You', blocked: 0, on: true, isNew: true });
+  try { if (typeof cardinalLogActivity === 'function') cardinalLogActivity('Suppression rule created: ' + c.who + ' from ' + c.from, 'cardinallibrary'); } catch (e) {}
+  renderLibSuppressions();
+};
+window.suppToggle = function (i) { var r = CARDINAL_SUPPRESSIONS[suppOrg()].rules[i]; r.on = !r.on; try { cardinalLogActivity('Suppression ' + (r.on ? 'resumed' : 'paused') + ': ' + r.who, 'cardinallibrary'); } catch (e) {} renderLibSuppressions(); };
+window.suppAdd = function () {
+  var g = function (id) { var el = document.getElementById(id); return el ? el.value.trim() : ''; };
+  var who = g('supp-who'), from = g('supp-from');
+  if (!who || !from) return;
+  var p = window.getActivePersona ? getActivePersona() : null;
+  var cohort = (window.CARDINAL_COHORTS || []).filter(function (c) { return c.name === who; })[0];
+  CARDINAL_SUPPRESSIONS[suppOrg()].rules.unshift({ who: who, n: cohort ? cohort.size : 0, from: from, until: g('supp-until') || 'Until reviewed', why: g('supp-why') || 'Added manually.', owner: p ? p.name : 'You', blocked: 0, on: true, isNew: true });
+  try { if (typeof cardinalLogActivity === 'function') cardinalLogActivity('Suppression rule created: ' + who + ' from ' + from, 'cardinallibrary'); } catch (e) {}
+  renderLibSuppressions();
+};
+window.renderLibSuppressions = function () {
+  var el = document.getElementById('lib-tab-content-suppressions');
+  if (!el) return;
+  var org = suppOrg(), S = CARDINAL_SUPPRESSIONS[org] || { rules: [], conflicts: [] };
+  var esc = function (s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;'); };
+  var active = S.rules.filter(function (r) { return r.on; });
+  var people = active.reduce(function (s, r) { return s + (r.n || 0); }, 0), blocked = active.reduce(function (s, r) { return s + (r.blocked || 0); }, 0);
+  var stat = function (l, v, c) { return '<div class="stat-card"><div class="stat-label">' + l + '</div><div class="stat-value" style="font-size:20px;color:' + (c || 'var(--chrome2)') + '">' + v + '</div></div>'; };
+  var cohorts = (window.CARDINAL_COHORTS || []).filter(function (c) { return c.industry === org; }).map(function (c) { return c.name; });
+  var targets = (window.CARDINAL_MODELS || []).filter(function (m) { return m.industry === org; }).map(function (m) { return m.name + ' decisions'; }).concat(['Marketing emails', 'Outbound calls and texts', 'Agent actions']);
+  var inp = 'width:100%;padding:7px 9px;border-radius:7px;border:1px solid var(--border2);background:var(--bg3);color:var(--text);font-size:11px;box-sizing:border-box';
+  el.innerHTML = '<div style="font-size:12px;color:var(--muted2);margin-bottom:12px;line-height:1.55">Suppression keeps a group of people out of a model, campaign, or outreach they shouldn\'t get, and stops two models from reaching the same people at once. It works whether a model is stamped or not. Every rule is logged in Echo.</div>' +
+    '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px">' + stat('Active Rules', active.length) + stat('People Protected', people.toLocaleString(), 'var(--green)') + stat('Sends / Decisions Blocked (30d)', blocked.toLocaleString()) + stat('Overlaps Found', S.conflicts.length, S.conflicts.length ? 'var(--amber)' : 'var(--green)') + '</div>' +
+    (S.conflicts.length ? '<div style="font-size:12px;font-weight:700;color:var(--chrome2);margin-bottom:6px">Overlaps Cardinal found</div>' + S.conflicts.map(function (c, i) {
+      return '<div style="border:1px solid rgba(180,83,9,.3);border-left:3px solid #B45309;border-radius:9px;padding:10px 12px;margin-bottom:8px;background:rgba(180,83,9,.05);display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center">' +
+        '<div style="max-width:560px"><div style="font-size:11.5px;color:var(--chrome2);font-weight:600">' + esc(c.text) + '</div><div style="font-size:10.5px;color:var(--muted2);margin-top:3px">' + esc(c.why) + '</div></div>' +
+        '<button type="button" onclick="suppCreateFromConflict(' + i + ')" style="font-size:10.5px;padding:6px 12px;border-radius:7px;border:1px solid rgba(180,83,9,.4);background:transparent;color:#B45309;font-weight:700;cursor:pointer;white-space:nowrap">Create suppression rule →</button></div>';
+    }).join('') : '') +
+    '<div style="font-size:12px;font-weight:700;color:var(--chrome2);margin:14px 0 6px">Suppression rules</div>' +
+    '<div style="border:1px solid var(--border2);border-radius:10px;overflow-x:auto;background:var(--card)"><table class="data-table" style="width:100%"><thead><tr><th>Who is suppressed</th><th>From</th><th>Until</th><th>Why</th><th>Blocked (30d)</th><th>Owner</th><th></th></tr></thead><tbody>' +
+    S.rules.map(function (r, i) {
+      return '<tr style="vertical-align:top;' + (r.on ? '' : 'opacity:.55') + '"><td style="font-weight:700;color:var(--chrome2)">' + esc(r.who) + (r.n ? '<div style="font-size:9.5px;font-weight:500;color:var(--muted)">' + r.n.toLocaleString() + ' people</div>' : '') + (r.isNew ? '<div style="font-size:9px;font-weight:800;color:#15803D">NEW</div>' : '') + '</td>' +
+        '<td style="font-size:10.5px">' + esc(r.from) + '</td><td style="font-size:10.5px;color:var(--muted2)">' + esc(r.until) + '</td><td style="font-size:10.5px;color:var(--muted2);max-width:280px;line-height:1.45">' + esc(r.why) + '</td>' +
+        '<td style="font-weight:700">' + (r.blocked || 0).toLocaleString() + '</td><td style="font-size:10.5px">' + esc(r.owner) + '</td>' +
+        '<td><button type="button" onclick="suppToggle(' + i + ')" style="font-size:10px;padding:3px 9px;border-radius:6px;border:1px solid var(--border2);background:transparent;color:' + (r.on ? 'var(--muted2)' : '#15803D') + ';cursor:pointer;font-weight:600">' + (r.on ? 'Pause' : 'Resume') + '</button></td></tr>';
+    }).join('') + '</tbody></table></div>' +
+    '<div style="border:1px solid var(--border2);border-radius:10px;padding:12px 14px;margin-top:14px;background:var(--card)"><div style="font-size:12px;font-weight:700;color:var(--chrome2);margin-bottom:8px">Add a suppression rule</div>' +
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">' +
+    '<div><div style="font-size:9.5px;color:var(--muted);margin-bottom:3px">Suppress this group</div><input id="supp-who" list="supp-who-list" placeholder="Pick a cohort or type a segment" style="' + inp + '"/><datalist id="supp-who-list">' + cohorts.map(function (c) { return '<option value="' + esc(c) + '">'; }).join('') + '</datalist></div>' +
+    '<div><div style="font-size:9.5px;color:var(--muted);margin-bottom:3px">From</div><input id="supp-from" list="supp-from-list" placeholder="Model, campaign, or outreach" style="' + inp + '"/><datalist id="supp-from-list">' + targets.map(function (c) { return '<option value="' + esc(c) + '">'; }).join('') + '</datalist></div>' +
+    '<div><div style="font-size:9.5px;color:var(--muted);margin-bottom:3px">Until</div><input id="supp-until" placeholder="e.g. Case closes, or a date" style="' + inp + '"/></div>' +
+    '<div><div style="font-size:9.5px;color:var(--muted);margin-bottom:3px">Why</div><input id="supp-why" placeholder="Reason, logged in Echo" style="' + inp + '"/></div></div>' +
+    '<button type="button" onclick="suppAdd()" style="margin-top:8px;padding:7px 14px;border-radius:7px;border:0;background:#1e3a8a;color:#fff;font-size:11px;font-weight:700;cursor:pointer">Add rule</button></div>';
+};
+
 window.cardinalLibrarySwitchTab = function(tab, btn) {
   var root = document.getElementById('screen-cardinallibrary');
   if (!root) return;
@@ -38699,7 +38802,7 @@ window.cardinalLibrarySwitchTab = function(tab, btn) {
     btn.style.color = 'var(--accent)';
     btn.classList.add('active');
   }
-  ['usecases', 'models', 'cohorts', 'search'].forEach(function(t) {
+  ['usecases', 'models', 'cohorts', 'suppressions', 'search'].forEach(function(t) {
     var c = document.getElementById('lib-tab-content-' + t);
     if (c) c.style.display = t === tab ? '' : 'none';
   });
@@ -38707,6 +38810,7 @@ window.cardinalLibrarySwitchTab = function(tab, btn) {
   else if (tab === 'models') renderLibModels();
   else if (tab === 'cohorts') renderLibCohorts();
   else if (tab === 'search') renderLibSearch();
+  else if (tab === 'suppressions') renderLibSuppressions();
 };
 
 window.renderCardinalLibrary = function() {
