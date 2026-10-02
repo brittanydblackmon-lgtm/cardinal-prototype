@@ -45784,6 +45784,7 @@ function cardinalAskRenderThread() {
         '<button type="button" onclick="cardinalAskDismiss(' + idx + ')" title="Dismiss" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:13px;line-height:1;flex-shrink:0;padding:0 2px">×</button>' +
       '</div>' +
       '<div class="cardinal-ask-card-a" style="margin-top:6px">' + aSafe + '</div>' +
+      '<div style="font-size:9.5px;color:var(--muted);margin-top:6px">' + cardinalAskAttribution(item.q, item.a) + '</div>' +
       '<div class="cardinal-ask-card-foot"><button type="button" class="cardinal-ask-continue" onclick="cardinalAskContinueInEve(' + JSON.stringify(item.q).replace(/"/g, '&quot;') + ')">Continue the conversation →</button>' +
       '<span style="font-size:10px;color:var(--muted)">or just keep typing above</span></div>' +
     '</div>';
@@ -45791,6 +45792,15 @@ function cardinalAskRenderThread() {
   host.innerHTML = clearBtn + cards;
 }
 
+// 10/2 -- Brittany: show contributors when another agent actually helped; Eve alone otherwise.
+function cardinalAskAttribution(q, a) {
+  var t = (String(q || '') + ' ' + String(a || '')).toLowerCase();
+  var withs = [];
+  if (/test|shadow|synthetic|counterfactual|coverage|persona|version|retrain|v\d\.\d/.test(t)) withs.push('Adam (testing)');
+  if (/agent|access|injection|misuse|security/.test(t)) withs.push('Security Watch');
+  if (/law|regulat|deadline|cfpb|ecoa|omb|hipaa|exam/.test(t)) withs.push('Compliance Exchange');
+  return 'Answered by <b style="color:#7e22ce">Eve</b>' + (withs.length ? ' · with ' + withs.slice(0, 2).join(' and ') : '');
+}
 function cardinalAskDismiss(idx) {
   if (idx > -1) window.__cardinalAskHistory.splice(idx, 1);
   cardinalAskRenderThread();
