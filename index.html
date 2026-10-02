@@ -23907,7 +23907,7 @@ var COMP_REGS_BY_ORG = {
     { name: 'Title VII (adverse impact)', loc: 'United States', region: 'North America', status: 'Gap', color: 'red', action: 'Fix v2.5 in shadow deployment', detail: 'Employment decisions with adverse impact on a protected group need a business-necessity defense. DI 0.67 is well under the four-fifths rule.' },
     { name: 'Illinois HB 3773', loc: 'Illinois, USA', region: 'North America', status: 'Gap', color: 'red', action: 'Remove home ZIP from Personnel Assignment', detail: 'In effect since Jan 1, 2026. Bans ZIP code as a proxy for protected traits in employment AI.' },
     { name: 'NYC Local Law 144', loc: 'New York City', region: 'North America', status: 'Compliant', color: 'green', action: 'Next annual audit in 12 months', detail: 'Independent bias audit of the NYC hiring screen, published with candidate notice.' },
-    { name: 'ITAR', loc: 'United States', region: 'North America', status: 'Due Soon', color: 'amber', action: 'Annual compliance audit', detail: 'Export-controlled technical data must stay with authorized persons, including data feeding AI models.' },
+    { name: 'ITAR', loc: 'United States', region: 'North America', status: 'Due Soon', color: 'amber', action: 'Annual compliance audit', detail: 'Export-controlled technical data must stay with authorized U.S. persons. Uploading it (flight telemetry, maintenance specs) to an AI model on a non-compliant or foreign-hosted cloud can itself be an unauthorized export, including a "deemed export" when foreign nationals can access it.' },
     { name: 'ISO/IEC 42001', loc: 'International', region: 'Europe', status: 'Compliant', color: 'green', action: 'Surveillance audit in ~2 months', detail: 'AI management system standard. Third-party certified.' },
     { name: 'UK MOD JSP 936', loc: 'United Kingdom', region: 'Europe', status: 'Compliant', color: 'green', action: 'Ongoing', detail: 'Dependable AI in defence: assurance for AI used on UK MOD programs.' },
     { name: 'Australia Privacy Act (automated decisions)', loc: 'Australia', region: 'Asia Pacific', status: 'Gap', color: 'red', action: 'Dec 10, 2026', detail: 'Privacy policies must explain automated decisions that significantly affect people.' }
@@ -36841,7 +36841,7 @@ const MARKETING_SCAN = {
     { reg: 'Title VII (adverse impact)', applies: 'Personnel Assignment v2.4, hiring screen', jurisdiction: 'Federal (EEOC)', risk: 'Critical' },
     { reg: 'Illinois HB 3773', applies: 'Personnel Assignment v2.4 (home ZIP proxy)', jurisdiction: 'Illinois', risk: 'Critical' },
     { reg: 'DoD AI Ethical Principles / RAI Toolkit', applies: 'Personnel Assignment, Mission Readiness', jurisdiction: 'Federal (DoD contracts)', risk: 'High' },
-    { reg: 'ITAR', applies: 'All AI touching export-controlled technical data', jurisdiction: 'Federal (State Dept.)', risk: 'Critical' },
+    { reg: 'ITAR (incl. deemed exports)', applies: 'All AI touching export-controlled technical data; models must run in a U.S.-person-only, compliant cloud', jurisdiction: 'Federal (State Dept.)', risk: 'Critical' },
     { reg: 'NYC Local Law 144', applies: 'Hiring screen for NYC roles', jurisdiction: 'New York City', risk: 'High' }
   ];
   C.ad.jurisdiction = [
@@ -46682,6 +46682,61 @@ window.genRenderScenarios = function () {
   window.switchIndustry = switchIndustry = function () { var r = osi.apply(this, arguments); try { genCompareSync(window.currentOrg); } catch (e) {} return r; };
   var ob = window.buildGenesis;
   if (typeof ob === 'function') window.buildGenesis = buildGenesis = function (org) { var r = ob.apply(this, arguments); try { genCompareSync(org); } catch (e) {} return r; };
+})();
+</script>
+
+<script>
+// ══ ECHO CORE LOCK (10/2, deferred by Brittany "to the very end"): Echo holds every sealed record,
+// so it asks for a passcode and a 6-digit authenticator code once per browser session. People whose
+// role can't open Echo get a request-access path instead. Every unlock is logged.
+(function () {
+  var KEY = 'cardinal-echo-unlocked', PASS = 'echo2026';
+  function unlocked() { try { return sessionStorage.getItem(KEY) === '1'; } catch (e) { return !!window.__echoUnlocked; } }
+  function setUnlocked() { window.__echoUnlocked = true; try { sessionStorage.setItem(KEY, '1'); } catch (e) {} }
+  function overlay() {
+    var scr = document.getElementById('screen-echo'); if (!scr) return;
+    var ov = document.getElementById('echo-lock'); if (ov) ov.remove();
+    if (unlocked()) return;
+    scr.style.position = 'relative';
+    ov = document.createElement('div'); ov.id = 'echo-lock';
+    ov.style.cssText = 'position:absolute;inset:0;z-index:50;min-height:520px;background:rgba(245,243,238,.86);backdrop-filter:blur(9px);-webkit-backdrop-filter:blur(9px);display:flex;align-items:flex-start;justify-content:center;padding-top:90px';
+    var p = window.getActivePersona ? getActivePersona() : null, allowed = !(window.__personaExplicit && p && typeof cardinalPersonaCores === 'function' && cardinalPersonaCores(p, true).indexOf('echo') === -1);
+    ov.innerHTML = '<div style="width:360px;max-width:92%;background:var(--card);border:1px solid var(--border2);border-radius:14px;padding:22px 22px 18px;box-shadow:0 12px 40px rgba(0,0,0,.15);text-align:center">' +
+      '<div style="font-size:26px">🔒</div><div style="font-size:15px;font-weight:700;color:var(--chrome2);margin:6px 0 4px">Echo Core is restricted</div>' +
+      '<div style="font-size:11px;color:var(--muted2);line-height:1.5;margin-bottom:14px">Every sealed decision, receipt, and whistleblower record lives here. Access needs your passcode and a code from your authenticator app, and every unlock is logged.</div>' +
+      (allowed ? '<div id="echo-lock-step1"><input id="echo-lock-pass" type="password" placeholder="Echo passcode" style="width:100%;box-sizing:border-box;padding:9px 11px;border-radius:8px;border:1px solid var(--border2);background:var(--bg3);color:var(--text);font-size:12px;margin-bottom:8px" onkeydown="if(event.key===\'Enter\')echoLockStep()"/>' +
+        '<button type="button" onclick="echoLockStep()" style="width:100%;padding:9px;border:0;border-radius:8px;background:#1e3a8a;color:#fff;font-weight:700;font-size:12px;cursor:pointer">Continue</button>' +
+        '<div style="font-size:9.5px;color:var(--muted);margin-top:8px">Demo passcode: echo2026</div></div>' +
+        '<div id="echo-lock-step2" style="display:none"><input id="echo-lock-code" inputmode="numeric" maxlength="6" placeholder="6-digit code" style="width:100%;box-sizing:border-box;padding:9px 11px;border-radius:8px;border:1px solid var(--border2);background:var(--bg3);color:var(--text);font-size:16px;letter-spacing:6px;text-align:center;margin-bottom:8px" onkeydown="if(event.key===\'Enter\')echoLockVerify()"/>' +
+        '<button type="button" onclick="echoLockVerify()" style="width:100%;padding:9px;border:0;border-radius:8px;background:#1e3a8a;color:#fff;font-weight:700;font-size:12px;cursor:pointer">Verify and open Echo</button>' +
+        '<div style="font-size:9.5px;color:var(--muted);margin-top:8px">Demo: any 6 digits</div></div><div id="echo-lock-msg" style="font-size:11px;color:#DC2626;margin-top:8px"></div>'
+        : '<div style="font-size:11.5px;color:var(--chrome2);margin-bottom:10px">' + (p ? p.name + '\'s role' : 'Your role') + ' does not include Echo Core.</div><button type="button" onclick="this.outerHTML=\'<div style=&quot;font-size:11px;color:#15803D;font-weight:700&quot;>✓ Request sent to the Compliance lead. Logged.</div>\'" style="padding:8px 14px;border-radius:8px;border:1px solid rgba(30,58,138,.35);background:transparent;color:#1e3a8a;font-weight:700;cursor:pointer;font-size:12px">Request access</button>') +
+      '</div>';
+    scr.appendChild(ov);
+    setTimeout(function () { var i = document.getElementById('echo-lock-pass'); if (i) i.focus(); }, 50);
+  }
+  window.echoLockStep = function () {
+    var v = (document.getElementById('echo-lock-pass') || {}).value || '';
+    if (v !== PASS) { document.getElementById('echo-lock-msg').textContent = 'That passcode is not right.'; return; }
+    document.getElementById('echo-lock-msg').textContent = '';
+    document.getElementById('echo-lock-step1').style.display = 'none';
+    document.getElementById('echo-lock-step2').style.display = 'block';
+    setTimeout(function () { var i = document.getElementById('echo-lock-code'); if (i) i.focus(); }, 30);
+  };
+  window.echoLockVerify = function () {
+    var v = ((document.getElementById('echo-lock-code') || {}).value || '').replace(/\D/g, '');
+    if (v.length !== 6) { document.getElementById('echo-lock-msg').textContent = 'Enter the 6-digit code.'; return; }
+    setUnlocked();
+    var ov = document.getElementById('echo-lock'); if (ov) ov.remove();
+    try { if (typeof cardinalLogActivity === 'function') cardinalLogActivity('Unlocked Echo Core (passcode + authenticator)', 'echo'); } catch (e) {}
+  };
+  window.echoLockReset = function () { try { sessionStorage.removeItem(KEY); } catch (e) {} window.__echoUnlocked = false; };
+  var orig = window.showScreen;
+  window.showScreen = showScreen = function (name) {
+    var r = orig.apply(this, arguments);
+    if (name === 'echo') { try { overlay(); } catch (e) {} }
+    return r;
+  };
 })();
 </script>
 
