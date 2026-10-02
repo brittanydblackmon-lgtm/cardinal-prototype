@@ -10973,6 +10973,47 @@ window.getTagStats = function() {
   return stats;
 };
 
+// 10/1 -- full team rosters for Finance, Healthcare, and Federal (A&D already had 14), reusing
+// names already in each org's story (whistleblower committee, agent owners, case owners) so
+// every screen agrees. IDs match WB_COMMITTEE so committee roles resolve.
+(function () {
+  var P = function (id, name, role, org, color, summary, wb, legal) {
+    var ini = name.replace(/^Dr\. /, '').split(' ').map(function (w) { return w.charAt(0); }).join('').slice(0, 2).toUpperCase();
+    return { id: id, name: name, initials: ini, role: role, org: org, color: color, scope: 'org', summary: summary,
+      permissions: { whistleblower: !!wb, sealedLegal: !!legal, dollarValues: true }, canSeeWhistleblower: !!wb, canSeeSealedLegal: !!legal, canSubmitWhistleblower: true };
+  };
+  var F = 'Blackmoor Wealth Group', H = 'Sterling Health', G = 'IRS Tax Compliance Division';
+  var add = [
+    P('riley-whitmore', 'Riley Whitmore', 'Chief Compliance Officer', F, '#22c55e', 'Leads the whistleblower Review Committee, owns the CFPB exam packet and every regulator filing.', 1, 1),
+    P('jordan-ellis', 'Jordan Ellis', 'Chief Risk Officer', F, '#ef4444', 'Owns model risk policy and the sponsor bank relationship. Signs off on production deployments.', 0, 1),
+    P('legal-fin', 'Morgan Hale', 'General Counsel', F, '#3b82f6', 'Backup leader on the Review Committee. Handles ECOA, FCRA, and BIPA exposure.', 1, 1),
+    P('hr-fin', 'Priya Desai', 'HR Director', F, '#f59e0b', 'Committee member for workplace reports. Owns collector performance scoring policy.', 1, 0),
+    P('sarah-chen-fin', 'Sarah Chen', 'Lead Data Scientist, Credit', F, '#a855f7', 'Owns Credit Scoring and Underwriting models, leads the v3.5 fix for #FIN-1203.', 1, 0),
+    P('lisa-torres', 'Lisa Torres', 'Fair Lending Analyst', F, '#22c55e', 'Runs disparate impact testing and prepares fair lending evidence for exams.', 0, 0),
+    P('daniel-okafor', 'Daniel Okafor', 'Head of Fraud', F, '#ef4444', 'Owns Fraud Screening v2.7 and the deepfake and synthetic identity response.', 0, 0),
+    P('grace-liu', 'Grace Liu', 'ML Platform Engineer', F, '#a855f7', 'Runs shadow deployments and rollbacks for lending models.', 0, 0),
+    P('hannah-brooks', 'Hannah Brooks', 'Product Manager, Digital Lending', F, '#3b82f6', 'Owns the Pre-qual Chatbot and application flow.', 0, 0),
+    P('marco-ruiz', 'Marco Ruiz', 'Collections Operations Manager', F, '#f59e0b', 'Owns the Collections Agent and calling-hours rules.', 0, 0),
+    P('maya-osei', 'Dr. Maya Osei', 'Chief Medical Officer', H, '#ef4444', 'Clinical sign-off on every coverage model change, including the #HS-2847 fix.', 0, 1),
+    P('compliance-health', 'Elena Ruiz', 'Chief Compliance Officer', H, '#22c55e', 'Leads the whistleblower Review Committee and Section 1557 attestations.', 1, 1),
+    P('legal-health', 'Marcus Bell', 'General Counsel', H, '#3b82f6', 'Backup committee leader. Owns HIPAA breach decisions and CA SB 1120 response.', 1, 1),
+    P('hr-health', 'Tasha Greene', 'HR Director', H, '#f59e0b', 'Committee member. Owns nurse scheduling policy and accommodations.', 1, 0),
+    P('aisha-patel', 'Dr. Aisha Patel', 'Head of Clinical AI', H, '#a855f7', 'Owns Claims Adjudication, Prior Auth, and Diagnosis Support models.', 1, 0),
+    P('ben-carter', 'Ben Carter', 'Claims Operations Director', H, '#f59e0b', 'Owns the Claims Triage Agent and claims reviewer team.', 0, 0),
+    P('priyanka-rao', 'Priyanka Rao', 'Senior Data Scientist', H, '#a855f7', 'Builds calibration tests for patients 75+.', 0, 0),
+    P('noah-fischer', 'Noah Fischer', 'Privacy Officer', H, '#3b82f6', 'Owns PHI access reviews and minimum-necessary rules for AI agents.', 0, 1),
+    P('olivia-grant', 'Olivia Grant', 'Member Experience Lead', H, '#22c55e', 'Owns patient messaging and Medicare Advantage outreach.', 0, 0),
+    P('dana-kim', 'Dana Kim', 'Chief AI Officer', G, '#ef4444', 'Accountable official for high-impact AI under OMB M-25-21.', 0, 1),
+    P('legal-fed', 'Owen Clarke', 'Chief Counsel', G, '#3b82f6', 'Backup committee leader. Owns IRC 6103 and Privacy Act questions.', 1, 1),
+    P('hr-fed', 'Renee Morales', 'Human Capital Officer', G, '#f59e0b', 'Committee member. Owns examiner caseload and workforce transition plans.', 1, 0),
+    P('james-martinez-fed', 'James Martinez', 'Lead Data Scientist', G, '#a855f7', 'Owns IRS Tax Fraud Detection v3.1 testing and the FED-PDV-001 analysis.', 1, 0),
+    P('luis-ortega', 'Luis Ortega', 'Examination Program Manager', G, '#22c55e', 'Owns audit selection workflow and examiner review of agent actions.', 0, 0)
+  ];
+  var have = {};
+  window.CARDINAL_PERSONAS.forEach(function (p) { have[p.id] = 1; });
+  add.forEach(function (p) { if (!have[p.id]) window.CARDINAL_PERSONAS.push(p); });
+})();
+
 // Active persona — default to Anthony (preserves existing demo behavior)
 window.__activePersonaId = window.__activePersonaId || 'anthony-broadnax';
 
@@ -10993,6 +11034,8 @@ window.getActivePersona = function() {
     // industry's real primary contact instead, sourced from CARDINAL_DATA so it can't
     // drift out of sync with the sidebar/Dashboard, which already use the same field.
     var d = (typeof cd === 'function') ? cd(window.currentOrg) : null;
+    var rosterMatch = d && d.user && window.CARDINAL_PERSONAS.filter(function (p) { return p.org === liveOrgName && p.name === d.user; })[0];
+    if (rosterMatch) return rosterMatch;
     if (d && d.user) {
       return {
         id: 'org-default-' + window.currentOrg,
@@ -11165,7 +11208,8 @@ window.openPersonaSwitcher = function() {
     '</div>' +
     '<div style="display:flex;flex-direction:column;gap:8px;">';
 
-  window.CARDINAL_PERSONAS.forEach(function(p){
+  var _orgNow = window.__CARDINAL_ORG_NAME_BY_INDUSTRY[window.currentOrg || 'ad'];
+  window.CARDINAL_PERSONAS.filter(function (p) { return !_orgNow || p.org === _orgNow; }).forEach(function(p){
     var isActive = p.id === activeId;
     html += '<div onclick="setActivePersona(\'' + p.id + '\'); document.getElementById(\'persona-switcher-modal\').remove();" style="cursor:pointer;display:grid;grid-template-columns:auto 1fr auto;gap:14px;padding:14px 16px;background:' + (isActive ? 'rgba(167, 167, 167,0.08)' : 'rgba(26,24,21,0.045)') + ';border:1px solid ' + (isActive ? 'rgba(167, 167, 167,0.3)' : 'rgba(167, 167, 167,0.08)') + ';border-radius:10px;align-items:center;transition:all 0.15s;" onmouseover="this.style.borderColor=\'rgba(167, 167, 167,0.4)\';this.style.background=\'rgba(167, 167, 167,0.08)\';" onmouseout="this.style.borderColor=\'' + (isActive ? 'rgba(167, 167, 167,0.3)' : 'rgba(167, 167, 167,0.08)') + '\';this.style.background=\'' + (isActive ? 'rgba(167, 167, 167,0.08)' : 'rgba(26,24,21,0.045)') + '\';">' +
       '<div style="width:44px;height:44px;border-radius:50%;background:' + p.color + '30;border:1px solid ' + p.color + ';display:flex;align-items:center;justify-content:center;font-size:14px;color:' + p.color + ';font-weight:700;flex-shrink:0;">' + p.initials + '</div>' +
@@ -11736,7 +11780,7 @@ window.DECISION_RECEIPTS = [
   {receiptId:"HS-DEPLOY-" + __cdrId("2026-03-22","health","DD") + "-DS24-PROD100",receiptType: 'deployment',issuedDate:"2026-03-22T10:08:00Z",issuedBy:"Atonement Core",signatures:[{signer:"Atonement Core",sigHash:"4464fbca51b4a739",timestamp:"2026-03-22T10:08:02Z"},{signer:"Linda Park",sigHash:"6be8c5e26dbd92ca",timestamp:"2026-03-22T10:09:33Z"}],multisigRequired:true,contents:{caseLabel:"HS-0912",modelVersion:"Diagnosis Support v2.4",productionTrafficPct:100,productionDI:0.88,validationNotes:"Full production promotion; rollback playbook rehearsed."},linkedCaseId:"HS-0912",linkedModelId:"Diagnosis Support v2.4",echoMemoryAnchor:"echo-HS-" + __cdrId("2026-03-22","health","DD") + "-1000-at04",publicVisibility: 'public-summary',hashAnchor:"186fa35548599ccd0d6101d9613b1593",industryContext: 'health'},
   {receiptId:"HS-CLOSURE-" + __cdrId("2026-03-25","health","DD") + "-CASE0912",receiptType: 'case-closure',issuedDate:"2026-03-25T16:02:00Z",issuedBy:"Sentinel",signatures:[{signer:"Sentinel",sigHash:"87e4dd5d05890418",timestamp:"2026-03-25T16:02:01Z"},{signer:"Linda Park",sigHash:"c1d2e9bfce494246",timestamp:"2026-03-25T16:03:40Z"},{signer:"Echo Core",sigHash:"3ad7c87ff5b61c5b",timestamp:"2026-03-25T16:04:12Z"}],multisigRequired:true,contents:{caseLabel:"HS-0912",modelVersion:"Diagnosis Support v2.4",closureRationale:"Closure validates prior counterfactual and deployment receipts; 287-patient cohort resolved 100% under v2.4.",referencedReceiptIds:["HS-CF-" + __cdrId("2026-02-08","health","DD") + "-DS23","HS-DEPLOY-" + __cdrId("2026-02-22","health","DD") + "-DS24-SHADOW","HS-DEPLOY-" + __cdrId("2026-03-08","health","DD") + "-DS24-RAMP25","HS-DEPLOY-" + __cdrId("2026-03-22","health","DD") + "-DS24-PROD100"],regulatoryTags:["ACA-1557","state-medical-board-OH"],cohortPatientsResolved:287,resolutionPct:100},linkedCaseId:"HS-0912",linkedModelId:"Diagnosis Support v2.4",echoMemoryAnchor:"echo-HS-" + __cdrId("2026-03-25","health","DD") + "-1600-cl01",publicVisibility: 'role-restricted',hashAnchor:"5052d7dd36347030e08425aea3996090",industryContext: 'health'},
   {receiptId:"AD-ATTEST-2025-05-15-DODAI",receiptType: 'attestation',issuedDate:"2025-05-15T14:00:00Z",issuedBy:"Compliance Exchange",signatures:[{signer:"James Martinez",sigHash:"b680f60f14883c35",timestamp:"2025-05-15T14:00:10Z"},{signer:"Atlas Legal",sigHash:"e1b41be684e2cd70",timestamp:"2025-05-15T14:01:02Z"},{signer:"David Park",sigHash:"417949b328d66a4e",timestamp:"2025-05-15T14:02:18Z"}],multisigRequired:true,contents:{filingKind:"DoD AI Ethics",filingYear:2025,acceptanceStatus:"accepted",narrative:"Prior-year DoD AI Ethics filing accepted; archived to Trust Ledger."},linkedCaseId:null,linkedModelId:null,echoMemoryAnchor:null,publicVisibility: 'public-summary',hashAnchor:"f2b444e295b263455fff1423539b7f12",industryContext: 'ad'},
-  {receiptId:"FIN-ATTEST-2025-12-01-NYCCA ADMT",receiptType: 'attestation',issuedDate:"2025-12-01T11:30:00Z",issuedBy:"Compliance Exchange",signatures:[{signer:"Marcus Chen",sigHash:"0c4bd2908b69828e",timestamp:"2025-12-01T11:30:05Z"},{signer:"Kevin O'Brien",sigHash:"afb5304ee1943f4f",timestamp:"2025-12-01T11:31:44Z"},{signer:"Riley Whitmore",sigHash:"d417c7fce84fd57e",timestamp:"2025-12-01T11:32:09Z"}],multisigRequired:true,contents:{filingKind:"NYC Local Law 144",filingYear:2025,acceptanceStatus:"accepted-with-comments",narrative:"Prior-year NYC LL144 filing accepted with regulator comments logged."},linkedCaseId:null,linkedModelId:null,echoMemoryAnchor:null,publicVisibility: 'public-summary',hashAnchor:"56cbd6ce2c8c5ef54387b6492dc371ca",industryContext: 'fin'},
+  {receiptId:"FIN-ATTEST-2025-12-01-REGB",receiptType: 'attestation',issuedDate:"2025-12-01T11:30:00Z",issuedBy:"Compliance Exchange",signatures:[{signer:"Marcus Chen",sigHash:"0c4bd2908b69828e",timestamp:"2025-12-01T11:30:05Z"},{signer:"Kevin O'Brien",sigHash:"afb5304ee1943f4f",timestamp:"2025-12-01T11:31:44Z"},{signer:"Riley Whitmore",sigHash:"d417c7fce84fd57e",timestamp:"2025-12-01T11:32:09Z"}],multisigRequired:true,contents:{filingKind:"NYC Local Law 144",filingYear:2025,acceptanceStatus:"accepted-with-comments",narrative:"Prior-year NYC LL144 filing accepted with regulator comments logged."},linkedCaseId:null,linkedModelId:null,echoMemoryAnchor:null,publicVisibility: 'public-summary',hashAnchor:"56cbd6ce2c8c5ef54387b6492dc371ca",industryContext: 'fin'},
   {receiptId:"HS-ATTEST-" + __cdrId("2026-04-01","health","DD") + "-ACA1557",receiptType: 'attestation',issuedDate:"2026-04-01T10:00:00Z",issuedBy:"Trust Ledger",signatures:[{signer:"Linda Park",sigHash:"7b74b4b6104d93ff",timestamp:"2026-04-01T10:00:02Z"},{signer:"Robert Chen",sigHash:"850962adfa3e7ba9",timestamp:"2026-04-01T10:01:15Z"},{signer:"Dr. Maya Osei",sigHash:"d0a455d2a27be7ca",timestamp:"2026-04-01T10:02:40Z"}],multisigRequired:true,contents:{filingKind:"ACA Section 1557 closure attestation",acceptanceDate:"2026-04-18",acceptanceAuthority:"HHS Office for Civil Rights",narrative:"Closure attestation accepted " + __cdr("April 18","health") + " tied to HS-0912 remediation packet."},linkedCaseId:"HS-0912",linkedModelId:"Diagnosis Support v2.4",echoMemoryAnchor:"echo-HS-" + __cdrId("2026-04-01","health","DD") + "-1000-cx02",publicVisibility: 'public-summary',hashAnchor:"d71a814c3e284310478c49d79b6676d6",industryContext: 'health'},
   {receiptId:"AD-GOV-" + __cdrId("2026-04-22","ad","DD") + "-CASEOPEN",receiptType: 'governance',issuedDate:"2026-04-22T08:45:00Z",issuedBy:"David Park",signatures:[{signer:"David Park",sigHash:"2d5d40efff204a67",timestamp:"2026-04-22T08:45:12Z"}],multisigRequired:false,contents:{decisionText:"CEO formally opens AD-2847 with 14-day SLA and premium-base reassignment hold pending remediation.",slaDays:14,executiveActions:["Notify JAG chain","Compliance + Legal intake"]},linkedCaseId:"AD-2847",linkedModelId:"Personnel Assignment v2.4",echoMemoryAnchor:"echo-AD-" + __cdrId("2026-04-22","ad","DD") + "-0900-wr01",publicVisibility: 'role-restricted',hashAnchor:"be88e4e9b93f5e8bfa6e91bd8714fa0a",industryContext: 'ad'},
   {receiptId:"FIN-GOV-" + __cdrId("2026-02-15","fin","DD") + "-CASEOPEN",receiptType: 'governance',issuedDate:"2026-02-15T10:20:00Z",issuedBy:"Riley Whitmore",signatures:[{signer:"Riley Whitmore",sigHash:"c05f7e666e53cb0c",timestamp:"2026-02-15T10:20:03Z"}],multisigRequired:false,contents:{decisionText:"CEO formally opens FIN-1203; CFPB fair lending exam clock engaged for Credit Scoring v3.4.",slaDays:30,executiveActions:["CFO brief","Legal supervisory notice"]},linkedCaseId:"FIN-1203",linkedModelId:"Credit Scoring v3.4",echoMemoryAnchor:"echo-FIN-" + __cdrId("2026-02-15","fin","DD") + "-1015-wr01",publicVisibility: 'role-restricted',hashAnchor:"69abb46a8f5c31447cef5af87315ff80",industryContext: 'fin'},
