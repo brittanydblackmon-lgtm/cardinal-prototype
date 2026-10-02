@@ -46881,6 +46881,81 @@ window.genRenderScenarios = function () {
 })();
 </script>
 
+<script>
+// ══ HALO DRILL-DOWN (10/2, backlog: "zoomable, clickable, CIA-style" map). Clicking the US now
+// zooms in to state lines colored by this company's state AI-law status (same data as the
+// State Law Navigator). Clicking a state opens its laws, with a jump to the full Navigator.
+(function () {
+  var NAMES = { Alabama: 'AL', Alaska: 'AK', Arizona: 'AZ', Arkansas: 'AR', California: 'CA', Colorado: 'CO', Connecticut: 'CT', Delaware: 'DE', 'District of Columbia': 'DC', Florida: 'FL', Georgia: 'GA', Hawaii: 'HI', Idaho: 'ID', Illinois: 'IL', Indiana: 'IN', Iowa: 'IA', Kansas: 'KS', Kentucky: 'KY', Louisiana: 'LA', Maine: 'ME', Maryland: 'MD', Massachusetts: 'MA', Michigan: 'MI', Minnesota: 'MN', Mississippi: 'MS', Missouri: 'MO', Montana: 'MT', Nebraska: 'NE', Nevada: 'NV', 'New Hampshire': 'NH', 'New Jersey': 'NJ', 'New Mexico': 'NM', 'New York': 'NY', 'North Carolina': 'NC', 'North Dakota': 'ND', Ohio: 'OH', Oklahoma: 'OK', Oregon: 'OR', Pennsylvania: 'PA', 'Rhode Island': 'RI', 'South Carolina': 'SC', 'South Dakota': 'SD', Tennessee: 'TN', Texas: 'TX', Utah: 'UT', Vermont: 'VT', Virginia: 'VA', Washington: 'WA', 'West Virginia': 'WV', Wisconsin: 'WI', Wyoming: 'WY' };
+  var COL = { gap: '#DC2626', track: '#15803D', upcoming: '#B45309' }, statesTopo = null;
+  function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;'); }
+  function ctx(org) {
+    var F = (window.SL_FOOTPRINT || {})[org] || { states: [], status: {} }, laws = window.SL_LAWS || [];
+    var stOf = function (l) { return (F.status[l.id] || [l.live ? 'track' : 'upcoming', ''])[0]; };
+    return { F: F, laws: laws, stOf: stOf, color: function (st) {
+      if (F.states.indexOf(st) === -1) return null;
+      var ls = laws.filter(function (l) { return l.st === st && l.ind[org]; });
+      if (!ls.length) return '#94A3B8';
+      return ls.some(function (l) { return stOf(l) === 'gap'; }) ? COL.gap : ls.some(function (l) { return !l.live; }) ? COL.upcoming : COL.track;
+    } };
+  }
+  function clearStates() { var g = document.getElementById('halo-states-layer'); if (g) g.remove(); var p = document.getElementById('halo-state-panel'); if (p) p.remove(); }
+  window.haloStatePanel = function (st, nm) {
+    var org = window.currentOrg || 'ad', c = ctx(org), cont = document.getElementById('halo-map-container');
+    var p = document.getElementById('halo-state-panel');
+    if (!p) { p = document.createElement('div'); p.id = 'halo-state-panel'; p.style.cssText = 'position:absolute;left:12px;bottom:12px;z-index:9;width:300px;max-height:300px;overflow:auto;background:rgba(13,14,20,.95);border:1px solid rgba(167,167,167,.25);border-radius:10px;padding:12px 14px;color:#e2e8f0;font-size:11px;line-height:1.5'; p.onclick = function (e) { e.stopPropagation(); }; cont.appendChild(p); }
+    var laws = c.laws.filter(function (l) { return l.st === st; }), op = c.F.states.indexOf(st) !== -1;
+    p.innerHTML = '<div style="display:flex;justify-content:space-between;gap:8px"><strong style="font-size:13px">' + esc(nm) + ' (' + st + ')</strong><span style="cursor:pointer;color:#94a3b8" onclick="document.getElementById(\'halo-state-panel\').remove()">✕</span></div>' +
+      '<div style="color:#94a3b8;margin:2px 0 8px">' + (org === 'fed' ? esc(c.F.note) + '.' : op ? 'You operate here.' : 'You do not operate here today.') + '</div>' +
+      (laws.length ? laws.map(function (l) {
+        var applies = op && l.ind[org], s = applies ? c.stOf(l) : null, col = s ? COL[s] : '#64748b';
+        return '<div style="border-left:3px solid ' + col + ';padding:4px 8px;margin-bottom:6px;background:rgba(255,255,255,.03)"><div style="font-weight:700">' + esc(l.name) + '</div><div style="color:#94a3b8">' + (applies ? (s === 'gap' ? '<span style="color:#f87171;font-weight:700">Gap today</span> · ' : s === 'upcoming' ? '<span style="color:#fbbf24;font-weight:700">Starts soon</span> · ' : '<span style="color:#4ade80;font-weight:700">On track</span> · ') + esc(l.ind[org]) : 'Does not apply to you') + '</div></div>';
+      }).join('') : '<div style="color:#94a3b8">No AI-specific state law. Existing consumer protection and anti-discrimination law still applies.</div>') +
+      (org !== 'fed' ? '<div style="margin-top:8px;color:#60a5fa;cursor:pointer;font-weight:700" onclick="showScreen(\'compliance\');setTimeout(function(){switchCompTab(\'states\');window.__slState=null;slPickState(\'' + st + '\')},200)">Open in State Law Navigator →</div>' : '');
+  };
+  function drawStates() {
+    var svg = d3.select('#halo-world-svg'), group = svg.select('g.map-group'), cont = document.getElementById('halo-map-container');
+    if (group.empty() || !statesTopo) return;
+    clearStates();
+    var width = cont.offsetWidth || 900, height = 540, org = window.currentOrg || 'ad', c = ctx(org);
+    var path = d3.geoPath().projection(d3.geoNaturalEarth1().scale(width / 6.5).translate([width / 2, height / 2]));
+    var layer = group.append('g').attr('id', 'halo-states-layer');
+    layer.selectAll('path').data(topojson.feature(statesTopo, statesTopo.objects.states).features).enter().append('path')
+      .attr('d', path).attr('vector-effect', 'non-scaling-stroke').style('cursor', 'pointer')
+      .attr('fill', function (d) { var col = c.color(NAMES[d.properties.name]); return col ? col + 'cc' : 'rgba(17,24,39,0.85)'; })
+      .attr('stroke', 'rgba(255,255,255,0.55)').attr('stroke-width', 0.8)
+      .on('mouseover', function () { d3.select(this).attr('stroke', '#fff').attr('stroke-width', 1.8); })
+      .on('mouseout', function () { d3.select(this).attr('stroke', 'rgba(255,255,255,0.55)').attr('stroke-width', 0.8); })
+      .on('click', function (ev, d) { ev.stopPropagation(); haloStatePanel(NAMES[d.properties.name], d.properties.name); });
+    if (!document.getElementById('halo-state-panel')) {
+      var cnt = c.F.states.length;
+      var p = document.createElement('div'); p.id = 'halo-state-panel'; p.style.cssText = 'position:absolute;left:12px;bottom:12px;z-index:9;width:300px;background:rgba(13,14,20,.95);border:1px solid rgba(167,167,167,.25);border-radius:10px;padding:10px 14px;color:#e2e8f0;font-size:11px;line-height:1.5';
+      p.innerHTML = '<strong>State view</strong><div style="color:#94a3b8">' + (org === 'fed' ? 'State AI laws do not bind federal agencies. Click any state to see what it has passed.' : cnt + ' states where you operate are shaded: <span style="color:#f87171">red</span> gap today, <span style="color:#fbbf24">amber</span> starts soon, <span style="color:#4ade80">green</span> on track. Click a state.') + '</div>';
+      p.onclick = function (e) { e.stopPropagation(); }; cont.appendChild(p);
+    }
+  }
+  function hook() {
+    var paths = d3.selectAll('#halo-world-svg g.map-group > path, #halo-world-svg g.map-group path');
+    var us = paths.filter(function (d) { return d && d.properties && d.properties.name === 'United States of America'; });
+    if (us.empty()) return false;
+    us.on('click.states', function () {
+      if (statesTopo) { setTimeout(drawStates, 620); return; }
+      fetch('https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json').then(function (r) { return r.json(); }).then(function (t) { statesTopo = t; setTimeout(drawStates, 300); }).catch(function () {});
+    });
+    var g = document.querySelector('#halo-world-svg g.map-group');
+    if (g && !g.__statesObs) { g.__statesObs = new MutationObserver(function () { var m = /scale\(([\d.]+)/.exec(g.getAttribute('transform') || ''); if (!m || +m[1] < 1.6) clearStates(); }); g.__statesObs.observe(g, { attributes: true, attributeFilter: ['transform'] }); }
+    return true;
+  }
+  var oInit = window.initHaloMap;
+  if (typeof oInit === 'function') window.initHaloMap = initHaloMap = function () {
+    var r = oInit.apply(this, arguments), n = 0;
+    clearStates();
+    var t = setInterval(function () { if (hook() || ++n > 30) clearInterval(t); }, 200);
+    return r;
+  };
+})();
+</script>
+
 </body>
 
 </html>
