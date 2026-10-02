@@ -5818,6 +5818,8 @@ Settings
       </div>
     </div>
 
+    <div id="dash-demo-group-chips" onclick="event.stopPropagation();" style="margin-top:18px;text-align:left"></div>
+    <div id="dash-demo-group-detail" onclick="event.stopPropagation();"></div>
     <!-- 9/26 -- Brittany: this section read as "dead space" below the detail card,
          floating on blank background with no visual container. Wrapped it in the
          same padded card box (dr-sub-box look) the demographic charts above already
@@ -46082,6 +46084,124 @@ applyClientView = window.applyClientView = (function (orig) {
     };
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', build); else build();
+})();
+</script>
+
+<script>
+// ══ PROTECTED GROUP DRILL-DOWN (10/2, backlog: race/age/gender need the same city/when/who/why
+// depth as Geography). Click any group chip or race row: where it's concentrated, when Cardinal
+// caught it, who is affected, why, and the fix. Federal gets its own demographic data (it was a
+// copy of Healthcare's, including "85+ patient" bands). Federal race is estimated with BISG,
+// since the IRS doesn't collect race (the method Treasury and Stanford researchers used in 2023).
+(function () {
+  try {
+    var F = DASH_INDUSTRY.fed;
+    F.dashAgeChart = Object.assign({}, F.dashAgeChart, { labels: ['18-34', '35-49', '50-64', '65+'], values: [71, 80, 84, 86], barColors: ['#ef4444', '#818cf8', '#818cf8', '#818cf8'] });
+    F.demoGenderBars = { male: 79, female: 81, other: 77, threshold: 72 };
+    F.demoRaceBars = Object.assign({}, F.demoRaceBars, { rows: [
+      { label: 'White', pct: 86.4, isBaseline: true, barColor: '#60a5fa' },
+      { label: 'Asian', pct: 84.9, delta: '-1.5', deltaColor: '#64748b', barColor: '#60a5fa' },
+      { label: 'Hispanic', pct: 79.2, delta: '-7.2', deltaColor: '#f59e0b', barColor: '#f59e0b' },
+      { label: 'Other', pct: 77.8, delta: '-8.6', deltaColor: '#f59e0b', barColor: '#f59e0b' },
+      { label: 'Black/AA', pct: 66.1, delta: '-20.3', deltaColor: '#ef4444', barColor: '#ef4444', critical: true }
+    ], baselinePct: 86.4 });
+    F.demoSecGender = 'Gender: share of filers cleared without audit';
+    F.demoSecAge = 'Age: share cleared without audit';
+    F.demoSecEthnic = 'Race / ethnicity (BISG estimate): share cleared';
+    F.demoPanelSub = 'Disparity analysis across the 1,200 self-employed filers in the FED-PDV-001 test cohort, scored by IRS Tax Fraud Detection v3.1.';
+    F.demoGenderInterpret = { text: 'Women and men are cleared at similar rates (81% vs 79%)', color: '#22c55e' };
+    F.demoAgeInsight = { text: '↘ Filers 18-34 are cleared least often (71% vs 86% for 65+), driven by gig and Schedule C income volatility', color: '#ef4444' };
+    F.demoImpactGroups = [{ line: 'Self-employed filers: 1.84x more likely to be flagged', tag: 'VIOLATION' }, { line: 'Black filers (BISG estimate): 20 pts below baseline', tag: 'WARNING' }, { line: 'Filers 18-34 with gig income: lowest clean-review rate', tag: 'WARNING' }];
+    if (F.demoGeo) {
+      F.demoGeo.subtitle = 'Clean-review rate by state for self-employed filers.';
+      var d9 = new Date(Date.now() - 9 * 86400000), M = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'], ds = M[d9.getMonth()] + ' ' + d9.getDate() + ', ' + d9.getFullYear();
+      (F.demoGeo.states || []).forEach(function (s) { if (s.since) s.since = s.since.replace(/Oct 1, 2026/, ds); });
+    }
+  } catch (e) {}
+})();
+window.GROUP_STORY = {
+  fin: {
+    'race:Hispanic': ['Los Angeles, CA and Chicago, IL ZIP clusters', 'FIN-1203', 'First-time borrowers with thin credit files in majority-Hispanic ZIP codes', 'ZIP code acts as a proxy for race (0.82 correlation) inside Credit Scoring v3.4.', 'Credit Scoring v3.5 in shadow at 5% of traffic, DI 0.83. Affected applicants are being re-reviewed.'],
+    'race:Black/AA': ['Atlanta, GA and Chicago, IL', 'FIN-1203', 'Applicants with similar income and debt to approved White applicants', 'Same ZIP proxy, plus a "branch distance" feature that tracks historic redlining maps.', 'Both features removed in v3.5; re-review queue open.'],
+    'race:Other': ['Honolulu, HI and Seattle, WA', 'TEST-628', 'Pacific Islander and multiracial applicants (a 200-person test cohort)', 'Coverage gap: almost no examples of this group in training data, so the model defaults to denial.', 'Genesis coverage test running; synthetic and partner data being added before v3.5 ships.'],
+    'age:75+': ['Florida and Arizona retiree markets', 'FIN-1203', 'Applicants 75+ on fixed incomes', 'Fixed retirement income is scored as "no income growth."', 'Feature reweighted in v3.5; ECOA allows age only in limited, justified ways.'],
+    'age:Unk': ['All markets', 'FIN-1203', 'Applicants whose birthdate failed to parse', 'Missing age defaults to the riskiest bucket.', 'Data fix in the pipeline: unknown age is now neutral.'],
+    'gender:male': ['Texas and Colorado', 'FIN-2207', 'Applicants paid on commission or gig income', 'Income volatility is weighted as instability, and commission jobs skew male in this book.', 'Volatility window extended from 6 to 24 months in Underwriting v4.1.']
+  },
+  ad: {
+    'race:Hispanic': ['Fort Bragg, NC and San Antonio, TX', 'AD-2847', '847 Hispanic maintenance technicians', 'Home ZIP code is a proxy for ethnicity (0.82 correlation) in Personnel Assignment v2.4.', 'v2.5 removes ZIP; shadow at 5%, DI 0.84. Illinois HB 3773 also bans the proxy.'],
+    'race:Other': ['Langley AFB, VA', 'AD-2847', 'Multiracial and Native American technicians', 'Same ZIP proxy, plus small group size inflates swings.', 'Included in the v2.5 fix and the remediation cohort.'],
+    'race:Black/AA': ['Huntsville, AL', 'AD-2847', 'Technicians at southern bases', 'Base-location feature correlates with race.', 'Monitored; within 1 point of the four-fifths line after v2.5.'],
+    'age:55-64': ['All sites', 'AD-2889', 'Senior technicians 55-64', 'Mission Readiness weights "years to retirement," which is age by another name.', 'Feature removed in Mission Readiness v1.2 (shadow).'],
+    'age:65+': ['All sites', 'AD-2889', 'Technicians and reservists 65+', 'Same years-to-retirement feature (ADEA risk).', 'Covered by the v1.2 fix.'],
+    'gender:other': ['Arlington, VA', 'AD-2918', 'Non-binary personnel', 'Very small sample makes the rate unstable; one feature uses a binary sex field.', 'Field made optional and excluded from scoring.']
+  },
+  health: {
+    'age:75-84': ['Phoenix, AZ and Los Angeles, CA specialty networks', 'HS-2847', 'Medicare Advantage members 75-84 needing specialty care', 'Calibration gap: the model under-predicts benefit of specialty care for older patients.', 'Claims Adjudication v2.0 at 25% of traffic; clinician review required on denials (CA SB 1120).'],
+    'age:85+': ['Same specialty networks', 'HS-2847', 'Members 85+', 'Same calibration gap, made worse by sparse training data.', 'Included in v2.0; denials reopened for clinical review.'],
+    'age:65-74': ['Statewide', 'HS-2847', 'Members 65-74', 'Milder version of the same gap.', 'Included in v2.0.'],
+    'race:Other': ['Salt Lake City, UT', 'HS-2104', 'Pacific Islander members', 'Underrepresented in training data.', 'Coverage test underway in Genesis.'],
+    'race:Hispanic': ['Los Angeles, CA and Houston, TX', 'HS-2104', 'Spanish-preferred members', 'Prior-auth forms in Spanish are parsed less accurately.', 'Document parser retrained; error rate halved.'],
+    'gender:female': ['Chicago, IL', 'HS-2901', 'Women referred for cardiology', 'Symptom features were trained mostly on male presentations of heart disease.', 'Retraining with balanced clinical data; clinician review on denials meanwhile.']
+  },
+  fed: {
+    'race:Black/AA': ['Southern metro areas (BISG estimate)', 'FED-PDV-001', 'Self-employed filers claiming refundable credits', 'Income-volatility and ZIP-cluster features select these filers more often. The IRS does not collect race, so Cardinal estimates it with BISG, the method Treasury researchers used.', 'Deployment blocked under OMB M-25-21 until testing clears.'],
+    'race:Hispanic': ['Texas and California border metros (BISG estimate)', 'FED-PDV-001', 'Self-employed filers with seasonal income', 'Seasonal income is scored as volatile.', 'Feature reweighted in the next test round.'],
+    'age:18-34': ['Nationwide', 'FED-PDV-001', 'Young self-employed and gig filers', 'Schedule C volatility drives selection.', 'Part of the FED-PDV-001 test cohort (1,200 filers).']
+  }
+};
+function grpEsc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;'); }
+function grpList(org) {
+  var c = DASH_INDUSTRY[org] || {}, out = [];
+  var g = c.demoGenderBars || {}, th = g.threshold || 75;
+  [['male', 'Men'], ['female', 'Women'], ['other', 'Non-binary / other']].forEach(function (x) { if (typeof g[x[0]] === 'number') out.push({ key: 'gender:' + x[0], label: x[1], val: g[x[0]], ref: th, refLabel: 'threshold' }); });
+  var a = c.dashAgeChart || {}, maxA = Math.max.apply(null, a.values || [80]);
+  (a.labels || []).forEach(function (l, i) { out.push({ key: 'age:' + l, label: 'Age ' + l, val: a.values[i], ref: Math.round(maxA * 0.8), refLabel: 'four-fifths line' }); });
+  var r = (c.demoRaceBars || {}).rows || [], base = (c.demoRaceBars || {}).baselinePct || (r[0] || {}).pct || 80;
+  r.forEach(function (x) { out.push({ key: 'race:' + x.label, label: x.label, val: x.pct, ref: Math.round(base * 0.8 * 10) / 10, refLabel: 'four-fifths of baseline', baseline: x.isBaseline }); });
+  return out;
+}
+window.dashShowGroupDetail = function (key) {
+  var org = window.currentOrg || 'ad', el = document.getElementById('dash-demo-group-detail');
+  if (!el) return;
+  var g = grpList(org).filter(function (x) { return x.key === key; })[0];
+  if (!g) return;
+  var st = (GROUP_STORY[org] || {})[key], below = g.val < g.ref;
+  document.querySelectorAll('#dash-demo-group-chips [data-grp]').forEach(function (b) { b.style.outline = b.getAttribute('data-grp') === key ? '2px solid #1e293b' : 'none'; });
+  var c = below ? '#ef4444' : '#22c55e';
+  el.innerHTML = '<div style="max-width:840px;margin:10px auto 0;border-left:3px solid ' + c + ';padding:10px 14px;background:rgba(167,167,167,0.05);border-radius:0 8px 8px 0;text-align:left">' +
+    '<div style="font-size:13px;font-weight:800;color:#1e293b">' + grpEsc(g.label) + ': ' + g.val + '% ' + ({ fed: 'clean-review rate', health: 'claims approval' }[org] || 'approval') + ' <span style="font-size:11px;font-weight:700;color:' + c + '">' + (g.baseline ? '(baseline group)' : below ? (Math.round((g.ref - g.val) * 10) / 10) + ' pts under the ' + g.refLabel : 'above the ' + g.refLabel) + '</span></div>' +
+    (st ? '<div style="font-size:11px;color:#64748b;margin-top:6px"><b style="color:#475569">Where:</b> ' + grpEsc(st[0]) + '</div>' +
+      '<div style="font-size:11px;color:#64748b;margin-top:3px"><b style="color:#475569">When:</b> Caught in case #' + grpEsc(st[1]) + '</div>' +
+      '<div style="font-size:11px;color:#64748b;margin-top:3px"><b style="color:#475569">Who:</b> ' + grpEsc(st[2]) + '</div>' +
+      '<div style="font-size:11px;color:#64748b;margin-top:3px;line-height:1.45"><b style="color:#475569">Why:</b> ' + grpEsc(st[3]) + '</div>' +
+      '<div style="font-size:11px;color:#15803D;margin-top:3px;line-height:1.45"><b>Fix:</b> ' + grpEsc(st[4]) + '</div>'
+      : '<div style="font-size:11px;color:#64748b;margin-top:6px">' + (below ? 'Below the line but not yet tied to a root cause; Eve opened a review.' : 'No disparity for this group. Cardinal keeps watching it every day.') + '</div>') + '</div>';
+};
+window.dashRenderGroupChips = function () {
+  var org = window.currentOrg || 'ad', host = document.getElementById('dash-demo-group-chips');
+  if (!host) return;
+  var list = grpList(org);
+  host.innerHTML = '<div style="font-size:11px;font-weight:700;color:#475569;margin-bottom:6px">Explore any group</div>' + list.map(function (g) {
+    var below = g.val < g.ref && !g.baseline;
+    return '<button type="button" data-grp="' + grpEsc(g.key) + '" onclick="event.stopPropagation();dashShowGroupDetail(\'' + g.key.replace(/'/g, "\\'") + '\')" style="font-size:10.5px;padding:3px 10px;margin:0 5px 5px 0;border-radius:12px;cursor:pointer;border:1px solid ' + (below ? 'rgba(239,68,68,.45)' : 'rgba(100,116,139,.3)') + ';background:' + (below ? 'rgba(239,68,68,.07)' : 'transparent') + ';color:' + (below ? '#b91c1c' : '#334155') + ';font-weight:' + (below ? '700' : '500') + '">' + grpEsc(g.label) + ' ' + g.val + '%</button>';
+  }).join('');
+  var first = list.filter(function (g) { return g.val < g.ref && !g.baseline && (GROUP_STORY[org] || {})[g.key]; }).sort(function (a, b) { return (a.val / a.ref) - (b.val / b.ref); })[0];
+  if (first) dashShowGroupDetail(first.key); else document.getElementById('dash-demo-group-detail').innerHTML = '';
+  var rr = document.getElementById('dash-race-bars-root');
+  if (rr && !rr.__grpWired) {
+    rr.__grpWired = true;
+    rr.addEventListener('click', function (e) {
+      var t = e.target; while (t && t !== rr && t.parentNode !== rr) t = t.parentNode;
+      if (!t || t === rr) return;
+      var lbl = ((DASH_INDUSTRY[window.currentOrg || 'ad'].demoRaceBars || {}).rows || [])[Array.prototype.indexOf.call(rr.children, t)];
+      if (lbl) { e.stopPropagation(); dashShowGroupDetail('race:' + lbl.label); }
+    });
+  }
+};
+(function () {
+  var o = window.dashRenderRaceBars;
+  if (typeof o === 'function') window.dashRenderRaceBars = dashRenderRaceBars = function () { var r = o.apply(this, arguments); try { dashRenderGroupChips(); } catch (e) {} return r; };
 })();
 </script>
 
