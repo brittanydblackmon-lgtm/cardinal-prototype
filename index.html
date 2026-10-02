@@ -5285,7 +5285,29 @@ body.cardinal-cleanup-mode .screen > div:empty:not(.cardinal-collapse-if-empty):
     var mm = ('0' + (r.getMonth() + 1)).slice(-2), dd = ('0' + r.getDate()).slice(-2);
     return (cache[k] = r.getFullYear() + (fmt[0] === 'D' ? '-' : '') + mm + (fmt[1] === 'D' ? '-' : '') + dd);
   };
+  // Month and quarter labels ('Mar 2026', 'Q1 2026', 'Jan–Mar 2026'). 'story' labels were written
+  // when the story's now was May 2026; 'now' labels when it was September 2026. Both move by whole
+  // months to today, so a label that meant "last quarter" still means last quarter.
+  var REF = { story: 2026 * 12 + 4, now: 2026 * 12 + 8 };
+  function mIdx(w) { var i = M3.indexOf(String(w).slice(0, 3)); return (i > -1 && (w.length === 3 || w === 'Sept' || MF[i] === w)) ? i : -1; }
+  function mName(i, like) { return like.length > 4 ? MF[i] : like === 'Sept' && i === 8 ? 'Sept' : M3[i]; }
+  window.__cdm = function (s, mode) {
+    var t = today.getFullYear() * 12 + today.getMonth(), off = (window.CARDINAL_DEADLINE_MODE && window.CARDINAL_DEADLINE_MODE !== 'rolling') ? 0 : Math.max(0, t - (REF[mode] || REF.story));
+    if (!off) return s;
+    return String(s).replace(/\b(?:Q([1-4])|([A-Z][a-z]{2,8})(?:([–-])([A-Z][a-z]{2,8}))?) (20\d\d)\b/g, function (all, q, a, dash, b, y) {
+      y = +y;
+      if (q) { var qi = y * 4 + (+q - 1) + Math.floor(off / 3) + ((off % 3) ? 1 : 0); return 'Q' + (qi % 4 + 1) + ' ' + Math.floor(qi / 4); }
+      var ai = mIdx(a), bi = b ? mIdx(b) : -1;
+      if (ai < 0 || (b && bi < 0)) return all;
+      var end = y * 12 + (b ? bi : ai) + off, ey = Math.floor(end / 12), em = end % 12;
+      if (!b) return mName(em, a) + ' ' + ey;
+      var st = (y - (ai > bi ? 1 : 0)) * 12 + ai + off, sy = Math.floor(st / 12), sm = st % 12;
+      return mName(sm, a) + (sy !== ey ? ' ' + sy : '') + dash + mName(em, b) + ' ' + ey;
+    });
+  };
+  window.__cdmText = window.__cdm;
   function roll() {
+    document.querySelectorAll('[data-cdm]').forEach(function (el) { if (!el.__cdmDone) { el.textContent = window.__cdm(el.textContent, el.getAttribute('data-cdm')); el.__cdmDone = true; } });
     var fi = document.getElementById('forensics-lookup-input');
     if (fi) fi.placeholder = 'e.g. AD-CF-' + window.__cdrId('2026-05-14', 'ad', 'DD') + '-V24';
     document.querySelectorAll('[data-cdr]').forEach(function (el) { if (!el.__cdrDone) { el.textContent = window.__cdr(el.getAttribute('data-cdr'), el.getAttribute('data-cdr-org') || 'ad'); el.__cdrDone = true; } }); }
@@ -6543,7 +6565,7 @@ Settings
 <div class="section-hdr" style="margin-bottom:12px">
 <div>
 <div class="section-title">Active Remediation: <span id="cohort-label2" >individuals affected</span></div>
-<div style="font-size:10px;color:var(--muted);margin-top:2px" id="cohort-period">Affected: Jan 2026 – Mar 2026</div>
+<div style="font-size:10px;color:var(--muted);margin-top:2px" id="cohort-period" data-cdm="story">Affected: Jan 2026 – Mar 2026</div>
 </div>
 <div style="text-align:right">
 <span id="cohort-label" style="display:none"></span><div style="font-size:22px;font-weight:700;color:var(--chrome2)" id="cohort-count">847</div>
@@ -6790,14 +6812,14 @@ Halo Core
     </div>
 
     <div style="background:linear-gradient(135deg,rgba(239,68,68,0.15),rgba(239,68,68,0.06));border:1px solid rgba(239,68,68,0.3);border-radius:10px;padding:16px;position:relative;">
-      <div style="position:absolute;top:12px;right:12px;background:rgba(239,68,68,0.2);border:1px solid rgba(239,68,68,0.4);border-radius:6px;padding:2px 8px;font-size:10px;font-weight:700;color:#ef4444;">Q3 2026</div>
+      <div style="position:absolute;top:12px;right:12px;background:rgba(239,68,68,0.2);border:1px solid rgba(239,68,68,0.4);border-radius:6px;padding:2px 8px;font-size:10px;font-weight:700;color:#ef4444;"><span data-cdm="story">Q3 2026</span></div>
       <div id="halo-inaction-q3-amount" style="font-size:28px;font-weight:800;color:#ef4444;margin-bottom:8px;">$43M</div>
       <div id="halo-inaction-q3-text" style="font-size:11px;color:#94a3b8;line-height:1.6;margin-bottom:12px;">Trust Score drops to 68. DoD contract renewal at risk. ITAR review triggered. Federal contractor status threatened.</div>
       <button type="button" id="halo-fixnow-q3" data-case-id="AD-2847" data-case-type="lifecycle" data-case-status="remediation-in-progress" onclick="cardinalRouteCase(this.dataset.caseId, this.dataset.caseType, this.dataset.caseStatus)" title="Route primary lifecycle case via Cardinal router (prototype)" style="width:100%;background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.3);color:#ef4444;border-radius:6px;padding:7px;font-size:11px;cursor:pointer;font-weight:600;">Fix Now: Avoid This →</button>
     </div>
 
     <div style="background:linear-gradient(135deg,rgba(239,68,68,0.2),rgba(239,68,68,0.08));border:1px solid rgba(239,68,68,0.35);border-radius:10px;padding:16px;position:relative;">
-      <div style="position:absolute;top:12px;right:12px;background:rgba(239,68,68,0.25);border:1px solid rgba(239,68,68,0.5);border-radius:6px;padding:2px 8px;font-size:10px;font-weight:700;color:#ef4444;">Q4 2026</div>
+      <div style="position:absolute;top:12px;right:12px;background:rgba(239,68,68,0.25);border:1px solid rgba(239,68,68,0.5);border-radius:6px;padding:2px 8px;font-size:10px;font-weight:700;color:#ef4444;"><span data-cdm="story">Q4 2026</span></div>
       <div id="halo-inaction-q4-amount" style="font-size:28px;font-weight:800;color:#ef4444;margin-bottom:8px;">$67M+</div>
       <div id="halo-inaction-q4-text" style="font-size:11px;color:#94a3b8;line-height:1.6;margin-bottom:12px;">Full DoD certification revoked. Class action filed by 847 service members. Federal contractor status at risk. Estimated liability $67M+</div>
       <button type="button" id="halo-fixnow-q4" data-case-id="AD-2847" data-case-type="lifecycle" data-case-status="remediation-in-progress" onclick="cardinalRouteCase(this.dataset.caseId, this.dataset.caseType, this.dataset.caseStatus)" title="Route primary lifecycle case via Cardinal router (prototype)" style="width:100%;background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.3);color:#ef4444;border-radius:6px;padding:7px;font-size:11px;cursor:pointer;font-weight:600;">Fix Now: Avoid This →</button>
@@ -6837,7 +6859,7 @@ Halo Core
 <canvas id="halo-penalty-chart" height="160" style="width:100%;max-height:200px;display:block"></canvas>
 <div class="halo-pen-sum">
 <div class="halo-pen-box" style="background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.18);flex:1;min-width:140px;border-radius:10px;padding:14px 16px">
-<div style="font-size:11px;color:var(--muted2);margin-bottom:4px;font-weight:600">Total Exposure Q4 2026</div>
+<div style="font-size:11px;color:var(--muted2);margin-bottom:4px;font-weight:600"><span data-cdm="story">Total Exposure Q4 2026</span></div>
 <div id="halo-exposure-q4" style="font-size:26px;font-weight:900;color:#f87171;letter-spacing:-0.03em;">$67M</div>
 </div>
 <div class="halo-pen-box" style="background:rgba(34,197,94,0.06);border:1px solid rgba(34,197,94,0.2);flex:1;min-width:140px;border-radius:10px;padding:14px 16px">
@@ -6855,30 +6877,30 @@ Halo Core
 <div class="halo-risk-card">
 <span class="badge badge-red">HOT</span>
 <div class="halo-rc-title">EU AI Act High-Risk Provisions</div>
-<div class="halo-rc-desc">Credit scoring AI classified high-risk, mandatory bias audits required</div>
+<div class="halo-rc-desc">Credit scoring and insurance pricing AI classified high-risk: data governance and bias checks (Article 10), human oversight (Article 14)</div>
 <div class="halo-tags"><span class="halo-mini-pill">Finance</span><span class="halo-mini-pill">Health</span></div>
-<div style="font-size:10px;color:var(--muted)">Effective Aug 2026</div>
+<div style="font-size:10px;color:var(--muted)">High-risk rules now apply Dec 2, 2027</div>
 </div>
 <div class="halo-risk-card">
 <span class="badge badge-amber">WATCH</span>
-<div class="halo-rc-title">US Federal AI Accountability Act</div>
-<div class="halo-rc-desc">Senate vote Q3 2026, would require Cardinal-style audits for all federal AI</div>
+<div class="halo-rc-title">Federal AI accountability bills</div>
+<div class="halo-rc-desc">No comprehensive federal AI law yet. Several accountability bills are pending, including the agenda Sen. Markey unveiled Jul 10, 2026</div>
 <div class="halo-tags"><span class="halo-mini-pill">A&amp;D</span><span class="halo-mini-pill">Finance</span><span class="halo-mini-pill">Health</span></div>
-<div style="font-size:10px;color:var(--muted)">Vote Q3 2026</div>
+<div style="font-size:10px;color:var(--muted)">Pending in committee</div>
 </div>
 <div class="halo-risk-card">
 <span class="badge badge-amber">WATCH</span>
 <div class="halo-rc-title">California AB 1008</div>
-<div class="halo-rc-desc">Biomarker and age-based clinical AI targeted, new disclosure requirements</div>
-<div class="halo-tags"><span class="halo-mini-pill">Health</span></div>
-<div style="font-size:10px;color:var(--muted)">Expected Q4 2026</div>
+<div class="halo-rc-desc">Personal information inside AI systems is covered by the CCPA: access, deletion, and correction requests reach model data</div>
+<div class="halo-tags"><span class="halo-mini-pill">Finance</span><span class="halo-mini-pill">Health</span></div>
+<div style="font-size:10px;color:var(--muted)">In effect since Jan 1, 2025</div>
 </div>
 <div class="halo-risk-card">
 <span class="badge" style="background:rgba(148,163,184,0.15);border:1px solid rgba(148,163,184,0.35);color:#cbd5e1;font-size:9px;font-weight:700">MONITOR</span>
-<div class="halo-rc-title">UK AI Regulation White Paper</div>
-<div class="halo-rc-desc">Finalization expected Q4 2026, high-risk AI definition expanding</div>
+<div class="halo-rc-title">UK AI regulation</div>
+<div class="halo-rc-desc">The FCA and ICO apply existing rules to AI; Cardinal tracks any new UK AI bill</div>
 <div class="halo-tags"><span class="halo-mini-pill">Finance</span></div>
-<div style="font-size:10px;color:var(--muted)">Q4 2026</div>
+<div style="font-size:10px;color:var(--muted)">Ongoing</div>
 </div>
 <div class="halo-risk-card" style="margin-bottom:0">
 <span class="badge" style="background:rgba(148,163,184,0.15);border:1px solid rgba(148,163,184,0.35);color:#cbd5e1;font-size:9px;font-weight:700">MONITOR</span>
@@ -7017,11 +7039,11 @@ Halo Core
 <div style="display:flex;align-items:center;gap:10px">
 <div style="width:8px;height:8px;border-radius:50%;background:var(--accent)"></div>
 <div>
-<div style="font-size:11px;font-weight:600;color:var(--accent)">3 New Regulations This Month</div>
-<div style="font-size:10px;color:var(--muted)">EU AI Act enforcement expanded · Colorado replaces its AI Act with SB 189 · FAA AC 23-18 updated</div>
+<div style="font-size:11px;font-weight:600;color:var(--accent)">3 regulatory changes to review</div>
+<div id="comp-reg-alert-list" style="font-size:10px;color:var(--muted)">EU AI Act high-risk rules now apply Dec 2, 2027 · Colorado SB 26-189 takes effect Jan 1, 2027 · ITAR deemed-export rules cover model access</div>
 </div>
 </div>
-<button class="btn-ghost" style="font-size:10px;padding:4px 10px" onclick="switchCompTabLegacy('regulations')">Review Now</button>
+<button class="btn-ghost" style="font-size:10px;padding:4px 10px" onclick="switchCompTab('regulations')">Review Now</button>
 </div>
 
 <!-- TABS -->
@@ -7712,8 +7734,8 @@ Template Overview
     </div>
     <div class="tsv2-eve-tabs" id="tsv2-eve-tabs">
       <button data-tf="daily"     onclick="tsv2SetEveTimeframe('daily', this)">Daily · Sep 25</button>
-      <button data-tf="monthly"   onclick="tsv2SetEveTimeframe('monthly', this)">Monthly · September 2026</button>
-      <button class="active" data-tf="quarterly" onclick="tsv2SetEveTimeframe('quarterly', this)">Quarterly · Q3 2026</button>
+      <button data-tf="monthly"   onclick="tsv2SetEveTimeframe('monthly', this)"><span data-cdm="now">Monthly · September 2026</span></button>
+      <button class="active" data-tf="quarterly" onclick="tsv2SetEveTimeframe('quarterly', this)"><span data-cdm="now">Quarterly · Q3 2026</span></button>
       <button data-tf="ytd"       onclick="tsv2SetEveTimeframe('ytd', this)">YTD · 12 Months</button>
     </div>
     <div class="tsv2-eve-body" id="tsv2-eve-body"></div>
@@ -8124,7 +8146,7 @@ Template Overview
 <button class="btn-ghost" style="font-size:10px;padding:4px 8px">All</button>
 </div>
 </div>
-<div style="display:flex;flex-direction:column;gap:6px">
+<div id="wr-incident-list" style="display:flex;flex-direction:column;gap:6px">
 <div style="padding:12px;background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.3);border-radius:10px;cursor:pointer" onclick="cardinalRouteCase('AD-2847','lifecycle','remediation-in-progress')" title="Open Sentinel: Primary remediation case">
 <div style="display:flex;justify-content:space-between;margin-bottom:4px">
 <div style="display:flex;align-items:center;gap:8px">
@@ -9529,7 +9551,7 @@ const DATA = {
  ],
  fixId:'Fix #AT-0847', fixTitle:'Remove Demographic Classification Feature',
  fixDesc:'Replace with verified performance metrics and mission-critical qualification scores.',
- cohortPeriod:'Affected: Jan 2026 – Mar 2026', cohortCount:847, cohortLabel:'personnel records affected',
+ cohortPeriod:__cdmText('Affected: Jan 2026 – Mar 2026','story'), cohortCount:847, cohortLabel:'personnel records affected',
  haloP:'$28M', haloA:'12,400',
  haloRec:'Optimal: Remove demographic feature. Reduces penalty 80% while reducing accuracy by only 1%. ROI: 78x.',
  haloScenarios:[{label:'Do Nothing',val:'$28M',sub:'Bias worsens 12% QoQ',c:'red'},{label:'Optimal Fix ✓',val:'$5.6M',sub:'80% reduction · 14 days',c:'green'},{label:'Partial Fix',val:'$14M',sub:'50% reduction · 7 days',c:'amber'}],
@@ -9561,7 +9583,7 @@ const DATA = {
  gaps:[{group:'Pacific Islander Applicants',train:'0.009%',pop:'0.4%',ratio:'44x underrepresented'},{group:'Native American Applicants',train:'0.01%',pop:'1.3%',ratio:'130x underrepresented'},{group:'Rural Hispanic Women 50-65',train:'0.3%',pop:'2.1%',ratio:'7x underrepresented'}],
  fixId:'Fix #FIN-1203', fixTitle:'Remove ZIP Code: Replace with Income Stability',
  fixDesc:'Replace ZIP code with verified_income_12mo and employment_stability. Eliminates racial proxy while improving fraud detection.',
- cohortPeriod:'Affected: Jan 2026 – Mar 2026', cohortCount:1203, cohortLabel:'applicants affected by credit bias',
+ cohortPeriod:__cdmText('Affected: Jan 2026 – Mar 2026','story'), cohortCount:1203, cohortLabel:'applicants affected by credit bias',
  haloP:'$40M', haloA:'18,200',
  haloRec:'Optimal: Remove ZIP code feature. Reduces ECOA penalty exposure 80%. Saves $7M in combined bias+fraud losses.',
  haloScenarios:[{label:'Do Nothing',val:'$40M',sub:'ECOA enforcement likely',c:'red'},{label:'Optimal Fix ✓',val:'$8M',sub:'80% reduction · 14 days',c:'green'},{label:'Partial Fix',val:'$20M',sub:'50% reduction · 7 days',c:'amber'}],
@@ -9593,7 +9615,7 @@ const DATA = {
  gaps:[{group:'Patients 75+',train:'8.2%',pop:'18.4%',ratio:'2.2x underrepresented'},{group:'Disability + Age 60+ Intersect',train:'1.1%',pop:'6.3%',ratio:'5.7x underrepresented'},{group:'Rural Elderly Patients',train:'3.4%',pop:'9.1%',ratio:'2.7x underrepresented'}],
  fixId:'Fix #HS-2847', fixTitle:'Remove Age-Cost Proxy: Replace Clinical Indicators',
  fixDesc:'Replace cost prediction proxy with clinical severity scores and evidence-based treatment protocols.',
- cohortPeriod:'Affected: Oct 2025 – Mar 2026', cohortCount:2847, cohortLabel:'patients affected by claims bias',
+ cohortPeriod:__cdmText('Affected: Oct 2025 – Mar 2026','story'), cohortCount:2847, cohortLabel:'patients affected by claims bias',
  haloP:'$65M', haloA:'24,100',
  haloRec:'Optimal: Remove age-cost proxy. Eliminates ACA Section 1557 violation risk. Saves $6M in combined losses.',
  haloScenarios:[{label:'Do Nothing',val:'$65M',sub:'ACA violation + CMS audit',c:'red'},{label:'Optimal Fix ✓',val:'$13M',sub:'80% reduction · 14 days',c:'green'},{label:'Partial Fix',val:'$32M',sub:'50% reduction · 7 days',c:'amber'}],
@@ -9626,7 +9648,7 @@ const DATA = {
 {group:'Metro multi-job filers',train:'6.2%',pop:'11.3%',ratio:'1.8x underrepresented'}],
  fixId:'Fix #FED-PDV-001', fixTitle:'Recourse mechanism + parity constraints before activation',
  fixDesc:'OMB packet v0.6 documents Eden narrative, Genesis receipt, filer notice + appeal channel, post-deployment monitoring.',
- cohortPeriod:'Exposure window: Apr 2026 – May 2026', cohortCount:1200, cohortLabel:'self-employed filers in vetting cohort',
+ cohortPeriod:__cdmText('Exposure window: Apr 2026 – May 2026','story'), cohortCount:1200, cohortLabel:'self-employed filers in vetting cohort',
  haloP:'$18M', haloA:'3,400',
  haloRec:'Optimal: Hold activation until OMB M-25-21 impact assessment + the M-25-21 appeals process live · avoids $18M cost-of-delay scenarios in Q4.',
  haloScenarios:[{label:'Deploy without vetting',val:'$18M+',sub:'EO + appropriations risk',c:'red'},{label:'Complete OMB packet ✓',val:'$3M',sub:'Recourse + monitoring plan',c:'green'},{label:'Partial mitigation',val:'$9M',sub:'50% exposure reduction',c:'amber'}],
@@ -10332,7 +10354,7 @@ window.CARDINAL_COHORTS = [
   { id: 'TEST-628', name: 'Pacific Islander Coverage Gap Test', type: 'test', industry: 'fin', size: 200, status: 'live', restored: null, owner: 'Anthony Broadnax', linkedCase: null, created: '2026-04-12' },
   { id: 'TEST-491', name: 'Rural Hispanic Women 50-65 Test', type: 'test', industry: 'fin', size: 300, status: 'archive', restored: null, owner: 'Sarah Chen', linkedCase: null, created: '2026-03-08' },
   { id: 'SYN-024', name: 'Synthetic Fraud Persona #24', type: 'synthetic', industry: 'fin', size: 1, status: 'live', restored: null, owner: 'Adam (AI)', linkedCase: null, created: '2026-05-01' },
-  { id: 'GAP-Q2-2026', name: 'Q2 2026 Coverage Gap Report', type: 'gap-report', industry: 'all', size: 8, status: 'live', restored: null, owner: 'Adam (AI)', linkedCase: null, created: '2026-04-01' },
+  { id: 'GAP-Q2-2026', name: __cdmText('Q2 2026 Coverage Gap Report','story'), type: 'gap-report', industry: 'all', size: 8, status: 'live', restored: null, owner: 'Adam (AI)', linkedCase: null, created: '2026-04-01' },
   { id: 'COHORT-FED-1200', name: 'FED-PDV-001 Self-Employed Filers', type: 'test', industry: 'fed', size: 1200, status: 'in-progress', restored: null, owner: 'Patricia Alvarez', linkedCase: 'FED-PDV-001', created: '2026-04-22' }
 ];
 
@@ -11196,9 +11218,9 @@ var CARDINAL_DATA = {
     ],
     projectedScore: 84,
     quarterlySummary: {
-      quarter:'Q1 2026',
+      quarter:__cdmText('Q1 2026','story'),
       paragraphs:[
-        'Atlas Defense\'s Trust Score moved from 76 to 74 over Q1 2026 after Eden flagged Personnel Assignment v2.4 in mid-January for a Disparate Impact ratio of 0.67, well below the EEOC 0.80 four-fifths threshold. The model affects assignment decisions for 847 service members across four bases, with concentrated impact on Hispanic technicians at Camp Pendleton (2.3x adverse rate). Estimated regulatory exposure: $67M.',
+        __cdmText('Atlas Defense\'s Trust Score moved from 76 to 74 over Q1 2026 after Eden flagged Personnel Assignment v2.4 in mid-January for a Disparate Impact ratio of 0.67, well below the EEOC 0.80 four-fifths threshold. The model affects assignment decisions for 847 service members across four bases, with concentrated impact on Hispanic technicians at Camp Pendleton (2.3x adverse rate). Estimated regulatory exposure: $67M.','story'),
         'Atonement Core has v2.5 in shadow deployment at 5% traffic and is converging on parity (DI 0.79 → projected 0.83). Remediation is 35% complete by re-evaluation count. The DoD AI Ethics attestation is overdue by 21 days; Compliance Exchange has the filing prepared and pending sign-off.',
         'What the board needs to know: the bias issue is real but contained, no fraud signals, no DoD contract impact yet, and a credible path to certification by ' + __cdr('May 15','ad') + '. Recommend authorizing the v2.5 promotion and the DoD attestation filing this week.'
       ]
@@ -11300,9 +11322,9 @@ var CARDINAL_DATA = {
     ],
     projectedScore: 87,
     quarterlySummary: {
-      quarter:'Q1 2026',
+      quarter:__cdmText('Q1 2026','story'),
       paragraphs:[
-        'Blackmoor Wealth\'s Trust Score climbed from 78 to 81 over Q1 2026, holding above the 80 certification threshold for the first time. ECOA compliance remains the soft spot at 68.3%, primarily driven by Credit Scoring v3.4\'s ZIP-code proxy correlation of 0.82 with race. 1,203 applicants are being re-decisioned with v3.5 in shadow deploy at 68% remediation.',
+        __cdmText('Blackmoor Wealth\'s Trust Score climbed from 78 to 81 over Q1 2026, holding above the 80 certification threshold for the first time. ECOA compliance remains the soft spot at 68.3%, primarily driven by Credit Scoring v3.4\'s ZIP-code proxy correlation of 0.82 with race. 1,203 applicants are being re-decisioned with v3.5 in shadow deploy at 68% remediation.','story'),
         'ECOA (Reg B) annual bias audit is 13 days out. Cardinal\'s audit-ready package has been pre-generated and is awaiting CFO sign-off. Atonement\'s v3.5 is converging on parity (DI 0.79 → projected 0.84) and remains on track for full deploy by ' + __cdr('May 8','fin') + ', five days before the audit.',
         'What the board needs to know: certification is intact, the v3.4 issue is contained, and we have a credible path to retire the ECOA risk before CFPB fair lending exam. Recommend authorizing v3.5 promotion this week.'
       ]
@@ -11404,7 +11426,7 @@ var CARDINAL_DATA = {
     ],
     projectedScore: 90,
     quarterlySummary: {
-      quarter:'Q1 2026',
+      quarter:__cdmText('Q1 2026','story'),
       paragraphs:[
         'Sterling Health\'s Trust Score sits at 83, 4 points above industry median, but it is not certified: Fairness is at 64, below Cardinal\'s 70 floor. Claims Adjudication v1.9 was flagged in November for an ACA 1557 disparate impact concern: age_cost_proxy is producing a DI of 0.77, with 2,847 patient claims affected and 65+ patients carrying 2.1x denial concentration. Estimated regulatory exposure: $150M.',
         'Remediation is gated on CMO approval: Atonement has v1.10 ready to enter shadow deploy. CMS audit is 30 days out and the audit package is 70% prepared. HIPAA remains strong at 91.2%, and Triage Priority v2.0 is being watched closely for proxy drift but is not actively non-compliant.',
@@ -11509,7 +11531,7 @@ var CARDINAL_DATA = {
     ],
     projectedScore: 84,
     quarterlySummary: {
-      quarter:'Q1 2026',
+      quarter:__cdmText('Q1 2026','story'),
       paragraphs:[
         'IRS Tax Compliance Division sits at 71, below Cardinal\'s 80-point certification floor while IRS Tax Fraud Detection v3.1 remains in pre-deployment vetting under OMB M-25-21. Eden flagged a 1.84x disparate fraud-flag rate for self-employed filers concentrated in five metro ZIP clusters; DI is 0.54 against the federal fairness gate.',
         'Genesis sealed counterfactual receipt FED-CF-' + __cdrId('2026-04-29','fed','DD') + '-V31 showing a 21.3% outcome swap when ZIP-correlated and Schedule C volatility proxies are neutralized. Compliance Exchange assembled OMB packet v0.6 covering Eden narrative, Genesis receipt, M-25-21 appeals design, and monitoring plan: James Martinez approved; Patricia Alvarez agency review ' + __cdr('May 22','fed') + '.',
@@ -11976,7 +11998,7 @@ function _overlapCasesListFromOrg(ok, nOverlap, primaryCase) {
 }
 
 function _edoAssignEveHist(dst, ok) {
-  var months = ['May 2025', 'Jun 2025', 'Jul 2025', 'Aug 2025', 'Sep 2025', 'Oct 2025', 'Nov 2025', 'Dec 2025', 'Jan 2026', 'Feb 2026', 'Mar 2026', 'Apr 2026'];
+  var months = [__cdmText('May 2025','story'), __cdmText('Jun 2025','story'), __cdmText('Jul 2025','story'), __cdmText('Aug 2025','story'), __cdmText('Sep 2025','story'), __cdmText('Oct 2025','story'), __cdmText('Nov 2025','story'), __cdmText('Dec 2025','story'), __cdmText('Jan 2026','story'), __cdmText('Feb 2026','story'), __cdmText('Mar 2026','story'), __cdmText('Apr 2026','story')];
   var orgLabel = ok === 'ad' ? 'Atlas Defense Systems' : ok === 'fin' ? 'Blackmoor Wealth Group' : ok === 'fed' ? 'IRS Tax Compliance Division' : 'Sterling Health';
   if (ok === 'ad') {
     var biasScore = [78, 79, 80, 81, 82, 80, 78, 75, 67, 68, 70, 67];
@@ -11992,14 +12014,14 @@ function _edoAssignEveHist(dst, ok) {
     for (var j = 0; j < 12; j++) dst.obsidianScoreHistory.push({ month: months[j], fraudScore: fs[j], syntheticId: [78, 79, 80, 82, 83, 84, 85, 86, 87, 88, 88, 89][j], behavioralAnomaly: [80, 81, 81, 82, 83, 84, 84, 85, 86, 86, 87, 87][j], clusterFraud: [82, 83, 84, 85, 86, 87, 88, 89, 89, 90, 90, 91][j], velocity: [77, 78, 79, 80, 82, 83, 84, 85, 86, 87, 88, 88][j], annotation: annO[j] });
     dst.edenEveSummary = {
       daily: { para1: 'As of today, September 25, Atlas Defense Systems\u2019 Bias Detection score is ' + dst.biasScore + '. No new disparate-impact flags in the last 24 hours: Personnel Assignment v2.4 remains the open case, unchanged since yesterday.', para2: 'Sample coverage held steady overnight; no new cohorts entered the monitoring window in the last day.', para3: 'v2.5 shadow deploy continues at its current traffic share. Bias\u2011Fraud Connection: seven cases remain linked, see the overlap cases.' },
-      monthly: { para1: 'Atlas Defense Systems April 2026 Bias Detection score is ' + dst.biasScore + ', in the 38th percentile of A&D peers and below the 70 fairness floor. Eden continues to flag Personnel Assignment v2.4 on disparate impact against Hispanic technician cohorts.', para2: 'Statistically significant disparities remain on age (55+ \u22127%), gender (female \u22125%), pay grade (E1\u2013E4 \u221218% vs O4+), and Native American training coverage (0.3% vs 1.2% population). Most vulnerable intersection: Hispanic women age 55+ at Fort Bragg NC at 61.3% assignment rate.', para3: 'Atonement Core is scaling v2.5 shadow traffic with DI tracking back toward the 0.80 floor. DoD AI Ethics audit prep continues. Bias\u2011Fraud Connection: seven cases where this bias pattern widened fraud exposure, see the overlap cases.' },
-      quarterly: { para1: 'Atlas Defense Systems Q1 2026 Bias Detection score sits at 67, in the 38th percentile of A&D peers and below the 70 fairness floor. Eden flagged Personnel Assignment v2.4 in January when the demographic_classification feature showed 0.81 correlation with assignment outcomes.', para2: 'Hispanic technicians were 2.3x more likely to be denied premium-base placement. 847 service members affected. Statistically significant disparities also detected in age (55+ \u22127%), gender (female \u22125%), pay grade (E1\u2013E4 \u221218% vs O4+), and Native American training data coverage (0.3% vs 1.2% population). Most vulnerable intersection: Hispanic women age 55+ at Fort Bragg NC at 61.3% assignment rate. Total bias-related regulatory exposure is $39M projected litigation.', para3: 'Atonement Core is running v2.5 shadow at 5% with bias metrics tracking back toward the 0.80 floor. DoD AI Ethics audit is overdue. Recommended board action: approve full v2.5 traffic expansion. Bias\u2011Fraud Connection: 7 cases where this bias pattern created fraud exposure, see the overlap cases.' },
-      ytd: { para1: 'Atlas Defense Systems year-to-date bias trajectory declined from the high-70s in mid-2025 to ' + dst.biasScore + ' in April 2026 as Personnel v2.4 drift compounded across installations.', para2: 'Cross-demographic analysis confirms widening gaps on assignment equity; Echo Core preserved sealed dissent events for regulator-ready reconstruction.', para3: 'Prioritize remediation velocity and document control gates for trustees. Bias\u2011Fraud Connection cases are tracked jointly, see the overlap cases below.' }
+      monthly: { para1: __cdmText('Atlas Defense Systems September 2026 Bias Detection score is ','now') + dst.biasScore + ', in the 38th percentile of A&D peers and below the 70 fairness floor. Eden continues to flag Personnel Assignment v2.4 on disparate impact against Hispanic technician cohorts.', para2: 'Statistically significant disparities remain on age (55+ \u22127%), gender (female \u22125%), pay grade (E1\u2013E4 \u221218% vs O4+), and Native American training coverage (0.3% vs 1.2% population). Most vulnerable intersection: Hispanic women age 55+ at Fort Bragg NC at 61.3% assignment rate.', para3: 'Atonement Core is scaling v2.5 shadow traffic with DI tracking back toward the 0.80 floor. DoD AI Ethics audit prep continues. Bias\u2011Fraud Connection: seven cases where this bias pattern widened fraud exposure, see the overlap cases.' },
+      quarterly: { para1: __cdmText('Atlas Defense Systems Q3 2026 Bias Detection score sits at 67, in the 38th percentile of A&D peers and below the 70 fairness floor. Eden flagged Personnel Assignment v2.4 when the demographic_classification feature showed 0.81 correlation with assignment outcomes.','now'), para2: 'Hispanic technicians were 2.3x more likely to be denied premium-base placement. 847 service members affected. Statistically significant disparities also detected in age (55+ \u22127%), gender (female \u22125%), pay grade (E1\u2013E4 \u221218% vs O4+), and Native American training data coverage (0.3% vs 1.2% population). Most vulnerable intersection: Hispanic women age 55+ at Fort Bragg NC at 61.3% assignment rate. Total bias-related regulatory exposure is $39M projected litigation.', para3: 'Atonement Core is running v2.5 shadow at 5% with bias metrics tracking back toward the 0.80 floor. DoD AI Ethics audit is overdue. Recommended board action: approve full v2.5 traffic expansion. Bias\u2011Fraud Connection: 7 cases where this bias pattern created fraud exposure, see the overlap cases.' },
+      ytd: { para1: 'Atlas Defense Systems year-to-date bias trajectory declined from the high-70s in mid-2025 to ' + dst.biasScore + __cdmText(' in April 2026 as Personnel v2.4 drift compounded across installations.','story'), para2: 'Cross-demographic analysis confirms widening gaps on assignment equity; Echo Core preserved sealed dissent events for regulator-ready reconstruction.', para3: 'Prioritize remediation velocity and document control gates for trustees. Bias\u2011Fraud Connection cases are tracked jointly, see the overlap cases below.' }
     };
     dst.obsidianEveSummary = {
       daily: { para1: 'As of today, September 25, Atlas Defense Systems\u2019 Fraud Detection score is ' + dst.fraudScore + '. No new synthetic-identity or velocity spikes in the last 24 hours.', para2: 'Overnight monitoring (02:00\u201305:00 UTC) came back clean, no new anomalies flagged today.', para3: 'Queues remain current. Bias\u2011Fraud Connection: seven overlaps tied to Personnel v2.4 remain open, see the overlap cases.' },
-      monthly: { para1: 'Atlas Defense Systems April 2026 Fraud Detection score is ' + dst.fraudScore + ', in the 78th percentile of A&D peers and above the 80 detection threshold. Synthetic Identity Detection rate: 89%. Behavioral Anomaly: 87%. Cluster Fraud: 91%. Velocity Detection: 88%.', para2: 'Velocity anomalies still concentrate 02:00\u201305:00 UTC; synthetic clusters remain concentrated around high-throughput enrollment paths.', para3: 'Harden overnight monitoring and cross-core alerts before clearing high-risk queues. Bias\u2011Fraud Connection: seven overlaps tied to Personnel v2.4, see the overlap cases.' },
-      quarterly: { para1: 'Atlas Defense Systems Q1 2026 Fraud Detection score sits at 91, in the 78th percentile of A&D peers and above the 80 detection threshold. Synthetic Identity Detection rate: 89%. Behavioral Anomaly: 87%. Cluster Fraud: 91%. Velocity Detection: 88%. Strong overall fraud posture this quarter.', para2: 'Top fraud pattern this quarter: 23 synthetic credential applications detected sharing device fingerprints, credential synthesis ring at Camp Pendleton (Ring FR-001, $340K). Velocity attack peaks 02:00-05:00 UTC during low-monitoring windows. $2.1M in fraudulent credentials blocked YTD. Most targeted cohort: Hispanic technicians at Pendleton (187 affected). Junior enlisted (E1-E4 pay grade) face highest synthetic identity targeting rate at 42%.', para3: 'Recommended: strengthen 02:00-05:00 UTC monitoring window staffing. Cluster fraud detection performing well · Ring FR-001 disrupted before payroll system entry. Bias\u2011Fraud Connection: 7 of these fraud cases exploited bias blind spots in Personnel v2.4, see the overlap cases.' },
+      monthly: { para1: __cdmText('Atlas Defense Systems September 2026 Fraud Detection score is ','now') + dst.fraudScore + ', in the 78th percentile of A&D peers and above the 80 detection threshold. Synthetic Identity Detection rate: 89%. Behavioral Anomaly: 87%. Cluster Fraud: 91%. Velocity Detection: 88%.', para2: 'Velocity anomalies still concentrate 02:00\u201305:00 UTC; synthetic clusters remain concentrated around high-throughput enrollment paths.', para3: 'Harden overnight monitoring and cross-core alerts before clearing high-risk queues. Bias\u2011Fraud Connection: seven overlaps tied to Personnel v2.4, see the overlap cases.' },
+      quarterly: { para1: __cdmText('Atlas Defense Systems Q3 2026 Fraud Detection score sits at 91, in the 78th percentile of A&D peers and above the 80 detection threshold. Synthetic Identity Detection rate: 89%. Behavioral Anomaly: 87%. Cluster Fraud: 91%. Velocity Detection: 88%. Strong overall fraud posture this quarter.','now'), para2: 'Top fraud pattern this quarter: 23 synthetic credential applications detected sharing device fingerprints, credential synthesis ring at Camp Pendleton (Ring FR-001, $340K). Velocity attack peaks 02:00-05:00 UTC during low-monitoring windows. $2.1M in fraudulent credentials blocked YTD. Most targeted cohort: Hispanic technicians at Pendleton (187 affected). Junior enlisted (E1-E4 pay grade) face highest synthetic identity targeting rate at 42%.', para3: 'Recommended: strengthen 02:00-05:00 UTC monitoring window staffing. Cluster fraud detection performing well · Ring FR-001 disrupted before payroll system entry. Bias\u2011Fraud Connection: 7 of these fraud cases exploited bias blind spots in Personnel v2.4, see the overlap cases.' },
       ytd: { para1: 'Atlas Defense Systems fraud posture improved from 84 to 91 over twelve months as Obsidian hardened enrollment velocity rules and cluster resolution.', para2: 'Synthetic identity pressure remains highest where throughput spikes and replay tactics cluster in overnight windows; maintain staffed escalations on those lanes.', para3: 'Continue Echo Memory pinning on major catches for regulator packs. Bias\u2011Fraud Connection reviews remain essential, see the overlap cases.' }
     };
   } else {
@@ -12786,7 +12808,7 @@ function _cardinalBuildModelDetailDrillInRegistry(CD) {
           name: mid,
           version: (mid.match(/v[\d.]+$/i) || ['v1.0'])[0],
           creationDate: 'Mar 2019',
-          lastUpdate: 'Apr 2026',
+          lastUpdate: __cdmText('Apr 2026','story'),
           ownerTeam: (d.org || ok) + ' · Model Office',
           description: purpose,
           tags: tags
@@ -13949,7 +13971,7 @@ function edoBuildEveExecutiveSection(lens, d, org) {
   var idP = lens === 'obsidian' ? 'obs' : 'eden';
   var tf = lens === 'obsidian' ? window.__edo.eveTfObsidian : window.__edo.eveTfEden;
   var edoTodayShort = (function () { try { var t = new Date(); var mm = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']; return mm[t.getMonth()] + ' ' + t.getDate(); } catch (_e) { return 'Sep 25'; } })();
-  var tabs = [['daily', 'Daily · ' + edoTodayShort], ['monthly', 'Monthly · September 2026'], ['quarterly', 'Quarterly · Q3 2026'], ['ytd', 'YTD · 12 Months']];
+  var tabs = [['daily', 'Daily · ' + edoTodayShort], ['monthly', __cdmText('Monthly · September 2026','now')], ['quarterly', __cdmText('Quarterly · Q3 2026','now')], ['ytd', 'YTD · 12 Months']];
   var tabHtml = tabs.map(function (t) {
     var on = tf === t[0];
     return '<button type="button" class="' + (on ? 'active' : '') + '" data-tf="' + t[0] + '"' + edoOn('edoSetEveTimeframeCore', [lens, t[0]]) + edoT('Reporting Period', 'Reporting Period / Switch between monthly, quarterly, or YTD analysis. Each timeframe pulls fresh data from Echo Core.') + '>' + t[1] + '</button>';
@@ -14527,7 +14549,7 @@ function edoBuildModelDrawer(d, org, screen) {
   var lens = window.__edo.modelLens;
   var detail = (d.modelDetailEnhancedMetrics || [])[idx] || {};
   var ml = d.modelLevelScores && d.modelLevelScores[idx];
-  var dep = ml && ml.deployed ? ml.deployed : 'Jan 2026';
+  var dep = ml && ml.deployed ? ml.deployed : __cdmText('Jan 2026','story');
   var retr = '' + __cdr('Mar 28, 2026','fin') + '';
   var train = 'Trained on historical production decisions, 2018–2024';
   var wgt = ml && ml.weight ? ml.weight + '% weight in Trust Score' : 'See Trust Score composition';
@@ -15119,7 +15141,7 @@ var CARDINAL_DATA_TS_EXT = {
     heatmapAxes: { rowLabel:'Base Location', colLabel:'Demographic Group',
       rows:['Pendleton','Bragg','Lewis','Hood'],
       cols:['Hispanic','Black','White','Asian','Other'] },
-    quarterlySummary: 'Atlas Defense Systems Q1 2026 Trust Score sits at 74, below the 80 certification threshold and in the 38th percentile of A&D peers. The driver is Personnel Assignment v2.4, an AI model used to allocate technicians across forward bases. Eden Core flagged a disparate impact ratio of 0.67 in January after the demographic_classification feature showed a 0.81 correlation with assignment outcomes: Hispanic technicians were 2.3x more likely to be denied premium-base placement. 847 service members were affected. Total regulatory and litigation exposure is $67M ($28M DoD penalties, $39M projected litigation).\n\nAtonement Core is running a shadow deployment of Personnel v2.5 at 5% of live traffic with bias metrics tracking back toward the 0.80 floor. Remediation is 35% complete; full rollout estimated ' + __cdr('May 15','ad') + '. The DoD AI Ethics audit is overdue and must be filed via Compliance Exchange this week.\n\nRecommended board action: approve full v2.5 traffic expansion and authorize remediation cohort outreach to all 847 affected service members.',
+    quarterlySummary: __cdmText('Atlas Defense Systems Q1 2026 Trust Score sits at 74, below the 80 certification threshold and in the 38th percentile of A&D peers. The driver is Personnel Assignment v2.4, an AI model used to allocate technicians across forward bases. Eden Core flagged a disparate impact ratio of 0.67 in January after the demographic_classification feature showed a 0.81 correlation with assignment outcomes: Hispanic technicians were 2.3x more likely to be denied premium-base placement. 847 service members were affected. Total regulatory and litigation exposure is $67M ($28M DoD penalties, $39M projected litigation).\n\nAtonement Core is running a shadow deployment of Personnel v2.5 at 5% of live traffic with bias metrics tracking back toward the 0.80 floor. Remediation is 35% complete; full rollout estimated ','story') + __cdr('May 15','ad') + '. The DoD AI Ethics audit is overdue and must be filed via Compliance Exchange this week.\n\nRecommended board action: approve full v2.5 traffic expansion and authorize remediation cohort outreach to all 847 affected service members.',
     biasFactors: [
       {label:'demographic_classification correlation 0.81: DI 0.67 below 0.80 threshold', proxyTerm:'demographic_classification'},
       {label:'Hispanic technicians at Pendleton: 2.3x denial rate'},
@@ -15181,7 +15203,7 @@ var CARDINAL_DATA_TS_EXT = {
     heatmapAxes: { rowLabel:'NYC ZIP Cluster', colLabel:'Race',
       rows:['10001','10031','10453','11212','11226','11368'],
       cols:['Black','Hispanic','White','Asian','Other'] },
-    quarterlySummary: 'Blackmoor Wealth Group Q1 2026 Trust Score is 81, above the 80 certification threshold and in the 64th percentile of finance peers. Cardinal ECOA certification is active. The current open issue is Credit Scoring v3.4, which Eden Core flagged in February for a 0.82 correlation between zip_code and race. 1,203 applicants in protected ZIP clusters were affected, with an approval disparity of 2.1x. Total exposure is $73M ($40M ECOA fines, $33M CFPB action).\n\nCredit v3.5 is running in Atonement shadow deployment with the proxy variable removed; 687 of the 1,203 affected applicants have already been re-approved (57% of the remediation cohort complete). Full v3.5 rollout is on track for ' + __cdr('May 8','fin') + ', ahead of the CFPB fair lending exam deadline of May 14. Remaining work: complete remediation cohort outreach and finalize the CFPB exam packet via Compliance Exchange.\n\nCardinal certification renews October 12, 2026.',
+    quarterlySummary: __cdmText('Blackmoor Wealth Group Q1 2026 Trust Score is 81, above the 80 certification threshold and in the 64th percentile of finance peers. Cardinal ECOA certification is active. The current open issue is Credit Scoring v3.4, which Eden Core flagged in February for a 0.82 correlation between zip_code and race. 1,203 applicants in protected ZIP clusters were affected, with an approval disparity of 2.1x. Total exposure is $73M ($40M ECOA fines, $33M CFPB action).\n\nCredit v3.5 is running in Atonement shadow deployment with the proxy variable removed; 687 of the 1,203 affected applicants have already been re-approved (57% of the remediation cohort complete). Full v3.5 rollout is on track for ','story') + __cdr('May 8','fin') + ', ahead of the CFPB fair lending exam deadline of May 14. Remaining work: complete remediation cohort outreach and finalize the CFPB exam packet via Compliance Exchange.\n\nCardinal certification renews October 12, 2026.',
     biasFactors: [
       {label:'zip_code proxy correlation 0.82: DI 0.79 approaching threshold', proxyTerm:'zip_code'},
       {label:'Black applicants in NYC ZIPs 10453, 11212: 2.1x denial'},
@@ -15242,7 +15264,7 @@ var CARDINAL_DATA_TS_EXT = {
     heatmapAxes: { rowLabel:'Age Bracket', colLabel:'Claim Type',
       rows:['18-30','31-50','51-64','65-74','75+'],
       cols:['Inpatient','Outpatient','Specialty','Emergency','Preventive'] },
-    quarterlySummary: 'Sterling Health Q1 2026 Trust Score is 83, in the 71st percentile of healthcare peers, but not yet certified because Fairness (64) is below the 70 floor. Cardinal ACA Section 1557 certification is active. The current open issue is Claims Adjudication v1.9, which Eden Core flagged in March for a 0.81 correlation between an age_cost_proxy feature and claim adjudication outcomes. 2,847 patient claims were affected, with a 2.3x disparity for patients 65 and older receiving specialty care. Total exposure is $150M ($65M ACA penalties, $85M CMS exclusion risk).\n\nRemediation is currently blocked awaiting CMO sign-off to begin shadow deployment: 0 of 2,847 claims re-evaluated to date. CMS audit deadline is in 30 days.\n\nRecommended board action: escalate CMO approval this week to start the Atonement shadow deploy and unblock the remediation cohort. Estimated full remediation completion ' + __cdr('June 1','health') + '.',
+    quarterlySummary: __cdmText('Sterling Health Q1 2026 Trust Score is 83, in the 71st percentile of healthcare peers, but not yet certified because Fairness (64) is below the 70 floor. Cardinal ACA Section 1557 certification is active. The current open issue is Claims Adjudication v1.9, which Eden Core flagged in March for a 0.81 correlation between an age_cost_proxy feature and claim adjudication outcomes. 2,847 patient claims were affected, with a 2.3x disparity for patients 65 and older receiving specialty care. Total exposure is $150M ($65M ACA penalties, $85M CMS exclusion risk).\n\nRemediation is currently blocked awaiting CMO sign-off to begin shadow deployment: 0 of 2,847 claims re-evaluated to date. CMS audit deadline is in 30 days.\n\nRecommended board action: escalate CMO approval this week to start the Atonement shadow deploy and unblock the remediation cohort. Estimated full remediation completion ','story') + __cdr('June 1','health') + '.',
     biasFactors: [
       {label:'age_cost_proxy correlation 0.81: DI 0.77 below threshold', proxyTerm:'age_cost_proxy'},
       {label:'Patients 65+ in specialty care: 2.3x claim denial'},
@@ -15324,8 +15346,8 @@ var CARDINAL_DATA_TS_V2 = {
     eveNarrativeByTimeframe: {
       daily:'As of today, September 25, Atlas Defense Systems’ Trust Score is 74. The drag is still Personnel Assignment v2.4, its disparate impact ratio remains below the 0.80 floor while the v2.5 shadow deploy holds at 35% remediation complete. No new incidents in the last 24 hours; the open item is the DoD AI Ethics audit, still overdue and needing to be filed via Compliance Exchange.',
       monthly:'August into September held roughly flat after a mid-quarter dip. Personnel Assignment v2.4 is still the driver: the model crossed the disparate-impact threshold back in April when ZIP-code-correlated patterns surfaced in technician assignments, and a Mission Readiness v1.1 drift flag added a second point of pressure in August. Sentinel flagged both within hours; Atonement has the v2.4 fix queued at 35% rollout. We expect a rebound toward 78 as v2.5 reaches full traffic.',
-      quarterly:'Atlas Defense Systems Q3 2026 Trust Score sits at 74, below the 80 certification threshold and in the 38th percentile of A&D peers. The driver is Personnel Assignment v2.4, an AI model used to allocate technicians across forward bases. Eden Core flagged a disparate impact ratio of 0.67 in January after the demographic_classification feature showed a 0.81 correlation with assignment outcomes: Hispanic technicians were 2.3x more likely to be denied premium-base placement. 847 service members were affected. Total regulatory and litigation exposure is $67M ($28M DoD penalties, $39M projected litigation).\n\nAtonement Core is running a shadow deployment of Personnel v2.5, now at 60% of live traffic as of Q2, with bias metrics tracking back toward the 0.80 floor. Remediation is 35% complete. The DoD AI Ethics audit is overdue and must be filed via Compliance Exchange this week.\n\nRecommended board action: approve full v2.5 traffic expansion and authorize remediation cohort outreach to all 847 affected service members.',
-      ytd:'Year-to-date, Trust Score has moved from 78 (May 2025) to 74 (September 2026), net -4 points across the year. The decline is not gradual: it concentrates in Q1 2026 when Personnel Assignment v2.4 entered violation, with a second dip in Q3 when a Mission Readiness v1.1 drift flag added pressure. Pre-violation, the score was tracking at or above the 80 certification threshold for 7 consecutive months. Atlas Defense Systems has been on Cardinal for 16 months; the platform caught the v2.4 issue 6.2 days before any external regulator inquiry. Once the v2.5 fix reaches full traffic, projected return to 82.'
+      quarterly:__cdmText('Atlas Defense Systems Q3 2026 Trust Score sits at 74, below the 80 certification threshold and in the 38th percentile of A&D peers. The driver is Personnel Assignment v2.4, an AI model used to allocate technicians across forward bases. Eden Core flagged a disparate impact ratio of 0.67 in January after the demographic_classification feature showed a 0.81 correlation with assignment outcomes: Hispanic technicians were 2.3x more likely to be denied premium-base placement. 847 service members were affected. Total regulatory and litigation exposure is $67M ($28M DoD penalties, $39M projected litigation).\n\nAtonement Core is running a shadow deployment of Personnel v2.5, now at 60% of live traffic as of Q2, with bias metrics tracking back toward the 0.80 floor. Remediation is 35% complete. The DoD AI Ethics audit is overdue and must be filed via Compliance Exchange this week.\n\nRecommended board action: approve full v2.5 traffic expansion and authorize remediation cohort outreach to all 847 affected service members.','now'),
+      ytd:'Year-to-date, Trust Score has moved from 78 (' + __cdm('May 2025','now') + ') to 74 (' + __cdm('September 2026','now') + '), net -4 points across the year. The decline is not gradual: it concentrates in ' + __cdm('Q1 2026','story') + ' when Personnel Assignment v2.4 entered violation, with a second dip in Q3 when a Mission Readiness v1.1 drift flag added pressure. Pre-violation, the score was tracking at or above the 80 certification threshold for 7 consecutive months. Atlas Defense Systems has been on Cardinal for 16 months; the platform caught the v2.4 issue 6.2 days before any external regulator inquiry. Once the v2.5 fix reaches full traffic, projected return to 82.'
     }
   },
   fin: {
@@ -15380,8 +15402,8 @@ var CARDINAL_DATA_TS_V2 = {
     eveNarrativeByTimeframe: {
       daily:'As of today, September 25, Blackmoor Wealth’s Trust Score is 81. Credit Scoring v3.5 has been at full traffic since June with no new proxy flags in the last 24 hours. The open item is the CFPB fair lending exam packet, filed in August and awaiting final sign-off.',
       monthly:'September held steady after Credit Scoring v3.5 reached full traffic in June. No new bias flags in the last 30 days. The CFPB fair lending exam packet was filed in August, ahead of the fiscal-year deadline. Remediation cohort outreach from the Q1 v3.4 issue is fully closed, all 1,203 affected applicants have been re-approved or resolved.',
-      quarterly:'Blackmoor Wealth Group Q3 2026 Trust Score is 81, above the 80 certification threshold and in the 64th percentile of finance peers. Cardinal ECOA certification is active. Credit Scoring v3.5 completed its shadow-to-full rollout in June with the zip_code proxy variable fully removed, and the CFPB fair lending exam packet was filed in August. Total exposure from the earlier Credit v3.4 issue has closed out, all 1,203 affected applicants were re-approved or otherwise resolved.\n\nRemaining work this quarter: hold monitoring coverage above 90% and complete the ECOA renewal filing.\n\nCardinal certification renews October 12, 2026.',
-      ytd:'Year-to-date, Trust Score has moved from 76 (May 2025) to 81 (September 2026), net +5 points. The trajectory is steady improvement with three incidents caught and resolved early (Aug 2025 Credit v3.2 ECOA flag, Feb 2026 Credit v3.4 catch, Aug 2026 ECOA (Reg B) filing). Cardinal certification is active and renews October 12, 2026. Blackmoor Wealth has been on Cardinal for 16 months; bias-fraud connection caught 3 fraud rings in Q4 2025 that traditional fraud-only systems missed.'
+      quarterly:__cdmText('Blackmoor Wealth Group Q3 2026 Trust Score is 81, above the 80 certification threshold and in the 64th percentile of finance peers. Cardinal ECOA certification is active. Credit Scoring v3.5 completed its shadow-to-full rollout in June with the zip_code proxy variable fully removed, and the CFPB fair lending exam packet was filed in August. Total exposure from the earlier Credit v3.4 issue has closed out, all 1,203 affected applicants were re-approved or otherwise resolved.\n\nRemaining work this quarter: hold monitoring coverage above 90% and complete the ECOA renewal filing.\n\nCardinal certification renews October 12, 2026.','now'),
+      ytd:'Year-to-date, Trust Score has moved from 76 (' + __cdm('May 2025','now') + ') to 81 (' + __cdm('September 2026','now') + '), net +5 points. The trajectory is steady improvement with three incidents caught and resolved early (' + __cdm('Aug 2025','story') + ' Credit v3.2 ECOA flag, ' + __cdm('Feb 2026','story') + ' Credit v3.4 catch, ' + __cdm('Aug 2026','story') + ' ECOA (Reg B) filing). Cardinal certification is active and renews October 12, 2026. Blackmoor Wealth has been on Cardinal for 16 months; bias-fraud connection caught 3 fraud rings in ' + __cdm('Q4 2025','story') + ' that traditional fraud-only systems missed.'
     }
   },
   health: {
@@ -15433,8 +15455,8 @@ var CARDINAL_DATA_TS_V2 = {
     eveNarrativeByTimeframe: {
       daily:'As of today, September 25, Sterling Health’s Trust Score is 83. Claims Adjudication v1.9 remains in CMO-approved remediation with no new incidents in the last 24 hours. The CMS audit packet was submitted in August and is awaiting review.',
       monthly:'September held steady at 83. Claims Adjudication v1.9 received CMO sign-off in May and has been in active Atonement remediation since; the CMS audit packet was submitted in August. Recommend monitoring for the CMS response, expected within 45 days.',
-      quarterly:'Sterling Health Q3 2026 Trust Score is 83, in the 71st percentile of healthcare peers. Certification is on hold: Fairness (64) is below the 70 floor until the Claims v1.9 fix deploys. Claims Adjudication v1.9, flagged in March for a 0.81 correlation between an age_cost_proxy feature and claim adjudication outcomes, received CMO sign-off in May and has been in active remediation since. The CMS audit packet was submitted in August, ahead of the internal review deadline.\n\nRemaining work: await CMS review response and complete final re-evaluation of the affected claims cohort.',
-      ytd:'Year-to-date, Trust Score has moved from 80 (May 2025) to 83 (September 2026), net +3 points despite an active ACA 1557 violation. Certification is on hold until Fairness clears the 70 floor. Sterling Health has been on Cardinal for 16 months; the platform caught the Claims v1.9 age_cost_proxy issue 9.4 days before any patient complaint surfaced, and CMO approval in May unblocked full remediation.'
+      quarterly:__cdmText('Sterling Health Q3 2026 Trust Score is 83, in the 71st percentile of healthcare peers. Certification is on hold: Fairness (64) is below the 70 floor until the Claims v1.9 fix deploys. Claims Adjudication v1.9, flagged in March for a 0.81 correlation between an age_cost_proxy feature and claim adjudication outcomes, received CMO sign-off in May and has been in active remediation since. The CMS audit packet was submitted in August, ahead of the internal review deadline.\n\nRemaining work: await CMS review response and complete final re-evaluation of the affected claims cohort.','now'),
+      ytd:'Year-to-date, Trust Score has moved from 80 (' + __cdm('May 2025','now') + ') to 83 (' + __cdm('September 2026','now') + '), net +3 points despite an active ACA 1557 violation. Certification is on hold until Fairness clears the 70 floor. Sterling Health has been on Cardinal for 16 months; the platform caught the Claims v1.9 age_cost_proxy issue 9.4 days before any patient complaint surfaced, and CMO approval in May unblocked full remediation.'
     }
   }
 };
@@ -18613,7 +18635,7 @@ const DASH_INDUSTRY = {
       penalty: {
         amount: '$67M',
         amountColor: '#ef4444',
-        subnote: 'if no action taken by Q4 2026',
+        subnote: __cdmText('if no action taken by Q4 2026','story'),
         breakdown: [
           { label: 'DoD penalties', val: '$28M' },
           { label: 'Litigation risk', val: '$39M' }
@@ -18941,7 +18963,7 @@ const DASH_INDUSTRY = {
       penalty: {
         amount: '$73M',
         amountColor: '#ef4444',
-        subnote: 'if no action taken by Q4 2026',
+        subnote: __cdmText('if no action taken by Q4 2026','story'),
         breakdown: [
           { label: 'ECOA fines', val: '$40M' },
           { label: 'CFPB action', val: '$33M' }
@@ -19032,7 +19054,7 @@ const DASH_INDUSTRY = {
           approvalText: '59% approval rate',
           note: 'ECOA (Reg B)',
           city: 'New York City metro',
-          since: 'Flagged Jul 2026, surfaced during ECOA (Reg B) prep',
+          since: __cdmText('Flagged Jul 2026, surfaced during ECOA (Reg B) prep','now'),
           who: 'Credit applicants in ZIP codes with a history of redlining',
           why: 'Credit Scoring v3.4 uses ZIP code as a feature, correlation 0.82 with protected class, an illegal ECOA proxy. This is exactly the pattern ECOA (Reg B)’s annual bias audit exists to catch.'
         },
@@ -19044,7 +19066,7 @@ const DASH_INDUSTRY = {
           countText: '267 applicants in this state',
           approvalText: '64% approval rate',
           city: 'Chicago metro',
-          since: 'Flagged Jul 2026',
+          since: __cdmText('Flagged Jul 2026','now'),
           who: 'Applicants in majority-Black and Hispanic Chicago-area ZIP codes',
           why: 'Same ZIP-code proxy issue as New York, in a different metro, second-largest concentration.'
         },
@@ -19056,7 +19078,7 @@ const DASH_INDUSTRY = {
           countText: '198 applicants in this state',
           approvalText: '70% approval rate',
           city: 'Los Angeles metro',
-          since: 'Flagged Aug 2026',
+          since: __cdmText('Flagged Aug 2026','now'),
           who: 'Applicants in Los Angeles-area ZIP codes',
           why: 'Moderate gap from the same proxy; California’s AB 2930 algorithmic-discrimination law applies here.'
         },
@@ -19068,7 +19090,7 @@ const DASH_INDUSTRY = {
           countText: '155 applicants in this state',
           approvalText: '74% approval rate',
           city: 'Dallas / Houston metros',
-          since: 'Flagged Aug 2026',
+          since: __cdmText('Flagged Aug 2026','now'),
           who: 'Applicants across major metro ZIP codes',
           why: 'Smaller gap, lower loan volume concentration than NY/IL keeps the proxy effect from compounding as much.'
         },
@@ -19080,7 +19102,7 @@ const DASH_INDUSTRY = {
           countText: '176 applicants in this state',
           approvalText: '73% approval rate',
           city: 'Miami / Orlando metros',
-          since: 'Flagged Aug 2026',
+          since: __cdmText('Flagged Aug 2026','now'),
           who: 'Applicants across major metro ZIP codes',
           why: 'Same ZIP-code proxy pattern at a smaller scale.'
         }
@@ -19239,25 +19261,25 @@ const DASH_INDUSTRY = {
           jur: 'International standard (voluntary)'
         },
         {
-          title: 'Title VII Adverse Impact Review',
-          sub: 'Dec 9, 2026 · annual review of personnel models',
+          title: 'Fair Lending Annual Review',
+          sub: 'Dec 9, 2026 · annual disparate-impact review of credit models',
           pill: '75 days',
-          detail: 'Annual adverse impact review of personnel models · Dec 9',
-          jur: 'US Federal (EEOC)'
+          detail: 'Annual disparate-impact review of credit and pricing models · Dec 9',
+          jur: 'US Federal (ECOA / Reg B)'
         }
       ],
       active: [
         {
-          title: 'FAA Safety Standards ✓',
+          title: 'SOC 2 Type II ✓',
           sub: '',
-          detail: 'Valid Dec 2026 · Covers AI systems in safety-critical operations',
-          jur: 'US Federal (FAA)'
+          detail: 'Valid through Apr 2027 · Covers model data access and change control',
+          jur: 'AICPA (voluntary)'
         },
         {
-          title: 'NYC Local Law 144 ✓',
+          title: 'Utah AI Disclosure ✓',
           sub: '',
-          detail: 'Annual bias audit of the NYC hiring screen published',
-          jur: 'New York City (DCWP)'
+          detail: 'Customer-facing assistant discloses AI use when asked',
+          jur: 'Utah (AI Policy Act)'
         }
       ]
     }
@@ -19280,7 +19302,7 @@ const DASH_INDUSTRY = {
       penalty: {
         amount: '$150M',
         amountColor: '#ef4444',
-        subnote: 'if no action taken by Q4 2026',
+        subnote: __cdmText('if no action taken by Q4 2026','story'),
         breakdown: [
           { label: 'ACA penalties', val: '$65M' },
           { label: 'CMS exclusion', val: '$85M' }
@@ -19369,7 +19391,7 @@ const DASH_INDUSTRY = {
           approvalText: '56% approval rate',
           note: 'Case #HS-2847',
           city: 'Atlanta metro',
-          since: 'Flagged Jun 2026, surfaced during CMS oversight prep',
+          since: __cdmText('Flagged Jun 2026, surfaced during CMS oversight prep','now'),
           who: 'Medicaid-eligible patients seeking claims approval',
           why: 'Claims Adjudication v1.9 uses an age-based proxy correlated with claims-history length, older patients with thinner claims histories score lower regardless of actual medical need. Largest Medicaid population of the five states, so the effect compounds most here.'
         },
@@ -19381,7 +19403,7 @@ const DASH_INDUSTRY = {
           countText: '511 patients in this state',
           approvalText: '64% approval rate',
           city: 'Statewide: rural counties concentrated',
-          since: 'Flagged Jun 2026',
+          since: __cdmText('Flagged Jun 2026','now'),
           who: 'Patients in Medicaid-heavy rural counties',
           why: 'Same claims-history proxy as Georgia; largest raw patient count of any state.'
         },
@@ -19393,7 +19415,7 @@ const DASH_INDUSTRY = {
           countText: '288 patients in this state',
           approvalText: '61% approval rate',
           city: 'New Orleans / Baton Rouge metros',
-          since: 'Flagged Jul 2026',
+          since: __cdmText('Flagged Jul 2026','now'),
           who: 'Patients in Medicaid-heavy parishes',
           why: 'Same proxy pattern, one of the higher Medicaid-enrollment states in the cohort.'
         },
@@ -19405,7 +19427,7 @@ const DASH_INDUSTRY = {
           countText: '142 patients in this state',
           approvalText: '58% approval rate',
           city: 'Jackson metro',
-          since: 'Flagged Jul 2026',
+          since: __cdmText('Flagged Jul 2026','now'),
           who: 'Patients in Medicaid-heavy rural counties',
           why: 'Smallest patient count but the second-worst gap: Mississippi’s Medicaid population skews older, which the age-based proxy penalizes hardest.'
         },
@@ -19417,7 +19439,7 @@ const DASH_INDUSTRY = {
           countText: '367 patients in this state',
           approvalText: '69% approval rate',
           city: 'Statewide: managed-care networks',
-          since: 'Flagged Aug 2026',
+          since: __cdmText('Flagged Aug 2026','now'),
           who: 'Patients across managed-care networks',
           why: 'Smallest gap of the five, a more mixed insurance base offsets some of the proxy effect.'
         }
@@ -19608,7 +19630,7 @@ const DASH_INDUSTRY = {
           {
             title: 'Federal',
             rows: [
-              { name: 'IRS Tax Fraud Detection v3.1', detail: 'DI 0.64', level: 'critical' },
+              { name: 'IRS Tax Fraud Detection v3.1', detail: 'DI 0.54', level: 'critical' },
               { name: 'Legacy rules engine v2.0', detail: 'Proxy 0.76', level: 'warning' }
             ]
           }
@@ -19617,7 +19639,7 @@ const DASH_INDUSTRY = {
       penalty: {
         amount: '$18M',
         amountColor: '#ef4444',
-        subnote: 'if no action taken by Q4 2026',
+        subnote: __cdmText('if no action taken by Q4 2026','story'),
         breakdown: [
           { label: 'Cost-of-delay', val: '$12M' },
           { label: 'Oversight escalation', val: '$6M' }
@@ -20731,7 +20753,7 @@ function getDashboardCorePanelsConfig(org) {
             bd: '#ef4444',
             pct: 96,
             bc: '#ef4444',
-            cx: '' + __cdr('Sep 23','fin') + ', 2026: 2 days past due'
+            cx: cardinalFormatDeadline('Sep 23, 2026') + ': 2 days past due'
           },
           {
             ic: 'clock',
@@ -20902,7 +20924,7 @@ function getDashboardCorePanelsConfig(org) {
             bd: '#ef4444',
             pct: 90,
             bc: '#ef4444',
-            cx: '' + __cdr('May 11','fin') + ', 2026: 13 days'
+            cx: cardinalFormatDeadline('Oct 8, 2026') + ': 13 days'
           },
           {
             ic: 'clock',
@@ -21092,7 +21114,7 @@ function getDashboardCorePanelsConfig(org) {
           bd: '#ef4444',
           pct: 95,
           bc: '#ef4444',
-          cx: '' + __cdr('May 2','fin') + ', 2026: 4 days'
+          cx: cardinalFormatDeadline('Sep 29, 2026') + ': 4 days'
         },
         {
           ic: 'clock',
@@ -21101,7 +21123,7 @@ function getDashboardCorePanelsConfig(org) {
           bd: '#f59e0b',
           pct: 60,
           bc: '#f59e0b',
-          cx: '' + __cdr('May 28','fin') + ', 2026: 30 days'
+          cx: cardinalFormatDeadline('Oct 25, 2026') + ': 30 days'
         },
         { ic: 'person', lb: 'Total exposure', bg: 'EXPOSURE', bd: '#ef4444', cx: '$65M penalties + CMS program exclusion if no action taken' }
       ]
@@ -24250,7 +24272,7 @@ function echoPMLookup() {
    result.innerHTML = '<div style="font-size:10px;color:var(--amber);padding:8px;background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);border-radius:6px">Enter an EID to look up a profile.</div>';
    return;
  }
- result.innerHTML = '<div style="font-size:10px;color:var(--green);padding:10px;background:rgba(34,197,94,.06);border:1px solid rgba(34,197,94,.2);border-radius:6px"><div style="font-weight:600;margin-bottom:4px">Profile found · '+eid+'</div><div style="color:var(--muted2)">Public view: Trust Score 92 · Compliant · Q1 2026. Switch to Internal Profiles tab for full decision history (compliance access required).</div></div>';
+ result.innerHTML = '<div style="font-size:10px;color:var(--green);padding:10px;background:rgba(34,197,94,.06);border:1px solid rgba(34,197,94,.2);border-radius:6px"><div style="font-weight:600;margin-bottom:4px">Profile found · '+eid+__cdmText('</div><div style="color:var(--muted2)">Public view: Trust Score 92 · Compliant · Q1 2026. Switch to Internal Profiles tab for full decision history (compliance access required).</div></div>','story');
 }
 
 function sendLucidTownHallMessage() {
@@ -24914,23 +24936,23 @@ function initHaloMap() {
       risk: 'CRITICAL'
     },
     'United Kingdom': {
-      regs: ['UK AI White Paper: In Review', 'GDPR: Compliant', 'FCA AI Rules: Monitoring'],
-      deadline: 'White Paper Final: Q4 2026',
+      regs: ['UK GDPR: Compliant', 'FCA AI expectations: Monitoring', 'ICO AI guidance: Monitoring'],
+      deadline: 'Sector regulators apply existing law; Cardinal tracks any new UK AI bill',
       risk: 'WATCH'
     },
     'Germany': {
-      regs: ['EU AI Act: Filing Jun 15', 'GDPR: Compliant', 'BaFin AI Rules: Active'],
-      deadline: 'EU AI Act Filing: Jun 15, 2026',
+      regs: ['EU AI Act transparency (Article 50): In force', 'GDPR: Compliant', 'BaFin AI expectations: Active'],
+      deadline: 'EU AI Act high-risk rules: Dec 2, 2027',
       risk: 'WATCH'
     },
     'Canada': {
-      regs: ['AIDA: Monitoring', 'PIPEDA: Compliant', 'OSFI AI Guidelines: Compliant'],
-      deadline: 'AIDA: 2027',
+      regs: ['AIDA: Died in Parliament (Jan 2025)', 'PIPEDA: Compliant', 'OSFI model risk guidance: Compliant'],
+      deadline: 'No federal AI law in force; Cardinal tracks new bills',
       risk: 'MONITOR'
     },
     'Japan': {
-      regs: ['PDPA AI Guidelines: Gap found', 'FSA AI Rules: Review needed'],
-      deadline: 'PDPA Review: Q3 2026',
+      regs: ['APPI (privacy law): Gap found', 'FSA AI guidance: Review needed', 'AI Promotion Act: Monitoring'],
+      deadline: 'APPI gap review: in progress',
       risk: 'WATCH'
     },
     'Australia': {
@@ -25303,7 +25325,7 @@ function initHaloMap() {
           {label:'Washington DC Operations', models:['Personnel Assignment v2.4','Mission Readiness v1.1'], bias:'Case #AD-2847 active', fraud:'23 synthetic credentials blocked', reg:'DoD AI Ethics: 71.2% AT RISK'},
           {label:'Fort Bragg Operations', models:['Personnel Assignment v2.4'], bias:'847 affected records', fraud:'None', reg:'DoD Audit due ' + __cdr('Apr 30','ad') + ''},
           {label:'Ramstein Germany Operations', models:['Fraud Detection v3.2'], bias:'None', fraud:'Clean', reg:'GDPR: Compliant'},
-          {label:'Yokota Japan Operations', models:['Mission Readiness v1.1'], bias:'None', fraud:'Clean', reg:'PDPA: Review needed'}
+          {label:'Yokota Japan Operations', models:['Mission Readiness v1.1'], bias:'None', fraud:'Clean', reg:'APPI: Review needed'}
         ],
         fin: [
           {label:'New York Metro Operations', models:['Credit Scoring v3.4','Auto Loan v2.1'], bias:'Case #FIN-1203: 1,203 applicants', fraud:'Synthetic identity ring detected', reg:'CFPB fair lending exam in 13 days'},
@@ -25609,7 +25631,7 @@ window.CARDINAL_HALO_PREDICTIONS = {
       id: 'PRED-AD-003',
       severity: 'medium',
       severityLabel: 'REGULATORY',
-      timeHorizon: 'Q3 2026',
+      timeHorizon: __cdmText('Q3 2026','story'),
       certaintyPct: 100,
       modelName: 'All A&D Models',
       modelId: null,
@@ -25668,7 +25690,7 @@ window.CARDINAL_HALO_PREDICTIONS = {
       id: 'PRED-FIN-003',
       severity: 'medium',
       severityLabel: 'REGULATORY',
-      timeHorizon: 'Q3 2026',
+      timeHorizon: __cdmText('Q3 2026','story'),
       certaintyPct: 100,
       modelName: 'All Finance Models',
       modelId: null,
@@ -25767,7 +25789,7 @@ window.CARDINAL_HALO_PREDICTIONS = {
       id: 'PRED-FED-002',
       severity: 'medium',
       severityLabel: 'REGULATORY',
-      timeHorizon: 'Q3 2026',
+      timeHorizon: __cdmText('Q3 2026','story'),
       certaintyPct: 100,
       modelName: 'All Federal Models',
       modelId: null,
@@ -26269,7 +26291,7 @@ function haloTooltipMeta(code,o){
  if(code==='USA') regs=[[o==='fin'?'CFPB fair lending':o==='health'?'ACA Section 1557':o==='fed'?'Privacy Act':'DoD AI Ethics Principles',o==='fin'?'78%':'62%'],[''+((o||'ad')==='health'?'CMS Medicare Advantage':(o||'ad')==='fed'?'OMB M-25-21':(o||'ad')==='fin'?'ECOA / Reg B':'DoD RAI Toolkit')+'',''+((o||'ad')==='health'?'81%':'59%')],['Executive oversight','Review']];
  else if(code==='UK') regs=[['FCA Prudential Standards','Critical'],['UK AI Guidance','Tier 2']];
  else if(code==='Germany'||code==='France') regs=[['EU AI Act Articles',(o||'ad')==='health'?'85%':'78%'],['GDPR Art.22','Compliance']];
- else if(code==='Japan') regs=[['APPI alignment','Moderate'],['PDPA remediation','Watch']];
+ else if(code==='Japan') regs=[['APPI alignment','Moderate'],['AI Promotion Act guidance','Watch']];
  else if(code==='Canada') regs=[['AIDA rollout','Low'],['Provincial sync','Passing']];
  else if(code==='Australia') regs=[['OAIC Guidance','Fair'],['Industry Code','Stable']];
  else if(code==='India'||code==='China') regs=[['Operational footprint','None'],['Regional posture','Observe']];
@@ -26304,7 +26326,7 @@ function initHaloCoreCharts(specOrg){
  if(elPen){ var ctxP=elPen.getContext('2d');
  haloPenaltyChart=new Chart(ctxP,{
  type:'bar',
- data:{labels:['Q2 2026','Q3 2026','Q4 2026'],datasets:[{data:H.penalties.slice(),backgroundColor:['rgba(239,68,68,0.78)','rgba(239,68,68,0.58)','rgba(239,68,68,0.42)'],borderColor:'#ef4444',borderRadius:10,borderWidth:1.2,maxBarThickness:76}]},
+ data:{labels:[__cdmText('Q2 2026','story'),__cdmText('Q3 2026','story'),__cdmText('Q4 2026','story')],datasets:[{data:H.penalties.slice(),backgroundColor:['rgba(239,68,68,0.78)','rgba(239,68,68,0.58)','rgba(239,68,68,0.42)'],borderColor:'#ef4444',borderRadius:10,borderWidth:1.2,maxBarThickness:76}]},
  options:{
   plugins:{legend:{display:false}},
   scales:{
@@ -29560,15 +29582,15 @@ const ATONEMENT_DATA = {
  {date:'' + __cdr('Apr 5','ad') + '',action:'1,847 decisions, ready to escalate to full deployment',status:'green'},
  ],
  cohortCards:[
- {id:'#AT-0847',title:'Personnel Assignment Bias: Ethnic/Demographic',period:'Jan 2026 – Mar 2026',affected:847,approved:412,rate:'48.6%',revenue:'$0 (mission reassignment)',c:'amber',status:'In Progress'},
+ {id:'#AT-0847',title:'Personnel Assignment Bias: Ethnic/Demographic',period:__cdmText('Jan 2026 – Mar 2026','story'),affected:847,approved:412,rate:'48.6%',revenue:'$0 (mission reassignment)',c:'amber',status:'In Progress'},
  ],
  cohortLabel:'personnel records affected',
- cohortPeriod:'Affected: Jan 2026 – Mar 2026',
+ cohortPeriod:__cdmText('Affected: Jan 2026 – Mar 2026','story'),
  cohortCount:'847', cohortDone:'412 (48.6%)', cohortApproved:'412',
  cohortRevenue:'Mission capacity restored', cohortRemaining:'435',
  cohortProgressPct:'48.6%', cohortProgressWidth:'48.6',
  simulationResults:[
- {label:'Historical decisions simulated',val:'847',note:'Jan–Mar 2026'},
+ {label:'Historical decisions simulated',val:'847',note:__cdmText('Jan–Mar 2026','story')},
  {label:'DI under corrected model',val:'0.84',note:'Above 0.80 DoD threshold ✓'},
  {label:'False approvals introduced',val:'0',note:'Fraud accuracy maintained'},
  {label:'Affected personnel to re-evaluate',val:'412',note:'Auto-generated cohort'},
@@ -29639,16 +29661,16 @@ const ATONEMENT_DATA = {
  {date:'' + __cdr('Apr 5','fin') + '',action:'3,241 decisions, ready for full deployment',status:'green'},
  ],
  cohortCards:[
- {id:'#AT-1203',title:'Credit Scoring: ZIP Code Racial Proxy',period:'Jan 2026 – Mar 2026',affected:1203,approved:687,rate:'57.1%',revenue:'$2.1M recovered',c:'green',status:'Complete'},
- {id:'#AT-1204',title:'Auto Loan: Geographic Distance Bias',period:'Sep 2025 – Feb 2026',affected:2147,approved:1294,rate:'60.3%',revenue:'$15M lawsuit prevented',c:'green',status:'Complete'},
+ {id:'#AT-1203',title:'Credit Scoring: ZIP Code Racial Proxy',period:__cdmText('Jan 2026 – Mar 2026','story'),affected:1203,approved:687,rate:'57.1%',revenue:'$2.1M recovered',c:'green',status:'Complete'},
+ {id:'#AT-1204',title:'Auto Loan: Geographic Distance Bias',period:__cdmText('Sep 2025 – Feb 2026','story'),affected:2147,approved:1294,rate:'60.3%',revenue:'$15M lawsuit prevented',c:'green',status:'Complete'},
  ],
  cohortLabel:'applicants affected by credit bias',
- cohortPeriod:'Affected: Jan 2026 – Mar 2026',
+ cohortPeriod:__cdmText('Affected: Jan 2026 – Mar 2026','story'),
  cohortCount:'1,203', cohortDone:'687 (57.1%)', cohortApproved:'687',
  cohortRevenue:'$2.1M revenue recovered', cohortRemaining:'516',
  cohortProgressPct:'57.1%', cohortProgressWidth:'57.1',
  simulationResults:[
- {label:'Historical decisions simulated',val:'1,203',note:'Jan–Mar 2026'},
+ {label:'Historical decisions simulated',val:'1,203',note:__cdmText('Jan–Mar 2026','story')},
  {label:'DI under corrected model',val:'0.91',note:'Above 0.80 ECOA threshold ✓'},
  {label:'Fraud false positives introduced',val:'0',note:'Fraud detection improved +3.2%'},
  {label:'Affected applicants to re-evaluate',val:'687',note:'Auto-generated cohort #AT-1203'},
@@ -29719,15 +29741,15 @@ const ATONEMENT_DATA = {
  {date:'' + __cdr('Apr 5','health') + '',action:'4,102 claims, ready for full rollout',status:'green'},
  ],
  cohortCards:[
- {id:'#AT-2847',title:'Claims Adjudication: Age Discrimination (65+)',period:'Oct 2025 – Mar 2026',affected:2847,approved:1847,rate:'64.9%',revenue:'$4.2M claims recovered',c:'green',status:'In Progress'},
+ {id:'#AT-2847',title:'Claims Adjudication: Age Discrimination (65+)',period:__cdmText('Oct 2025 – Mar 2026','story'),affected:2847,approved:1847,rate:'64.9%',revenue:'$4.2M claims recovered',c:'green',status:'In Progress'},
  ],
  cohortLabel:'patients affected by claims bias',
- cohortPeriod:'Affected: Oct 2025 – Mar 2026',
+ cohortPeriod:__cdmText('Affected: Oct 2025 – Mar 2026','story'),
  cohortCount:'2,847', cohortDone:'1,847 (64.9%)', cohortApproved:'1,847',
  cohortRevenue:'$4.2M in claims recovered', cohortRemaining:'1,000',
  cohortProgressPct:'64.9%', cohortProgressWidth:'64.9',
  simulationResults:[
- {label:'Historical denials simulated',val:'2,847',note:'Oct 2025 – Mar 2026'},
+ {label:'Historical denials simulated',val:'2,847',note:__cdmText('Oct 2025 – Mar 2026','story')},
  {label:'DI under corrected model',val:'0.89',note:'Above 0.80 ACA threshold ✓'},
  {label:'Clinical accuracy change',val:'+12%',note:'Clinical features outperform cost proxies'},
  {label:'Patients to re-evaluate',val:'1,847',note:'Auto-generated Cohort #AT-2847'},
@@ -30600,21 +30622,21 @@ const ML_DATA = {
  {id:'ML-046',name:'Demographic Classification Bias Fix',type:'bias',typeLabel:'Bias Prevention',built:'' + __cdr('Mar 28, 2026','ad') + '',accuracy:'90%',di:'0.84',desc:'Removes demographic classification proxy. Replaces with verified performance metrics and mission-critical qualification scores.',source:'Atonement: Genesis validated',status:'active',tests:5200},
  {id:'ML-045',name:'Geographic Proxy Detector',type:'bias',typeLabel:'Bias Prevention',built:'' + __cdr('Mar 15, 2026','ad') + '',accuracy:'—',di:'0.88',desc:'Detects when geographic origin is used as proxy for demographic data in personnel systems.',source:'Atonement: Genesis validated',status:'active',tests:3100},
  {id:'ML-044',name:'Identity Spoofing Pattern v3',type:'fraud',typeLabel:'Fraud Prevention',built:'' + __cdr('Feb 28, 2026','ad') + '',accuracy:'96.2%',di:'N/A',desc:'Detects document forgery patterns specific to defense clearance applications.',source:'Adam: Obsidian trigger',status:'active',tests:2800},
- {id:'DS-001',name:'Personnel Assignment Dataset Q1 2026',type:'validated',typeLabel:'Validated Data',built:'' + __cdr('Apr 1, 2026','ad') + '',accuracy:'—',di:'0.84',desc:'Clean personnel data, passed Eden + Obsidian. DI 0.84. Continuously monitored.',source:'Cardinal Layer, clean pipeline',status:'active',tests:12400},
+ {id:'DS-001',name:__cdmText('Personnel Assignment Dataset Q1 2026','story'),type:'validated',typeLabel:'Validated Data',built:'' + __cdr('Apr 1, 2026','ad') + '',accuracy:'—',di:'0.84',desc:'Clean personnel data, passed Eden + Obsidian. DI 0.84. Continuously monitored.',source:'Cardinal Layer, clean pipeline',status:'active',tests:12400},
  ],
  fin:[
  {id:'ML-031',name:'Device Fingerprint Ring Detector',type:'fraud',typeLabel:'Fraud Prevention',built:'' + __cdr('Apr 3, 2026','fin') + '',accuracy:'99.1%',di:'N/A',desc:'Detects multiple applications from single device. Built by Adam after 47-app iPhone ring detected.',source:'Adam: Obsidian trigger',status:'active',tests:3241},
  {id:'ML-030',name:'ZIP Code Proxy Eliminator',type:'bias',typeLabel:'Bias Prevention',built:'' + __cdr('Mar 25, 2026','fin') + '',accuracy:'91%',di:'0.91',desc:'Removes ZIP code racial proxy. Replaces with income stability and employment verification features.',source:'Atonement: Genesis validated',status:'active',tests:8100},
  {id:'ML-029',name:'Synthetic Identity Pattern v3',type:'fraud',typeLabel:'Fraud Prevention',built:'' + __cdr('Mar 10, 2026','fin') + '',accuracy:'97.8%',di:'N/A',desc:'Detects synthetic identity clusters, fake SSNs with shared behavioral timing patterns.',source:'Adam: Obsidian trigger',status:'active',tests:6200},
  {id:'ML-028',name:'Geographic Income Bias Detector',type:'bias',typeLabel:'Bias Prevention',built:'' + __cdr('Feb 15, 2026','fin') + '',accuracy:'—',di:'0.88',desc:'Flags when geographic features correlate with income proxies that disparately impact protected groups.',source:'Atonement: Genesis validated',status:'active',tests:4100},
- {id:'DS-002',name:'Credit Application Dataset Q1 2026',type:'validated',typeLabel:'Validated Data',built:'' + __cdr('Apr 1, 2026','fin') + '',accuracy:'—',di:'0.91',desc:'Clean credit application data, passed Eden + Obsidian. DI 0.91. ZIP code removed. Continuously monitored.',source:'Cardinal Layer, clean pipeline',status:'active',tests:18200},
+ {id:'DS-002',name:__cdmText('Credit Application Dataset Q1 2026','story'),type:'validated',typeLabel:'Validated Data',built:'' + __cdr('Apr 1, 2026','fin') + '',accuracy:'—',di:'0.91',desc:'Clean credit application data, passed Eden + Obsidian. DI 0.91. ZIP code removed. Continuously monitored.',source:'Cardinal Layer, clean pipeline',status:'active',tests:18200},
  ],
  health:[
  {id:'ML-021',name:'Prescription Fraud Ring Detector',type:'fraud',typeLabel:'Fraud Prevention',built:'' + __cdr('Apr 2, 2026','health') + '',accuracy:'97.3%',di:'N/A',desc:'Detects coordinated prescription fraud networks, rotating providers, shared patient pools, medication patterns.',source:'Adam: Obsidian trigger',status:'active',tests:4102},
  {id:'ML-020',name:'Age-Cost Proxy Eliminator',type:'bias',typeLabel:'Bias Prevention',built:'' + __cdr('Mar 20, 2026','health') + '',accuracy:'91%',di:'0.89',desc:'Removes age-cost proxy from claims adjudication. Replaces with clinical severity scoring.',source:'Atonement: Genesis validated',status:'active',tests:9800},
  {id:'ML-019',name:'Elderly Patient Fairness Guard',type:'bias',typeLabel:'Bias Prevention',built:'' + __cdr('Mar 8, 2026','health') + '',accuracy:'—',di:'0.91',desc:'Monitors claims decisions for age-based disparate impact in real time.',source:'Atonement: Genesis validated',status:'active',tests:7100},
  {id:'ML-018',name:'Synthetic Patient Identity Detector',type:'fraud',typeLabel:'Fraud Prevention',built:'' + __cdr('Feb 20, 2026','health') + '',accuracy:'96.8%',di:'N/A',desc:'Detects synthetic patient identities used to fraudulently obtain prescriptions.',source:'Adam: Obsidian trigger',status:'active',tests:5300},
- {id:'DS-003',name:'Claims Dataset Q1 2026',type:'validated',typeLabel:'Validated Data',built:'' + __cdr('Apr 1, 2026','health') + '',accuracy:'—',di:'0.89',desc:'Clean claims data, passed Eden + Obsidian. Age-cost proxy removed. DI 0.89. Continuously monitored.',source:'Cardinal Layer, clean pipeline',status:'active',tests:24100},
+ {id:'DS-003',name:__cdmText('Claims Dataset Q1 2026','story'),type:'validated',typeLabel:'Validated Data',built:'' + __cdr('Apr 1, 2026','health') + '',accuracy:'—',di:'0.89',desc:'Clean claims data, passed Eden + Obsidian. Age-cost proxy removed. DI 0.89. Continuously monitored.',source:'Cardinal Layer, clean pipeline',status:'active',tests:24100},
  ]
 };
 
@@ -30688,7 +30710,7 @@ const LUCID_DATA = {
  breakdown:'Ages 25-45 · Clearance Level 2-4 · Multiple demographics',
  denialRate:'2.3x higher than baseline',
  affected:'847 personnel records',
- period:'Jan 2026 – Mar 2026',
+ period:__cdmText('Jan 2026 – Mar 2026','story'),
  },
  remediationPath:[
  {step:1,action:'Remove demographic_classification feature',owner:'Engineering',time:'Day 1-2',status:'ready'},
@@ -30732,8 +30754,8 @@ const LUCID_DATA = {
  ],
  eveSummary:'Your personnel assignment model is denying qualified people based on who they are, not what they can do. 847 service members are being blocked from assignments they have earned. This violates DoD ethics requirements and puts your certification at risk. The good news: the fix is ready, it takes 2 weeks, and it will actually improve the model overall.',
  eveBrief:[
- {heading:'What happened',body:'A feature in the Personnel Assignment model correlates with demographic data, blocking qualified minority service members from assignments at 2.3 times the rate of their peers. This has been happening since January 2026.'},
- {heading:'Who is affected',body:'847 personnel records across Q1 2026. These are service members with the right qualifications, clearances, and performance records, denied by a data feature, not by their merit.'},
+ {heading:'What happened',body:__cdmText('A feature in the Personnel Assignment model correlates with demographic data, blocking qualified minority service members from assignments at 2.3 times the rate of their peers. This has been happening since January 2026.','story')},
+ {heading:'Who is affected',body:__cdmText('847 personnel records across Q1 2026. These are service members with the right qualifications, clearances, and performance records, denied by a data feature, not by their merit.','story')},
  {heading:'What it costs',body:'$28M in DoD penalty exposure if not corrected. Beyond the money: damaged trust with the workforce, and a fairness failure in a system that should be based on mission readiness.'},
  {heading:'What we are doing',body:'The fix is built and validated in Genesis. 14-day implementation: retrain the model, shadow deploy at 5%, confirm DoD threshold met, then full deployment. Remediation Cohort #AT-0847 is re-evaluating all 847 affected personnel.'},
  ],
@@ -30744,7 +30766,7 @@ const LUCID_DATA = {
  {q:'Are we certified?',a:'Not currently. Trust Score 74, below 80 threshold. After fix: projected 84. Certification restored.'},
  ],
  cohortSuggestions:[
- {query:'Show me all personnel denied in Q1 2026',cohort:'Cohort #AT-0847',size:847,ready:true},
+ {query:__cdmText('Show me all personnel denied in Q1 2026','story'),cohort:'Cohort #AT-0847',size:847,ready:true},
  {query:'What cohorts should we test next?',cohort:'Native American Technicians (#TEST-614)',size:200,ready:true},
  {query:'Status of current remediation',cohort:'Cohort #AT-0847',size:847,done:412,ready:true},
  ],
@@ -30780,7 +30802,7 @@ const LUCID_DATA = {
  breakdown:'Ages 25-35 · Income $40K-$60K · South Bronx, East LA, similar',
  denialRate:'2.1x higher than baseline',
  affected:'1,203 applicants',
- period:'Jan 2026 – Mar 2026',
+ period:__cdmText('Jan 2026 – Mar 2026','story'),
  },
  remediationPath:[
  {step:1,action:'Remove zip_code_5digit and phone_area_code features',owner:'Engineering',time:'Day 1-2',status:'ready'},
@@ -30832,7 +30854,7 @@ const LUCID_DATA = {
  eveHuman:'1,203 families were denied loans they qualify for. For many of them, this is not just a loan, it is the house, the business, the future. A ZIP code is making that decision instead of their actual creditworthiness. We are fixing this. 687 families have already been re-evaluated and approved.',
  eveSuggestedQA:[
  {q:'How many customers affected by bias this year?',a:'3 incidents in 2026. 3,350 total applicants affected. 687 already re-approved. $2.1M revenue recovered. Trend improving, remediation rate up to 57%.'},
- {q:'Show me all Hispanic applicants denied in Q1 2026',a:'Cohort #AT-1203: 1,203 applicants. 847 Hispanic, 356 Black. Q1 2026. CSV ready to download.'},
+ {q:__cdmText('Show me all Hispanic applicants denied in Q1 2026','story'),a:__cdmText('Cohort #AT-1203: 1,203 applicants. 847 Hispanic, 356 Black. Q1 2026. CSV ready to download.','story')},
  {q:'What is the status of the CFPB exam?',a:'13 days remaining. Shadow deployment at 3,241 decisions, all ECOA metrics passing. Documentation complete. Recommend escalating to full deployment today.'},
  ],
  cohortSuggestions:[
@@ -30873,7 +30895,7 @@ const LUCID_DATA = {
  breakdown:'Ages 65-92 · All diagnoses · All coverage types',
  denialRate:'2.3x higher than baseline',
  affected:'2,847 patient claims',
- period:'Oct 2025 – Mar 2026',
+ period:__cdmText('Oct 2025 – Mar 2026','story'),
  },
  remediationPath:[
  {step:1,action:'Remove age_cost_proxy and expected_treatment_cost features',owner:'Clinical Engineering',time:'Day 1-2',status:'ready'},
@@ -30918,13 +30940,13 @@ const LUCID_DATA = {
  eveSummary:'Your claims model has been denying elderly patients at more than twice the rate of younger patients with identical conditions. 2,847 patients, many of them elderly, many on fixed incomes, were told their claims were denied. Some of them could not afford the care they needed. This is wrong, it violates federal law, and we caught it. The fix is validated and ready to go live.',
  eveBrief:[
  {heading:'What happened',body:'The Claims Adjudication model used an age-cost proxy feature that predicted elderly patients would be expensive, and denied them at 2.3 times the rate of younger patients with identical diagnoses. This violates ACA Section 1557 non-discrimination rules.'},
- {heading:'Who is affected',body:'2,847 patients aged 65 and older, across all diagnoses and coverage types, from October 2025 through March 2026. Many are on fixed incomes. Some could not afford out-of-pocket care for claims that should have been approved.'},
+ {heading:'Who is affected',body:__cdmText('2,847 patients aged 65 and older, across all diagnoses and coverage types, from October 2025 through March 2026. Many are on fixed incomes. Some could not afford out-of-pocket care for claims that should have been approved.','story')},
  {heading:'What it costs',body:'$65M in ACA penalty exposure. CMS audit initiated: 30-day window. Potential program exclusion from Medicare and Medicaid. Beyond money: $4.2M in claims wrongly denied, patients who needed care and did not get it.'},
  {heading:'What we are doing',body:'Fix validated in shadow deployment: 4,102 claims, DI 0.89, all ACA thresholds passing. Ready to deploy to 100% of claims. 1,847 of 2,847 patients already re-evaluated and approved. CMS audit report complete.'},
  ],
  eveHuman:'2,847 patients were denied claims they should have received. Many of them are elderly. Some of them could not pay for the care out of pocket. This model was making decisions based on how old someone is, not on whether their claim was valid. We caught this, we built the fix, and we are making it right. 1,847 patients have already been re-evaluated and approved.',
  eveSuggestedQA:[
- {q:'How many patients affected by bias this year?',a:'1 incident: 2,847 patients, ages 65+, Oct 2025-Mar 2026. 1,847 already re-approved ($4.2M in claims recovered). 64.9% remediation rate. Fix validated and deploying.'},
+ {q:'How many patients affected by bias this year?',a:__cdmText('1 incident: 2,847 patients, ages 65+, Oct 2025-Mar 2026. 1,847 already re-approved ($4.2M in claims recovered). 64.9% remediation rate. Fix validated and deploying.','story')},
  {q:'What is the status of the CMS audit?',a:'30-day window. Audit report complete: detection timestamp (' + __cdr('Apr 2','health') + '), root cause, fix documentation, shadow deployment results, 2,847-patient cohort. Export ready from Atonement Core.'},
  {q:'Are we at risk of program exclusion?',a:'At risk if no action. With documented remediation: penalty reduced from $65M to $13M, exclusion risk drops to minimal. Cardinal documentation is your defense.'},
  ],
@@ -31302,7 +31324,7 @@ const ECHO_DATA = {
  {ts:'' + __cdr('Apr 2, 2026','ad') + ' 09:14',event:'Bias detected: Personnel v2.4: DI 0.67',type:'bias',who:'Cardinal Eden',ref:'CASE-AD-2847',hash:'f3c9e517'},
  {ts:'' + __cdr('Mar 28, 2026','ad') + ' 14:22',event:'ML-046 stored: Demographic Classification Fix',type:'fix',who:'Adam: Cardinal',ref:'ML-046',hash:'d2b8f341'},
  {ts:'' + __cdr('Jan 15, 2026','ad') + ' 08:41',event:'Personnel Assignment v2.4 deployed to production',type:'deploy',who:'Eng: J. Williams',ref:'DEPLOY-PA-024',hash:'b3c5e189'},
- {ts:'Oct 1, 2025 09:00',event:'Q3 2025 bias review: DI trending down 3%',type:'bias',who:'Compliance: Dr. K. Chen',ref:'REVIEW-Q3-2025',hash:'f8a2d671'},
+ {ts:'Oct 1, 2025 09:00',event:__cdmText('Q3 2025 bias review: DI trending down 3%','story'),type:'bias',who:'Compliance: Dr. K. Chen',ref:'REVIEW-Q3-2025',hash:'f8a2d671'},
  ],
  receipts:[
  {id:'PA-' + __cdrId('2026-04-05','ad','DD') + '-001847',model:'Personnel Assignment v2.4',decision:'DENIED',feature_hash:'a4f2b891c3',timestamp:'' + __cdr('Apr 5, 2026','ad') + ' 08:43:21',ledger:'Verified'},
@@ -31310,24 +31332,24 @@ const ECHO_DATA = {
  {id:'PA-' + __cdrId('2026-04-04','ad','DD') + '-018243',model:'Personnel v2.5-shadow',decision:'APPROVED',feature_hash:'a1d4c827e9',timestamp:'' + __cdr('Apr 4, 2026','ad') + ' 17:22:44',ledger:'Verified'},
  ],
  fairnessDrift:[
- {quarter:'Q1 2025',di:'0.81',status:'Passing',c:'green'},
- {quarter:'Q2 2025',di:'0.77',status:'Watch',c:'amber'},
- {quarter:'Q3 2025',di:'0.74',status:'Failing',c:'amber'},
- {quarter:'Q4 2025',di:'0.71',status:'Failing',c:'red'},
- {quarter:'Q1 2026',di:'0.67',status:'Critical',c:'red'},
+ {quarter:__cdmText('Q1 2025','story'),di:'0.81',status:'Passing',c:'green'},
+ {quarter:__cdmText('Q2 2025','story'),di:'0.77',status:'Watch',c:'amber'},
+ {quarter:__cdmText('Q3 2025','story'),di:'0.74',status:'Failing',c:'amber'},
+ {quarter:__cdmText('Q4 2025','story'),di:'0.71',status:'Failing',c:'red'},
+ {quarter:__cdmText('Q1 2026','story'),di:'0.67',status:'Critical',c:'red'},
  ],
  fraudDrift:[
- {quarter:'Q1 2025',accuracy:'96%',status:'Strong',c:'green'},
- {quarter:'Q2 2025',accuracy:'94%',status:'Good',c:'green'},
- {quarter:'Q3 2025',accuracy:'91%',status:'Watch',c:'amber'},
- {quarter:'Q4 2025',accuracy:'88%',status:'Declining',c:'amber'},
- {quarter:'Q1 2026',accuracy:'84%',status:'Declining',c:'red'},
+ {quarter:__cdmText('Q1 2025','story'),accuracy:'96%',status:'Strong',c:'green'},
+ {quarter:__cdmText('Q2 2025','story'),accuracy:'94%',status:'Good',c:'green'},
+ {quarter:__cdmText('Q3 2025','story'),accuracy:'91%',status:'Watch',c:'amber'},
+ {quarter:__cdmText('Q4 2025','story'),accuracy:'88%',status:'Declining',c:'amber'},
+ {quarter:__cdmText('Q1 2026','story'),accuracy:'84%',status:'Declining',c:'red'},
  ],
  driftCauses:[
- {quarter:'Q2 2025',cause:'Training refresh, demographic field added without bias check',impact:'DI -4%'},
- {quarter:'Q3 2025',cause:'Mission expansion, model not retrained on new categories',impact:'DI -3%, Fraud -3%'},
- {quarter:'Q4 2025',cause:'No retraining despite Q3 watch flag',impact:'DI -3%, Fraud -3%'},
- {quarter:'Q1 2026',cause:'v2.4 deployed without bias test: Cardinal detected in 48h',impact:'DI -4%, Fraud -4%'},
+ {quarter:__cdmText('Q2 2025','story'),cause:'Training refresh, demographic field added without bias check',impact:'DI -4%'},
+ {quarter:__cdmText('Q3 2025','story'),cause:'Mission expansion, model not retrained on new categories',impact:'DI -3%, Fraud -3%'},
+ {quarter:__cdmText('Q4 2025','story'),cause:'No retraining despite Q3 watch flag',impact:'DI -3%, Fraud -3%'},
+ {quarter:__cdmText('Q1 2026','story'),cause:'v2.4 deployed without bias test: Cardinal detected in 48h',impact:'DI -4%, Fraud -4%'},
  ],
  lineage:[
  {version:'v2.5 (shadow)',deployed:'' + __cdr('Apr 3, 2026','ad') + '',di:'0.84',fraud:'90%',status:'Shadow',by:'Eng: M. Torres',change:'Remove demographic_classification, add performance_score_verified'},
@@ -31336,12 +31358,12 @@ const ECHO_DATA = {
  {version:'v2.2',deployed:'Apr 15, 2025',di:'0.81',fraud:'96%',status:'Retired',by:'Eng: R. Patel',change:'Initial bias-aware retrain'},
  ],
  dataLineage:[
- {dataset:'Personnel Records Q4 2025',size:'124,000 records',biasAtTrain:'DI 0.71 (flagged)',usedIn:'v2.4: flag ignored'},
- {dataset:'Personnel Records Q3 2025',size:'118,000 records',biasAtTrain:'DI 0.74 (watch)',usedIn:'v2.3'},
+ {dataset:__cdmText('Personnel Records Q4 2025','story'),size:'124,000 records',biasAtTrain:'DI 0.71 (flagged)',usedIn:'v2.4: flag ignored'},
+ {dataset:__cdmText('Personnel Records Q3 2025','story'),size:'118,000 records',biasAtTrain:'DI 0.74 (watch)',usedIn:'v2.3'},
  ],
  accountability:[
  {who:'J. Williams: Sr. Engineer',action:'Deployed v2.4 without bias test',date:'' + __cdr('Jan 15, 2026','ad') + '',consequence:'847 personnel affected'},
- {who:'Dr. K. Chen: Compliance',action:'Q3 2025 watch flag, not escalated',date:'Oct 1, 2025',consequence:'DI decline continued'},
+ {who:'Dr. K. Chen: Compliance',action:__cdmText('Q3 2025 watch flag, not escalated','story'),date:'Oct 1, 2025',consequence:'DI decline continued'},
  {who:'Cardinal Eden',action:'Bias detected within 48 hours of deployment',date:'' + __cdr('Apr 2, 2026','ad') + '',consequence:'Remediation initiated immediately'},
  {who:'M. Torres: Sr. Engineer',action:'Shadow deployment of v2.5 fix',date:'' + __cdr('Apr 3, 2026','ad') + '',consequence:'DI 0.84 in shadow, passing'},
  ],
@@ -31356,7 +31378,7 @@ const ECHO_DATA = {
  fin:{
  totalEvents:4102,modelsTracked:4,receiptsCount:47821,accountabilityCount:28,
  driftAlertTitle:'ZIP Code Proxy Drift: ECOA Violation Worsening',
- driftAlertBody:'Credit model disparate impact worsened 9% since Q2 2025. ZIP code weight increased 3 quarters. Fraud detection declined 8% simultaneously.',
+ driftAlertBody:__cdmText('Credit model disparate impact worsened 9% since Q2 2025. ZIP code weight increased 3 quarters. Fraud detection declined 8% simultaneously.','story'),
  timeline:[
  {ts:'' + __cdr('Apr 5, 2026','fin') + ' 09:14',event:'Eve morning briefing: CFPB fair lending exam 13 days',type:'info',who:'Eve: Cardinal',ref:'BRIEF-2026-0405',hash:'f3a1d892'},
  {ts:'' + __cdr('Mar 25, 2026','fin') + ' 09:00',event:'Shadow deployment: Credit v3.5 at 5% traffic',type:'deploy',who:'Eng: A. Johnson',ref:'DEPLOY-SD-189',hash:'c4b7e231'},
@@ -31369,24 +31391,24 @@ const ECHO_DATA = {
  {id:'CR-' + __cdrId('2026-04-05','fin','DD') + '-047820',model:'Credit v3.5-shadow',decision:'APPROVED',feature_hash:'a9d4e127c8',timestamp:'' + __cdr('Apr 5, 2026','fin') + ' 09:12:33',ledger:'Verified'},
  ],
  fairnessDrift:[
- {quarter:'Q1 2025',di:'0.84',status:'Passing',c:'green'},
- {quarter:'Q2 2025',di:'0.81',status:'Watch',c:'amber'},
- {quarter:'Q3 2025',di:'0.78',status:'Failing',c:'amber'},
- {quarter:'Q4 2025',di:'0.76',status:'Failing',c:'red'},
- {quarter:'Q1 2026',di:'0.74',status:'ECOA Violation',c:'red'},
+ {quarter:__cdmText('Q1 2025','story'),di:'0.84',status:'Passing',c:'green'},
+ {quarter:__cdmText('Q2 2025','story'),di:'0.81',status:'Watch',c:'amber'},
+ {quarter:__cdmText('Q3 2025','story'),di:'0.78',status:'Failing',c:'amber'},
+ {quarter:__cdmText('Q4 2025','story'),di:'0.76',status:'Failing',c:'red'},
+ {quarter:__cdmText('Q1 2026','story'),di:'0.74',status:'ECOA Violation',c:'red'},
  ],
  fraudDrift:[
- {quarter:'Q1 2025',accuracy:'94%',status:'Strong',c:'green'},
- {quarter:'Q2 2025',accuracy:'92%',status:'Good',c:'green'},
- {quarter:'Q3 2025',accuracy:'90%',status:'Watch',c:'amber'},
- {quarter:'Q4 2025',accuracy:'89%',status:'Declining',c:'amber'},
- {quarter:'Q1 2026',accuracy:'88%',status:'Declining',c:'red'},
+ {quarter:__cdmText('Q1 2025','story'),accuracy:'94%',status:'Strong',c:'green'},
+ {quarter:__cdmText('Q2 2025','story'),accuracy:'92%',status:'Good',c:'green'},
+ {quarter:__cdmText('Q3 2025','story'),accuracy:'90%',status:'Watch',c:'amber'},
+ {quarter:__cdmText('Q4 2025','story'),accuracy:'89%',status:'Declining',c:'amber'},
+ {quarter:__cdmText('Q1 2026','story'),accuracy:'88%',status:'Declining',c:'red'},
  ],
  driftCauses:[
- {quarter:'Q2 2025',cause:'ZIP code weight increased for fraud signal, unintended bias',impact:'DI -3%'},
- {quarter:'Q3 2025',cause:'Fraud model update: ZIP weight increased further',impact:'DI -3%'},
- {quarter:'Q4 2025',cause:'v3.4 deployed without ECOA proxy check',impact:'DI -2%'},
- {quarter:'Q1 2026',cause:'Cardinal detected ZIP-race correlation 0.82: ECOA violation',impact:'Enforcement risk $40M'},
+ {quarter:__cdmText('Q2 2025','story'),cause:'ZIP code weight increased for fraud signal, unintended bias',impact:'DI -3%'},
+ {quarter:__cdmText('Q3 2025','story'),cause:'Fraud model update: ZIP weight increased further',impact:'DI -3%'},
+ {quarter:__cdmText('Q4 2025','story'),cause:'v3.4 deployed without ECOA proxy check',impact:'DI -2%'},
+ {quarter:__cdmText('Q1 2026','story'),cause:'Cardinal detected ZIP-race correlation 0.82: ECOA violation',impact:'Enforcement risk $40M'},
  ],
  lineage:[
  {version:'v3.5 (shadow)',deployed:'' + __cdr('Mar 25, 2026','fin') + '',di:'0.91',fraud:'91%',status:'Shadow',by:'Eng: A. Johnson',change:'Remove ZIP, add verified_income_12mo'},
@@ -31395,12 +31417,12 @@ const ECHO_DATA = {
  {version:'v3.2',deployed:'Mar 1, 2025',di:'0.84',fraud:'94%',status:'Retired',by:'Eng: T. Kim',change:'Baseline ECOA-compliant model'},
  ],
  dataLineage:[
- {dataset:'Credit Applications Q4 2025',size:'284,000 records',biasAtTrain:'DI 0.76 (flagged)',usedIn:'v3.4: ECOA check skipped'},
- {dataset:'Credit Applications Q3 2025',size:'271,000 records',biasAtTrain:'DI 0.78 (watch)',usedIn:'v3.3'},
+ {dataset:__cdmText('Credit Applications Q4 2025','story'),size:'284,000 records',biasAtTrain:'DI 0.76 (flagged)',usedIn:'v3.4: ECOA check skipped'},
+ {dataset:__cdmText('Credit Applications Q3 2025','story'),size:'271,000 records',biasAtTrain:'DI 0.78 (watch)',usedIn:'v3.3'},
  ],
  accountability:[
  {who:'B. Martinez: Sr. Engineer',action:'Deployed Credit v3.4 without ECOA check',date:'Dec 1, 2025',consequence:'ECOA violation: 1,203 applicants'},
- {who:'L. Park: Compliance',action:'Q2 2025 ZIP flag, watch only, not escalated',date:'Sep 15, 2025',consequence:'Violation continued'},
+ {who:'L. Park: Compliance',action:__cdmText('Q2 2025 ZIP flag, watch only, not escalated','story'),date:'Sep 15, 2025',consequence:'Violation continued'},
  {who:'Cardinal Eden',action:'Detected ZIP-race correlation 0.82',date:'' + __cdr('Jan 15, 2026','fin') + '',consequence:'Immediate remediation'},
  {who:'A. Johnson: Sr. Engineer',action:'Shadow-deployed Credit v3.5 fix',date:'' + __cdr('Mar 25, 2026','fin') + '',consequence:'ECOA thresholds passing'},
  ],
@@ -31415,38 +31437,38 @@ const ECHO_DATA = {
  health:{
  totalEvents:5214,modelsTracked:3,receiptsCount:89241,accountabilityCount:41,
  driftAlertTitle:'Age Bias Drift: ACA 1557 Violation Escalating',
- driftAlertBody:'Claims denial rate for patients 65+ increased 12% since Q3 2025. Age-cost proxy weight grew 4 quarters. Clinical accuracy declined 8% simultaneously.',
+ driftAlertBody:__cdmText('Claims denial rate for patients 65+ increased 12% since Q3 2025. Age-cost proxy weight grew 4 quarters. Clinical accuracy declined 8% simultaneously.','story'),
  timeline:[
  {ts:'' + __cdr('Apr 5, 2026','health') + ' 09:14',event:'Eve morning briefing: CMS audit 30 days',type:'info',who:'Eve: Cardinal',ref:'BRIEF-2026-0405',hash:'e2b7f413'},
  {ts:'' + __cdr('Apr 1, 2026','health') + ' 00:00',event:'1,847 patient re-evaluations complete: 64.9% approval',type:'fix',who:'Cardinal Atonement',ref:'COHORT-AT-2847',hash:'c9d4a821'},
  {ts:'' + __cdr('Apr 2, 2026','health') + ' 08:41',event:'Age bias detected: Claims v1.9: DI 0.64',type:'bias',who:'Cardinal Eden',ref:'CASE-HS-2847',hash:'b8f2c341'},
  {ts:'' + __cdr('Mar 20, 2026','health') + ' 09:00',event:'Shadow deployment: Claims v2.0 at 5% of claims',type:'deploy',who:'Eng: P. Nguyen',ref:'DEPLOY-SD-204',hash:'f7b3c192'},
  {ts:'Oct 1, 2025 09:00',event:'Claims v1.9 deployed, no ACA bias test run',type:'deploy',who:'Eng: S. Kim',ref:'DEPLOY-CL-019',hash:'d3a9e217'},
- {ts:'Jul 15, 2025 14:22',event:'Q2 2025, age-cost proxy flagged, watch status',type:'bias',who:'Clinical: Dr. A. Patel',ref:'REVIEW-Q2-2025',hash:'e6b4f189'},
+ {ts:'Jul 15, 2025 14:22',event:__cdmText('Q2 2025, age-cost proxy flagged, watch status','story'),type:'bias',who:'Clinical: Dr. A. Patel',ref:'REVIEW-Q2-2025',hash:'e6b4f189'},
  ],
  receipts:[
  {id:'CL-' + __cdrId('2026-04-05','health','DD') + '-089241',model:'Claims Adjudication v1.9',decision:'DENIED',feature_hash:'b9c4f217a3',timestamp:'' + __cdr('Apr 5, 2026','health') + ' 08:44:12',ledger:'Verified'},
  {id:'CL-' + __cdrId('2026-04-05','health','DD') + '-089240',model:'Claims v2.0-shadow',decision:'APPROVED',feature_hash:'a7e2d419c8',timestamp:'' + __cdr('Apr 5, 2026','health') + ' 08:44:12',ledger:'Verified'},
  ],
  fairnessDrift:[
- {quarter:'Q1 2025',di:'0.82',status:'Passing',c:'green'},
- {quarter:'Q2 2025',di:'0.76',status:'Watch',c:'amber'},
- {quarter:'Q3 2025',di:'0.72',status:'Failing',c:'amber'},
- {quarter:'Q4 2025',di:'0.68',status:'Failing',c:'red'},
- {quarter:'Q1 2026',di:'0.64',status:'ACA Violation',c:'red'},
+ {quarter:__cdmText('Q1 2025','story'),di:'0.82',status:'Passing',c:'green'},
+ {quarter:__cdmText('Q2 2025','story'),di:'0.76',status:'Watch',c:'amber'},
+ {quarter:__cdmText('Q3 2025','story'),di:'0.72',status:'Failing',c:'amber'},
+ {quarter:__cdmText('Q4 2025','story'),di:'0.68',status:'Failing',c:'red'},
+ {quarter:__cdmText('Q1 2026','story'),di:'0.64',status:'ACA Violation',c:'red'},
  ],
  fraudDrift:[
- {quarter:'Q1 2025',accuracy:'92%',status:'Strong',c:'green'},
- {quarter:'Q2 2025',accuracy:'90%',status:'Good',c:'green'},
- {quarter:'Q3 2025',accuracy:'88%',status:'Watch',c:'amber'},
- {quarter:'Q4 2025',accuracy:'86%',status:'Declining',c:'amber'},
- {quarter:'Q1 2026',accuracy:'84%',status:'Declining',c:'red'},
+ {quarter:__cdmText('Q1 2025','story'),accuracy:'92%',status:'Strong',c:'green'},
+ {quarter:__cdmText('Q2 2025','story'),accuracy:'90%',status:'Good',c:'green'},
+ {quarter:__cdmText('Q3 2025','story'),accuracy:'88%',status:'Watch',c:'amber'},
+ {quarter:__cdmText('Q4 2025','story'),accuracy:'86%',status:'Declining',c:'amber'},
+ {quarter:__cdmText('Q1 2026','story'),accuracy:'84%',status:'Declining',c:'red'},
  ],
  driftCauses:[
- {quarter:'Q2 2025',cause:'Cost efficiency update, age-cost proxy weight increased',impact:'DI -6%'},
- {quarter:'Q3 2025',cause:'Claims v1.9 trained on Q2 data, proxy compounded',impact:'DI -4%'},
- {quarter:'Q4 2025',cause:'No retraining, watch flag ignored',impact:'DI -4%'},
- {quarter:'Q1 2026',cause:'Cardinal detected age-cost correlation 0.81: ACA 1557',impact:'CMS audit initiated'},
+ {quarter:__cdmText('Q2 2025','story'),cause:'Cost efficiency update, age-cost proxy weight increased',impact:'DI -6%'},
+ {quarter:__cdmText('Q3 2025','story'),cause:'Claims v1.9 trained on Q2 data, proxy compounded',impact:'DI -4%'},
+ {quarter:__cdmText('Q4 2025','story'),cause:'No retraining, watch flag ignored',impact:'DI -4%'},
+ {quarter:__cdmText('Q1 2026','story'),cause:'Cardinal detected age-cost correlation 0.81: ACA 1557',impact:'CMS audit initiated'},
  ],
  lineage:[
  {version:'v2.0 (shadow)',deployed:'' + __cdr('Mar 20, 2026','health') + '',di:'0.89',fraud:'85%',status:'Shadow',by:'Eng: P. Nguyen',change:'Remove age-cost proxy, add clinical_severity_score'},
@@ -31455,8 +31477,8 @@ const ECHO_DATA = {
  {version:'v1.7',deployed:'Jan 1, 2025',di:'0.82',fraud:'92%',status:'Retired',by:'Eng: T. Kim',change:'Baseline ACA-compliant model'},
  ],
  dataLineage:[
- {dataset:'Claims Data Q3 2025',size:'841,000 claims',biasAtTrain:'DI 0.68 (flagged)',usedIn:'v1.9: ACA check skipped'},
- {dataset:'Claims Data Q2 2025',size:'798,000 claims',biasAtTrain:'DI 0.72 (watch)',usedIn:'v1.8'},
+ {dataset:__cdmText('Claims Data Q3 2025','story'),size:'841,000 claims',biasAtTrain:'DI 0.68 (flagged)',usedIn:'v1.9: ACA check skipped'},
+ {dataset:__cdmText('Claims Data Q2 2025','story'),size:'798,000 claims',biasAtTrain:'DI 0.72 (watch)',usedIn:'v1.8'},
  ],
  accountability:[
  {who:'S. Kim: Sr. Engineer',action:'Deployed Claims v1.9 without ACA bias test',date:'Oct 1, 2025',consequence:'2,847 patients affected'},
@@ -37089,12 +37111,12 @@ function pushToLedger(){
 const COHORT_LIBRARY_DATA = {
  ad:{
  cohorts:[
- {id:'#AT-0847',type:'remediation',typeLabel:'Remediation',title:'Personnel Assignment: Minority Technicians',period:'Jan–Mar 2026',size:847,done:412,rate:'48.6%',status:'In Progress',c:'amber',group:'Minority Technicians, Group A',push:['Salesforce','CSV']},
- {id:'#TEST-614',type:'test',typeLabel:'Test Cohort',title:'Native American Technicians: Coverage Gap',period:'Apr 2026',size:200,done:0,rate:'Testing',status:'Running',c:'blue',group:'Native American Technicians',push:['CSV']},
- {id:'#TEST-615',type:'test',typeLabel:'Test Cohort',title:'Female Combat Roles: Coverage Gap',period:'Apr 2026',size:350,done:350,rate:'2.8x bias found',status:'Complete',c:'red',group:'Female Combat Roles',push:['CSV']},
- {id:'#TEST-616',type:'test',typeLabel:'Test Cohort',title:'Age 55+ Remote Personnel',period:'Apr 2026',size:400,done:400,rate:'Passing DI 0.87',status:'Complete',c:'green',group:'Age 55+ Remote',push:['CSV']},
+ {id:'#AT-0847',type:'remediation',typeLabel:'Remediation',title:'Personnel Assignment: Minority Technicians',period:__cdmText('Jan–Mar 2026','story'),size:847,done:412,rate:'48.6%',status:'In Progress',c:'amber',group:'Minority Technicians, Group A',push:['Salesforce','CSV']},
+ {id:'#TEST-614',type:'test',typeLabel:'Test Cohort',title:'Native American Technicians: Coverage Gap',period:__cdmText('Apr 2026','story'),size:200,done:0,rate:'Testing',status:'Running',c:'blue',group:'Native American Technicians',push:['CSV']},
+ {id:'#TEST-615',type:'test',typeLabel:'Test Cohort',title:'Female Combat Roles: Coverage Gap',period:__cdmText('Apr 2026','story'),size:350,done:350,rate:'2.8x bias found',status:'Complete',c:'red',group:'Female Combat Roles',push:['CSV']},
+ {id:'#TEST-616',type:'test',typeLabel:'Test Cohort',title:'Age 55+ Remote Personnel',period:__cdmText('Apr 2026','story'),size:400,done:400,rate:'Passing DI 0.87',status:'Complete',c:'green',group:'Age 55+ Remote',push:['CSV']},
  {id:'#SYN-201',type:'synthetic',typeLabel:'Synthetic Personas',title:'Synthetic Credential Ring: Defense Onboarding',period:'' + __cdr('Apr 3, 2026','ad') + '',size:200,done:200,rate:'Fraud model tested',status:'Complete',c:'green',group:'Fraud pattern: shared device + IP',push:['CSV']},
- {id:'#COV-AD-01',type:'coverage',typeLabel:'Coverage Gap',title:'Training Data Coverage Report: Q1 2026',period:'' + __cdr('Apr 1, 2026','ad') + '',size:0,done:0,rate:'3 groups underrepresented',status:'Active',c:'amber',group:'Native Am · Female Combat · Age 55+',push:['CSV','Report']},
+ {id:'#COV-AD-01',type:'coverage',typeLabel:'Coverage Gap',title:__cdmText('Training Data Coverage Report: Q1 2026','story'),period:'' + __cdr('Apr 1, 2026','ad') + '',size:0,done:0,rate:'3 groups underrepresented',status:'Active',c:'amber',group:'Native Am · Female Combat · Age 55+',push:['CSV','Report']},
  ],
  compareDesc:'Documenting Personnel Assignment model improvement for DoD audit. One-click export for regulatory submission.',
  allModels:[
@@ -37111,8 +37133,8 @@ const COHORT_LIBRARY_DATA = {
  {metric:'Trust Score',old:'67',new:'84',improvement:'↑ 17 points',c:'green'},
  ],
  biasReduction:[
- {cohort:'Ethnic Minorities',before:'0.67',after:'0.84',reduction:'25% improvement',period:'Jan–Apr 2026',c:'green'},
- {cohort:'Age 55+ Personnel',before:'0.71',after:'0.87',reduction:'22% improvement',period:'Mar–Apr 2026',c:'green'},
+ {cohort:'Ethnic Minorities',before:'0.67',after:'0.84',reduction:'25% improvement',period:__cdmText('Jan–Apr 2026','story'),c:'green'},
+ {cohort:'Age 55+ Personnel',before:'0.71',after:'0.87',reduction:'22% improvement',period:__cdmText('Mar–Apr 2026','story'),c:'green'},
  ],
  biasReduceDesc:'Personnel Assignment model bias reduction documented for DoD compliance audit. Version comparison admissible as regulatory evidence.',
  crossTeamAlert:'Personnel Assignment v2.4 removed demographic_classification (protected attribute correlation: 0.81). Mission Readiness v1.1 still uses similar classification feature. Recommend review before next deployment.',
@@ -37129,13 +37151,13 @@ const COHORT_LIBRARY_DATA = {
  },
  fin:{
  cohorts:[
- {id:'#AT-1203',type:'remediation',typeLabel:'Remediation',title:'Credit Scoring: ZIP Code Proxy (Hispanic/Black)',period:'Jan–Mar 2026',size:1203,done:687,rate:'57.1%',status:'In Progress',c:'green',group:'Hispanic + Black applicants, low-income ZIPs',push:['Salesforce','HubSpot','CSV']},
- {id:'#AT-1204',type:'remediation',typeLabel:'Remediation',title:'Auto Loan: Geographic Distance Bias',period:'Sep 2025–Feb 2026',size:2147,done:1294,rate:'60.3%',status:'Complete',c:'green',group:'Rural applicants, distance-to-branch proxy',push:['Salesforce','CSV']},
- {id:'#MARKETING-401',type:'marketing',typeLabel:'Marketing Cohort',title:'Campaign Gap: Hispanic Ages 25-35 (7M → 6M)',period:'Mar 2026',size:1000000,done:980000,rate:'98%',status:'Complete',c:'green',group:'Hispanic, Ages 25-35, 1M not reached',push:['Salesforce Marketing Cloud','Marketo','CSV']},
- {id:'#TEST-491',type:'test',typeLabel:'Test Cohort',title:'Rural Hispanic Women 50-65: Coverage Gap',period:'Apr 2026',size:300,done:300,rate:'45% vs 68%: BIAS',status:'Complete',c:'red',group:'Rural Hispanic Women, 50-65',push:['CSV']},
- {id:'#TEST-492',type:'test',typeLabel:'Test Cohort',title:'Pacific Islander Applicants: 44x Underrepresented',period:'Apr 2026',size:500,done:500,rate:'3.2x denial: BIAS',status:'Complete',c:'red',group:'Pacific Islander Applicants',push:['CSV']},
+ {id:'#AT-1203',type:'remediation',typeLabel:'Remediation',title:'Credit Scoring: ZIP Code Proxy (Hispanic/Black)',period:__cdmText('Jan–Mar 2026','story'),size:1203,done:687,rate:'57.1%',status:'In Progress',c:'green',group:'Hispanic + Black applicants, low-income ZIPs',push:['Salesforce','HubSpot','CSV']},
+ {id:'#AT-1204',type:'remediation',typeLabel:'Remediation',title:'Auto Loan: Geographic Distance Bias',period:__cdmText('Sep 2025–Feb 2026','story'),size:2147,done:1294,rate:'60.3%',status:'Complete',c:'green',group:'Rural applicants, distance-to-branch proxy',push:['Salesforce','CSV']},
+ {id:'#MARKETING-401',type:'marketing',typeLabel:'Marketing Cohort',title:'Campaign Gap: Hispanic Ages 25-35 (7M → 6M)',period:__cdmText('Mar 2026','story'),size:1000000,done:980000,rate:'98%',status:'Complete',c:'green',group:'Hispanic, Ages 25-35, 1M not reached',push:['Salesforce Marketing Cloud','Marketo','CSV']},
+ {id:'#TEST-491',type:'test',typeLabel:'Test Cohort',title:'Rural Hispanic Women 50-65: Coverage Gap',period:__cdmText('Apr 2026','story'),size:300,done:300,rate:'45% vs 68%: BIAS',status:'Complete',c:'red',group:'Rural Hispanic Women, 50-65',push:['CSV']},
+ {id:'#TEST-492',type:'test',typeLabel:'Test Cohort',title:'Pacific Islander Applicants: 44x Underrepresented',period:__cdmText('Apr 2026','story'),size:500,done:500,rate:'3.2x denial: BIAS',status:'Complete',c:'red',group:'Pacific Islander Applicants',push:['CSV']},
  {id:'#SYN-189',type:'synthetic',typeLabel:'Synthetic Personas',title:'Synthetic Identity Ring: 47 Apps, 1 iPhone',period:'' + __cdr('Apr 3, 2026','fin') + '',size:200,done:200,rate:'Fraud model tested',status:'Complete',c:'green',group:'Fraud pattern: single device, multiple SSNs',push:['CSV']},
- {id:'#COV-FIN-01',type:'coverage',typeLabel:'Coverage Gap',title:'Training Data Coverage Report: Q1 2026',period:'' + __cdr('Apr 1, 2026','fin') + '',size:0,done:0,rate:'3 groups underrepresented',status:'Active',c:'amber',group:'Pacific Islander · Rural Hispanic · Native Am.',push:['CSV','Report']},
+ {id:'#COV-FIN-01',type:'coverage',typeLabel:'Coverage Gap',title:__cdmText('Training Data Coverage Report: Q1 2026','story'),period:'' + __cdr('Apr 1, 2026','fin') + '',size:0,done:0,rate:'3 groups underrepresented',status:'Active',c:'amber',group:'Pacific Islander · Rural Hispanic · Native Am.',push:['CSV','Report']},
  ],
  compareDesc:'Documenting Credit Scoring model improvement for CFPB audit and ECOA (Reg B) compliance. Model v3.4 vs v3.5 comparison with one-click regulator export.',
  allModels:[
@@ -37152,8 +37174,8 @@ const COHORT_LIBRARY_DATA = {
  {metric:'Trust Score',old:'74',new:'88',improvement:'↑ 14 points → Certified',c:'green'},
  ],
  biasReduction:[
- {cohort:'Hispanic Applicants',before:'0.74',after:'0.91',reduction:'23% improvement: ECOA compliant',period:'Jan–Apr 2026',c:'green'},
- {cohort:'Rural Low-Income',before:'0.71',after:'0.88',reduction:'24% improvement',period:'Jan–Apr 2026',c:'green'},
+ {cohort:'Hispanic Applicants',before:'0.74',after:'0.91',reduction:'23% improvement: ECOA compliant',period:__cdmText('Jan–Apr 2026','story'),c:'green'},
+ {cohort:'Rural Low-Income',before:'0.71',after:'0.88',reduction:'24% improvement',period:__cdmText('Jan–Apr 2026','story'),c:'green'},
  ],
  biasReduceDesc:'Credit Scoring v3.4 → v3.5 bias reduction documented for CFPB audit. 20% bias reduction with one-click export chart. Disparate impact 0.74 → 0.91 documented as regulatory evidence.',
  crossTeamAlert:'Credit team removed ZIP code from Credit Scoring v3.4 (race correlation: 0.82 · ECOA violation). Fraud Screening v2.7 still uses ZIP code as a signal. Eve recommends: remove ZIP code from Fraud Model v2.1 before next deployment.',
@@ -37163,19 +37185,19 @@ const COHORT_LIBRARY_DATA = {
  {name:'Marketo',status:'Connected',icon:'📣',lastSync:'' + __cdr('Mar 28, 2026','fin') + '',c:'green'},
  ],
  apiActivity:[
- {time:'Mar 2026',action:'Cohort #MARKETING-401 pushed to Salesforce Marketing Cloud',size:'1M records: 98% reached',c:'green'},
+ {time:__cdmText('Mar 2026','story'),action:'Cohort #MARKETING-401 pushed to Salesforce Marketing Cloud',size:'1M records: 98% reached',c:'green'},
  {time:'' + __cdr('Apr 5','fin') + '',action:'Remediation Cohort #AT-1203 pushed to HubSpot',size:'1,203 applicants',c:'green'},
  {time:'' + __cdr('Apr 1','fin') + '',action:'Model comparison v3.4 vs v3.5 exported for CFPB',size:'PDF + data',c:'blue'},
  ],
  },
  health:{
  cohorts:[
- {id:'#AT-2847',type:'remediation',typeLabel:'Remediation',title:'Claims Adjudication: Age Discrimination (65+)',period:'Oct 2025–Mar 2026',size:2847,done:1847,rate:'64.9%',status:'In Progress',c:'amber',group:'Patients 65+, all conditions',push:['Salesforce','CSV']},
- {id:'#TEST-701',type:'test',typeLabel:'Test Cohort',title:'Patients 75+: 2.2x Underrepresented',period:'Apr 2026',size:500,done:500,rate:'3.4x denial: BIAS',status:'Complete',c:'red',group:'Patients Age 75+',push:['CSV']},
- {id:'#TEST-702',type:'test',typeLabel:'Test Cohort',title:'Disability + Age 60+: 5.7x Underrepresented',period:'Apr 2026',size:300,done:0,rate:'Testing',status:'Running',c:'blue',group:'Disability + Age 60+',push:['CSV']},
- {id:'#TEST-703',type:'test',typeLabel:'Test Cohort',title:'Rural Elderly: 2.7x Underrepresented',period:'Apr 2026',size:400,done:400,rate:'2.1x denial: BIAS',status:'Complete',c:'red',group:'Rural Elderly Patients',push:['CSV']},
+ {id:'#AT-2847',type:'remediation',typeLabel:'Remediation',title:'Claims Adjudication: Age Discrimination (65+)',period:__cdmText('Oct 2025–Mar 2026','story'),size:2847,done:1847,rate:'64.9%',status:'In Progress',c:'amber',group:'Patients 65+, all conditions',push:['Salesforce','CSV']},
+ {id:'#TEST-701',type:'test',typeLabel:'Test Cohort',title:'Patients 75+: 2.2x Underrepresented',period:__cdmText('Apr 2026','story'),size:500,done:500,rate:'3.4x denial: BIAS',status:'Complete',c:'red',group:'Patients Age 75+',push:['CSV']},
+ {id:'#TEST-702',type:'test',typeLabel:'Test Cohort',title:'Disability + Age 60+: 5.7x Underrepresented',period:__cdmText('Apr 2026','story'),size:300,done:0,rate:'Testing',status:'Running',c:'blue',group:'Disability + Age 60+',push:['CSV']},
+ {id:'#TEST-703',type:'test',typeLabel:'Test Cohort',title:'Rural Elderly: 2.7x Underrepresented',period:__cdmText('Apr 2026','story'),size:400,done:400,rate:'2.1x denial: BIAS',status:'Complete',c:'red',group:'Rural Elderly Patients',push:['CSV']},
  {id:'#SYN-204',type:'synthetic',typeLabel:'Synthetic Personas',title:'Prescription Fraud Network: 31 Providers',period:'' + __cdr('Apr 2, 2026','health') + '',size:300,done:300,rate:'Fraud model tested',status:'Complete',c:'green',group:'Fraud: rotating providers, shared patients',push:['CSV']},
- {id:'#COV-HS-01',type:'coverage',typeLabel:'Coverage Gap',title:'Training Data Coverage Report: Q1 2026',period:'' + __cdr('Apr 1, 2026','health') + '',size:0,done:0,rate:'4 groups underrepresented',status:'Active',c:'amber',group:'Patients 75+ · Disability+60+ · Rural Elderly · Black Women 65+',push:['CSV','Report']},
+ {id:'#COV-HS-01',type:'coverage',typeLabel:'Coverage Gap',title:__cdmText('Training Data Coverage Report: Q1 2026','story'),period:'' + __cdr('Apr 1, 2026','health') + '',size:0,done:0,rate:'4 groups underrepresented',status:'Active',c:'amber',group:'Patients 75+ · Disability+60+ · Rural Elderly · Black Women 65+',push:['CSV','Report']},
  ],
  compareDesc:'Documenting Claims Adjudication improvement for CMS audit. Age bias reduction v1.9 → v2.0 with one-click export for CMS proceedings.',
  allModels:[
@@ -37191,8 +37213,8 @@ const COHORT_LIBRARY_DATA = {
  {metric:'Trust Score',old:'64',new:'87',improvement:'↑ 23 points',c:'green'},
  ],
  biasReduction:[
- {cohort:'Patients 65+ (all conditions)',before:'0.64',after:'0.89',reduction:'39% improvement: ACA 1557 compliant',period:'Oct 2025–Apr 2026',c:'green'},
- {cohort:'Disability Patients (any age)',before:'0.68',after:'0.86',reduction:'26% improvement',period:'Apr 2026',c:'green'},
+ {cohort:'Patients 65+ (all conditions)',before:'0.64',after:'0.89',reduction:'39% improvement: ACA 1557 compliant',period:__cdmText('Oct 2025–Apr 2026','story'),c:'green'},
+ {cohort:'Disability Patients (any age)',before:'0.68',after:'0.86',reduction:'26% improvement',period:__cdmText('Apr 2026','story'),c:'green'},
  ],
  biasReduceDesc:'Claims Adjudication v1.9 → v2.0 age bias reduction documented for CMS audit. 39% improvement admissible as ACA 1557 compliance evidence.',
  crossTeamAlert:'Claims Adjudication team removed age-cost proxy (age correlation: 0.81). Diagnostic Triage AI still uses expected treatment cost as a feature. Eve recommends: audit Diagnostic Triage AI for similar age-cost correlation before next deployment.',
@@ -37358,7 +37380,7 @@ const COHORT_DETAIL = {
  {id:'#AT-0847',type:'remediation',typeLabel:'Remediation',title:'Personnel Assignment: Minority Technicians',
  created:'' + __cdr('Apr 2, 2026','ad') + ' 09:15',createdBy:'Cardinal Auto-Generated',creatorType:'auto',
  lastUsed:'' + __cdr('Apr 5, 2026','ad') + '',lastUsedIn:'Atonement Core',lastEditedBy:'Sarah Chen',lastEdited:'' + __cdr('Apr 4, 2026','ad') + '',
- period:'Jan–Mar 2026',size:847,done:412,rate:'48.6%',status:'active',
+ period:__cdmText('Jan–Mar 2026','story'),size:847,done:412,rate:'48.6%',status:'active',
  group:'Minority Technicians, Group A · Ages 25-45',
  tags:['DoD-audit','Q1-2026'],incidents:1,incidentRef:'Case #AD-2847',legalHold:false,c:'amber',
  usageHistory:[{date:'' + __cdr('Apr 5','ad') + '',location:'Compliance Exchange',actor:'Sarah Chen'},{date:'' + __cdr('Apr 2','ad') + '',location:'Auto-generated from bias detection',actor:'Cardinal'}],
@@ -37366,7 +37388,7 @@ const COHORT_DETAIL = {
  {id:'#TEST-615',type:'test',typeLabel:'Test Cohort',title:'Female Combat Roles: Coverage Gap',
  created:'' + __cdr('Apr 3, 2026','ad') + '',createdBy:'Adam (Autonomous)',creatorType:'adam',
  lastUsed:'' + __cdr('Apr 4, 2026','ad') + '',lastUsedIn:'Genesis Core',lastEditedBy:'Adam',lastEdited:'' + __cdr('Apr 4, 2026','ad') + '',
- period:'Apr 2026',size:350,done:350,rate:'2.8x denial found',status:'active',
+ period:__cdmText('Apr 2026','story'),size:350,done:350,rate:'2.8x denial found',status:'active',
  group:'Female Combat Roles, synthetic profiles',
  tags:['pre-deployment','genesis'],incidents:1,incidentRef:'2.8x denial rate, bias caught pre-deployment',legalHold:false,c:'red',
  usageHistory:[{date:'' + __cdr('Apr 4','ad') + '',location:'Genesis Core: Pre-deployment validation',actor:'Adam'}],
@@ -37384,7 +37406,7 @@ const COHORT_DETAIL = {
  {id:'#MARKETING-401',type:'marketing',typeLabel:'Marketing Cohort',title:'Campaign Gap: Hispanic Ages 25-35 (7M to 6M)',
  created:'' + __cdr('Mar 15, 2026','fin') + '',createdBy:'Cardinal Auto-Generated',creatorType:'auto',
  lastUsed:'' + __cdr('Mar 28, 2026','fin') + '',lastUsedIn:'Salesforce Marketing Cloud',lastEditedBy:'James Park',lastEdited:'' + __cdr('Mar 16, 2026','fin') + '',
- period:'Mar 2026',size:1000000,done:980000,rate:'98% remediation',status:'active',
+ period:__cdmText('Mar 2026','story'),size:1000000,done:980000,rate:'98% remediation',status:'active',
  group:'Hispanic, Ages 25-35, 1M not reached by campaign',
  tags:['marketing','salesforce','campaign-gap'],incidents:0,incidentRef:'—',legalHold:false,c:'green',
  usageHistory:[{date:'' + __cdr('Mar 28','fin') + '',location:'Salesforce Marketing Cloud: Campaign re-launch',actor:'James Park'},{date:'' + __cdr('Mar 15','fin') + '',location:'Auto-detected from campaign analytics',actor:'Cardinal'}],
@@ -37392,7 +37414,7 @@ const COHORT_DETAIL = {
  {id:'#AT-1203',type:'remediation',typeLabel:'Remediation',title:'Credit Scoring: ZIP Code Proxy',
  created:'' + __cdr('Jan 15, 2026','fin') + '',createdBy:'Cardinal Auto-Generated',creatorType:'auto',
  lastUsed:'' + __cdr('Apr 5, 2026','fin') + '',lastUsedIn:'Compliance Exchange: CFPB Disclosure',lastEditedBy:'James Park',lastEdited:'' + __cdr('Apr 5, 2026','fin') + '',
- period:'Jan–Mar 2026',size:1203,done:687,rate:'57.1%',status:'active',
+ period:__cdmText('Jan–Mar 2026','story'),size:1203,done:687,rate:'57.1%',status:'active',
  group:'Hispanic + Black applicants, low-income ZIP codes',
  tags:['ECOA','CFPB','NYC-Law-144','legal-hold'],incidents:1,incidentRef:'Case #FIN-1203: ECOA violation',legalHold:true,c:'green',
  usageHistory:[{date:'' + __cdr('Apr 5','fin') + '',location:'Compliance Exchange: CFPB Disclosure',actor:'James Park'},{date:'' + __cdr('Jan 15','fin') + '',location:'Auto-generated from bias detection',actor:'Cardinal'}],
@@ -37402,7 +37424,7 @@ const COHORT_DETAIL = {
  {id:'#AT-2847',type:'remediation',typeLabel:'Remediation',title:'Claims Adjudication: Age Discrimination (65+)',
  created:'' + __cdr('Apr 2, 2026','health') + ' 08:42',createdBy:'Cardinal Auto-Generated',creatorType:'auto',
  lastUsed:'' + __cdr('Apr 5, 2026','health') + '',lastUsedIn:'Compliance Exchange: CMS Audit',lastEditedBy:'Dr. Nguyen',lastEdited:'' + __cdr('Apr 5, 2026','health') + '',
- period:'Oct 2025–Mar 2026',size:2847,done:1847,rate:'64.9%',status:'active',
+ period:__cdmText('Oct 2025–Mar 2026','story'),size:2847,done:1847,rate:'64.9%',status:'active',
  group:'Patients 65+, all conditions, all coverage types',
  tags:['ACA-1557','CMS-audit','legal-hold'],incidents:1,incidentRef:'Case #HS-2847: ACA 1557 violation',legalHold:true,c:'amber',
  usageHistory:[{date:'' + __cdr('Apr 5','health') + '',location:'Compliance Exchange: CMS Audit report',actor:'Dr. Nguyen'},{date:'' + __cdr('Apr 2','health') + '',location:'Auto-generated from bias detection',actor:'Cardinal'}],
@@ -37777,7 +37799,7 @@ const WAR_ROOM_DATA = {
  escalationTimeline:[
  {pct:'25%',day:'Day 8',date:'' + __cdr('Apr 10','health') + '',action:'CMS status check required · Compliance confirms remediation on track',status:'upcoming',c:'blue'},
  {pct:'50%',day:'Day 15',date:'' + __cdr('Apr 17','health') + '',action:'Halo validation must be complete by this point',status:'upcoming',c:'amber'},
- {pct:'75%',day:'Day 23',date:'Apr 25',action:'Final CMS submission report due',status:'upcoming',c:'amber'},
+ {pct:'75%',day:'Day 23',date:__cdr('Apr 25','health'),action:'Final CMS submission report due',status:'upcoming',c:'amber'},
  {pct:'100%',day:'Day 30',date:'' + __cdr('May 2','health') + '',action:'CMS audit date, all documentation must be in place',status:'upcoming',c:'red'},
  ],
  regDeadlines:[
@@ -41077,7 +41099,7 @@ function tsv2DownloadBoardBrief() {
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(10);
       doc.setTextColor(180, 190, 220);
-      doc.text('Q1 2026 Board Brief', pageW - margin, 44, { align: 'right' });
+      doc.text(__cdmText('Q1 2026 Board Brief','story'), pageW - margin, 44, { align: 'right' });
 
       var y = 110;
       doc.setTextColor(20, 22, 30);
@@ -41169,7 +41191,7 @@ function tsv2DownloadBoardBrief() {
 
   // Fallback: text download
   var lines = [
-    'CARDINAL: Q1 2026 BOARD BRIEF',
+    __cdmText('CARDINAL: Q1 2026 BOARD BRIEF','story'),
     'Organization: ' + (d.org || ''),
     'Trust Score: ' + (d.trustScoreDisplay || '') + '  (' + (d.trustStatus || '') + ')',
     'Certification: ' + (d.certStatus || 'Not Certified'),
@@ -46585,6 +46607,7 @@ window.genRenderScenarios = function () {
     [['GENESIS_DATA', typeof GENESIS_DATA !== 'undefined' ? GENESIS_DATA : null], ['ATONEMENT_DATA', typeof ATONEMENT_DATA !== 'undefined' ? ATONEMENT_DATA : null], ['LUCID_DATA', typeof LUCID_DATA !== 'undefined' ? LUCID_DATA : null], ['OBSIDIAN_DATA', typeof OBSIDIAN_DATA !== 'undefined' ? OBSIDIAN_DATA : null]].forEach(function (p) {
       if (p[1] && p[1].health && !p[1].fed) p[1].fed = deep(p[1].health);
     });
+    if (typeof WAR_ROOM_DATA !== 'undefined' && WAR_ROOM_DATA.health && !WAR_ROOM_DATA.fed) WAR_ROOM_DATA.fed = deep(WAR_ROOM_DATA.health);
     if (GENESIS_DATA.fed) {
       GENESIS_DATA.fed.alertTitle = 'Proactive Discovery: 3 Filer Groups Never Tested';
       GENESIS_DATA.fed.cfTitle = 'Proving Causation: ZIP Cluster Feature';
@@ -46953,6 +46976,72 @@ window.genRenderScenarios = function () {
     var t = setInterval(function () { if (hook() || ++n > 30) clearInterval(t); }, 200);
     return r;
   };
+})();
+</script>
+
+<script>
+// 10/2 -- Trust Score history months were written ending Sep 2026 (the late-September "now").
+// Roll them with today's month so the chart always ends at the current month.
+(function () {
+  ['ad', 'fin', 'health', 'fed'].forEach(function (o) {
+    var h = window.CARDINAL_DATA && CARDINAL_DATA[o] && CARDINAL_DATA[o].trustScoreHistory;
+    (h || []).forEach(function (r) { if (r && r.month && !r.__cdm) { r.month = __cdm(r.month, 'now'); r.__cdm = 1; } });
+  });
+})();
+</script>
+
+<script>
+// 10/2 -- Compliance alert banner per company (it listed an A&D-only FAA item for everyone).
+(function () {
+  var T = {
+    ad: 'EU AI Act high-risk rules now apply Dec 2, 2027 · Colorado SB 26-189 takes effect Jan 1, 2027 · ITAR deemed-export rules cover model access',
+    fin: 'Colorado SB 26-189 takes effect Jan 1, 2027 · California ADMT rules apply Jan 1, 2027 · EU AI Act high-risk rules now apply Dec 2, 2027',
+    health: 'Colorado SB 26-189 takes effect Jan 1, 2027 · California AB 3030 patient AI notices in force · EU AI Act high-risk rules now apply Dec 2, 2027',
+    fed: 'OMB M-25-21 AI use case inventory and risk practices · OMB M-25-22 AI acquisition rules · State AI laws do not bind federal agencies'
+  };
+  function set() { var el = document.getElementById('comp-reg-alert-list'); if (el) el.textContent = T[window.currentOrg] || T.ad; }
+  var oS = window.showScreen;
+  if (typeof oS === 'function') window.showScreen = showScreen = function () { var r = oS.apply(this, arguments); try { set(); } catch (e) {} return r; };
+  var oI = window.switchIndustry;
+  if (typeof oI === 'function') window.switchIndustry = switchIndustry = function () { var r = oI.apply(this, arguments); try { set(); } catch (e) {} return r; };
+  set();
+})();
+</script>
+
+<script>
+// 10/2 -- War Room per company: the All Incidents list was A&D's for everyone (and called a
+// personnel case "ECOA risk"); Federal had no War Room data at all.
+(function () {
+  if (typeof WAR_ROOM_DATA !== 'undefined' && WAR_ROOM_DATA.fed) {
+    var F = WAR_ROOM_DATA.fed;
+    F.incidentTitle = 'CRITICAL: IRS Tax Fraud Detection v3.1: Income-Volatility Proxy';
+    F.incidentBody = 'schedule_c_volatility correlation 0.76. DI 0.54 (self-employed filers). 1,200 filers affected. $18M exposure in wrongful refund holds and exam costs. Chief AI Officer review opened.';
+    F.affected = 1200; F.deadline = 'M-25-21 risk review: 30 days';
+    (F.details || []).forEach(function (d) { if (d.label === 'Regulation') d.val = 'OMB M-25-21 (rights-impacting AI) + Privacy Act'; if (d.label === 'Affected cohort') d.val = 'Cohort #FED-PDV-001: 1,200 filers'; });
+    var fix = function (v) { return typeof v === 'string' ? v.replace(/\bACA penalty\b/g, 'penalty').replace(/\bages? 65\+|aged 65\+/g, 'self-employed').replace(/Age Discrimination/g, 'Income-Volatility Proxy').replace(/\bage-cost proxy\b/gi, 'income-volatility proxy').replace(/Dr\. Nguyen/g, 'Dana Kim') : v; };
+    var walk = function (o) { Object.keys(o).forEach(function (k) { var v = o[k]; if (typeof v === 'string') o[k] = fix(v); else if (v && typeof v === 'object') walk(v); }); };
+    walk(F);
+  }
+  var L = {
+    ad: [['AD-2847', 'Case #2847: Hispanic Bias', 'Personnel Assignment v2.4 · 847 affected records · Title VII risk', 'Apr 18'], ['Case #2831: Model Drift', 'Mission Readiness v1.0 · Accuracy below threshold · Fixed in 9 days', 'Apr 5'], ['Case #2819: Fraud Anomaly', 'Fraud Detection v3.2 · 47-application coordinated pattern · Blocked in 3 days', 'Mar 22']],
+    fin: [['FIN-1203', 'Case #FIN-1203: ZIP Code Proxy', 'Credit Scoring v3.4 · 1,203 affected applicants · ECOA risk', 'Apr 18'], ['Case #FIN-1180: Geographic Bias', 'Auto Loan v2.1 · Distance-to-branch proxy · Fixed and re-decisioned', 'Apr 5'], ['Case #FIN-1162: Synthetic ID Ring', 'Fraud Screening v2.7 · 31 linked applications · Blocked in 2 days', 'Mar 22']],
+    health: [['HS-2847', 'Case #HS-2847: Age Proxy', 'Claims Adjudication v1.9 · 2,847 affected patients · ACA 1557 risk', 'Apr 2'], ['Case #HS-2810: Triage Drift', 'Triage Priority v2.0 · Proxy score above threshold · Fixed in 8 days', 'Apr 5'], ['Case #HS-2795: Upcoding Ring', 'Obsidian fraud scan · Specialty upcoding cluster · Blocked in 4 days', 'Mar 22']],
+    fed: [['FED-PDV-001', 'Case #FED-PDV-001: Income-Volatility Proxy', 'IRS Tax Fraud Detection v3.1 · 1,200 affected filers · OMB M-25-21 risk', 'Apr 18'], ['Case #FED-0974: Caseload Drift', 'Examiner Caseload Balancer · Accuracy below threshold · Fixed in 9 days', 'Apr 5'], ['Case #FED-0961: Refund Redirect Ring', 'Deepfake refund-redirect ring · 52 returns · Blocked in 3 days', 'Mar 22']]
+  };
+  function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;'); }
+  function render(org) {
+    var el = document.getElementById('wr-incident-list'), l = L[org]; if (!el || !l) return;
+    var a = l[0];
+    el.innerHTML = '<div style="padding:12px;background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.3);border-radius:10px;cursor:pointer" onclick="cardinalRouteCase(\'' + a[0] + '\',\'lifecycle\',\'remediation-in-progress\')" title="Open the primary remediation case">' +
+      '<div style="display:flex;justify-content:space-between;margin-bottom:4px"><div style="display:flex;align-items:center;gap:8px"><span class="badge badge-red" style="font-size:9px">Critical</span><span style="font-size:11px;font-weight:600;color:var(--text)">' + esc(a[1]) + '</span></div><span style="font-size:10px;color:var(--red);font-weight:600">7 days remaining</span></div>' +
+      '<div style="font-size:10px;color:var(--muted)">' + esc(a[2]) + ' · Opened ' + __cdr(a[3], org) + '</div>' +
+      '<div style="display:flex;gap:8px;margin-top:6px;font-size:9px;color:var(--muted)"><span>Assigned: Data Science, Compliance, Legal</span><span style="margin-left:auto">Case Channel →</span></div></div>' +
+      l.slice(1).map(function (c) {
+        return '<div style="padding:12px;background:var(--bg3);border:1px solid var(--border2);border-radius:10px;opacity:0.7"><div style="display:flex;justify-content:space-between;margin-bottom:4px"><div style="display:flex;align-items:center;gap:8px"><span class="badge badge-green" style="font-size:9px">Closed</span><span style="font-size:11px;font-weight:600;color:var(--text)">' + esc(c[0]) + '</span></div><span style="font-size:10px;color:var(--green)">Closed ' + __cdr(c[2], org) + '</span></div><div style="font-size:10px;color:var(--muted)">' + esc(c[1]) + '</div></div>';
+      }).join('');
+  }
+  var oB = window.buildWarRoom;
+  if (typeof oB === 'function') window.buildWarRoom = buildWarRoom = function (org) { var r = oB.apply(this, arguments); try { render(org || window.currentOrg || 'ad'); } catch (e) {} return r; };
 })();
 </script>
 
