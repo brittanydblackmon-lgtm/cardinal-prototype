@@ -7747,6 +7747,7 @@ Template Overview
   <div style="display:flex;gap:2px;margin-bottom:18px;background:var(--bg2);border-radius:10px;padding:3px;width:fit-content">
     <button class="lib-tab active" data-lib-tab="usecases" onclick="cardinalLibrarySwitchTab('usecases', this)" style="padding:8px 18px;background:rgba(167, 167, 167,0.12);border:1px solid rgba(167, 167, 167,0.28);border-radius:7px;font-size:11px;font-weight:600;color:var(--accent);cursor:pointer;">Use Cases · <span id="lib-tab-count-usecases">95</span></button>
     <button class="lib-tab" data-lib-tab="models" onclick="cardinalLibrarySwitchTab('models', this)" style="padding:8px 18px;background:transparent;border:1px solid transparent;border-radius:7px;font-size:11px;font-weight:600;color:var(--muted);cursor:pointer;">Models · <span id="lib-tab-count-models">—</span></button>
+    <button class="lib-tab" data-lib-tab="systems" onclick="cardinalLibrarySwitchTab('systems', this)" style="padding:8px 18px;background:transparent;border:1px solid transparent;border-radius:7px;font-size:11px;font-weight:600;color:var(--muted);cursor:pointer;">AI Systems</button>
     <button class="lib-tab" data-lib-tab="cohorts" onclick="cardinalLibrarySwitchTab('cohorts', this)" style="padding:8px 18px;background:transparent;border:1px solid transparent;border-radius:7px;font-size:11px;font-weight:600;color:var(--muted);cursor:pointer;">Cohorts · <span id="lib-tab-count-cohorts">—</span></button>
     <button class="lib-tab" data-lib-tab="suppressions" onclick="cardinalLibrarySwitchTab('suppressions', this)" style="padding:8px 18px;background:transparent;border:1px solid transparent;border-radius:7px;font-size:11px;font-weight:600;color:var(--muted);cursor:pointer;">Suppressions</button>
     <button class="lib-tab" data-lib-tab="search" onclick="cardinalLibrarySwitchTab('search', this)" style="padding:8px 18px;background:transparent;border:1px solid transparent;border-radius:7px;font-size:11px;font-weight:600;color:var(--muted);cursor:pointer;">Search</button>
@@ -7756,6 +7757,7 @@ Template Overview
   <div id="lib-tab-content-usecases" class="cardinal-collapse-if-empty"></div>
   <div id="lib-tab-content-models" style="display:none;" class="cardinal-collapse-if-empty"></div>
   <div id="lib-tab-content-cohorts" style="display:none;" class="cardinal-collapse-if-empty"></div>
+  <div id="lib-tab-content-systems" style="display:none;"></div>
   <div id="lib-tab-content-suppressions" style="display:none;"></div>
   <div id="lib-tab-content-search" style="display:none;"></div>
 </div>
@@ -23871,6 +23873,8 @@ window.buildCompStates = buildCompStates;
       var rg = document.getElementById('comp-content-regulations'), cl = document.getElementById('comp-content-calendar');
       if (rg && rg.style.display === 'block') buildCompRegulations(window._compRegRegion || 'All');
       if (cl && cl.style.display === 'block') buildCompCalendar();
+      var lsy = document.getElementById('lib-tab-content-systems');
+      if (lsy && lsy.style.display !== 'none' && lsy.offsetParent !== null) renderLibSystems();
       var ls = document.getElementById('lib-tab-content-suppressions');
       if (ls && ls.style.display !== 'none' && ls.offsetParent !== null) renderLibSuppressions();
       var p = document.getElementById('screen-pipeline');
@@ -38688,6 +38692,68 @@ window.cardinalLibFlattenUseCaseTags = function() {
   return out;
 };
 
+// ══ CARDINAL LIBRARY: AI SYSTEMS (10/1, Brittany: "systems as a new layer") ══
+// A system is what a customer actually runs: models + agents + data + tools working together.
+// Systems get checks that no single model has: end-to-end outcome fairness, agent actions,
+// data rights, vendor documentation, and (for LLM assistants) answer accuracy and injection.
+window.CARDINAL_SYSTEMS = {
+  fin: [
+    { name: 'Loan Decisioning System', type: 'Decision pipeline', status: 'At Risk', models: ['Credit Scoring v3.4', 'Underwriting v4.1', 'Fraud Screening v2.7'], agents: ['Pre-qual Chatbot'], data: ['Applicant file', 'Credit bureau feed'], tools: ['Adverse action notice generator'],
+      checks: [['End-to-end approval ratio (worst group)', '0.76', 'fail'], ['Agent actions without approval (30d)', '1 blocked', 'warn'], ['Training data rights', 'Bureau feed: training not licensed', 'fail'], ['Adverse action notices with specific reasons', '100%', 'pass']] },
+    { name: 'Collections Outreach System', type: 'Agentic workflow', status: 'Watch', models: ['Collections AI v1.3'], agents: ['Collections Agent (vendor)'], data: ['Delinquent accounts', 'Call recordings'], tools: ['SMS / email sender', 'Dialer'],
+      checks: [['Calling-hours violations (30d)', '1, rolled back', 'warn'], ['Agent has a named owner', 'No', 'fail'], ['End-to-end outcome ratio', '0.81', 'pass'], ['Suppression rules applied', '2 active', 'pass']] },
+    { name: 'Customer Support Assistant', type: 'LLM assistant (RAG)', status: 'Passing', models: [], agents: ['Support assistant (vendor LLM)'], data: ['Policy and FAQ knowledge base'], tools: ['Account lookup (read-only)'],
+      checks: [['Wrong answers on policy questions', '1.8%', 'pass'], ['Prompt injection attempts blocked', '3 of 3', 'pass'], ['Personal data leakage tests', 'Passed', 'pass'], ['Vendor training data summary (CA AB 2013)', 'Not posted', 'warn']] }
+  ],
+  ad: [
+    { name: 'Workforce Scheduling System', type: 'Agentic workflow', status: 'At Risk', models: ['Personnel Assignment v2.4', 'Personnel Assignment v2.5', 'Maintenance Routing v1.2'], agents: ['Scheduling bot'], data: ['Personnel records', 'Home ZIP feed (TechServe)'], tools: ['Roster writer'],
+      checks: [['End-to-end assignment ratio (Hispanic technicians)', '0.67', 'fail'], ['Agent actions without approval (30d)', '1 blocked (14 reassignments)', 'warn'], ['Banned proxy in data (IL HB 3773)', 'Home ZIP present', 'fail'], ['Agent has a named owner', 'No', 'fail']] },
+    { name: 'Readiness & Procurement System', type: 'Decision pipeline', status: 'Passing', models: ['Mission Readiness v1.1', 'Mission Readiness v1.2', 'Fraud Detection v3.2'], agents: [], data: ['Readiness scores', 'Procurement records'], tools: ['Readiness dashboard'],
+      checks: [['End-to-end outcome ratio', '0.91', 'pass'], ['Export-controlled data access', 'Authorized only', 'pass'], ['Shadow test overlap', '112 people in two tests', 'warn']] }
+  ],
+  health: [
+    { name: 'Claims Decision System', type: 'Agentic workflow', status: 'At Risk', models: ['Claims Adjudication v1.9', 'Claims Adjudication v2.0', 'Prior Auth v1.5'], agents: ['Claims Triage Agent'], data: ['Patient records (PHI)', 'Licensed clinical criteria'], tools: ['Denial letter generator'],
+      checks: [['End-to-end approval ratio (patients 75+)', '0.64', 'fail'], ['Agent actions without approval (30d)', '31 auto-closed, reopened', 'fail'], ['Clinician decides medical necessity (CA SB 1120)', 'Gap', 'fail'], ['PHI minimum necessary', 'Agent reads full records', 'warn']] },
+    { name: 'Patient Messaging Assistant', type: 'LLM assistant (RAG)', status: 'Passing', models: ['Diagnosis Support v2.3'], agents: ['Messaging assistant (vendor LLM)'], data: ['Care guidelines', 'Member records'], tools: ['Appointment booking'],
+      checks: [['Wrong answers on clinical questions', '2.4%', 'warn'], ['AI disclaimer + path to a human (CA AB 3030)', 'Yes', 'pass'], ['Prompt injection attempts blocked', 'All', 'pass']] }
+  ],
+  fed: [
+    { name: 'Audit Selection System', type: 'Agentic workflow', status: 'At Risk', models: ['IRS Tax Fraud Detection v3.1'], agents: ['Audit Selection Agent'], data: ['Return data (IRC 6103)'], tools: ['Audit queue writer'],
+      checks: [['End-to-end selection ratio (self-employed)', '0.54', 'fail'], ['Agent has a named owner (OMB M-25-21)', 'No', 'fail'], ['Actions held for examiner review', '40 held', 'pass'], ['Appeal path documented', 'Yes', 'pass']] },
+    { name: 'Taxpayer Help Assistant', type: 'LLM assistant (RAG)', status: 'Watch', models: [], agents: ['Taxpayer Help Assistant (vendor LLM)'], data: ['Public IRS guidance'], tools: ['Account status lookup'],
+      checks: [['Truth-seeking and neutrality evals (OMB M-26-04)', 'Passed', 'pass'], ['Vendor transparency documents', 'Pending', 'warn'], ['Wrong answers on tax questions', '1.1%', 'pass']] }
+  ]
+};
+window.renderLibSystems = function () {
+  var el = document.getElementById('lib-tab-content-systems');
+  if (!el) return;
+  var org = (typeof currentOrg !== 'undefined' && currentOrg) || window.currentOrg || 'ad';
+  var list = CARDINAL_SYSTEMS[org] || [];
+  var esc = function (s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;'); };
+  var C = { pass: '#15803D', warn: '#B45309', fail: '#DC2626' }, SC = { 'At Risk': '#DC2626', Watch: '#B45309', Passing: '#15803D' };
+  var comps = list.reduce(function (s, x) { return s + x.models.length + x.agents.length + x.data.length + x.tools.length; }, 0);
+  var stat = function (l, v, c) { return '<div class="stat-card"><div class="stat-label">' + l + '</div><div class="stat-value" style="font-size:20px;color:' + (c || 'var(--chrome2)') + '">' + v + '</div></div>'; };
+  var chips = function (label, arr, model) {
+    if (!arr.length) return '';
+    return '<div style="margin-top:6px"><span style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-right:6px">' + label + '</span>' + arr.map(function (a) {
+      return model ? '<span onclick="openModelDetail(' + esc(JSON.stringify(a)) + ',\'cardinallibrary\')" title="' + esc(typeof cardinalModelCode === 'function' ? cardinalModelCode(a, org) : '') + '" style="display:inline-block;font-size:10px;padding:2px 8px;margin:0 4px 4px 0;border-radius:10px;border:1px solid rgba(37,99,235,.3);background:rgba(37,99,235,.06);color:#1d4ed8;cursor:pointer;font-weight:600">' + esc(a) + '</span>'
+        : '<span style="display:inline-block;font-size:10px;padding:2px 8px;margin:0 4px 4px 0;border-radius:10px;border:1px solid var(--border2);color:var(--chrome2)">' + esc(a) + '</span>';
+    }).join('') + '</div>';
+  };
+  el.innerHTML = '<div style="font-size:12px;color:var(--muted2);margin-bottom:12px;line-height:1.55">What you actually run: models, agents, data, and tools working together. A model can pass on its own while the system around it fails, so Cardinal checks the whole system too.</div>' +
+    '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px">' + stat('AI Systems', list.length) + stat('Components Tracked', comps) + stat('Systems At Risk', list.filter(function (x) { return x.status === 'At Risk'; }).length, 'var(--red)') + stat('LLM Assistants', list.filter(function (x) { return /LLM/.test(x.type); }).length) + '</div>' +
+    list.map(function (s) {
+      var c = SC[s.status] || '#64748b';
+      return '<div style="border:1px solid var(--border2);border-left:3px solid ' + c + ';border-radius:10px;padding:12px 14px;margin-bottom:10px;background:var(--card)">' +
+        '<div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center"><div><span style="font-size:13px;font-weight:700;color:var(--chrome2)">' + esc(s.name) + '</span> <span style="font-size:10.5px;color:var(--muted)">· ' + esc(s.type) + '</span></div>' +
+        '<span style="font-size:9px;font-weight:800;text-transform:uppercase;color:' + c + ';border:1px solid ' + c + '55;background:' + c + '12;padding:2px 8px;border-radius:5px">' + esc(s.status) + '</span></div>' +
+        chips('Models', s.models, true) + chips('Agents', s.agents) + chips('Data', s.data) + chips('Tools', s.tools) +
+        '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:6px;margin-top:10px">' + s.checks.map(function (k) {
+          return '<div style="border:1px solid ' + C[k[2]] + '33;background:' + C[k[2]] + '0b;border-radius:7px;padding:6px 9px"><div style="font-size:10px;color:var(--muted2)">' + esc(k[0]) + '</div><div style="font-size:11.5px;font-weight:700;color:' + C[k[2]] + '">' + (k[2] === 'pass' ? '✓ ' : k[2] === 'fail' ? '✕ ' : '! ') + esc(k[1]) + '</div></div>';
+        }).join('') + '</div></div>';
+    }).join('');
+};
+
 // ══ CARDINAL LIBRARY: SUPPRESSION RULES (10/1, Brittany's definition) ══
 // Segmentation, independent of stamps: keep a cohort or segment from being reached by a model,
 // campaign, or outreach it shouldn't get, and stop two models from hitting the same people at
@@ -38802,7 +38868,7 @@ window.cardinalLibrarySwitchTab = function(tab, btn) {
     btn.style.color = 'var(--accent)';
     btn.classList.add('active');
   }
-  ['usecases', 'models', 'cohorts', 'suppressions', 'search'].forEach(function(t) {
+  ['usecases', 'models', 'systems', 'cohorts', 'suppressions', 'search'].forEach(function(t) {
     var c = document.getElementById('lib-tab-content-' + t);
     if (c) c.style.display = t === tab ? '' : 'none';
   });
@@ -38811,6 +38877,7 @@ window.cardinalLibrarySwitchTab = function(tab, btn) {
   else if (tab === 'cohorts') renderLibCohorts();
   else if (tab === 'search') renderLibSearch();
   else if (tab === 'suppressions') renderLibSuppressions();
+  else if (tab === 'systems') renderLibSystems();
 };
 
 window.renderCardinalLibrary = function() {
