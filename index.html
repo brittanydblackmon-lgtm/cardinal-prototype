@@ -46740,6 +46740,65 @@ window.genRenderScenarios = function () {
 })();
 </script>
 
+<script>
+// ══ ITEM-LEVEL ACCESS (10/2, backlog: restrict specific models/conversations to specific people,
+// a "remove public access" control). Library models and Trust Loop conversations carry a "Visible
+// to" group. When someone is picked in the persona switcher and isn't in the group, they see a
+// restricted placeholder. Models under active investigation start restricted.
+(function () {
+  var GROUPS = ['Everyone', 'Compliance + Legal + Data Science', 'Compliance + Legal', 'Leadership only'];
+  window.CARDINAL_ITEM_ACCESS = window.CARDINAL_ITEM_ACCESS || { 'model:Personnel Assignment v2.4': 1, 'model:Credit Scoring v3.4': 1, 'model:Claims Adjudication v1.9': 1, 'model:IRS Tax Fraud Detection v3.1': 2 };
+  function inGroup(p, g) {
+    if (!window.__personaExplicit || !p || g === 0) return true;
+    var r = String(p.role || '').toLowerCase(), lead = /chief|cto|cro|general counsel|primary contact|head of/.test(r), comp = /compliance|counsel|legal|privacy|fair lending/.test(r), ds = /data scientist|ml|clinical ai/.test(r);
+    return g === 1 ? (lead || comp || ds) : g === 2 ? (lead || comp) : lead;
+  }
+  window.cardinalCanSeeItem = function (key) { return inGroup(window.getActivePersona ? getActivePersona() : null, window.CARDINAL_ITEM_ACCESS[key] || 0); };
+  window.cardinalCycleAccess = function (key, ev) {
+    if (ev) ev.stopPropagation();
+    var g = ((window.CARDINAL_ITEM_ACCESS[key] || 0) + 1) % GROUPS.length;
+    window.CARDINAL_ITEM_ACCESS[key] = g;
+    try { if (typeof cardinalLogActivity === 'function') cardinalLogActivity('Access changed: ' + key.replace(/^\w+:/, '') + ' → ' + GROUPS[g], 'settings'); } catch (e) {}
+    try { if (key.indexOf('model:') === 0) cardinalLibRenderModelsGrid(window.__libModelFilter); else renderTrustLoopWorkspace(window.currentOrg || 'ad'); } catch (e) {}
+  };
+  function chip(key) {
+    var g = window.CARDINAL_ITEM_ACCESS[key] || 0;
+    return '<button type="button" onclick="cardinalCycleAccess(' + JSON.stringify(key).replace(/"/g, '&quot;') + ', event)" title="Click to change who can see this" style="font-size:9.5px;padding:2px 8px;border-radius:10px;cursor:pointer;border:1px solid ' + (g ? 'rgba(126,34,206,.4)' : 'var(--border2)') + ';background:' + (g ? 'rgba(126,34,206,.07)' : 'transparent') + ';color:' + (g ? '#7e22ce' : 'var(--muted)') + ';font-weight:700">' + (g ? '🔒 ' : '🌐 ') + GROUPS[g] + '</button>';
+  }
+  var oRM = window.cardinalLibRenderModelsGrid;
+  if (typeof oRM === 'function') window.cardinalLibRenderModelsGrid = function () {
+    var r = oRM.apply(this, arguments);
+    try {
+      document.querySelectorAll('#lib-models-grid > div[onclick*="openModelDetail"]').forEach(function (card) {
+        var m = /openModelDetail\(("[^"]*"|&quot;.*?&quot;)/.exec(card.getAttribute('onclick') || '');
+        var name = m ? JSON.parse(m[1].replace(/&quot;/g, '"')) : null; if (!name) return;
+        var key = 'model:' + name;
+        if (!cardinalCanSeeItem(key)) {
+          card.removeAttribute('onclick'); card.style.cursor = 'default';
+          card.innerHTML = '<div style="font-size:12px;font-weight:700;color:var(--chrome2)">🔒 Restricted model</div><div style="font-size:10.5px;color:var(--muted2);margin:4px 0 8px">Visible to ' + GROUPS[window.CARDINAL_ITEM_ACCESS[key]] + '.</div><button type="button" onclick="this.outerHTML=\'<span style=&quot;font-size:10px;color:#15803D;font-weight:700&quot;>✓ Access requested. Logged.</span>\'" style="font-size:10px;padding:3px 9px;border-radius:6px;border:1px solid rgba(30,58,138,.35);background:transparent;color:#1e3a8a;font-weight:700;cursor:pointer">Request access</button>';
+          return;
+        }
+        var row = document.createElement('div'); row.style.cssText = 'margin-top:8px'; row.innerHTML = chip(key); card.appendChild(row);
+      });
+    } catch (e) {}
+    return r;
+  };
+  var oTL = window.renderTrustLoopWorkspace;
+  if (typeof oTL === 'function') window.renderTrustLoopWorkspace = renderTrustLoopWorkspace = function (org) {
+    var r = oTL.apply(this, arguments);
+    try {
+      if (window.__tlDmPeer) return r;
+      var id = window.__tlSelectedChannelId; if (!id) return r;
+      var key = 'channel:' + id, root = document.getElementById('trustloop-workspace-root');
+      var gear = [].slice.call(root.querySelectorAll('button')).filter(function (b) { return b.textContent.trim() === '⚙'; })[0];
+      if (gear) { var s = document.createElement('span'); s.style.marginRight = '6px'; s.innerHTML = chip(key); gear.parentNode.insertBefore(s, gear); }
+      if (!cardinalCanSeeItem(key)) { var th = document.getElementById('tlw-thread'); if (th) th.innerHTML = '<div style="margin:40px auto;text-align:center;font-size:12px;color:var(--muted2)">🔒 This conversation is restricted to ' + GROUPS[window.CARDINAL_ITEM_ACCESS[key]] + '.</div>'; }
+    } catch (e) {}
+    return r;
+  };
+})();
+</script>
+
 </body>
 
 </html>
