@@ -7778,7 +7778,7 @@ Template Overview
     <div class="tsv2-comp-head-row">
       <div>
         <div class="tsv2-q-header" id="tsv2-comp-title">Why is your score <span class="num" id="tsv2-comp-num-inline">74</span>?</div>
-        <div class="tsv2-q-sub" id="tsv2-comp-sub">Composite score across 6 governance dimensions. Hover any dimension for methodology. Weights vary by industry. Click any dimension to expand rich detail or use the core link to navigate.</div>
+        <div class="tsv2-q-sub" id="tsv2-comp-sub">Composite score across 6 governance dimensions. Hover any dimension for methodology. Weights are set per industry and published. Companies can't change them, so every score compares fairly. Click any dimension to expand rich detail or use the core link to navigate.</div>
       </div>
       <div style="display:flex;gap:8px;align-items:center;flex-shrink:0;flex-wrap:wrap">
         <button type="button" class="btn-ghost" id="tsv2-comp-method" onclick="tsMethodOpen()" style="font-size:10px;padding:6px 10px">How it's calculated →</button>
@@ -9027,36 +9027,7 @@ Access Control
 <div style="margin-bottom:12px">
 <div style="font-size:11px;color:var(--muted);margin-bottom:8px">Team member access levels</div>
 </div>
-<div style="display:flex;flex-direction:column;gap:8px">
-<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:var(--bg3);border-radius:8px">
-<div>
-<div style="font-size:11px;font-weight:600;color:var(--text)">David Park</div>
-<div style="font-size:9px;color:var(--muted)">Admin · Full access</div>
-</div>
-<span class="badge badge-green" style="font-size:9px">Admin</span>
-</div>
-<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:var(--bg3);border-radius:8px">
-<div>
-<div style="font-size:11px;font-weight:600;color:var(--text)">Sarah Chen</div>
-<div style="font-size:9px;color:var(--muted)">Data Science · Eden, Genesis, Atonement</div>
-</div>
-<span class="badge badge-blue" style="font-size:9px">Analyst</span>
-</div>
-<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:var(--bg3);border-radius:8px">
-<div>
-<div style="font-size:11px;font-weight:600;color:var(--text)">James Martinez</div>
-<div style="font-size:9px;color:var(--muted)">Compliance · Compliance Exchange, Trust Ledger</div>
-</div>
-<span class="badge badge-amber" style="font-size:9px">Compliance</span>
-</div>
-<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:var(--bg3);border-radius:8px">
-<div>
-<div style="font-size:11px;font-weight:600;color:var(--text)">Deloitte Partner</div>
-<div style="font-size:9px;color:var(--muted)">Third Party · Trust Ledger, Compliance Exchange only</div>
-</div>
-<span class="badge badge-red" style="font-size:9px">External</span>
-</div>
-</div>
+<div id="settings-access-list" style="display:flex;flex-direction:column;gap:8px"></div>
 <button class="btn-ghost" style="width:100%;margin-top:12px;font-size:11px">+ Invite Team Member</button>
 </div>
 
@@ -23016,7 +22987,7 @@ var TRUST_LEDGER_DATA = {
     ],
     verificationLog: [
       { date: '' + __cdr('Apr 18, 2026','ad') + '', time: '10:15 AM', who: 'CFPB Inspector: Compliance Query', desc: 'Queried certification status for Case #AD-2847. Accessed: Trust Score, ECOA cert status, case timeline. No internal data accessed.', badge: 'Read-only' },
-      { date: '' + __cdr('Apr 17, 2026','ad') + '', time: '02:30 PM', who: 'Deloitte Auditor: Annual Review', desc: 'Annual compliance verification. Accessed: All active certifications, whistleblower case count, audit trail summary. 14-year partnership.', badge: 'Authorized' },
+      { date: '' + __cdr('Apr 17, 2026','ad') + '', time: '02:30 PM', who: 'Crestline Assurance auditor: Annual Review', desc: 'Annual compliance verification. Accessed: All active certifications, whistleblower case count, audit trail summary. 14-year partnership.', badge: 'Authorized' },
       { date: '' + __cdr('Apr 15, 2026','ad') + '', time: '09:00 AM', who: 'DoD CDAO: Contract Review', desc: 'RAI compliance verification for F-35 contract renewal. Trust Score and DoD certification hash queried. Contract approved.', badge: 'Authorized' }
     ],
     wbCases: [
@@ -47138,6 +47109,144 @@ window.genRenderScenarios = function () {
   if (typeof oS === 'function') window.showScreen = showScreen = function (s) { var r = oS.apply(this, arguments); try { label(); if (s === 'trustscore') setTimeout(cadence, 50); } catch (e) {} return r; };
   var oI = window.switchIndustry;
   if (typeof oI === 'function') window.switchIndustry = switchIndustry = function () { var r = oI.apply(this, arguments); try { setTimeout(cadence, 80); } catch (e) {} return r; };
+})();
+</script>
+
+<script>
+// 10/2 -- People from one company were showing up in another company's screens (A&D's James Park
+// on Finance; A&D's and Finance's Sarah Chen across Healthcare; case owners not on any roster).
+// Each stray name maps to the same-role person on the right team. Finance's Sarah Chen and Federal's
+// James Martinez shared names with A&D people, so they get their own names (Nina Shah, Andre Lewis).
+(function () {
+  var MAP = {
+    fin: { 'Dr. Sarah Chen': 'Nina Shah', 'Sarah Chen': 'Nina Shah', 'S. Chen': 'N. Shah', 'James Park': 'Hannah Brooks', 'J. Park': 'H. Brooks', 'David Park': 'Nina Shah', 'Marcus Williams': 'Grace Liu', 'Marcus Chen': 'Grace Liu', 'Kate Morgan': 'Hannah Brooks', 'James Martinez': 'Riley Whitmore', 'J. Martinez': 'R. Whitmore', "Kevin O'Brien": 'Morgan Hale' },
+    health: { 'Dr. Sarah Chen': 'Priyanka Rao', 'Sarah Chen': 'Priyanka Rao', 'S. Chen': 'P. Rao', 'James Martinez': 'Elena Ruiz', 'J. Martinez': 'E. Ruiz', 'Kate Morgan': 'Olivia Grant', 'David Park': 'Priyanka Rao', 'Linda Park': 'Ben Carter', 'Dr. Amelia Green': 'Dr. Aisha Patel', 'Dr. Rajesh Patel': 'Priyanka Rao', 'Marcus Williams': 'Priyanka Rao', 'James Park': 'Olivia Grant', 'J. Park': 'O. Grant', "Kevin O'Brien": 'Marcus Bell' },
+    fed: { 'Dr. Sarah Chen': 'Andre Lewis', 'Sarah Chen': 'Andre Lewis', 'S. Chen': 'A. Lewis', 'James Martinez': 'Andre Lewis', 'J. Martinez': 'A. Lewis', 'Marcus Williams': 'Andre Lewis', 'Kate Morgan': 'Luis Ortega', 'David Park': 'Andre Lewis', 'James Park': 'Luis Ortega', 'J. Park': 'L. Ortega', "Kevin O'Brien": 'Owen Clarke' }
+  };
+  var RX = {};
+  Object.keys(MAP).forEach(function (o) {
+    var keys = Object.keys(MAP[o]).sort(function (a, b) { return b.length - a.length; });
+    RX[o] = new RegExp('\\b(' + keys.map(function (k) { return k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }).join('|') + ')\\b', 'g');
+  });
+  function fix(o, s) { return (RX[o] && typeof s === 'string' && RX[o].test(s)) ? (RX[o].lastIndex = 0, s.replace(RX[o], function (m) { return MAP[o][m]; })) : s; }
+  window.cardinalLocalNames = fix;
+  (window.CARDINAL_PERSONAS || []).forEach(function (p) { if (p.id === 'sarah-chen-fin') p.name = 'Nina Shah'; if (p.id === 'james-martinez-fed') p.name = 'Andre Lewis'; });
+  function walk(o, v, depth) {
+    if (depth > 12 || !v || typeof v !== 'object') return;
+    Object.keys(v).forEach(function (k) { var x = v[k]; if (typeof x === 'string') { var y = fix(o, x); if (y !== x) v[k] = y; } else if (x && typeof x === 'object') walk(o, x, depth + 1); });
+  }
+  var OBJS = [typeof ATONEMENT_DATA !== 'undefined' ? ATONEMENT_DATA : null, typeof BF_DATA !== 'undefined' ? BF_DATA : null, typeof CARDINAL_ATONEMENT_QUEUE !== 'undefined' ? CARDINAL_ATONEMENT_QUEUE : null, typeof CARDINAL_CLIENTS !== 'undefined' ? CARDINAL_CLIENTS : null, typeof CARDINAL_COHORTS !== 'undefined' ? CARDINAL_COHORTS : null, typeof CARDINAL_DATA !== 'undefined' ? CARDINAL_DATA : null, typeof CARDINAL_DATA_MASTER !== 'undefined' ? CARDINAL_DATA_MASTER : null, typeof CARDINAL_DATA_TS_EXT !== 'undefined' ? CARDINAL_DATA_TS_EXT : null, typeof CARDINAL_DATA_TS_V2 !== 'undefined' ? CARDINAL_DATA_TS_V2 : null, typeof CARDINAL_DEEPFAKE !== 'undefined' ? CARDINAL_DEEPFAKE : null, typeof CARDINAL_HALO_PREDICTIONS !== 'undefined' ? CARDINAL_HALO_PREDICTIONS : null, typeof CARDINAL_PACKETS !== 'undefined' ? CARDINAL_PACKETS : null, typeof CARDINAL_PROVENANCE !== 'undefined' ? CARDINAL_PROVENANCE : null, typeof CARDINAL_SECURITY_WATCH !== 'undefined' ? CARDINAL_SECURITY_WATCH : null, typeof CARDINAL_SUPPRESSIONS !== 'undefined' ? CARDINAL_SUPPRESSIONS : null, typeof CARDINAL_SYSTEMS !== 'undefined' ? CARDINAL_SYSTEMS : null, typeof CARDINAL_WORKFORCE !== 'undefined' ? CARDINAL_WORKFORCE : null, typeof COHORT_DETAIL !== 'undefined' ? COHORT_DETAIL : null, typeof COHORT_LIBRARY_DATA !== 'undefined' ? COHORT_LIBRARY_DATA : null, typeof COMPLIANCE_DATA !== 'undefined' ? COMPLIANCE_DATA : null, typeof COMP_CAL_BY_ORG !== 'undefined' ? COMP_CAL_BY_ORG : null, typeof COMP_REGS_BY_ORG !== 'undefined' ? COMP_REGS_BY_ORG : null, typeof DASH_INDUSTRY !== 'undefined' ? DASH_INDUSTRY : null, typeof DATA !== 'undefined' ? DATA : null, typeof DECISION_RECEIPTS !== 'undefined' ? DECISION_RECEIPTS : null, typeof ECHO_DATA !== 'undefined' ? ECHO_DATA : null, typeof EDEN_INDUSTRY !== 'undefined' ? EDEN_INDUSTRY : null, typeof EVENING_BRIEFS !== 'undefined' ? EVENING_BRIEFS : null, typeof EVE_ALERTS !== 'undefined' ? EVE_ALERTS : null, typeof EVE_BACKUP_CONTACTS !== 'undefined' ? EVE_BACKUP_CONTACTS : null, typeof EVE_CHANGE_FEED !== 'undefined' ? EVE_CHANGE_FEED : null, typeof EVE_MORNING_BRIEFING !== 'undefined' ? EVE_MORNING_BRIEFING : null, typeof EVE_RESPONSES !== 'undefined' ? EVE_RESPONSES : null, typeof FORENSICS_FLOWS !== 'undefined' ? FORENSICS_FLOWS : null, typeof GENESIS_DATA !== 'undefined' ? GENESIS_DATA : null, typeof GENESIS_LOG_DATA !== 'undefined' ? GENESIS_LOG_DATA : null, typeof GROUP_STORY !== 'undefined' ? GROUP_STORY : null, typeof GUARDRAILS_DATA !== 'undefined' ? GUARDRAILS_DATA : null, typeof HALO_DATA !== 'undefined' ? HALO_DATA : null, typeof LUCID_DATA !== 'undefined' ? LUCID_DATA : null, typeof MARKETING_SCAN !== 'undefined' ? MARKETING_SCAN : null, typeof ML_DATA !== 'undefined' ? ML_DATA : null, typeof MODEL_CHECK_DATA !== 'undefined' ? MODEL_CHECK_DATA : null, typeof MODEL_COMPARE_DATA !== 'undefined' ? MODEL_COMPARE_DATA : null, typeof MORNING_BRIEFS !== 'undefined' ? MORNING_BRIEFS : null, typeof OBSIDIAN_DATA !== 'undefined' ? OBSIDIAN_DATA : null, typeof PM_PROFILES !== 'undefined' ? PM_PROFILES : null, typeof SENTINEL_ALERTS !== 'undefined' ? SENTINEL_ALERTS : null, typeof SENTINEL_AUTOSTOP !== 'undefined' ? SENTINEL_AUTOSTOP : null, typeof SENTINEL_DISCOVERED !== 'undefined' ? SENTINEL_DISCOVERED : null, typeof SENTINEL_INCIDENTS !== 'undefined' ? SENTINEL_INCIDENTS : null, typeof SENTINEL_PLAYBOOKS !== 'undefined' ? SENTINEL_PLAYBOOKS : null, typeof SENTINEL_SHADOW_AI !== 'undefined' ? SENTINEL_SHADOW_AI : null, typeof SENTINEL_VENDORS !== 'undefined' ? SENTINEL_VENDORS : null, typeof SENTINEL_VENDOR_RISK !== 'undefined' ? SENTINEL_VENDOR_RISK : null, typeof TL_SEED !== 'undefined' ? TL_SEED : null, typeof TRUST_LEDGER_DATA !== 'undefined' ? TRUST_LEDGER_DATA : null, typeof WAR_ROOM_DATA !== 'undefined' ? WAR_ROOM_DATA : null, typeof WB_COMMITTEE !== 'undefined' ? WB_COMMITTEE : null, typeof WB_SEED !== 'undefined' ? WB_SEED : null, typeof WB_TIMELINE_DATA !== 'undefined' ? WB_TIMELINE_DATA : null, typeof WQ_SEED !== 'undefined' ? WQ_SEED : null];
+  OBJS.forEach(function (D) {
+    if (!D || typeof D !== 'object') return;
+    ['fin', 'health', 'fed'].forEach(function (o) { if (D[o] && typeof D[o] === 'object') walk(o, D[o], 0); });
+    if (Array.isArray(D)) D.forEach(function (e) { var o = e && (e.org || e.industry); if (MAP[o]) walk(o, e, 0); });
+  });
+  // Safety net for text built straight into markup: rewrite text nodes on screen for the company in view.
+  function scrub(root) {
+    var o = window.currentOrg; if (!RX[o] || !root) return;
+    var w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: function (n) { var p = n.parentNode && n.parentNode.nodeName; return (p === 'SCRIPT' || p === 'STYLE' || p === 'TEXTAREA') ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT; } }), t, list = [];
+    while ((t = w.nextNode())) if (RX[o].test(t.nodeValue)) { RX[o].lastIndex = 0; list.push(t); } else RX[o].lastIndex = 0;
+    list.forEach(function (n) { if (n.__origText == null) n.__origText = n.nodeValue; n.nodeValue = fix(o, n.nodeValue); touched.add(n); });
+  }
+  var touched = new Set();
+  function restore() { touched.forEach(function (n) { if (n.__origText != null) { n.nodeValue = n.__origText; n.__origText = null; } }); touched.clear(); }
+  var pending = null, roots = [];
+  new MutationObserver(function (muts) {
+    if (!RX[window.currentOrg]) return;
+    muts.forEach(function (m) { m.addedNodes.forEach(function (n) { if (n.nodeType === 1 || n.nodeType === 3) roots.push(n.nodeType === 3 ? n.parentNode : n); }); if (m.type === 'characterData') roots.push(m.target.parentNode); });
+    if (!pending) pending = setTimeout(function () { var r = roots; roots = []; pending = null; r.forEach(function (n) { if (n && n.isConnected) scrub(n); }); }, 30);
+  }).observe(document.body, { childList: true, subtree: true, characterData: true });
+  var oI = window.switchIndustry;
+  if (typeof oI === 'function') window.switchIndustry = switchIndustry = function () { restore(); var r = oI.apply(this, arguments); setTimeout(function () { scrub(document.body); }, 60); return r; };
+})();
+</script>
+<script>
+// 10/2 -- Settings > Access Control lists each company's own people (it was A&D's names for
+// everyone, plus a real auditing firm's name).
+(function () {
+  var ORG = { ad: 'Atlas Defense Systems', fin: 'Blackmoor Wealth Group', health: 'Sterling Health', fed: 'IRS Tax Compliance Division' };
+  function row(name, sub, badge, cls) { return '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:var(--bg3);border-radius:8px"><div><div style="font-size:11px;font-weight:600;color:var(--text)">' + name + '</div><div style="font-size:9px;color:var(--muted)">' + sub + '</div></div><span class="badge badge-' + cls + '" style="font-size:9px">' + badge + '</span></div>'; }
+  function render() {
+    var el = document.getElementById('settings-access-list'); if (!el) return;
+    var org = window.currentOrg || 'ad', team = (window.CARDINAL_PERSONAS || []).filter(function (p) { return p.org === ORG[org]; });
+    var pick = function (re, not) { return team.filter(function (p) { return re.test(p.role) && not.indexOf(p) === -1; })[0]; };
+    var admin = pick(/CTO|Chief AI|Chief Compliance|Chief Medical/, []), ds = pick(/Data Scientist/, [admin]), comp = pick(/Compliance|Privacy|Fair Lending/, [admin, ds]);
+    el.innerHTML = (admin ? row(admin.name, admin.role + ' · Admin, full access', 'Admin', 'green') : '') +
+      (ds ? row(ds.name, 'Data Science · Eden, Genesis, Atonement', 'Analyst', 'blue') : '') +
+      (comp ? row(comp.name, 'Compliance · Compliance Exchange, Trust Ledger', 'Compliance', 'amber') : '') +
+      row('Crestline Assurance (auditor)', 'Third party · Trust Ledger and Compliance Exchange only', 'External', 'red');
+  }
+  var oS = window.showScreen;
+  if (typeof oS === 'function') window.showScreen = showScreen = function () { var r = oS.apply(this, arguments); try { render(); } catch (e) {} return r; };
+  var oI = window.switchIndustry;
+  if (typeof oI === 'function') window.switchIndustry = switchIndustry = function () { var r = oI.apply(this, arguments); try { render(); } catch (e) {} return r; };
+  render();
+})();
+</script>
+
+<script>
+// 10/2 -- Row-level deep links: after jumping to a case, scroll to the exact row that names it
+// and flash it, instead of only landing on the right section.
+(function () {
+  if (!document.getElementById('cardinal-hl-style')) { var st = document.createElement('style'); st.id = 'cardinal-hl-style'; st.textContent = '@keyframes cardinalHl{0%,60%{box-shadow:0 0 0 3px rgba(168,85,247,.75);background-color:rgba(168,85,247,.10)}100%{box-shadow:0 0 0 0 rgba(168,85,247,0);background-color:transparent}}.cardinal-hl{animation:cardinalHl 2.4s ease-out 1}'; document.head.appendChild(st); }
+  function highlight(id) {
+    var key = String(id || '').replace(/^#/, ''); if (!key) return;
+    var scr = document.querySelector('.screen.active'); if (!scr) return;
+    var best = null, bestLen = 1e9;
+    scr.querySelectorAll('tr, li, div').forEach(function (el) {
+      if (!el.offsetParent || el.children.length > 40) return;
+      var t = el.innerText || ''; if (t.indexOf(key) === -1 || t.length > 900) return;
+      if (el.offsetHeight < 18 || el.offsetHeight > 420) return;
+      if (t.length < bestLen) { bestLen = t.length; best = el; }
+    });
+    if (!best) return;
+    var row = best.closest('tr') || best; if (row.offsetHeight < 40 && row.parentElement && row.parentElement.offsetHeight < 260) row = row.parentElement;
+    row.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    row.classList.remove('cardinal-hl'); void row.offsetWidth; row.classList.add('cardinal-hl');
+  }
+  window.cardinalHighlightRow = highlight;
+  ['cardinalNavigateToCase', 'cardinalRouteCase'].forEach(function (fn) {
+    var o = window[fn]; if (typeof o !== 'function') return;
+    window[fn] = function (id) { var r = o.apply(this, arguments); setTimeout(function () { highlight(id); }, 750); return r; };
+  });
+})();
+</script>
+
+<script>
+// 10/2 -- Backlog: "what's happening in the news that Cardinal should be watching for." Real,
+// sourced incidents, each paired with the Cardinal check that would catch it. Shown on Halo,
+// most relevant to the company in view first.
+(function () {
+  var W = [
+    { d: 'Jul 2025', t: 'An AI coding agent deleted a live production database', w: 'During a public test, Replit’s agent dropped a company’s production tables despite an instruction to make no changes without approval, then wrongly said recovery was impossible.', c: 'Sentinel · Agents on a leash', h: 'Every agent has a named owner, destructive actions need a human sign-off, and Auto-Stop halts an agent that acts outside its rules.', u: 'https://fortune.com/2025/07/23/ai-coding-tool-replit-wiped-database-called-it-a-catastrophic-failure', s: 'Fortune', orgs: ['ad', 'fin', 'health', 'fed'] },
+    { d: 'Jul 2025', t: '$2.5M settlement over a biased AI lending model', w: 'The Massachusetts Attorney General settled with student lender Earnest over AI underwriting that allegedly caused disparate harm to Black, Hispanic, and non-citizen applicants.', c: 'Eden · Echo', h: 'Eden tests each lending model for disparate impact continuously; Echo keeps the governance record (policies, testing, inventory) the settlement required.', u: 'https://www.dlapiper.com/en-us/insights/publications/ai-outlook/2025/state-action-targets-use-of-biased-ai-underwriting-models', s: 'DLA Piper', orgs: ['fin'] },
+    { d: 'May 2025', t: 'AI hiring screen faces a nationwide age-bias case', w: 'In Mobley v. Workday, a federal court let a claim that AI applicant screening disadvantaged people over 40 proceed as a nationwide collective action.', c: 'Eden', h: 'Eden checks hiring and personnel models for age, race, and gender gaps before and after they go live.', u: 'https://www.hklaw.com/en/insights/publications/2025/05/federal-court-allows-collective-action-lawsuit-over-alleged', s: 'Holland & Knight', orgs: ['ad', 'fed', 'fin', 'health'] },
+    { d: 'Jan 2024', t: 'Deepfaked executives on a video call: about $25M wired out', w: 'An Arup finance employee in Hong Kong sent HK$200M across 15 transfers after a video call where the CFO and colleagues were all deepfakes.', c: 'Obsidian · Deepfake fraud', h: 'Obsidian flags deepfake voice and video requests and holds high-value transfers for out-of-band confirmation.', u: 'https://www.constructionbriefing.com/news/arup-employee-falls-victim-to-us-25-million-deepfake-video-call-scam/8037338.article', s: 'Construction Briefing', orgs: ['fin', 'ad', 'fed', 'health'] },
+    { d: 'Feb 2024', t: 'A company was held liable for its chatbot’s wrong answer', w: 'A British Columbia tribunal ruled Air Canada responsible for refund advice its website chatbot got wrong, rejecting the argument that the chatbot was a separate entity.', c: 'Library · AI Systems', h: 'Cardinal checks customer-facing assistants against the company’s real policies and logs every answer.', u: 'https://www.cbc.ca/1.7116416', s: 'CBC', orgs: ['fin', 'fed', 'health'] },
+    { d: 'Nov 2023 → now', t: 'Lawsuit over AI-driven Medicare Advantage denials', w: 'Families allege UnitedHealth’s nH Predict tool drove wrongful post-acute care denials; a federal court ordered broad discovery. The company disputes the claims.', c: 'Eden · Atonement', h: 'Cardinal tests claims models for age-linked denial gaps and requires clinician review before an AI denial is final.', u: 'https://www.beckershospitalreview.com/legal/judge-orders-unitedhealth-to-hand-over-broad-discovery-in-ai-coverage-denial-case/', s: "Becker's", orgs: ['health'] }
+  ];
+  function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;'); }
+  function render() {
+    var scr = document.getElementById('screen-halo'); if (!scr) return;
+    var el = document.getElementById('halo-in-the-wild');
+    if (!el) { el = document.createElement('div'); el.id = 'halo-in-the-wild'; el.className = 'card'; el.style.cssText = 'margin-top:18px'; scr.appendChild(el); }
+    var org = window.currentOrg || 'ad';
+    var list = W.slice().sort(function (a, b) { var ia = a.orgs.indexOf(org), ib = b.orgs.indexOf(org); ia = ia < 0 ? 9 : ia; ib = ib < 0 ? 9 : ib; return ia - ib; });
+    el.innerHTML = '<div style="font-size:14px;font-weight:700;color:var(--chrome2)">Seen in the wild</div><div style="font-size:11px;color:var(--muted);margin:3px 0 12px">Real incidents from the news, and the Cardinal check built to catch each one. Most relevant to you first.</div>' +
+      '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px">' + list.map(function (x) {
+        var rel = x.orgs[0] === org || x.orgs.length === 4;
+        return '<div style="border:1px solid var(--border2);border-left:3px solid ' + (rel ? '#7e22ce' : 'var(--border2)') + ';border-radius:10px;padding:11px 13px;background:var(--card)">' +
+          '<div style="font-size:9.5px;color:var(--muted);font-weight:700;letter-spacing:.4px">' + esc(x.d).toUpperCase() + '</div>' +
+          '<div style="font-size:12px;font-weight:700;color:var(--chrome2);margin:3px 0 5px;line-height:1.35">' + esc(x.t) + '</div>' +
+          '<div style="font-size:10.5px;color:var(--muted2);line-height:1.5">' + esc(x.w) + '</div>' +
+          '<div style="font-size:10.5px;color:var(--chrome2);line-height:1.5;margin-top:6px"><strong style="color:#7e22ce">' + esc(x.c) + ':</strong> ' + esc(x.h) + '</div>' +
+          '<a href="' + x.u + '" target="_blank" rel="noopener" style="display:inline-block;margin-top:6px;font-size:10px;color:var(--accent);font-weight:600">Source: ' + esc(x.s) + ' ↗</a></div>';
+      }).join('') + '</div>';
+  }
+  var oS = window.showScreen;
+  if (typeof oS === 'function') window.showScreen = showScreen = function (s) { var r = oS.apply(this, arguments); if (s === 'halo') try { render(); } catch (e) {} return r; };
+  var oI = window.switchIndustry;
+  if (typeof oI === 'function') window.switchIndustry = switchIndustry = function () { var r = oI.apply(this, arguments); try { if (document.getElementById('halo-in-the-wild')) render(); } catch (e) {} return r; };
 })();
 </script>
 
