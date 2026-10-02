@@ -7023,9 +7023,9 @@ Halo Core
 <div class="stat-change down">Requiring attention</div>
 </div>
 <div class="stat-card" onclick="switchCompTab('calendar')" style="cursor:pointer;border-color:rgba(239,68,68,.2)">
-<div class="stat-label">Cert. Due Renewal</div>
-<div class="stat-value" style="color:#EF4444;font-size:22px">2</div>
-<div class="stat-change down">ECOA in 8 days</div>
+<div class="stat-label">Due in 30 Days</div>
+<div class="stat-value" id="comp-due-count" style="color:#EF4444;font-size:22px">2</div>
+<div class="stat-change down" id="comp-due-next">ECOA in 8 days</div>
 </div>
 <div class="stat-card" onclick="switchCompTabLegacy('whistleblower')" style="cursor:pointer">
 <div class="stat-label">Whistleblower Cases</div>
@@ -42171,6 +42171,11 @@ function buildCohortGrid(org, filter) {
       {id:'PAT-2847',name:'Age 65+ Claims Adjudication Cohort',size:2847,status:'Active',creator:'Cardinal Auto-Generated',type:'Remediation',c:'amber'},
       {id:'TEST-031',name:'Rural Patient Coverage Gap',size:412,status:'Active',creator:'Adam (Autonomous)',type:'Test',c:'blue'},
       {id:'SYN-088',name:'Synthetic Duplicate Claim Profiles',size:88,status:'Active',creator:'Adam (Autonomous)',type:'Synthetic',c:'red'},
+    ],
+    fed: [
+      {id:'PAT-1200',name:'Self-Employed Filers Flagged by Income Volatility',size:1200,status:'Active',creator:'Cardinal Auto-Generated',type:'Remediation',c:'amber'},
+      {id:'TEST-044',name:'Gig Workers (1099-K) Coverage Gap',size:380,status:'Active',creator:'Adam (Autonomous)',type:'Test',c:'blue'},
+      {id:'SYN-052',name:'Deepfake Refund-Redirect Profiles',size:52,status:'Active',creator:'Adam (Autonomous)',type:'Synthetic',c:'red'},
     ]
   };
   const list = cohorts[org] || cohorts.ad;
@@ -46604,7 +46609,7 @@ window.genRenderScenarios = function () {
     return v;
   }
   try {
-    [['GENESIS_DATA', typeof GENESIS_DATA !== 'undefined' ? GENESIS_DATA : null], ['ATONEMENT_DATA', typeof ATONEMENT_DATA !== 'undefined' ? ATONEMENT_DATA : null], ['LUCID_DATA', typeof LUCID_DATA !== 'undefined' ? LUCID_DATA : null], ['OBSIDIAN_DATA', typeof OBSIDIAN_DATA !== 'undefined' ? OBSIDIAN_DATA : null]].forEach(function (p) {
+    [['GENESIS_DATA', typeof GENESIS_DATA !== 'undefined' ? GENESIS_DATA : null], ['ATONEMENT_DATA', typeof ATONEMENT_DATA !== 'undefined' ? ATONEMENT_DATA : null], ['LUCID_DATA', typeof LUCID_DATA !== 'undefined' ? LUCID_DATA : null], ['OBSIDIAN_DATA', typeof OBSIDIAN_DATA !== 'undefined' ? OBSIDIAN_DATA : null], ['COHORT_LIBRARY_DATA', typeof COHORT_LIBRARY_DATA !== 'undefined' ? COHORT_LIBRARY_DATA : null], ['ML_DATA', typeof ML_DATA !== 'undefined' ? ML_DATA : null]].forEach(function (p) {
       if (p[1] && p[1].health && !p[1].fed) p[1].fed = deep(p[1].health);
     });
     if (typeof WAR_ROOM_DATA !== 'undefined' && WAR_ROOM_DATA.health && !WAR_ROOM_DATA.fed) WAR_ROOM_DATA.fed = deep(WAR_ROOM_DATA.health);
@@ -47042,6 +47047,59 @@ window.genRenderScenarios = function () {
   }
   var oB = window.buildWarRoom;
   if (typeof oB === 'function') window.buildWarRoom = buildWarRoom = function (org) { var r = oB.apply(this, arguments); try { render(org || window.currentOrg || 'ad'); } catch (e) {} return r; };
+})();
+</script>
+
+<script>
+// 10/2 -- Per-company refresh for three spots that kept the previous company's content after a
+// switch: Pipeline's provenance table, Compliance's "due in 30 days" stat, the War Room title.
+(function () {
+  var PFX = { ad: 'AD-', fin: 'FIN-', health: 'HS-', fed: 'FED-' };
+  function refresh() {
+    var org = window.currentOrg || 'ad';
+    try { if (typeof pipelineRenderProvenance === 'function') pipelineRenderProvenance(org); } catch (e) {}
+    try {
+      var items = (typeof compCalItems === 'function' ? compCalItems(org) : []).filter(function (it) { return it.days >= 0 && it.days <= 30; }).sort(function (a, b) { return a.days - b.days; });
+      var c = document.getElementById('comp-due-count'), n = document.getElementById('comp-due-next');
+      if (c) c.textContent = items.length;
+      if (n) n.textContent = items.length ? String(items[0].name).replace(/\s*\(.*\)$/, '') + ' ' + (items[0].days === 0 ? 'today' : 'in ' + cardinalPluralDays(items[0].days)) : 'Nothing due';
+    } catch (e) {}
+  }
+  var oB = window.buildWarRoom;
+  if (typeof oB === 'function') window.buildWarRoom = buildWarRoom = function (org) {
+    var o = org || window.currentOrg || 'ad', f = window.__wrFocusCaseId;
+    if (f && String(f).indexOf(PFX[o]) !== 0) window.__wrFocusCaseId = null;
+    return oB.apply(this, arguments);
+  };
+  var oS = window.showScreen;
+  if (typeof oS === 'function') window.showScreen = showScreen = function () { var r = oS.apply(this, arguments); refresh(); return r; };
+  var oI = window.switchIndustry;
+  if (typeof oI === 'function') window.switchIndustry = switchIndustry = function () { var r = oI.apply(this, arguments); refresh(); return r; };
+})();
+</script>
+
+<script>
+// 10/2 -- Federal fields still carrying Healthcare structure (insurance tiers, inpatient/outpatient,
+// age brackets, Healthcare case IDs).
+(function () {
+  var F = window.CARDINAL_DATA && CARDINAL_DATA.fed; if (!F) return;
+  var B = [['W-2 only', 'W-2', 88, 'above', 14, 'low'], ['Self-employed (Schedule C)', 'Sched. C', 54, 'below', 41, 'high'], ['EITC claimants', 'EITC', 66, 'below', 46, 'high'], ['Gig income (1099-K)', '1099-K', 61, 'below', 33, 'medium']];
+  F.payGradeOrIncomeOrTier = { chartTitle: 'Filer Type Analysis', yLabel: 'Returns cleared without a fraud flag', thresholdLine: 80,
+    callout: '↘ Self-employed and gig filers clear at far lower rates than W-2 filers with the same refund size',
+    brackets: B.map(function (b) { return { label: b[0], shortLabel: b[1], rate: b[2], status: b[3], cohortFilter: b[0], barTip: b[0] + ' / ' + b[2] + '% cleared without a flag' + (b[3] === 'below' ? ', below the 80% equity band.' : '.') }; }) };
+  F.payGradeOrIncomeTierFraud = { chartTitle: 'Refund Fraud Rate by Filer Type', yLabel: 'Refund fraud / synthetic-identity rate', thresholdLine: 20,
+    callout: '↘ EITC and self-employed returns draw the most synthetic-identity and refund-redirect attempts, the same groups the model over-flags',
+    brackets: B.map(function (b) { return { label: b[0], shortLabel: b[1], rate: b[4], status: b[5], cohortFilter: b[0], barTip: 'Fraud Targeting Rate / ' + b[0] + ': ' + b[5] + '.' }; }) };
+  var COLS = { Inpatient: '1040 standard', Outpatient: 'Itemized', Specialty: 'EITC claim', Emergency: 'Refundable credits', Preventive: 'Amended' };
+  var ROWS = { '18-30': 'W-2 only', '31-50': 'W-2 + side income', '51-64': 'Schedule C', '65-74': '1099-K gig', 'self-employed': 'Retirement income' };
+  if (F.heatmapAxes) { F.heatmapAxes.colLabel = 'Return Type'; F.heatmapAxes.rowLabel = 'Income Source'; F.heatmapAxes.cols = F.heatmapAxes.cols.map(function (c) { return COLS[c] || c; }); F.heatmapAxes.rows = F.heatmapAxes.rows.map(function (r) { return ROWS[r] || r; }); }
+  (F.heatmapData || []).forEach(function (d) { d.col = COLS[d.col] || d.col; d.row = ROWS[d.row] || d.row; });
+  var R = [[/#?HS-2847/g, 'FED-PDV-001'], [/Claims Adjudication v1\.9/g, 'IRS Tax Fraud Detection v3.1'], [/Returns v1\.8/g, 'Tax Fraud Detection v3.0'], [/ACA (Section )?1557/g, 'OMB M-25-21'], [/\bACA\b/g, 'M-25-21'], [/Medicaid/g, 'EITC'], [/Medicare/g, 'Schedule C']];
+  (function walk(o) { Object.keys(o).forEach(function (k) { var v = o[k]; if (typeof v === 'string') { R.forEach(function (r) { v = v.replace(r[0], r[1]); }); o[k] = v; } else if (v && typeof v === 'object') walk(v); }); })(F);
+  if (typeof COHORT_LIBRARY_DATA !== 'undefined' && COHORT_LIBRARY_DATA.fed) {
+    COHORT_LIBRARY_DATA.fed.crossTeamAlert = 'The Examiner Caseload Balancer team removed an income-volatility feature that acted as a proxy for self-employment. The same pattern (schedule_c_volatility) is live in IRS Tax Fraud Detection v3.1. Eve suggests the same fix, tested in shadow first.';
+    (function walk(o) { Object.keys(o).forEach(function (k) { var v = o[k]; if (typeof v === 'string') { R.forEach(function (r) { v = v.replace(r[0], r[1]); }); o[k] = v; } else if (v && typeof v === 'object') walk(v); }); })(COHORT_LIBRARY_DATA.fed);
+  }
 })();
 </script>
 
