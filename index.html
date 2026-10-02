@@ -46638,6 +46638,53 @@ window.genRenderScenarios = function () {
 })();
 </script>
 
+<script>
+// ══ GENESIS MODEL COMPARE PER ORG (10/2): the compare tool only knew A&D's four models, so every
+// company compared Personnel Assignment vs Mission Readiness. Now it lists the current company's
+// models, built from the same bias/fraud metrics and registry the cores use.
+(function () {
+  var A_D = window.MODEL_COMPARE_DATA_AD = Object.assign({}, MODEL_COMPARE_DATA);
+  function build(org) {
+    if (org === 'ad') return A_D;
+    var d = (window.CARDINAL_DATA || {})[org] || {}, out = {}, parts = (window.CARDINAL_SCORE_MODEL.orgs[org] || {}).parts || {};
+    var people = ((typeof PM_PROFILES !== 'undefined' ? PM_PROFILES : {})[org] || {}).live || [];
+    (d.biasMetricsByModel || []).forEach(function (m, i) {
+      var reg = (window.CARDINAL_MODELS || []).filter(function (r) { return r.name === m.modelId; })[0] || {};
+      var f = (d.fraudMetricsByModel || []).filter(function (x) { return x.modelId === m.modelId; })[0];
+      var fi = f ? Math.round((f.syntheticIdentityRate + f.behavioralAnomalyRate + f.clusterFraudRate + f.velocityFraudRate) / 4) : 85;
+      var aff = (m.affectedCohort || {}).totalCount || 0;
+      out['m' + i] = { name: m.modelId, trustScore: reg.trustScore || Math.round(m.di * 100), di: m.di.toFixed(2), fraudIntegrity: fi,
+        transparency: Math.max(55, Math.min(95, (parts.transparency || 78) + (m.di >= 0.8 ? 4 : -4))), governance: Math.max(55, Math.min(95, (parts.governance || 75) + (m.di >= 0.8 ? 3 : -5))),
+        status: m.di < 0.7 ? 'Critical' : m.di < 0.8 ? 'Watch' : 'Passing', affected: aff,
+        rootCause: m.topProxyVariable ? m.topProxyVariable.name + ' (correlation ' + m.topProxyVariable.correlation + ' with ' + (m.topProxyVariable.correlatesWith || 'a protected trait') + ')' : 'No proxy detected',
+        cohortIds: people.filter(function (p) { return (p.models || []).indexOf(m.modelId) !== -1; }).map(function (p) { return p.eid; }),
+        biasFlags: m.di < 0.8 ? (m.di < 0.7 ? 3 : 1) : 0, fraudFlags: f && fi < 80 ? 1 : 0, testCoverage: (60 + Math.round(m.di * 30)) + '%',
+        lastDeployed: reg.deployedDate ? new Date(reg.deployedDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'In testing' };
+    });
+    if (org === 'fed' && out.m0) {
+      out.m1 = Object.assign({}, out.m0, { name: 'IRS Tax Fraud Detection v3.2 (fix in testing)', trustScore: 79, di: '0.81', status: 'Watch', affected: 0, rootCause: 'ZIP-cluster feature removed; Schedule C income volatility reweighted. Retesting on the 1,200-filer cohort.', biasFlags: 0, testCoverage: '88%', lastDeployed: 'In testing' });
+    }
+    return out;
+  }
+  window.genCompareSync = function (org) {
+    var data = build(org || window.currentOrg || 'ad');
+    Object.keys(MODEL_COMPARE_DATA).forEach(function (k) { delete MODEL_COMPARE_DATA[k]; });
+    Object.assign(MODEL_COMPARE_DATA, data);
+    var keys = Object.keys(data);
+    ['compare-model-a', 'compare-model-b'].forEach(function (id, j) {
+      var sel = document.getElementById(id); if (!sel) return;
+      sel.innerHTML = keys.map(function (k) { return '<option value="' + k + '">' + data[k].name + '</option>'; }).join('');
+      sel.value = keys[Math.min(j, keys.length - 1)];
+    });
+    try { runModelComparison(); } catch (e) {}
+  };
+  var osi = window.switchIndustry;
+  window.switchIndustry = switchIndustry = function () { var r = osi.apply(this, arguments); try { genCompareSync(window.currentOrg); } catch (e) {} return r; };
+  var ob = window.buildGenesis;
+  if (typeof ob === 'function') window.buildGenesis = buildGenesis = function (org) { var r = ob.apply(this, arguments); try { genCompareSync(org); } catch (e) {} return r; };
+})();
+</script>
+
 </body>
 
 </html>
