@@ -43791,7 +43791,7 @@ function buildSentinel(org) {
     '<div style="font-size:11px;color:var(--muted);margin-top:4px">Case engine + Lab workspace · Channels embed below when a case is opened</div></div>' +
     hero +
     tabRow +
-    (tab === 'lab' ? labPanel : tab === 'runtime' ? runtimePanel + sentinelAutoStopPanel(o) : tab === 'security' ? sentinelSecurityWatchPanel(o) : tab === 'incidents' ? sentinelIncidentsPanel(o) : tab === 'playbooks' ? sentinelPlaybooksPanel(o) : tab === 'shadow' ? sentinelShadowPanel(o) : tab === 'vendors' ? sentinelVendorsPanel(o) : casesPanel) +
+    (tab === 'lab' ? labPanel : tab === 'runtime' ? runtimePanel + sentinelAutoStopPanel(o) : tab === 'security' ? sentinelSecurityWatchPanel(o) : tab === 'incidents' ? sentinelIncidentsPanel(o) : tab === 'playbooks' ? sentinelPlaybooksPanel(o) : tab === 'shadow' ? sentinelShadowPanel(o) + sentinelDiscoveryHtml(o) : tab === 'vendors' ? sentinelVendorsPanel(o) : casesPanel) +
     '</div>';
 }
 
@@ -44019,6 +44019,33 @@ function sentinelAutoStopPanel(org) {
     }).join('') + '</tbody></table></div>';
 }
 
+// ══ AI ASSET DISCOVERY + VENDOR RISK SCORING (10/2, backlog items 5 and 6) ══
+window.SENTINEL_DISCOVERED = {
+  fin: [['Churn prediction model', 'Live endpoint in the data science cloud account', 'Reads applicant credit data; decides who gets retention offers', 'High'], ['Marketing lookalike model', 'Warehouse ML job, runs nightly', 'Picks who sees loan ads (fair lending risk)', 'High'], ['Ops scripts calling an LLM API', 'Personal API key in a shared repo', 'Summarizes customer complaints', 'Medium']],
+  ad: [['Parts-demand forecaster', 'Notebook model on a contractor workstation', 'Touches export-controlled part numbers', 'High'], ['Resume keyword ranker', 'Spreadsheet macro calling an AI service', 'Screens applicants for NYC roles (LL144 audit needed)', 'High']],
+  health: [['No-show predictor', 'Scheduling vendor feature switched on by default', 'Overbooks patients it predicts will miss visits', 'High'], ['Clinical note summarizer', 'Browser extension used by 6 nurses', 'Reads PHI', 'High']],
+  fed: [['Correspondence triage model', 'Pilot in a regional office', 'Sorts taxpayer letters by urgency', 'Medium']]
+};
+window.SENTINEL_VENDOR_RISK = {
+  fin: [['B', 'Clear'], ['A', 'Clear'], ['C', 'Review: name match on a sanctions list'], ['A', 'Clear']],
+  ad: [['B', 'Clear'], ['A', 'Clear']],
+  health: [['A', 'Clear'], ['B', 'Clear']],
+  fed: [['A', 'Clear'], ['C', 'Clear']]
+};
+window.__discReg = window.__discReg || {};
+window.sentinelRegisterAsset = function (i) { window.__discReg[(window.currentOrg || 'ad') + ':' + i] = true; try { cardinalLogActivity('Discovered AI registered: ' + SENTINEL_DISCOVERED[window.currentOrg || 'ad'][i][0], 'sentinel'); } catch (e) {} buildSentinel(window.currentOrg || 'ad'); };
+function sentinelDiscoveryHtml(org) {
+  var rows = SENTINEL_DISCOVERED[org] || [];
+  var esc = function (s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;'); };
+  return '<div class="card" style="padding:14px;margin-top:14px"><div style="font-size:13px;font-weight:700;color:var(--chrome2)">Unregistered AI found in your systems</div><div style="font-size:11px;color:var(--muted2);margin:4px 0 10px">Cardinal scans cloud accounts, data warehouses, code repos, and vendor settings for models and agents nobody registered. Each one is unmonitored until it is.</div>' +
+    '<table class="data-table" style="width:100%"><thead><tr><th>What Cardinal found</th><th>Where</th><th>What it does</th><th>Risk</th><th></th></tr></thead><tbody>' +
+    rows.map(function (r, i) {
+      var done = window.__discReg[org + ':' + i];
+      return '<tr style="vertical-align:top"><td style="font-weight:700;color:var(--chrome2)">' + esc(r[0]) + '</td><td style="font-size:10.5px">' + esc(r[1]) + '</td><td style="font-size:10.5px;color:var(--muted2)">' + esc(r[2]) + '</td><td style="font-weight:700;color:' + (r[3] === 'High' ? '#DC2626' : '#B45309') + '">' + r[3] + '</td>' +
+        '<td>' + (done ? '<span style="font-size:10px;font-weight:700;color:#15803D">✓ Registered, monitoring started</span>' : '<button type="button" onclick="sentinelRegisterAsset(' + i + ')" style="font-size:10px;padding:3px 9px;border-radius:6px;border:1px solid rgba(37,99,235,.35);background:transparent;color:#1d4ed8;font-weight:700;cursor:pointer;white-space:nowrap">Register →</button>') + '</td></tr>';
+    }).join('') + '</tbody></table></div>';
+}
+
 // ══ SENTINEL ADDITIONS (10/2, Brittany picked all four): Incident Reporting clocks, Case
 // Playbooks, Shadow AI monitor, Vendor AI registry. Real reporting deadlines only:
 // FinCEN SAR 30 days after detection (31 CFR 1020.320); GDPR Art. 33 72 hours to the DPA;
@@ -44105,10 +44132,12 @@ function sentinelShadowPanel(org) {
 }
 function sentinelVendorsPanel(org) {
   var rows = SENTINEL_VENDORS[org] || [], SC = { Gap: '#DC2626', Watch: '#B45309', Passing: '#15803D' };
-  return '<div class="card" style="padding:14px"><div style="font-size:13px;font-weight:700;color:var(--chrome2)">Vendor AI Registry</div><div style="font-size:11px;color:var(--muted2);margin:4px 0 12px">Every outside company whose AI touches your decisions, what it has proven, and what is missing. Regulators now expect this (the 2026 GEICO settlement required accountability for third-party AI).</div>' +
-    '<table class="data-table" style="width:100%"><thead><tr><th>Vendor</th><th>Provides</th><th>Used by</th><th>On file</th><th>Missing</th><th>Status</th></tr></thead><tbody>' +
-    rows.map(function (r) {
+  return '<div class="card" style="padding:14px"><div style="font-size:13px;font-weight:700;color:var(--chrome2)">Vendor AI Registry</div><div style="font-size:11px;color:var(--muted2);margin:4px 0 12px">Every outside company whose AI touches your decisions: what it has proven, what is missing, its live cybersecurity rating, and sanctions and watchlist screening. Regulators now expect this (the 2026 GEICO settlement required accountability for third-party AI).</div>' +
+    '<table class="data-table" style="width:100%"><thead><tr><th>Vendor</th><th>Provides</th><th>Used by</th><th>On file</th><th>Missing</th><th>Cyber rating</th><th>Sanctions screen</th><th>Status</th></tr></thead><tbody>' +
+    rows.map(function (r, vi) {
+      var vr = (SENTINEL_VENDOR_RISK[org] || [])[vi] || ['–', '–'], rc = { A: '#15803D', B: '#15803D', C: '#B45309', D: '#DC2626', F: '#DC2626' }[vr[0]] || 'var(--muted)';
       return '<tr style="vertical-align:top"><td style="font-weight:700;color:var(--chrome2)">' + sentEsc(r[0]) + '</td><td style="font-size:10.5px">' + sentEsc(r[1]) + '</td><td style="font-size:10.5px">' + sentEsc(r[2]) + '</td><td style="font-size:10px;color:#15803D">' + r[3].map(function (x) { return '✓ ' + sentEsc(x); }).join('<br>') + '</td><td style="font-size:10px;color:#DC2626">' + (r[4].length ? r[4].map(function (x) { return '✕ ' + sentEsc(x); }).join('<br>') : '<span style="color:var(--muted)">Nothing</span>') + '</td>' +
+        '<td style="font-weight:800;color:' + rc + '">' + vr[0] + '</td><td style="font-size:10px;color:' + (/Review/.test(vr[1]) ? '#B45309' : '#15803D') + '">' + sentEsc(vr[1]) + '</td>' +
         '<td><span style="font-size:9px;font-weight:800;text-transform:uppercase;color:' + SC[r[5]] + ';border:1px solid ' + SC[r[5]] + '55;padding:2px 6px;border-radius:5px">' + r[5] + '</span></td></tr>';
     }).join('') + '</tbody></table></div>';
 }
