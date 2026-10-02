@@ -45628,6 +45628,94 @@ window.renderClientAccess = function () {
 };
 </script>
 
+<script>
+// ══ PERSONA-SCOPED VIEW (10/1, Brittany: "in the switcher") ══
+// Picking a person reshapes the app to what their role can reach; the switcher lists what
+// each person can and can't see. Client view (B2B) takes priority when it's on.
+var PERSONA_ALWAYS = ['myworkspace', 'workqueue', 'glossary', 'settings'];
+var PERSONA_ALL = Object.keys(window.CARDINAL_CORE_LABELS);
+window.cardinalPersonaCores = function (p, force) {
+  if (!p || (!force && !window.__personaExplicit)) return PERSONA_ALL;   // full access until someone is picked in the switcher
+  var r = String(p.role || '').toLowerCase();
+  if (/chief|general counsel|counsel|compliance (officer|lead)|privacy|cto|primary contact|head of clinical/.test(r)) return PERSONA_ALL;
+  if (/engineer|ml platform/.test(r)) return ['dashboard', 'pipeline', 'eden', 'obsidian', 'genesis', 'atonement', 'sentinel', 'cardinallibrary', 'trustloop', 'lucid'];
+  if (/data scientist/.test(r)) return ['dashboard', 'trustscore', 'pipeline', 'eden', 'obsidian', 'genesis', 'atonement', 'halo', 'sentinel', 'echo', 'cardinallibrary', 'trustloop', 'lucid'];
+  if (/risk analyst/.test(r)) return ['dashboard', 'trustscore', 'eden', 'obsidian', 'halo', 'sentinel', 'compliance', 'cardinallibrary', 'trustloop'];
+  if (/product manager/.test(r)) return ['dashboard', 'trustscore', 'eden', 'obsidian', 'genesis', 'atonement', 'halo', 'marketing', 'cardinallibrary', 'trustloop', 'lucid'];
+  if (/marketing|member experience/.test(r)) return ['dashboard', 'trustscore', 'marketing', 'cardinallibrary', 'trustloop'];
+  if (/hr |hr$|human capital/.test(r)) return ['dashboard', 'eden', 'echo', 'compliance', 'trustloop'];
+  if (/analyst/.test(r)) return ['dashboard', 'trustscore', 'eden', 'compliance', 'trustledger', 'echo', 'cardinallibrary', 'trustloop'];
+  if (/operations|program manager|head of fraud/.test(r)) return ['dashboard', 'eden', 'obsidian', 'sentinel', 'cardinallibrary', 'trustloop'];
+  return PERSONA_ALL;
+};
+window.cardinalAllowedCores = function () {
+  var v = window.__clientView;
+  if (v) return v.cores;
+  return cardinalPersonaCores(window.getActivePersona ? getActivePersona() : null);
+};
+// Sidebar: hide what the current person (or client) can't reach.
+applyClientView = window.applyClientView = (function (orig) {
+  return function () {
+    orig();
+    var allowed = cardinalAllowedCores();
+    document.querySelectorAll('.nav-item').forEach(function (n) {
+      var m = /showScreen\('([a-z]+)'/.exec(n.getAttribute('onclick') || '');
+      if (!m) return;
+      var k = m[1];
+      n.style.display = PERSONA_ALWAYS.indexOf(k) !== -1 && !window.__clientView ? '' : (CARDINAL_CORE_LABELS[k] && allowed.indexOf(k) === -1 ? 'none' : (window.__clientView && !CARDINAL_CORE_LABELS[k] ? 'none' : ''));
+    });
+  };
+})(applyClientView);
+// Block navigation for persona scope too (client view already blocks).
+(function () {
+  var orig = window.showScreen;
+  window.showScreen = showScreen = function (name, el) {
+    if (!window.__clientView && CARDINAL_CORE_LABELS[name]) {
+      var p = window.getActivePersona ? getActivePersona() : null;
+      if (cardinalPersonaCores(p).indexOf(name) === -1) {
+        if (typeof cardinalShowToast === 'function') cardinalShowToast((p ? p.name + ' (' + p.role + ')' : 'This role') + ' does not have access to ' + CARDINAL_CORE_LABELS[name]);
+        return;
+      }
+    }
+    return orig.apply(this, arguments);
+  };
+  var osp = window.setActivePersona;
+  window.setActivePersona = function (id) {
+    var r = osp.apply(this, arguments);
+    try {
+      applyClientView();
+      var p = getActivePersona(), cur = (document.querySelector('.screen.active') || {}).id || '';
+      var curName = cur.replace('screen-', '');
+      if (CARDINAL_CORE_LABELS[curName] && cardinalPersonaCores(p).indexOf(curName) === -1) showScreen(cardinalPersonaCores(p)[0] || 'dashboard', null);
+    } catch (e) {}
+    return r;
+  };
+  var osi = window.switchIndustry;
+  window.switchIndustry = switchIndustry = function () { var r = osi.apply(this, arguments); try { applyClientView(); } catch (e) {} return r; };
+  // Switcher: show each person's reach under their name.
+  var oos = window.openPersonaSwitcher;
+  window.openPersonaSwitcher = function () {
+    var r = oos.apply(this, arguments);
+    try {
+      document.querySelectorAll('#persona-switcher-modal [onclick*="setActivePersona"]').forEach(function (row) {
+        var id = (/setActivePersona\('([^']+)'/.exec(row.getAttribute('onclick')) || [])[1];
+        var p = window.CARDINAL_PERSONAS.filter(function (x) { return x.id === id; })[0];
+        if (!p) return;
+        row.setAttribute('onclick', 'window.__personaExplicit=true;' + row.getAttribute('onclick'));
+        var cores = cardinalPersonaCores(p, true), hidden = PERSONA_ALL.filter(function (k) { return cores.indexOf(k) === -1; });
+        var line = document.createElement('div');
+        line.style.cssText = 'grid-column:1/-1;font-size:10px;color:var(--muted2);margin-top:2px;line-height:1.45';
+        line.innerHTML = hidden.length
+          ? '<span style="color:#15803D;font-weight:700">Sees ' + cores.length + ' of ' + PERSONA_ALL.length + ' cores.</span> Can\'t see: ' + hidden.map(function (k) { return CARDINAL_CORE_LABELS[k]; }).join(', ') + '.' + (p.canSeeWhistleblower ? '' : ' No whistleblower inbox.')
+          : '<span style="color:#15803D;font-weight:700">Sees everything.</span>' + (p.canSeeWhistleblower ? ' Whistleblower inbox access.' : '');
+        row.appendChild(line);
+      });
+    } catch (e) {}
+    return r;
+  };
+})();
+</script>
+
 </body>
 
 </html>
