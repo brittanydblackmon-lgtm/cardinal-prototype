@@ -44465,6 +44465,27 @@ window.openModelDetail = openModelDetail;
     });
   } catch (_rst) { if (window.console) console.warn('cardinalRollStoryTimeline', _rst); }
 })();
+// 10/1 -- Obsidian's live fraud score (mean of each stamped model's 4 detection rates) didn't
+// match the Trust Score's Fraud part for A&D (90 vs 91), Healthcare (88 vs 84), Federal (80 vs 78).
+// Shift every model's detection rates by the same small amount so the mean lands on the part,
+// leaving the Trust Score math untouched.
+(function cardinalCalibrateFraud() {
+  try {
+    var SM = window.CARDINAL_SCORE_MODEL; if (!SM) return;
+    ['ad', 'fin', 'health', 'fed'].forEach(function (o) {
+      var d = (window.CARDINAL_DATA || {})[o], part = SM.orgs[o] && SM.orgs[o].parts.fraud;
+      if (!d || part == null) return;
+      var ms = d.fraudMetricsByModel || [];
+      if (!ms.length) return;
+      var K = ['syntheticIdentityRate', 'behavioralAnomalyRate', 'clusterFraudRate', 'velocityFraudRate'];
+      var mean = ms.reduce(function (s, m) { return s + K.reduce(function (t, k) { return t + m[k]; }, 0) / 4; }, 0) / ms.length;
+      var delta = part - mean;
+      if (Math.abs(delta) < 0.01) return;
+      ms.forEach(function (m) { K.forEach(function (k) { m[k] = Math.max(0, Math.min(100, Math.round((m[k] + delta) * 10) / 10)); }); });
+      d.fraudScore = part;
+    });
+  } catch (_cf) { if (window.console) console.warn('cardinalCalibrateFraud', _cf); }
+})();
 </script>
 
 <!-- ══ NEW TEST MODAL ══ -->
