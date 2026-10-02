@@ -28185,7 +28185,7 @@ window.cardinalSentinelUiGoBack = function () {
   } catch (_e) {}
 };
 window.cardinalSentinelUiSetMainTab = function (t) {
-  window.__sentinelTab = (t === 'lab') ? 'lab' : (t === 'runtime') ? 'runtime' : (t === 'security') ? 'security' : 'cases';
+  window.__sentinelTab = ['lab', 'runtime', 'security', 'incidents', 'playbooks', 'shadow', 'vendors'].indexOf(t) !== -1 ? t : 'cases';
   window.__sentinelFocusCaseId = null;
   try {
     if (typeof showScreen === 'function') showScreen('sentinel', null);
@@ -43580,6 +43580,7 @@ function buildSentinel(org) {
     '<button type="button" class="gen-tab' +
     (tab === 'security' ? ' active' : '') +
     '" style="font-size:11px;padding:8px 14px" title="Who can reach sensitive data, and attempts to manipulate or extract data from models" onclick="cardinalSentinelUiSetMainTab(\'security\')">Security Watch</button>' +
+    [['incidents', 'Incident Reporting'], ['playbooks', 'Playbooks'], ['shadow', 'Shadow AI'], ['vendors', 'Vendor AI']].map(function (x) { return '<button type="button" class="gen-tab' + (tab === x[0] ? ' active' : '') + '" style="font-size:11px;padding:8px 14px" onclick="cardinalSentinelUiSetMainTab(\'' + x[0] + '\')">' + x[1] + '</button>'; }).join('') +
     '</div>';
 
   var pillsRow =
@@ -43773,7 +43774,7 @@ function buildSentinel(org) {
     '<div style="font-size:11px;color:var(--muted);margin-top:4px">Case engine + Lab workspace · Channels embed below when a case is opened</div></div>' +
     hero +
     tabRow +
-    (tab === 'lab' ? labPanel : tab === 'runtime' ? runtimePanel : tab === 'security' ? sentinelSecurityWatchPanel(o) : casesPanel) +
+    (tab === 'lab' ? labPanel : tab === 'runtime' ? runtimePanel : tab === 'security' ? sentinelSecurityWatchPanel(o) : tab === 'incidents' ? sentinelIncidentsPanel(o) : tab === 'playbooks' ? sentinelPlaybooksPanel(o) : tab === 'shadow' ? sentinelShadowPanel(o) : tab === 'vendors' ? sentinelVendorsPanel(o) : casesPanel) +
     '</div>';
 }
 
@@ -43954,6 +43955,100 @@ window.cardinalOwaspChips = function (codes) {
     return '<span title="OWASP ' + c + ': ' + (window.CARDINAL_OWASP[c] || '') + '" style="font-size:9px;font-weight:700;font-family:monospace;color:#475569;border:1px solid rgba(71,85,105,.35);background:rgba(71,85,105,.07);padding:1px 6px;border-radius:5px;white-space:nowrap">OWASP ' + c + ' · ' + (window.CARDINAL_OWASP[c] || '') + '</span>';
   }).join(' ');
 };
+
+// ══ SENTINEL ADDITIONS (10/2, Brittany picked all four): Incident Reporting clocks, Case
+// Playbooks, Shadow AI monitor, Vendor AI registry. Real reporting deadlines only:
+// FinCEN SAR 30 days after detection (31 CFR 1020.320); GDPR Art. 33 72 hours to the DPA;
+// DORA major ICT incident: initial notice within 4h of classification (24h of awareness max);
+// HIPAA individual notice within 60 days (45 CFR 164.404); DFARS 252.204-7012 cyber incident
+// report to DoD within 72 hours; federal agencies report incidents to CISA within 1 hour
+// (OMB M-17-12 for PII breaches); IRC 7213A unauthorized inspection.
+window.SENTINEL_INCIDENTS = {
+  fin: [
+    { what: 'Voice-clone wire attempt ($480,000)', case: 'Obsidian deepfake', h: 50, rules: [['FinCEN SAR (key term FIN-2024-DEEPFAKEFRAUD)', 30 * 24]] },
+    { what: 'Departed contractor key used on the Credit Scoring API (EU applicant data)', case: 'Security Watch', h: 9, rules: [['DORA initial notice (if classified major)', 24], ['GDPR Art. 33 notice to the Irish DPC', 72]] },
+    { what: 'Collections Agent texted 212 people after 9 PM', case: 'Agent actions', h: 2, rules: [['Internal FDCPA review (policy)', 5 * 24]] }
+  ],
+  ad: [
+    { what: 'Contractor API key probed Personnel Assignment 3,400 times', case: 'Security Watch', h: 26, rules: [['DFARS 252.204-7012 cyber incident report to DoD', 72]] },
+    { what: 'Deepfake applicant in a cleared-role interview', case: 'Obsidian deepfake', h: 170, rules: [['DCSA suspicious contact report (company policy: 1 business day)', 24]], done: true },
+    { what: 'Cloned CFO voice requested a $1.2M payment', case: 'Obsidian deepfake', h: 26, rules: [['FBI IC3 complaint (recommended within 24h)', 24]] }
+  ],
+  health: [
+    { what: 'Cloned patient voice redirected 3 controlled-substance refills', case: 'Obsidian deepfake', h: 75, rules: [['HIPAA notice to the patient', 60 * 24], ['HHS breach log (annual, under 500 people)', 365 * 24]] },
+    { what: 'Claims Triage Agent auto-closed 31 denials without clinician review', case: 'Agent actions', h: 4, rules: [['Internal clinical review (policy)', 48]] }
+  ],
+  fed: [
+    { what: 'Examiner looked up a relative\'s return through the fraud model', case: 'Whistleblower', h: 30, rules: [['CISA incident report (PII, OMB M-17-12)', 1], ['TIGTA referral (IRC 7213A unauthorized inspection)', 7 * 24]], done: true },
+    { what: '37 refunds diverted with deepfake identity checks', case: 'Obsidian deepfake', h: 60, rules: [['TIGTA referral', 7 * 24], ['CISA incident report', 1]], done: true }
+  ]
+};
+window.SENTINEL_PLAYBOOKS = [
+  { name: 'Bias in a live model', steps: ['Eve confirms the disparity with a Genesis counterfactual test', 'Suppress the affected cohort from harmful outreach', 'Fix in Atonement: shadow deploy on 5% of traffic with auto-rollback', 'Named approver signs off on the ramp', 'Notify regulators the law requires', 'Re-review every affected person; Passport shows them the outcome', 'Seal the closure receipt on the Trust Ledger'], cases: { ad: ['AD-2847', 4], fin: ['FIN-1203', 4], health: ['HS-2847', 3], fed: ['FED-PDV-001', 1] } },
+  { name: 'Fraud ring exploiting a model gap', steps: ['Obsidian links the ring to the bias blind spot', 'Freeze linked accounts (suppression rule)', 'Close the gap in the model and in identity checks', 'File the required report (SAR, TIGTA, IC3)', 'Seal evidence hashes'], cases: { fin: ['FIN-2207', 2], ad: ['AD-2902', 3] } },
+  { name: 'AI agent acted without approval', steps: ['Runtime Enforcement pauses the agent', 'Roll back what it did', 'Assign or confirm a human owner', 'Narrow its access to what it uses', 'Log the action and fix in Echo'], cases: { fin: ['Collections Agent', 3], health: ['Claims Triage Agent', 2], fed: ['Audit Selection Agent', 2], ad: ['Scheduling bot', 5] } },
+  { name: 'Deepfake or voice-clone attack', steps: ['Hold the transaction or access', 'Confirm with the real person by callback', 'Start the reporting clock', 'Request takedown of public fakes', 'Harden the identity check that was beaten'], cases: { fin: ['Wire attempt', 3], health: ['Refill redirect', 4], ad: ['CFO voice', 5], fed: ['Refund ring', 4] } },
+  { name: 'Model drift', steps: ['Halo flags the trend before a threshold breaks', 'Genesis retests on fresh data', 'Decide: retrain, recalibrate, or roll back', 'Shadow test the change', 'Promote and seal'], cases: { ad: ['AD-2889', 4], health: ['HS-2104', 2] } }
+];
+window.SENTINEL_SHADOW_AI = {
+  fin: [['Personal chatbot accounts (consumer LLMs)', 41, 'Credit memos and applicant notes pasted 6 times this month', 'Blocked on work devices; approved assistant offered', 'fail'], ['Browser writing extension reading the CRM', 18, 'Has read access to customer records', 'Under review', 'warn'], ['AI meeting note-taker (unapproved)', 7, 'Recorded 3 underwriting committee meetings', 'Removed; recordings deleted', 'pass']],
+  ad: [['Personal chatbot accounts (consumer LLMs)', 23, 'Maintenance manuals pasted twice (export-controlled data)', 'Blocked; ITAR review opened', 'fail'], ['AI code assistant on personal accounts', 11, 'Proprietary routing code shared', 'Moved to approved enterprise tool', 'pass']],
+  health: [['Personal chatbot accounts (consumer LLMs)', 36, 'Patient notes pasted 4 times (PHI)', 'Blocked; privacy officer notified', 'fail'], ['Transcription app on personal phones', 12, 'Used in 2 patient calls', 'Under review', 'warn']],
+  fed: [['Personal chatbot accounts (consumer LLMs)', 9, 'No return data detected', 'Blocked by agency policy', 'pass'], ['Browser AI extensions', 4, 'Could read taxpayer case notes', 'Removed', 'pass']]
+};
+window.SENTINEL_VENDORS = {
+  fin: [['Selfie liveness vendor', 'Identity verification', 'Onboarding', ['SOC 2', 'Model card'], ['BIPA consent terms', 'Bias audit'], 'Gap'], ['Credit bureau feed', 'Credit attributes', 'Underwriting v4.1', ['SOC 2', 'FCRA terms'], ['Model-training rights'], 'Gap'], ['Collections agent platform', 'Outbound AI agent', 'Collections', ['SOC 2'], ['Named owner', 'FDCPA attestation'], 'Gap'], ['Support LLM provider', 'Foundation model', 'Support assistant, Pre-qual Chatbot', ['SOC 2', 'No training on your data'], ['CA AB 2013 training data summary'], 'Watch']],
+  ad: [['TechServe LLC', 'Roster ETL', 'Maintenance Routing', ['CMMC Level 2'], ['Retraining rights after Dec 31'], 'Watch'], ['Interview platform', 'Video interviews', 'Hiring', ['SOC 2', 'Deepfake detection'], [], 'Passing']],
+  health: [['Clinical criteria licensor', 'Coverage criteria', 'Prior Auth v1.5', ['License incl. training', 'BAA'], [], 'Passing'], ['Messaging LLM provider', 'Foundation model', 'Patient Messaging Assistant', ['BAA', 'No training on PHI'], ['Wrong-answer rate reporting'], 'Watch']],
+  fed: [['Help assistant LLM provider', 'Foundation model', 'Taxpayer Help Assistant', ['FedRAMP', 'M-26-04 terms in contract'], ['Transparency documents'], 'Watch'], ['Identity verification provider', 'Selfie identity checks', 'Account access', ['FedRAMP'], ['Deepfake injection testing'], 'Gap']]
+};
+window.__sentPacket = window.__sentPacket || {};
+window.sentinelMakePacket = function (i) { window.__sentPacket[(window.currentOrg || 'ad') + ':' + i] = true; buildSentinel(window.currentOrg || 'ad'); };
+function sentEsc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;'); }
+function sentinelIncidentsPanel(org) {
+  var list = SENTINEL_INCIDENTS[org] || [], appr = { fin: 'Riley Whitmore', ad: 'James Martinez', health: 'Elena Ruiz', fed: 'Patricia Alvarez' }[org];
+  var clock = function (hAgo, hLimit) {
+    var left = hLimit - hAgo;
+    if (left <= 0) return '<span style="font-weight:700;color:#DC2626">Past deadline by ' + (-left < 48 ? (-left) + 'h' : Math.round(-left / 24) + 'd') + '</span>';
+    return '<span style="font-weight:700;color:' + (left <= 24 ? '#DC2626' : left <= 72 ? '#B45309' : '#15803D') + '">' + (left < 48 ? left + 'h left' : Math.round(left / 24) + ' days left') + '</span>';
+  };
+  return '<div class="card" style="padding:14px"><div style="font-size:13px;font-weight:700;color:var(--chrome2)">Incident Reporting: every clock that started, and the packet each one needs</div>' +
+    '<div style="font-size:11px;color:var(--muted2);margin:4px 0 12px">Cardinal starts the right regulator clock the moment an incident is confirmed and assembles the packet: timeline, affected records, model and version, actions taken, and sealed evidence hashes.</div>' +
+    list.map(function (x, i) {
+      var made = window.__sentPacket[org + ':' + i] || x.done;
+      return '<div style="border:1px solid var(--border2);border-radius:9px;padding:10px 12px;margin-bottom:8px;background:rgba(26,24,21,0.03)">' +
+        '<div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap"><div style="font-size:12px;font-weight:700;color:var(--chrome2)">' + sentEsc(x.what) + '</div><span style="font-size:10px;color:var(--muted)">From ' + sentEsc(x.case) + ' · detected ' + (x.h < 24 ? x.h + 'h' : Math.round(x.h / 24) + 'd') + ' ago</span></div>' +
+        x.rules.map(function (r) { return '<div style="display:flex;justify-content:space-between;gap:8px;font-size:11px;padding:4px 0;border-bottom:1px solid var(--border)"><span style="color:var(--chrome2)">' + sentEsc(r[0]) + '</span>' + (x.done ? '<span style="font-weight:700;color:#15803D">✓ Filed</span>' : clock(x.h, r[1])) + '</div>'; }).join('') +
+        '<div style="margin-top:6px">' + (made ? '<span style="font-size:10.5px;font-weight:700;color:#15803D">✓ Packet ' + (x.done ? 'filed' : 'drafted by Eve, waiting on ' + appr + ' to approve') + '. Sealed on the Trust Ledger.</span>' : '<button type="button" onclick="sentinelMakePacket(' + i + ')" style="font-size:10.5px;padding:4px 11px;border-radius:7px;border:1px solid rgba(37,99,235,.35);background:rgba(37,99,235,.06);color:#1d4ed8;font-weight:700;cursor:pointer">Generate regulator packet →</button>') + '</div></div>';
+    }).join('') + '</div>';
+}
+function sentinelPlaybooksPanel(org) {
+  return '<div class="card" style="padding:14px"><div style="font-size:13px;font-weight:700;color:var(--chrome2)">Case Playbooks</div><div style="font-size:11px;color:var(--muted2);margin:4px 0 12px">Every case type runs the same tested steps. Eve does the green steps; a named person approves the rest.</div>' +
+    SENTINEL_PLAYBOOKS.map(function (p) {
+      var a = p.cases[org];
+      return '<div style="border:1px solid var(--border2);border-radius:9px;padding:10px 12px;margin-bottom:8px;background:rgba(26,24,21,0.03)"><div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap"><div style="font-size:12px;font-weight:700;color:var(--chrome2)">' + sentEsc(p.name) + '</div>' +
+        (a ? '<span style="font-size:10px;font-weight:700;color:#1d4ed8">Running on ' + sentEsc(a[0]) + ': step ' + a[1] + ' of ' + p.steps.length + '</span>' : '<span style="font-size:10px;color:var(--muted)">Ready</span>') + '</div>' +
+        '<ol style="margin:6px 0 0 18px;padding:0">' + p.steps.map(function (s, k) {
+          var done = a && k < a[1] - 1, cur = a && k === a[1] - 1, eve = /^Eve|Runtime|Halo|Obsidian|Genesis retests|Suppress|Freeze|Start the/.test(s);
+          return '<li style="font-size:10.5px;padding:2px 0;color:' + (done ? '#15803D' : cur ? '#1d4ed8' : 'var(--muted2)') + ';font-weight:' + (cur ? '700' : '500') + '">' + (done ? '✓ ' : cur ? '▶ ' : '') + sentEsc(s) + ' <span style="font-size:9px;color:' + (eve ? '#15803D' : '#7E22CE') + '">(' + (eve ? 'Eve' : 'human approval') + ')</span></li>';
+        }).join('') + '</ol></div>';
+    }).join('') + '</div>';
+}
+function sentinelShadowPanel(org) {
+  var C = { pass: '#15803D', warn: '#B45309', fail: '#DC2626' }, rows = SENTINEL_SHADOW_AI[org] || [];
+  return '<div class="card" style="padding:14px"><div style="font-size:13px;font-weight:700;color:var(--chrome2)">Shadow AI: outside AI tools touching company data</div><div style="font-size:11px;color:var(--muted2);margin:4px 0 12px">AI your people use that nobody approved. Detected from network, browser, and data-loss signals; every finding goes to the data owner.</div>' +
+    '<table class="data-table" style="width:100%"><thead><tr><th>Tool</th><th>People</th><th>What it touched</th><th>Action</th></tr></thead><tbody>' +
+    rows.map(function (r) { return '<tr style="vertical-align:top"><td style="font-weight:700;color:var(--chrome2)">' + sentEsc(r[0]) + '</td><td>' + r[1] + '</td><td style="font-size:10.5px;color:' + C[r[4]] + '">' + sentEsc(r[2]) + '</td><td style="font-size:10.5px">' + sentEsc(r[3]) + '</td></tr>'; }).join('') + '</tbody></table></div>';
+}
+function sentinelVendorsPanel(org) {
+  var rows = SENTINEL_VENDORS[org] || [], SC = { Gap: '#DC2626', Watch: '#B45309', Passing: '#15803D' };
+  return '<div class="card" style="padding:14px"><div style="font-size:13px;font-weight:700;color:var(--chrome2)">Vendor AI Registry</div><div style="font-size:11px;color:var(--muted2);margin:4px 0 12px">Every outside company whose AI touches your decisions, what it has proven, and what is missing. Regulators now expect this (the 2026 GEICO settlement required accountability for third-party AI).</div>' +
+    '<table class="data-table" style="width:100%"><thead><tr><th>Vendor</th><th>Provides</th><th>Used by</th><th>On file</th><th>Missing</th><th>Status</th></tr></thead><tbody>' +
+    rows.map(function (r) {
+      return '<tr style="vertical-align:top"><td style="font-weight:700;color:var(--chrome2)">' + sentEsc(r[0]) + '</td><td style="font-size:10.5px">' + sentEsc(r[1]) + '</td><td style="font-size:10.5px">' + sentEsc(r[2]) + '</td><td style="font-size:10px;color:#15803D">' + r[3].map(function (x) { return '✓ ' + sentEsc(x); }).join('<br>') + '</td><td style="font-size:10px;color:#DC2626">' + (r[4].length ? r[4].map(function (x) { return '✕ ' + sentEsc(x); }).join('<br>') : '<span style="color:var(--muted)">Nothing</span>') + '</td>' +
+        '<td><span style="font-size:9px;font-weight:800;text-transform:uppercase;color:' + SC[r[5]] + ';border:1px solid ' + SC[r[5]] + '55;padding:2px 6px;border-radius:5px">' + r[5] + '</span></td></tr>';
+    }).join('') + '</tbody></table></div>';
+}
 
 function sentinelSecurityWatchPanel(org) {
   var d = (window.CARDINAL_SECURITY_WATCH || {})[org] || window.CARDINAL_SECURITY_WATCH.ad;
