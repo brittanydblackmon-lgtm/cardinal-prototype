@@ -36617,6 +36617,121 @@ const MARKETING_SCAN = {
  passed:['Reg Z rate disclosure present','ECOA equal opportunity statement included','CAN-SPAM compliance confirmed'],
 };
 
+// 10/1 -- Compliance Overview / Regulations / Reporting / Whistleblower data brought in line with
+// the corrected story: Federal had no entry (it showed Healthcare's), Healthcare said "Score 71"
+// (it's 83), Finance listed California AB 2930 (a 2024 bill that never passed) and a model that
+// doesn't exist, A&D listed a "DoD AI Ethics Certification" (not a real certification), and the
+// CFPB exam date didn't roll. Whistleblower reports now come from the real whistleblower records.
+(function () {
+  var D = function (days) { var a = window.CARDINAL_AUTHORED_TODAY; return cardinalFormatDeadline(new Date(a.getFullYear(), a.getMonth(), a.getDate() + days)); };
+  var S = { ad: 74, fin: 81, health: 83, fed: 71 };
+  var R = function (org, cert, status, deadline, c) { return { cert: cert, status: status, score: S[org], threshold: 80, deadline: deadline, c: c }; };
+  var wb = function (org) {
+    return (WB_SEED[org] || []).map(function (t) {
+      var last = t.messages[t.messages.length - 1];
+      return { id: t.id, type: t.category, status: t.status, filed: t.messages[0].day, resolved: t.status === 'Closed' ? last.day : 'Open', c: t.status === 'Closed' ? 'green' : t.status === 'Open' ? 'red' : 'amber' };
+    });
+  };
+  var C = COMPLIANCE_DATA;
+  C.ad.renewalTracker = [
+    R('ad', 'Cardinal Certification', 'Not Certified', 'After v2.5 rollout', 'red'),
+    R('ad', 'DoD Responsible AI assessment', 'Overdue', D(-2), 'red'),
+    R('ad', 'ITAR compliance audit', 'Due Soon', D(8), 'amber'),
+    R('ad', 'ISO/IEC 42001 surveillance audit', 'Scheduled', D(75), 'green'),
+    R('ad', 'NYC Local Law 144 bias audit', 'Compliant', D(360), 'green')
+  ];
+  C.ad.ruleLibrary = [
+    { reg: 'Title VII (adverse impact)', applies: 'Personnel Assignment v2.4, hiring screen', jurisdiction: 'Federal (EEOC)', risk: 'Critical' },
+    { reg: 'Illinois HB 3773', applies: 'Personnel Assignment v2.4 (home ZIP proxy)', jurisdiction: 'Illinois', risk: 'Critical' },
+    { reg: 'DoD AI Ethical Principles / RAI Toolkit', applies: 'Personnel Assignment, Mission Readiness', jurisdiction: 'Federal (DoD contracts)', risk: 'High' },
+    { reg: 'ITAR', applies: 'All AI touching export-controlled technical data', jurisdiction: 'Federal (State Dept.)', risk: 'Critical' },
+    { reg: 'NYC Local Law 144', applies: 'Hiring screen for NYC roles', jurisdiction: 'New York City', risk: 'High' }
+  ];
+  C.ad.jurisdiction = [
+    { location: 'Arlington, VA (HQ)', model: 'Personnel Assignment v2.4', law: 'Title VII + DoD RAI Toolkit', status: 'At Risk', c: 'red' },
+    { location: 'Chicago, IL', model: 'Personnel Assignment v2.4', law: 'Illinois HB 3773', status: 'At Risk', c: 'red' },
+    { location: 'Fort Bragg, NC', model: 'Mission Readiness v1.1', law: 'DoD AI Ethical Principles', status: 'Passing', c: 'green' },
+    { location: 'Langley AFB, VA', model: 'Maintenance Routing v1.2', law: 'ITAR + DoD RAI Toolkit', status: 'Watch', c: 'amber' }
+  ];
+  C.fin.renewalTracker = [
+    R('fin', 'Cardinal Certification', 'Certified', 'Watch Fairness (74)', 'green'),
+    R('fin', 'CFPB fair lending exam', 'Evidence 55%', D(13), 'red'),
+    R('fin', 'ECOA / Reg B (#FIN-1203)', 'Fix In Progress', 'Before the exam', 'amber'),
+    R('fin', 'Colorado SB 26-189', 'Gap', 'Jan 1, 2027', 'red'),
+    R('fin', 'California ADMT rules', 'Pending', 'Jan 1, 2027', 'blue'),
+    R('fin', 'EU AI Act (high-risk credit scoring)', 'Gap', 'Dec 2, 2027', 'red'),
+    R('fin', 'SOC 2 Type II', 'Compliant', D(330), 'green')
+  ];
+  C.fin.ruleLibrary = [
+    { reg: 'ECOA / Reg B', applies: 'Credit Scoring v3.4, Underwriting v4.1', jurisdiction: 'Federal (CFPB)', risk: 'Critical' },
+    { reg: 'FCRA adverse action', applies: 'Every AI-driven credit denial', jurisdiction: 'Federal', risk: 'High' },
+    { reg: 'FinCEN deepfake alert (FIN-2024-Alert004)', applies: 'Fraud Screening v2.7, wire desk', jurisdiction: 'Federal (FinCEN)', risk: 'High' },
+    { reg: 'California ADMT rules', applies: 'Credit decisions for California applicants', jurisdiction: 'California', risk: 'High' },
+    { reg: 'Colorado SB 26-189', applies: 'Credit decisions for Colorado applicants', jurisdiction: 'Colorado', risk: 'High' },
+    { reg: 'Illinois BIPA', applies: 'Selfie and voice-print identity checks', jurisdiction: 'Illinois', risk: 'High' },
+    { reg: 'Massachusetts fair lending enforcement', applies: 'Credit Scoring v3.4', jurisdiction: 'Massachusetts', risk: 'High' }
+  ];
+  C.fin.jurisdiction = [
+    { location: 'New York, NY', model: 'Credit Scoring v3.4', law: 'ECOA (Reg B)', status: 'At Risk', c: 'red' },
+    { location: 'Boston, MA', model: 'Credit Scoring v3.4', law: 'ECOA + MA AG enforcement', status: 'At Risk', c: 'red' },
+    { location: 'Los Angeles, CA', model: 'Credit Scoring v3.4', law: 'ECOA + CA ADMT (2027)', status: 'Watch', c: 'amber' },
+    { location: 'Chicago, IL', model: 'Fraud Screening v2.7', law: 'IL BIPA (selfie checks)', status: 'Gap', c: 'red' },
+    { location: 'Denver, CO', model: 'Underwriting v4.1', law: 'CO SB 26-189 (2027)', status: 'Watch', c: 'amber' }
+  ];
+  C.fin.ledgerCert = { id: 'CARD-FIN-2026-1203', score: 81, status: 'Certified', issued: D(-30), valid: D(335), hash: '0x3c8f91...' };
+  C.health.renewalTracker = [
+    R('health', 'Cardinal Certification', 'Not Certified: Fairness 64', 'After HS-2847 fix', 'red'),
+    R('health', 'ACA Section 1557 remediation', 'Fix Deploying', D(4), 'red'),
+    R('health', 'California SB 1120 (clinician review)', 'Gap', 'Fix target set', 'red'),
+    R('health', 'CMS Medicare Advantage audit', 'Audit In Progress', D(30), 'amber'),
+    R('health', 'Joint Commission survey', 'Preparing', D(56), 'blue'),
+    R('health', 'HIPAA Security Rule', 'Compliant', 'Annual', 'green')
+  ];
+  C.health.ledgerCert = { id: 'CARD-HS-2026-2847', score: 83, status: 'Not Certified (Fairness 64 < 70)', issued: 'Pending fix', valid: 'N/A', hash: '0x9d2e47...' };
+  (C.health.ledgerEntries || []).forEach(function (e) { if (/Score 71/.test(e.event)) e.event = 'Last certification check: Score 83, failed on Fairness 64 (floor 70)'; });
+  C.fed = {
+    renewalTracker: [
+      R('fed', 'Cardinal Certification', 'Not Certified', 'Fairness 54 < 70', 'red'),
+      R('fed', 'OMB M-25-21 high-impact AI', 'Gap: no owner', D(27), 'red'),
+      R('fed', 'AI use case inventory', 'Compliant', 'Annual', 'green'),
+      R('fed', 'FISMA authorization (ATO)', 'Compliant', 'Continuous', 'green'),
+      R('fed', 'Privacy Act system notice', 'Compliant', 'Review yearly', 'green')
+    ],
+    ruleLibrary: [
+      { reg: 'OMB M-25-21 (high-impact AI)', applies: 'IRS Tax Fraud Detection v3.1, Audit Selection Agent', jurisdiction: 'Federal (OMB)', risk: 'Critical' },
+      { reg: 'IRC 6103 (return confidentiality)', applies: 'All models using return data', jurisdiction: 'Federal', risk: 'Critical' },
+      { reg: 'Privacy Act', applies: 'All systems of records feeding AI', jurisdiction: 'Federal', risk: 'High' },
+      { reg: 'FISMA', applies: 'All agency AI systems', jurisdiction: 'Federal', risk: 'High' },
+      { reg: 'EO 13960 (agency AI principles)', applies: 'All agency AI, through OMB M-25-21', jurisdiction: 'Federal', risk: 'Medium' }
+    ],
+    jurisdiction: [
+      { location: 'Washington, DC (national)', model: 'IRS Tax Fraud Detection v3.1', law: 'OMB M-25-21', status: 'At Risk', c: 'red' },
+      { location: 'Ogden, UT campus', model: 'Audit Selection Agent', law: 'M-25-21 human oversight', status: 'Gap', c: 'red' },
+      { location: 'Kansas City, MO campus', model: 'Taxpayer Help Assistant', law: 'Privacy Act + IRC 6103', status: 'Passing', c: 'green' }
+    ],
+    escalationLog: [
+      { caseId: '#FED-PDV-001', event: 'Chief AI Officer notified: audit selection disparity for self-employed filers', time: __cdr('Apr 21', 'fed') + ' 10:05', team: 'Privacy + Compliance', c: 'red' },
+      { caseId: '#FED-PDV-001', event: 'Deployment blocked pending M-25-21 impact assessment', time: __cdr('Apr 22', 'fed') + ' 09:00', team: 'CAIO + Legal', c: 'amber' },
+      { caseId: '#FED-PDV-001', event: 'OMB packet v0.6 assembled; agency review scheduled', time: __cdr('Apr 30', 'fed') + ' 15:30', team: 'Compliance', c: 'blue' }
+    ],
+    disclosures: [
+      { type: 'OMB packet v0.6 (impact assessment + appeals design)', generated: __cdr('Apr 30, 2026', 'fed'), status: 'Draft', c: 'amber' },
+      { type: 'AI use case inventory update', generated: __cdr('Apr 10, 2026', 'fed'), status: 'Submitted', c: 'green' },
+      { type: 'TIGTA referral: deepfake refund ring', generated: __cdr('Apr 28, 2026', 'fed'), status: 'Sent', c: 'green' }
+    ],
+    wbReports: [],
+    ledgerCert: { id: 'CARD-FED-2026-0071', score: 71, status: 'Below Threshold', issued: 'Pending fix', valid: 'N/A', hash: '0x5e1c07...' },
+    ledgerEntries: [
+      { date: __cdr('Apr 30', 'fed'), event: 'OMB packet v0.6 fingerprint sealed', c: 'blue' },
+      { date: __cdr('Apr 22', 'fed'), event: 'Deployment block logged (M-25-21)', c: 'amber' }
+    ],
+    marketingTrail: [
+      { asset: 'Taxpayer notice: AI use disclosure', scanned: __cdr('Apr 15, 2026', 'fed'), result: 'Compliant', issues: 0, approver: 'Privacy Office', c: 'green' }
+    ]
+  };
+  ['ad', 'fin', 'health', 'fed'].forEach(function (o) { C[o].wbReports = wb(o); });
+})();
+
 function buildCompliance(org) {
   // Render Cardinal pin panel + dual-view
   try { if (typeof cardinalRenderCorePinsPanel === 'function') cardinalRenderCorePinsPanel('compliance', 'compliance-core-pins'); } catch(_e1) {}
