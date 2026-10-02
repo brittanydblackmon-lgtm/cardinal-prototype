@@ -17695,6 +17695,7 @@ function dashStartTrustScoreDrift(baseline) {
   if (window._dashTrustDriftTimer) { clearInterval(window._dashTrustDriftTimer); window._dashTrustDriftTimer = null; }
   window._dashTrustDriftBase = baseline;
   window._dashTrustDriftValue = baseline;
+  window._dashTrustDriftOrg = window.currentOrg;   // which company this drift belongs to
   // reset sub-score baselines so they re-anchor to whatever's on screen after a refresh/switch
   ['dr-bias-det-num', 'dr-fraud-num', 'dr-comp-num', 'tsv2-pill-bias-num', 'tsv2-pill-fraud-num', 'tsv2-pill-comp-num'].forEach(function (id) { delete window['_dashTrust_' + id + '_base']; });
   el.style.transition = 'opacity 0.4s ease';
@@ -22692,7 +22693,7 @@ function loadIndustry(org) {
  // else the org's real CARDINAL_DATA baseline) and hand it to the one shared
  // display function instead of computing and writing a competing number.
  var cdReal = (window.CARDINAL_DATA && window.CARDINAL_DATA[org]) || null;
- var score = (typeof window._dashTrustDriftValue === 'number' && window.currentOrg === org)
+ var score = (typeof window._dashTrustDriftValue === 'number' && window.currentOrg === org && window._dashTrustDriftOrg === org)
    ? Math.round(window._dashTrustDriftValue)
    : Math.round(cdReal ? cdReal.trustScore * 100 : computeTrustScore(dimScores));
  const sc = scoreColor(score);
@@ -23333,7 +23334,7 @@ function showScreen(name, navEl) {
     // directly to Trust Score). Resumes from wherever the score last sat rather
     // than restarting the whole baseline->high->low->baseline cycle from scratch.
     if (!window._dashTrustDriftTimer && typeof dashStartTrustScoreDrift === 'function') {
-      var tsResumeFrom = (typeof window._dashTrustDriftValue === 'number') ? Math.round(window._dashTrustDriftValue) : (typeof window._dashTrustDriftBase === 'number' ? window._dashTrustDriftBase : null);
+      var tsResumeFrom = (typeof window._dashTrustDriftValue === 'number' && window._dashTrustDriftOrg === window.currentOrg) ? Math.round(window._dashTrustDriftValue) : (typeof window._dashTrustDriftBase === 'number' ? window._dashTrustDriftBase : null);
       if (tsResumeFrom == null) {
         try {
           var tsResumeData = (typeof tsv2Data === 'function') ? tsv2Data(currentOrg || 'ad') : null;
@@ -26814,7 +26815,7 @@ function personalize(text) {
 function eveSwapLiveScoreInText(text) {
   if (!text || typeof text !== 'string') return text;
   var org = window.currentOrg || 'ad';
-  var live = (typeof window._dashTrustDriftValue === 'number') ? Math.round(window._dashTrustDriftValue)
+  var live = (typeof window._dashTrustDriftValue === 'number' && window._dashTrustDriftOrg === window.currentOrg) ? Math.round(window._dashTrustDriftValue)
     : (window.CARDINAL_DATA && window.CARDINAL_DATA[org] ? Math.round(window.CARDINAL_DATA[org].trustScore * 100) : null);
   if (live == null) return text;
   var swapped = text.replace(/(Trust Score(?:<\/span>)?(?:\s+is|:)?\s+)(\d{2,3})/gi, function (m, pre) { return pre + live; });
@@ -40154,8 +40155,9 @@ function tsv2HexA(hex, a) {
 
 function tsv2AnimateNumber(el, from, to, durMs) {
   if (!el) return;
-  var start = performance.now();
+  var start = performance.now(), tok = el.__animTok = (el.__animTok || 0) + 1;   // a newer animation cancels this one
   function tick(now) {
+    if (el.__animTok !== tok) return;
     var t = Math.min(1, (now - start) / durMs);
     var eased = 1 - Math.pow(1 - t, 3);
     var v = Math.round(from + (to - from) * eased);
@@ -40183,7 +40185,7 @@ function tsv2BuildHero(d, org) {
   // when it's running for the org actually on screen, instead of the static
   // seed number, so the ring doesn't paint a stale value for one frame before
   // dashSyncAllTrustScoreDisplays's next tick corrects it.
-  var score = (typeof window._dashTrustDriftValue === 'number' && window.currentOrg === (window.TSV2_LAST_ORG || window.currentOrg))
+  var score = (typeof window._dashTrustDriftValue === 'number' && window._dashTrustDriftOrg === window.currentOrg)
     ? Math.round(window._dashTrustDriftValue)
     : (parseInt(d.trustScoreDisplay, 10) || 0);
   var color = d.trustColor || tsv2ScoreColor(score);
@@ -40792,7 +40794,7 @@ function tsv2BuildPath(d) {
   // computed from the same blockers list rendered below (not a separate guess).
   var calloutEl = document.getElementById('tsv2-path-top-callout');
   if (calloutEl) {
-    var liveForCallout = (typeof window._dashTrustDriftValue === 'number' && window.currentOrg === (window.TSV2_LAST_ORG || window.currentOrg))
+    var liveForCallout = (typeof window._dashTrustDriftValue === 'number' && window._dashTrustDriftOrg === window.currentOrg)
       ? Math.round(window._dashTrustDriftValue)
       : (parseInt(d.trustScoreDisplay, 10) || 0);
     var topBlocker = null, topImpact = 0;
@@ -40939,7 +40941,7 @@ function tsv2BuildPath(d) {
   //     how the static 82 was originally derived (74 seed + ~7.9 pts of listed
   //     upside, rounded), so this makes the number live instead of hardcoding
   //     a value that was only ever correct at the seed baseline.
-  var current = (typeof window._dashTrustDriftValue === 'number' && window.currentOrg === (window.TSV2_LAST_ORG || window.currentOrg))
+  var current = (typeof window._dashTrustDriftValue === 'number' && window._dashTrustDriftOrg === window.currentOrg)
     ? Math.round(window._dashTrustDriftValue)
     : (parseInt(d.trustScoreDisplay, 10) || 0);
   var upsideTotal = (d.fixImpactScenarios || []).reduce(function (sum, u) { return sum + (typeof u.points === 'number' ? u.points : 0); }, 0);
@@ -41008,7 +41010,7 @@ function tsv2RenderEveBody(d) {
   // by regex, instead of blindly swapping the first number in the paragraph (which for
   // monthly text would wrongly hit the delta number, not a score).
   try {
-    var liveScoreForEve = (typeof window._dashTrustDriftValue === 'number' && window.currentOrg === (window.TSV2_LAST_ORG || window.currentOrg))
+    var liveScoreForEve = (typeof window._dashTrustDriftValue === 'number' && window._dashTrustDriftOrg === window.currentOrg)
       ? Math.round(window._dashTrustDriftValue)
       : null;
     var seedScoreForEve = parseInt(d.trustScoreDisplay, 10);
@@ -41958,7 +41960,7 @@ function buildAnnualCertFile(org) {
   // 9/26 -- same live-drift fix as the hero ring (tsv2BuildHero): read the
   // live score value when it's running for this org, instead of the static
   // seed number, so this doesn't show a stale score next to the live ring.
-  var acfLiveScore = (typeof window._dashTrustDriftValue === 'number' && window.currentOrg === org)
+  var acfLiveScore = (typeof window._dashTrustDriftValue === 'number' && window.currentOrg === org && window._dashTrustDriftOrg === org)
     ? Math.round(window._dashTrustDriftValue)
     : (parseInt(d.trustScoreDisplay, 10) || d.trustScoreDisplay);
 
@@ -47100,6 +47102,42 @@ window.genRenderScenarios = function () {
     COHORT_LIBRARY_DATA.fed.crossTeamAlert = 'The Examiner Caseload Balancer team removed an income-volatility feature that acted as a proxy for self-employment. The same pattern (schedule_c_volatility) is live in IRS Tax Fraud Detection v3.1. Eve suggests the same fix, tested in shadow first.';
     (function walk(o) { Object.keys(o).forEach(function (k) { var v = o[k]; if (typeof v === 'string') { R.forEach(function (r) { v = v.replace(r[0], r[1]); }); o[k] = v; } else if (v && typeof v === 'object') walk(v); }); })(COHORT_LIBRARY_DATA.fed);
   }
+})();
+</script>
+
+<script>
+// 10/2 -- Brittany's calls: keep the core names, add plain labels (sidebar shows "Eden · Bias");
+// certification is annual, with a quarterly badge backed by continuous monitoring.
+(function () {
+  var PLAIN = { eden: ['Eden', 'Bias'], obsidian: ['Obsidian', 'Fraud'], genesis: ['Genesis', 'Testing'], atonement: ['Atonement', 'Fixes'], halo: ['Halo', 'Forecasting'], marketing: ['Marketing', 'Claims'], echo: ['Echo', 'Records'], sentinel: ['Sentinel', 'Security'], lucid: ['Lucid', 'Explanations'] };
+  function label() {
+    document.querySelectorAll('.sidebar .nav-item').forEach(function (n) {
+      var m = /showScreen\('(\w+)'/.exec(n.getAttribute('onclick') || ''); if (!m || !PLAIN[m[1]] || n.__plain) return;
+      var w = document.createTreeWalker(n, NodeFilter.SHOW_TEXT), t;
+      while ((t = w.nextNode())) {
+        if (/\b(Core|Layer)\b/.test(t.nodeValue)) {
+          var sp = document.createElement('span');
+          sp.innerHTML = PLAIN[m[1]][0] + ' <span style="opacity:.6;font-size:.92em">· ' + PLAIN[m[1]][1] + '</span>';
+          t.parentNode.replaceChild(sp, t); n.__plain = true; n.title = n.title || (PLAIN[m[1]][0] + ' Core: ' + PLAIN[m[1]][1].toLowerCase()); break;
+        }
+      }
+    });
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', label); else label();
+  // Certification cadence line under the Trust Score badge.
+  function cadence() {
+    var wrap = document.getElementById('tsv2-cert-badge-wrap'); if (!wrap || typeof cardinalCertStatus !== 'function') return;
+    var org = window.currentOrg || 'ad', st = cardinalCertStatus(org), now = new Date(), q = 'Q' + (Math.floor(now.getMonth() / 3) + 1) + ' ' + now.getFullYear();
+    var el = document.getElementById('ts-cert-cadence');
+    if (!el) { el = document.createElement('div'); el.id = 'ts-cert-cadence'; el.style.cssText = 'font-size:10.5px;color:var(--muted2);margin-top:6px;line-height:1.5'; wrap.parentNode.insertBefore(el, wrap.nextSibling); }
+    el.innerHTML = st.certified
+      ? '<strong style="color:var(--chrome2)">Annual certification</strong> renews ' + cardinalFormatDeadline('Oct 12, 2026') + ' · <strong style="color:#15803D">' + q + ' badge active</strong>, re-checked every quarter from live monitoring'
+      : '<strong style="color:var(--chrome2)">Annual certification</strong> not earned yet · <strong style="color:#B91C1C">' + q + ' badge suspended</strong>. It returns the quarter the score holds 80+ with no part under 70.';
+  }
+  var oS = window.showScreen;
+  if (typeof oS === 'function') window.showScreen = showScreen = function (s) { var r = oS.apply(this, arguments); try { label(); if (s === 'trustscore') setTimeout(cadence, 50); } catch (e) {} return r; };
+  var oI = window.switchIndustry;
+  if (typeof oI === 'function') window.switchIndustry = switchIndustry = function () { var r = oI.apply(this, arguments); try { setTimeout(cadence, 80); } catch (e) {} return r; };
 })();
 </script>
 
