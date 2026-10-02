@@ -13197,6 +13197,78 @@ function edoOverdueStampReminders(org) {
 window.edoOverdueStampReminders = edoOverdueStampReminders;
 window.edoStampChurnIsFlag = edoStampChurnIsFlag;
 window.edoStampChurnCount = edoStampChurnCount;
+// ══ STAMP OPERATIONS (10/1, approved proposals): seeded recent history, a confidence label on
+// partial coverage, one list of re-stamp reminders across both lenses, and a churn leaderboard.
+// Seeded unstamps are Eden-only and never the worst model, so no headline score moves (bias
+// score = worst stamped DI). Everything still flows through the real stampLog.
+(function seedStampHistory() {
+  window.__edo = window.__edo || {};
+  if (window.__edo.__stampSeeded) return;
+  window.__edo.__stampSeeded = true;
+  window.__edo.stampLog = window.__edo.stampLog || [];
+  window.__edo.unstamped = window.__edo.unstamped || {};
+  var DAY = 86400000, now = Date.now();
+  var at = function (d) { return new Date(now - d * DAY).toISOString(); };
+  var due = function (d) { return new Date(now + d * DAY).toISOString(); };
+  var L = function (org, lens, modelId, action, ago, actor, reason, reminderIn) {
+    window.__edo.stampLog.push({ org: org, lens: lens, modelId: modelId, action: action, at: at(ago), actor: actor, reason: reason || null, reminderDue: reminderIn == null ? null : due(reminderIn) });
+  };
+  // Finance: Fraud Screening temporarily unstamped from the bias lens (reminder upcoming); Underwriting churned twice.
+  L('fin', 'eden', 'Underwriting v4.1', 'unstamp', 70, 'Sarah Chen', 'Feature refresh before quarter close', null);
+  L('fin', 'eden', 'Underwriting v4.1', 'restamp', 62, 'Sarah Chen');
+  L('fin', 'eden', 'Underwriting v4.1', 'unstamp', 25, 'Sarah Chen', 'Vendor bureau feed outage', null);
+  L('fin', 'eden', 'Underwriting v4.1', 'restamp', 20, 'Sarah Chen');
+  L('fin', 'eden', 'Fraud Screening v2.7', 'unstamp', 18, 'Sarah Chen', 'Retraining on new consortium labels', 12);
+  window.__edo.unstamped['eden|fin|Fraud Screening v2.7'] = true;
+  // A&D: Mission Readiness unstamped for a feed migration, reminder now overdue.
+  L('ad', 'eden', 'Mission Readiness v1.1', 'unstamp', 33, 'Kate Morgan', 'Readiness data feed migration', -3);
+  window.__edo.unstamped['eden|ad|Mission Readiness v1.1'] = true;
+  L('ad', 'obs', 'Maintenance Routing v1.2', 'unstamp', 50, 'James Park', 'Vendor ETL swap', null);
+  L('ad', 'obs', 'Maintenance Routing v1.2', 'restamp', 44, 'James Park');
+  // Healthcare: one short remediation unstamp, re-stamped.
+  L('health', 'eden', 'Prior Auth v1.5', 'unstamp', 40, 'Dr. Aisha Patel', 'Criteria set update', null);
+  L('health', 'eden', 'Prior Auth v1.5', 'restamp', 37, 'Dr. Aisha Patel');
+})();
+function edoAllReminders(org) {
+  var log = (window.__edo && window.__edo.stampLog) || [], seen = {}, out = [];
+  for (var i = log.length - 1; i >= 0; i--) {
+    var e = log[i];
+    if (e.org !== org || e.action !== 'unstamp' || !e.reminderDue) continue;
+    var key = e.lens + '|' + e.modelId;
+    if (seen[key]) continue;
+    seen[key] = true;
+    var latest = edoLatestStampLogEntry(e.lens, org, e.modelId);
+    if (!latest || latest.action !== 'unstamp') continue;
+    out.push({ lens: e.lens, modelId: e.modelId, due: new Date(e.reminderDue), reason: e.reason, actor: e.actor });
+  }
+  return out.sort(function (a, b) { return a.due - b.due; });
+}
+window.edoStampOpsHtml = function (org) {
+  var esc = function (s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;'); };
+  var rem = edoAllReminders(org);
+  var log = (window.__edo && window.__edo.stampLog) || [];
+  var cut = Date.now() - 90 * 86400000, counts = {};
+  log.forEach(function (e) {
+    if (e.org !== org || e.action !== 'unstamp' || new Date(e.at).getTime() < cut) return;
+    var k = e.lens + '|' + e.modelId; counts[k] = (counts[k] || 0) + 1;
+  });
+  var board = Object.keys(counts).map(function (k) { var p = k.split('|'); return { lens: p[0], modelId: p[1], n: counts[k], flag: edoStampChurnIsFlag(p[0], org, p[1]) }; }).sort(function (a, b) { return b.n - a.n; });
+  var lensName = function (l) { return l === 'obs' ? 'Fraud lens' : 'Bias lens'; };
+  var today = new Date(); today.setHours(0, 0, 0, 0);
+  return '<section style="margin-bottom:20px"><div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">' +
+    '<div style="border:1px solid var(--border2);border-radius:10px;padding:11px 13px;background:var(--card)"><div style="font-size:12px;font-weight:700;color:var(--chrome2);margin-bottom:2px">Re-stamp reminders</div><div style="font-size:10px;color:var(--muted);margin-bottom:8px">Every unstamped model with a review date, across both lenses.</div>' +
+    (rem.length ? rem.map(function (r) {
+      var d = Math.round((new Date(r.due.getFullYear(), r.due.getMonth(), r.due.getDate()) - today) / 86400000);
+      var c = d < 0 ? '#DC2626' : d <= 7 ? '#B45309' : 'var(--muted2)';
+      return '<div style="display:flex;justify-content:space-between;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);font-size:10.5px"><div><strong style="color:var(--chrome2)">' + esc(r.modelId) + '</strong> <span style="color:var(--muted)">· ' + lensName(r.lens) + '</span><div style="color:var(--muted2)">"' + esc(r.reason) + '" · ' + esc(r.actor) + '</div></div>' +
+        '<div style="text-align:right;white-space:nowrap"><div style="font-weight:700;color:' + c + '">' + (d < 0 ? 'Overdue ' + (-d) + 'd' : d === 0 ? 'Due today' : 'Due in ' + d + 'd') + '</div><button type="button" onclick="edoToggleStamp(\'' + r.lens + '\',\'' + org + '\',' + esc(JSON.stringify(r.modelId)).replace(/"/g, '&quot;') + ')" style="margin-top:3px;font-size:9.5px;padding:2px 8px;border-radius:6px;border:1px solid rgba(21,128,61,.35);background:transparent;color:#15803D;cursor:pointer;font-weight:700">Re-stamp</button></div></div>';
+    }).join('') : '<div style="font-size:10.5px;color:var(--green)">✓ No unstamped models waiting on review.</div>') + '</div>' +
+    '<div style="border:1px solid var(--border2);border-radius:10px;padding:11px 13px;background:var(--card)"><div style="font-size:12px;font-weight:700;color:var(--chrome2);margin-bottom:2px">Stamp churn, last 90 days</div><div style="font-size:10px;color:var(--muted);margin-bottom:8px">Unstamping and re-stamping can prop up a score without fixing anything. Two or more in a year is flagged on the Annual Certification File.</div>' +
+    (board.length ? board.map(function (b, i) {
+      return '<div style="display:flex;justify-content:space-between;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);font-size:10.5px"><div><span style="color:var(--muted);margin-right:6px">' + (i + 1) + '.</span><strong style="color:var(--chrome2)">' + esc(b.modelId) + '</strong> <span style="color:var(--muted)">· ' + lensName(b.lens) + '</span></div>' +
+        '<div style="white-space:nowrap"><strong style="color:' + (b.flag ? '#DC2626' : 'var(--chrome2)') + '">' + b.n + ' unstamp' + (b.n === 1 ? '' : 's') + '</strong>' + (b.flag ? ' <span style="font-size:9px;font-weight:800;color:#DC2626;border:1px solid #DC262655;padding:1px 5px;border-radius:4px">GAMING FLAG</span>' : '') + '</div></div>';
+    }).join('') : '<div style="font-size:10.5px;color:var(--green)">✓ No stamp changes in the last 90 days.</div>') + '</div></div></section>';
+};
 // Live bias score = worst (lowest) DI among currently-stamped models, matching the app's
 // existing worst-case-floor convention (seed d.biasScore for 'ad' = 67 = exactly the DI of its
 // worst model). Unstamping the worst offender raises the displayed score; unstamping ALL models
@@ -13223,7 +13295,8 @@ function edoStampCoverageHtml(lens, org, models) {
   var total = models.length;
   var stamped = models.filter(function (m) { return edoIsStamped(lens, org, m); }).length;
   if (stamped === total) return '';
-  return '<button type="button" onclick="edoScrollModels(' + edoQ(lens) + ')" style="display:block;width:100%;text-align:left;margin-top:8px;padding:8px 10px;font-size:11px;color:var(--amber);background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.3);border-radius:8px;cursor:pointer"' + edoT('Unstamped Models', 'Unstamped models are excluded from the live score above. Click to jump to the model table and re-add a stamp to include a model again.') + '>⚠ ' + stamped + ' of ' + total + ' systems currently monitored: ' + (total - stamped) + ' unstamped and excluded from this score. <span style="text-decoration:underline">View unstamped models →</span></button>';
+  return '<button type="button" onclick="edoScrollModels(' + edoQ(lens) + ')" style="display:block;width:100%;text-align:left;margin-top:8px;padding:8px 10px;font-size:11px;color:var(--amber);background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.3);border-radius:8px;cursor:pointer"' + edoT('Unstamped Models', 'Unstamped models are excluded from the live score above. Click to jump to the model table and re-add a stamp to include a model again.') + '>⚠ ' + stamped + ' of ' + total + ' systems currently monitored: ' + (total - stamped) + ' unstamped and excluded from this score. <span style="text-decoration:underline">View unstamped models →</span>' +
+    '<span style="display:block;margin-top:4px;font-weight:700;color:' + (stamped / total < 0.8 ? '#B91C1C' : '#B45309') + '">Confidence: ' + (stamped / total < 0.8 ? 'Lower' : 'Moderate') + '. This score covers ' + Math.round(stamped / total * 100) + '% of your models, so treat it as partial until every model is stamped.</span></button>';
 }
 function edoDiColor(di) {
   var n = parseFloat(di);
@@ -14804,6 +14877,7 @@ window.renderEden = function (org) {
     '<button type="button" class="btn-ghost" style="font-size:11px;margin-top:8px" onclick="showScreen(\'warroom\',null)"' + edoT('War Room', 'Open case command center.') + '>View All in War Room \u2192</button></section>' +
     sec3b +
     (typeof edenWorkforcePanel === 'function' ? edenWorkforcePanel(org) : '') +
+    (typeof edoStampOpsHtml === 'function' ? edoStampOpsHtml(org) : '') +
     '<section id="eden-sec-models" style="margin-bottom:20px"><h2 style="font-size:14px"' + edoT('Models Monitored for Bias', 'Coverage grid from biasMetricsByModel.') + '>Models Monitored for Bias</h2>' +
     edoModelFilterPillsHtml() +
     '<div style="max-height:340px;overflow-y:auto;overflow-x:auto;border:1px solid var(--border2);border-radius:10px;margin-top:8px;background:var(--card)"><table class="data-table"><thead style="position:sticky;top:0;background:var(--card);z-index:1"><tr><th onclick="edoSortModels(\'model\')"' + edoT('Model', 'Monitored model name and version.') + '>Model</th><th onclick="edoSortModels(\'di\')"' + edoT('Disparate Impact (DI)', 'Ratio of favorable rates: EEOC 0.80 floor.') + '>DI</th><th ' + edoT('Equalized Odds', 'Should be <0.10.') + '>EO</th><th ' + edoT('Proxy Variable', 'Feature correlating with protected class.') + '>Top Proxy</th><th>Affected</th><th ' + edoT('Status', 'Critical / Watch / Passing.') + '>Status</th><th ' + edoT('Trend (30d)', 'Direction of bias metric over last 30 days.') + '>Trend</th><th ' + edoT('Stamp', 'Whether this model is actively counted in the live Trust Score. Unstamp during remediation to exclude it.') + '>Stamp</th></tr></thead><tbody>' + mrows + '</tbody></table></div></section>' +
@@ -15051,6 +15125,7 @@ window.renderObsidian = function (org) {
     '<button type="button" class="btn-ghost" style="font-size:11px;margin-top:8px" onclick="showScreen(\'warroom\',null)"' + edoT('War Room', 'Open case command center.') + '>View All in War Room \u2192</button></section>' +
     (typeof obsDeepfakePanel === 'function' ? obsDeepfakePanel(org) : '') +
     sec3f +
+    (typeof edoStampOpsHtml === 'function' ? '<div style="margin-top:20px">' + edoStampOpsHtml(org) + '</div>' : '') +
     '<section id="obs-sec-models" style="margin-top:20px"><h2 style="font-size:14px">Models: Fraud Coverage</h2>' +
     edoModelFilterPillsHtml() +
     '<div style="max-height:340px;overflow-y:auto;overflow-x:auto;margin-top:10px;border:1px solid var(--border2);border-radius:10px;background:var(--card)"><table class="data-table"><thead style="position:sticky;top:0;background:var(--card);z-index:1"><tr><th ' + edoT('Model', 'Monitored model.') + '>Model</th><th ' + edoT('Synthetic Identity Rate', 'Percent caught / blocked in monitor.') + '>Syn ID</th><th ' + edoT('Behavioral Anomaly', 'Behavioral fraud detection rate.') + '>Behav</th><th ' + edoT('Cluster Fraud', 'Ring detection rate.') + '>Cluster</th><th ' + edoT('Top Pattern', 'Dominant fraud typology.') + '>Pattern</th><th ' + edoT('Bias\u2011Fraud', 'Linked cases count.') + '>B\u2011F</th><th>Status</th><th ' + edoT('Trend (30d)', '30-day trajectory.') + '>Tr</th><th ' + edoT('Stamp', 'Whether this model is actively counted in the live Trust Score. Unstamp during remediation to exclude it.') + '>Stamp</th></tr></thead><tbody>' + mrows + '</tbody></table></div></section>' +
