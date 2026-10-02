@@ -43791,7 +43791,7 @@ function buildSentinel(org) {
     '<div style="font-size:11px;color:var(--muted);margin-top:4px">Case engine + Lab workspace · Channels embed below when a case is opened</div></div>' +
     hero +
     tabRow +
-    (tab === 'lab' ? labPanel : tab === 'runtime' ? runtimePanel : tab === 'security' ? sentinelSecurityWatchPanel(o) : tab === 'incidents' ? sentinelIncidentsPanel(o) : tab === 'playbooks' ? sentinelPlaybooksPanel(o) : tab === 'shadow' ? sentinelShadowPanel(o) : tab === 'vendors' ? sentinelVendorsPanel(o) : casesPanel) +
+    (tab === 'lab' ? labPanel : tab === 'runtime' ? runtimePanel + sentinelAutoStopPanel(o) : tab === 'security' ? sentinelSecurityWatchPanel(o) : tab === 'incidents' ? sentinelIncidentsPanel(o) : tab === 'playbooks' ? sentinelPlaybooksPanel(o) : tab === 'shadow' ? sentinelShadowPanel(o) : tab === 'vendors' ? sentinelVendorsPanel(o) : casesPanel) +
     '</div>';
 }
 
@@ -43972,6 +43972,52 @@ window.cardinalOwaspChips = function (codes) {
     return '<span title="OWASP ' + c + ': ' + (window.CARDINAL_OWASP[c] || '') + '" style="font-size:9px;font-weight:700;font-family:monospace;color:#475569;border:1px solid rgba(71,85,105,.35);background:rgba(71,85,105,.07);padding:1px 6px;border-radius:5px;white-space:nowrap">OWASP ' + c + ' · ' + (window.CARDINAL_OWASP[c] || '') + '</span>';
   }).join(' ');
 };
+
+// ══ AUTO-STOP RULES (10/2, backlog): a model or agent halts on its own when its certification
+// lapses, a law it depends on takes effect, its fairness falls through the floor, or it loses its
+// human owner. "Stop" means the safe fallback for that system (last approved version, humans
+// decide, or paused), never a silent failure.
+window.SENTINEL_AUTOSTOP = {
+  fin: [
+    ['Law takes effect: Colorado SB 26-189', 'Credit Scoring v3.4 (Colorado applicants)', 'Route Colorado decisions to human review until the 30-day disclosure is live', 'date', 'Jan 1, 2027'],
+    ['Fairness floor: DI under 0.65 for 24 hours', 'All lending models', 'Shift traffic back to the last approved version', 'armed'],
+    ['Certification lapses', 'Credit Scoring v3.4', 'Recommend-only mode: a loan officer makes the final call', 'armed'],
+    ['Agent loses its human owner or skips a required check', 'Collections Agent (vendor)', 'Pause the agent and roll back its last batch', 'fired', '2h ago (texts after 9 PM)']
+  ],
+  ad: [
+    ['Required assessment overdue: DoD Responsible AI', 'Personnel Assignment v2.4', 'Recommend-only mode: supervisors make every assignment', 'fired', '2 days ago'],
+    ['Law in effect: Illinois HB 3773 (ZIP proxy ban)', 'Personnel Assignment v2.4 (Illinois staff)', 'Block decisions that use home ZIP for Illinois employees', 'fired', 'Since Jan 1, 2026'],
+    ['Agent acts without approval', 'Scheduling bot', 'Block the action before it runs and pause the agent', 'fired', '6 days ago (14 reassignments)'],
+    ['Fairness floor: DI under 0.60', 'All personnel models', 'Fall back to the last approved version', 'armed']
+  ],
+  health: [
+    ['Law in effect: CA SB 1120', 'Claims Adjudication v1.9, Prior Auth v1.5', 'No AI denial without a licensed clinician', 'fired', 'Enforced on every denial'],
+    ['Agent closes decisions without review', 'Claims Triage Agent', 'Pause the agent and reopen what it closed', 'fired', '4h ago (31 denials reopened)'],
+    ['Law takes effect: EU AI Act high-risk rules', 'Health insurance pricing (Ireland)', 'Block deployment of any version without a conformity file', 'date', 'Dec 2, 2027'],
+    ['Certification lapses: ISO/IEC 42001', 'All clinical AI', 'Freeze new versions until surveillance audit passes', 'armed']
+  ],
+  fed: [
+    ['Required assessment missing: OMB M-25-21', 'IRS Tax Fraud Detection v3.1', 'Deployment blocked until the impact assessment and testing clear', 'fired', 'Blocked since testing began'],
+    ['Agent has no named owner (M-25-21 human oversight)', 'Audit Selection Agent', 'Hold every action for examiner review', 'fired', '8h ago (40 returns held)'],
+    ['Vendor documents missing (OMB M-26-04)', 'Taxpayer Help Assistant', 'Limit answers to published IRS guidance', 'armed']
+  ]
+};
+function sentinelAutoStopPanel(org) {
+  var rows = SENTINEL_AUTOSTOP[org] || [];
+  var esc = function (s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;'); };
+  var today = new Date(); today.setHours(0, 0, 0, 0);
+  var fired = rows.filter(function (r) { return r[3] === 'fired'; }).length;
+  return '<div class="card" style="padding:14px;margin-top:14px"><div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap"><div style="font-size:13px;font-weight:700;color:var(--chrome2)">Auto-Stop Rules</div><span style="font-size:10.5px;color:var(--muted)">' + rows.length + ' rules · ' + fired + ' fired</span></div>' +
+    '<div style="font-size:11px;color:var(--muted2);margin:4px 0 10px">When a certification lapses, a law takes effect, fairness falls through the floor, or an agent loses its owner, Cardinal stops the system on its own and falls back to a safe mode. Every stop is sealed in Echo.</div>' +
+    '<table class="data-table" style="width:100%"><thead><tr><th>Trigger</th><th>Applies to</th><th>What happens</th><th>Status</th></tr></thead><tbody>' +
+    rows.map(function (r) {
+      var st;
+      if (r[3] === 'fired') st = '<span style="font-weight:700;color:#DC2626">Stopped</span><div style="font-size:9.5px;color:var(--muted)">' + esc(r[4]) + '</div>';
+      else if (r[3] === 'date') { var d = cardinalParseDate(r[4]), n = Math.round((d - today) / 86400000); st = '<span style="font-weight:700;color:#B45309">Armed</span><div style="font-size:9.5px;color:var(--muted)">Fires ' + esc(r[4]) + ' (' + n + ' days)</div>'; }
+      else st = '<span style="font-weight:700;color:#15803D">Armed</span><div style="font-size:9.5px;color:var(--muted)">Watching live</div>';
+      return '<tr style="vertical-align:top"><td style="font-weight:600;color:var(--chrome2)">' + esc(r[0]) + '</td><td style="font-size:10.5px">' + esc(r[1]) + '</td><td style="font-size:10.5px;color:var(--muted2)">' + esc(r[2]) + '</td><td>' + st + '</td></tr>';
+    }).join('') + '</tbody></table></div>';
+}
 
 // ══ SENTINEL ADDITIONS (10/2, Brittany picked all four): Incident Reporting clocks, Case
 // Playbooks, Shadow AI monitor, Vendor AI registry. Real reporting deadlines only:
