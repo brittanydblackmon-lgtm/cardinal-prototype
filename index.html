@@ -13368,7 +13368,7 @@ function edoBuildObsidianHeroSection(d, org, bfN) {
     '<div class="tsv2-conf-row"><span' + edoT('Detection Coverage', 'Share of model decisions actively monitored for fraud typologies in this scoring window.') + '>Detection Coverage</span><span class="v">' + dcov + '%</span></div>' +
     '<div class="tsv2-conf-row"><span' + edoT('False Positive Rate', 'Share of escalated fraud alerts cleared as benign on review. Lower is better.') + '>False Positive Rate</span><span class="v">' + fpr + '%</span></div>' +
     '<div class="tsv2-conf-row"><span' + edoT('Cluster Resolution', 'Completeness of identified fraud ring membership vs Ground truth simulation, higher means fewer missed members.') + '>Cluster Resolution</span><span class="v">' + cres + '%</span></div></div></div></div>' +
-    '<div style="margin-top:16px;padding:14px;border-radius:12px;border:1px solid rgba(251,146,60,.45);cursor:pointer;background:linear-gradient(100deg,rgba(251,146,60,.14),rgba(245,158,11,.08))" onclick="edoScrollBf()"' + edoT('Bias-Fraud Connection', 'Obsidian view of Eden-linked overlap cases. Jump to the overlap cases.') + '><strong>Bias\u2011Fraud Connection:</strong> ' + bfN + ' cases tie back to Eden bias findings \u2192 jump to detail</div></section>';
+    '<div style="margin-top:12px;display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:999px;border:1px solid rgba(234,88,12,.35);cursor:pointer;background:rgba(251,146,60,.10);font-size:11.5px;color:#7c2d12" onclick="edoScrollBf()"' + edoT('Bias-Fraud Connection', 'Obsidian view of Eden-linked overlap cases. Jump to the overlap cases.') + '><strong>Bias\u2011Fraud Connection:</strong> ' + bfN + ' cases tie back to Eden bias findings \u2192 jump to detail</div></section>';
 }
 function edoRaceBarsHtml(d, org) {
   var bm = d.biasMetricsByModel || [];
@@ -13470,6 +13470,8 @@ function edoModelFilterPillsHtml() {
     one('Watch', 'Watch', 'Watch Status', 'Watch Status / Models showing bias trends requiring monitoring.') +
     one('Passing', 'Passing', 'Passing Status', 'Passing Status / Models passing fairness tests this quarter.') +
     one('Highest Affected', 'Highest Affected', 'Sort by Impact', 'Sort by Impact / Models affecting the most individuals, highest-count affected cohorts.') +
+    one('Stamped', 'Stamped', 'Stamped models', 'Stamped / Models counted in the live score.') +
+    one('Unstamped', 'Unstamped', 'Unstamped models', 'Unstamped / Models left out of the live score until someone re-stamps them.') +
     '</div>';
 }
 window.edoFilterModels = function (f) {
@@ -14481,7 +14483,7 @@ function edoBuildBfVennHtml(d, org, screenIsObsidian) {
     '<div style="font-size:18px;line-height:1">\u26A0</div><div style="font-size:11px;font-weight:800;color:var(--chrome2)">Step 3: Fraud Exploits Gap</div>' +
     '<p style="margin:0;font-size:10px;color:var(--muted);line-height:1.5;flex:1">' + frE.text + '</p>' +
     '<div style="font-size:10px;font-weight:700;color:#fb923c"' + edoT('Fraud metrics', frE.metric) + '>' + frE.metric + '</div></div></div></div>';
-  var moat = '<div style="margin-top:20px;padding:14px 16px;border-radius:12px;border:1px solid rgba(167, 167, 167,.2);background:linear-gradient(90deg,rgba(10,14,22,.92),rgba(15,18,26,.88));display:flex;gap:14px;align-items:center;flex-wrap:wrap"' + edoT('Why this matters', 'Dual-lens posture / Other vendors offer bias detection OR fraud detection. This deployment ties both to shared audit infrastructure (Echo Core), so cross-lens cases surface together.') + '>' +
+  var moat = '' && '<div style="margin-top:20px;padding:14px 16px;border-radius:12px;border:1px solid rgba(167, 167, 167,.2);background:linear-gradient(90deg,rgba(10,14,22,.92),rgba(15,18,26,.88));display:flex;gap:14px;align-items:center;flex-wrap:wrap"' + edoT('Why this matters', 'Dual-lens posture / Other vendors offer bias detection OR fraud detection. This deployment ties both to shared audit infrastructure (Echo Core), so cross-lens cases surface together.') + '>' +
     '<div style="flex:1;min-width:240px"><div style="font-size:11px;font-weight:800;margin-bottom:6px;color:#F5F3EF">Why this matters</div><div style="font-size:10px;color:rgba(245,243,239,0.72);line-height:1.55">Bias detection tools see Step 1. Fraud detection tools see Step 3. Cardinal is the only platform that connects them. Every overlap case here was caught because Eden and Obsidian share the same audit core.</div></div>' +
     '<div style="font-size:12px;font-weight:900;letter-spacing:.12em;color:var(--accent);opacity:.9"' + edoT('Cardinal', 'Unified Eden + Obsidian core.') + '>CARDINAL</div></div>';
   return '<section id="' + (screenIsObsidian ? 'obs-sec-bf' : 'eden-sec-bf') + '" style="margin-bottom:24px">' +
@@ -14672,6 +14674,7 @@ window.renderEden = function (org) {
   else if (mf === 'Watch') biasModels = biasModels.filter(function (m) { return m.status === 'Watch'; });
   else if (mf === 'Passing') biasModels = biasModels.filter(function (m) { return m.status === 'Passing'; });
   else if (mf === 'Highest Affected') biasModels.sort(function (a, b) { return (b.affectedCohort.totalCount || 0) - (a.affectedCohort.totalCount || 0); });
+  else if (mf === 'Stamped' || mf === 'Unstamped') biasModels = biasModels.filter(function (m) { var st = edoIsStamped('bias', window.__edo.org, m); return mf === 'Stamped' ? st : !st; });
   var sortK = window.__edo.mdlSort;
   if (sortK === 'di') biasModels.sort(function (a, b) { return a.di - b.di; });
   var cards = cases.map(function (c) {
@@ -14937,6 +14940,7 @@ window.renderObsidian = function (org) {
   else if (mf === 'Watch') fmodels = fmodels.filter(function (m) { return m.status === 'Watch'; });
   else if (mf === 'Passing') fmodels = fmodels.filter(function (m) { return m.status === 'Passing'; });
   else if (mf === 'Highest Affected') fmodels.sort(function (a, b) { return (b.topFraudPattern.casesDetected || 0) - (a.topFraudPattern.casesDetected || 0); });
+  else if (mf === 'Stamped' || mf === 'Unstamped') fmodels = fmodels.filter(function (m) { var st = edoIsStamped('obs', window.__edo.org, m); return mf === 'Stamped' ? st : !st; });
   var cards = cases.map(function (c) {
     var se = c.severity === 'Critical' ? 'badge-red' : c.severity === 'High' ? 'badge-amber' : 'badge-yellow';
     var sla = edoSlaDays(c.slaDeadline);
@@ -47854,6 +47858,59 @@ window.genRenderScenarios = function () {
   if (typeof oS === 'function') window.showScreen = showScreen = function (s) { var r = oS.apply(this, arguments); if (s === 'pipeline') setTimeout(function () { try { build(); stats(); } catch (e) { console.warn(e); } }, 80); return r; };
   var oI = window.switchIndustry;
   if (typeof oI === 'function') window.switchIndustry = switchIndustry = function () { var r = oI.apply(this, arguments); F.sel = {}; setTimeout(function () { try { if (document.getElementById('pl-files')) { plRender(); stats(); } } catch (e) {} }, 150); return r; };
+})();
+</script>
+
+<style>
+#screen-eden table tbody tr:nth-child(even), #screen-obsidian table tbody tr:nth-child(even) { background: #faf8f3; }
+#screen-eden table tbody tr:nth-child(odd), #screen-obsidian table tbody tr:nth-child(odd) { background: #fff; }
+</style>
+<script>
+// 10/2 feedback on Eden/Obsidian: show AI systems, agents, and vendor AI (not just models and
+// cohorts); re-stamp reminders shrink to one line; plain-language definitions on the metrics.
+(function () {
+  var DEF = { 'DI': 'Disparate impact: approval rate for a group divided by the approval rate for the best-treated group. 1.0 is equal; below 0.80 is the common warning line.', 'EO': 'Equalized odds gap: how much error rates differ between groups. Lower is better; above 0.10 is a warning.', 'DI RATIO': 'Disparate impact: approval rate for a group divided by the approval rate for the best-treated group. 1.0 is equal; below 0.80 is the common warning line.', 'EQUALIZED ODDS': 'How much error rates differ between groups. Lower is better.', 'SAMPLE COVERAGE': 'How much of each group appears in the training data, compared with the real population. Low coverage means the model learned little about that group.' };
+  var oStamp = window.edoStampOpsHtml;
+  if (typeof oStamp === 'function') window.edoStampOpsHtml = function (org) {
+    var full = oStamp.apply(this, arguments), rem = (typeof edoAllReminders === 'function' ? edoAllReminders(org) : []);
+    var over = rem.filter(function (r) { return r.due < new Date(); }).length;
+    var id = 'edo-stampops-' + Math.random().toString(36).slice(2, 7);
+    return '<div style="margin:10px 0;padding:9px 12px;border:1px solid var(--border2);border-radius:10px;background:var(--card);font-size:11.5px;color:var(--chrome2);display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">' +
+      '<span><strong>Re-stamp reminders:</strong> ' + rem.length + ' model' + (rem.length === 1 ? '' : 's') + ' waiting' + (over ? ', ' + over + ' overdue' : '') + '. Also listed in today’s summary.</span>' +
+      '<a href="#" style="font-size:11px;color:#1e3a8a" onclick="event.preventDefault();var e=document.getElementById(\'' + id + '\');e.style.display=e.style.display===\'none\'?\'block\':\'none\'">Show details</a></div><div id="' + id + '" style="display:none">' + full + '</div>';
+  };
+  function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;'); }
+  function arr(x) { return Array.isArray(x) ? x : []; }
+  function beyond(org, fraud) {
+    var sys = arr((window.CARDINAL_SYSTEMS || {})[org]), vend = arr((typeof SENTINEL_VENDORS !== 'undefined' ? SENTINEL_VENDORS : {})[org]);
+    var shadow = arr((typeof SENTINEL_SHADOW_AI !== 'undefined' ? SENTINEL_SHADOW_AI : {})[org]);
+    var row = function (cells, i) { return '<tr style="background:' + (i % 2 ? '#faf8f3' : '#fff') + '">' + cells.map(function (c, j) { return '<td style="padding:8px 10px;font-size:11px;' + (j === 0 ? 'font-weight:700;color:#1a1815' : 'color:#475569') + '">' + c + '</td>'; }).join('') + '</tr>'; };
+    var pill = function (t) { var bad = /risk|gap|fail/i.test(t); return '<span style="font-size:10px;font-weight:800;padding:2px 8px;border-radius:999px;color:' + (bad ? '#B91C1C' : '#15803D') + ';background:' + (bad ? 'rgba(220,38,38,.1)' : 'rgba(21,128,61,.1)') + '">' + esc(t) + '</span>'; };
+    var sysRows = sys.map(function (x, i) { return row([esc(x.name), esc(x.type), esc(arr(x.models).length + ' models, ' + arr(x.agents).length + ' agents'), fraud ? 'Fraud and misuse checked end to end' : 'Fairness checked end to end', pill(x.status || 'OK')], i); }).join('');
+    var agents = []; sys.forEach(function (x) { arr(x.agents).forEach(function (a) { if (agents.indexOf(a) < 0) agents.push(a); }); });
+    var agentRows = agents.map(function (a, i) { return row([esc(a), 'AI agent', 'Owner and approvals on file', fraud ? 'Prompt injection and tool misuse tests passing' : 'Answers checked for unequal treatment', pill('OK')], i); }).join('');
+    var vendRows = vend.map(function (v, i) { return row([esc(v[0]), 'Vendor AI · ' + esc(v[1]), 'On file: ' + esc(arr(v[3]).join(', ') || 'nothing'), 'Missing: ' + esc(arr(v[4]).join(', ') || 'nothing'), pill(v[5] === 'Gap' ? 'Gap' : 'OK')], i); }).join('');
+    var shRows = shadow.map(function (v, i) { return row([esc(v[0]), 'Shadow AI', esc(v[1]) + ' people', esc(v[2]), pill(v[4] === 'fail' ? 'Needs action' : 'OK')], i); }).join('');
+    return '<section class="edo-beyond" style="margin:18px 0 24px"><h2 style="font-size:15px;margin:0 0 4px">Beyond models: AI systems, agents, vendor AI, and shadow AI</h2>' +
+      '<p style="font-size:11px;color:var(--muted);margin:0 0 10px">' + (fraud ? 'Fraud, impersonation, and misuse checks' : 'Fairness checks') + ' cover everything that makes or shapes a decision, including AI you buy and AI people use without approval.</p>' +
+      '<div style="border:1px solid rgba(26,24,21,.10);border-radius:10px;overflow:hidden"><table style="width:100%;border-collapse:collapse"><thead><tr style="background:#f3f0e9;text-align:left">' + ['Name', 'Kind', 'What it includes', 'What Cardinal checks', 'Status'].map(function (h) { return '<th style="padding:8px 10px;font-size:10.5px;color:#475569">' + h + '</th>'; }).join('') + '</tr></thead><tbody>' + sysRows + agentRows + vendRows + shRows + '</tbody></table></div></section>';
+  }
+  function polish(screen) {
+    var scr = document.getElementById('screen-' + screen); if (!scr) return;
+    var org = window.currentOrg || 'ad', fraud = screen === 'obsidian';
+    if (!scr.querySelector('.edo-beyond')) {
+      var anchor = document.getElementById(fraud ? 'obs-sec-bf' : 'eden-sec-bf');
+      if (anchor) anchor.insertAdjacentHTML('beforebegin', beyond(org, fraud));
+    }
+    scr.querySelectorAll('th').forEach(function (th) { var k = th.textContent.trim().toUpperCase(); if (DEF[k] && !th.title) { th.title = DEF[k]; th.style.cursor = 'help'; th.style.textDecoration = 'underline dotted'; } });
+  }
+  var pend = {};
+  ['eden', 'obsidian'].forEach(function (sc) {
+    var el = document.getElementById('screen-' + sc); if (!el) return;
+    new MutationObserver(function () { if (pend[sc]) return; pend[sc] = setTimeout(function () { pend[sc] = null; if (el.classList.contains('active')) polish(sc); }, 60); }).observe(el, { childList: true, subtree: true });
+  });
+  var oS = window.showScreen;
+  if (typeof oS === 'function') window.showScreen = showScreen = function (s) { var r = oS.apply(this, arguments); if (s === 'eden' || s === 'obsidian') setTimeout(function () { polish(s); }, 120); return r; };
 })();
 </script>
 
