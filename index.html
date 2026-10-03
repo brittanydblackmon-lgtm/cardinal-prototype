@@ -48188,7 +48188,7 @@ window.genRenderScenarios = function () {
   function rows(org) {
     return {
       fin: [['United States (federal)', 'CFPB fair lending exam (ECOA / Reg B)', D('Oct 8, 2026'), 15, 'High'], ['Illinois', 'BIPA: selfie-liveness consent gap', 'Now', 7.5, 'High'], ['New York', 'State fair lending review (DFS / Attorney General)', 'Ongoing', 8, 'Medium'], ['Colorado', 'SB 26-189: adverse-outcome disclosures', 'Jan 1, 2027', 4, 'High'], ['California', 'CCPA rules on automated decisions', 'Jan 1, 2027', 3, 'Medium'], ['Massachusetts', 'Attorney General: AI underwriting (comparable $2.5M settlement)', 'Ongoing', 2.5, 'Low']],
-      ad: [['United States (federal)', 'DoD AI Ethics audit review: Personnel Assignment v2.4', 'Overdue', 28, 'High'], ['United States (federal)', 'ITAR: deemed export through model access', D('Oct 10, 2026'), 15, 'Medium'], ['Illinois', 'HB 3773: AI in employment decisions', 'Now', 9, 'High'], ['Colorado', 'SB 26-189: employment decisions', 'Jan 1, 2027', 6, 'Medium'], ['New York City', 'Local Law 144: hiring-tool bias audit', D('Oct 15, 2026'), 4, 'Medium'], ['Germany (EU)', 'EU AI Act high-risk rules (employment)', 'Dec 2, 2027', 5, 'Low']],
+      ad: [['United States (federal)', 'Availability penalties on the performance-based maintenance contract (Fleet Health v2.4)', 'Now', 28, 'High'], ['United States (federal)', 'Grounding and liability after in-flight warnings at desert and coastal bases', 'Ongoing', 18, 'High'], ['United States (federal)', 'Counterfeit parts: removal, replacement, and FAA suspected unapproved parts reports', D('Oct 20, 2026'), 12, 'High'], ['United States (federal)', 'DFARS counterfeit electronic parts rules: contract findings', 'Q1 2027', 9, 'Medium'], ['United States (federal)', 'Mission Readiness v1.1: readiness forecasts wrong for older airframes', 'Q1 2027', 4, 'Medium']],
       health: [['United States (federal)', 'CMS Medicare Advantage audit: Claims Adjudication v1.9', D('Oct 25, 2026'), 45, 'High'], ['United States (federal)', 'Section 1557 complaints to HHS Office for Civil Rights', D('Sep 29, 2026'), 30, 'High'], ['California', 'SB 1120: clinician must decide medical necessity', 'Now', 25, 'High'], ['Nationwide', 'Class action from denied patients 65+', 'Q2 2027', 50, 'Medium']],
       fed: [['United States (federal)', 'OMB M-25-21: high-impact AI documentation', D('Oct 25, 2026'), 9, 'High'], ['United States (federal)', 'TIGTA review of flagged returns', 'Q1 2027', 4, 'Medium'], ['United States (federal)', 'Modernization delay and manual review surge', 'Q1 2027', 5, 'Medium']]
     }[org] || [];
@@ -48657,7 +48657,7 @@ window.CARDINAL_PLACES = {
   function sev(g) { return g <= -14 ? 'high' : g <= -7 ? 'medium' : 'low'; }
   function fsev(f) { return f >= 30 ? 'high' : f >= 20 ? 'medium' : 'low'; }
   function cf(o, p) { return o === 'ad' ? p[1].split(/ and | \/ /)[0].replace('Pentagon', 'Pentagon') : p[0] + ':'; }
-  var FULL = { AL: 'Alabama', AZ: 'Arizona', CA: 'California', CO: 'Colorado', DC: 'District of Columbia', FL: 'Florida', GA: 'Georgia', HI: 'Hawaii', IL: 'Illinois', KY: 'Kentucky', LA: 'Louisiana', MA: 'Massachusetts', MN: 'Minnesota', MS: 'Mississippi', NC: 'North Carolina', NY: 'New York', TX: 'Texas', UT: 'Utah', VA: 'Virginia', WA: 'Washington' };
+  var FULL = { AL: 'Alabama', AZ: 'Arizona', CA: 'California', CO: 'Colorado', DC: 'District of Columbia', FL: 'Florida', GA: 'Georgia', HI: 'Hawaii', IL: 'Illinois', KY: 'Kentucky', LA: 'Louisiana', NV: 'Nevada', MA: 'Massachusetts', MN: 'Minnesota', MS: 'Mississippi', NC: 'North Carolina', NY: 'New York', TX: 'Texas', UT: 'Utah', VA: 'Virginia', WA: 'Washington' };
   try {
     // Eden and Obsidian heat grids (Finance keeps its NYC ZIP grid: the same story, one level deeper).
     ['ad', 'health', 'fed'].forEach(function (o) {
@@ -48673,7 +48673,7 @@ window.CARDINAL_PLACES = {
       var counts = { ad: [247, 92, 511, 140, 96], fin: [312, 267, 198, 176, 155], health: [412, 367, 288, 205, 142], fed: [312, 98, 164, 287, 121] }[o];
       g.states = P[o].slice(0, 5).map(function (p, i) {
         var s = old[p[0]] || {}, L = lvl(p[2]);
-        return { abbr: p[0], level: L, delta: p[2] + '%', tag: L.toUpperCase(), countText: counts[i] + ' ' + unit + ' in this state', approvalText: s.approvalText || (Math.round(80 + p[2]) + '% ' + (o === 'fed' ? 'clean-review rate' : o === 'ad' ? 'assignment rate' : 'approval rate')), note: p[4] ? 'Case #' + p[4] : '', city: p[1], since: s.since || '', who: p[5], why: s.why && old[p[0]] && o !== 'health' ? s.why : '' };
+        return { abbr: p[0], level: L, delta: p[2] + '%', tag: L.toUpperCase(), countText: counts[i] + ' ' + unit + ' in this state', approvalText: s.approvalText || (Math.round(80 + p[2]) + '% ' + (o === 'fed' ? 'clean-review rate' : o === 'ad' ? 'assignment rate' : 'approval rate')), note: p[4] ? 'Case #' + p[4] : '', city: p[1], since: s.since || '', who: p[5], why: s.why && old[p[0]] && o !== 'health' && o !== 'ad' ? s.why : '' };
       });
       if (o === 'health') g.subtitle = 'Approval rates by state for your members.';
     });
@@ -48785,7 +48785,7 @@ window.CARDINAL_PLACES = {
     var unit = { ad: 'service members', fin: 'applicants', health: 'members', fed: 'filers' }[org] || 'people';
     var ratio = base && base.v ? (worst.v / base.v).toFixed(2) : null;
     return '<div id="pg-summary" style="margin:12px 16px 4px;padding:12px 14px;border-radius:12px;background:#fbfaf7;border:1px solid rgba(26,24,21,.08)"><div style="font-size:10px;font-weight:800;letter-spacing:.06em;color:#64748b;text-transform:uppercase;margin-bottom:4px">What this tells you</div>' +
-      '<div style="font-size:12.5px;color:#1a1815;line-height:1.55"><b>' + esc(worst.label) + '</b> ' + unit + ' get a yes ' + worst.v + '% of the time' + (base ? ', ' + Math.round(base.v - worst.v) + ' points below ' + esc(base.label) + ' (' + base.v + '%)' : '') + '.' +
+      '<div style="font-size:12.5px;color:#1a1815;line-height:1.55"><b>' + esc(worst.label) + '</b> ' + (org === 'ad' ? 'get an early warning before a part fails ' : unit + ' get a yes ') + worst.v + '% of the time' + (base ? ', ' + Math.round(base.v - worst.v) + ' points below ' + esc(base.label) + ' (' + base.v + '%)' : '') + '.' +
       (st[3] ? ' Why: ' + esc(st[3]) : '') + (st[0] ? ' Where: ' + esc(st[0]) + '.' : '') + (st[4] ? ' What is being done: ' + esc(st[4]) : '') + (st[1] ? ' <a href="#" onclick="event.preventDefault();event.stopPropagation();showScreen(\'eden\',null)" style="color:#1d4ed8;font-weight:700">Open case ' + esc(st[1]) + '</a>' : '') + '</div></div>';
   }
   function wire() {
@@ -48942,6 +48942,133 @@ window.CARDINAL_PLACES = {
     s.innerHTML = '<div style="font-size:10.5px;font-weight:800;color:#64748b;text-transform:uppercase;margin-bottom:8px">Your badges, last four quarters</div><div style="display:flex;gap:6px;justify-content:space-between;flex-wrap:wrap">' + cardinalQuarterBadges(org).map(function (b) { return cardinalBadgeHtml(b, 44); }).join('') + '</div>';
     w.parentNode.insertBefore(s, w.nextSibling);
   }, 900);
+})();
+</script>
+
+<script>
+// 10/3 (Brittany: "Do it now"). A&D switches from the personnel story to predictive maintenance.
+// Atlas's Fleet Health model predicts when engine parts need replacing. It was trained mostly on
+// mild-climate bases, so it predicts wear too late for aircraft at desert and coastal bases (sand and
+// salt). The fraud link: it trusts parts with clean paperwork, and a supplier ring sells counterfeit
+// parts with forged release certificates. Same blind spot, used twice. Grounded in the real AOG
+// Technics forged-paperwork case. Data and logic keep their internal names; what people read changes.
+(function () {
+  // ── A&D data written for the new story ──
+  try {
+    window.CARDINAL_PLACES.ad = [
+      ['AZ', 'Davis-Monthan AFB', -24, 18, 'AD-2847', 'Aircraft flying in sand; engine wear predicted too late'],
+      ['CA', 'Camp Pendleton', -21, 22, 'AD-2847', 'Coastal aircraft; salt corrosion not in the training data'],
+      ['FL', 'NAS Jacksonville depot', -12, 41, 'AD-2918', 'Coastal aircraft, and the depot where most counterfeit parts arrived'],
+      ['NV', 'Nellis AFB', -18, 14, 'AD-2847', 'Desert aircraft; sand wear predicted too late'],
+      ['TX', 'Fort Bliss', -15, 26, 'AD-2847', 'Desert helicopters; parts replaced after warnings, not before'],
+      ['VA', 'Langley AFB', -9, 12, 'AD-2847', 'Coastal aircraft'],
+      ['HI', 'Pearl Harbor-Hickam', -8, 9, 'AD-2847', 'Coastal aircraft'],
+      ['NC', 'Fort Bragg', -3, 10, '', 'Mild climate, near the baseline'],
+      ['WA', 'Joint Base Lewis-McChord', -1, 7, '', 'Mild climate (baseline)'],
+      ['KY', 'Fort Knox', 0, 6, '', 'Mild climate (baseline)']
+    ].sort(function (a, b) { return a[2] - b[2]; });
+    var P = window.CARDINAL_PLACES.ad, d = (window.CARDINAL_DATA || {}).ad;
+    var sev = function (g) { return g <= -14 ? 'high' : g <= -7 ? 'medium' : 'low'; }, fsev = function (f) { return f >= 30 ? 'high' : f >= 20 ? 'medium' : 'low'; };
+    if (d) {
+      d.expandedGeographicDisparity = { title: 'Early-catch gap by base', cells: P.map(function (p) { return { label: p[0], deltaPercent: p[2], severity: sev(p[2]), cohortFilter: p[1], tipBody: p[1] + ' (' + p[0] + '): parts flagged early ' + Math.abs(p[2]) + '% less often than at mild-climate bases. ' + p[5] + '.' }; }) };
+      d.expandedGeographicFraudConcentration = { title: 'Counterfeit parts by receiving base', cells: P.map(function (p) { return { label: p[0], fraudRate: p[3], severity: fsev(p[3]), cohortFilter: p[1], tipBody: 'Share of suspect parts received at ' + p[1] + ': ' + p[3] + '%.' }; }) };
+    }
+    if (typeof DASH_INDUSTRY !== 'undefined' && DASH_INDUSTRY.ad && DASH_INDUSTRY.ad.demoGeo) {
+      var cnt = [212, 188, 96, 141, 120];
+      DASH_INDUSTRY.ad.demoGeo.subtitle = 'How often each base gets an early warning before a part fails.';
+      DASH_INDUSTRY.ad.demoGeo.states = P.slice(0, 5).map(function (p, i) { var L = p[2] <= -20 ? 'critical' : p[2] <= -14 ? 'high' : p[2] <= -7 ? 'medium' : 'low'; return { abbr: p[0], level: L, delta: p[2] + '%', tag: L.toUpperCase(), countText: cnt[i] + ' aircraft at this base', approvalText: (80 + p[2]) + '% early-catch rate', note: p[4] ? 'Case #' + p[4] : '', city: p[1], since: '', who: p[5], why: '' }; });
+      if (typeof DASH_GEO_STATE_POS !== 'undefined') DASH_GEO_STATE_POS.NV = { x: 170, y: 260 };
+    }
+    var GS = window.GROUP_STORY || {};
+    GS.ad = {
+      'race:Hispanic': ['Davis-Monthan AFB, AZ; Nellis AFB, NV; Fort Bliss, TX', 'AD-2847', 'Aircraft flying from desert bases', 'Fleet Health v2.4 learned from mild-climate bases and never sees sand exposure, so it predicts engine wear too late.', 'Fleet Health v2.5 adds sand and salt exposure data. It is in shadow on 5% of the fleet with a catch ratio of 0.84.'],
+      'race:Black/AA': ['Camp Pendleton, CA; NAS Jacksonville, FL; Langley AFB, VA', 'AD-2847', 'Aircraft at coastal bases', 'Salt corrosion is not in the training data.', 'Covered by the v2.5 fix.'],
+      'race:Other': ['Aircraft that rotate between bases', 'AD-2847', 'Aircraft that move between climates', 'Exposure history resets when an aircraft changes bases.', 'v2.5 carries exposure history across moves.'],
+      'race:Asian': ['Cold-climate bases', '', 'Aircraft at cold-climate bases', 'Slightly below the baseline; ice and cold starts are partly covered.', 'Watched; no fix needed yet.'],
+      'age:55-64': ['All bases', 'AD-2889', 'Airframes 21 to 25 years old', 'Mission Readiness v1.1 weights airframe age so heavily that older aircraft are forecast unready even after an overhaul.', 'Mission Readiness v1.2 uses overhaul history instead (shadow).'],
+      'age:65+': ['All bases', 'AD-2889', 'Airframes 26 years and older', 'Same airframe-age weighting.', 'Covered by the v1.2 fix.'],
+      'gender:other': ['All bases', '', 'Drones (UAS)', 'Very few drones in the training data, so predictions swing.', 'More drone flight data being added.']
+    };
+    var F = (window.SL_FOOTPRINT || {}).ad;
+    if (F) { if (F.status['il-3773']) F.status['il-3773'] = ['track', 'The hiring screener was checked: no ZIP code or other banned proxy.']; F.note = 'Bases, depots, and offices in ' + F.states.length + ' states.'; }
+    var SYS = (window.CARDINAL_SYSTEMS || {}).ad;
+    if (SYS && SYS[0]) { SYS[0].name = 'Fleet Maintenance System'; SYS[0].agents = ['Work-order bot']; SYS[0].data = ['Maintenance records', 'Flight and sensor logs (TechServe)']; SYS[0].tools = ['Work-order writer'];
+      SYS[0].checks = [['End-to-end early-catch ratio (desert and coastal bases)', '0.67', 'fail'], ['Agent actions without approval (30d)', '1 blocked (14 deferred inspections)', 'warn'], ['Environment data in training (sand, salt)', 'Missing', 'fail'], ['Agent has a named owner', 'No', 'fail']]; }
+    if (SYS && SYS[1]) { SYS[1].name = 'Readiness & Parts Supply System'; SYS[1].checks = [['End-to-end readiness forecast accuracy', '0.91', 'pass'], ['Export-controlled data access', 'Authorized only', 'pass'], ['Parts with release certificates checked against the issuer', '97%', 'warn']]; }
+    var V = (window.SENTINEL_VENDORS || {}).ad;
+    if (V) { V[0] = ['TechServe LLC', 'Flight and sensor log ETL', 'Fleet Health', ['CMMC Level 2'], ['Sand and salt exposure fields'], 'Watch']; V[1] = ['Parts broker network', 'Supplier release certificates', 'Fraud Detection v3.2', ['AS9120 claimed'], ['Issuer verification on every certificate'], 'Gap']; }
+  } catch (e) { console.warn('ad story data', e); }
+
+  // ── What people read: A&D text rewritten on screen, restored when switching away ──
+  var R = [
+    [/Personnel Assignment Model v2\.4/g, 'Fleet Health Model v2.4'], [/Personnel Assignment Model/g, 'Fleet Health Model'], [/Personnel Assignment/g, 'Fleet Health'], [/Personnel v2\.(\d)/g, 'Fleet Health v2.$1'], [/\bPersonnel Fairness\b/g, 'Fleet Health early warnings'],
+    [/personnel and mission-readiness models/g, 'fleet health and mission-readiness models'], [/Personnel & mission assignment equity/g, 'Fleet health and mission readiness'],
+    [/Workforce Scheduling System/g, 'Fleet Maintenance System'], [/RosterBot/g, 'WorkOrderBot'], [/Scheduling bot automatic reassignments/g, 'Work-order bot automatic deferrals'], [/[Ss]cheduling bot tried to reassign 14 technicians/g, 'work-order bot tried to defer 14 inspections'], [/Tried to reassign 14 technicians/g, 'Tried to defer 14 inspections'], [/Scheduling bot stopped before 14 reassignments/g, 'Work-order bot stopped before 14 deferred inspections'], [/14 reassignments/g, '14 deferred inspections'], [/Scheduling bot/g, 'Work-order bot'], [/scheduling bot/g, 'work-order bot'], [/Scheduling agent/g, 'Work-order agent'], [/hold new assignments for the AT-0847 cohort/g, 'hold automatic deferrals for the AT-0847 fleet'], [/No new assignments/g, 'No automatic deferrals'], [/Roster writer/g, 'Work-order writer'],
+    [/Base (maintenance )?roster \+ home ZIP( via TechServe LLC ETL)?/g, 'Flight and sensor logs$2, no sand or salt exposure fields'], [/Home ZIP feed \(TechServe\)/g, 'Flight and sensor logs (TechServe)'], [/Banned proxy in data \(IL HB 3773\)/g, 'Environment data in training'], [/Home ZIP present/g, 'Sand and salt exposure missing'],
+    [/Home ZIP code is a proxy for ethnicity \(0\.82 correlation\) in Personnel Assignment v2\.4\.?/g, 'Fleet Health v2.4 learned from mild-climate bases and never sees sand or salt exposure.'], [/[Hh]ome ZIP code is a proxy for ethnicity[^.]*\./g, 'The model never sees sand or salt exposure.'], [/v2\.5 removes ZIP/g, 'v2.5 adds sand and salt exposure'], [/removes? (the )?home ZIP( code)?/g, 'adds sand and salt exposure data'], [/ Illinois HB 3773 also bans the proxy\./g, ''],
+    [/demographic_classification/g, 'climate_blind_wear'], [/ZIP code proxy/g, 'missing climate data'],
+    [/847 Hispanic maintenance technicians/g, '847 aircraft at desert and coastal bases'], [/Hispanic women technicians at Camp Pendleton aged 22-28/g, 'older helicopters at Camp Pendleton'], [/Hispanic technicians at Camp Pendleton/g, 'aircraft at Camp Pendleton'], [/Hispanic technicians at Pendleton/g, 'aircraft at Pendleton'], [/Hispanic\/Latino technicians/g, 'desert and coastal aircraft'], [/Hispanic maintenance technicians/g, 'aircraft at desert and coastal bases'], [/Hispanic technician denial 2\.3x baseline/g, 'Late part calls 2.3x baseline at desert and coastal bases'], [/Hispanic technician (cohorts|cases)/g, 'desert and coastal aircraft'], [/Hispanic technicians?/g, 'desert and coastal aircraft'], [/Hispanic bias/g, 'Desert and coastal wear gap'], [/Hispanic Bias/g, 'Desert and Coastal Wear Gap'], [/Hispanic\/Latino/g, 'Desert bases'], [/\bHispanic\b/g, 'Desert bases'],
+    [/Black technicians at Bragg/g, 'Coastal aircraft at Langley'], [/White technicians \(baseline\)/g, 'Mild-climate bases (baseline)'], [/Multiracial and Native American technicians/g, 'Aircraft that rotate between bases'], [/Native American: 0\.3% training data vs 1\.2% population/g, 'Arctic bases: 0.3% of training data vs 1.2% of the fleet'], [/Native American/g, 'Arctic bases'],
+    [/Age 55\+ show 28% lower assignment rates than age 18-25 cohort/g, 'Airframes 21+ years get 28% fewer early catches than airframes 0-5 years'], [/Age 55\+ personnel/g, 'Airframes 21+ years'], [/Senior technicians 55-64/g, 'Airframes 21 to 25 years'], [/Technicians and reservists 65\+/g, 'Airframes 26+ years'], [/Same years-to-retirement feature \(ADEA risk\)\.?/g, 'Same airframe-age weighting.'], [/years to retirement/g, 'airframe age'], [/No significant gender disparity in personnel assignment/g, 'No significant gap between aircraft types'], [/Non-binary personnel/g, 'Drones (UAS)'],
+    [/GENDER DISTRIBUTION & ASSIGNMENT RATES/gi, 'AIRCRAFT TYPE & EARLY-CATCH RATES'], [/AGE GROUP ASSIGNMENT RATES/gi, 'AIRFRAME AGE & EARLY-CATCH RATES'], [/RACIAL\/ETHNIC ASSIGNMENT ANALYSIS/gi, 'BASE ENVIRONMENT ANALYSIS'], [/Protected Group Impact Analysis/g, 'Impact by Base and Airframe'], [/identifying groups experiencing AI discrimination/g, 'showing which aircraft get late warnings'],
+    [/847 service members/g, '847 aircraft'], [/847 affected service members/g, '847 affected aircraft'], [/affected service members/g, 'affected aircraft'], [/946 service members/g, '946 aircraft'], [/service members/g, 'aircraft'], [/service member/g, 'aircraft'], [/847 personnel records/g, '847 aircraft'], [/847 affected personnel records/g, '847 affected aircraft'], [/personnel records affected/g, 'aircraft affected'], [/203 personnel/g, '203 aircraft'], [/847 affected technicians/g, '847 affected aircraft'], [/847 affected records/g, '847 affected aircraft'],
+    [/denied premium-base placement at 2\.3x rate vs baseline/g, 'warned too late at 2.3x the baseline rate'], [/denied premium-base placement/g, 'warned too late for part replacement'], [/premium-base placement denials/g, 'late part-replacement calls'], [/premium[- ]base placement/g, 'early part replacement'], [/premium-base reassignment batch runs/g, 'automatic work-order batches'], [/premium-base reassignment/g, 'automatic work-order'], [/JAG may pause/g, 'the program office may pause'],
+    [/Technician assignment shows 2\.3x disparity/g, 'Part-replacement timing shows a 2.3x gap'], [/assignment decisions for 847/g, 'part-replacement calls for 847'], [/favorable assignments at 67% the rate of the highest-approved group/g, 'early warnings at 67% the rate of mild-climate bases'], [/ASSIGNMENT DENIED \(technician, overtime-eligible site\)/g, 'REPLACEMENT DEFERRED (engine part, desert base)'], [/Hispanic technicians assigned to overtime shifts at a higher rate\./g, 'Aircraft at desert and coastal bases warned too late.'], [/assigned to overtime shifts at a higher rate/g, 'warned too late'],
+    [/Assignments drive overtime pay and promotion eligibility, so the b[^.]*\./g, 'Late warnings mean in-flight failures, so the safety stakes are high.'], [/assignment disparity band/g, 'early-catch gap band'], [/assignment rates/g, 'early-catch rates'], [/assignment rate/g, 'early-catch rate'], [/Assignment rate/g, 'Early-catch rate'], [/equity gap on assignment timing/g, 'gap in warning timing'],
+    [/Disparate [Ii]mpact ratio of 0\.67/g, 'early-catch ratio of 0.67'], [/[Dd]isparate impact ratio/g, 'early-catch ratio'], [/legal-grade proof of disparate impact/g, 'proof the gap comes from the model'], [/disparate impact against/g, 'an early-catch gap for'], [/EEOC four-fifths threshold violated/g, 'below Cardinal’s 0.80 floor'], [/EEOC four-fifths/g, 'Cardinal 0.80'], [/Discrimination claims filed by affected aircraft/g, 'Safety claims after in-flight warnings'], [/\bDI (0\.\d+)/g, 'catch ratio $1'], [/\bDI: (0\.\d+)/g, 'catch ratio: $1'],
+    [/DoD penalties: \$28M \+ Litigation risk: \$39M/g, 'Contract penalties: $28M + Grounding, recall, and liability: $39M'], [/DoD penalties/g, 'Contract penalties'], [/Litigation risk/g, 'Grounding and liability'], [/DoD audit overdue/g, 'safety review overdue'],
+    [/synthetic credential ring members/g, 'counterfeit parts'], [/synthetic credential ring/g, 'counterfeit parts ring'], [/23 synthetic credential applications detected sharing device fingerprints/g, '23 parts shipments found sharing one forged certificate signature'], [/synthetic credential applications/g, 'parts shipments with forged release certificates'], [/synthetic credentials blocked/g, 'counterfeit parts stopped'], [/synthetic credentials/g, 'forged release certificates'], [/synthetic credential/g, 'forged certificate'], [/credential synthesis ring/g, 'counterfeit parts ring'], [/credential verification skipped on denial pattern/g, 'inspection skipped for parts with clean paperwork'], [/fraudulent credentials/g, 'counterfeit parts'], [/device-fingerprint spoofing cluster at Pendleton/g, 'forged-certificate cluster from one broker'], [/sharing device fingerprints/g, 'sharing one forged signature'], [/device fingerprints/g, 'forged signatures'], [/Identity spoofing, synthetic credentials, national security priority/g, 'Counterfeit parts and forged paperwork, flight safety priority'], [/Identity recycling: 6 cases at Bragg maintenance crew/g, 'Recycled serial numbers: 6 parts'], [/Synthetic Identity Targeting by Pay Grade/g, 'Counterfeit Parts by Supplier Type'], [/Synthetic identity targeting rate/g, 'Share of suspect parts'], [/synthetic identity rings? probe thinner verification paths that overlap bias blind spots/g, 'counterfeiters sell through brokers, where paperwork is checked least'],
+    [/Junior enlisted \(E1-E4\) show 18% lower early-catch rates than senior officers/g, 'Parts bought from brokers get 18% fewer early catches than parts from original manufacturers'], [/Junior enlisted \(E1-E4\) are most targeted/g, 'Broker-sourced parts are the most suspect'], [/E1[-–]E4 Junior Enlisted/g, 'Brokers'], [/E5[-–]E9 NCO/g, 'Distributors'], [/O1[-–]O3 Junior Officer/g, 'Repair stations'], [/O4\+ Senior Officer/g, 'Manufacturers'], [/E1[-–]E4 junior enlisted/g, 'Broker-sourced parts'], [/[Jj]unior enlisted/g, 'broker-sourced parts'], [/\bE1[-–]E4\b/g, 'Brokers'], [/\bE5[-–]E9\b/g, 'Distributors'], [/\bO1[-–]O3\b/g, 'Repair stations'],
+    [/Fort Cavazos/g, 'Fort Bliss'], [/Great Plains rotation cohort/g, 'desert helicopter fleet'],
+    [/vs white baseline/gi, 'vs mild-climate bases'], [/[Vv]s youngest cohort/g, 'vs newest airframes'],
+    [/\bWhite\b/g, 'Mild-climate bases'], [/Black\/AA/g, 'Coastal bases'], [/\bAsian\b/g, 'Cold-climate bases'], [/Non-binary \/ other/g, 'Drones (UAS)'], [/\bMen(?= [\d.]+%)/g, 'Fixed-wing'], [/\bWomen(?= [\d.]+%)/g, 'Rotary-wing'],
+    [/\bAge 18-25\b/g, 'Airframe 0-5 yrs'], [/\bAge 26-35\b/g, 'Airframe 6-10 yrs'], [/\bAge 36-45\b/g, 'Airframe 11-15 yrs'], [/\bAge 46-55\b/g, 'Airframe 16-20 yrs'], [/\bAge 55-64\b/g, 'Airframe 21-25 yrs'], [/\bAge 65\+/g, 'Airframe 26+ yrs']
+  ];
+  R.unshift(
+    [/Affected personnel to re-evaluate/g, 'Affected aircraft to re-check'], [/lawsuit claims systematic discrimination in personnel assignments/g, 'claim says parts were replaced too late at desert bases'], [/(\d+) affected personnel re-evaluated within 30 days, (\d+) approved/g, '$1 affected aircraft re-checked within 30 days, $2 parts replaced early'], [/847 personnel re-evaluated/g, '847 aircraft re-checked'], [/personnel bias: 847 affected/g, 'wear gap: 847 aircraft affected'], [/Female officers age 40\+ assignment delays/g, 'Older helicopters: late readiness calls'], [/assignment fairness watch/g, 'inspection watch'],
+    [/Your personnel assignment model is denying qualified people based on who th[^.]*\./g, 'Your Fleet Health model warns desert and coastal bases too late, because it never learned how sand and salt wear parts.'],
+    [/Recommend-only mode: supervisors make every assignment/g, 'Recommend-only mode: a mechanic approves every work order'], [/Block decisions that use home ZIP for Illinois employees/g, 'Block deferrals from the climate-blind model at desert bases'], [/\(Illinois staff\)/g, '(desert bases)'], [/All personnel models/g, 'All maintenance models'], [/Personnel records \(race, ethnicity, veteran status\)/g, 'Maintenance records (base, climate, airframe age)'], [/\bEEOC\b/g, 'Cardinal'],
+    [/Norfolk \/ Hampton Roads VA: Navy enlisted corridor/g, 'NAS Norfolk, VA: coastal fleet'], [/DC metro personnel: Pentagon corridor/g, 'Joint Base Andrews (mild baseline)'], [/Black technicians at Fort Bragg/g, 'Coastal aircraft at Langley AFB'], [/Distributors, assignment fairness watch/g, 'Distributor parts, inspection watch'],
+    [/847 historical personnel assignment decisions/g, '847 historical part-replacement calls'], [/No real personnel affected during simulation/g, 'No real aircraft affected during simulation'], [/(\d+) personnel would have been correctly approved/g, '$1 aircraft would have been warned in time'],
+    [/0?\.80 four-fifths (benchmark|line|threshold|rule)/g, '0.80 floor'], [/four-fifths (benchmark|line|threshold|rule)/g, '0.80 floor'], [/(0?\.80 )?EEOC floor/g, '0.80 Cardinal floor'], [/under EEOC concern threshold/g, 'under Cardinal’s review threshold'], [/US Federal \(EEOC\)/g, 'US Federal (FAA and DoD)'],
+    [/CCO notified: Personnel bias detected/g, 'CCO notified: Fleet Health wear gap detected'], [/Personnel bias/g, 'Fleet Health wear gap'], [/Personnel pipeline/g, 'Fleet Health pipeline'], [/\bPersonnel\b(?= v\d)/g, 'Fleet Health'],
+    [/([\d.]+)x the rate of white technicians: DoD AI Ethics violation/g, '$1x the rate of mild-climate bases: flight safety risk'], [/white technicians/g, 'mild-climate bases'], [/Arctic bases technicians/g, 'Arctic bases'], [/Native American technicians/g, 'Arctic-base aircraft'],
+    [/Age 65\+: (\d+)% approval/g, 'Airframes 26+ yrs: $1% early catches'], [/Annual adverse impact review of personnel models/g, 'Annual fleet model review'], [/Age 65\+ shows 26% lower relative assignment index vs 18-25 cohort/g, 'Airframes 26+ years get 26% fewer early catches than airframes 0-5 years'],
+    [/disparate impact finding/g, 'early-catch gap finding'], [/Eden tests each lending model for disparate impact continuously/g, 'Eden tests each maintenance model for early-catch gaps continuously'], [/Eden checks hiring and personnel models for age, race, and gender gaps/g, 'Eden checks the maintenance models for gaps between bases, climates, and airframes'], [/disparate impact/g, 'early-catch gap'],
+    [/replaced with skill-based assignment vector/g, 'replaced with sand and salt exposure features'], [/vs assignment latency baseline/g, 'vs warning-time baseline'],
+    [/created credential verification blind spots/g, 'let parts with clean paperwork skip inspection'], [/skipped enhanced credential checks/g, 'skipped extra inspection'], [/credential checks/g, 'parts inspections'], [/Pendleton credential synthesis/g, 'Jacksonville counterfeit parts'], [/Fraud ring proximity: /g, 'Counterfeit parts near: '], [/Would have entered the assignment pool/g, 'Would have gone onto an aircraft'],
+    [/Racial \/ ethnic assignment analysis/gi, 'Base environment analysis'], [/Shift and site assignments for 847 technicians/g, 'Part-replacement calls for 847 aircraft'], [/847 technicians affected/g, '847 aircraft affected'], [/847 technicians/g, '847 aircraft'], [/~340 personnel projected/g, '~340 aircraft projected'],
+    [/Assignment history, 2019 to 2024 \(past human decisions\) \+ home ZIP/g, 'Maintenance history, 2019 to 2024 (past part replacements), mild-climate bases only'], [/Employee privacy notice/g, 'Contract data rights'], [/Race, ethnicity, veteran stat\w*/g, 'Base, climate, airframe age'],
+    [/Minority technicians, Ages 25-45, DoD clearance Group A/g, 'Desert and coastal aircraft, airframes 6 to 15 years'], [/minority technicians/g, 'desert and coastal aircraft'],
+    [/#TEST-616 Age 55\+ Personnel/g, '#TEST-616 Older airframes'], [/Age 55\+ Remote Personnel/g, 'Older airframes at remote bases'], [/Age 55\+ Personnel/g, 'Older airframes'], [/Changed technician class from Group A to Group B/g, 'Changed the base climate from mild to desert'], [/Which variables legitimately drive assignment decisions vs which are biased proxies\?/g, 'Which signals really predict part wear, and which are blind spots?'], [/Genesis also found discrimination against Age 55\+ remote personnel/g, 'Genesis also found late warnings for older airframes at remote bases'], [/Geographic proxy correlated with both ethnicity AND seniority/g, 'Base location stands in for climate, which the model never sees'], [/Legitimate personnel vs (synthetic|credential) fraud attempts/g, 'Genuine parts vs counterfeit parts'], [/departing-employee credential reuse against personnel systems/g, 'counterfeit parts entering through brokers'], [/exfiltrate personnel assignment decisions/g, 'exfiltrate maintenance records'], [/Synthetic credential ring \(23 apps\)/g, 'Counterfeit parts ring (23 shipments)'], [/Age 55\+ from remote postings, minority technicians/g, 'older airframes at remote desert and coastal bases']
+  );
+  var EXACT = { 'White': 'Mild-climate bases', 'Asian': 'Cold-climate bases', 'Black/AA': 'Coastal bases', 'Male': 'Fixed-wing', 'Female': 'Rotary-wing', 'Approval %': 'Early-catch %', 'Vs youngest cohort': 'Vs newest airframes', 'Equity threshold': 'Safety floor', 'Men': 'Fixed-wing', 'Women': 'Rotary-wing', 'Non-binary / other': 'Drones (UAS)', 'Age 18-25': 'Airframe 0-5 yrs', 'Age 26-35': 'Airframe 6-10 yrs', 'Age 36-45': 'Airframe 11-15 yrs', 'Age 46-55': 'Airframe 16-20 yrs', 'Age 55-64': 'Airframe 21-25 yrs', 'Age 65+': 'Airframe 26+ yrs', 'O4+': 'Manufacturers', 'BASELINE': 'BASELINE' };
+  function fix(s) {
+    if (!s || !/[A-Za-z]/.test(s)) return s;
+    var t = s.trim(); if (EXACT[t] && t !== EXACT[t]) return s.replace(t, EXACT[t]);
+    var out = s; for (var i = 0; i < R.length; i++) { R[i][0].lastIndex = 0; if (R[i][0].test(out)) { R[i][0].lastIndex = 0; out = out.replace(R[i][0], R[i][1]); } }
+    return out;
+  }
+  window.cardinalAdStoryText = fix;
+  var touched = new Set();
+  function scrub(root) {
+    if ((window.currentOrg || 'ad') !== 'ad' || !root) return;
+    var w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: function (n) { var p = n.parentNode && n.parentNode.nodeName; return (p === 'SCRIPT' || p === 'STYLE' || p === 'TEXTAREA' || (p === 'OPTION' && !n.parentNode.hasAttribute('value'))) ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT; } }), t, list = [];
+    while ((t = w.nextNode())) { var v = t.nodeValue, f = fix(v); if (f !== v) list.push([t, f]); }
+    list.forEach(function (x) { var n = x[0]; if (n.__adOrig == null) n.__adOrig = n.nodeValue; n.nodeValue = x[1]; touched.add(n); });
+  }
+  function restore() { touched.forEach(function (n) { if (n.__adOrig != null) { n.nodeValue = n.__adOrig; n.__adOrig = null; } }); touched.clear(); }
+  var pending = null, roots = [];
+  new MutationObserver(function (muts) {
+    if ((window.currentOrg || 'ad') !== 'ad') return;
+    muts.forEach(function (m) { m.addedNodes.forEach(function (n) { if (n.nodeType === 1) roots.push(n); else if (n.nodeType === 3) roots.push(n.parentNode); }); if (m.type === 'characterData' && m.target.__adOrig == null) roots.push(m.target.parentNode); });
+    if (!pending) pending = setTimeout(function () { var r = roots; roots = []; pending = null; r.forEach(function (n) { if (n && n.isConnected) scrub(n); }); }, 25);
+  }).observe(document.body, { childList: true, subtree: true, characterData: true });
+  var oI = window.switchIndustry;
+  if (typeof oI === 'function') window.switchIndustry = switchIndustry = function () { restore(); var r = oI.apply(this, arguments); setTimeout(function () { scrub(document.body); }, 80); return r; };
+  setTimeout(function () { scrub(document.body); }, 500);
+  // Eve reads her messages out loud: keep what she says in step with what she shows.
+  try { var oSpeak = window.speechSynthesis && window.speechSynthesis.speak.bind(window.speechSynthesis); if (oSpeak) window.speechSynthesis.speak = function (u) { try { if ((window.currentOrg || 'ad') === 'ad' && u && u.text) u.text = fix(u.text); } catch (e) {} return oSpeak(u); }; } catch (e) {}
 })();
 </script>
 
