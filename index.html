@@ -5729,7 +5729,7 @@ Settings
     <div>
       <div style="display:flex;align-items:center;gap:8px;">
         <span class="dash-activity-ticker-dot" style="position:relative;"></span>
-        <div id="dash-core-status-title" style="font-size:18px;font-weight:700;color:var(--text);cursor:help;letter-spacing:-0.01em;">Live AI Risk Intelligence</div>
+        <div id="dash-core-status-title" style="font-size:18px;font-weight:700;color:var(--text);cursor:help;letter-spacing:-0.01em;">Live Model Status</div>
       </div>
       <div style="font-size:11px;color:var(--muted);margin-top:4px;">Real-time status across every Cardinal core, at the model level, every issue, every fix, every deadline, updating as it happens, down to which tools and data each AI agent touches.</div>
     </div>
@@ -22278,7 +22278,7 @@ function initDashboardTooltips() {
     // Live AI Risk Intelligence section title
     showTooltip(
       document.getElementById('dash-core-status-title'),
-      'Live AI Risk Intelligence',
+      'Live Model Status',
       'Real-time status of all Cardinal cores, tracking the AI models currently instrumented in each core. Each panel shows the top issues right now: <span class="tt-accent">what\'s failing, what\'s being fixed, and what action is needed</span>, plus a trend indicator and the top contributing factor, and cards are sorted worst-first by real severity. <span class="tt-accent">Coverage spans models and AI agents</span>: which model runs, and which tools and data each agent touches (Sentinel → Security Watch). Click the arrow on any panel to go to the full core screen.'
     );
 
@@ -47541,6 +47541,8 @@ window.genRenderScenarios = function () {
   if (typeof oI === 'function') window.switchIndustry = switchIndustry = function () { var r = oI.apply(this, arguments); try { wire(); } catch (e) {} return r; };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', wire); else wire();
   setTimeout(wire, 1500);
+  // Login can set the company without switchIndustry, so re-check the hint when the company changes.
+  setInterval(function () { var i = document.getElementById('cardinal-ask-input'), o = window.currentOrg || 'ad'; if (i && i.__org !== o) { i.__org = o; try { wire(); } catch (e) {} } }, 1000);
 })();
 </script>
 
@@ -47618,7 +47620,7 @@ window.genRenderScenarios = function () {
     var df = ((window.CARDINAL_DEEPFAKE || {})[org] || {}).rows || [];
     var ow = arr(window.CARDINAL_OWASP_AGENTIC_COVERAGE);
     return [
-      { n: models.length, l: 'Models', s: models.filter(function (m) { return m.trustScore < 80; }).length + ' below 80', go: 'cardinallibrary' },
+      { n: models.length, l: 'Models', s: ((((window.CARDINAL_DATA || {})[org] || {}).modelsAtRiskList || []).length) + ' at risk', go: 'cardinallibrary' },
       { n: sys.length, l: 'AI systems', s: sys.filter(function (x) { return /risk/i.test(x.status || ''); }).length + ' at risk', go: 'cardinallibrary' },
       { n: Object.keys(agents).length, l: 'AI agents', s: 'Each has an owner and approvals', go: 'sentinel' },
       { n: vend.length, l: 'Vendor AI', s: vend.filter(function (v) { return v[5] === 'Gap'; }).length + ' with gaps', go: 'sentinel' },
@@ -48594,6 +48596,13 @@ window.genRenderScenarios = function () {
 /* 10/3 (Brittany): no outside views (an auditor just gets the company's Trust Ledger, shared from Settings);
    Trust Score page drops the "Everything Cardinal watches" block and the repeated part chips under the ring. */
 .top-view-btn[data-view="client"], #ts-coverage, #tsv2-part-chips { display: none !important; }
+/* 10/3 dashboard: the red alert bar is one tight row (pills, then the alert itself in readable type), no empty band. */
+#dash-action-alert-banner { align-items: center !important; padding-top: 10px !important; padding-bottom: 10px !important; min-height: 0 !important; }
+#dash-action-alert-banner > div:first-child { align-items: center !important; }
+#dash-action-alert-banner > div:first-child > div:nth-child(2) { display: flex; align-items: center; gap: 10px; min-width: 0; }
+#dash-action-alert-banner > div:first-child > div:nth-child(2) > div:first-child { margin-bottom: 0 !important; flex-wrap: nowrap !important; flex: none; }
+#dash-action-alert-desc { font-size: 13px !important; font-weight: 600; color: #1a1815 !important; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+@media (max-width: 700px) { #dash-action-alert-banner > div:first-child > div:nth-child(2) { flex-wrap: wrap; } #dash-action-alert-desc { white-space: normal; } }
 </style>
 <script>
 // 10/3 (Brittany: "does the map match up to where everything is being affected ... by state, go deep").
@@ -48723,6 +48732,109 @@ window.CARDINAL_PLACES = {
     b.innerHTML = '<button type="button" onclick="event.stopPropagation();haloShowStates()" style="font-size:11px;font-weight:700;padding:5px 10px;border:0;border-radius:7px;background:#1a1815;color:#fff;cursor:pointer">By state</button><button type="button" onclick="event.stopPropagation();var r=document.getElementById(\'halo-zoom-reset\');if(r)r.click()" style="font-size:11px;font-weight:700;padding:5px 10px;border:0;border-radius:7px;background:transparent;color:#1a1815;cursor:pointer">World</button>';
     cont.appendChild(b);
   }, 800);
+})();
+</script>
+
+<script>
+// 10/3 dashboard cleanup: Protected Group Impact gets a plain summary and working Refresh / Export;
+// "Live AI Risk Intelligence" is renamed; drag handles are visible.
+(function () {
+  function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;'); }
+  function groups(p) { return [].map.call(p.querySelectorAll('button[onclick*="dashShowGroupDetail"]'), function (b) { var k = /dashShowGroupDetail\('([^']+)'\)/.exec(b.getAttribute('onclick'))[1], v = parseFloat((b.textContent.match(/([\d.]+)%/) || [])[1]); return { k: k, label: b.textContent.replace(/\s*[\d.]+%\s*$/, '').trim(), v: v }; }); }
+  function summary(org, p) {
+    var g = groups(p); if (!g.length) return '';
+    var race = g.filter(function (x) { return /^race:/.test(x.k); }), base = race.filter(function (x) { return x.k === 'race:White'; })[0] || race[0];
+    var worst = g.filter(function (x) { return x !== base; }).sort(function (a, b) { return a.v - b.v; })[0];
+    var st = ((window.GROUP_STORY || {})[org] || {})[worst.k] || [];
+    var unit = { ad: 'service members', fin: 'applicants', health: 'members', fed: 'filers' }[org] || 'people';
+    var ratio = base && base.v ? (worst.v / base.v).toFixed(2) : null;
+    return '<div id="pg-summary" style="margin:12px 16px 4px;padding:12px 14px;border-radius:12px;background:#fbfaf7;border:1px solid rgba(26,24,21,.08)"><div style="font-size:10px;font-weight:800;letter-spacing:.06em;color:#64748b;text-transform:uppercase;margin-bottom:4px">What this tells you</div>' +
+      '<div style="font-size:12.5px;color:#1a1815;line-height:1.55"><b>' + esc(worst.label) + '</b> ' + unit + ' get a yes ' + worst.v + '% of the time' + (base ? ', ' + Math.round(base.v - worst.v) + ' points below ' + esc(base.label) + ' (' + base.v + '%)' : '') + '.' +
+      (st[3] ? ' Why: ' + esc(st[3]) : '') + (st[0] ? ' Where: ' + esc(st[0]) + '.' : '') + (st[4] ? ' What is being done: ' + esc(st[4]) : '') + (st[1] ? ' <a href="#" onclick="event.preventDefault();event.stopPropagation();showScreen(\'eden\',null)" style="color:#1d4ed8;font-weight:700">Open case ' + esc(st[1]) + '</a>' : '') + '</div></div>';
+  }
+  function wire() {
+    var p = document.getElementById('dash-demographic-panel'); if (!p) return;
+    var org = window.currentOrg || 'ad', key = org + groups(p).length;
+    var s = document.getElementById('pg-summary');
+    if (!s || p.__pgKey !== key) {
+      if (s) s.remove();
+      var head = p.firstElementChild; if (head && groups(p).length) { head.insertAdjacentHTML('afterend', summary(org, p)); p.__pgKey = key; }
+    }
+    [].forEach.call(p.querySelectorAll('button'), function (b) {
+      var t = b.textContent.trim();
+      if (t === 'Refresh Analysis' && !b.__w) { b.__w = 1; b.onclick = function (e) { e.stopPropagation(); b.textContent = 'Re-running...'; b.disabled = true; setTimeout(function () { b.textContent = 'Refresh Analysis'; b.disabled = false; var lr = [].filter.call(p.querySelectorAll('*'), function (x) { return x.children.length === 0 && /^Last run/.test(x.textContent.trim()); })[0]; if (lr) lr.textContent = 'Last run just now'; try { cardinalShowToast('Re-ran on the latest decisions. No group changed by more than a point.'); } catch (er) {} }, 1200); }; }
+      if (t === 'Export Analysis' && !b.__w) { b.__w = 1; b.onclick = function (e) { e.stopPropagation(); var rows = [['Group', 'Approval rate %']].concat(groups(p).map(function (x) { return [x.label, x.v]; })); var csv = rows.map(function (r) { return r.join(','); }).join('\n'); var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' })); a.download = 'protected-group-impact-' + org + '.csv'; document.body.appendChild(a); a.click(); a.remove(); try { cardinalShowToast('Exported. The export is logged in Echo.'); } catch (er) {} }; }
+    });
+    var tt = document.getElementById('dash-core-status-title'); if (tt && tt.textContent !== 'Live Model Status') tt.textContent = 'Live Model Status';
+  }
+  // Models at Risk and AI Coverage count the same registry, so "2 of N" matches "N models".
+  try {
+    ['ad', 'fin', 'health', 'fed'].forEach(function (o) {
+      var d = (window.CARDINAL_DATA || {})[o]; if (!d) return;
+      var n = (window.CARDINAL_MODELS || []).filter(function (m) { return m.industry === o && m.status !== 'archive'; }).length;
+      var k = (d.modelsAtRiskList || []).length || parseInt(d.modelsAtRisk, 10) || 0;
+      if (n) d.modelsAtRisk = k + ' of ' + Math.max(n, k);
+    });
+  } catch (e) {}
+  setInterval(function () { var d = document.getElementById('screen-dashboard'); if (d && d.offsetParent !== null) wire(); }, 800);
+})();
+</script>
+<style>
+/* Drag handles were white on a light card and could not be seen. */
+.drag-handle, .dash-bottom-drag-handle, .gen-tile-drag-handle { color: #94a3b8 !important; opacity: 1 !important; }
+.drag-handle:hover, .dash-bottom-drag-handle:hover { color: #1a1815 !important; }
+</style>
+
+<script>
+// 10/3 checklist: Back button, jump to top / bottom, and plain definitions of incident vs case.
+(function () {
+  var hist = [], cur = 'dashboard', goingBack = false;
+  var oS = window.showScreen;
+  if (typeof oS === 'function') window.showScreen = showScreen = function (name) {
+    var prev = cur, r = oS.apply(this, arguments);
+    var now = (document.querySelector('.screen.active') || {}).id; now = now ? now.replace(/^screen-/, '') : name;
+    if (now && now !== prev) { if (!goingBack) { hist.push(prev); if (hist.length > 30) hist.shift(); } cur = now; }
+    goingBack = false; paintBack(); return r;
+  };
+  window.cardinalBack = function () { var p = hist.pop(); if (!p) return; goingBack = true; showScreen(p, null); };
+  function paintBack() {
+    var t = document.getElementById('topbar-title'); if (!t) return;
+    var b = document.getElementById('cardinal-back-btn');
+    if (!b) { b = document.createElement('button'); b.id = 'cardinal-back-btn'; b.type = 'button'; b.onclick = cardinalBack; b.title = 'Back to the previous screen'; b.style.cssText = 'margin-right:10px;font-size:11.5px;font-weight:700;padding:5px 10px;border-radius:8px;border:1px solid rgba(26,24,21,.15);background:#fff;color:#1a1815;cursor:pointer;vertical-align:middle'; t.parentNode.insertBefore(b, t); var wrap = t.parentNode; if (getComputedStyle(wrap).display === 'block') { t.style.display = 'inline'; } }
+    var p = hist[hist.length - 1];
+    var label = { dashboard: 'Dashboard', trustscore: 'Trust Score', pipeline: 'Data Pipeline', eden: 'Eden', obsidian: 'Obsidian', genesis: 'Genesis', atonement: 'Atonement', halo: 'Halo', marketing: 'Codex', compliance: 'Compliance', trustledger: 'Trust Ledger', echo: 'Echo', sentinel: 'Sentinel', lucid: 'Lucid', cardinallibrary: 'Library', trustloop: 'Trust Loop', myworkspace: 'My Workspace', settings: 'Settings', glossary: 'Glossary', warroom: 'War Room' }[p] || 'Back';
+    b.textContent = '← ' + label; b.style.display = p ? 'inline-block' : 'none';
+  }
+  // Jump to top / bottom of the current screen.
+  function scroller() { var c = document.querySelector('.content'); return c && c.scrollHeight > c.clientHeight + 10 ? c : (document.scrollingElement || document.documentElement); }
+  function addJump() {
+    if (document.getElementById('cardinal-jump')) return;
+    var j = document.createElement('div'); j.id = 'cardinal-jump';
+    j.style.cssText = 'position:fixed;right:84px;bottom:26px;z-index:900;display:flex;flex-direction:column;gap:6px';
+    var mk = function (txt, tip, fn) { var b = document.createElement('button'); b.type = 'button'; b.textContent = txt; b.title = tip; b.setAttribute('aria-label', tip); b.onclick = fn; b.style.cssText = 'width:34px;height:34px;border-radius:50%;border:1px solid rgba(26,24,21,.15);background:#fff;color:#1a1815;font-size:15px;font-weight:800;cursor:pointer;box-shadow:0 4px 12px rgba(26,24,21,.12)'; return b; };
+    j.appendChild(mk('↑', 'Jump to top', function () { scroller().scrollTo({ top: 0, behavior: 'smooth' }); window.scrollTo({ top: 0, behavior: 'smooth' }); }));
+    j.appendChild(mk('↓', 'Jump to bottom', function () { var s = scroller(); s.scrollTo({ top: s.scrollHeight, behavior: 'smooth' }); }));
+    document.body.appendChild(j);
+  }
+  setInterval(function () { var app = document.querySelector('.content'); var j = document.getElementById('cardinal-jump'); if (app && app.offsetParent !== null) { addJump(); paintBack(); } else if (j) j.remove(); }, 1000);
+  // Incident vs case, in the Glossary and at the top of Sentinel.
+  try {
+    if (window.CARDINAL_GLOSSARY_DATA) {
+      CARDINAL_GLOSSARY_DATA.push({ term: 'Incident', category: 'Cases and incidents', def: 'Something that already happened and hurt someone or broke a rule, like an agent acting without approval or a wrongful denial. An incident can start a legal reporting clock.' });
+      CARDINAL_GLOSSARY_DATA.push({ term: 'Case', category: 'Cases and incidents', def: 'The file Cardinal opens to work a problem from start to finish: the finding, who owns it, the fix, and the sign-off. One case can hold several incidents and findings.' });
+      CARDINAL_GLOSSARY_DATA.push({ term: 'Codex Core', category: 'Cores', def: 'Where documents get reviewed before they go out: policies, contracts, vendor due diligence, model cards, filings, and marketing. Each one is tied to the model or customer group it touches and checked against the rules.' });
+      CARDINAL_GLOSSARY_DATA.push({ term: 'AI Agents & Security (dimension)', category: 'Trust Score', def: 'The seventh part of the Trust Score: every agent has a named owner, required sign-offs are never skipped, and agents hold up against prompt injection and tool misuse.' });
+      CARDINAL_GLOSSARY_DATA.push({ term: 'Finding', category: 'Cases and incidents', def: 'Something a check turned up, like a bias gap or a missing contract term. A finding becomes a case when someone needs to act on it.' });
+    }
+  } catch (e) {}
+  setInterval(function () {
+    var s = document.getElementById('screen-sentinel'); if (!s || s.offsetParent === null || document.getElementById('sent-defs')) return;
+    var d = document.createElement('div'); d.id = 'sent-defs';
+    d.style.cssText = 'display:flex;gap:10px;flex-wrap:wrap;margin:0 0 14px';
+    d.innerHTML = [['Finding', 'Something a check turned up.'], ['Case', 'The file that works a problem to the end: owner, fix, sign-off.'], ['Incident', 'Harm that already happened. It can start a reporting clock.']].map(function (x) { return '<div style="flex:1;min-width:180px;padding:9px 12px;border-radius:10px;background:#fbfaf7;border:1px solid rgba(26,24,21,.08);font-size:11.5px;color:#475569"><b style="color:#1a1815">' + x[0] + ':</b> ' + x[1] + '</div>'; }).join('');
+    var head = s.querySelector('.screen-header'); var anchor = head && head.offsetParent !== null ? head.nextSibling : s.firstChild;
+    s.insertBefore(d, anchor);
+  }, 900);
 })();
 </script>
 
