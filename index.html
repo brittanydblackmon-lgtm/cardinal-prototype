@@ -6727,7 +6727,7 @@ Halo Core
      sync in 3 spots: this container's inline height, the <svg height> attribute, and
      initHaloMap()'s internal `height` var (~line 22679 as of this pass). -->
 <div class="halo-map-shell" style="position:relative;margin-bottom:18px" onclick="haloBackdropClick(event)">
-<div id="halo-map-container" style="width:100%;height:540px;background:#080c14;border-radius:12px;border:1px solid rgba(167, 167, 167,0.1);position:relative;overflow:hidden;">
+<div id="halo-map-container" style="width:100%;height:540px;background:#f6f3ec;border-radius:12px;border:1px solid rgba(167, 167, 167,0.1);position:relative;overflow:hidden;">
   <svg id="halo-world-svg" width="100%" height="540"></svg>
   <div id="halo-map-prediction-overlay" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:7;"></div>
   <div id="halo-map-tooltip" style="display:none;position:absolute;background:rgba(13,14,20,0.95);border:1px solid rgba(167, 167, 167,0.2);border-radius:8px;padding:12px 16px;pointer-events:none;min-width:200px;z-index:10;"></div>
@@ -24904,9 +24904,9 @@ function initHaloMap() {
     'Canada': {risk:'compliant', color:'rgba(34,197,94,0.3)', stroke:'#22c55e'},
     'Japan': {risk:'deadline', color:'rgba(245,158,11,0.4)', stroke:'#f59e0b'},
     'Australia': {risk:'compliant', color:'rgba(34,197,94,0.3)', stroke:'#22c55e'},
-    'Brazil': {risk:'none', color:'rgba(255,255,255,0.04)', stroke:'rgba(255,255,255,0.1)'},
-    'India': {risk:'none', color:'rgba(255,255,255,0.04)', stroke:'rgba(255,255,255,0.1)'},
-    'China': {risk:'none', color:'rgba(255,255,255,0.04)', stroke:'rgba(255,255,255,0.1)'}
+    'Brazil': {risk:'none', color:'#e9e4da', stroke:'#cfc7b8'},
+    'India': {risk:'none', color:'#e9e4da', stroke:'#cfc7b8'},
+    'China': {risk:'none', color:'#e9e4da', stroke:'#cfc7b8'}
   };
 
   var countryInfo = {
@@ -25035,13 +25035,13 @@ function initHaloMap() {
           var name = countryNames[String(d.id)] || '';
           var fp = haloFootprint(name);
           if (fp) return fp.fill;
-          return countryRisk[name] ? countryRisk[name].color : 'rgba(255,255,255,0.03)';
+          return countryRisk[name] ? countryRisk[name].color : '#e9e4da';
         })
         .attr('stroke', function(d) {
           var name = countryNames[String(d.id)] || '';
           var fp = haloFootprint(name);
           if (fp) return fp.stroke;
-          return countryRisk[name] ? countryRisk[name].stroke : 'rgba(255,255,255,0.08)';
+          return countryRisk[name] ? countryRisk[name].stroke : '#cfc7b8';
         })
         .attr('stroke-width', function(d) {
           var name = countryNames[String(d.id)] || '';
@@ -46948,7 +46948,7 @@ window.genRenderScenarios = function () {
   window.haloStatePanel = function (st, nm) {
     var org = window.currentOrg || 'ad', c = ctx(org), cont = document.getElementById('halo-map-container');
     var p = document.getElementById('halo-state-panel');
-    if (!p) { p = document.createElement('div'); p.id = 'halo-state-panel'; p.style.cssText = 'position:absolute;left:12px;bottom:12px;z-index:9;width:300px;max-height:300px;overflow:auto;background:rgba(13,14,20,.95);border:1px solid rgba(167,167,167,.25);border-radius:10px;padding:12px 14px;color:#e2e8f0;font-size:11px;line-height:1.5'; p.onclick = function (e) { e.stopPropagation(); }; cont.appendChild(p); }
+    if (!p) { p = document.createElement('div'); p.id = 'halo-state-panel'; p.style.cssText = 'position:absolute;left:12px;bottom:12px;z-index:9;width:300px;max-height:300px;overflow:auto;background:#fff;border:1px solid rgba(26,24,21,.12);box-shadow:0 8px 24px rgba(26,24,21,.12);border-radius:10px;padding:12px 14px;color:#1a1815;font-size:11px;line-height:1.5'; p.onclick = function (e) { e.stopPropagation(); }; cont.appendChild(p); }
     var laws = c.laws.filter(function (l) { return l.st === st; }), op = c.F.states.indexOf(st) !== -1;
     p.innerHTML = '<div style="display:flex;justify-content:space-between;gap:8px"><strong style="font-size:13px">' + esc(nm) + ' (' + st + ')</strong><span style="cursor:pointer;color:#94a3b8" onclick="document.getElementById(\'halo-state-panel\').remove()">✕</span></div>' +
       '<div style="color:#94a3b8;margin:2px 0 8px">' + (org === 'fed' ? esc(c.F.note) + '.' : op ? 'You operate here.' : 'You do not operate here today.') + '</div>' +
@@ -46967,14 +46967,14 @@ window.genRenderScenarios = function () {
     var layer = group.append('g').attr('id', 'halo-states-layer');
     layer.selectAll('path').data(topojson.feature(statesTopo, statesTopo.objects.states).features).enter().append('path')
       .attr('d', path).attr('vector-effect', 'non-scaling-stroke').style('cursor', 'pointer')
-      .attr('fill', function (d) { var col = c.color(NAMES[d.properties.name]); return col ? col + 'cc' : 'rgba(17,24,39,0.85)'; })
-      .attr('stroke', 'rgba(255,255,255,0.55)').attr('stroke-width', 0.8)
-      .on('mouseover', function () { d3.select(this).attr('stroke', '#fff').attr('stroke-width', 1.8); })
-      .on('mouseout', function () { d3.select(this).attr('stroke', 'rgba(255,255,255,0.55)').attr('stroke-width', 0.8); })
+      .attr('fill', function (d) { var col = c.color(NAMES[d.properties.name]); return col ? col + 'cc' : '#ebe6dc'; })
+      .attr('stroke', '#a8a090').attr('stroke-width', 0.8)
+      .on('mouseover', function () { d3.select(this).attr('stroke', '#1a1815').attr('stroke-width', 1.8); })
+      .on('mouseout', function () { d3.select(this).attr('stroke', '#a8a090').attr('stroke-width', 0.8); })
       .on('click', function (ev, d) { ev.stopPropagation(); haloStatePanel(NAMES[d.properties.name], d.properties.name); });
     if (!document.getElementById('halo-state-panel')) {
       var cnt = c.F.states.length;
-      var p = document.createElement('div'); p.id = 'halo-state-panel'; p.style.cssText = 'position:absolute;left:12px;bottom:12px;z-index:9;width:300px;background:rgba(13,14,20,.95);border:1px solid rgba(167,167,167,.25);border-radius:10px;padding:10px 14px;color:#e2e8f0;font-size:11px;line-height:1.5';
+      var p = document.createElement('div'); p.id = 'halo-state-panel'; p.style.cssText = 'position:absolute;left:12px;bottom:12px;z-index:9;width:300px;background:#fff;border:1px solid rgba(26,24,21,.12);box-shadow:0 8px 24px rgba(26,24,21,.12);border-radius:10px;padding:10px 14px;color:#1a1815;font-size:11px;line-height:1.5';
       p.innerHTML = '<strong>State view</strong><div style="color:#94a3b8">' + (org === 'fed' ? 'State AI laws do not bind federal agencies. Click any state to see what it has passed.' : cnt + ' states where you operate are shaded: <span style="color:#f87171">red</span> gap today, <span style="color:#fbbf24">amber</span> starts soon, <span style="color:#4ade80">green</span> on track. Click a state.') + '</div>';
       p.onclick = function (e) { e.stopPropagation(); }; cont.appendChild(p);
     }
@@ -48120,6 +48120,55 @@ window.genRenderScenarios = function () {
   if (typeof oS === 'function') window.showScreen = showScreen = function (s) { var r = oS.apply(this, arguments); if (s === 'atonement' || s === 'genesis') setTimeout(mount, 80); return r; };
   var oI = window.switchIndustry;
   if (typeof oI === 'function') window.switchIndustry = switchIndustry = function () { var r = oI.apply(this, arguments); AT.open = null; GN.open = null; GN.adam = []; setTimeout(function () { try { atwsRender(); gnRender(); } catch (e) {} }, 120); return r; };
+})();
+</script>
+
+<style>
+/* 10/2 feedback: Halo in the same clean light style as Eden/Obsidian (dark gradients were unreadable). */
+#screen-halo [style*="rgba(13,14,20,0.95)"], #screen-halo [style*="rgba(13,14,20,0.9)"] { background: #fff !important; box-shadow: 0 1px 3px rgba(26,24,21,.08); }
+#screen-halo [style*="color:#e2e8f0"], #screen-halo [style*="color:#f1f5f9"], #screen-halo [style*="color:#cbd5e1"], #screen-halo [style*="color: rgb(226, 232, 240)"] { color: #1a1815 !important; }
+#screen-halo [style*="color:#94a3b8"] { color: #475569 !important; }
+#screen-halo .halo-prediction-card { background: #fff !important; }
+#halo-map-tooltip { background: #fff !important; color: #1a1815 !important; border: 1px solid rgba(26,24,21,.12) !important; box-shadow: 0 8px 24px rgba(26,24,21,.14); }
+#halo-map-tooltip * { color: inherit; }
+#screen-halo .halo-map-legend, #halo-map-container [style*="background:rgba(13,14,20"] { background: rgba(255,255,255,.95) !important; color: #1a1815 !important; border-color: rgba(26,24,21,.12) !important; }
+#screen-halo .halo-map-legend * { color: #1a1815 !important; }
+</style>
+<script>
+// 10/2 feedback: Halo tells the prediction story first: Eve's forecast, then where the money is at
+// risk (by state, country, or federal rule), under which rule, and by when.
+(function () {
+  function D(s) { return typeof cardinalFormatDeadline === 'function' ? cardinalFormatDeadline(s) : s; }
+  function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;'); }
+  function rows(org) {
+    return {
+      fin: [['United States (federal)', 'CFPB fair lending exam (ECOA / Reg B)', D('Oct 8, 2026'), 15, 'High'], ['Illinois', 'BIPA: selfie-liveness consent gap', 'Now', 7.5, 'High'], ['New York', 'State fair lending review (DFS / Attorney General)', 'Ongoing', 8, 'Medium'], ['Colorado', 'SB 26-189: adverse-outcome disclosures', 'Jan 1, 2027', 4, 'High'], ['California', 'CCPA rules on automated decisions', 'Jan 1, 2027', 3, 'Medium'], ['Massachusetts', 'Attorney General: AI underwriting (comparable $2.5M settlement)', 'Ongoing', 2.5, 'Low']],
+      ad: [['United States (federal)', 'DoD AI Ethics audit review: Personnel Assignment v2.4', 'Overdue', 28, 'High'], ['United States (federal)', 'ITAR: deemed export through model access', D('Oct 10, 2026'), 15, 'Medium'], ['Illinois', 'HB 3773: AI in employment decisions', 'Now', 9, 'High'], ['Colorado', 'SB 26-189: employment decisions', 'Jan 1, 2027', 6, 'Medium'], ['New York City', 'Local Law 144: hiring-tool bias audit', D('Oct 15, 2026'), 4, 'Medium'], ['Germany (EU)', 'EU AI Act high-risk rules (employment)', 'Dec 2, 2027', 5, 'Low']],
+      health: [['United States (federal)', 'CMS Medicare Advantage audit: Claims Adjudication v1.9', D('Oct 25, 2026'), 45, 'High'], ['United States (federal)', 'Section 1557 complaints to HHS Office for Civil Rights', D('Sep 29, 2026'), 30, 'High'], ['California', 'SB 1120: clinician must decide medical necessity', 'Now', 25, 'High'], ['Nationwide', 'Class action from denied patients 65+', 'Q2 2027', 50, 'Medium']],
+      fed: [['United States (federal)', 'OMB M-25-21: high-impact AI documentation', D('Oct 25, 2026'), 9, 'High'], ['United States (federal)', 'TIGTA review of flagged returns', 'Q1 2027', 4, 'Medium'], ['United States (federal)', 'Modernization delay and manual review surge', 'Q1 2027', 5, 'Medium']]
+    }[org] || [];
+  }
+  function render() {
+    var scr = document.getElementById('screen-halo'); if (!scr) return;
+    var org = window.currentOrg || 'ad', R = rows(org), total = R.reduce(function (a, r) { return a + r[3]; }, 0);
+    var top = R.slice().sort(function (a, b) { return b[3] - a[3]; })[0] || ['', '', '', 0];
+    var host = document.getElementById('halo-forecast');
+    if (!host) { host = document.createElement('div'); host.id = 'halo-forecast'; host.className = 'card'; host.style.cssText = 'padding:16px 18px;margin:0 0 18px'; var hdr = scr.querySelector('.section-hdr, .halo-hdr, h1, .screen-hdr'); var anchor = hdr ? (hdr.closest('.section-hdr') || hdr) : scr.firstElementChild; anchor.parentNode.insertBefore(host, anchor.nextSibling); }
+    var col = function (l) { return l === 'High' ? '#B91C1C' : l === 'Medium' ? '#B45309' : '#475569'; };
+    host.innerHTML = '<div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.6fr);gap:16px;align-items:start">' +
+      '<div><div style="font-size:15px;font-weight:700;color:var(--chrome2)">Eve’s forecast</div><ul style="margin:8px 0 0;padding-left:18px;font-size:12px;color:#1a1815;line-height:1.7">' +
+      '<li>If nothing changes, estimated exposure is <strong>$' + total.toFixed(1).replace('.0', '') + 'M</strong> across ' + R.length + ' places and rules.</li>' +
+      '<li>Biggest single risk: <strong>' + esc(top[1]) + '</strong> (' + esc(top[0]) + ', $' + top[3] + 'M).</li>' +
+      '<li>Fastest way down: approve the fix in Atonement. It takes about 14 days and removes most of this exposure.</li></ul>' +
+      '<div style="font-size:10.5px;color:#64748b;margin-top:8px">Estimates use comparable enforcement actions and the number of people affected. They are forecasts, not legal advice.</div></div>' +
+      '<div><div style="font-size:12px;font-weight:700;color:#1a1815;margin-bottom:6px">Where the money is at risk</div><div style="border:1px solid rgba(26,24,21,.10);border-radius:10px;overflow:hidden"><table style="width:100%;border-collapse:collapse;font-size:11.5px"><thead><tr style="background:#f3f0e9;text-align:left">' +
+      ['Where', 'Rule', 'By when', 'If not fixed', 'Likelihood'].map(function (h) { return '<th style="padding:8px 10px;color:#475569">' + h + '</th>'; }).join('') + '</tr></thead><tbody>' +
+      R.map(function (r, i) { return '<tr style="background:' + (i % 2 ? '#faf8f3' : '#fff') + '"><td style="padding:8px 10px;font-weight:700;color:#1a1815">' + esc(r[0]) + '</td><td style="padding:8px 10px;color:#334155">' + esc(r[1]) + '</td><td style="padding:8px 10px;color:#334155;white-space:nowrap">' + esc(r[2]) + '</td><td style="padding:8px 10px;font-weight:800;color:#B91C1C">$' + r[3] + 'M</td><td style="padding:8px 10px;font-weight:700;color:' + col(r[4]) + '">' + r[4] + '</td></tr>'; }).join('') + '</tbody></table></div></div></div>';
+  }
+  var oS = window.showScreen;
+  if (typeof oS === 'function') window.showScreen = showScreen = function (s) { var r = oS.apply(this, arguments); if (s === 'halo') setTimeout(render, 80); return r; };
+  var oI = window.switchIndustry;
+  if (typeof oI === 'function') window.switchIndustry = switchIndustry = function () { var r = oI.apply(this, arguments); setTimeout(function () { if (document.getElementById('halo-forecast')) render(); }, 150); return r; };
 })();
 </script>
 
