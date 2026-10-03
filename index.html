@@ -6639,7 +6639,7 @@ Settings
 </div>
 </div>
 <div class="card">
-<div class="section-title" style="margin-bottom:12px">Echo Core: Complete Audit Trail</div>
+<div class="section-title" style="margin-bottom:12px">What's been done in Atonement</div>
 <div style="font-size:11px;color:var(--muted2);margin-bottom:12px">Every detection, fix, deployment, and re-evaluation is logged with timestamp, decision ID, and regulatory reference. Immutable record for legal proceedings.</div>
 <div id="at-echo-trail"></div>
 </div>
@@ -47911,6 +47911,215 @@ window.genRenderScenarios = function () {
   });
   var oS = window.showScreen;
   if (typeof oS === 'function') window.showScreen = showScreen = function (s) { var r = oS.apply(this, arguments); if (s === 'eden' || s === 'obsidian') setTimeout(function () { polish(s); }, 120); return r; };
+})();
+</script>
+
+<script>
+// 10/2 feedback: Atonement and Genesis become places where work happens.
+// Atonement: fixes grouped by who is doing them (Adam / other AI agents / your team), each with
+// a work panel (edit, features, shadow traffic, suppression, evidence, notes, approval, log).
+// Genesis: test list with a mini dashboard per test, a test builder (hypothesis, variants,
+// metrics including tokens and cost), and a place to ask Adam to build a test.
+(function () {
+  function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;'); }
+  function me() { var p = window.getActivePersona ? getActivePersona() : null; return p ? p.name : 'You'; }
+  function stamp() { return new Date().toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }); }
+  function toast(m) { try { (window.cardinalShowToast || showToast)(m); } catch (e) {} }
+  var CARD = 'background:#fff;border:1px solid rgba(26,24,21,.08);border-radius:12px;box-shadow:0 1px 3px rgba(26,24,21,.06)';
+  var INP = 'width:100%;box-sizing:border-box;font-size:12px;padding:8px 10px;border:1px solid rgba(26,24,21,.15);border-radius:8px;background:#fff;color:#1a1815;font-family:inherit';
+  var PILL = { 'In shadow': ['#6D28D9', 'rgba(109,40,217,.1)'], Drafted: ['#475569', 'rgba(100,116,139,.12)'], Applied: ['#15803D', 'rgba(21,128,61,.1)'], 'In review': ['#B45309', 'rgba(234,179,8,.16)'], 'Waiting on vendor': ['#B45309', 'rgba(234,179,8,.16)'], 'In progress': ['#1D4ED8', 'rgba(29,78,216,.1)'], Approved: ['#15803D', 'rgba(21,128,61,.1)'], 'Changes requested': ['#B91C1C', 'rgba(220,38,38,.1)'], Passed: ['#15803D', 'rgba(21,128,61,.1)'], Failed: ['#B91C1C', 'rgba(220,38,38,.1)'], Running: ['#1D4ED8', 'rgba(29,78,216,.1)'], Draft: ['#475569', 'rgba(100,116,139,.12)'] };
+  function pill(t) { var c = PILL[t] || PILL.Drafted; return '<span style="font-size:10px;font-weight:800;padding:2px 9px;border-radius:999px;color:' + c[0] + ';background:' + c[1] + ';white-space:nowrap">' + esc(t) + '</span>'; }
+
+  // ── Atonement fixes ───────────────────────────────────────────────
+  var FIX = {
+    fin: [
+      ['adam', 'Replace zip_code with cash-flow features', 'Credit Scoring v3.5', 'In shadow', 'DI 0.74 → 0.91 expected; default rate unchanged', ['zip_code', 'phone_area_code'], ['verified_income_12mo', 'employment_stability'], 5, 'Riley Whitmore'],
+      ['adam', 'Recalibrate fraud thresholds for thin-file applicants', 'Fraud Screening v2.7', 'Drafted', 'Cuts false fraud flags on thin-file applicants by about a third', ['credit_history_months'], ['device_tenure', 'income_verification'], 0, 'Daniel Okafor'],
+      ['agent', 'Collections agent: pause reminders for the re-review cohort', 'Collections AI v1.3 (agent)', 'Applied', 'Suppression keeps 1,203 people out of collections outreach during re-review', [], [], 0, 'Marco Ruiz'],
+      ['agent', 'Pre-qual Chatbot vendor patch: correct rate-disclosure answers', 'Pre-qual Chatbot (vendor)', 'Waiting on vendor', '3 answers misstated APR ranges; vendor patch under test', [], [], 0, 'Hannah Brooks'],
+      ['team', 'Rewrite adverse-action reason codes', 'Credit Scoring v3.4', 'In review', 'Every denial notice gives a specific, accurate reason', [], [], 0, 'Riley Whitmore'],
+      ['team', 'Re-review 1,203 denied applicants', 'Cohort FIN-1203', 'In progress', '687 of 1,203 re-decided so far', [], [], 0, 'Lisa Torres']
+    ],
+    ad: [
+      ['adam', 'Remove demographic_classification and retrain on qualifications', 'Personnel Assignment v2.5', 'In shadow', 'DI 0.67 → 0.84 expected', ['demographic_classification'], ['verified_performance', 'qualification_scores'], 5, 'James Martinez'],
+      ['adam', 'Add base-climate wear factor to maintenance predictions', 'Maintenance Routing v1.2', 'Drafted', 'Earlier part replacement for desert and coastal bases', [], ['base_climate', 'sand_salt_exposure'], 0, 'Lisa Walker'],
+      ['agent', 'Scheduling agent: hold new assignments for the AT-0847 cohort', 'Scheduling agent', 'Applied', 'No new assignments decided by v2.4 for affected people', [], [], 0, 'James Martinez'],
+      ['team', 'Re-evaluate 847 assignments', 'Cohort AT-0847', 'In progress', '412 of 847 re-evaluated', [], [], 0, 'Anthony Broadnax']
+    ],
+    health: [
+      ['adam', 'Remove age_cost_proxy and use clinical severity', 'Claims Adjudication v2.0', 'In shadow', 'DI 0.64 → 0.89 in shadow on 4,102 claims', ['age_cost_proxy'], ['clinical_severity_score', 'protocol_match'], 5, 'Dr. Maya Osei'],
+      ['agent', 'Prior-auth agent: route every denial to a clinician', 'Prior Auth v1.5 (agent)', 'Applied', 'Meets California SB 1120', [], [], 0, 'Dr. Aisha Patel'],
+      ['agent', 'Patient messaging vendor: add AI disclaimer and human path', 'Patient messaging assistant (vendor)', 'Waiting on vendor', 'Required by California AB 3030', [], [], 0, 'Olivia Grant'],
+      ['team', 'Re-adjudicate 2,847 claims', 'Cohort HS-2847', 'In progress', '1,847 of 2,847 re-approved', [], [], 0, 'Ben Carter']
+    ],
+    fed: [
+      ['adam', 'Drop schedule_c_volatility and use verified income history', 'IRS Tax Fraud Detection v3.2', 'In shadow', 'DI 0.54 → 0.82 expected', ['schedule_c_volatility'], ['verified_income_history'], 5, 'Dana Kim'],
+      ['agent', 'Taxpayer Help Assistant vendor: neutrality patch', 'Taxpayer Help Assistant (vendor)', 'Waiting on vendor', 'M-26-04 contract terms', [], [], 0, 'Dana Kim'],
+      ['team', 'Design the appeals path for flagged filers', 'Cohort FED-PDV-001', 'In review', 'Required by M-25-21 before launch', [], [], 0, 'Patricia Alvarez']
+    ]
+  };
+  var FS = {};
+  function fixes(org) {
+    if (!FS[org]) FS[org] = (FIX[org] || []).map(function (f, i) { return { id: org + 'f' + i, who: f[0], title: f[1], model: f[2], status: f[3], impact: f[4], remove: f[5].slice(), add: f[6].slice(), traffic: f[7], approver: f[8], change: f[1] + '. ' + f[4] + '.', notes: '', files: [], log: [{ t: 'Created', by: f[0] === 'adam' ? 'Adam (AI)' : f[0] === 'agent' ? f[2] : f[8] }] }; });
+    return FS[org];
+  }
+  var AT = { tab: 'adam', open: null };
+  window.atwsTab = function (t) { AT.tab = t; AT.open = null; atwsRender(); };
+  window.atwsOpen = function (id) { AT.open = AT.open === id ? null : id; atwsRender(); };
+  function fx(id) { return fixes(window.currentOrg || 'ad').filter(function (f) { return f.id === id; })[0]; }
+  window.atwsDo = function (id, what, val) {
+    var f = fx(id); if (!f) return;
+    if (what === 'change') { f.change = val; f.log.push({ t: 'Edited the proposed change', by: me() }); }
+    if (what === 'notes') { f.notes = val; f.log.push({ t: 'Added a note', by: me() }); }
+    if (what === 'traffic') { f.traffic = +val; f.status = +val > 0 ? 'In shadow' : f.status; f.log.push({ t: 'Shadow traffic set to ' + val + '%', by: me() }); }
+    if (what === 'toggle') { var i = f.remove.indexOf(val); if (i > -1) { f.remove.splice(i, 1); f.log.push({ t: 'Kept feature ' + val, by: me() }); } else { f.remove.push(val); f.log.push({ t: 'Marked feature ' + val + ' for removal', by: me() }); } }
+    if (what === 'addfeat' && val) { f.remove.push(val); f.log.push({ t: 'Marked feature ' + val + ' for removal', by: me() }); }
+    if (what === 'file') { [].forEach.call(val || [], function (x) { f.files.push(x.name); f.log.push({ t: 'Attached ' + x.name, by: me() }); }); }
+    if (what === 'suppress') { var S = (window.CARDINAL_SUPPRESSIONS || {})[window.currentOrg || 'ad']; if (S) S.rules.unshift({ who: 'People affected by: ' + f.model, n: 0, from: f.model, until: 'Fix approved', why: 'Keep affected people out of this model until the fix is approved.', owner: me(), blocked: 0, on: true }); f.log.push({ t: 'Added a suppression', by: me() }); toast('Suppression added. See Cardinal Library > Suppressions.'); }
+    if (what === 'approve') { f.status = 'Approved'; f.log.push({ t: 'Approved next step', by: me() }); toast('Approved. Logged in Echo.'); }
+    if (what === 'changes') { f.status = 'Changes requested'; f.log.push({ t: 'Requested changes', by: me() }); }
+    try { cardinalLogActivity('edit', f.title + ': ' + f.log[f.log.length - 1].t, null); } catch (e) {}
+    atwsRender();
+  };
+  function fixPanel(f) {
+    var feats = f.remove.map(function (x) { return '<button type="button" onclick="atwsDo(\'' + f.id + '\',\'toggle\',\'' + esc(x) + '\')" style="font-size:10.5px;padding:3px 9px;border-radius:999px;border:1px solid rgba(220,38,38,.3);background:rgba(220,38,38,.07);color:#B91C1C;cursor:pointer">Remove: ' + esc(x) + ' ×</button>'; }).join(' ') +
+      f.add.map(function (x) { return ' <span style="font-size:10.5px;padding:3px 9px;border-radius:999px;background:rgba(21,128,61,.08);color:#15803D">Add: ' + esc(x) + '</span>'; }).join('');
+    return '<div style="margin-top:10px;padding:14px;border-radius:10px;background:#fbfaf7;border:1px solid rgba(26,24,21,.08)">' +
+      '<div style="display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:14px">' +
+      '<div><div style="font-size:10.5px;font-weight:800;color:#64748b;text-transform:uppercase;margin-bottom:4px">Proposed change</div><textarea style="' + INP + ';min-height:70px" onchange="atwsDo(\'' + f.id + '\',\'change\',this.value)">' + esc(f.change) + '</textarea>' +
+      '<div style="font-size:10.5px;font-weight:800;color:#64748b;text-transform:uppercase;margin:10px 0 4px">Features</div><div style="display:flex;flex-wrap:wrap;gap:5px;align-items:center">' + (feats || '<span style="font-size:11px;color:#64748b">No feature changes</span>') + '</div>' +
+      '<input placeholder="Add a feature to remove, then press Enter" style="' + INP + ';margin-top:6px" onkeydown="if(event.key===\'Enter\'){atwsDo(\'' + f.id + '\',\'addfeat\',this.value)}">' +
+      '<div style="font-size:10.5px;font-weight:800;color:#64748b;text-transform:uppercase;margin:10px 0 4px">Notes</div><textarea style="' + INP + ';min-height:50px" placeholder="Why this fix, what to watch" onchange="atwsDo(\'' + f.id + '\',\'notes\',this.value)">' + esc(f.notes) + '</textarea></div>' +
+      '<div><div style="font-size:10.5px;font-weight:800;color:#64748b;text-transform:uppercase;margin-bottom:4px">Shadow traffic</div><select style="' + INP + '" onchange="atwsDo(\'' + f.id + '\',\'traffic\',this.value)">' + [0, 5, 25, 50, 100].map(function (v) { return '<option value="' + v + '"' + (v === f.traffic ? ' selected' : '') + '>' + (v ? v + '% of live decisions' : 'Not deployed') + '</option>'; }).join('') + '</select>' +
+      '<div style="font-size:10.5px;color:#64748b;margin-top:4px">Rolls back on its own if fairness slips.</div>' +
+      '<div style="font-size:10.5px;font-weight:800;color:#64748b;text-transform:uppercase;margin:10px 0 4px">Evidence</div>' + (f.files.length ? f.files.map(function (x) { return '<div style="font-size:11px;color:#334155">' + esc(x) + '</div>'; }).join('') : '<div style="font-size:11px;color:#64748b">None attached</div>') +
+      '<label class="btn-ghost" style="font-size:11px;margin-top:6px;display:inline-block;cursor:pointer">Attach file<input type="file" multiple style="display:none" onchange="atwsDo(\'' + f.id + '\',\'file\',this.files)"></label> ' +
+      '<button type="button" class="btn-ghost" style="font-size:11px;margin-top:6px" onclick="atwsDo(\'' + f.id + '\',\'suppress\')">Add suppression</button>' +
+      '<div style="font-size:10.5px;font-weight:800;color:#64748b;text-transform:uppercase;margin:10px 0 4px">Approval</div><div style="font-size:11px;color:#334155;margin-bottom:6px">Approver: <strong>' + esc(f.approver) + '</strong></div>' +
+      '<button type="button" class="btn-primary" style="font-size:11px" onclick="atwsDo(\'' + f.id + '\',\'approve\')">Approve next step</button> <button type="button" class="btn-ghost" style="font-size:11px" onclick="atwsDo(\'' + f.id + '\',\'changes\')">Request changes</button></div></div>' +
+      '<div style="font-size:10.5px;font-weight:800;color:#64748b;text-transform:uppercase;margin:12px 0 4px">Activity</div>' + f.log.slice().reverse().slice(0, 6).map(function (l) { return '<div style="font-size:11px;color:#475569;padding:3px 0;border-bottom:1px solid rgba(26,24,21,.05)">' + esc(l.t) + ' · ' + esc(l.by) + '</div>'; }).join('') + '</div>';
+  }
+  window.atwsRender = function () {
+    var host = document.getElementById('atws'); if (!host) return;
+    var org = window.currentOrg || 'ad', all = fixes(org), list = all.filter(function (f) { return f.who === AT.tab; });
+    var tabs = [['adam', 'By Adam'], ['agent', 'By other AI agents'], ['team', 'By your team']];
+    host.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><div><div style="font-size:15px;font-weight:700;color:var(--chrome2)">Remediation workspace</div><div style="font-size:11px;color:var(--muted2)">Cardinal proposes and tests fixes. Your team, your AI agents, or your vendors make them, and a named person approves.</div></div>' +
+      '<div style="display:flex;gap:4px;background:#f3f0e9;padding:3px;border-radius:9px">' + tabs.map(function (t) { var n = all.filter(function (f) { return f.who === t[0]; }).length; return '<button type="button" onclick="atwsTab(\'' + t[0] + '\')" style="font-size:11.5px;padding:6px 12px;border-radius:7px;border:0;cursor:pointer;font-weight:700;background:' + (AT.tab === t[0] ? '#fff' : 'transparent') + ';color:' + (AT.tab === t[0] ? '#1a1815' : '#64748b') + ';box-shadow:' + (AT.tab === t[0] ? '0 1px 2px rgba(0,0,0,.08)' : 'none') + '">' + t[1] + ' (' + n + ')</button>'; }).join('') + '</div></div>' +
+      '<div style="margin-top:12px;display:flex;flex-direction:column;gap:8px">' + list.map(function (f) {
+        return '<div style="' + CARD + ';padding:12px 14px"><div style="display:flex;justify-content:space-between;gap:10px;align-items:center;cursor:pointer" onclick="atwsOpen(\'' + f.id + '\')"><div><div style="font-size:12.5px;font-weight:700;color:#1a1815">' + esc(f.title) + '</div><div style="font-size:11px;color:#64748b;margin-top:2px">' + esc(f.model) + ' · ' + esc(f.impact) + '</div></div><div style="display:flex;gap:8px;align-items:center">' + pill(f.status) + '<span style="font-size:11px;color:#1e3a8a;font-weight:700">' + (AT.open === f.id ? 'Close' : 'Open') + '</span></div></div>' + (AT.open === f.id ? fixPanel(f) : '') + '</div>';
+      }).join('') + (list.length ? '' : '<div style="font-size:11.5px;color:#64748b;padding:10px">Nothing here right now.</div>') + '</div>';
+  };
+
+  // ── Genesis tests ─────────────────────────────────────────────────
+  var M = { di: 'Fairness (DI)', acc: 'Accuracy', hall: 'Hallucination rate', fraud: 'Fraud caught', lat: 'Latency', tok: 'Tokens per call', cost: 'Cost per 1k calls', temp: 'Temperature', attack: 'Attacks blocked', flip: 'Decisions that flip' };
+  var TESTS = {
+    fin: [
+      ['adam', 'Credit Scoring v3.5 vs v3.4 (shadow A/B)', 'A/B shadow test', 'Passed', 'Credit Scoring v3.5', 'Replacing zip_code with cash-flow features brings DI above 0.80 without raising defaults.', 6, 5, [['A · v3.4', 95, { di: '0.74', acc: '91.2%', lat: '42 ms' }], ['B · v3.5', 5, { di: '0.91', acc: '91.0%', lat: '45 ms' }]], 'Ramp B to 25% for 7 days, then 100% if DI stays at 0.80 or above.'],
+      ['team', 'Pre-qual Chatbot accuracy, temperature, and cost', 'LLM evaluation', 'Passed', 'Pre-qual Chatbot (vendor)', 'A lower temperature cuts wrong rate answers without raising cost.', 3, 100, [['A · temp 0.2', 50, { acc: '96%', hall: '1.2%', lat: '820 ms', tok: '410', cost: '$3.10', temp: '0.2' }], ['B · temp 0.7', 50, { acc: '89%', hall: '4.8%', lat: '790 ms', tok: '455', cost: '$3.40', temp: '0.7' }]], 'Keep temperature 0.2. Ask the vendor to fix 3 rate-disclosure answers, then retest.'],
+      ['adam', 'Prompt-injection red team: Collections agent', 'Security test', 'Failed', 'Collections AI v1.3 (agent)', 'The agent never waives fees or changes payment plans without a human.', 1, 0, [['240 attack prompts', 100, { attack: '238 of 240' }]], 'Block the waive_fee tool unless a human approves, then rerun the same 240 attacks.'],
+      ['team', 'Counterfactual: swap ZIP code only', 'Counterfactual test', 'Passed', 'Credit Scoring v3.4', 'If ZIP drives denials, swapping it alone will flip decisions.', 2, 0, [['1,203 past decisions', 100, { flip: '38%' }]], 'Proof of causation is sealed in Echo for the exam file.'],
+      ['adam', 'Income features, four combinations', 'Multivariate test', 'Running', 'Credit Scoring v3.5', 'Which income features keep accuracy highest while DI stays above 0.80.', 3, 10, [['A · income only', 25, { di: '0.88', acc: '90.1%' }], ['B · + tenure', 25, { di: '0.90', acc: '90.8%' }], ['C · + cash flow', 25, { di: '0.91', acc: '91.0%' }], ['D · all', 25, { di: '0.89', acc: '91.1%' }]], 'Leaning toward C. Let it run 4 more days for a confident read.']
+    ],
+    ad: [
+      ['adam', 'Personnel Assignment v2.5 vs v2.4 (shadow A/B)', 'A/B shadow test', 'Passed', 'Personnel Assignment v2.5', 'Retraining on qualifications brings DI above 0.80 with no readiness loss.', 6, 5, [['A · v2.4', 95, { di: '0.67', acc: '88%' }], ['B · v2.5', 5, { di: '0.84', acc: '88%' }]], 'Ramp to 25% after DoD sign-off.'],
+      ['team', 'Maintenance predictions by base climate', 'Model check', 'Failed', 'Maintenance Routing v1.2', 'Prediction error is the same at every base.', 5, 0, [['Mild-climate bases', 50, { acc: '94%' }], ['Desert and coastal bases', 50, { acc: '81%' }]], 'Add a climate wear factor and retrain; see Atonement.']
+    ],
+    health: [
+      ['adam', 'Claims Adjudication v2.0 vs v1.9 (shadow A/B)', 'A/B shadow test', 'Passed', 'Claims Adjudication v2.0', 'Clinical severity instead of age-cost restores fair coverage for patients 65+.', 8, 5, [['A · v1.9', 95, { di: '0.64', acc: '86%' }], ['B · v2.0', 5, { di: '0.89', acc: '98.2%' }]], 'Ready for 100% once the Chief Medical Officer signs off.'],
+      ['team', 'Patient messaging assistant: disclaimer and accuracy', 'LLM evaluation', 'Running', 'Patient messaging assistant (vendor)', 'Every AI message carries the disclaimer and a way to reach a person.', 2, 100, [['Current vendor model', 100, { acc: '93%', hall: '2.1%', tok: '380', cost: '$2.70' }]], 'Waiting on the vendor patch.']
+    ],
+    fed: [
+      ['adam', 'IRS Tax Fraud Detection v3.2 vs v3.1 (shadow A/B)', 'A/B shadow test', 'Passed', 'IRS Tax Fraud Detection v3.2', 'Verified income history replaces volatility without missing real fraud.', 6, 5, [['A · v3.1', 95, { di: '0.54', fraud: '91%' }], ['B · v3.2', 5, { di: '0.82', fraud: '90%' }]], 'Complete the M-25-21 impact assessment, then ramp.'],
+      ['team', 'Taxpayer Help Assistant neutrality and accuracy', 'LLM evaluation', 'Running', 'Taxpayer Help Assistant (vendor)', 'Answers are accurate and neutral on 500 common questions.', 2, 100, [['Vendor model', 100, { acc: '95%', hall: '1.8%', tok: '350', cost: '$1.90' }]], 'Under review for M-26-04 terms.']
+    ]
+  };
+  var TS = {};
+  function tests(org) { if (!TS[org]) TS[org] = (TESTS[org] || []).map(function (t, i) { return { id: org + 't' + i, who: t[0], name: t[1], type: t[2], status: t[3], target: t[4], hyp: t[5], days: t[6], exposure: t[7], variants: t[8], rec: t[9], owner: t[0] === 'adam' ? 'Adam (AI)' : me(), notes: '', log: [{ t: 'Created', by: t[0] === 'adam' ? 'Adam (AI)' : 'Team' }] }; }); return TS[org]; }
+  var GN = { tab: 'all', open: null, building: false, adam: [] };
+  window.gnTab = function (t) { GN.tab = t; GN.open = null; gnRender(); };
+  window.gnOpen = function (id) { GN.open = GN.open === id ? null : id; GN.building = false; gnRender(); };
+  window.gnBuild = function (on) { GN.building = on; GN.open = null; gnRender(); var h = document.getElementById('gnws'); if (h) h.scrollIntoView({ block: 'start', behavior: 'smooth' }); };
+  function tt(id) { return tests(window.currentOrg || 'ad').filter(function (t) { return t.id === id; })[0]; }
+  window.gnDo = function (id, what, val) {
+    var t = tt(id); if (!t) return;
+    if (what === 'notes') { t.notes = val; t.log.push({ t: 'Added findings or notes', by: me() }); }
+    if (what === 'retry') { t.status = 'Running'; t.log.push({ t: 'Retried the test', by: me() }); toast('Test restarted.'); }
+    if (what === 'promote') { t.log.push({ t: 'Promoted the winning variant to Atonement', by: me() }); toast('Sent to Atonement as a fix to approve.'); }
+    gnRender();
+  };
+  function testDash(t) {
+    var keys = []; t.variants.forEach(function (v) { Object.keys(v[2]).forEach(function (k) { if (keys.indexOf(k) < 0) keys.push(k); }); });
+    return '<div style="margin-top:10px;padding:14px;border-radius:10px;background:#fbfaf7;border:1px solid rgba(26,24,21,.08)">' +
+      '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;margin-bottom:10px">' + [['Type', t.type], ['Target', t.target], ['Owner', t.owner], ['Ran for', t.days + ' day' + (t.days === 1 ? '' : 's')], ['Live exposure', t.exposure ? t.exposure + '% of decisions' : 'Offline (no customers)'], ['Result', t.status]].map(function (x) { return '<div style="' + CARD + ';padding:8px 10px"><div style="font-size:10px;color:#64748b">' + x[0] + '</div><div style="font-size:12px;font-weight:700;color:#1a1815">' + esc(x[1]) + '</div></div>'; }).join('') + '</div>' +
+      '<div style="font-size:10.5px;font-weight:800;color:#64748b;text-transform:uppercase">Hypothesis</div><div style="font-size:12px;color:#1a1815;margin:3px 0 10px">' + esc(t.hyp) + '</div>' +
+      '<div style="border:1px solid rgba(26,24,21,.10);border-radius:10px;overflow:hidden"><table style="width:100%;border-collapse:collapse;font-size:11.5px"><thead><tr style="background:#f3f0e9;text-align:left"><th style="padding:8px 10px">Variant</th><th style="padding:8px 10px">Traffic</th>' + keys.map(function (k) { return '<th style="padding:8px 10px">' + esc(M[k] || k) + '</th>'; }).join('') + '</tr></thead><tbody>' +
+      t.variants.map(function (v, i) { return '<tr style="background:' + (i % 2 ? '#faf8f3' : '#fff') + '"><td style="padding:8px 10px;font-weight:700">' + esc(v[0]) + '</td><td style="padding:8px 10px">' + v[1] + '%</td>' + keys.map(function (k) { return '<td style="padding:8px 10px">' + esc(v[2][k] || '—') + '</td>'; }).join('') + '</tr>'; }).join('') + '</tbody></table></div>' +
+      '<div style="margin-top:10px;padding:10px 12px;border-radius:10px;background:' + (t.status === 'Failed' ? 'rgba(220,38,38,.06)' : 'rgba(21,128,61,.06)') + '"><div style="font-size:10.5px;font-weight:800;color:#64748b;text-transform:uppercase">Recommendation</div><div style="font-size:12px;color:#1a1815;margin-top:3px">' + esc(t.rec) + '</div></div>' +
+      '<div style="margin-top:10px;display:flex;gap:6px;flex-wrap:wrap"><button type="button" class="btn-primary" style="font-size:11px" onclick="gnDo(\'' + t.id + '\',\'promote\')">Send winner to Atonement</button><button type="button" class="btn-ghost" style="font-size:11px" onclick="gnDo(\'' + t.id + '\',\'retry\')">Retry test</button></div>' +
+      '<div style="font-size:10.5px;font-weight:800;color:#64748b;text-transform:uppercase;margin:12px 0 4px">Findings and notes</div><textarea style="' + INP + ';min-height:50px" placeholder="What you learned, so anyone can pick this up later" onchange="gnDo(\'' + t.id + '\',\'notes\',this.value)">' + esc(t.notes) + '</textarea>' +
+      '<div style="font-size:10.5px;font-weight:800;color:#64748b;text-transform:uppercase;margin:10px 0 4px">Log</div>' + t.log.slice().reverse().slice(0, 5).map(function (l) { return '<div style="font-size:11px;color:#475569;padding:2px 0">' + esc(l.t) + ' · ' + esc(l.by) + '</div>'; }).join('') + '</div>';
+  }
+  function builder() {
+    var org = window.currentOrg || 'ad';
+    var targets = (window.CARDINAL_MODELS || []).filter(function (m) { return m.industry === org && m.status !== 'archive'; }).map(function (m) { return m.name; });
+    ((window.CARDINAL_SYSTEMS || {})[org] || []).forEach(function (s) { (s.agents || []).forEach(function (a) { if (targets.indexOf(a) < 0) targets.push(a); }); });
+    return '<div style="margin-top:12px;padding:14px;border-radius:10px;background:#fbfaf7;border:1px solid rgba(26,24,21,.08)"><div style="font-size:13px;font-weight:700;color:#1a1815;margin-bottom:10px">New test</div>' +
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">' +
+      '<label style="font-size:11px;color:#475569">Test name<input id="gn-name" style="' + INP + '" placeholder="e.g. v3.5 vs v3.4 fairness"></label>' +
+      '<label style="font-size:11px;color:#475569">What to test<select id="gn-target" style="' + INP + '">' + targets.map(function (x) { return '<option>' + esc(x) + '</option>'; }).join('') + '</select></label>' +
+      '<label style="font-size:11px;color:#475569">Test type<select id="gn-type" style="' + INP + '">' + ['A/B shadow test', 'Multivariate test', 'Counterfactual test', 'LLM evaluation', 'Security test (prompt injection)', 'Model check'].map(function (x) { return '<option>' + x + '</option>'; }).join('') + '</select></label>' +
+      '<label style="font-size:11px;color:#475569">Run for<select id="gn-days" style="' + INP + '"><option value="3">3 days</option><option value="7" selected>7 days</option><option value="14">14 days</option></select></label></div>' +
+      '<label style="font-size:11px;color:#475569;display:block;margin-top:10px">Hypothesis<textarea id="gn-hyp" style="' + INP + ';min-height:50px" placeholder="What you expect to happen, and why"></textarea></label>' +
+      '<div style="font-size:11px;color:#475569;margin-top:10px">Variants and traffic split</div><div style="display:grid;grid-template-columns:2fr 1fr;gap:6px;margin-top:4px"><input id="gn-va" style="' + INP + '" value="A · current version"><input id="gn-sa" style="' + INP + '" value="95"><input id="gn-vb" style="' + INP + '" value="B · candidate"><input id="gn-sb" style="' + INP + '" value="5"></div>' +
+      '<div style="font-size:11px;color:#475569;margin-top:10px">What to measure</div><div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:4px">' + Object.keys(M).map(function (k) { return '<label style="font-size:11px;color:#334155"><input type="checkbox" class="gn-m" value="' + k + '"' + (/di|acc|lat|tok|cost/.test(k) ? ' checked' : '') + '> ' + M[k] + '</label>'; }).join('') + '</div>' +
+      '<label style="font-size:11px;color:#475569;display:block;margin-top:10px">Notes<textarea id="gn-notes" style="' + INP + ';min-height:40px"></textarea></label>' +
+      '<div style="margin-top:10px;display:flex;gap:6px"><button type="button" class="btn-primary" style="font-size:12px" onclick="gnLaunch()">Launch test</button><button type="button" class="btn-ghost" style="font-size:12px" onclick="gnBuild(false)">Cancel</button></div></div>';
+  }
+  window.gnLaunch = function () {
+    var g = function (id) { var e = document.getElementById(id); return e ? e.value : ''; };
+    var ms = [].map.call(document.querySelectorAll('.gn-m:checked'), function (e) { return e.value; });
+    var v = function () { var o = {}; ms.forEach(function (k) { o[k] = 'collecting'; }); return o; };
+    var org = window.currentOrg || 'ad';
+    var t = { id: org + 't' + Date.now(), who: 'team', name: g('gn-name') || 'Untitled test', type: g('gn-type'), status: 'Running', target: g('gn-target'), hyp: g('gn-hyp') || 'No hypothesis written yet.', days: 0, exposure: +g('gn-sb') || 0, variants: [[g('gn-va'), +g('gn-sa') || 0, v()], [g('gn-vb'), +g('gn-sb') || 0, v()]], rec: 'Results appear as data comes in.', owner: me(), notes: g('gn-notes'), log: [{ t: 'Launched for ' + g('gn-days') + ' days', by: me() }] };
+    tests(org).unshift(t); GN.building = false; GN.open = t.id; GN.tab = 'all';
+    try { cardinalLogActivity('edit', 'Launched test: ' + t.name, null); } catch (e) {}
+    gnRender();
+  };
+  window.gnAskAdam = function () {
+    var e = document.getElementById('gn-adam-q'); var q = e ? e.value.trim() : ''; if (!q) return;
+    var org = window.currentOrg || 'ad', target = ((window.CARDINAL_MODELS || []).filter(function (m) { return m.industry === org; })[0] || {}).name || 'your model';
+    GN.adam.push(['you', q]);
+    var t = { id: org + 't' + Date.now(), who: 'adam', name: 'Adam draft: ' + q.slice(0, 60), type: /token|cost|llm|chat|answer/i.test(q) ? 'LLM evaluation' : /inject|attack|agent/i.test(q) ? 'Security test (prompt injection)' : 'A/B shadow test', status: 'Draft', target: target, hyp: q, days: 0, exposure: 0, variants: [['A · current', 95, { di: 'pending', acc: 'pending' }], ['B · candidate', 5, { di: 'pending', acc: 'pending' }]], rec: 'Review the setup, then launch.', owner: 'Adam (AI)', notes: '', log: [{ t: 'Drafted from your request', by: 'Adam (AI)' }] };
+    tests(org).unshift(t);
+    GN.adam.push(['adam', 'I drafted "' + t.name.replace('Adam draft: ', '') + '" as a ' + t.type.toLowerCase() + ' on ' + target + ' with a 5% candidate split. Open it to review, then launch. Eve has the summary.']);
+    GN.open = t.id; e.value = ''; gnRender();
+  };
+  window.gnRender = function () {
+    var host = document.getElementById('gnws'); if (!host) return;
+    var org = window.currentOrg || 'ad', all = tests(org), list = all.filter(function (t) { return GN.tab === 'all' || t.who === GN.tab; });
+    var tabs = [['all', 'All tests'], ['adam', 'By Adam'], ['team', 'By your team']];
+    host.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><div><div style="font-size:15px;font-weight:700;color:var(--chrome2)">Test workspace</div><div style="font-size:11px;color:var(--muted2)">A/B and shadow tests, LLM evaluations (accuracy, tokens, cost), security tests, and counterfactual proofs, for your models, agents, and vendor AI.</div></div>' +
+      '<div style="display:flex;gap:8px;align-items:center"><div style="display:flex;gap:4px;background:#f3f0e9;padding:3px;border-radius:9px">' + tabs.map(function (t) { return '<button type="button" onclick="gnTab(\'' + t[0] + '\')" style="font-size:11.5px;padding:6px 12px;border-radius:7px;border:0;cursor:pointer;font-weight:700;background:' + (GN.tab === t[0] ? '#fff' : 'transparent') + ';color:' + (GN.tab === t[0] ? '#1a1815' : '#64748b') + '">' + t[1] + '</button>'; }).join('') + '</div><button type="button" class="btn-primary" style="font-size:12px" onclick="gnBuild(true)">+ New test</button></div></div>' +
+      (GN.building ? builder() : '') +
+      '<div style="margin-top:12px;display:grid;grid-template-columns:minmax(0,1fr) 280px;gap:12px;align-items:start"><div style="display:flex;flex-direction:column;gap:8px">' + list.map(function (t) {
+        return '<div style="' + CARD + ';padding:12px 14px"><div style="display:flex;justify-content:space-between;gap:10px;align-items:center;cursor:pointer" onclick="gnOpen(\'' + t.id + '\')"><div><div style="font-size:12.5px;font-weight:700;color:#1a1815">' + esc(t.name) + '</div><div style="font-size:11px;color:#64748b;margin-top:2px">' + esc(t.type) + ' · ' + esc(t.target) + ' · ' + esc(t.owner) + '</div></div><div style="display:flex;gap:8px;align-items:center">' + pill(t.status) + '<span style="font-size:11px;color:#1e3a8a;font-weight:700">' + (GN.open === t.id ? 'Close' : 'Open') + '</span></div></div>' + (GN.open === t.id ? testDash(t) : '') + '</div>';
+      }).join('') + '</div>' +
+      '<div style="' + CARD + ';padding:12px"><div style="font-size:12px;font-weight:700;color:#1a1815">Ask Adam</div><div style="font-size:10.5px;color:#64748b;margin:2px 0 8px">Describe the test you want. Adam drafts it; Eve keeps the summary.</div>' +
+      '<div style="max-height:180px;overflow:auto;display:flex;flex-direction:column;gap:6px;margin-bottom:8px">' + GN.adam.map(function (m) { return '<div style="font-size:11px;padding:7px 9px;border-radius:9px;background:' + (m[0] === 'you' ? '#f3f0e9' : 'rgba(109,40,217,.08)') + ';color:#1a1815"><strong>' + (m[0] === 'you' ? 'You' : 'Adam') + ':</strong> ' + esc(m[1]) + '</div>'; }).join('') + '</div>' +
+      '<textarea id="gn-adam-q" style="' + INP + ';min-height:54px" placeholder="e.g. Test whether the chatbot costs less at a lower temperature without more wrong answers"></textarea><button type="button" class="btn-primary" style="font-size:11.5px;margin-top:6px;width:100%" onclick="gnAskAdam()">Ask Adam to build it</button></div></div>';
+  };
+  function mount() {
+    var a = document.getElementById('screen-atonement');
+    if (a && !document.getElementById('atws')) { var hdr = a.querySelector('.section-hdr'); var box = document.createElement('div'); box.id = 'atws'; box.className = 'card'; box.style.cssText = 'padding:16px 18px;margin:0 0 18px'; hdr.parentNode.insertBefore(box, hdr.nextSibling); }
+    var g = document.getElementById('screen-genesis');
+    if (g && !document.getElementById('gnws')) { var hdr2 = g.querySelector('.section-hdr'); var box2 = document.createElement('div'); box2.id = 'gnws'; box2.className = 'card'; box2.style.cssText = 'padding:16px 18px;margin:0 0 18px'; hdr2.parentNode.insertBefore(box2, hdr2.nextSibling); }
+    atwsRender(); gnRender();
+  }
+  window.openNewTestModal = function () { showScreen('genesis', null); setTimeout(function () { mount(); gnBuild(true); }, 150); };
+  var oS = window.showScreen;
+  if (typeof oS === 'function') window.showScreen = showScreen = function (s) { var r = oS.apply(this, arguments); if (s === 'atonement' || s === 'genesis') setTimeout(mount, 80); return r; };
+  var oI = window.switchIndustry;
+  if (typeof oI === 'function') window.switchIndustry = switchIndustry = function () { var r = oI.apply(this, arguments); AT.open = null; GN.open = null; GN.adam = []; setTimeout(function () { try { atwsRender(); gnRender(); } catch (e) {} }, 120); return r; };
 })();
 </script>
 
