@@ -38961,7 +38961,7 @@ window.renderLibUseCases = function() {
   // you were viewing the A&D org). Now it only applies that default the first time this
   // tab is opened, or after the org itself changes -- an explicit pill click sticks.
   var __libCurOrg = (typeof currentOrg !== 'undefined' && currentOrg) || window.currentOrg || 'ad';
-  if (!window.__libFilters.industryUserSet || window.__libFilters.lastOrgSeen !== __libCurOrg) {
+  if (true) {   // a company only sees its own industry's use cases
     window.__libFilters.industry = __libCurOrg;
     window.__libFilters.industryUserSet = false;
   }
@@ -38969,7 +38969,7 @@ window.renderLibUseCases = function() {
 
   var html = '<div style="display:flex;gap:14px;margin-bottom:14px;flex-wrap:wrap;align-items:center;">';
   html += '<div style="display:flex;gap:6px;">';
-  ['fin', 'health', 'ad', 'fed'].forEach(function(ind) {
+  [].forEach(function(ind) {
     var label = { fin: 'Finance', health: 'Healthcare', ad: 'A&D', fed: 'Federal' }[ind];
     var isCur = ind === window.__libFilters.industry;
     html +=
@@ -47534,6 +47534,49 @@ window.genRenderScenarios = function () {
 /* Halo emerging-regulation card titles were white on a light card. */
 .halo-risk-card .halo-rc-title { color: #1a1815 !important; }
 </style>
+
+<script>
+// 10/2 feedback: Settings opens with who you are (active user, access, last login, session);
+// the Glossary shows your org's own terms first.
+(function () {
+  function move() {
+    var u = document.getElementById('settings-username'), grid = u && u.closest('.grid-4'), ca = document.getElementById('settings-client-access');
+    if (grid && ca && grid.nextElementSibling !== ca && !grid.__moved) { ca.parentNode.insertBefore(grid, ca); grid.__moved = true; }
+    var g = document.getElementById('screen-glossary');
+    if (g) {
+      var titles = [].slice.call(g.querySelectorAll('.section-title'));
+      var custom = titles.filter(function (t) { return /Custom Terminology/.test(t.textContent); })[0], terms = titles.filter(function (t) { return t.textContent.trim() === 'Terms'; })[0];
+      var cc = custom && custom.closest('.card'), tc = terms && terms.closest('.card');
+      if (cc && tc && !cc.__moved) { tc.parentNode.insertBefore(cc, tc); cc.__moved = true; cc.style.marginBottom = '14px'; }
+    }
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', move); else move();
+  setTimeout(move, 1500);
+})();
+</script>
+
+<script>
+// 10/2 feedback: no emojis anywhere in the product. Simple interface marks (check, cross, arrows,
+// triangles, Eve's spark, Adam's hexagon) stay.
+(function () {
+  var KEEP = /[✓✕✗→←↑↓▲▼►◄✦⬡⇄↗↘·•–●○■□◆◇★☆▸▾▴]/;
+  var RX = /(?:[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{2B00}-\u{2BFF}\u{2300}-\u{23FF}\u{2190}-\u{21FF}\u{25A0}-\u{25FF}\u{3030}\u{303D}\u{3297}\u{3299}][\u{FE0F}\u{200D}\u{1F3FB}-\u{1F3FF}]*)+\s?/gu;
+  function clean(t) { return t.replace(RX, function (m) { var ch = m.trim(); return KEEP.test(ch) && ch.length <= 2 ? m : ''; }); }
+  function scrub(root) {
+    if (!root) return;
+    var w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: function (n) { var p = n.parentNode && n.parentNode.nodeName; return (p === 'SCRIPT' || p === 'STYLE' || p === 'TEXTAREA') ? 2 : 1; } }), n, list = [];
+    while ((n = w.nextNode())) { RX.lastIndex = 0; if (RX.test(n.nodeValue)) list.push(n); }
+    list.forEach(function (x) { RX.lastIndex = 0; var c = clean(x.nodeValue); if (c !== x.nodeValue) x.nodeValue = c; });
+  }
+  window.cardinalScrubEmoji = scrub;
+  var pend = null, roots = [];
+  new MutationObserver(function (ms) {
+    ms.forEach(function (m) { m.addedNodes.forEach(function (n) { roots.push(n.nodeType === 3 ? n.parentNode : n); }); if (m.type === 'characterData') roots.push(m.target.parentNode); });
+    if (!pend) pend = setTimeout(function () { var r = roots; roots = []; pend = null; r.forEach(function (x) { if (x && x.isConnected) scrub(x); }); }, 20);
+  }).observe(document.body, { childList: true, subtree: true, characterData: true });
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function () { scrub(document.body); }); else scrub(document.body);
+})();
+</script>
 
 </body>
 
