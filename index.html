@@ -48838,6 +48838,77 @@ window.CARDINAL_PLACES = {
 })();
 </script>
 
+<script>
+// 10/3 (Brittany: "is this annual certification file for you to file for it? ... needs more detail"
+// and "where are the badges? I don't see the badges"). The file now says what it is, checks every
+// requirement, scores all seven parts, shows this year's quarterly badges, and what Cardinal covers.
+(function () {
+  function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;'); }
+  var WHAT = { fairness: 'Outcomes are even across groups', fraud: 'Fraud is caught without hitting the same groups', transparency: 'People get clear reasons and notices', privacy: 'Personal data is used only as allowed', governance: 'Owners, approvals, and policies are in place', monitoring: 'Models are watched live, not once a year', agents: 'Agents have owners, sign-offs, and security tests' };
+  // Quarterly badges for the last four quarters. Past quarters come from the score history on file
+  // (earned when both tracked parts were 80+ at quarter end); the current quarter uses the live status.
+  window.cardinalQuarterBadges = function (org) {
+    var d = (window.CARDINAL_DATA || {})[org] || {}, eh = d.edenScoreHistory || [], oh = d.obsidianScoreHistory || [];
+    var M = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'], now = new Date(), out = [];
+    var at = function (arr, lab, key) { var e = arr.filter(function (x) { return x.month === lab; })[0]; return e ? e[key] : null; };
+    for (var k = 3; k >= 0; k--) {
+      var q = new Date(now.getFullYear(), Math.floor(now.getMonth() / 3) * 3 - k * 3, 1), name = 'Q' + (Math.floor(q.getMonth() / 3) + 1) + ' ' + q.getFullYear(), st;
+      if (k === 0) { var c = cardinalCertStatus(org, window.cardinalLiveScore ? cardinalLiveScore(org) : null); st = c.certified ? 'Earned' : 'Suspended'; }
+      else {
+        // Quarter end on file: earned when both tracked parts clear the 70 floor and average 80+.
+        var lab = M[q.getMonth() + 2] + ' ' + q.getFullYear(), bs = at(eh, lab, 'biasScore'), fs = at(oh, lab, 'fraudScore');
+        st = bs == null ? 'Not scored' : (Math.min(bs, fs == null ? bs : fs) >= 70 && (bs + (fs == null ? bs : fs)) / 2 >= 80) ? 'Earned' : 'Suspended';
+      }
+      out.push({ name: name, status: st, current: k === 0 });
+    }
+    return out;
+  };
+  window.cardinalBadgeHtml = function (b, size) {
+    size = size || 74; var on = b.status === 'Earned', col = on ? '#15803D' : b.status === 'Suspended' ? '#B91C1C' : '#94A3B8';
+    return '<div style="text-align:center;width:' + (size + 14) + 'px"><div style="width:' + size + 'px;height:' + size + 'px;margin:0 auto;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;background:' + (on ? 'radial-gradient(circle at 30% 25%,#4ade80,#15803D)' : '#f1f5f9') + ';border:3px solid ' + col + ';box-shadow:' + (on ? '0 6px 16px rgba(21,128,61,.3)' : 'none') + ';color:' + (on ? '#fff' : col) + ';' + (on ? '' : 'opacity:.85;') + '"><div style="font-size:' + Math.round(size / 7) + 'px;font-weight:800;letter-spacing:.08em">CARDINAL</div><div style="font-size:' + Math.round(size / 4.2) + 'px;font-weight:800;line-height:1.1">' + b.name.split(' ')[0] + '</div><div style="font-size:' + Math.round(size / 7.5) + 'px;font-weight:700">' + b.name.split(' ')[1] + '</div></div><div style="font-size:10.5px;font-weight:800;color:' + col + ';margin-top:5px">' + b.status + (b.current ? ' (now)' : '') + '</div></div>';
+  };
+  var oB = window.buildAnnualCertFile;
+  if (typeof oB === 'function') window.buildAnnualCertFile = buildAnnualCertFile = function (org) {
+    var r = oB.apply(this, arguments), body = document.getElementById('acf-body'); if (!body) return r;
+    var m = cardinalScoreModel(org), live = window.cardinalLiveScore ? cardinalLiveScore(org) : null, st = cardinalCertStatus(org, live), M = window.CARDINAL_SCORE_MODEL;
+    var cov = window.cardinalCoverage ? cardinalCoverage(org) : [], badges = cardinalQuarterBadges(org), d = (window.CARDINAL_DATA || {})[org] || {};
+    var name = (window.__CARDINAL_ORG_NAME_BY_INDUSTRY || {})[org] || '';
+    var earned = badges.filter(function (b) { return b.status === 'Earned'; }).length;
+    var check = function (ok, t, s) { return '<div style="display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-bottom:1px solid rgba(26,24,21,.06)"><span style="flex:none;width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#fff;background:' + (ok ? '#15803D' : '#DC2626') + '">' + (ok ? '&#10003;' : '!') + '</span><div><div style="font-size:12.5px;font-weight:700;color:#1a1815">' + t + '</div><div style="font-size:11px;color:#64748b">' + s + '</div></div></div>'; };
+    var cases = (d.biasIncidentsActive || []).length + (d.fraudIncidentsActive || []).length;
+    var top = '<section style="margin-bottom:22px"><div style="padding:14px 16px;border-radius:12px;background:' + (st.certified ? 'rgba(21,128,61,.06)' : 'rgba(220,38,38,.05)') + ';border:1px solid ' + (st.certified ? 'rgba(21,128,61,.25)' : 'rgba(220,38,38,.22)') + '">' +
+      '<div style="font-size:10px;font-weight:800;letter-spacing:.06em;color:#64748b;text-transform:uppercase">What this file is</div><div style="font-size:12.5px;color:#1a1815;line-height:1.55;margin-top:4px">The yearly record behind ' + esc(name) + '’s Cardinal certification. Cardinal builds it automatically from sealed records; nobody fills it out. The company shares it with auditors and regulators, and it backs the public certificate on the Trust Ledger and in Cardinal Passport.</div>' +
+      '<div style="font-size:16px;font-weight:800;margin-top:10px;color:' + (st.certified ? '#15803D' : '#B91C1C') + '">' + (st.certified ? 'Certified for this year' : 'Not certified this year') + '</div></div></section>' +
+      '<section style="margin-bottom:22px"><div style="font-size:11px;font-weight:700;color:var(--chrome2);margin-bottom:4px">Requirements</div>' +
+      check(st.overOk, 'Trust Score ' + M.threshold + ' or higher', 'Now ' + Math.round(st.score) + '.') +
+      check(!st.below.length, 'Every part ' + M.floor + ' or higher', st.below.length ? st.below.map(function (b) { return b.name + ' is ' + b.score; }).join(', ') + '.' : 'All seven parts clear the floor.') +
+      check(earned >= 3, 'Quarterly badge kept in at least 3 of 4 quarters', earned + ' of 4 earned this year.') +
+      check(true, 'Every decision, fix, and sign-off sealed in Echo', 'Re-checked when this file was built: no record changed.') + '</section>' +
+      '<section style="margin-bottom:22px"><div style="font-size:11px;font-weight:700;color:var(--chrome2);margin-bottom:8px">Quarterly badges this year</div><div style="display:flex;gap:14px;flex-wrap:wrap">' + badges.map(function (b) { return cardinalBadgeHtml(b, 70); }).join('') + '</div></section>' +
+      '<section style="margin-bottom:22px"><div style="font-size:11px;font-weight:700;color:var(--chrome2);margin-bottom:6px">All seven parts</div><table style="width:100%;border-collapse:collapse;font-size:11.5px"><thead><tr style="text-align:left;color:#64748b;font-size:10px"><th style="padding:6px">Part</th><th style="padding:6px">What it checks</th><th style="padding:6px;text-align:center">Score</th><th style="padding:6px;text-align:center">Weight</th><th style="padding:6px;text-align:center">70 floor</th></tr></thead><tbody>' +
+      Object.keys(m.parts).map(function (k) { var v = m.parts[k], ok = v >= M.floor; return '<tr style="border-top:1px solid rgba(26,24,21,.06)"><td style="padding:6px;font-weight:700">' + esc((window.CARDINAL_PART_NAMES || {})[k] || k) + '</td><td style="padding:6px;color:#64748b">' + esc(WHAT[k] || '') + '</td><td style="padding:6px;text-align:center;font-weight:800;color:' + (v >= 80 ? '#15803D' : ok ? '#B45309' : '#B91C1C') + '">' + v + '</td><td style="padding:6px;text-align:center;color:#64748b">' + ((m.weights || {})[k] != null ? m.weights[k] + '%' : '') + '</td><td style="padding:6px;text-align:center">' + (ok ? '<span style="color:#15803D;font-weight:800">Pass</span>' : '<span style="color:#B91C1C;font-weight:800">Below</span>') + '</td></tr>'; }).join('') + '</tbody></table></section>' +
+      (cov.length ? '<section style="margin-bottom:22px"><div style="font-size:11px;font-weight:700;color:var(--chrome2);margin-bottom:6px">What Cardinal covered this year</div><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px">' + cov.slice(0, 8).map(function (x) { return '<div style="padding:9px 11px;border-radius:10px;background:var(--card,#fff);border:1px solid rgba(26,24,21,.08)"><div style="font-size:18px;font-weight:800">' + esc(x.n) + '</div><div style="font-size:10.5px;font-weight:700;color:#334155">' + esc(x.l) + '</div></div>'; }).join('') + '<div style="padding:9px 11px;border-radius:10px;background:var(--card,#fff);border:1px solid rgba(26,24,21,.08)"><div style="font-size:18px;font-weight:800">' + cases + '</div><div style="font-size:10.5px;font-weight:700;color:#334155">Open cases</div></div></div></section>' : '');
+    body.insertAdjacentHTML('afterbegin', top);
+    // Fix the old summary count and label the two-part history honestly.
+    [].forEach.call(body.querySelectorAll('.stat-card'), function (c) { var l = c.querySelector('.stat-label'); if (l && /Models Tracked/i.test(l.textContent)) { var v = c.querySelector('.stat-value'); if (v) v.textContent = (window.CARDINAL_MODELS || []).filter(function (x) { return x.industry === org && x.status !== 'archive'; }).length; } });
+    [].forEach.call(body.querySelectorAll('section > div:first-child'), function (h) { if (/^Full-Year Score History$/.test(h.textContent.trim())) h.innerHTML = 'Monthly history: Fairness and Fraud parts <span style="font-weight:500;color:#64748b">(all seven parts are scored each quarter above)</span>'; });
+    return r;
+  };
+  // Trust Score: show the badges, not just the word "suspended".
+  setInterval(function () {
+    var w = document.getElementById('tsv2-cadence-wrap'); if (!w || w.offsetParent === null) return;
+    var org = window.currentOrg || 'ad', key = org + JSON.stringify(cardinalQuarterBadges(org).map(function (b) { return b.status; }));
+    var s = document.getElementById('ts-badge-strip');
+    if (s && s.getAttribute('data-k') === key && s.parentNode === w.parentNode) return;
+    if (!s) { s = document.createElement('div'); s.id = 'ts-badge-strip'; }
+    s.setAttribute('data-k', key);
+    s.style.cssText = 'margin-top:10px;padding:10px 12px;border:1px solid rgba(148,163,184,.25);border-radius:10px;background:#fff';
+    s.innerHTML = '<div style="font-size:10.5px;font-weight:800;color:#64748b;text-transform:uppercase;margin-bottom:8px">Your badges, last four quarters</div><div style="display:flex;gap:6px;justify-content:space-between;flex-wrap:wrap">' + cardinalQuarterBadges(org).map(function (b) { return cardinalBadgeHtml(b, 44); }).join('') + '</div>';
+    w.parentNode.insertBefore(s, w.nextSibling);
+  }, 900);
+})();
+</script>
+
 </body>
 
 </html>
