@@ -46157,7 +46157,7 @@ applyClientView = window.applyClientView = (function (orig) {
     { id: 'people', label: 'People', sub: 'Cardinal Passport and activity', tabs: ['pmprofiles', 'peoplelog'] },
     { id: 'decisions', label: 'Decisions', sub: 'Cryptographic receipts', tabs: ['receipts'] },
     { id: 'wb', label: 'Whistleblower', sub: 'Sealed reports', tabs: ['whistleblower'] },
-    { id: 'desk', label: 'Your Desk', sub: 'Your notes and pins', tabs: ['myworkspace'] }
+    { id: 'desk', label: 'Your Desk', sub: 'Your notes and pins', tabs: ['myworkspace'], hidden: true }
   ];
   function roomOf(tab) { for (var i = 0; i < ROOMS.length; i++) if (ROOMS[i].tabs.indexOf(tab) !== -1) return ROOMS[i]; return ROOMS[0]; }
   function paint(room) {
@@ -48336,6 +48336,82 @@ window.genRenderScenarios = function () {
   if (typeof oS === 'function') window.showScreen = showScreen = function (s) { var r = oS.apply(this, arguments); if (s === 'lucid') setTimeout(paint, 120); return r; };
   var oI = window.switchIndustry;
   if (typeof oI === 'function') window.switchIndustry = switchIndustry = function () { var r = oI.apply(this, arguments); setTimeout(function () { if (document.getElementById('lucid-today')) paint(); }, 200); return r; };
+})();
+</script>
+
+<style>
+/* 10/2: Echo's "Your Desk" duplicates My Workspace. */
+[data-room="desk"] { display: none !important; }
+</style>
+<script>
+// 10/2 feedback batch: Library counts per company, Trust Loop private/public markers,
+// Settings admin controls, and an Ask bar in Compliance.
+(function () {
+  function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;'); }
+  var NAME = { ad: 'Atlas Defense Systems', fin: 'Blackmoor Wealth Group', health: 'Sterling Health', fed: 'IRS Tax Compliance Division' };
+  function libCounts() {
+    var org = window.currentOrg || 'ad';
+    var m = (window.CARDINAL_MODELS || []).filter(function (x) { return x.industry === org; }).length;
+    var c = (window.CARDINAL_COHORTS || []).filter(function (x) { return x.industry === org || x.industry === 'all'; }).length;
+    var set = function (id, v) { var e = document.getElementById(id); if (e) e.textContent = v; };
+    set('lib-tab-count-models', m); set('lib-tab-count-cohorts', c);
+    var ucEl = document.getElementById('lib-tab-content-usecases'), um = ucEl && ucEl.innerText.match(/(\d+) of (\d+)/); if (um) set('lib-tab-count-usecases', um[2]);
+  }
+  // Trust Loop: which channels are private.
+  var PRIV = /legal|board|exec|whistle|hr|privileged|counsel/i;
+  function tlMarks() {
+    var root = document.getElementById('trustloop-workspace-root'); if (!root) return;
+    root.querySelectorAll('[onclick*="__tlSelectedChannelId"], [onclick*="tlSelectChannel"], [onclick*="selectTrustLoopChannel"]').forEach(function (el) {
+      if (el.querySelector('.tl-vis')) return; var t = el.textContent; if (!/#/.test(t)) return;
+      var priv = PRIV.test(t);
+      el.insertAdjacentHTML('beforeend', ' <span class="tl-vis" title="' + (priv ? 'Private: members only' : 'Public: anyone at the company can join') + '" style="font-size:9px;font-weight:800;padding:1px 6px;border-radius:999px;margin-left:4px;color:' + (priv ? '#7e22ce' : '#475569') + ';background:' + (priv ? 'rgba(126,34,206,.1)' : 'rgba(100,116,139,.12)') + '">' + (priv ? 'Private' : 'Public') + '</span>');
+    });
+  }
+  // Settings: admin controls.
+  var ST = {};
+  window.stSet = function (pid, k, v) { ST[pid] = ST[pid] || {}; ST[pid][k] = v; try { cardinalLogActivity('edit', 'Access change: ' + pid + ' ' + k + ' → ' + v, null); } catch (e) {} stAdmin(); };
+  function stAdmin() {
+    var scr = document.getElementById('screen-settings'); if (!scr) return;
+    var org = window.currentOrg || 'ad', people = (window.CARDINAL_PERSONAS || []).filter(function (p) { return p.org === NAME[org]; });
+    var box = document.getElementById('st-admin');
+    if (!box) { box = document.createElement('div'); box.id = 'st-admin'; box.className = 'card'; box.style.cssText = 'padding:20px 22px;margin-bottom:20px'; var ca = document.getElementById('settings-client-access'); if (ca) ca.parentNode.insertBefore(box, ca.nextSibling); else scr.appendChild(box); }
+    var SEL = 'font-size:11px;padding:5px 7px;border:1px solid rgba(26,24,21,.15);border-radius:7px;background:#fff';
+    box.innerHTML = '<div style="font-size:15px;font-weight:700;color:var(--chrome2)">Team and access</div><div style="font-size:11px;color:var(--muted2);margin:3px 0 12px">Admins can change access levels, deactivate accounts, and decide which models and conversations are private. Every change is logged in Echo.</div>' +
+      '<div style="border:1px solid rgba(26,24,21,.10);border-radius:10px;overflow:hidden"><table style="width:100%;border-collapse:collapse;font-size:11.5px"><thead><tr style="background:#f3f0e9;text-align:left"><th style="padding:8px 10px">Person</th><th style="padding:8px 10px">Role</th><th style="padding:8px 10px">Access</th><th style="padding:8px 10px">Echo</th><th style="padding:8px 10px">Account</th></tr></thead><tbody>' +
+      people.map(function (p, i) {
+        var s = ST[p.id] || {}, admin = /chief|cto|counsel|compliance (lead|officer)/i.test(p.role), acc = s.access || (admin ? 'Admin' : 'Editor'), act = s.active !== false, echo = s.echo || (/compliance|counsel|legal|privacy|chief/i.test(p.role) ? 'Full' : 'With passcode');
+        return '<tr style="background:' + (i % 2 ? '#faf8f3' : '#fff') + ';opacity:' + (act ? 1 : .55) + '"><td style="padding:8px 10px;font-weight:700">' + esc(p.name) + '</td><td style="padding:8px 10px;color:#475569">' + esc(p.role) + '</td>' +
+          '<td style="padding:8px 10px"><select style="' + SEL + '" onchange="stSet(\'' + p.id + '\',\'access\',this.value)">' + ['Admin', 'Editor', 'Viewer'].map(function (x) { return '<option' + (x === acc ? ' selected' : '') + '>' + x + '</option>'; }).join('') + '</select></td>' +
+          '<td style="padding:8px 10px"><select style="' + SEL + '" onchange="stSet(\'' + p.id + '\',\'echo\',this.value)">' + ['Full', 'With passcode', 'No access'].map(function (x) { return '<option' + (x === echo ? ' selected' : '') + '>' + x + '</option>'; }).join('') + '</select></td>' +
+          '<td style="padding:8px 10px"><button type="button" class="btn-ghost" style="font-size:11px;' + (act ? 'color:#B91C1C' : '') + '" onclick="stSet(\'' + p.id + '\',\'active\',' + (!act) + ')">' + (act ? 'Deactivate' : 'Reactivate') + '</button></td></tr>';
+      }).join('') + '</tbody></table></div>' +
+      '<div style="font-size:11px;color:#475569;margin-top:10px">Private models and conversations: use the "Visible to" control on any model card in Cardinal Library or any channel in Trust Loop.</div>';
+  }
+  // Compliance: Ask bar.
+  function compAnswer(q, org) {
+    q = q.toLowerCase(); var items = typeof compCalItems === 'function' ? compCalItems(org) : [];
+    if (/due|deadline|when|next/.test(q)) { var n = items.filter(function (i) { return i.days >= -30; }).sort(function (a, b) { return a.days - b.days; }).slice(0, 4); return n.length ? n.map(function (i) { return i.name + ': ' + (i.days < 0 ? 'overdue by ' + cardinalPluralDays(-i.days) : 'due in ' + cardinalPluralDays(i.days)); }).join('<br>') : 'Nothing due in the next 30 days.'; }
+    var F = (window.SL_FOOTPRINT || {})[org] || { states: [] }, L = window.SL_LAWS || [];
+    var stM = q.match(/\b(colorado|california|illinois|texas|utah|new york|massachusetts|co|ca|il|tx|ut|ny|ma)\b/);
+    if (stM) { var map = { colorado: 'CO', california: 'CA', illinois: 'IL', texas: 'TX', utah: 'UT', 'new york': 'NY', massachusetts: 'MA' }; var st = (map[stM[1]] || stM[1]).toUpperCase(); var ls = L.filter(function (l) { return l.st === st; }); return ls.length ? ls.map(function (l) { return '<strong>' + esc(l.name) + '</strong> (' + esc(l.date) + '): ' + esc(l.req); }).join('<br>') : 'No AI-specific law tracked for ' + st + '. Existing consumer protection and anti-discrimination law still applies.'; }
+    if (/upcoming|coming|new|pending|bill/.test(q)) { var up = L.filter(function (l) { return !l.live && F.states.indexOf(l.st) > -1; }); return (up.length ? 'Taking effect where you operate:<br>' + up.map(function (l) { return esc(l.name) + ' (' + esc(l.date) + ')'; }).join('<br>') : 'Nothing new taking effect where you operate.') + '<br>Federal: several AI accountability bills are pending; none has passed.'; }
+    if (/packet|policy/.test(q)) return 'Policy packets are under Compliance > Policy Packets. <a href="#" onclick="event.preventDefault();switchCompTab(\'packets\')">Open policy packets</a>';
+    return 'Try: "What is due next?", "What applies in Colorado?", "What new rules are coming?", or "Open the policy packet".';
+  }
+  window.compAsk = function () { var i = document.getElementById('comp-ask'), o = document.getElementById('comp-ask-out'); if (!i || !o || !i.value.trim()) return; o.innerHTML = '<div style="margin-top:8px;padding:10px 12px;border-radius:10px;background:#fff;border:1px solid rgba(26,24,21,.08);font-size:12px;color:#1a1815;line-height:1.6"><div style="font-size:10.5px;color:#64748b;margin-bottom:4px">' + esc(i.value) + '</div>' + compAnswer(i.value, window.currentOrg || 'ad') + '</div>'; };
+  function compBar() {
+    var scr = document.getElementById('screen-compliance'); if (!scr || document.getElementById('comp-ask')) return;
+    var anchor = scr.querySelector('.section-hdr') || scr.firstElementChild;
+    var box = document.createElement('div'); box.style.cssText = 'margin:0 0 14px';
+    box.innerHTML = '<div style="display:flex;gap:8px"><input id="comp-ask" placeholder="Ask about compliance: what\'s due, rules by state, upcoming laws, policy packets" style="flex:1;font-size:13px;padding:11px 14px;border:1px solid rgba(26,24,21,.12);border-radius:12px;background:#fff;box-shadow:0 1px 3px rgba(26,24,21,.06)" onkeydown="if(event.key===\'Enter\')compAsk()"><button type="button" class="btn-primary" style="font-size:12px" onclick="compAsk()">Ask</button></div><div id="comp-ask-out"></div>';
+    anchor.parentNode.insertBefore(box, anchor.nextSibling);
+  }
+  var oS = window.showScreen;
+  if (typeof oS === 'function') window.showScreen = showScreen = function (s) { var r = oS.apply(this, arguments); setTimeout(function () { try { if (s === 'cardinallibrary') libCounts(); if (s === 'trustloop') tlMarks(); if (s === 'settings') stAdmin(); if (s === 'compliance') compBar(); } catch (e) {} }, 150); return r; };
+  var oI = window.switchIndustry;
+  if (typeof oI === 'function') window.switchIndustry = switchIndustry = function () { var r = oI.apply(this, arguments); setTimeout(function () { try { libCounts(); if (document.getElementById('st-admin')) stAdmin(); var o = document.getElementById('comp-ask-out'); if (o) o.innerHTML = ''; } catch (e) {} }, 200); return r; };
+  var tl = document.getElementById('trustloop-workspace-root');
+  if (tl) new MutationObserver(function () { clearTimeout(tl.__t); tl.__t = setTimeout(tlMarks, 60); }).observe(tl, { childList: true, subtree: true });
 })();
 </script>
 
