@@ -48531,6 +48531,179 @@ window.genRenderScenarios = function () {
 })();
 </script>
 
+<script>
+// 10/2 (Brittany: "client view ... Deloitte version ... Harvey ... build the checking of vendors AI as closely as
+// in-house models ... clear built in-house versus from vendors split"). Client View becomes Outside Views:
+// an audit firm (Crestline Assurance), an AI vendor (Lexora AI), a law firm that runs in-house models plus
+// Lexora (Whitfield & Crane LLP), and the partners with limited access that were already here.
+(function () {
+  function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;'); }
+  function d(n) { var x = new Date(); x.setDate(x.getDate() + n); return x.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }); }
+  var INK = '#1a1815', MUTED = '#64748b', LINE = 'rgba(26,24,21,.10)';
+  function pill(t, tone) { var c = { g: ['#15803D', 'rgba(21,128,61,.1)'], r: ['#B91C1C', 'rgba(220,38,38,.1)'], y: ['#B45309', 'rgba(234,179,8,.16)'], b: ['#1e3a8a', 'rgba(30,58,138,.08)'], n: ['#475569', 'rgba(100,116,139,.12)'] }[tone || 'n']; return '<span style="font-size:10px;font-weight:800;padding:2px 8px;border-radius:999px;white-space:nowrap;color:' + c[0] + ';background:' + c[1] + '">' + esc(t) + '</span>'; }
+  function card(title, sub, body) { return '<div style="background:#fff;border:1px solid ' + LINE + ';border-radius:14px;padding:16px 18px;margin-bottom:14px;box-shadow:0 1px 3px rgba(26,24,21,.05)"><div style="font-size:14px;font-weight:700;color:' + INK + '">' + title + '</div>' + (sub ? '<div style="font-size:11.5px;color:' + MUTED + ';margin:3px 0 12px">' + sub + '</div>' : '<div style="height:10px"></div>') + body + '</div>'; }
+  function stat(n, l, s) { return '<div style="padding:12px 14px;border-radius:12px;background:#fff;border:1px solid ' + LINE + '"><div style="font-size:22px;font-weight:800;color:' + INK + '">' + n + '</div><div style="font-size:11.5px;font-weight:700;color:#334155">' + l + '</div>' + (s ? '<div style="font-size:10.5px;color:' + MUTED + ';margin-top:2px">' + s + '</div>' : '') + '</div>'; }
+  function table(head, rows) { return '<div style="overflow-x:auto;border:1px solid ' + LINE + ';border-radius:10px"><table style="width:100%;border-collapse:collapse;font-size:11.5px;min-width:620px"><thead><tr style="background:#f3f0e9;color:#475569;text-align:left">' + head.map(function (h) { return '<th style="padding:9px 10px;font-weight:700">' + h + '</th>'; }).join('') + '</tr></thead><tbody>' + rows.map(function (r, i) { return '<tr style="background:' + (i % 2 ? '#faf8f3' : '#fff') + '">' + r.map(function (c, j) { return '<td style="padding:9px 10px;color:' + (j ? '#475569' : INK) + ';' + (j ? '' : 'font-weight:700;') + 'vertical-align:top">' + c + '</td>'; }).join('') + '</tr>'; }).join('') + '</tbody></table></div>'; }
+  function btn(t, on, primary) { return '<button type="button" onclick="' + on + '" style="font-size:11px;padding:6px 12px;border-radius:8px;cursor:pointer;font-weight:700;border:1px solid ' + (primary ? INK : 'rgba(26,24,21,.18)') + ';background:' + (primary ? INK : '#fff') + ';color:' + (primary ? '#fff' : INK) + '">' + t + '</button>'; }
+  function score(org) { try { var v = window.cardinalLiveScore ? cardinalLiveScore(org) : null; return v != null ? Math.round(v) : parseInt((CARDINAL_DATA[org] || {}).trustScoreDisplay, 10); } catch (e) { return { ad: 74, fin: 81, health: 83, fed: 71 }[org]; } }
+  function cert(org) { try { return cardinalCertStatus(org, score(org)); } catch (e) { return { certified: false, reason: '' }; } }
+
+  // ── Crestline Assurance: an audit firm that audits several companies on Cardinal ──
+  var CREST_REQ = [
+    ['Blackmoor Wealth', 'Credit Scoring v3.5 shadow test results and the sign-off record', 'Fair lending review', 'Pulled from Echo automatically', 'g', 3],
+    ['Blackmoor Wealth', 'Adverse action notices sampled for specific reasons (25)', 'Fair lending review', 'Pulled from Echo automatically', 'g', 2],
+    ['Atlas Defense', 'Counterfactual proof for AD-2847', 'ISO/IEC 42001 surveillance', 'Waiting on Atlas (owner: James Martinez)', 'y', 6],
+    ['Sterling Health', 'Clinician sign-off on reopened claim denials', 'HIPAA and Section 1557 review', 'Waiting on Sterling (owner: Elena Ruiz)', 'y', 4],
+    ['Whitfield & Crane', 'Lexora Research vendor certificate and your own retest of it', 'Annual AI controls review', 'Shared by Lexora through Cardinal', 'g', 1]
+  ];
+  var crestSample = null;
+  function crestline() {
+    var orgs = [['fin', 'Blackmoor Wealth Group', 'Fair lending review', 22], ['ad', 'Atlas Defense Systems', 'ISO/IEC 42001 surveillance audit', 41], ['health', 'Sterling Health', 'HIPAA and Section 1557 review', 15]];
+    var rows = orgs.map(function (o) {
+      var c = cert(o[0]), i = (CARDINAL_CLIENTS[o[0]] || []).map(function (x) { return x.name; }).indexOf('Crestline Assurance LLP');
+      return [esc(o[1]), esc(o[2]), '<b style="color:' + INK + '">' + score(o[0]) + '</b>', c.certified ? pill('Certified', 'g') : pill('Not certified', 'r'), d(o[3]), btn('Open their workspace', "outsideClose();topEnterClient('" + o[0] + "'," + i + ")")];
+    });
+    rows.push(['Whitfield &amp; Crane LLP', 'Annual AI controls review', '<b style="color:' + INK + '">78</b>', pill('Not certified', 'r'), d(34), btn('Open their workspace', "outsideOpen('lawfirm')")]);
+    return '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:10px;margin-bottom:14px">' +
+      stat(4, 'Clients audited on Cardinal', 'Read-only access each client granted') + stat(CREST_REQ.filter(function (r) { return r[4] === 'g'; }).length + ' of ' + CREST_REQ.length, 'Evidence requests filled', 'Most come straight from sealed records') + stat('0', 'Records failing the seal check', 'Every record re-hashed on open') + stat(d(15), 'Next fieldwork', 'Sterling Health') + '</div>' +
+      card('How Crestline uses Cardinal', 'An audit firm checks the work. It never changes a score, a finding, or a record.',
+        '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px">' + [['Watch all year, not once a year', 'Scores, findings, and fixes for every client, live, instead of a yearly sample.'], ['Request evidence once', 'Requests go to the client in Cardinal. Most are filled from sealed records in minutes.'], ['Verify the seal', 'Every record is re-hashed on open, so a changed record shows up immediately.'], ['Write the opinion', 'Findings carry into the attestation draft with the record each one rests on.']].map(function (x) { return '<div style="padding:10px 12px;border-radius:10px;background:#faf8f3;border:1px solid ' + LINE + '"><div style="font-size:12px;font-weight:700;color:' + INK + '">' + x[0] + '</div><div style="font-size:11px;color:' + MUTED + ';margin-top:3px">' + x[1] + '</div></div>'; }).join('') + '</div>') +
+      card('Client portfolio', 'Live scores. Opening a workspace shows only the cores that client granted Crestline.', table(['Client', 'Engagement', 'Trust Score', 'Certification', 'Next fieldwork', ''], rows)) +
+      card('Evidence requests', 'Sent to each client inside Cardinal. Nothing is emailed around.', table(['Client', 'Request', 'Engagement', 'Status', 'Asked'], CREST_REQ.map(function (r) { return [esc(r[0]), esc(r[1]), esc(r[2]), pill(r[3], r[4]), r[5] + 'd ago']; }))) +
+      card('Test the records yourself', 'Pull a random sample of sealed decisions and re-check each seal.',
+        btn('Pull 10 sealed Blackmoor decisions', 'crestPull()', true) + (crestSample ? '<div style="margin-top:12px">' + table(['Record', 'Model', 'Decision', 'Sealed', 'Seal check'], crestSample) + '</div>' : ''));
+  }
+  window.crestPull = function () {
+    var models = ['Credit Scoring v3.4', 'Underwriting v4.1', 'Fraud Screening v2.7'], out = [];
+    for (var i = 0; i < 10; i++) { var h = (Math.random().toString(16).slice(2, 10) + Math.random().toString(16).slice(2, 10)); out.push(['BW-' + (48000 + Math.floor(Math.random() * 9000)), models[i % 3], i % 4 === 1 ? pill('Denied', 'r') : pill('Approved', 'g'), d(-1 - Math.floor(Math.random() * 60)), '<span style="font-family:monospace;font-size:10.5px">' + h.slice(0, 12) + '</span> ' + pill('Matches', 'g')]); }
+    crestSample = out; outsideOpen('auditor');
+  };
+
+  // ── Lexora AI: a legal AI vendor whose product is certified on Cardinal ──
+  var LEX_PARTS = [['Citation accuracy', 86], ['Client confidentiality', 92], ['Prompt injection defense', 84], ['Agent actions and approvals', 81], ['Bias in outputs', 88], ['Documentation', 79], ['Monitoring', 85]];
+  var LEX_CUST = [
+    ['Whitfield & Crane LLP', 'Lexora Research, Lexora Contract Review', '2.1% made-up citations on their own matters (Lexora tested 0.9%)', 'r', 'Retest requested'],
+    ['Marlow Hayes LLP', 'Lexora Contract Review', 'Clause extraction accuracy 97.4%, matches Lexora testing', 'g', 'Relying on certificate'],
+    ['Brightwater Legal Group', 'Lexora Research', 'No gaps; confidentiality tests passed in their environment', 'g', 'Relying on certificate'],
+    ['Eastbrook County Public Defender', 'Lexora Research', 'Onboarding: first independent check due ' + d(9), 'y', 'In progress']
+  ];
+  var lexShared = false;
+  function lexora() {
+    var avg = Math.round(LEX_PARTS.reduce(function (a, p) { return a + p[1]; }, 0) / LEX_PARTS.length);
+    return '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:10px;margin-bottom:14px">' +
+      stat(avg, 'Lexora Research: product score', 'Certified: 80+ overall, every part 70+') + stat(LEX_CUST.length, 'Customers relying on it', 'Each one also checks it in their own setup') + stat(1, 'Open customer finding', 'From Whitfield & Crane') + stat((function () { var t = new Date(), q = new Date(t.getFullYear(), Math.floor(t.getMonth() / 3) * 3 + 3, 1); return q.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }); })(), 'Next quarterly badge check', 'Annual certificate valid to ' + d(271)) + '</div>' +
+      card('How Lexora uses Cardinal', 'A vendor gets checked once, independently, and shares that proof with every customer instead of filling out a new questionnaire for each one.',
+        '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:6px">' + LEX_PARTS.map(function (p) { return '<div style="padding:7px 9px;border-radius:8px;background:' + (p[1] >= 80 ? 'rgba(21,128,61,.08)' : 'rgba(234,179,8,.14)') + '"><div style="font-size:10px;color:' + MUTED + '">' + p[0] + '</div><div style="font-size:15px;font-weight:800;color:' + (p[1] >= 80 ? '#15803D' : '#B45309') + '">' + p[1] + '</div></div>'; }).join('') + '</div>') +
+      card('The certificate Lexora shares', 'Customers see the same sealed certificate. Lexora cannot edit it.',
+        '<div style="display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap;align-items:center;padding:14px;border:1.5px solid rgba(21,128,61,.35);border-radius:12px;background:rgba(21,128,61,.04)"><div><div style="font-size:10px;font-weight:800;letter-spacing:.06em;color:#15803D">CARDINAL CERTIFIED AI PRODUCT</div><div style="font-size:15px;font-weight:800;color:' + INK + ';margin-top:3px">Lexora Research v4.1</div><div style="font-size:11px;color:' + MUTED + ';margin-top:2px">Certificate LX-2026-0417 · issued ' + d(-94) + ' · valid to ' + d(271) + ' · score ' + avg + '</div><div style="font-size:10.5px;font-family:monospace;color:' + MUTED + ';margin-top:4px">Seal 7f3a91c4e0b2d855</div></div>' +
+        (lexShared ? pill('Shared with 4 customers', 'g') : btn('Share with a new customer', 'lexShare()', true)) + '</div>') +
+      card('Customers relying on Lexora', 'Each customer also checks Lexora on their own matters. When their result differs from Lexora\'s own testing, Lexora sees it here.', table(['Customer', 'Products', 'What they see in their own setup', 'Status'], LEX_CUST.map(function (c) { return [esc(c[0]), esc(c[1]), esc(c[2]), pill(c[4], c[3])]; }))) +
+      card('Open finding from a customer', '',
+        '<div style="padding:12px;border-radius:10px;border:1px solid rgba(220,38,38,.25);background:rgba(220,38,38,.04)"><div style="font-size:12.5px;font-weight:700;color:' + INK + '">Made-up case citations on Whitfield &amp; Crane matters</div><div style="font-size:11.5px;color:#475569;margin-top:4px">Their check found 2.1% of research answers cited cases that do not exist, against 0.9% in Lexora\'s own testing. The gap is in state appellate cases, which Lexora\'s test set under-covers. Patch v4.2 adds a citation check before answers go out.</div><div style="font-size:11px;color:' + MUTED + ';margin-top:6px">Opened ' + d(-6) + ' · Patch submitted ' + d(-1) + ' · Cardinal retest ' + d(3) + ' · The certificate stays valid unless the retest misses the 70 floor.</div></div>');
+  }
+  window.lexShare = function () { lexShared = true; outsideOpen('vendor'); };
+
+  // ── Whitfield & Crane LLP: a law firm using its own models plus Lexora ──
+  var WC_AI = [
+    ['Matter Intake Classifier', 'In-house', 'Routes new matters and runs the first conflict check', 'Daniel Okafor', 'Conflict misses 0 of 412 test matters', 'g', 'Passing'],
+    ['Associate Staffing Recommender', 'In-house', 'Suggests who staffs each matter', 'Grace Whitfield', 'Women associates offered trial matters at 0.78 the rate of men', 'r', 'Fix in testing'],
+    ['Billing Anomaly Model', 'In-house', 'Flags time entries before invoices go out', 'Marcus Lee', 'False flags 3.2%, steady', 'g', 'Passing'],
+    ['Docket Deadline Agent', 'In-house agent', 'Calendars court deadlines from filings', 'Priya Nair', 'Named owner; every calendar change needs a paralegal sign-off', 'g', 'Passing'],
+    ['Lexora Research', 'Vendor', 'Legal research answers with citations', 'Daniel Okafor', '2.1% made-up citations on firm matters (vendor tested 0.9%)', 'r', 'Retest ' + d(3)],
+    ['Lexora Contract Review', 'Vendor', 'Extracts and flags contract clauses', 'Priya Nair', 'Clause accuracy 96.8%; no client data used for training (confirmed)', 'g', 'Passing'],
+    ['Deposition transcription service', 'Vendor', 'Transcribes depositions and calls', 'Marcus Lee', 'Speaker errors higher for accented speech (4.9% vs 1.7%)', 'y', 'Watch'],
+    ['Personal chatbot accounts', 'Shadow AI', 'Found by discovery scan, not approved', 'No owner', '14 lawyers pasted client documents in the last 30 days', 'r', 'Blocked, training sent']
+  ];
+  var WC_PARTS = [['Fairness', 76], ['Accuracy & Citations', 74], ['Client Confidentiality', 79], ['Documentation', 82], ['Monitoring', 84], ['Vendor Oversight', 80], ['AI Agents & Security', 72]];
+  var wcFilter = 'all';
+  function lawfirm() {
+    var list = WC_AI.filter(function (x) { return wcFilter === 'all' || (wcFilter === 'in' ? /^In-house/.test(x[1]) : wcFilter === 'vendor' ? x[1] === 'Vendor' : x[1] === 'Shadow AI'); });
+    var n = function (re) { return WC_AI.filter(function (x) { return re.test(x[1]); }).length; };
+    var tab = function (k, t) { return '<button type="button" onclick="wcSet(\'' + k + '\')" style="font-size:11px;padding:6px 12px;border-radius:999px;cursor:pointer;font-weight:700;border:1px solid ' + (wcFilter === k ? INK : 'rgba(26,24,21,.15)') + ';background:' + (wcFilter === k ? INK : '#fff') + ';color:' + (wcFilter === k ? '#fff' : INK) + '">' + t + '</button>'; };
+    return '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:10px;margin-bottom:14px">' +
+      stat(78, 'Trust Score', 'Not certified: below 80') + stat(n(/^In-house/), 'Built in-house', '3 models and 1 agent') + stat(n(/^Vendor/), 'From vendors', 'Checked the same way as in-house') + stat(n(/Shadow/), 'Shadow AI found', '14 lawyers, client documents') + '</div>' +
+      card('Why a law firm uses Cardinal', 'Lawyers stay responsible for AI they use, whether they built it or bought it. ABA Formal Opinion 512 (July 2024) ties generative AI use to the duties of competence and client confidentiality, and courts have sanctioned lawyers who filed AI-made-up citations.',
+        '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:6px">' + WC_PARTS.map(function (p) { return '<div style="padding:7px 9px;border-radius:8px;background:' + (p[1] >= 80 ? 'rgba(21,128,61,.08)' : 'rgba(234,179,8,.14)') + '"><div style="font-size:10px;color:' + MUTED + '">' + p[0] + '</div><div style="font-size:15px;font-weight:800;color:' + (p[1] >= 80 ? '#15803D' : '#B45309') + '">' + p[1] + '</div></div>'; }).join('') + '</div>') +
+      card('Every AI the firm uses', 'Built in-house and bought from vendors, side by side, with the same checks.',
+        '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">' + tab('all', 'All ' + WC_AI.length) + tab('in', 'Built in-house ' + n(/^In-house/)) + tab('vendor', 'From vendors ' + n(/^Vendor/)) + tab('shadow', 'Shadow AI ' + n(/Shadow/)) + '</div>' +
+        table(['AI', 'Source', 'What it does', 'Owner', 'What Cardinal found', 'Status'], list.map(function (x) { return [esc(x[0]), pill(x[1], x[1] === 'Vendor' ? 'b' : x[1] === 'Shadow AI' ? 'r' : 'n'), esc(x[2]), esc(x[3]), esc(x[4]), pill(x[6], x[5])]; }))) +
+      card('Vendor AI, checked as closely as in-house', 'Lexora\'s certificate is the starting point, not the end. Cardinal runs the same checks on the firm\'s own matters.',
+        table(['Check', 'Lexora\'s own testing', 'On Whitfield & Crane matters', 'Result'], [['Made-up citations', '0.9%', '2.1%', pill('Gap: retest requested', 'r')], ['Client data used for training', 'None (contract)', 'None found in 30 days of traffic', pill('Matches', 'g')], ['Prompt injection from uploaded documents', 'Blocked 98%', 'Blocked 41 of 41', pill('Matches', 'g')], ['Privileged text in answers to other matters', 'Not tested', '0 leaks in 2,300 answers', pill('Added by Cardinal', 'b')]]) +
+        '<div style="margin-top:10px;display:flex;gap:6px;flex-wrap:wrap">' + btn('See Lexora\'s certificate', "outsideOpen('vendor')") + btn('See what Crestline sees', "outsideOpen('auditor')") + '</div>');
+  }
+  window.wcSet = function (k) { wcFilter = k; outsideOpen('lawfirm'); };
+
+  var VIEWS = {
+    auditor: ['CA', 'Crestline Assurance', 'Audit firm', 'What an audit firm sees: every client it audits on Cardinal, evidence requests, and records it can verify itself', crestline],
+    vendor: ['LX', 'Lexora AI', 'AI vendor', 'What an AI vendor sees: its product score, the certificate it shares, and every customer relying on it', lexora],
+    lawfirm: ['WC', 'Whitfield & Crane LLP', 'Law firm', 'A law firm using its own models plus vendor AI from Lexora, all checked the same way', lawfirm]
+  };
+  window.outsideOpen = function (k) {
+    var v = VIEWS[k]; if (!v) return;
+    var o = document.getElementById('outside-portal');
+    if (!o) { o = document.createElement('div'); o.id = 'outside-portal'; o.style.cssText = 'position:fixed;inset:0;z-index:9993;background:#f7f4ee;overflow-y:auto;font-family:var(--sans)'; document.body.appendChild(o); }
+    var keep = o.getAttribute('data-k') === k ? o.scrollTop : 0;
+    o.setAttribute('data-k', k);
+    o.innerHTML = '<div style="position:sticky;top:0;z-index:2;background:rgba(247,244,238,.96);border-bottom:1px solid ' + LINE + ';padding:12px 20px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap"><div style="display:flex;align-items:center;gap:12px"><div style="width:38px;height:38px;border-radius:10px;background:' + INK + ';color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px">' + v[0] + '</div><div><div style="font-size:16px;font-weight:800;color:' + INK + '">' + esc(v[1]) + ' <span style="font-size:11px;font-weight:600;color:' + MUTED + '">· ' + v[2] + ' on Cardinal</span></div><div style="font-size:11px;color:' + MUTED + '">' + esc(v[3]) + '</div></div></div>' +
+      '<div style="display:flex;gap:6px;flex-wrap:wrap">' + Object.keys(VIEWS).map(function (x) { return '<button type="button" onclick="outsideOpen(\'' + x + '\')" style="font-size:11px;padding:6px 11px;border-radius:8px;cursor:pointer;font-weight:700;border:1px solid ' + (x === k ? INK : 'rgba(26,24,21,.15)') + ';background:' + (x === k ? 'rgba(26,24,21,.06)' : '#fff') + ';color:' + INK + '">' + VIEWS[x][2] + '</button>'; }).join('') + btn('Exit outside view', 'outsideClose()', true) + '</div></div>' +
+      '<div style="max-width:1100px;margin:0 auto;padding:18px 20px 60px">' + v[4]() + '</div>';
+    o.style.display = 'block'; o.scrollTop = keep;
+    try { markTopView('client'); } catch (e) {}
+  };
+  window.outsideClose = function () { var o = document.getElementById('outside-portal'); if (o) o.style.display = 'none'; try { markTopView(''); } catch (e) {} };
+
+  // Top bar: "Client View" becomes "Outside Views" with the three new views first.
+  var b = document.querySelector('.top-view-btn[data-view="client"]');
+  if (b) { b.textContent = 'Outside Views ▾'; b.title = 'See Cardinal as an audit firm, an AI vendor, a law firm, or a partner with limited access'; }
+  var oMenu = window.topClientMenu;
+  window.topClientMenu = function (btnEl) {
+    var r = oMenu ? oMenu.apply(this, arguments) : null;
+    var m = document.getElementById('top-client-menu'); if (!m) return r;
+    var head = m.firstElementChild; if (head) head.textContent = 'Partners with limited access';
+    var top = document.createElement('div');
+    top.innerHTML = '<div style="font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:2px 4px 8px">Outside views</div>' + Object.keys(VIEWS).map(function (k) { var v = VIEWS[k]; return '<button type="button" onclick="document.getElementById(\'top-client-menu\').remove();outsideOpen(\'' + k + '\')" style="display:block;width:100%;text-align:left;padding:8px 10px;margin-bottom:4px;border:1px solid transparent;border-radius:8px;background:transparent;cursor:pointer;font-family:var(--sans)" onmouseover="this.style.background=\'rgba(30,58,138,.06)\'" onmouseout="this.style.background=\'transparent\'"><div style="font-size:12px;font-weight:700;color:var(--chrome2)">' + esc(v[1]) + '</div><div style="font-size:10.5px;color:var(--muted2)">' + v[2] + '</div></button>'; }).join('') + '<div style="height:1px;background:var(--border2);margin:8px 2px 10px"></div>';
+    m.insertBefore(top, m.firstChild);
+    // The Crestline rows below are covered by the audit-firm view above.
+    [].forEach.call(m.querySelectorAll('button[onclick^="topEnterClient"]'), function (x) { if (/Crestline/.test(x.textContent)) x.remove(); });
+    return r;
+  };
+  var oSw = window.switchIndustry;
+  window.switchIndustry = switchIndustry = function () { outsideClose(); return oSw.apply(this, arguments); };
+  // Inside a client's workspace from the audit-firm view: say whose workspace it is, and go back to Crestline on exit.
+  var oCv = window.clientViewAs;
+  window.clientViewAs = function (i) {
+    var r = oCv.apply(this, arguments), v = window.__clientView, bar = document.getElementById('client-view-bar');
+    if (v && bar && /Crestline/.test(v.name)) {
+      var on = (window.__CARDINAL_ORG_NAME_BY_INDUSTRY || {})[v.org] || '';
+      bar.innerHTML = 'Crestline Assurance (audit firm), read-only inside <strong style="margin:0 4px">' + esc(on) + '</strong> · ' + v.cores.length + ' cores granted <button type="button" onclick="clientViewAs(null);outsideOpen(\'auditor\')" style="margin-left:10px;background:#fff;color:#1e3a8a;border:0;border-radius:6px;padding:3px 10px;font-size:11px;font-weight:700;cursor:pointer">Back to Crestline</button>';
+    }
+    return r;
+  };
+
+  // In-house vs vendor split on "Everything Cardinal watches" (Trust Score).
+  window.cardinalSourceSplit = function (org) {
+    var inh = (window.CARDINAL_MODELS || []).filter(function (m) { return m.industry === org && m.status !== 'archive'; }).map(function (m) { return m.name; });
+    var ven = (window.SENTINEL_VENDORS && SENTINEL_VENDORS[org] || []).map(function (v) { return v[0]; });
+    ((window.CARDINAL_SYSTEMS || {})[org] || []).forEach(function (s) { (s.agents || []).forEach(function (a) { if (/vendor/i.test(a)) return; if (/Pre-qual Chatbot/.test(a)) { ven.push(a); return; } if (inh.indexOf(a) === -1) inh.push(a); }); });
+    var sh = ((window.SENTINEL_SHADOW_AI || {})[org] || []).length;
+    return { inh: inh, ven: ven, shadow: sh };
+  };
+  function paintSplit() {
+    var p = document.getElementById('ts-coverage'); if (!p) return;
+    var org = window.currentOrg || 'ad', s = cardinalSourceSplit(org), key = org + s.inh.length + s.ven.length;
+    var el = document.getElementById('ts-source-split');
+    if (el && el.getAttribute('data-k') === key && el.parentNode === p) return;
+    if (!el) { el = document.createElement('div'); el.id = 'ts-source-split'; }
+    el.setAttribute('data-k', key);
+    el.style.cssText = 'display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:8px;margin-top:10px';
+    var box = function (t, list, tone) { return '<div style="padding:10px 12px;border-radius:10px;border:1px solid ' + LINE + ';background:' + tone + '"><div style="font-size:11px;font-weight:800;color:#334155">' + t + ' · ' + list.length + '</div><div style="font-size:10.5px;color:' + MUTED + ';margin-top:3px">' + list.map(esc).join(', ') + '</div></div>'; };
+    el.innerHTML = box('Built in-house', s.inh, '#fff') + box('From vendors (checked the same way)', s.ven, 'rgba(30,58,138,.04)');
+    p.appendChild(el);
+  }
+  setInterval(function () { var t = document.getElementById('screen-trustscore'); if (t && t.offsetParent !== null) paintSplit(); }, 800);
+})();
+</script>
+
 </body>
 
 </html>
