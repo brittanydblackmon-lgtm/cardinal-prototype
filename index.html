@@ -48172,6 +48172,60 @@ window.genRenderScenarios = function () {
 })();
 </script>
 
+<script>
+// 10/2 feedback on Sentinel: open a new case or an incident war room from here, jump from any
+// case to its war room, see the suggested playbook, and a clear name for the "Lab" tab.
+(function () {
+  function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;'); }
+  var INP = 'width:100%;box-sizing:border-box;font-size:12px;padding:8px 10px;border:1px solid rgba(26,24,21,.15);border-radius:8px;background:#fff;color:#1a1815;font-family:inherit';
+  var OPENED = {};
+  var PB = { Critical: 'Critical bias or harm: freeze or route to human review, notify the approver, open a war room, file required notices', High: 'High: shadow-test a fix within 7 days, assign a lead, brief compliance', Medium: 'Medium: monitor, set a re-check date, document the decision' };
+  function team(org) { var N = { ad: 'Atlas Defense Systems', fin: 'Blackmoor Wealth Group', health: 'Sterling Health', fed: 'IRS Tax Compliance Division' }; return (window.CARDINAL_PERSONAS || []).filter(function (p) { return p.org === N[org]; }); }
+  window.snOpenWarRoom = function (caseId) { window.__wrFocusCaseId = caseId || null; showScreen('warroom', null); };
+  window.snShowForm = function (on) { var f = document.getElementById('sn-form'); if (f) f.style.display = on ? 'block' : 'none'; };
+  window.snCreate = function () {
+    var org = window.currentOrg || 'ad', g = function (id) { return (document.getElementById(id) || {}).value || ''; };
+    var pre = { ad: 'AD-', fin: 'FIN-', health: 'HS-', fed: 'FED-' }[org] || '';
+    var id = pre + (3000 + Math.floor(Math.random() * 900));
+    var c = { id: id, title: g('sn-title') || 'New case', model: g('sn-model'), sev: g('sn-sev'), lead: g('sn-lead'), desc: g('sn-desc'), at: new Date() };
+    (OPENED[org] = OPENED[org] || []).unshift(c);
+    try { cardinalLogActivity('case', 'Opened case #' + id + ': ' + c.title, id); } catch (e) {}
+    snShowForm(false); paint();
+  };
+  function paint() {
+    var scr = document.getElementById('screen-sentinel'); if (!scr) return;
+    var org = window.currentOrg || 'ad';
+    var bar = document.getElementById('sn-actions');
+    if (!bar) { bar = document.createElement('div'); bar.id = 'sn-actions'; var hdr = scr.querySelector('.section-hdr'); hdr.parentNode.insertBefore(bar, hdr.nextSibling); }
+    var models = (window.CARDINAL_MODELS || []).filter(function (m) { return m.industry === org && m.status !== 'archive'; }).map(function (m) { return m.name; });
+    var list = OPENED[org] || [];
+    var __html = '<div style="display:flex;gap:8px;flex-wrap:wrap;margin:0 0 12px"><button type="button" class="btn-primary" style="font-size:12px" onclick="snShowForm(true)">+ Open a new case</button>' +
+      '<button type="button" class="btn-ghost" style="font-size:12px" onclick="snOpenWarRoom(null)">Open an incident war room</button>' +
+      '<button type="button" class="btn-ghost" style="font-size:12px" onclick="cardinalSentinelUiSetMainTab(\'playbooks\')">Playbooks</button></div>' +
+      '<div id="sn-form" class="card" style="display:none;padding:14px 16px;margin-bottom:12px"><div style="font-size:13px;font-weight:700;color:#1a1815;margin-bottom:8px">Open a new case</div>' +
+      '<div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:8px"><input id="sn-title" style="' + INP + '" placeholder="What happened?"><select id="sn-model" style="' + INP + '">' + models.map(function (m) { return '<option>' + esc(m) + '</option>'; }).join('') + '<option>AI agent or vendor AI</option></select>' +
+      '<select id="sn-sev" style="' + INP + '" onchange="document.getElementById(\'sn-pb\').textContent=\'Suggested playbook: \'+({Critical:\'' + PB.Critical + '\',High:\'' + PB.High + '\',Medium:\'' + PB.Medium + '\'})[this.value]"><option>Critical</option><option selected>High</option><option>Medium</option></select>' +
+      '<select id="sn-lead" style="' + INP + '">' + team(org).map(function (p) { return '<option>' + esc(p.name) + '</option>'; }).join('') + '<option>Eve (AI)</option></select></div>' +
+      '<textarea id="sn-desc" style="' + INP + ';margin-top:8px;min-height:50px" placeholder="Details, who is affected, what you have seen"></textarea>' +
+      '<div id="sn-pb" style="font-size:11px;color:#475569;margin-top:6px">Suggested playbook: ' + PB.High + '</div>' +
+      '<div style="margin-top:8px;display:flex;gap:6px"><button type="button" class="btn-primary" style="font-size:12px" onclick="snCreate()">Open case</button><button type="button" class="btn-ghost" style="font-size:12px" onclick="snShowForm(false)">Cancel</button></div></div>' +
+      (list.length ? '<div class="card" style="padding:12px 14px;margin-bottom:12px"><div style="font-size:12px;font-weight:700;color:#1a1815;margin-bottom:6px">Opened today</div>' + list.map(function (c) { return '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 0;border-top:1px solid rgba(26,24,21,.06);font-size:11.5px"><span><strong>#' + esc(c.id) + '</strong> ' + esc(c.title) + ' · ' + esc(c.model) + ' · ' + esc(c.sev) + ' · lead ' + esc(c.lead) + '</span><button type="button" class="btn-ghost" style="font-size:11px" onclick="snOpenWarRoom(\'' + esc(c.id) + '\')">Open war room</button></div>'; }).join('') + '</div>' : '');
+    var __key = org + '|' + list.length; if (bar.__key !== __key) { var formOpen = document.getElementById('sn-form') && document.getElementById('sn-form').style.display === 'block'; bar.innerHTML = __html; bar.__key = __key; if (formOpen) snShowForm(true); }
+    scr.querySelectorAll('button').forEach(function (b) { if (b.textContent.trim() === 'Lab' && b.textContent !== 'Stress tests') { b.textContent = 'Stress tests'; b.title = 'Synthetic people, drift monitors, and stress tests Sentinel runs against your models and agents'; } });
+    var det = document.getElementById('sentinel-unified-case-detail');
+    if (det && det.style.display !== 'none' && det.innerText.trim() && !det.querySelector('.sn-case-bar')) {
+      var m = det.innerText.match(/#?([A-Z]{2,4}-[A-Z0-9-]*\d)/); var cid = m ? m[1] : null;
+      var sev = /Critical/i.test(det.innerText) ? 'Critical' : /High/i.test(det.innerText) ? 'High' : 'Medium';
+      det.insertAdjacentHTML('afterbegin', '<div class="sn-case-bar" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px;padding:9px 12px;border-radius:10px;background:#fbfaf7;border:1px solid rgba(26,24,21,.08)"><button type="button" class="btn-primary" style="font-size:11.5px" onclick="snOpenWarRoom(\'' + (cid || '') + '\')">Open war room</button><span style="font-size:11px;color:#475569"><strong>Suggested playbook:</strong> ' + esc(PB[sev]) + '</span> <a href="#" style="font-size:11px;color:#1e3a8a" onclick="event.preventDefault();cardinalSentinelUiSetMainTab(\'playbooks\')">See playbook</a></div>');
+    }
+  }
+  var pend = null, el = document.getElementById('screen-sentinel');
+  if (el) new MutationObserver(function () { if (pend) return; pend = setTimeout(function () { pend = null; if (el.classList.contains('active')) paint(); }, 80); }).observe(el, { childList: true, subtree: true });
+  var oS = window.showScreen;
+  if (typeof oS === 'function') window.showScreen = showScreen = function (s) { var r = oS.apply(this, arguments); if (s === 'sentinel') setTimeout(paint, 100); return r; };
+})();
+</script>
+
 </body>
 
 </html>
