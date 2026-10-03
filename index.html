@@ -48226,6 +48226,67 @@ window.genRenderScenarios = function () {
 })();
 </script>
 
+<style>
+/* 10/2: My Workspace without the stray purple. */
+.nav-item[onclick*="showScreen('workqueue'"] { display: none !important; }   /* Work Queue now lives in My Workspace > My tasks */
+#myworkspace-content [style*="rgba(168,85,247"], #myworkspace-content [style*="rgba(236,72,153"] { background: #fff !important; border-color: rgba(26,24,21,.10) !important; }
+#myworkspace-content button[style*="#a855f7"], #myworkspace-content button[style*="168,85,247"], #myworkspace-content button[style*="#9333ea"] { background: #1a1815 !important; color: #fff !important; border-color: #1a1815 !important; }
+#myworkspace-content [style*="color:#a855f7"], #myworkspace-content [style*="color:#c084fc"], #myworkspace-content [style*="color: rgb(168, 85, 247)"] { color: #1a1815 !important; }
+</style>
+<script>
+// 10/2 feedback: My Workspace is the person's home. Work Queue merges in as "My tasks", plus
+// "My cases", "My conversations", and "Important notes". It's seeded so it's never empty.
+(function () {
+  function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;'); }
+  var TAB = 'tasks';
+  window.mywsTab = function (t) { TAB = t; paint(); };
+  function seed(p, org) {
+    window.__userNotes = window.__userNotes || {}; window.__userPins = window.__userPins || {};
+    var nk = 'notes:' + p.id, pk = 'pins:' + p.id;
+    try { var ls = JSON.parse(localStorage.getItem('cardinal-notes-' + p.id) || 'null'); if (ls && !window.__userNotes[nk]) window.__userNotes[nk] = ls; } catch (e) {}
+    if (!(window.__userNotes[nk] || []).length) {
+      var d = window.CARDINAL_DATA && CARDINAL_DATA[org], pc = d && d.primaryCase;
+      window.__userNotes[nk] = [{ title: 'Prep for this week', text: 'Walk through the open case' + (pc ? ' #' + pc : '') + ' with the approver, confirm the shadow test numbers, and get sign-off on the next step.', timestamp: new Date(Date.now() - 86400000).toISOString(), seeded: true }, { title: 'Regulator questions to expect', text: 'How did we find it, how fast, who approved the fix, and what changed for the people affected. Echo has the timeline.', timestamp: new Date(Date.now() - 3 * 86400000).toISOString(), seeded: true }];
+    }
+    if (!(window.__userPins[pk] || []).length) {
+      var mem = ((window.CARDINAL_DATA || {})[org] || {}).echoMemories || [];
+      window.__userPins[pk] = mem.slice(-2).map(function (m) { return m.id; });
+    }
+  }
+  function card(inner) { return '<div style="background:#fff;border:1px solid rgba(26,24,21,.08);border-radius:10px;padding:10px 12px;box-shadow:0 1px 2px rgba(26,24,21,.05)">' + inner + '</div>'; }
+  function paint() {
+    var host = document.getElementById('myworkspace-content'); if (!host) return;
+    var p = window.getActivePersona ? getActivePersona() : null; if (!p) return;
+    var org = window.currentOrg || 'ad'; seed(p, org);
+    var box = document.getElementById('myws-work');
+    if (!box) { box = document.createElement('div'); box.id = 'myws-work'; box.className = 'card'; box.style.cssText = 'padding:16px 18px;margin:0 0 16px'; host.insertBefore(box, host.firstChild); }
+    var tickets = (typeof wqTickets === 'function' ? wqTickets(org) : []).filter(function (t) { return t.assignee === p.name || t.approver === p.name; });
+    var d = (window.CARDINAL_DATA || {})[org] || {};
+    var cases = (d.caseChannels || []).filter(function (c) { return (c.members || []).indexOf(p.name) > -1; });
+    var convos = (d.trustLoopChannels || []).filter(function (c) { return (c.members || []).indexOf(p.name) > -1; });
+    var notes = (window.__userNotes['notes:' + p.id] || []).filter(function (n) { return !n.deleted; });
+    var tabs = [['tasks', 'My tasks', tickets.length], ['cases', 'My cases', cases.length], ['convos', 'My conversations', convos.length], ['notes', 'Important notes', notes.length]];
+    var body;
+    if (TAB === 'tasks') body = (tickets.length ? tickets.map(function (t) { var due = typeof wqDue === 'function' ? wqDue(t).label : ''; return card('<div style="display:flex;justify-content:space-between;gap:8px"><div><div style="font-size:12px;font-weight:700;color:#1a1815;cursor:pointer" onclick="wqOpen && wqOpen(\'' + esc(t.id) + '\')">' + esc(t.title) + '</div><div style="font-size:10.5px;color:#64748b;margin-top:2px">' + esc(t.id) + ' · ' + esc(t.team) + ' · ' + (t.approver === p.name ? 'You approve' : 'Assigned to you') + '</div></div><div style="text-align:right;font-size:10.5px;color:#475569;white-space:nowrap"><div style="font-weight:700">' + esc(t.priority) + '</div>' + esc(due) + '</div></div>'); }).join('') : card('<div style="font-size:11.5px;color:#64748b">Nothing assigned to you right now.</div>')) + '<button type="button" class="btn-ghost" style="font-size:11px;margin-top:6px" onclick="showScreen(\'workqueue\', null)">Open the full team board</button>';
+    else if (TAB === 'cases') body = cases.length ? cases.map(function (c) { return card('<div style="display:flex;justify-content:space-between;gap:8px;align-items:center"><div><div style="font-size:12px;font-weight:700;color:#1a1815">Case #' + esc(c.caseId) + '</div><div style="font-size:10.5px;color:#64748b">' + (c.members || []).length + ' members · ' + (c.unreadCount || 0) + ' unread</div></div><div style="display:flex;gap:6px"><button type="button" class="btn-ghost" style="font-size:11px" onclick="cardinalNavigateToCase(\'' + esc(c.caseId) + '\')">Open case</button><button type="button" class="btn-ghost" style="font-size:11px" onclick="window.__wrFocusCaseId=\'' + esc(c.caseId) + '\';showScreen(\'warroom\',null)">War room</button></div></div>'); }).join('') : card('<div style="font-size:11.5px;color:#64748b">You are not on any open case.</div>');
+    else if (TAB === 'convos') body = convos.length ? convos.map(function (c) { var last = (c.messages || []).slice(-1)[0] || {}; return card('<div style="cursor:pointer" onclick="window.__tlSelectedChannelId=\'' + esc(c.id) + '\';showScreen(\'trustloop\',null)"><div style="display:flex;justify-content:space-between"><strong style="font-size:12px;color:#1a1815">' + esc(c.name) + '</strong><span style="font-size:10.5px;color:#64748b">' + (c.unreadCount || 0) + ' unread</span></div><div style="font-size:11px;color:#475569;margin-top:3px">' + esc(last.author || '') + ': ' + esc(String(last.content || '').slice(0, 110)) + '</div></div>'); }).join('') : card('<div style="font-size:11.5px;color:#64748b">No conversations yet.</div>');
+    else body = notes.length ? notes.slice().reverse().map(function (n) { return card('<div style="font-size:12px;font-weight:700;color:#1a1815">' + esc(n.title || 'Note') + '</div><div style="font-size:11.5px;color:#334155;margin-top:3px">' + esc(n.text) + '</div><div style="font-size:10px;color:#64748b;margin-top:4px">' + new Date(n.timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + '</div>'); }).join('') : card('<div style="font-size:11.5px;color:#64748b">No notes yet.</div>');
+    box.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><div><div style="font-size:15px;font-weight:700;color:var(--chrome2)">My work</div><div style="font-size:11px;color:var(--muted2)">Everything assigned to you, the cases and conversations you are in, and your notes. All of it is also kept in Echo.</div></div>' +
+      '<div style="display:flex;gap:4px;background:#f3f0e9;padding:3px;border-radius:9px">' + tabs.map(function (t) { return '<button type="button" onclick="mywsTab(\'' + t[0] + '\')" style="font-size:11.5px;padding:6px 12px;border-radius:7px;border:0;cursor:pointer;font-weight:700;background:' + (TAB === t[0] ? '#fff' : 'transparent') + ';color:' + (TAB === t[0] ? '#1a1815' : '#64748b') + '">' + t[1] + ' (' + t[2] + ')</button>'; }).join('') + '</div></div>' +
+      '<div style="display:flex;flex-direction:column;gap:6px;margin-top:12px">' + body + '</div>';
+  }
+  window.mywsPaint = paint;
+  var oR = window.renderBigWorkspacePage;
+  if (typeof oR === 'function') window.renderBigWorkspacePage = function () { var p = window.getActivePersona && getActivePersona(); if (p) seed(p, window.currentOrg || 'ad'); var r = oR.apply(this, arguments); try { paint(); } catch (e) {} return r; };
+  function hideWQnav() { document.querySelectorAll('.nav-item[onclick*="showScreen(\'workqueue\'"]').forEach(function (n) { n.style.display = 'none'; }); }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', hideWQnav); else hideWQnav();
+  var oS = window.showScreen;
+  if (typeof oS === 'function') window.showScreen = showScreen = function (s) { var r = oS.apply(this, arguments); if (s === 'myworkspace') setTimeout(function () { var p = window.getActivePersona && getActivePersona(); if (p) seed(p, window.currentOrg || 'ad'); try { renderBigWorkspacePage(); } catch (e) {} paint(); }, 80); return r; };
+  var oI = window.switchIndustry;
+  if (typeof oI === 'function') window.switchIndustry = switchIndustry = function () { var r = oI.apply(this, arguments); setTimeout(function () { if (document.getElementById('myws-work')) paint(); }, 150); return r; };
+})();
+</script>
+
 </body>
 
 </html>
