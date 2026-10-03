@@ -39463,7 +39463,8 @@ function cardinalLibToolbarHtml(tab) {
     return '<button type="button" onclick="cardinalLibSetView(\'' + tab + '\',\'' + v + '\')" style="padding:5px 11px;border:0;border-radius:6px;font-size:10px;font-weight:600;cursor:pointer;background:' + (on ? 'rgba(167,167,167,0.16)' : 'transparent') + ';color:' + (on ? 'var(--accent)' : 'var(--muted)') + '">' + label + '</button>';
   };
   return '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px">' +
-    '<input type="text" id="lib-q-' + tab + '" value="' + esc(st.q) + '" placeholder="Filter by name, ID, owner, case…" oninput="cardinalLibSetQuery(\'' + tab + '\',this.value)" style="flex:1;min-width:200px;max-width:340px;padding:7px 11px;background:rgba(26,24,21,0.045);border:1px solid rgba(167,167,167,0.22);border-radius:8px;font-size:11px;color:var(--chrome2);outline:none" />' +
+    '<div style="flex:1 1 100%;display:flex;align-items:center;gap:10px;background:#fff;border:1px solid rgba(26,24,21,.12);border-radius:14px;padding:10px 14px;box-shadow:0 4px 14px rgba(26,24,21,.06)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg><input type="text" id="lib-q-' + tab + '" value="' + esc(st.q) + '" placeholder="Search by name, ID, owner, or case, or ask a question (for example: which models are below 80?)" oninput="cardinalLibSetQuery(\'' + tab + '\',this.value)" onkeydown="if(event.key===\'Enter\'&&/\\?$|^(what|which|why|how|who|show|when)\\b/i.test(this.value.trim())){try{cardinalAskSubmit(this.value)}catch(e){}}" style="flex:1;border:0;outline:0;background:transparent;font-size:13px;color:#1a1815"><span id="lib-ask-hint-' + tab + '" style="display:none;font-size:10.5px;color:#1d4ed8;font-weight:700;white-space:nowrap">Press Enter to ask Cardinal</span></div>' +
+    (tab !== 'usecases' ? cardinalLibExtraFilters(tab) : '') +
     '<label style="font-size:10px;color:var(--muted);font-weight:600">Sort ' +
     '<select onchange="cardinalLibSetSort(\'' + tab + '\',this.value)" style="margin-left:4px;padding:6px 8px;background:var(--card);border:1px solid rgba(167,167,167,0.22);border-radius:7px;font-size:10px;color:var(--chrome2)">' +
     CARDINAL_LIB_SORTS[tab].map(function (s) { return '<option value="' + s[0] + '"' + (s[0] === st.sort ? ' selected' : '') + '>' + s[1] + '</option>'; }).join('') +
@@ -39473,6 +39474,18 @@ function cardinalLibToolbarHtml(tab) {
     '</div>';
 }
 window.cardinalLibToolbarHtml = cardinalLibToolbarHtml;
+// 10/3 (Brittany: "more filters, like custom dates and who created what, last time edited").
+function cardinalLibExtraFilters(tab) {
+  var st = window.__libView[tab], esc = window.cardinalLibEsc, org = window.currentOrg || 'ad';
+  var src = tab === 'models' ? (window.CARDINAL_MODELS || []).filter(function (m) { return m.industry === org; }) : (window.CARDINAL_COHORTS || []).filter(function (c) { return c.industry === org; });
+  var owners = src.map(function (x) { return x.owner; }).filter(function (x, i, a) { return x && a.indexOf(x) === i; }).sort();
+  var sel = 'padding:6px 8px;background:var(--card);border:1px solid rgba(167,167,167,0.22);border-radius:7px;font-size:10px;color:var(--chrome2)';
+  return '<label style="font-size:10px;color:var(--muted);font-weight:600">Created by <select onchange="window.__libView[\'' + tab + '\'].owner=this.value;cardinalLibRerender(\'' + tab + '\')" style="margin-left:4px;' + sel + '"><option value="">Anyone</option>' + owners.map(function (o) { return '<option' + (o === st.owner ? ' selected' : '') + '>' + esc(o) + '</option>'; }).join('') + '</select></label>' +
+    '<label style="font-size:10px;color:var(--muted);font-weight:600">' + (tab === 'models' ? 'Last edited' : 'Created') + ' from <input type="date" value="' + esc(st.from || '') + '" onchange="window.__libView[\'' + tab + '\'].from=this.value;cardinalLibRerender(\'' + tab + '\')" style="margin-left:4px;' + sel + '"></label>' +
+    '<label style="font-size:10px;color:var(--muted);font-weight:600">to <input type="date" value="' + esc(st.to || '') + '" onchange="window.__libView[\'' + tab + '\'].to=this.value;cardinalLibRerender(\'' + tab + '\')" style="margin-left:4px;' + sel + '"></label>' +
+    ((st.owner || st.from || st.to) ? '<button type="button" onclick="var v=window.__libView[\'' + tab + '\'];v.owner=v.from=v.to=\'\';cardinalLibSetView(\'' + tab + '\',v.view)" style="font-size:10px;border:0;background:transparent;color:#1d4ed8;font-weight:700;cursor:pointer">Clear filters</button>' : '');
+}
+window.cardinalLibExtraFilters = cardinalLibExtraFilters;
 
 function cardinalLibRerender(tab) {
   if (tab === 'usecases') cardinalLibRenderUseCaseGrid();
@@ -39495,8 +39508,16 @@ window.cardinalLibApply = function (tab, arr) {
   var out = arr.filter(function (x) {
     if (!q) return true;
     var hay = [x.name, x.id, x.owner, x.description, x.linkedCase, (x.cases || []).join(' '), (x.demoCases || []).join(' ')].join(' ').toLowerCase();
-    return hay.indexOf(q) !== -1;
+    var question = /\?$|^(what|which|why|how|who|show|when)\b/.test(q);
+    return question || hay.indexOf(q) !== -1;
+  }).filter(function (x) {
+    if (st.owner && x.owner !== st.owner) return false;
+    var raw = x.lastReview || x.created || x.deployedDate || '', pd = raw ? new Date(raw) : null, dt = pd && !isNaN(pd) ? pd.getFullYear() + '-' + ('0' + (pd.getMonth() + 1)).slice(-2) + '-' + ('0' + pd.getDate()).slice(-2) : '';
+    if (st.from && (!dt || dt < st.from)) return false;
+    if (st.to && (!dt || dt > st.to)) return false;
+    return true;
   });
+  var hint = document.getElementById('lib-ask-hint-' + tab); if (hint) hint.style.display = /\?$|^(what|which|why|how|who|show|when)\b/.test(q) ? 'inline' : 'none';
   var def = CARDINAL_LIB_SORTS[tab].filter(function (s) { return s[0] === st.sort; })[0] || CARDINAL_LIB_SORTS[tab][0];
   out.sort(def[2]);
   var cnt = document.getElementById('lib-count-' + tab);
@@ -48865,7 +48886,7 @@ window.CARDINAL_PLACES = {
   };
   window.cardinalBadgeHtml = function (b, size) {
     size = size || 74; var on = b.status === 'Earned', col = on ? '#15803D' : b.status === 'Suspended' ? '#B91C1C' : '#94A3B8';
-    return '<div style="text-align:center;width:' + (size + 14) + 'px"><div style="width:' + size + 'px;height:' + size + 'px;margin:0 auto;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;background:' + (on ? 'radial-gradient(circle at 30% 25%,#4ade80,#15803D)' : '#f1f5f9') + ';border:3px solid ' + col + ';box-shadow:' + (on ? '0 6px 16px rgba(21,128,61,.3)' : 'none') + ';color:' + (on ? '#fff' : col) + ';' + (on ? '' : 'opacity:.85;') + '"><div style="font-size:' + Math.round(size / 7) + 'px;font-weight:800;letter-spacing:.08em">CARDINAL</div><div style="font-size:' + Math.round(size / 4.2) + 'px;font-weight:800;line-height:1.1">' + b.name.split(' ')[0] + '</div><div style="font-size:' + Math.round(size / 7.5) + 'px;font-weight:700">' + b.name.split(' ')[1] + '</div></div><div style="font-size:10.5px;font-weight:800;color:' + col + ';margin-top:5px">' + b.status + (b.current ? ' (now)' : '') + '</div></div>';
+    return '<div style="text-align:center;width:' + (size + 14) + 'px"><div style="width:' + size + 'px;height:' + size + 'px;margin:0 auto;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;background:' + (on ? 'radial-gradient(circle at 30% 25%,#4ade80,#15803D)' : '#f1f5f9') + ';border:3px solid ' + col + ';box-shadow:' + (on ? '0 6px 16px rgba(21,128,61,.3)' : 'none') + ';color:' + (on ? '#fff' : col) + ';' + (on ? '' : 'opacity:.85;') + '"><div style="font-size:' + Math.round(size / 8) + 'px;font-weight:800;letter-spacing:.01em">CARDINAL</div><div style="font-size:' + Math.round(size / 4.2) + 'px;font-weight:800;line-height:1.1">' + b.name.split(' ')[0] + '</div><div style="font-size:' + Math.round(size / 7.5) + 'px;font-weight:700">' + b.name.split(' ')[1] + '</div></div><div style="font-size:10.5px;font-weight:800;color:' + col + ';margin-top:5px">' + b.status + (b.current ? ' (now)' : '') + '</div></div>';
   };
   var oB = window.buildAnnualCertFile;
   if (typeof oB === 'function') window.buildAnnualCertFile = buildAnnualCertFile = function (org) {
