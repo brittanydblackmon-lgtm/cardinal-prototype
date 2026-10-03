@@ -47676,6 +47676,187 @@ window.genRenderScenarios = function () {
 })();
 </script>
 
+<script>
+// 10/2 feedback: Data Pipeline rebuilt as a real upload page. Stats in one row, an upload
+// area (file, data source, model registry), and a filterable file table with bulk actions and
+// "create suppression" straight from a file. The Eden/Obsidian clean/issue diagram is gone.
+(function () {
+  var NOWD = new Date();
+  function ago(d) { var x = new Date(NOWD); x.setDate(x.getDate() - d); return x; }
+  function fmt(d) { return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }); }
+  var SEED = {
+    fin: [
+      ['Applicant_file_2026Q3.csv', 'Dataset', 'Credit Scoring v3.4, Underwriting v4.1', 'Nina Shah', 0, '412 MB', 'Live', 'race_ethnicity (protected; monitoring only), zip_code, income_12mo, dti, employment_months, decision, reason_codes'],
+      ['FIN-1203_rereview_cohort.csv', 'Cohort', 'Credit Scoring v3.5 (shadow)', 'Lisa Torres', 1, '1.1 MB', 'Live', 'applicant_id (hashed), original_decision, rereview_status, notice_sent'],
+      ['credit_scoring_v3.5.onnx', 'Model file', 'Loan Decisioning System', 'Grace Liu', 2, '86 MB', 'Shadow', 'Model weights + model card'],
+      ['Bureau_feed_monthly.parquet', 'Data source', 'Underwriting v4.1', 'Connector', 3, '2.4 GB', 'Live', 'tradelines, utilization, inquiries, delinquencies'],
+      ['Collections_call_transcripts_Sep.json', 'Dataset', 'Collections AI v1.3', 'Marco Ruiz', 4, '38 MB', 'Review', 'call_id, transcript, outcome, consent_flag'],
+      ['Adverse_action_reason_codes.csv', 'Reference', 'Credit Scoring v3.4', 'Riley Whitmore', 6, '84 KB', 'Live', 'reason_code, plain_language_text, reg_b_reference'],
+      ['Prequal_chatbot_answers_sample.json', 'Vendor AI output', 'Pre-qual Chatbot (vendor)', 'Hannah Brooks', 8, '6 MB', 'Review', 'question, answer, policy_match, escalated'],
+      ['Synthetic_fraud_personas_2000.csv', 'Synthetic data', 'Fraud Screening v2.7', 'Adam (AI)', 11, '3 MB', 'Live', 'persona_id, device_fingerprint, velocity_profile, label'],
+      ['Applicant_file_2026Q2.csv', 'Dataset', 'Credit Scoring v3.4', 'Nina Shah', 92, '398 MB', 'Archived', 'same schema as Q3']
+    ],
+    ad: [
+      ['Personnel_assignments_FY26.csv', 'Dataset', 'Personnel Assignment v2.4', 'David Park', 0, '96 MB', 'Live', 'service_id (hashed), base, specialty, qualification_scores, demographic_classification, assignment'],
+      ['AT-0847_remediation_cohort.csv', 'Cohort', 'Personnel Assignment v2.5 (shadow)', 'Anthony Broadnax', 1, '420 KB', 'Live', 'service_id (hashed), original_assignment, reevaluated'],
+      ['Fleet_sensor_telemetry_Sep.parquet', 'Data source', 'Maintenance Routing v1.2', 'Connector', 2, '5.8 GB', 'Live', 'airframe, part_number, cycles, vibration, temperature, base_climate'],
+      ['personnel_assignment_v2.5.pkl', 'Model file', 'Personnel Assignment v2.5', 'Ryan Bennett', 3, '41 MB', 'Shadow', 'Model weights + model card'],
+      ['Supplier_release_certificates.pdf', 'Document', 'Procurement & Vendor Risk', 'Amanda Clark', 5, '12 MB', 'Review', 'supplier, part_number, release_certificate_id, issue_date'],
+      ['Readiness_scores_Q3.csv', 'Dataset', 'Mission Readiness v1.1', 'Sarah Chen', 9, '22 MB', 'Live', 'unit, readiness_score, deployment_history, base_location']
+    ],
+    health: [
+      ['Claims_2026Q3.csv', 'Dataset', 'Claims Adjudication v1.9', 'Priyanka Rao', 0, '1.3 GB', 'Live', 'member_id (hashed), age_band, diagnosis_codes, procedure_codes, cost_estimate, decision'],
+      ['HS-2847_restoration_cohort.csv', 'Cohort', 'Claims Adjudication v2.0 (shadow)', 'Elena Ruiz', 1, '2.2 MB', 'Live', 'member_id (hashed), original_decision, rereview_status'],
+      ['claims_adjudication_v2.0.onnx', 'Model file', 'Claims Adjudication v2.0', 'Priyanka Rao', 3, '64 MB', 'Shadow', 'Model weights + model card'],
+      ['Prior_auth_criteria_licensed.pdf', 'Reference', 'Prior Auth v1.5', 'Dr. Aisha Patel', 6, '8 MB', 'Live', 'licensed clinical criteria'],
+      ['Patient_message_drafts_sample.json', 'Vendor AI output', 'Patient messaging assistant (vendor)', 'Olivia Grant', 7, '4 MB', 'Review', 'message, ai_disclaimer_present, human_path']
+    ],
+    fed: [
+      ['Returns_TY2025_sample.parquet', 'Dataset', 'IRS Tax Fraud Detection v3.1', 'Andre Lewis', 0, '2.9 GB', 'Live', 'return_id (hashed), filer_type, schedule_c_income, refund_amount, flag'],
+      ['FED-PDV-001_affected_filers.csv', 'Cohort', 'IRS Tax Fraud Detection v3.2 (shadow)', 'Patricia Alvarez', 1, '900 KB', 'Live', 'return_id (hashed), original_flag, rereview_status'],
+      ['taxpayer_help_assistant_evals.json', 'Vendor AI output', 'Taxpayer Help Assistant (vendor)', 'Dana Kim', 4, '7 MB', 'Review', 'question, answer, neutrality_check, accuracy_check'],
+      ['M-25-21_impact_assessment_draft.docx', 'Document', 'IRS Tax Fraud Detection v3.1', 'Dana Kim', 6, '1.4 MB', 'Review', 'impact assessment sections 1-7']
+    ]
+  };
+  var ROWS = {};
+  function rows(org) {
+    if (!ROWS[org]) ROWS[org] = (SEED[org] || []).map(function (r, i) { return { id: org + i, name: r[0], type: r[1], feeds: r[2], by: r[3], at: ago(r[4]), size: r[5], status: r[6], cols: r[7] }; });
+    return ROWS[org];
+  }
+  var F = { q: '', type: '', status: '', by: '', from: '', to: '', sel: {} };
+  function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;'); }
+  var STC = { Live: ['#15803D', 'rgba(21,128,61,.1)'], Shadow: ['#6D28D9', 'rgba(109,40,217,.1)'], Review: ['#B45309', 'rgba(234,179,8,.16)'], Archived: ['#64748b', 'rgba(100,116,139,.12)'], Processing: ['#1D4ED8', 'rgba(29,78,216,.1)'] };
+  function filtered(org) {
+    return rows(org).filter(function (r) {
+      if (F.q && (r.name + ' ' + r.feeds + ' ' + r.by).toLowerCase().indexOf(F.q.toLowerCase()) === -1) return false;
+      if (F.type && r.type !== F.type) return false;
+      if (F.status && r.status !== F.status) return false;
+      if (F.by && r.by !== F.by) return false;
+      if (F.from && r.at < new Date(F.from)) return false;
+      if (F.to && r.at > new Date(F.to + 'T23:59')) return false;
+      return true;
+    });
+  }
+  function opts(list, cur, all) { return '<option value="">' + all + '</option>' + list.map(function (x) { return '<option' + (x === cur ? ' selected' : '') + '>' + esc(x) + '</option>'; }).join(''); }
+  function uniq(a) { return a.filter(function (x, i) { return a.indexOf(x) === i; }); }
+  var SEL = 'font-size:11.5px;padding:7px 9px;border:1px solid rgba(26,24,21,.15);border-radius:8px;background:#fff;color:#1a1815';
+  window.plRender = function () {
+    var host = document.getElementById('pl-files'); if (!host) return;
+    var org = window.currentOrg || 'ad', all = rows(org), list = filtered(org);
+    var chips = [];
+    if (F.q) chips.push(['q', 'Search: ' + F.q]); if (F.type) chips.push(['type', 'Type: ' + F.type]); if (F.status) chips.push(['status', 'Status: ' + F.status]); if (F.by) chips.push(['by', 'Uploaded by: ' + F.by]); if (F.from || F.to) chips.push(['from', 'Dates: ' + (F.from || 'any') + ' to ' + (F.to || 'today')]);
+    var nSel = Object.keys(F.sel).filter(function (k) { return F.sel[k]; }).length;
+    host.innerHTML =
+      '<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end;margin-bottom:10px">' +
+      '<input id="pl-q" placeholder="Search files, models, people" value="' + esc(F.q) + '" style="' + SEL + ';flex:1;min-width:200px">' +
+      '<select id="pl-type" style="' + SEL + '">' + opts(uniq(all.map(function (r) { return r.type; })), F.type, 'All file types') + '</select>' +
+      '<select id="pl-status" style="' + SEL + '">' + opts(['Live', 'Shadow', 'Review', 'Processing', 'Archived'], F.status, 'All statuses') + '</select>' +
+      '<select id="pl-by" style="' + SEL + '">' + opts(uniq(all.map(function (r) { return r.by; })), F.by, 'Uploaded by anyone') + '</select>' +
+      '<label style="font-size:10.5px;color:#64748b">From<br><input id="pl-from" type="date" value="' + F.from + '" style="' + SEL + '"></label>' +
+      '<label style="font-size:10.5px;color:#64748b">To<br><input id="pl-to" type="date" value="' + F.to + '" style="' + SEL + '"></label></div>' +
+      (chips.length ? '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">' + chips.map(function (c) { return '<span style="font-size:10.5px;font-weight:700;padding:4px 10px;border-radius:999px;background:rgba(29,78,216,.08);color:#1e3a8a">' + esc(c[1]) + ' <a href="#" onclick="event.preventDefault();plClear(\'' + c[0] + '\')" style="color:#1e3a8a;text-decoration:none;margin-left:4px">×</a></span>'; }).join('') + '</div>' : '') +
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><div style="font-size:12px;font-weight:700;color:#1a1815">' + list.length + ' file' + (list.length === 1 ? '' : 's') + '</div>' +
+      (nSel ? '<div style="display:flex;gap:6px;align-items:center"><span style="font-size:11px;color:#64748b">' + nSel + ' selected</span><button type="button" class="btn-ghost" style="font-size:11px" onclick="plBulk(\'suppress\')">Create suppression</button><button type="button" class="btn-ghost" style="font-size:11px" onclick="plBulk(\'archive\')">Archive</button><button type="button" class="btn-ghost" style="font-size:11px;color:#B91C1C" onclick="plBulk(\'delete\')">Delete</button></div>' : '') + '</div>' +
+      '<div style="border:1px solid rgba(26,24,21,.10);border-radius:10px;overflow:hidden"><table style="width:100%;border-collapse:collapse;font-size:11.5px"><thead><tr style="background:#f3f0e9;text-align:left;color:#475569">' +
+      '<th style="padding:9px 10px;width:28px"><input type="checkbox" onclick="plAll(this.checked)"' + (nSel && nSel === list.length ? ' checked' : '') + '></th><th style="padding:9px 8px">Name</th><th style="padding:9px 8px">Type</th><th style="padding:9px 8px">Feeds</th><th style="padding:9px 8px">Uploaded by</th><th style="padding:9px 8px">Uploaded</th><th style="padding:9px 8px">Size</th><th style="padding:9px 8px">Status</th><th style="padding:9px 8px"></th></tr></thead><tbody>' +
+      list.map(function (r, i) {
+        var c = STC[r.status] || STC.Live;
+        return '<tr style="background:' + (i % 2 ? '#faf8f3' : '#fff') + ';border-top:1px solid rgba(26,24,21,.06)">' +
+          '<td style="padding:9px 10px"><input type="checkbox"' + (F.sel[r.id] ? ' checked' : '') + ' onclick="plSel(\'' + r.id + '\',this.checked)"></td>' +
+          '<td style="padding:9px 8px;font-weight:700;color:#1a1815;cursor:pointer" onclick="plView(\'' + r.id + '\')">' + esc(r.name) + '</td>' +
+          '<td style="padding:9px 8px;color:#475569">' + esc(r.type) + '</td><td style="padding:9px 8px;color:#475569">' + esc(r.feeds) + '</td>' +
+          '<td style="padding:9px 8px;color:#475569">' + esc(r.by) + '</td><td style="padding:9px 8px;color:#475569">' + fmt(r.at) + '</td><td style="padding:9px 8px;color:#475569">' + esc(r.size) + '</td>' +
+          '<td style="padding:9px 8px"><span style="font-size:10px;font-weight:800;padding:2px 8px;border-radius:999px;color:' + c[0] + ';background:' + c[1] + '">' + esc(r.status) + '</span></td>' +
+          '<td style="padding:9px 8px;white-space:nowrap"><select style="' + SEL + ';padding:4px 6px;font-size:10.5px" onchange="plAct(\'' + r.id + '\',this.value);this.value=\'\'"><option value="">Actions</option><option value="view">View details</option><option value="suppress">Create suppression</option><option value="archive">Archive</option><option value="delete">Delete</option></select></td></tr>';
+      }).join('') + (list.length ? '' : '<tr><td colspan="9" style="padding:18px;text-align:center;color:#64748b">No files match these filters.</td></tr>') + '</tbody></table></div><div id="pl-detail"></div>';
+    var bind = function (id, key, ev) { var e = document.getElementById(id); if (e) e.addEventListener(ev || 'change', function () { F[key] = e.value; plRender(); if (id === 'pl-q') { var n = document.getElementById('pl-q'); n.focus(); n.setSelectionRange(n.value.length, n.value.length); } }); };
+    bind('pl-q', 'q', 'input'); bind('pl-type', 'type'); bind('pl-status', 'status'); bind('pl-by', 'by'); bind('pl-from', 'from'); bind('pl-to', 'to');
+  };
+  window.plClear = function (k) { if (k === 'from') { F.from = ''; F.to = ''; } else F[k] = ''; plRender(); };
+  window.plSel = function (id, on) { F.sel[id] = on; plRender(); };
+  window.plAll = function (on) { filtered(window.currentOrg || 'ad').forEach(function (r) { F.sel[r.id] = on; }); plRender(); };
+  function find(id) { return rows(window.currentOrg || 'ad').filter(function (r) { return r.id === id; })[0]; }
+  function toast(m) { try { (window.cardinalShowToast || showToast)(m); } catch (e) {} }
+  function suppress(list) {
+    var org = window.currentOrg || 'ad', S = (window.CARDINAL_SUPPRESSIONS || {})[org]; if (!S || !list.length) return;
+    var p = window.getActivePersona ? getActivePersona() : null;
+    list.forEach(function (r) { S.rules.unshift({ who: r.name.replace(/\.(csv|json|parquet)$/i, '') + ' segment', n: 0, from: r.feeds, until: 'Removed by an owner', why: 'Created from the Data Pipeline so these people are kept out of ' + r.feeds + ' while the file is reviewed.', owner: p ? p.name : 'You', blocked: 0, on: true }); });
+    try { cardinalLogActivity('edit', 'Created suppression from ' + list.map(function (r) { return r.name; }).join(', '), null); } catch (e) {}
+    toast('Suppression created. See Cardinal Library > Suppressions.');
+  }
+  window.plAct = function (id, a) {
+    var r = find(id); if (!r || !a) return;
+    if (a === 'view') return plView(id);
+    if (a === 'suppress') return suppress([r]);
+    if (a === 'archive') { r.status = 'Archived'; toast(r.name + ' archived. It stays in the audit log.'); }
+    if (a === 'delete') { if (!confirm('Delete ' + r.name + ' from the pipeline? The record of its upload stays in Echo.')) return; ROWS[window.currentOrg || 'ad'] = rows(window.currentOrg || 'ad').filter(function (x) { return x !== r; }); }
+    try { cardinalLogActivity('edit', a + ': ' + r.name, null); } catch (e) {}
+    plRender();
+  };
+  window.plBulk = function (a) {
+    var list = rows(window.currentOrg || 'ad').filter(function (r) { return F.sel[r.id]; }); if (!list.length) return;
+    if (a === 'suppress') suppress(list);
+    if (a === 'archive') list.forEach(function (r) { r.status = 'Archived'; });
+    if (a === 'delete') { if (!confirm('Delete ' + list.length + ' files? Their upload records stay in Echo.')) return; ROWS[window.currentOrg || 'ad'] = rows(window.currentOrg || 'ad').filter(function (r) { return !F.sel[r.id]; }); }
+    F.sel = {}; plRender();
+  };
+  window.plView = function (id) {
+    var r = find(id), d = document.getElementById('pl-detail'); if (!r || !d) return;
+    var cols = r.cols.split(/,\s*/);
+    var pii = cols.filter(function (c) { return /race|ethnic|age|gender|zip|member_id|service_id|return_id|transcript|diagnos/i.test(c); });
+    d.innerHTML = '<div class="card" style="margin-top:12px;padding:14px 16px;border-left:3px solid #1e3a8a"><div style="display:flex;justify-content:space-between;gap:8px"><div style="font-size:13px;font-weight:800;color:#1a1815">' + esc(r.name) + '</div><a href="#" onclick="event.preventDefault();this.closest(\'.card\').remove()" style="font-size:11px;color:#64748b">Close</a></div>' +
+      '<div style="font-size:11px;color:#475569;margin:4px 0 10px">' + esc(r.type) + ' · uploaded by ' + esc(r.by) + ' on ' + fmt(r.at) + ' · feeds ' + esc(r.feeds) + '</div>' +
+      '<div style="font-size:10.5px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.04em">Columns</div><div style="display:flex;flex-wrap:wrap;gap:5px;margin:6px 0 10px">' + cols.map(function (c) { return '<span style="font-size:10.5px;padding:3px 8px;border-radius:6px;background:' + (pii.indexOf(c) > -1 ? 'rgba(220,38,38,.08);color:#B91C1C' : '#f3f0e9;color:#334155') + '">' + esc(c) + '</span>'; }).join('') + '</div>' +
+      '<div style="font-size:10.5px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.04em">What Cardinal checked</div><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:6px;margin-top:6px">' +
+      [['Sensitive fields', pii.length ? pii.length + ' flagged (shown in red)' : 'None found'], ['Proxy check', /zip|base|age_band|filer_type/i.test(r.cols) ? 'Possible proxy for a protected trait' : 'No proxy found'], ['Fraud patterns', 'Scanned'], ['Training rights', r.type === 'Vendor AI output' ? 'Vendor terms on file' : 'Owned'], ['Agent and security', 'No prompt-injection content'], ['Schema', 'Validated']].map(function (x) { return '<div style="padding:7px 9px;border-radius:8px;background:#fff;border:1px solid rgba(26,24,21,.08)"><div style="font-size:10px;color:#64748b">' + x[0] + '</div><div style="font-size:11.5px;font-weight:700;color:#1a1815">' + x[1] + '</div></div>'; }).join('') + '</div>' +
+      '<div style="margin-top:10px;display:flex;gap:6px"><button type="button" class="btn-ghost" style="font-size:11px" onclick="plAct(\'' + r.id + '\',\'suppress\')">Create suppression</button><button type="button" class="btn-ghost" style="font-size:11px" onclick="plAct(\'' + r.id + '\',\'archive\')">Archive</button></div></div>';
+    d.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  };
+  window.plUpload = function (files) {
+    var org = window.currentOrg || 'ad', p = window.getActivePersona ? getActivePersona() : null;
+    [].forEach.call(files || [], function (f) {
+      var ext = (f.name.split('.').pop() || '').toLowerCase();
+      var r = { id: org + 'u' + Date.now() + Math.random(), name: f.name, type: /onnx|pkl|pt|safetensors|h5/.test(ext) ? 'Model file' : /pdf|docx?/.test(ext) ? 'Document' : 'Dataset', feeds: 'Not linked yet', by: p ? p.name : 'You', at: new Date(), size: f.size > 1e6 ? (f.size / 1e6).toFixed(1) + ' MB' : Math.max(1, Math.round(f.size / 1e3)) + ' KB', status: 'Processing', cols: 'Reading columns...' };
+      rows(org).unshift(r);
+      setTimeout(function () { r.status = 'Review'; r.cols = 'columns detected on upload'; plRender(); }, 2500);
+      try { cardinalLogActivity('edit', 'Uploaded ' + f.name + ' to the Data Pipeline', null); } catch (e) {}
+    });
+    plRender();
+  };
+  function build() {
+    var scr = document.getElementById('screen-pipeline'); if (!scr || document.getElementById('pl-files')) { plRender(); return; }
+    var hdr = scr.querySelector('.section-hdr');
+    var top = document.createElement('div'); top.id = 'pl-top';
+    top.innerHTML =
+      '<div id="pl-stats" style="display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin:4px 0 14px"></div>' +
+      '<div class="card" style="padding:16px 18px;margin-bottom:14px"><div style="border:1.5px dashed rgba(26,24,21,.18);border-radius:12px;padding:16px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;background:#fbfaf7" ondragover="event.preventDefault()" ondrop="event.preventDefault();plUpload(event.dataTransfer.files)">' +
+      '<div><div style="font-size:13px;font-weight:700;color:#1a1815">Drag and drop files here</div><div style="font-size:11px;color:#64748b;margin-top:2px">Datasets (CSV, JSON, Parquet), cohorts, model files (ONNX, PyTorch, safetensors), model cards, documents</div></div>' +
+      '<div style="display:flex;gap:8px;flex-wrap:wrap"><label class="btn-primary" style="font-size:12px;cursor:pointer">Upload file<input type="file" multiple style="display:none" onchange="plUpload(this.files)"></label>' +
+      '<button type="button" class="btn-ghost" style="font-size:12px" onclick="pipelineSetMode && pipelineSetMode(\'cloud\');document.getElementById(\'pl-sources-anchor\').scrollIntoView({behavior:\'smooth\'})">Connect a data source</button>' +
+      '<button type="button" class="btn-ghost" style="font-size:12px" onclick="(window.cardinalShowToast||showToast)(\'Model registries: Hugging Face, SageMaker, Vertex AI, Databricks MLflow. Pick one to connect.\')">Connect a model registry</button></div></div>' +
+      '<div style="margin-top:14px" id="pl-files"></div></div>';
+    hdr.parentNode.insertBefore(top, hdr.nextSibling);
+    var wiz = document.getElementById('pipeline-wizard'); if (wiz) wiz.style.display = 'none';
+    [].forEach.call(scr.querySelectorAll('.section-hdr'), function (h) {
+      if (/Then, Cardinal Processes It/.test(h.textContent)) { h.style.display = 'none'; if (h.nextElementSibling) h.nextElementSibling.style.display = 'none'; }
+      if (/Connected Data Sources/.test(h.textContent)) h.id = 'pl-sources-anchor';
+    });
+    plRender();
+  }
+  function stats() {
+    var el = document.getElementById('pl-stats'); if (!el) return;
+    var org = window.currentOrg || 'ad', rs = rows(org);
+    var g = function (id) { var e = document.getElementById(id); return e ? e.textContent : '—'; };
+    var items = [['Files', rs.length, rs.filter(function (r) { return r.status === 'Review'; }).length + ' in review'], ['Records processed', g('pipeline-stat-records'), 'All sources'], ['Processing time', '2.3s', 'Per batch'], ['Issues found', (parseInt(g('pipeline-stat-bias'), 10) || 0) + (parseInt(g('pipeline-stat-fraud'), 10) || 0), 'Across all checks'], ['Models fed', g('pipeline-stat-library'), 'In Cardinal Library']];
+    el.innerHTML = items.map(function (x) { return '<div class="stat-card" style="padding:12px 14px"><div class="stat-label">' + x[0] + '</div><div class="stat-value" style="font-size:20px">' + x[1] + '</div><div style="font-size:10.5px;color:#64748b">' + x[2] + '</div></div>'; }).join('');
+  }
+  var oS = window.showScreen;
+  if (typeof oS === 'function') window.showScreen = showScreen = function (s) { var r = oS.apply(this, arguments); if (s === 'pipeline') setTimeout(function () { try { build(); stats(); } catch (e) { console.warn(e); } }, 80); return r; };
+  var oI = window.switchIndustry;
+  if (typeof oI === 'function') window.switchIndustry = switchIndustry = function () { var r = oI.apply(this, arguments); F.sel = {}; setTimeout(function () { try { if (document.getElementById('pl-files')) { plRender(); stats(); } } catch (e) {} }, 150); return r; };
+})();
+</script>
+
 </body>
 
 </html>
