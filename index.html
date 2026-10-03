@@ -7778,7 +7778,7 @@ Template Overview
     <div class="tsv2-comp-head-row">
       <div>
         <div class="tsv2-q-header" id="tsv2-comp-title">Why is your score <span class="num" id="tsv2-comp-num-inline">74</span>?</div>
-        <div class="tsv2-q-sub" id="tsv2-comp-sub">Composite score across 6 governance dimensions. Hover any dimension for methodology. Weights are set per industry and published. Companies can't change them, so every score compares fairly. Click any dimension to expand rich detail or use the core link to navigate.</div>
+        <div class="tsv2-q-sub" id="tsv2-comp-sub">Composite score across 7 parts, including AI agents and security. Hover any dimension for methodology. Weights are set per industry and published. Companies can't change them, so every score compares fairly. Click any dimension to expand rich detail or use the core link to navigate.</div>
       </div>
       <div style="display:flex;gap:8px;align-items:center;flex-shrink:0;flex-wrap:wrap">
         <button type="button" class="btn-ghost" id="tsv2-comp-method" onclick="tsMethodOpen()" style="font-size:10px;padding:6px 10px">How it's calculated →</button>
@@ -9462,6 +9462,7 @@ const INDUSTRY_DIMENSIONS = {
  {id:'monitoring', label:'Post-Deployment Monitoring', weight:0.05, rationale:'Hiring models run in batches, monitoring cadence differs'},
  ],
 };
+['ad','fin','health','fed'].forEach(function (o) { if (INDUSTRY_DIMENSIONS[o] && !INDUSTRY_DIMENSIONS[o].some(function (d) { return d.id === 'agents'; })) INDUSTRY_DIMENSIONS[o].push({ id: 'agents', label: 'AI Agents & Security', weight: 0.10, rationale: 'Agents with named owners and approvals, auto-stop rules, prompt-injection defenses, shadow and vendor AI, deepfake and impersonation attempts' }); });
 
 function getDimensions(org) {
  return INDUSTRY_DIMENSIONS[org] || INDUSTRY_DIMENSIONS.fin;
@@ -11219,7 +11220,7 @@ var CARDINAL_DATA = {
     org: 'Blackmoor Wealth Group', user: 'Riley Whitmore', initials: 'RW',
     trustScore: 0.81, trustScoreDisplay: '81', trustColor: '#22c55e',
     trustStatus: 'Within Compliance',
-    certStatus: 'Certified Cardinal: Fair Lending Check Passing',
+    certStatus: 'Cardinal Certified',
     sentinelKpis: { leadLabel: '5.4 days', prevented: '31', exposureQ: '$112K' },
     biasScore: 74, fraudScore: 88, complianceScore: 76,
     biasDetection: '74%', fraudPrevention: '88%', compliance: '76%',
@@ -11248,7 +11249,7 @@ var CARDINAL_DATA = {
     peerComparison: 'Industry avg: 79 · Your score: 81 · 64th percentile',
     peerPercentile: 64,
     industryMedian: 79,
-    certRenewal: 'Oct 12, 2026',
+    certRenewal: cardinalFormatDeadline('Oct 12, 2026'),
     certWarning: 'Credit Scoring v3.4 proxy discrimination active, certification at risk',
     /* === Trust Score deep-dive (May 1, 2026) === */
     history12mo: {
@@ -15174,7 +15175,7 @@ var CARDINAL_DATA_TS_EXT = {
     heatmapAxes: { rowLabel:'NYC ZIP Cluster', colLabel:'Race',
       rows:['10001','10031','10453','11212','11226','11368'],
       cols:['Black','Hispanic','White','Asian','Other'] },
-    quarterlySummary: __cdmText('Blackmoor Wealth Group Q1 2026 Trust Score is 81, above the 80 certification threshold and in the 64th percentile of finance peers. Cardinal certification is active. The current open issue is Credit Scoring v3.4, which Eden Core flagged in February for a 0.82 correlation between zip_code and race. 1,203 applicants in protected ZIP clusters were affected, with an approval disparity of 2.1x. Total exposure is $73M ($40M fair lending penalties, $33M CFPB action).\n\nCredit v3.5 is running in Atonement shadow deployment with the proxy variable removed; 687 of the 1,203 affected applicants have already been re-approved (57% of the remediation cohort complete). Full v3.5 rollout is on track for ','story') + __cdr('May 8','fin') + ', ahead of the CFPB fair lending exam deadline of May 14. Remaining work: complete remediation cohort outreach and finalize the CFPB exam packet via Compliance Exchange.\n\nCardinal certification renews October 12, 2026.',
+    quarterlySummary: __cdmText('Blackmoor Wealth Group Q1 2026 Trust Score is 81, above the 80 certification threshold and in the 64th percentile of finance peers. Cardinal certification is active. The current open issue is Credit Scoring v3.4, which Eden Core flagged in February for a 0.82 correlation between zip_code and race. 1,203 applicants in protected ZIP clusters were affected, with an approval disparity of 2.1x. Total exposure is $73M ($40M fair lending penalties, $33M CFPB action).\n\nCredit v3.5 is running in Atonement shadow deployment with the proxy variable removed; 687 of the 1,203 affected applicants have already been re-approved (57% of the remediation cohort complete). Full v3.5 rollout is on track for ','story') + __cdr('May 8','fin') + ', ahead of the CFPB fair lending exam deadline of May 14. Remaining work: complete remediation cohort outreach and finalize the CFPB exam packet via Compliance Exchange.\n\nCardinal certification renews ' + cardinalFormatDeadline('Oct 12, 2026') + '.',
     biasFactors: [
       {label:'zip_code proxy correlation 0.82: DI 0.79 approaching threshold', proxyTerm:'zip_code'},
       {label:'Black applicants in NYC ZIPs 10453, 11212: 2.1x denial'},
@@ -15373,8 +15374,8 @@ var CARDINAL_DATA_TS_V2 = {
     eveNarrativeByTimeframe: {
       daily:'As of today, September 25, Blackmoor Wealth’s Trust Score is 81. Credit Scoring v3.5 has been at full traffic since June with no new proxy flags in the last 24 hours. The open item is the CFPB fair lending exam packet, filed in August and awaiting final sign-off.',
       monthly:'September held steady after Credit Scoring v3.5 reached full traffic in June. No new bias flags in the last 30 days. The CFPB fair lending exam packet was filed in August, ahead of the fiscal-year deadline. Remediation cohort outreach from the Q1 v3.4 issue is fully closed, all 1,203 affected applicants have been re-approved or resolved.',
-      quarterly:__cdmText('Blackmoor Wealth Group Q3 2026 Trust Score is 81, above the 80 certification threshold and in the 64th percentile of finance peers. Cardinal certification is active. Credit Scoring v3.5 completed its shadow-to-full rollout in June with the zip_code proxy variable fully removed, and the CFPB fair lending exam packet was filed in August. Total exposure from the earlier Credit v3.4 issue has closed out, all 1,203 affected applicants were re-approved or otherwise resolved.\n\nRemaining work this quarter: hold monitoring coverage above 90% and complete the fair lending review.\n\nCardinal certification renews October 12, 2026.','now'),
-      ytd:'Year-to-date, Trust Score has moved from 76 (' + __cdm('May 2025','now') + ') to 81 (' + __cdm('September 2026','now') + '), net +5 points. The trajectory is steady improvement with three incidents caught and resolved early (' + __cdm('Aug 2025','story') + ' Credit v3.2 fair lending flag, ' + __cdm('Feb 2026','story') + ' Credit v3.4 catch, ' + __cdm('Aug 2026','story') + ' fair lending exam prep). Cardinal certification is active and renews October 12, 2026. Blackmoor Wealth has been on Cardinal for 16 months; bias-fraud connection caught 3 fraud rings in ' + __cdm('Q4 2025','story') + ' that traditional fraud-only systems missed.'
+      quarterly:__cdmText('Blackmoor Wealth Group Q3 2026 Trust Score is 81, above the 80 certification threshold and in the 64th percentile of finance peers. Cardinal certification is active. Credit Scoring v3.5 completed its shadow-to-full rollout in June with the zip_code proxy variable fully removed, and the CFPB fair lending exam packet was filed in August. Total exposure from the earlier Credit v3.4 issue has closed out, all 1,203 affected applicants were re-approved or otherwise resolved.\n\nRemaining work this quarter: hold monitoring coverage above 90% and complete the fair lending review.\n\nCardinal certification renews ' + cardinalFormatDeadline('Oct 12, 2026') + '.','now'),
+      ytd:'Year-to-date, Trust Score has moved from 76 (' + __cdm('May 2025','now') + ') to 81 (' + __cdm('September 2026','now') + '), net +5 points. The trajectory is steady improvement with three incidents caught and resolved early (' + __cdm('Aug 2025','story') + ' Credit v3.2 fair lending flag, ' + __cdm('Feb 2026','story') + ' Credit v3.4 catch, ' + __cdm('Aug 2026','story') + ' fair lending exam prep). Cardinal certification is active and renews ' + cardinalFormatDeadline('Oct 12, 2026') + '. Blackmoor Wealth has been on Cardinal for 16 months; bias-fraud connection caught 3 fraud rings in ' + __cdm('Q4 2025','story') + ' that traditional fraud-only systems missed.'
     }
   },
   health: {
@@ -15462,17 +15463,17 @@ window.CARDINAL_SCORE_MODEL = {
   threshold: 80,
   floor: 70,
   orgs: {
-    ad: { weights: { fairness: 25, fraud: 15, transparency: 10, privacy: 10, governance: 25, monitoring: 15 },
-      parts: { fairness: 67, fraud: 91, transparency: 78, privacy: 82, governance: 70, monitoring: 68 },
+    ad: { weights: { fairness: 22, fraud: 14, transparency: 9, privacy: 9, governance: 22, monitoring: 14, agents: 10 },
+      parts: { fairness: 67, fraud: 91, transparency: 78, privacy: 82, governance: 70, monitoring: 68, agents: 73 },
       why: 'Defense: Title VII and DoD AI Ethics put fairness and governance (attestations, change control) at the top.' },
-    fin: { weights: { fairness: 30, fraud: 25, transparency: 15, privacy: 10, governance: 10, monitoring: 10 },
-      parts: { fairness: 74, fraud: 88, transparency: 85, privacy: 85, governance: 76, monitoring: 79 },
+    fin: { weights: { fairness: 27, fraud: 22, transparency: 14, privacy: 9, governance: 9, monitoring: 9, agents: 10 },
+      parts: { fairness: 74, fraud: 88, transparency: 85, privacy: 85, governance: 76, monitoring: 79, agents: 81 },
       why: 'Lending: ECOA and fair-lending law make fairness count most, fraud close behind, and adverse-action notices drive transparency.' },
-    health: { weights: { fairness: 20, fraud: 15, transparency: 15, privacy: 30, governance: 10, monitoring: 10 },
-      parts: { fairness: 64, fraud: 84, transparency: 90, privacy: 89, governance: 88, monitoring: 86 },
+    health: { weights: { fairness: 18, fraud: 13, transparency: 13, privacy: 28, governance: 9, monitoring: 9, agents: 10 },
+      parts: { fairness: 64, fraud: 84, transparency: 90, privacy: 89, governance: 88, monitoring: 86, agents: 83 },
       why: 'Healthcare: HIPAA makes privacy count most; ACA Section 1557 keeps fairness close behind.' },
-    fed: { weights: { fairness: 25, fraud: 15, transparency: 25, privacy: 15, governance: 10, monitoring: 10 },
-      parts: { fairness: 54, fraud: 80, transparency: 74, privacy: 84, governance: 70, monitoring: 75 },
+    fed: { weights: { fairness: 22, fraud: 14, transparency: 22, privacy: 14, governance: 9, monitoring: 9, agents: 10 },
+      parts: { fairness: 54, fraud: 80, transparency: 74, privacy: 84, governance: 70, monitoring: 75, agents: 69 },
       why: 'Federal: the OMB M-25-21 and OMB guidance put fairness and public transparency on equal footing.' }
   }
 };
@@ -15483,7 +15484,7 @@ window.cardinalScoreFromParts = function (org, parts, weights) {
   Object.keys(weights).forEach(function (k) { tw += weights[k]; s += weights[k] * (parts[k] || 0); });
   return tw ? s / tw : 0;
 };
-var CARDINAL_PART_NAMES = { fairness: 'Fairness', fraud: 'Fraud Integrity', transparency: 'Transparency', privacy: 'Privacy', governance: 'Governance', monitoring: 'Monitoring' };
+var CARDINAL_PART_NAMES = { fairness: 'Fairness', fraud: 'Fraud Integrity', transparency: 'Transparency', privacy: 'Privacy', governance: 'Governance', monitoring: 'Monitoring', agents: 'AI Agents & Security' };
 // score: optional live score (drifts); defaults to the org's headline
 window.cardinalCertStatus = function (org, score) {
   var M = window.CARDINAL_SCORE_MODEL, m = cardinalScoreModel(org);
@@ -17398,7 +17399,8 @@ var DASH_TRUST_DIM_DEFS = {
   transparency: 'Whether the model’s decisions can be explained, to a regulator, an auditor, or the person the decision affected.',
   privacy: 'How personal data is collected, stored, and used by the model, consent, data minimization, and who can access it.',
   governance: 'Whether the model has been through the required approvals, security review, and change-control process before and during use, the paperwork and sign-off trail, separate from what data it touches.',
-  monitoring: 'Whether the model is actively watched for new problems after deployment, not just checked once before launch.'
+  monitoring: 'Whether the model is actively watched for new problems after deployment, not just checked once before launch.',
+  agents: 'Whether AI agents act only with an owner and the approvals they need, stop automatically when they break rules, resist prompt injection, and whether shadow AI, vendor AI, and deepfake attempts are caught.'
 };
 
 function dashRenderTrustDimensions(org) {
@@ -17883,6 +17885,7 @@ function dashApplyExecutiveCards(org) {
   }
 
   function cardCert() {
+    if (typeof window.cardinalCoverageCard === 'function') return window.cardinalCoverageCard(window.currentOrg || 'ad');   // 10/2: certification is shown in the Trust Score box below; this slot shows everything Cardinal watches
     // ── Urgency-first redesign per FIX 9 ─────────────────────────
     if (!cdata) {
       // legacy fallback
@@ -40513,7 +40516,9 @@ var TSV2_DIMENSIONS = [
   { key:'governance',   name:'Governance & Security',      sub:'Compliance Exchange', route:'compliance',
     tooltip:['Governance', 'Regulatory adherence, certification status, audit readiness. Driven by Compliance Exchange.'] },
   { key:'monitoring',   name:'Post-Deployment Monitoring', sub:'Sentinel',            route:'sentinel',
-    tooltip:['Monitoring', 'Drift detection, ongoing validation, incident response time. Driven by Sentinel.'] }
+    tooltip:['Monitoring', 'Drift detection, ongoing validation, incident response time. Driven by Sentinel.'] },
+  { key:'agents',       name:'AI Agents & Security',       sub:'Sentinel + AI Systems', route:'sentinel',
+    tooltip:['AI Agents & Security', 'Every agent has an owner and approvals; auto-stop rules; prompt-injection defenses; shadow AI and vendor AI checks; deepfake and impersonation attempts.'] }
 ];
 
 function tsv2DimDetailContentKey(dimKey) {
@@ -41784,7 +41789,7 @@ function tsv2WireTooltips() {
     T('tsv2-history-caption','Caption Strip',       'Plain-English summary of the selected timeframe.');
 
     // ── COMPOSITION (6-dim) ── tooltips bound dynamically inside tsv2BuildComposition
-    T('tsv2-comp-title',     'Composition',         'Why your Trust Score reflects weighted performance across six governance dimensions.');
+    T('tsv2-comp-title',     'Composition',         'Why your Trust Score reflects weighted performance across seven parts.');
     T('tsv2-comp-sub',       'Methodology',         'Six-dimension trust framework. Industry-tailored weights. Expand rows for rich detail; use core links to navigate.');
     T('tsv2-dim-footer',     'Dimension Weights',   'How much each governance dimension contributes to the composite Trust Score.');
 
@@ -47575,6 +47580,99 @@ window.genRenderScenarios = function () {
     if (!pend) pend = setTimeout(function () { var r = roots; roots = []; pend = null; r.forEach(function (x) { if (x && x.isConnected) scrub(x); }); }, 20);
   }).observe(document.body, { childList: true, subtree: true, characterData: true });
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function () { scrub(document.body); }); else scrub(document.body);
+})();
+</script>
+
+<script>
+// 10/2 feedback ("it's not just bias and fraud"): the Trust Score shows all seven parts, the
+// quarterly checkpoint covers all of them, and a coverage panel shows everything Cardinal
+// watches (models, systems, agents, vendor AI, shadow AI, unregistered AI, deepfakes,
+// auto-stop rules, agent security checks, LLM usage). The dashboard's Certification card
+// (a repeat of the Trust Score box) becomes the AI Coverage card.
+(function () {
+  var ROUTE = { fairness: 'eden', fraud: 'obsidian', transparency: 'trustloop', privacy: 'trustledger', governance: 'compliance', monitoring: 'sentinel', agents: 'sentinel' };
+  var ORDER = ['fairness', 'fraud', 'agents', 'transparency', 'privacy', 'governance', 'monitoring'];
+  var TOKENS = { fin: ['18.4M', '$2,310'], ad: ['6.1M', '$740'], health: ['22.9M', '$2,880'], fed: ['9.7M', '$1,160'] };
+  function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;'); }
+  function tier(v) { return v >= 80 ? ['#15803D', 'rgba(21,128,61,.10)'] : v >= 70 ? ['#B45309', 'rgba(234,179,8,.16)'] : ['#B91C1C', 'rgba(220,38,38,.10)']; }
+  function arr(x) { return Array.isArray(x) ? x : []; }
+  window.cardinalCoverage = function (org) {
+    var models = (window.CARDINAL_MODELS || []).filter(function (m) { return m.industry === org && m.status !== 'archive'; });
+    var sys = arr((window.CARDINAL_SYSTEMS || {})[org]);
+    var agents = {}; sys.forEach(function (x) { arr(x.agents).forEach(function (a) { agents[a] = 1; }); });
+    var vend = arr((typeof SENTINEL_VENDORS !== 'undefined' ? SENTINEL_VENDORS : {})[org]);
+    var shadow = arr((typeof SENTINEL_SHADOW_AI !== 'undefined' ? SENTINEL_SHADOW_AI : {})[org]);
+    var disc = arr((typeof SENTINEL_DISCOVERED !== 'undefined' ? SENTINEL_DISCOVERED : {})[org]);
+    var stop = arr((typeof SENTINEL_AUTOSTOP !== 'undefined' ? SENTINEL_AUTOSTOP : {})[org]);
+    var df = ((window.CARDINAL_DEEPFAKE || {})[org] || {}).rows || [];
+    var ow = arr(window.CARDINAL_OWASP_AGENTIC_COVERAGE);
+    return [
+      { n: models.length, l: 'Models', s: models.filter(function (m) { return m.trustScore < 80; }).length + ' below 80', go: 'cardinallibrary' },
+      { n: sys.length, l: 'AI systems', s: sys.filter(function (x) { return /risk/i.test(x.status || ''); }).length + ' at risk', go: 'cardinallibrary' },
+      { n: Object.keys(agents).length, l: 'AI agents', s: 'Each has an owner and approvals', go: 'sentinel' },
+      { n: vend.length, l: 'Vendor AI', s: vend.filter(function (v) { return v[5] === 'Gap'; }).length + ' with gaps', go: 'sentinel' },
+      { n: shadow.length, l: 'Shadow AI tools', s: shadow.filter(function (v) { return v[4] === 'fail'; }).length + ' need action', go: 'sentinel' },
+      { n: disc.length, l: 'Unregistered AI found', s: 'Found by discovery scan', go: 'sentinel' },
+      { n: df.length, l: 'Deepfake attempts', s: 'Voice and video impersonation', go: 'obsidian' },
+      { n: stop.length, l: 'Auto-stop rules', s: 'Halt a model or agent automatically', go: 'sentinel' },
+      { n: ow.filter(function (x) { return x[1] === 'covered'; }).length + '/' + (ow.length || 10), l: 'Agent security checks', s: 'Prompt injection, tool misuse, and more', go: 'sentinel' },
+      { n: (TOKENS[org] || TOKENS.fin)[0], l: 'LLM tokens this month', s: (TOKENS[org] || TOKENS.fin)[1] + ' spend, tracked per model', go: 'lucid' }
+    ];
+  };
+  function chips(org) {
+    var m = cardinalScoreModel(org);
+    return ORDER.map(function (k) {
+      var v = m.parts[k], t = tier(v);
+      return '<button type="button" onclick="showScreen(\'' + ROUTE[k] + '\', null)" style="display:inline-flex;align-items:center;gap:7px;padding:6px 11px;border-radius:999px;border:1px solid rgba(26,24,21,.10);background:' + t[1] + ';cursor:pointer;font-size:10.5px;color:#334155;letter-spacing:.02em">' +
+        '<span style="text-transform:uppercase">' + esc((window.CARDINAL_PART_NAMES || {})[k] || k) + '</span><b style="color:' + t[0] + ';font-size:12px">' + v + '</b></button>';
+    }).join('');
+  }
+  function paintTrust() {
+    var org = window.currentOrg || 'ad';
+    var pills = document.querySelector('#screen-trustscore .tsv2-subscores');
+    if (pills) {
+      pills.style.display = 'none';
+      var c = document.getElementById('tsv2-part-chips');
+      if (!c) { c = document.createElement('div'); c.id = 'tsv2-part-chips'; c.style.cssText = 'display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:14px;max-width:460px;margin-left:auto;margin-right:auto'; pills.parentNode.insertBefore(c, pills.nextSibling); }
+      c.innerHTML = chips(org);
+    }
+    var hero = document.querySelector('#screen-trustscore .tsv2-hero');
+    if (hero) {
+      var p = document.getElementById('ts-coverage');
+      if (!p) { p = document.createElement('div'); p.id = 'ts-coverage'; p.className = 'card'; p.style.cssText = 'margin:16px 0;padding:16px 18px'; hero.parentNode.insertBefore(p, hero.nextSibling); }
+      var name = (window.__CARDINAL_ORG_NAME_BY_INDUSTRY || {})[org] || '';
+      p.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap"><div style="font-size:14px;font-weight:700;color:var(--chrome2)">Everything Cardinal watches for ' + esc(name) + '</div><div style="font-size:10.5px;color:var(--muted2)">Your own models and the AI you buy from vendors, checked the same way</div></div>' +
+        '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin-top:12px">' + cardinalCoverage(org).map(function (x) {
+          return '<div onclick="showScreen(\'' + x.go + '\', null)" style="cursor:pointer;padding:10px 12px;border-radius:10px;background:#fff;border:1px solid rgba(26,24,21,.08);box-shadow:0 1px 3px rgba(26,24,21,.06)"><div style="font-size:20px;font-weight:800;color:var(--chrome2)">' + esc(x.n) + '</div><div style="font-size:11px;font-weight:700;color:#334155">' + esc(x.l) + '</div><div style="font-size:10px;color:var(--muted2);margin-top:2px">' + esc(x.s) + '</div></div>';
+        }).join('') + '</div>';
+    }
+  }
+  // Quarterly badge checkpoint: all seven parts, plus why the badge is active or suspended.
+  window.tsv2BuildCadenceCheckpoint = tsv2BuildCadenceCheckpoint = function () {
+    var wrap = document.getElementById('tsv2-cadence-wrap'); if (!wrap) return;
+    var org = window.currentOrg || 'ad', m = cardinalScoreModel(org), st = cardinalCertStatus(org, window.cardinalLiveScore ? cardinalLiveScore(org) : null);
+    var now = new Date(), next = [0, 3, 6, 9].map(function (mm) { return new Date(now.getFullYear() + (mm <= now.getMonth() ? 1 : 0), mm, 1); }).sort(function (a, b) { return a - b; })[0];
+    var q = 'Q' + (Math.floor(now.getMonth() / 3) + 1) + ' ' + now.getFullYear();
+    var why = st.certified ? 'Active: score is 80+ and every part is 70+.' : !st.overOk ? 'Suspended: the score is below 80.' : 'Suspended: ' + st.below.map(function (b) { return b.name + ' is ' + b.score; }).join(', ') + ' (every part must be 70+).';
+    wrap.innerHTML = '<div style="margin-top:10px;padding:10px 12px;border:1px solid rgba(148,163,184,.25);border-radius:10px;background:rgba(148,163,184,.05)">' +
+      '<div style="display:flex;justify-content:space-between;gap:8px;align-items:center"><div style="font-size:10.5px;font-weight:800;letter-spacing:.02em;color:#64748b;text-transform:uppercase">' + q + ' quarterly badge</div><span style="font-size:10px;font-weight:800;padding:2px 8px;border-radius:999px;color:' + (st.certified ? '#15803D' : '#B91C1C') + ';background:' + (st.certified ? 'rgba(21,128,61,.1)' : 'rgba(220,38,38,.1)') + '">' + (st.certified ? 'ACTIVE' : 'SUSPENDED') + '</span></div>' +
+      '<div style="font-size:11px;color:#475569;margin-top:4px">' + esc(why) + ' Next check: <strong>' + next.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) + '</strong>. Annual certification renews separately.</div>' +
+      '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(98px,1fr));gap:5px;margin-top:8px">' + ORDER.map(function (k) { var v = m.parts[k], t = tier(v); return '<div style="padding:5px 7px;border-radius:7px;background:' + t[1] + '"><div style="font-size:9px;color:#64748b">' + esc(CARDINAL_PART_NAMES[k]) + '</div><div style="font-size:12px;font-weight:800;color:' + t[0] + '">' + v + '</div></div>'; }).join('') + '</div></div>';
+  };
+  // Dashboard: AI Coverage card in place of the repeated Certification card.
+  window.cardinalCoverageCard = function (org) {
+    var c = cardinalCoverage(org), total = 0; c.slice(0, 6).forEach(function (x) { total += (+x.n || 0); });
+    var issues = [c[3].s, c[4].s].join(' · ');
+    return '<div class="dash-exec-card" role="button" tabindex="0" onclick="showScreen(\'trustscore\',null);setTimeout(function(){var e=document.getElementById(\'ts-coverage\');if(e)e.scrollIntoView({block:\'center\'});},300)">' +
+      '<div class="dash-exec-h"><span class="dash-exec-title">AI Coverage</span></div>' +
+      '<div class="dash-exec-num-md" style="color:var(--chrome2)">' + total + ' AI assets</div>' +
+      '<div style="font-size:12px;color:var(--text);margin-top:8px;line-height:1.6">' + c[0].n + ' models · ' + c[1].n + ' systems · ' + c[2].n + ' agents<br>' + c[3].n + ' vendor AI · ' + c[4].n + ' shadow AI tools · ' + c[5].n + ' unregistered</div>' +
+      '<div style="font-size:11.5px;color:#B45309;font-weight:600;margin-top:8px">' + esc(issues) + '</div></div>';
+  };
+  var oS = window.showScreen;
+  if (typeof oS === 'function') window.showScreen = showScreen = function (s) { var r = oS.apply(this, arguments); if (s === 'trustscore') setTimeout(function () { try { paintTrust(); tsv2BuildCadenceCheckpoint(); } catch (e) {} }, 60); return r; };
+  var oI = window.switchIndustry;
+  if (typeof oI === 'function') window.switchIndustry = switchIndustry = function () { var r = oI.apply(this, arguments); setTimeout(function () { try { if (document.getElementById('screen-trustscore').classList.contains('active')) { paintTrust(); tsv2BuildCadenceCheckpoint(); } } catch (e) {} }, 120); return r; };
 })();
 </script>
 
