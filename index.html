@@ -8734,9 +8734,9 @@ Template Overview
 <button onclick="toggleVoiceSettings()" style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);color:var(--red);border-radius:6px;padding:2px 10px;cursor:pointer;font-size:12px;font-family:var(--sans)">✕ Close</button>
 </div>
 <div class="vs-row"><span class="vs-label">Eve speaks out loud</span><div class="vs-toggle on" id="eve-tts-toggle" data-tts="eve" onclick="setEveTTS(!eveTTSEnabled)"></div></div>
-<div class="vs-row"><span class="vs-label">Eve's language</span><select class="vs-select" id="eve-voice-select" onchange="setVoiceAccent('eve',this.value)"><option value="en-US">English (US)</option><option value="en-GB">English (UK)</option><option value="es-ES">Spanish</option><option value="fr-FR">French</option><option value="it-IT">Italian</option><option value="ja-JP">Japanese</option></select></div>
+<div class="vs-row"><span class="vs-label">Eve's language</span><select class="vs-select" id="eve-voice-select" onchange="setVoiceAccent('eve',this.value)"><option value="en-US">English (US)</option><option value="en-GB">English (UK)</option><option value="es-ES">Spanish</option><option value="fr-FR">French</option><option value="it-IT">Italian</option><option value="ja-JP">Japanese</option><option value="zh-CN">Chinese (Mandarin)</option></select></div>
 <div class="vs-row"><span class="vs-label">Adam speaks out loud</span><div class="vs-toggle on" id="adam-tts-toggle" data-tts="adam" onclick="setAdamTTS(!adamTTSEnabled)"></div></div>
-<div class="vs-row"><span class="vs-label">Adam's language</span><select class="vs-select" id="adam-voice-select" onchange="setVoiceAccent('adam',this.value)"><option value="en-US">English (US)</option><option value="en-GB">English (UK)</option><option value="es-ES">Spanish</option><option value="fr-FR">French</option><option value="it-IT">Italian</option><option value="ja-JP">Japanese</option></select></div>
+<div class="vs-row"><span class="vs-label">Adam's language</span><select class="vs-select" id="adam-voice-select" onchange="setVoiceAccent('adam',this.value)"><option value="en-US">English (US)</option><option value="en-GB">English (UK)</option><option value="es-ES">Spanish</option><option value="fr-FR">French</option><option value="it-IT">Italian</option><option value="ja-JP">Japanese</option><option value="zh-CN">Chinese (Mandarin)</option></select></div>
 <div style="border-top:1px solid rgba(167, 167, 167,.08);margin:10px 0;padding-top:10px">
 <div class="vs-title" style="margin-bottom:8px">Check-In Schedule</div>
 <div class="vs-row"><span class="vs-label">Morning briefing</span><div class="vs-toggle on" id="morning-toggle" onclick="this.classList.toggle('on');toggleCheckin('morning',this.classList.contains('on'))"></div></div>
@@ -9003,7 +9003,7 @@ Eve & Adam
 <option value="es-ES">Spanish</option>
 <option value="fr-FR">French</option>
 <option value="it-IT">Italian</option>
-<option value="ja-JP">Japanese</option>
+<option value="ja-JP">Japanese</option><option value="zh-CN">Chinese (Mandarin)</option>
 </select>
 </div>
 <div style="padding:10px 0">
@@ -9014,7 +9014,7 @@ Eve & Adam
 <option value="es-ES">Spanish</option>
 <option value="fr-FR">French</option>
 <option value="it-IT">Italian</option>
-<option value="ja-JP">Japanese</option>
+<option value="ja-JP">Japanese</option><option value="zh-CN">Chinese (Mandarin)</option>
 </select>
 </div>
 </div>
@@ -21722,12 +21722,12 @@ function glossaryRunSearch(query) {
   if (badge) badge.textContent = results.length + ' term' + (results.length === 1 ? '' : 's');
   if (!host) return;
   host.innerHTML = results.length
-    ? results.map(function (t) {
-        return '<div style="padding:10px 0;border-bottom:1px solid rgba(180,190,220,.06)">' +
+    ? results.map(function (t, gi) {
+        return '<div style="padding:12px 14px;border-radius:8px;background:' + (gi % 2 ? '#f6f2ea' : '#ffffff') + '">' +
           '<div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px">' +
-          '<span style="font-size:12px;font-weight:600;color:var(--chrome2)">' + glossaryEsc(t.term) + '</span>' +
+          '<span style="font-size:13px;font-weight:700;color:var(--chrome2)">' + glossaryEsc(t.term) + '</span>' +
           '<span style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em">' + glossaryEsc(t.category) + '</span></div>' +
-          '<div style="font-size:11px;color:var(--muted2);line-height:1.5;margin-top:3px">' + glossaryEsc(t.def) + '</div></div>';
+          '<div style="font-size:12px;color:#475569;line-height:1.55;margin-top:4px">' + glossaryEsc(t.def) + '</div></div>';
       }).join('')
     : '<div style="font-size:11px;color:var(--muted)">No terms match "' + glossaryEsc(query) + '". Try a different word, or add it as one of your org’s own terms below.</div>';
 }
@@ -23477,6 +23477,25 @@ function setTheme(theme) {
  if(btn){btn.style.background='var(--accent)';btn.style.borderColor='var(--accent)';btn.style.color='#000';}
 }
 
+// 10/3 evening part 2 (Brittany: "I clicked dark mode and some of it doesn't look right"). Most screens use
+// fixed colors, so dark and dim invert the whole interface evenly and keep maps, images, and charts true;
+// light returns to Cardinal's cream palette.
+(function () {
+  var st = document.createElement('style');
+  st.textContent = 'html.cardinal-dark{filter:invert(.9) hue-rotate(180deg);background:#111}html.cardinal-dim{filter:invert(.82) hue-rotate(180deg);background:#222}' +
+    'html.cardinal-dark img,html.cardinal-dark video,html.cardinal-dark canvas,html.cardinal-dark #halo-map-container,html.cardinal-dark .sidebar,html.cardinal-dark #eve-bubble,html.cardinal-dark #eve-panel,' +
+    'html.cardinal-dim img,html.cardinal-dim video,html.cardinal-dim canvas,html.cardinal-dim #halo-map-container,html.cardinal-dim .sidebar,html.cardinal-dim #eve-bubble,html.cardinal-dim #eve-panel{filter:invert(1) hue-rotate(180deg)}';
+  document.head.appendChild(st);
+})();
+setTheme = window.setTheme = function (theme) {
+  var root = document.documentElement;
+  ['--bg', '--bg2', '--bg3', '--card', '--text', '--muted', '--muted2', '--border', '--border2', '--chrome', '--chrome2', '--accent'].forEach(function (k) { root.style.removeProperty(k); });
+  root.classList.remove('cardinal-dark', 'cardinal-dim');
+  if (theme === 'dark') root.classList.add('cardinal-dark'); else if (theme === 'dim') root.classList.add('cardinal-dim');
+  try { localStorage.setItem('cardinal-theme', theme); } catch (e) {}
+  document.querySelectorAll('[id^="theme-"]').forEach(function (b) { b.style.background = 'transparent'; b.style.borderColor = 'var(--border2)'; b.style.color = 'var(--muted)'; });
+  var btn = document.getElementById('theme-' + theme); if (btn) { btn.style.background = '#1a1815'; btn.style.borderColor = '#1a1815'; btn.style.color = '#fff'; }
+};
 function setEveAccent(lang) { eveVoiceLang = lang; }
 function setAdamAccent(lang) { adamVoiceLang = lang; }
 
@@ -46799,9 +46818,10 @@ window.genRenderScenarios = function () {
   function unlocked() {
     var p = window.getActivePersona ? getActivePersona() : null;
     if (p && /compliance|counsel|legal|privacy/i.test(p.role || '')) return true;   // compliance and legal roles open Echo directly
-    try { return sessionStorage.getItem(KEY) === '1'; } catch (e) { return !!window.__echoUnlocked; }
+    // 10/3 evening: an unlock lasts 15 minutes and only for the person who unlocked it.
+    try { var v = JSON.parse(sessionStorage.getItem(KEY) || 'null'); return !!(v && v.pid === (p && p.id) && Date.now() - v.t < 15 * 60000); } catch (e) { return !!window.__echoUnlocked; }
   }
-  function setUnlocked() { window.__echoUnlocked = true; try { sessionStorage.setItem(KEY, '1'); } catch (e) {} }
+  function setUnlocked() { window.__echoUnlocked = true; var p = window.getActivePersona ? getActivePersona() : null; try { sessionStorage.setItem(KEY, JSON.stringify({ t: Date.now(), pid: p && p.id })); } catch (e) {} }
   function overlay() {
     var scr = document.getElementById('screen-echo'); if (!scr) return;
     var ov = document.getElementById('echo-lock'); if (ov) ov.remove();
@@ -48530,7 +48550,7 @@ window.genRenderScenarios = function () {
   function fmt(d) { return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }); }
   function ext(n) { var m = /\.([a-z0-9]+)$/i.exec(n || ''); return m ? m[1].toUpperCase() : 'LINK'; }
   var EXT_C = { PDF: '#B91C1C', DOCX: '#1D4ED8', PNG: '#0F766E', JPG: '#0F766E', JPEG: '#0F766E', FIG: '#7C3AED', LINK: '#7C3AED', MP4: '#D99A06' };
-  function badge(n) { var e = ext(n); return '<span style="display:inline-block;min-width:34px;text-align:center;font-size:9px;font-weight:800;padding:2px 5px;border-radius:5px;color:#fff;background:' + (EXT_C[e] || '#475569') + ';margin-right:8px">' + e + '</span>'; }
+  function badge(n) { var e = ext(n), c = EXT_C[e] || '#475569'; return '<span style="display:inline-block;min-width:34px;text-align:center;font-size:9px;font-weight:800;padding:2px 5px;border-radius:5px;color:' + c + ';background:#fff;border:1px solid ' + c + '33;margin-right:8px">' + e + '</span>'; }
   // [name, type, ties, by, daysAgo, version, status, findings [sev, text, rule, quote], size, content]
   var SEED = {
     fin: [
@@ -48584,7 +48604,7 @@ window.genRenderScenarios = function () {
   };
   var ROWS = {};
   function rows(org) { if (!ROWS[org]) ROWS[org] = (SEED[org] || []).map(function (r, i) { return { id: org + 'd' + i, name: r[0], type: r[1], ties: r[2], by: r[3], at: ago(r[4]), ver: r[5], status: r[6], find: r[7], size: r[8], c: r[9] || {}, hist: Array.apply(null, Array(r[5])).map(function (_, k) { return 'v' + (k + 1) + ' · ' + fmt(ago(r[4] + (r[5] - 1 - k) * 3)); }) }; }); return ROWS[org]; }
-  var F = { q: '', type: '', fmt: '', status: '' };
+  var F = { q: '', type: '', fmt: '', status: '', by: '', from: '', to: '' }, SELD = {};
   var STC = { Approved: ['#15803D', 'rgba(21,128,61,.1)'], 'Changes needed': ['#B91C1C', 'rgba(220,38,38,.1)'], 'In review': ['#D99A06', 'rgba(234,179,8,.16)'] };
   function st(s) { var c = STC[s] || STC['In review']; return '<span style="font-size:10px;font-weight:800;padding:2px 8px;border-radius:999px;white-space:nowrap;color:' + c[0] + ';background:' + c[1] + '">' + esc(s) + '</span>'; }
   var SEL = 'font-size:11.5px;padding:7px 9px;border:1px solid rgba(26,24,21,.15);border-radius:8px;background:#fff;color:#1a1815';
@@ -48593,7 +48613,9 @@ window.genRenderScenarios = function () {
   window.docRender = function () {
     var host = document.getElementById('docs-core'); if (!host) return;
     var org = window.currentOrg || 'ad', all = rows(org);
-    var list = all.filter(function (r) { return (!F.q || (r.name + ' ' + r.ties + ' ' + r.by).toLowerCase().indexOf(F.q.toLowerCase()) > -1) && (!F.type || r.type === F.type) && (!F.fmt || ext(r.name) === F.fmt) && (!F.status || r.status === F.status); });
+    var ymd = function (d) { return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); };
+    var list = all.filter(function (r) { return (!F.q || (r.name + ' ' + r.ties + ' ' + r.by).toLowerCase().indexOf(F.q.toLowerCase()) > -1) && (!F.type || r.type === F.type) && (!F.fmt || ext(r.name) === F.fmt) && (!F.status || r.status === F.status) && (!F.by || r.by === F.by) && (!F.from || ymd(r.at) >= F.from) && (!F.to || ymd(r.at) <= F.to); });
+    var nSel = list.filter(function (r) { return SELD[r.id]; }).length;
     var uniq = function (f) { return all.map(f).filter(function (x, i, a) { return a.indexOf(x) === i; }); };
     var cnt = function (s) { return all.filter(function (r) { return r.status === s; }).length; };
     var high = all.filter(function (r) { return r.find.some(function (f) { return f[0] === 'High'; }); }).length;
@@ -48607,12 +48629,16 @@ window.genRenderScenarios = function () {
       '<div style="display:flex;gap:8px;flex-wrap:wrap;margin:0 0 10px"><input id="doc-q" placeholder="Search documents, models, people" value="' + esc(F.q) + '" style="' + SEL + ';flex:1;min-width:200px">' +
       '<select id="doc-type" style="' + SEL + '"><option value="">All types</option>' + uniq(function (r) { return r.type; }).map(function (t) { return '<option' + (t === F.type ? ' selected' : '') + '>' + esc(t) + '</option>'; }).join('') + '</select>' +
       '<select id="doc-fmt" style="' + SEL + '"><option value="">All file formats</option>' + uniq(function (r) { return ext(r.name); }).map(function (t) { return '<option' + (t === F.fmt ? ' selected' : '') + '>' + t + '</option>'; }).join('') + '</select>' +
-      '<select id="doc-status" style="' + SEL + '"><option value="">All review statuses</option>' + ['In review', 'Changes needed', 'Approved'].map(function (t) { return '<option' + (t === F.status ? ' selected' : '') + '>' + t + '</option>'; }).join('') + '</select></div>' +
-      '<div style="font-size:11px;color:#64748b;margin-bottom:6px">' + list.length + ' of ' + all.length + ' documents · click one to open it</div>' +
-      '<div style="border:1px solid rgba(26,24,21,.10);border-radius:10px;overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:11.5px;min-width:760px"><thead><tr style="background:#f3f0e9;text-align:left;color:#475569"><th style="padding:9px 10px">Name</th><th style="padding:9px 8px">Type</th><th style="padding:9px 8px">Ties to</th><th style="padding:9px 8px">Uploaded by</th><th style="padding:9px 8px">Uploaded</th><th style="padding:9px 8px">Version</th><th style="padding:9px 8px">Findings</th><th style="padding:9px 8px">Review</th></tr></thead><tbody>' +
-      list.map(function (r, i) { return '<tr style="background:' + (i % 2 ? '#faf8f3' : '#fff') + ';cursor:pointer" onmouseover="this.style.background=\'#f1ede4\'" onmouseout="this.style.background=\'' + (i % 2 ? '#faf8f3' : '#fff') + '\'" onclick="docOpen(\'' + r.id + '\')"><td style="padding:9px 10px;font-weight:700;color:#1a1815">' + badge(r.name) + esc(r.name) + '</td><td style="padding:9px 8px;color:#475569">' + esc(r.type) + '</td><td style="padding:9px 8px;color:#475569">' + esc(r.ties) + '</td><td style="padding:9px 8px;color:#475569">' + esc(r.by) + '</td><td style="padding:9px 8px;color:#475569">' + fmt(r.at) + '</td><td style="padding:9px 8px;color:#475569">v' + r.ver + '</td><td style="padding:9px 8px;color:' + (r.find.some(function (f) { return f[0] === 'High'; }) ? '#B91C1C' : '#475569') + ';font-weight:700">' + r.find.length + '</td><td style="padding:9px 8px">' + st(r.status) + '</td></tr>'; }).join('') + '</tbody></table></div>';
+      '<select id="doc-status" style="' + SEL + '"><option value="">All review statuses</option>' + ['In review', 'Changes needed', 'Approved'].map(function (t) { return '<option' + (t === F.status ? ' selected' : '') + '>' + t + '</option>'; }).join('') + '</select>' +
+      '<select id="doc-by" style="' + SEL + '"><option value="">Uploaded by anyone</option>' + uniq(function (r) { return r.by; }).map(function (t) { return '<option' + (t === F.by ? ' selected' : '') + '>' + esc(t) + '</option>'; }).join('') + '</select>' +
+      '<label style="font-size:10.5px;color:#64748b;display:flex;align-items:center;gap:4px">From <input type="date" id="doc-from" value="' + F.from + '" style="' + SEL + '"></label><label style="font-size:10.5px;color:#64748b;display:flex;align-items:center;gap:4px">To <input type="date" id="doc-to" value="' + F.to + '" style="' + SEL + '"></label></div>' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:11px;color:#64748b;margin-bottom:6px"><span>' + list.length + ' of ' + all.length + ' documents · click one to open it</span>' + (nSel ? '<span style="display:flex;gap:6px;align-items:center"><b style="color:#1a1815">' + nSel + ' selected</b><button type="button" class="btn-ghost" style="font-size:11px" onclick="docBulk(\'Approved\')">Approve</button><button type="button" class="btn-ghost" style="font-size:11px" onclick="docBulk(\'Changes needed\')">Request changes</button><button type="button" class="btn-ghost" style="font-size:11px" onclick="try{cardinalSharePicker(\'' + nSel + ' Codex documents\',\'\')}catch(e){}">Share</button></span>' : '') + '</div>' +
+      '<div style="border:1px solid rgba(26,24,21,.10);border-radius:10px;overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:11.5px;min-width:760px"><thead><tr style="background:#f3f0e9;text-align:left;color:#475569"><th style="padding:9px 10px;width:28px"><input type="checkbox" id="doc-all"' + (list.length && nSel === list.length ? ' checked' : '') + '></th><th style="padding:9px 10px">Name</th><th style="padding:9px 8px">Type</th><th style="padding:9px 8px">Ties to</th><th style="padding:9px 8px">Uploaded by</th><th style="padding:9px 8px">Uploaded</th><th style="padding:9px 8px">Version</th><th style="padding:9px 8px">Findings</th><th style="padding:9px 8px">Review</th></tr></thead><tbody>' +
+      list.map(function (r, i) { return '<tr style="background:' + (i % 2 ? '#faf8f3' : '#fff') + ';cursor:pointer" onmouseover="this.style.background=\'#f1ede4\'" onmouseout="this.style.background=\'' + (i % 2 ? '#faf8f3' : '#fff') + '\'" onclick="docOpen(\'' + r.id + '\')"><td style="padding:9px 10px" onclick="event.stopPropagation()"><input type="checkbox" data-doc="' + r.id + '"' + (SELD[r.id] ? ' checked' : '') + '></td><td style="padding:9px 10px;font-weight:700;color:#1a1815">' + badge(r.name) + esc(r.name) + '</td><td style="padding:9px 8px;color:#475569">' + esc(r.type) + '</td><td style="padding:9px 8px;color:#475569">' + esc(r.ties) + '</td><td style="padding:9px 8px;color:#475569">' + esc(r.by) + '</td><td style="padding:9px 8px;color:#475569">' + fmt(r.at) + '</td><td style="padding:9px 8px;color:#475569">v' + r.ver + '</td><td style="padding:9px 8px;color:' + (r.find.some(function (f) { return f[0] === 'High'; }) ? '#B91C1C' : '#475569') + ';font-weight:700">' + r.find.length + '</td><td style="padding:9px 8px">' + st(r.status) + '</td></tr>'; }).join('') + '</tbody></table></div>';
     var b = function (id, k, ev) { var e = document.getElementById(id); if (e) e.addEventListener(ev || 'change', function () { F[k] = e.value; docRender(); if (id === 'doc-q') { var n = document.getElementById('doc-q'); n.focus(); n.setSelectionRange(n.value.length, n.value.length); } }); };
-    b('doc-q', 'q', 'input'); b('doc-type', 'type'); b('doc-fmt', 'fmt'); b('doc-status', 'status');
+    b('doc-q', 'q', 'input'); b('doc-type', 'type'); b('doc-fmt', 'fmt'); b('doc-status', 'status'); b('doc-by', 'by'); b('doc-from', 'from'); b('doc-to', 'to');
+    [].forEach.call(host.querySelectorAll('input[data-doc]'), function (c) { c.onchange = function () { SELD[c.getAttribute('data-doc')] = c.checked; docRender(); }; });
+    var al = document.getElementById('doc-all'); if (al) al.onchange = function () { list.forEach(function (r) { SELD[r.id] = al.checked; }); docRender(); };
   };
   // ── Viewer ──
   function hl(text, r) {
@@ -48646,6 +48672,7 @@ window.genRenderScenarios = function () {
       '<div style="font-size:10.5px;font-weight:800;color:#64748b;text-transform:uppercase;margin:14px 0 6px">Versions (kept permanently)</div>' + r.hist.slice().reverse().map(function (h, i) { return '<div style="font-size:11px;color:' + (i ? '#64748b' : '#1a1815') + ';font-weight:' + (i ? 500 : 700) + ';padding:3px 0">' + esc(h) + (i ? '' : ' · current') + '</div>'; }).join('') +
       '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:16px"><button type="button" class="btn-primary" style="font-size:11px" onclick="docSet(\'' + r.id + '\',\'Approved\')">Approve</button><button type="button" class="btn-ghost" style="font-size:11px" onclick="docSet(\'' + r.id + '\',\'Changes needed\')">Request changes</button><label class="btn-ghost" style="font-size:11px;cursor:pointer">Upload new version<input type="file" style="display:none" onchange="docVersion(\'' + r.id + '\',this.files)"></label></div></div></div>';
   };
+  window.docBulk = function (st) { rows(window.currentOrg || 'ad').forEach(function (r) { if (SELD[r.id]) { r.status = st; SELD[r.id] = false; } }); docRender(); try { cardinalShowToast('Updated: ' + st); } catch (e) {} };
   window.docClose = function () { view = null; var o = document.getElementById('doc-viewer'); if (o) o.remove(); };
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && view) docClose(); });
   function find(id) { return rows(window.currentOrg || 'ad').filter(function (r) { return r.id === id; })[0]; }
@@ -48687,6 +48714,17 @@ window.genRenderScenarios = function () {
 #screen-eden table tbody tr:nth-child(odd), #screen-obsidian table tbody tr:nth-child(odd), #screen-genesis table tbody tr:nth-child(odd), #screen-atonement table tbody tr:nth-child(odd), #screen-sentinel table tbody tr:nth-child(odd), #screen-cardinallibrary table tbody tr:nth-child(odd), #screen-compliance table tbody tr:nth-child(odd), #screen-echo table tbody tr:nth-child(odd) { background: #ffffff; }
 #screen-eden table tbody tr:nth-child(even), #screen-obsidian table tbody tr:nth-child(even), #screen-genesis table tbody tr:nth-child(even), #screen-atonement table tbody tr:nth-child(even), #screen-sentinel table tbody tr:nth-child(even), #screen-cardinallibrary table tbody tr:nth-child(even), #screen-compliance table tbody tr:nth-child(even), #screen-echo table tbody tr:nth-child(even) { background: #f6f2ea; }
 /* 10/3: no unexplained count badges next to cores in the sidebar (Trust Score keeps its score, My Workspace keeps your items). */
+/* 10/3 evening part 2: Atonement's stats get their own full-width row under the title, like Eden's top box. */
+#screen-atonement > .section-hdr { flex-wrap: wrap !important; align-items: center !important; gap: 12px !important; }
+#screen-atonement > .section-hdr > .grid-4 { order: 3; flex: 1 1 100% !important; width: 100% !important; display: grid !important; grid-template-columns: repeat(4, minmax(0, 1fr)) !important; gap: 10px !important; }
+#screen-atonement > .section-hdr > div:first-child { flex: 1 1 auto; }
+/* 10/3 evening part 2: company name readable on the dark sidebar; collapsed sidebar stays tidy. */
+.sidebar .sidebar-org-label { color: rgba(244,241,234,.55) !important; }
+.sidebar .sidebar-org-name { color: #f4f1ea !important; font-weight: 700 !important; }
+body.sidebar-collapsed .trust-score-chip-badge-dot, body.sidebar-collapsed .sidebar-user-card > div[style*="position:absolute"] { display: none !important; }
+body.sidebar-collapsed .sidebar-user-card { justify-content: center !important; padding-left: 0 !important; padding-right: 0 !important; }
+body.sidebar-collapsed .sidebar-bottom { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+body.sidebar-collapsed .sidebar-bottom > div[style*="border-top"] { width: 60%; }
 /* 10/3 evening: only the Trust Score number stays in the sidebar (no Live, Public, or counts). */
 .nav-item .nav-badge:not(#nav-ts-badge) { display: none !important; }
 #nav-eden-badge, #nav-echo-badge, #nav-obs-badge, #nav-obsidian-badge, #nav-comp-badge, #nav-sentinel-badge, #nav-halo-badge, #nav-genesis-badge, #nav-atonement-badge { display: none !important; }
@@ -48758,13 +48796,13 @@ window.CARDINAL_PLACES = {
   function place(org, st) { return (P[org] || []).filter(function (p) { return p[0] === st; })[0]; }
   function worst(p) { if (!p) return null; var b = lvl(p[2]), f = fsev(p[3]); var r = ['low', 'medium', 'high', 'critical']; return r[Math.max(r.indexOf(b), r.indexOf(f === 'high' ? 'high' : f))]; }
   window.haloPlacePanel = function (st, nm) {
-    var org = window.currentOrg || 'ad', p = place(org, st), cont = document.getElementById('halo-map-container'); if (!cont) return;
+    var org = window.currentOrg || 'ad', p = place(org, st), cont = document.getElementById('halo-map-container'); if (!cont) return; window.__haloSt = st;
     var el = document.getElementById('halo-state-panel');
     if (!el) { el = document.createElement('div'); el.id = 'halo-state-panel'; el.onclick = function (e) { e.stopPropagation(); }; cont.appendChild(el); }
     el.style.cssText = 'position:absolute;right:12px;bottom:12px;z-index:9;width:320px;max-height:360px;overflow:auto;background:#fff;border:1px solid rgba(26,24,21,.12);box-shadow:0 8px 24px rgba(26,24,21,.14);border-radius:12px;padding:12px 14px;font-size:11.5px;color:#1a1815';
     var laws = (window.SL_LAWS || []).filter(function (l) { return l.st === st && l.ind && l.ind[org]; });
     var F = (window.SL_FOOTPRINT || {})[org] || { status: {} };
-    var row = function (t, v, s, c) { return '<div style="display:flex;justify-content:space-between;gap:8px;padding:7px 9px;border-radius:8px;background:' + COLS[s] + '14;margin-bottom:5px"><div><div style="font-size:10px;color:#64748b">' + t + '</div><div style="font-weight:700">' + v + '</div></div><button type="button" onclick="showScreen(\'' + c + '\',null)" style="align-self:center;font-size:10px;padding:4px 8px;border-radius:6px;border:1px solid rgba(26,24,21,.15);background:#fff;cursor:pointer">Open</button></div>'; };
+    var row = function (t, v, s, c) { return '<div style="display:flex;justify-content:space-between;gap:8px;padding:7px 9px;border-radius:8px;background:' + COLS[s] + '14;margin-bottom:5px"><div><div style="font-size:10px;color:#64748b">' + t + '</div><div style="font-weight:700">' + v + '</div></div><button type="button" onclick="haloOpenState(\'' + c + '\',\'' + (window.__haloSt || '') + '\')" style="align-self:center;font-size:10px;padding:4px 8px;border-radius:6px;border:1px solid rgba(26,24,21,.15);background:#fff;cursor:pointer">Open</button></div>'; };
     el.innerHTML = '<div style="display:flex;justify-content:space-between;gap:8px"><strong style="font-size:13px">' + esc(nm) + '</strong><span style="cursor:pointer;color:#94a3b8;font-size:14px" onclick="haloPlaceLegend()">&times;</span></div>' +
       (p ? '<div style="color:#64748b;margin:2px 0 8px">' + esc(p[1]) + (p[4] ? ' · Case ' + esc(p[4]) : '') + '</div><div style="margin-bottom:8px">' + esc(p[5]) + '</div>' +
         row('Eden (bias): gap vs baseline', p[2] + '%', p[2] <= -14 ? 'high' : p[2] <= -7 ? 'medium' : 'low', 'eden') + row('Obsidian (fraud): targeting rate', p[3] + '%', fsev(p[3]), 'obsidian')
@@ -48772,6 +48810,15 @@ window.CARDINAL_PLACES = {
       '<div style="font-size:10px;font-weight:800;color:#64748b;text-transform:uppercase;margin:8px 0 4px">' + (org === 'fed' ? 'State AI laws (do not bind federal agencies)' : 'State AI laws that apply') + '</div>' +
       (laws.length ? laws.map(function (l) { var s = (F.status[l.id] || [l.live ? 'track' : 'upcoming'])[0]; return '<div style="border-left:3px solid ' + (s === 'gap' ? '#DC2626' : s === 'upcoming' ? '#D97706' : '#15803D') + ';padding:3px 8px;margin-bottom:4px"><div style="font-weight:700">' + esc(l.name) + '</div><div style="color:#64748b">' + (s === 'gap' ? 'Gap today' : s === 'upcoming' ? 'Starts soon' : 'On track') + '</div></div>'; }).join('') : '<div style="color:#64748b">No AI-specific state law. Anti-discrimination and consumer protection law still apply.</div>') +
       (org !== 'fed' && laws.length ? '<div style="margin-top:6px;color:#1d4ed8;cursor:pointer;font-weight:700" onclick="showScreen(\'compliance\');setTimeout(function(){switchCompTab(\'states\');window.__slState=null;slPickState(\'' + st + '\')},200)">Open in State Law Navigator</div>' : '');
+  };
+  // Open lands on that state's cell in Eden's or Obsidian's geography grid and highlights it.
+  window.haloOpenState = function (screen, st) {
+    showScreen(screen, null);
+    var tries = 0, t = setInterval(function () {
+      var sec = document.getElementById(screen === 'eden' ? 'eden-sec-protected-impact' : 'obs-sec-fraud-concentrates');
+      var cell = sec && [].filter.call(sec.querySelectorAll('*'), function (x) { return x.children.length === 0 && x.textContent.trim() === st; })[0];
+      if (cell || ++tries > 20) { clearInterval(t); var tgt = cell ? (cell.closest('button,[onclick],div') || cell) : sec; if (tgt) { tgt.scrollIntoView({ behavior: 'smooth', block: 'center' }); if (cell) { tgt.style.outline = '3px solid #1d4ed8'; tgt.style.outlineOffset = '2px'; setTimeout(function () { tgt.style.outline = ''; }, 2500); } } }
+    }, 250);
   };
   window.haloPlaceLegend = function () {
     var org = window.currentOrg || 'ad', cont = document.getElementById('halo-map-container'); if (!cont) return;
@@ -48799,16 +48846,23 @@ window.CARDINAL_PLACES = {
   window.haloShowStates = function () {
     var us = d3.selectAll('#halo-world-svg g.map-group path').filter(function (d) { return d && d.properties && d.properties.name === 'United States of America'; });
     if (us.empty()) return false;
-    us.dispatch('click');
+    var already = !!document.getElementById('halo-states-layer');
+    if (!already) us.dispatch('click');
     setTimeout(function () {
       var tt = document.getElementById('halo-map-tooltip'); if (tt) tt.style.display = 'none';
       var svg = d3.select('#halo-world-svg'), g = svg.select('g.map-group'), cont = document.getElementById('halo-map-container'), w = cont.offsetWidth || 900, h = 540;
-      var proj = d3.geoNaturalEarth1().scale(w / 6.5).translate([w / 2, h / 2]), a = proj([-125, 49.5]), b = proj([-66, 24.5]);
-      var s = Math.min(7.5, 0.92 / Math.max((b[0] - a[0]) / w, (b[1] - a[1]) / h)), t = d3.zoomIdentity.translate(w / 2 - s * (a[0] + b[0]) / 2, h / 2 - s * (a[1] + b[1]) / 2).scale(s);
+      var proj = d3.geoNaturalEarth1().scale(w / 6.5).translate([w / 2, h / 2]), a = proj([-126, 50]), b = proj([-65, 23]);
+      var s = Math.min(6.5, 0.84 / Math.max((b[0] - a[0]) / w, (b[1] - a[1]) / h)), t = d3.zoomIdentity.translate(w / 2 - s * (a[0] + b[0]) / 2, h / 2 - s * (a[1] + b[1]) / 2).scale(s);
       var z = d3.zoom().scaleExtent([1, 8]).on('zoom', function (e) { g.attr('transform', e.transform); });
       svg.transition().duration(500).call(z.transform, t);
-    }, 700);
+    }, already ? 0 : 700);
     return true;
+  };
+  window.haloShowWorld = function () {
+    var svg = d3.select('#halo-world-svg'), g = svg.select('g.map-group'), cont = document.getElementById('halo-map-container'); if (!cont) return;
+    var w = cont.offsetWidth || 900, h = 540, proj = d3.geoNaturalEarth1().scale(w / 6.5).translate([w / 2, h / 2]), c = proj([-60, 30]), s = 1.7;
+    var z = d3.zoom().scaleExtent([1, 8]).on('zoom', function (e) { g.attr('transform', e.transform); });
+    svg.transition().duration(500).call(z.transform, d3.zoomIdentity.translate(w / 2 - s * c[0], h / 2 - s * c[1]).scale(s));
   };
   var oInit = window.initHaloMap;
   if (typeof oInit === 'function') window.initHaloMap = initHaloMap = function () {
@@ -48816,17 +48870,22 @@ window.CARDINAL_PLACES = {
     var t = setInterval(function () { if ((d3.selectAll('#halo-world-svg g.map-group path').size() > 50 && haloShowStates()) || ++n > 40) clearInterval(t); }, 250);
     return r;
   };
-  // Eve's forecast and "where the money is at risk" sit under the map, inside Halo Core, not above the header.
+  // 10/3 evening part 2 (Brittany: actions at the top like Trust Score; regulation signals higher; cost of inaction not at the bottom).
   setInterval(function () {
-    var f = document.getElementById('halo-forecast'), m = document.querySelector('#screen-halo .halo-map-shell');
-    if (f && m && m.nextElementSibling !== f) { m.parentNode.insertBefore(f, m.nextSibling); f.style.marginBottom = '18px'; }
-  }, 500);
+    var sh = document.querySelector('#screen-halo .halo-shell'); if (!sh || sh.offsetParent === null) return;
+    var pick = function (sel) { return sh.querySelector(':scope > ' + sel); };
+    var cost = [].filter.call(sh.children, function (x) { return /Cost of Inaction/i.test((x.innerText || '').slice(0, 80)); })[0];
+    var want = [pick('.halo-head'), pick('.halo-action-row'), pick('#halo-cardinal-hero'), document.getElementById('halo-forecast'), pick('.halo-map-shell'), pick('.halo-panels-grid'), cost, pick('#halo-attribution-cards'), pick('#halo-predictive-section')].filter(function (x) { return x && x.parentNode === sh; });
+    var cur = [].filter.call(sh.children, function (x) { return want.indexOf(x) > -1; });
+    if (want.some(function (x, i) { return cur[i] !== x; })) { var a = want[0]; for (var i = 1; i < want.length; i++) { sh.insertBefore(want[i], a.nextSibling); a = want[i]; } }
+    var act = pick('.halo-action-row'); if (act) { act.style.justifyContent = 'flex-end'; act.style.margin = '0 0 14px'; }
+  }, 900);
   // Map button to go back and forth between world and states.
   setInterval(function () {
     var cont = document.getElementById('halo-map-container'); if (!cont || document.getElementById('halo-state-btn')) return;
     var b = document.createElement('div'); b.id = 'halo-state-btn';
     b.style.cssText = 'position:absolute;top:12px;left:12px;z-index:9;display:flex;gap:4px;background:#fff;border:1px solid rgba(26,24,21,.12);border-radius:9px;padding:3px;box-shadow:0 2px 8px rgba(26,24,21,.08)';
-    b.innerHTML = '<button type="button" onclick="event.stopPropagation();haloShowStates()" style="font-size:11px;font-weight:700;padding:5px 10px;border:0;border-radius:7px;background:#1a1815;color:#fff;cursor:pointer">By state</button><button type="button" onclick="event.stopPropagation();var r=document.getElementById(\'halo-zoom-reset\');if(r)r.click()" style="font-size:11px;font-weight:700;padding:5px 10px;border:0;border-radius:7px;background:transparent;color:#1a1815;cursor:pointer">World</button>';
+    b.innerHTML = '<button type="button" onclick="event.stopPropagation();haloShowStates()" style="font-size:11px;font-weight:700;padding:5px 10px;border:0;border-radius:7px;background:#1a1815;color:#fff;cursor:pointer">By state</button><button type="button" onclick="event.stopPropagation();haloShowWorld()" style="font-size:11px;font-weight:700;padding:5px 10px;border:0;border-radius:7px;background:transparent;color:#1a1815;cursor:pointer">World</button>';
     cont.appendChild(b);
   }, 800);
 })();
@@ -48971,7 +49030,18 @@ window.CARDINAL_PLACES = {
     }
     return out;
   };
+  // 10/3 evening part 2 (Brittany: "make them squares next to each other"): small size = square tile.
+  window.cardinalBadgeSquare = function (b) {
+    var col = b.count >= 5 ? '#15803D' : b.count >= 3 ? '#a16207' : '#64748b';
+    var dots = b.parts.map(function (p) { return '<span title="' + p.name + ' ' + p.v + (p.earned ? ': badge earned' : ': needs 80') + '" style="width:9px;height:9px;border-radius:3px;display:inline-block;background:' + (p.earned ? '#16a34a' : 'transparent') + ';border:1.5px solid ' + (p.earned ? '#16a34a' : '#cbd5e1') + '"></span>'; }).join('');
+    return '<div style="flex:1 1 0;aspect-ratio:1/1;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;border:1px solid ' + (b.current ? 'rgba(29,78,216,.35)' : 'rgba(26,24,21,.12)') + ';border-radius:12px;box-shadow:0 1px 2px rgba(26,24,21,.05);padding:6px">' +
+      '<div style="font-size:10.5px;font-weight:700;color:#1a1815">' + b.name.split(' ')[0] + ' <span style="font-weight:500;color:#64748b">' + b.name.split(' ')[1] + '</span></div>' +
+      '<div style="font-size:20px;font-weight:800;color:' + col + ';line-height:1">' + b.count + '<span style="font-size:10px;color:#94a3b8;font-weight:600">/7</span></div>' +
+      '<div style="display:flex;flex-wrap:wrap;justify-content:center;gap:3px;max-width:52px">' + dots + '</div>' +
+      (b.current ? '<div style="font-size:8.5px;color:#1d4ed8;font-weight:700">IN PROGRESS</div>' : '') + '</div>';
+  };
   window.cardinalBadgeHtml = function (b, size) {
+    if ((size || 44) < 60) return cardinalBadgeSquare(b);
     var big = (size || 44) >= 60;
     var icon = function (p) { var c = p.earned ? '#15803D' : '#94a3b8'; return '<span title="' + p.name + ' ' + p.v + (p.earned ? ': badge earned' : ': needs 80 for the badge') + '" style="display:inline-flex;flex-direction:column;align-items:center;gap:2px;width:' + (big ? 54 : 30) + 'px"><svg width="' + (big ? 20 : 15) + '" height="' + (big ? 20 : 15) + '" viewBox="0 0 24 24" fill="' + (p.earned ? c : 'none') + '" stroke="' + c + '" stroke-width="1.8" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>' + (p.earned ? '<path d="M8.5 12l2.5 2.5 4.5-5" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round"/>' : '') + '</svg>' + (big ? '<span style="font-size:9px;color:' + (p.earned ? '#15803D' : '#94a3b8') + ';font-weight:600;text-align:center;line-height:1.1">' + p.name + '</span>' : '') + '</span>'; };
     return '<div style="flex:1 1 ' + (big ? '100%' : '0') + ';min-width:' + (big ? 0 : 140) + 'px;padding:' + (big ? '12px 14px' : '9px 10px') + ';border:1px solid ' + (b.current ? 'rgba(29,78,216,.30)' : 'rgba(26,24,21,.12)') + ';border-radius:12px;background:transparent;box-shadow:0 1px 2px rgba(26,24,21,.05)">' +
@@ -48998,7 +49068,7 @@ window.CARDINAL_PLACES = {
       check(!st.below.length, 'Every part ' + M.floor + ' or higher', st.below.length ? st.below.map(function (b) { return b.name + ' is ' + b.score; }).join(', ') + '.' : 'All seven parts clear the floor.') +
       check(true, 'Quarterly badges', badges.reduce(function (t, q) { return t + q.count; }, 0) + ' of 28 part badges earned across the last four quarters. Badges show strengths; certification is the 80+ score with every part 70+.') +
       check(true, 'Every decision, fix, and sign-off sealed in Echo', 'Re-checked when this file was built: no record changed.') + '</section>' +
-      '<section style="margin-bottom:22px"><div style="font-size:11px;font-weight:700;color:var(--chrome2);margin-bottom:8px">Badges by quarter (one per part at 80+)</div><div style="display:flex;flex-direction:column;gap:8px">' + badges.map(function (b) { return cardinalBadgeHtml(b, 70); }).join('') + '</div></section>' +
+      '<section style="margin-bottom:22px"><div style="font-size:11px;font-weight:700;color:var(--chrome2);margin-bottom:8px">Badges by quarter (one per part at 80+)</div><div style="display:flex;gap:10px;max-width:520px">' + badges.map(function (b) { return cardinalBadgeSquare(b); }).join('') + '</div></section>' +
       '<section style="margin-bottom:22px"><div style="font-size:11px;font-weight:700;color:var(--chrome2);margin-bottom:6px">All seven parts</div><table style="width:100%;border-collapse:collapse;font-size:11.5px"><thead><tr style="text-align:left;color:#64748b;font-size:10px"><th style="padding:6px">Part</th><th style="padding:6px">What it checks</th><th style="padding:6px;text-align:center">Score</th><th style="padding:6px;text-align:center">Weight</th><th style="padding:6px;text-align:center">70 floor</th></tr></thead><tbody>' +
       Object.keys(m.parts).map(function (k) { var v = m.parts[k], ok = v >= M.floor; return '<tr style="border-top:1px solid rgba(26,24,21,.06)"><td style="padding:6px;font-weight:700">' + esc((window.CARDINAL_PART_NAMES || {})[k] || k) + '</td><td style="padding:6px;color:#64748b">' + esc(WHAT[k] || '') + '</td><td style="padding:6px;text-align:center;font-weight:800;color:' + (v >= 80 ? '#15803D' : ok ? '#B45309' : '#B91C1C') + '">' + v + '</td><td style="padding:6px;text-align:center;color:#64748b">' + ((m.weights || {})[k] != null ? m.weights[k] + '%' : '') + '</td><td style="padding:6px;text-align:center">' + (ok ? '<span style="color:#15803D;font-weight:800">Pass</span>' : '<span style="color:#B91C1C;font-weight:800">Below</span>') + '</td></tr>'; }).join('') + '</tbody></table></section>' +
       (cov.length ? '<section style="margin-bottom:22px"><div style="font-size:11px;font-weight:700;color:var(--chrome2);margin-bottom:6px">What Cardinal covered this year</div><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px">' + cov.slice(0, 8).map(function (x) { return '<div style="padding:9px 11px;border-radius:10px;background:var(--card,#fff);border:1px solid rgba(26,24,21,.08)"><div style="font-size:18px;font-weight:800">' + esc(x.n) + '</div><div style="font-size:10.5px;font-weight:700;color:#334155">' + esc(x.l) + '</div></div>'; }).join('') + '<div style="padding:9px 11px;border-radius:10px;background:var(--card,#fff);border:1px solid rgba(26,24,21,.08)"><div style="font-size:18px;font-weight:800">' + cases + '</div><div style="font-size:10.5px;font-weight:700;color:#334155">Open cases</div></div></div></section>' : '');
@@ -49017,7 +49087,7 @@ window.CARDINAL_PLACES = {
     if (!s) { s = document.createElement('div'); s.id = 'ts-badge-strip'; }
     s.setAttribute('data-k', key);
     s.style.cssText = 'margin-top:12px;padding:0;background:transparent;border:0';
-    s.innerHTML = '<div style="font-size:10.5px;font-weight:800;color:#64748b;text-transform:uppercase;margin-bottom:8px">Badges by quarter <span style="text-transform:none;font-weight:500">(one per part at 80+)</span></div><div style="display:flex;flex-direction:column;gap:8px">' + cardinalQuarterBadges(org).map(function (b) { return cardinalBadgeHtml(b, 44); }).join('') + '</div>';
+    s.innerHTML = '<div style="font-size:10.5px;font-weight:800;color:#64748b;text-transform:uppercase;margin-bottom:8px">Badges by quarter <span style="text-transform:none;font-weight:500">(one per part at 80+)</span></div><div style="display:flex;gap:8px">' + cardinalQuarterBadges(org).map(function (b) { return cardinalBadgeHtml(b, 44); }).join('') + '</div>';
     w.parentNode.insertBefore(s, w.nextSibling);
   }, 900);
 })();
@@ -49097,7 +49167,7 @@ window.CARDINAL_PLACES = {
     [/DoD penalties: \$28M \+ Litigation risk: \$39M/g, 'Contract penalties: $28M + Grounding, recall, and liability: $39M'], [/DoD penalties/g, 'Contract penalties'], [/Litigation risk/g, 'Grounding and liability'], [/DoD audit overdue/g, 'safety review overdue'],
     [/synthetic credential ring members/g, 'counterfeit parts'], [/synthetic credential ring/g, 'counterfeit parts ring'], [/23 synthetic credential applications detected sharing device fingerprints/g, '23 parts shipments found sharing one forged certificate signature'], [/synthetic credential applications/g, 'parts shipments with forged release certificates'], [/synthetic credentials blocked/g, 'counterfeit parts stopped'], [/synthetic credentials/g, 'forged release certificates'], [/synthetic credential/g, 'forged certificate'], [/credential synthesis ring/g, 'counterfeit parts ring'], [/credential verification skipped on denial pattern/g, 'inspection skipped for parts with clean paperwork'], [/fraudulent credentials/g, 'counterfeit parts'], [/device-fingerprint spoofing cluster at Pendleton/g, 'forged-certificate cluster from one broker'], [/sharing device fingerprints/g, 'sharing one forged signature'], [/device fingerprints/g, 'forged signatures'], [/Identity spoofing, synthetic credentials, national security priority/g, 'Counterfeit parts and forged paperwork, flight safety priority'], [/Identity recycling: 6 cases at Bragg maintenance crew/g, 'Recycled serial numbers: 6 parts'], [/Synthetic Identity Targeting by Pay Grade/g, 'Counterfeit Parts by Supplier Type'], [/Synthetic identity targeting rate/g, 'Share of suspect parts'], [/synthetic identity rings? probe thinner verification paths that overlap bias blind spots/g, 'counterfeiters sell through brokers, where paperwork is checked least'],
     [/Junior enlisted \(E1-E4\) show 18% lower early-catch rates than senior officers/g, 'Parts bought from brokers get 18% fewer early catches than parts from original manufacturers'], [/Junior enlisted \(E1-E4\) are most targeted/g, 'Broker-sourced parts are the most suspect'], [/E1[-–]E4 Junior Enlisted/g, 'Brokers'], [/E5[-–]E9 NCO/g, 'Distributors'], [/O1[-–]O3 Junior Officer/g, 'Repair stations'], [/O4\+ Senior Officer/g, 'Manufacturers'], [/E1[-–]E4 junior enlisted/g, 'Broker-sourced parts'], [/[Jj]unior enlisted/g, 'broker-sourced parts'], [/\bE1[-–]E4\b/g, 'Brokers'], [/\bE5[-–]E9\b/g, 'Distributors'], [/\bO1[-–]O3\b/g, 'Repair stations'],
-    [/\bDI recalculated/g, 'catch ratio recalculated'], [/Personnel_assignments_FY26\.csv/g, 'Maintenance_history_FY26.csv'], [/personnel_assignment_v2\.5\.pkl/g, 'fleet_health_v2.5.pkl'], [/personnel_assignment_v2\.4\.pkl/g, 'fleet_health_v2.4.pkl'], [/Readiness_scores_Q3\.csv/g, 'Readiness_forecasts_Q3.csv'], [/disparate-impact flags/g, 'early-catch flags'], [/\bE?Odds (0\.\d+)/g, 'error gap $1'], [/(\d+) people affected/g, '$1 aircraft affected'], [/Pre-caught bias/g, 'Caught the wear gap'], [/caught this bias/g, 'caught this wear gap'],
+    [/\bDI recalculated/g, 'catch ratio recalculated'], [/retrain on qualifications/g, 'retrain with sand and salt exposure'], [/on qualifications/g, 'with exposure data'], [/Personnel_assignments_FY26\.csv/g, 'Maintenance_history_FY26.csv'], [/personnel_assignment_v2\.5\.pkl/g, 'fleet_health_v2.5.pkl'], [/personnel_assignment_v2\.4\.pkl/g, 'fleet_health_v2.4.pkl'], [/Readiness_scores_Q3\.csv/g, 'Readiness_forecasts_Q3.csv'], [/disparate-impact flags/g, 'early-catch flags'], [/\bE?Odds (0\.\d+)/g, 'error gap $1'], [/(\d+) people affected/g, '$1 aircraft affected'], [/Pre-caught bias/g, 'Caught the wear gap'], [/caught this bias/g, 'caught this wear gap'],
     [/Fort Cavazos/g, 'Fort Bliss'], [/Great Plains rotation cohort/g, 'desert helicopter fleet'],
     [/vs white baseline/gi, 'vs mild-climate bases'], [/[Vv]s youngest cohort/g, 'vs newest aircraft'],
     [/\bWhite\b(?! &(amp;)? Case| House)/g, 'Mild-climate bases'], [/Black\/AA/g, 'Coastal bases'], [/\bAsian\b/g, 'Cold-climate bases'], [/Non-binary \/ other/g, 'Drones (UAS)'], [/\bMen(?= [\d.]+%)/g, 'Fixed-wing'], [/\bWomen(?= [\d.]+%)/g, 'Rotary-wing'],
@@ -49134,7 +49204,7 @@ window.CARDINAL_PLACES = {
   var touched = new Set();
   function scrub(root) {
     if ((window.currentOrg || 'ad') !== 'ad' || !root) return;
-    var w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: function (n) { var p = n.parentNode && n.parentNode.nodeName; return (p === 'SCRIPT' || p === 'STYLE' || p === 'TEXTAREA' || (p === 'OPTION' && !n.parentNode.hasAttribute('value')) || (n.parentNode.closest && n.parentNode.closest('#halo-in-the-wild, .cardinal-real-news'))) ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT; } }), t, list = [];
+    var w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: function (n) { var p = n.parentNode && n.parentNode.nodeName; return (p === 'SCRIPT' || p === 'STYLE' || p === 'TEXTAREA' || (p === 'OPTION' && !n.parentNode.hasAttribute('value') && !n.parentNode.closest('#gn-modal, #gnws, #atws')) || (n.parentNode.closest && n.parentNode.closest('#halo-in-the-wild, .cardinal-real-news'))) ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT; } }), t, list = [];
     while ((t = w.nextNode())) { var v = t.nodeValue, f = fix(v); if (f !== v) list.push([t, f]); }
     list.forEach(function (x) { var n = x[0]; if (n.__adOrig == null) n.__adOrig = n.nodeValue; n.nodeValue = x[1]; touched.add(n); });
   }
@@ -49329,7 +49399,7 @@ window.CARDINAL_PLACES = {
     [].forEach.call(g.querySelectorAll('div'), function (d) {
       if (d.__atc || d.children.length > 6 || !/^Test AT-\d+/.test(d.innerText.trim())) return;
       d.__atc = 1; d.style.cursor = 'pointer'; d.title = 'Open this test';
-      d.addEventListener('click', function () { try { gnTab('adam'); } catch (e) {} var h = [].filter.call(g.querySelectorAll('*'), function (x) { return x.children.length === 0 && /Scenario Tests/.test(x.textContent); })[0]; if (h) h.scrollIntoView({ behavior: 'smooth', block: 'start' }); });
+      d.addEventListener('click', function () { try { if (window.coreTabGo) coreTabGo('genesis', 0); gnTab('adam'); } catch (e) {} var h = [].filter.call(g.querySelectorAll('*'), function (x) { return x.children.length === 0 && /Scenario Tests/.test(x.textContent); })[0]; if (h) h.scrollIntoView({ behavior: 'smooth', block: 'start' }); });
     });
   }, 1000);
 })();
@@ -49683,6 +49753,145 @@ window.CARDINAL_PLACES = {
     var sc = document.getElementById('lib-tab-content-systems');
     if (sc && !document.getElementById('lib-tab-content-vendors')) { var d = document.createElement('div'); d.id = 'lib-tab-content-vendors'; d.style.display = 'none'; sc.parentNode.insertBefore(d, sc.nextSibling); }
   }, 1000);
+})();
+</script>
+
+<script>
+// 10/3 evening part 2 (Brittany: settings). Only admins, compliance, and legal can change people's access or
+// Echo passcode rules; Trust Ledger sharing is managed by compliance and legal; each person picks a language.
+(function () {
+  function me() { return window.getActivePersona ? getActivePersona() : null; }
+  function canAdmin() { var p = me(); return !p || /chief|cto|counsel|legal|compliance|privacy|primary contact/i.test(p.role || ''); }
+  var LANGS = [['en-US', 'English (US)'], ['en-GB', 'English (UK)'], ['es-ES', 'Spanish'], ['fr-FR', 'French'], ['it-IT', 'Italian'], ['ja-JP', 'Japanese'], ['zh-CN', 'Chinese (Mandarin)'], ['de-DE', 'German'], ['pt-BR', 'Portuguese (Brazil)']];
+  function lang(pid, v) { try { var o = JSON.parse(localStorage.getItem('cardinal-user-lang') || '{}'); if (v) { o[pid] = v; localStorage.setItem('cardinal-user-lang', JSON.stringify(o)); } return o[pid] || 'en-US'; } catch (e) { return 'en-US'; } }
+  setInterval(function () {
+    var scr = document.getElementById('screen-settings'); if (!scr || scr.offsetParent === null) return;
+    var p = me(), ok = canAdmin(), key = (p && p.id) + ok;
+    var box = document.getElementById('st-admin');
+    if (box && box.getAttribute('data-k') !== key + box.innerHTML.length) {
+      [].forEach.call(box.querySelectorAll('select, button, input'), function (x) { x.disabled = !ok; x.style.opacity = ok ? '' : '.55'; x.style.cursor = ok ? '' : 'not-allowed'; });
+      var note = box.querySelector('.st-perm-note');
+      if (!ok && !note) { note = document.createElement('div'); note.className = 'st-perm-note'; note.style.cssText = 'font-size:11.5px;color:#B91C1C;margin:0 0 10px'; note.textContent = (p ? p.name.split(' ')[0] + '’s role' : 'Your role') + ' can view the team but not change access or Echo passcode rules. Admins, compliance, and legal can.'; box.insertBefore(note, box.children[2] || null); }
+      if (ok && note) note.remove();
+      box.setAttribute('data-k', key + box.innerHTML.length);
+    }
+    var ca = document.getElementById('settings-client-access');
+    if (ca) { ca.style.display = ok ? '' : 'none'; }
+    var lb = document.getElementById('st-user-lang');
+    if (!lb) {
+      var anchor = [].filter.call(scr.querySelectorAll('.card'), function (c) { return /Appearance/.test(c.textContent); })[0];
+      if (anchor) { lb = document.createElement('div'); lb.id = 'st-user-lang'; lb.style.cssText = 'display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--border);gap:10px'; anchor.appendChild(lb); }
+    }
+    if (lb && lb.getAttribute('data-p') !== String(p && p.id)) {
+      lb.setAttribute('data-p', String(p && p.id));
+      lb.innerHTML = '<div><div style="font-size:12px;font-weight:500;color:var(--text)">Your language</div><div style="font-size:10px;color:var(--muted)">For ' + (p ? p.name : 'you') + ': Eve, emails, and reports</div></div><select style="font-size:11px;padding:5px 8px;border-radius:7px;border:1px solid rgba(26,24,21,.15);background:#fff">' + LANGS.map(function (l) { return '<option value="' + l[0] + '"' + (lang(p && p.id) === l[0] ? ' selected' : '') + '>' + l[1] + '</option>'; }).join('') + '</select>';
+      lb.querySelector('select').onchange = function () { lang(p && p.id, this.value); try { cardinalShowToast('Language saved for ' + (p ? p.name : 'you') + ': ' + this.options[this.selectedIndex].text); } catch (e) {} };
+    }
+  }, 1000);
+})();
+</script>
+
+<script>
+// 10/3 evening part 2 (Brittany: "activity log jumps", "pinned items up top, then notes, then activity log",
+// "report a concern should be a button that opens a pop-up, under my name").
+(function () {
+  var oR = window.renderBigWorkspacePage;
+  if (typeof oR === 'function') window.renderBigWorkspacePage = function () {
+    var c = document.querySelector('.content'), y = c ? c.scrollTop : 0;
+    var r = oR.apply(this, arguments);
+    try { arrange(); } catch (e) {}
+    if (c) c.scrollTop = y;
+    return r;
+  };
+  function sec(col, re) { return [].filter.call(col.children, function (x) { return re.test((x.innerText || '').slice(0, 60)); })[0]; }
+  function modal(title, node) {
+    var o = document.createElement('div'); o.className = 'ws-modal'; o.style.cssText = 'position:fixed;inset:0;z-index:9994;background:rgba(17,17,17,.5);display:flex;align-items:center;justify-content:center;padding:20px';
+    var box = document.createElement('div'); box.style.cssText = 'width:min(560px,100%);max-height:86vh;overflow:auto;background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 24px 60px rgba(0,0,0,.3)';
+    box.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><div style="font-size:15px;font-weight:700;color:#1a1815">' + title + '</div><button type="button" aria-label="Close" style="border:0;background:rgba(26,24,21,.06);width:30px;height:30px;border-radius:8px;cursor:pointer;font-size:16px">&times;</button></div>';
+    var home = node.parentNode, next = node.nextSibling;
+    node.style.display = ''; box.appendChild(node); o.appendChild(box); document.body.appendChild(o);
+    var close = function () { node.style.display = 'none'; if (home) home.insertBefore(node, next); o.remove(); };
+    box.querySelector('button').onclick = close; o.onclick = function (e) { if (e.target === o) close(); };
+  }
+  function arrange() {
+    var c = document.getElementById('myworkspace-content'); if (!c) return;
+    var grid = [].filter.call(c.children, function (x) { return /grid-template-columns/.test(x.getAttribute('style') || ''); })[0]; if (!grid || grid.children.length < 2) return;
+    var left = grid.children[0], right = grid.children[1];
+    var pin = sec(right, /PINNED/i), notes = sec(right, /^MY NOTES/i), act = sec(right, /ACTIVITY LOG/i), comp = sec(right, /COMPOSE A NOTE/i), rep = sec(right, /REPORT A CONCERN/i);
+    var want = [pin, notes, act, comp, rep].filter(Boolean), cur = [].slice.call(right.children);
+    if (want.some(function (x, i) { return cur[i] !== x; })) want.forEach(function (x) { right.appendChild(x); });
+    if (comp && comp.parentNode === right) comp.style.display = 'none';
+    if (rep && rep.parentNode === right) rep.style.display = 'none';
+    if (!left.querySelector('.ws-actions')) {
+      var a = document.createElement('div'); a.className = 'ws-actions'; a.style.cssText = 'display:flex;flex-direction:column;gap:6px';
+      var mk = function (t, fn, primary) { var b = document.createElement('button'); b.type = 'button'; b.className = primary ? 'btn-primary' : 'btn-ghost'; b.style.cssText = 'font-size:12px;width:100%;text-align:center'; b.textContent = t; b.onclick = fn; return b; };
+      a.appendChild(mk('Write a note', function () { var x = sec(right, /COMPOSE A NOTE/i); if (x) modal('Write a note', x); }, true));
+      a.appendChild(mk('Report a concern anonymously', function () { var x = sec(right, /REPORT A CONCERN/i); if (x) modal('Report a concern anonymously', x); }));
+      left.insertBefore(a, left.children[1] || null);
+    }
+  }
+  setInterval(function () { var s = document.getElementById('screen-myworkspace'); if (s && s.offsetParent !== null) arrange(); }, 1000);
+})();
+</script>
+
+<script>
+// 10/3 evening part 2 (Brittany: "Genesis and Atonement are too much ... a top box like Eden with active tests,
+// models in testing, coverage, then tabs like Compliance so it's cleaner than scrolling; one New Test, as a
+// pop-up; 'Adam' and 'Team' filters").
+(function () {
+  var TABS = {
+    genesis: [['Tests', ['gnws', 'gen-discovery-alert', 'gen-scenarios']], ['Counterfactual', ['gen-tab-counterfactual']], ['Intersectionality', ['gen-tab-intersectionality']], ['Coverage gaps', ['gen-tab-coverage']], ['A/B and shadow', ['gen-tab-ab']], ['Cohorts', ['gen-tab-cohort']], ['Adam', ['gen-tab-adam']], ['Profiles', ['gen-tab-pmprofiles']], ['Compare models', ['gen-tab-compare']], ['Activity log', ['genesis-log-panel']]],
+    atonement: [['Fixes', ['atws']], ['Pipeline', ['atonement-deep-view']], ['Recommended fix', ['at-tab-fix']], ['Shadow deployment', ['at-tab-shadow']], ['Remediation cohorts', ['at-tab-cohorts']], ['Regulatory simulation', ['at-tab-simulation']], ['Legal defense', ['at-tab-defense']]]
+  };
+  var HIDE = { genesis: ['gen-overview-grid', 'gen-isolate-bar'], atonement: ['at-tabs', 'echo-tab-forensics', 'echo-tab-guardrails'] };
+  var cur = { genesis: 0, atonement: 0 };
+  function bar(scr) {
+    var el = document.createElement('div'); el.className = 'core-tabbar'; el.setAttribute('data-scr', scr);
+    el.style.cssText = 'display:flex;flex-wrap:wrap;gap:4px;background:#f3f0e9;padding:4px;border-radius:12px;margin:0 0 16px';
+    TABS[scr].forEach(function (t, i) { var b = document.createElement('button'); b.type = 'button'; b.textContent = t[0]; b.setAttribute('data-i', i); b.style.cssText = 'flex:1 1 auto;font-size:12px;font-weight:600;padding:8px 12px;border:0;border-radius:9px;cursor:pointer;background:transparent;color:#475569'; b.onclick = function () { cur[scr] = i; apply(scr); }; el.appendChild(b); });
+    return el;
+  }
+  function apply(scr) {
+    var root = document.getElementById('screen-' + scr); if (!root) return;
+    var all = []; TABS[scr].forEach(function (t) { all = all.concat(t[1]); });
+    TABS[scr].forEach(function (t, i) { t[1].forEach(function (id) { var e = document.getElementById(id); if (e) e.style.display = i === cur[scr] ? '' : 'none'; }); });
+    [].forEach.call(root.querySelectorAll('.gen-section-anchor'), function (a) { a.style.display = 'none'; });
+    HIDE[scr].forEach(function (id) { var e = document.getElementById(id); if (e) e.style.display = 'none'; });
+    var b = root.querySelector('.core-tabbar');
+    if (b) [].forEach.call(b.children, function (x, i) { var on = i === cur[scr]; x.style.background = on ? '#fff' : 'transparent'; x.style.color = on ? '#1a1815' : '#475569'; x.style.boxShadow = on ? '0 1px 3px rgba(26,24,21,.12)' : 'none'; });
+  }
+  function setup(scr) {
+    var root = document.getElementById('screen-' + scr); if (!root || root.offsetParent === null) return;
+    var hdr = root.querySelector('.section-hdr'); if (!hdr) return;
+    if (scr === 'genesis') {
+      var stats = document.getElementById('gen-stats-row');
+      if (stats && stats.previousElementSibling !== hdr) { hdr.parentNode.insertBefore(stats, hdr.nextSibling); stats.classList.add('card'); stats.style.padding = '14px'; stats.style.marginBottom = '14px'; }
+      // One "New test": the header button goes, and the builder opens as a pop-up.
+      [].forEach.call(hdr.querySelectorAll('button'), function (x) { if (/^\+?\s*New Test$/i.test(x.textContent.trim())) x.style.display = 'none'; });
+      var ws = document.getElementById('gnws');
+      if (ws) {
+        [].forEach.call(ws.querySelectorAll('button'), function (x) { var t = x.textContent.trim(); if (t === 'By Adam') x.textContent = 'Adam'; else if (t === 'By your team') x.textContent = 'Team'; else if (t === 'All tests') x.textContent = 'All'; });
+        var hyp = ws.querySelector('#gn-hyp');
+        if (hyp && !document.getElementById('gn-modal')) {
+          var form = hyp.closest('div[style*="border"]') || hyp.parentNode;
+          while (form.parentNode && form.parentNode !== ws && form.parentNode.id !== 'gnws' && !/padding:1[24]px/.test(form.getAttribute('style') || '')) form = form.parentNode;
+          var o = document.createElement('div'); o.id = 'gn-modal'; o.style.cssText = 'position:fixed;inset:0;z-index:9994;background:rgba(17,17,17,.5);display:flex;align-items:center;justify-content:center;padding:20px';
+          var box = document.createElement('div'); box.style.cssText = 'width:min(680px,100%);max-height:88vh;overflow:auto;background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 24px 60px rgba(0,0,0,.3)';
+          box.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><div style="font-size:15px;font-weight:700;color:#1a1815">New test</div><button type="button" aria-label="Close" style="border:0;background:rgba(26,24,21,.06);width:30px;height:30px;border-radius:8px;cursor:pointer;font-size:16px">&times;</button></div>';
+          box.appendChild(form); o.appendChild(box); document.body.appendChild(o);
+          var close = function () { o.remove(); try { gnBuild(false); } catch (e) {} };
+          box.querySelector('button').onclick = close; o.onclick = function (e) { if (e.target === o) close(); };
+          [].forEach.call(form.querySelectorAll('button'), function (x) { if (/Launch|Start|Run test|Create|Cancel/i.test(x.textContent)) x.addEventListener('click', function () { setTimeout(function () { var m = document.getElementById('gn-modal'); if (m) m.remove(); }, 50); }); });
+        }
+      }
+    }
+    var b = root.querySelector('.core-tabbar');
+    if (!b) { b = bar(scr); var anchor = scr === 'genesis' ? document.getElementById('gen-stats-row') : hdr; anchor.parentNode.insertBefore(b, anchor.nextSibling); }
+    apply(scr);
+  }
+  setInterval(function () { var w = document.getElementById('atws'); if (!w) return; [].forEach.call(w.querySelectorAll('button'), function (x) { var t = x.textContent; if (/^By Adam/.test(t)) x.textContent = t.replace('By Adam', 'Adam'); else if (/^By other AI agents/.test(t)) x.textContent = t.replace('By other AI agents', 'AI agents'); else if (/^By your team/.test(t)) x.textContent = t.replace('By your team', 'Team'); }); }, 800);
+  window.coreTabGo = function (scr, i) { cur[scr] = i; apply(scr); };
+  setInterval(function () { setup('genesis'); setup('atonement'); }, 700);
 })();
 </script>
 
