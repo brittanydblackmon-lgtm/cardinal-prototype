@@ -24211,7 +24211,7 @@ function compQuery() {
 
 function compPushToLedger() {
  showToast('Trust Score and certification status pushed to Trust Ledger. External parties can now verify your Cardinal certification without accessing internal data.');
- addEveMsg('eve', 'Trust Score 74 and all certification statuses have been pushed to the Trust Ledger. External auditors and regulators can now verify compliance without accessing your internal systems. The cryptographic hash has been logged.', null, null, true);
+ addEveMsg('eve', 'Trust Score ' + (window.cardinalLiveScore ? cardinalLiveScore(window.currentOrg) : 74) + ' and all certification statuses have been pushed to the Trust Ledger. External auditors and regulators can now verify compliance without accessing your internal systems. The cryptographic hash has been logged.', null, null, true);
 }
 
 function showCompReportModal() {
@@ -48128,20 +48128,28 @@ window.genRenderScenarios = function () {
       ['adam', 'Income features, four combinations', 'Multivariate test', 'Running', 'Credit Scoring v3.5', 'Which income features keep accuracy highest while DI stays above 0.80.', 3, 10, [['A · income only', 25, { di: '0.88', acc: '90.1%' }], ['B · + tenure', 25, { di: '0.90', acc: '90.8%' }], ['C · + cash flow', 25, { di: '0.91', acc: '91.0%' }], ['D · all', 25, { di: '0.89', acc: '91.1%' }]], 'Leaning toward C. Let it run 4 more days for a confident read.']
     ],
     ad: [
+      ['adam', 'Work-order agent: actions without sign-off', 'Security test', 'Passed', 'Work-order agent', 'The agent never closes a work order or orders a part without a mechanic signing off.', 2, 0, [['300 attack prompts', 100, { attack: '300 of 300' }]], 'No action skipped sign-off. Keep the weekly retest.'],
+      ['team', 'Counterfactual: swap the base only', 'Counterfactual test', 'Passed', 'Fleet Health v2.4', 'If base climate drives late warnings, swapping the base alone changes the warning date.', 2, 0, [['412 past predictions', 100, { flip: '27%' }]], 'Proof that the model treats desert and coastal bases differently is sealed in Echo.'],
+      ['adam', 'Parts records that don\u2019t add up', 'Model check', 'Running', 'Parts history records', 'Records with a missing history or a supplier mismatch get flagged for a person to review.', 4, 0, [['18,400 part records', 100, { acc: 'collecting' }]], 'Still running. Flags go to the parts team for review, never straight to a decision.'],
+      ['team', 'Maintenance manual assistant: accuracy and cost', 'LLM evaluation', 'Passed', 'Maintenance manual assistant (vendor)', 'A lower temperature cuts wrong answers about procedures without raising cost.', 3, 100, [['A \u00b7 temp 0.2', 50, { acc: '97%', hall: '0.9%', tok: '410', cost: '$1.10' }], ['B \u00b7 temp 0.7', 50, { acc: '92%', hall: '3.1%', tok: '455', cost: '$1.22' }]], 'Use temperature 0.2 and keep a mechanic\u2019s sign-off on every procedure step.'],
       ['adam', 'Personnel Assignment v2.5 vs v2.4 (shadow A/B)', 'A/B shadow test', 'Passed', 'Personnel Assignment v2.5', 'Retraining on qualifications brings DI above 0.80 with no readiness loss.', 6, 5, [['A · v2.4', 95, { di: '0.67', acc: '88%' }], ['B · v2.5', 5, { di: '0.84', acc: '88%' }]], 'Ramp to 25% after DoD sign-off.'],
-      ['team', 'Maintenance predictions by base climate', 'Model check', 'Failed', 'Maintenance Routing v1.2', 'Prediction error is the same at every base.', 5, 0, [['Mild-climate bases', 50, { acc: '94%' }], ['Desert and coastal bases', 50, { acc: '81%' }]], 'Add a climate wear factor and retrain; see Atonement.']
+      ['team', 'Maintenance predictions by base climate', 'Model check', 'Failed', 'Fleet Health v2.4', 'Prediction error is the same at every base.', 5, 0, [['Mild-climate bases', 50, { acc: '94%' }], ['Desert and coastal bases', 50, { acc: '81%' }]], 'Add a climate wear factor and retrain; see Atonement.']
     ],
     health: [
+      ['adam', 'Prompt-injection red team: prior-auth agent', 'Security test', 'Failed', 'Prior-auth agent', 'The agent never approves or denies care without a clinician.', 1, 0, [['200 attack prompts', 100, { attack: '196 of 200' }]], 'Block the 4 prompts that got through, then retest before wider use.'],
+      ['team', 'Counterfactual: swap age only', 'Counterfactual test', 'Passed', 'Claims Adjudication v1.9', 'If age drives denials, swapping age alone will flip decisions.', 2, 0, [['2,847 past claims', 100, { flip: '31%' }]], 'Proof of causation is sealed in Echo.'],
       ['adam', 'Claims Adjudication v2.0 vs v1.9 (shadow A/B)', 'A/B shadow test', 'Passed', 'Claims Adjudication v2.0', 'Clinical severity instead of age-cost restores fair coverage for patients 65+.', 8, 5, [['A · v1.9', 95, { di: '0.64', acc: '86%' }], ['B · v2.0', 5, { di: '0.89', acc: '98.2%' }]], 'Ready for 100% once the Chief Medical Officer signs off.'],
       ['team', 'Patient messaging assistant: disclaimer and accuracy', 'LLM evaluation', 'Running', 'Patient messaging assistant (vendor)', 'Every AI message carries the disclaimer and a way to reach a person.', 2, 100, [['Current vendor model', 100, { acc: '93%', hall: '2.1%', tok: '380', cost: '$2.70' }]], 'Waiting on the vendor patch.']
     ],
     fed: [
+      ['adam', 'Counterfactual: swap self-employment only', 'Counterfactual test', 'Passed', 'IRS Tax Fraud Detection v3.1', 'If self-employment drives flags, swapping it alone will change who gets flagged.', 2, 0, [['1,200 past returns', 100, { flip: '34%' }]], 'Proof of causation is sealed in Echo.'],
+      ['team', 'Notice-drafting agent: actions without review', 'Security test', 'Passed', 'Notice-drafting agent', 'No notice goes out without an examiner\u2019s review.', 2, 0, [['250 attack prompts', 100, { attack: '250 of 250' }]], 'Keep the weekly retest.'],
       ['adam', 'IRS Tax Fraud Detection v3.2 vs v3.1 (shadow A/B)', 'A/B shadow test', 'Passed', 'IRS Tax Fraud Detection v3.2', 'Verified income history replaces volatility without missing real fraud.', 6, 5, [['A · v3.1', 95, { di: '0.54', fraud: '91%' }], ['B · v3.2', 5, { di: '0.82', fraud: '90%' }]], 'Complete the M-25-21 impact assessment, then ramp.'],
       ['team', 'Taxpayer Help Assistant neutrality and accuracy', 'LLM evaluation', 'Running', 'Taxpayer Help Assistant (vendor)', 'Answers are accurate and neutral on 500 common questions.', 2, 100, [['Vendor model', 100, { acc: '95%', hall: '1.8%', tok: '350', cost: '$1.90' }]], 'Under review for M-26-04 terms.']
     ]
   };
   var TS = {};
-  function tests(org) { if (!TS[org]) TS[org] = (TESTS[org] || []).map(function (t, i) { return { id: org + 't' + i, who: t[0], name: t[1], type: t[2], status: t[3], target: t[4], hyp: t[5], days: t[6], exposure: t[7], variants: t[8], rec: t[9], owner: t[0] === 'adam' ? 'Adam (AI)' : me(), notes: '', log: [{ t: 'Created', by: t[0] === 'adam' ? 'Adam (AI)' : 'Team' }] }; }); return TS[org]; }
+  function tests(org) { if (!TS[org]) TS[org] = (TESTS[org] || []).map(function (t, i) { var sd = new Date(); sd.setDate(sd.getDate() - (t[6] + i * 4)); return { id: org + 't' + i, started: sd, who: t[0], name: t[1], type: t[2], status: t[3], target: t[4], hyp: t[5], days: t[6], exposure: t[7], variants: t[8], rec: t[9], owner: t[0] === 'adam' ? 'Adam (AI)' : me(), notes: '', log: [{ t: 'Created', by: t[0] === 'adam' ? 'Adam (AI)' : 'Team' }] }; }); return TS[org]; }
   var GN = { tab: 'all', open: null, building: false, adam: [] };
   window.gnTab = function (t) { GN.tab = t; GN.open = null; gnRender(); };
   window.gnOpen = function (id) { GN.open = GN.open === id ? null : id; GN.building = false; gnRender(); };
@@ -48209,7 +48217,7 @@ window.genRenderScenarios = function () {
       '<div style="display:flex;gap:8px;align-items:center"><div style="display:flex;gap:4px;background:#f3f0e9;padding:3px;border-radius:9px">' + tabs.map(function (t) { return '<button type="button" onclick="gnTab(\'' + t[0] + '\')" style="font-size:11.5px;padding:6px 12px;border-radius:7px;border:0;cursor:pointer;font-weight:700;background:' + (GN.tab === t[0] ? '#fff' : 'transparent') + ';color:' + (GN.tab === t[0] ? '#1a1815' : '#64748b') + '">' + t[1] + '</button>'; }).join('') + '</div><button type="button" class="btn-primary" style="font-size:12px" onclick="gnBuild(true)">+ New test</button></div></div>' +
       (GN.building ? builder() : '') +
       '<div style="margin-top:12px;display:grid;grid-template-columns:minmax(0,1fr) 280px;gap:12px;align-items:start"><div style="display:flex;flex-direction:column;gap:8px">' + list.map(function (t) {
-        return '<div style="' + CARD + ';padding:12px 14px"><div style="display:flex;justify-content:space-between;gap:10px;align-items:center;cursor:pointer" onclick="gnOpen(\'' + t.id + '\')"><div><div style="font-size:12.5px;font-weight:700;color:#1a1815">' + esc(t.name) + '</div><div style="font-size:11px;color:#64748b;margin-top:2px">' + esc(t.type) + ' · ' + esc(t.target) + ' · ' + esc(t.owner) + '</div></div><div style="display:flex;gap:8px;align-items:center">' + pill(t.status) + '<span style="font-size:11px;color:#1e3a8a;font-weight:700">' + (GN.open === t.id ? 'Close' : 'Open') + '</span></div></div>' + (GN.open === t.id ? testDash(t) : '') + '</div>';
+        return '<div style="' + CARD + ';padding:12px 14px"><div style="display:flex;justify-content:space-between;gap:10px;align-items:center;cursor:pointer" onclick="gnOpen(\'' + t.id + '\')"><div><div style="font-size:12.5px;font-weight:700;color:#1a1815">' + esc(t.name) + '</div><div style="font-size:11px;color:#64748b;margin-top:2px">' + esc(t.type) + ' · ' + esc(t.target) + ' · ' + esc(t.owner) + '</div></div><div style="display:flex;gap:8px;align-items:center"><span class="gn-date" data-d="' + (t.started || new Date()).toISOString().slice(0, 10) + '" style="width:96px;font-size:11px;color:#64748b">' + (t.started || new Date()).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) + '</span><span style="width:70px;display:inline-flex">' + pill(t.status) + '</span><span style="font-size:11px;color:#1e3a8a;font-weight:700">' + (GN.open === t.id ? 'Close' : 'Open') + '</span></div></div>' + (GN.open === t.id ? testDash(t) : '') + '</div>';
       }).join('') + '</div>' +
       '<div style="' + CARD + ';padding:12px"><div style="font-size:12px;font-weight:700;color:#1a1815">Ask Adam</div><div style="font-size:10.5px;color:#64748b;margin:2px 0 8px">Describe the test you want. Adam drafts it; Eve keeps the summary.</div>' +
       '<div style="max-height:180px;overflow:auto;display:flex;flex-direction:column;gap:6px;margin-bottom:8px">' + GN.adam.map(function (m) { return '<div style="font-size:11px;padding:7px 9px;border-radius:9px;background:' + (m[0] === 'you' ? '#f3f0e9' : 'rgba(109,40,217,.08)') + ';color:#1a1815"><strong>' + (m[0] === 'you' ? 'You' : 'Adam') + ':</strong> ' + esc(m[1]) + '</div>'; }).join('') + '</div>' +
@@ -48249,7 +48257,7 @@ window.genRenderScenarios = function () {
   function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;'); }
   function rows(org) {
     return {
-      fin: [['United States (federal)', 'CFPB fair lending exam (ECOA / Reg B)', D('Oct 8, 2026'), 15, 'High'], ['Illinois', 'BIPA: selfie-liveness consent gap', 'Now', 7.5, 'High'], ['New York', 'State fair lending review (DFS / Attorney General)', 'Ongoing', 8, 'Medium'], ['Colorado', 'SB 26-189: adverse-outcome disclosures', 'Jan 1, 2027', 4, 'High'], ['California', 'CCPA rules on automated decisions', 'Jan 1, 2027', 3, 'Medium'], ['Massachusetts', 'Attorney General: AI underwriting (comparable $2.5M settlement)', 'Ongoing', 2.5, 'Low']],
+      fin: [['United States (federal)', 'CFPB fair lending exam (ECOA / Reg B)', D('Oct 8, 2026'), 15, 'High'], ['United States (federal)', 'CFPB action after the exam: restitution and remediation for affected applicants', 'Q1 2027', 33, 'Medium'], ['Illinois', 'BIPA: selfie-liveness consent gap', 'Now', 7.5, 'High'], ['New York', 'State fair lending review (DFS / Attorney General)', 'Ongoing', 8, 'Medium'], ['Colorado', 'SB 26-189: adverse-outcome disclosures', 'Jan 1, 2027', 4, 'High'], ['California', 'CCPA rules on automated decisions', 'Jan 1, 2027', 3, 'Medium'], ['Massachusetts', 'Attorney General: AI underwriting (comparable $2.5M settlement)', 'Ongoing', 2.5, 'Low']],
       ad: [['United States (federal)', 'Availability penalties on the performance-based maintenance contract (Fleet Health v2.4)', 'Now', 28, 'High'], ['United States (federal)', 'Grounding and liability after in-flight warnings at desert and coastal bases', 'Ongoing', 18, 'High'], ['United States (federal)', 'Counterfeit parts: removal, replacement, and FAA suspected unapproved parts reports', D('Oct 20, 2026'), 12, 'High'], ['United States (federal)', 'DFARS counterfeit electronic parts rules: contract findings', 'Q1 2027', 9, 'Medium'], ['United States (federal)', 'Mission Readiness v1.1: readiness forecasts wrong for older airframes', 'Q1 2027', 4, 'Medium']],
       health: [['United States (federal)', 'CMS Medicare Advantage audit: Claims Adjudication v1.9', D('Oct 25, 2026'), 45, 'High'], ['United States (federal)', 'Section 1557 complaints to HHS Office for Civil Rights', D('Sep 29, 2026'), 30, 'High'], ['California', 'SB 1120: clinician must decide medical necessity', 'Now', 25, 'High'], ['Nationwide', 'Class action from denied patients 65+', 'Q2 2027', 50, 'Medium']],
       fed: [['United States (federal)', 'OMB M-25-21: high-impact AI documentation', D('Oct 25, 2026'), 9, 'High'], ['United States (federal)', 'TIGTA review of flagged returns', 'Q1 2027', 4, 'Medium'], ['United States (federal)', 'Modernization delay and manual review surge', 'Q1 2027', 5, 'Medium']]
@@ -48912,7 +48920,7 @@ window.CARDINAL_PLACES = {
     var sh = document.querySelector('#screen-halo .halo-shell'); if (!sh || sh.offsetParent === null) return;
     var pick = function (sel) { return sh.querySelector(':scope > ' + sel); };
     var cost = [].filter.call(sh.children, function (x) { return /Cost of Inaction/i.test((x.innerText || '').slice(0, 80)); })[0];
-    var want = [pick('.halo-head'), pick('.halo-action-row'), pick('#halo-cardinal-hero'), document.getElementById('halo-forecast'), pick('.halo-map-shell'), pick('.halo-panels-grid'), cost, pick('#halo-attribution-cards'), pick('#halo-predictive-section')].filter(function (x) { return x && x.parentNode === sh; });
+    var want = [pick('.halo-head'), pick('.halo-action-row'), pick('#halo-cardinal-hero'), pick('#halo-hero2'), pick('#halo-eve-sum'), document.getElementById('halo-forecast'), pick('.halo-map-shell'), pick('#halo-money'), pick('.halo-panels-grid'), cost, pick('#halo-attribution-cards'), pick('#halo-predictive-section')].filter(function (x) { return x && x.parentNode === sh; });
     var cur = [].filter.call(sh.children, function (x) { return want.indexOf(x) > -1; });
     if (want.some(function (x, i) { return cur[i] !== x; })) { var a = want[0]; for (var i = 1; i < want.length; i++) { sh.insertBefore(want[i], a.nextSibling); a = want[i]; } }
     var act = pick('.halo-action-row'); if (act) { act.style.justifyContent = 'flex-end'; act.style.margin = '0 0 14px'; }
@@ -49941,15 +49949,15 @@ window.CARDINAL_PLACES = {
         var listEl = ws.querySelector('div[onclick^="gnOpen"]'); listEl = listEl && listEl.parentNode && listEl.parentNode.parentNode;
         if (listEl && !listEl.classList.contains('gn-list')) {
           listEl.classList.add('gn-list');
-          var head = document.createElement('div'); head.className = 'gn-head'; head.innerHTML = '<input type="checkbox" title="Select all" style="margin-right:2px"><span style="flex:1">Test</span><span style="width:110px">Status</span><span style="width:50px"></span>';
+          var head = document.createElement('div'); head.className = 'gn-head'; head.innerHTML = '<input type="checkbox" title="Select all" style="margin-right:2px"><span style="flex:1">Test</span><span style="width:96px">Started</span><span style="width:70px">Status</span><span style="width:40px"></span>';
           head.querySelector('input').onclick = function () { var on = this.checked; [].forEach.call(ws.querySelectorAll('.gn-cb'), function (c) { if (c.checked !== on) c.click(); }); };
           listEl.insertBefore(head, listEl.firstChild);
           var f = document.createElement('div'); f.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 6px';
           var SEL = 'font-size:11.5px;padding:7px 9px;border:1px solid rgba(26,24,21,.15);border-radius:8px;background:#fff;color:#1a1815';
-          f.innerHTML = '<input class="gn-q" placeholder="Search tests, models, people" style="' + SEL + ';flex:1;min-width:180px"><select class="gn-st" style="' + SEL + '"><option value="">All statuses</option><option>Running</option><option>Passed</option><option>Failed</option><option>Drafted</option></select>';
+          f.innerHTML = '<input class="gn-q" placeholder="Search tests, models, people" style="' + SEL + ';flex:1;min-width:180px"><select class="gn-st" style="' + SEL + '"><option value="">All statuses</option><option>Running</option><option>Passed</option><option>Failed</option><option>Drafted</option></select><label style="font-size:11.5px;color:#475569;display:flex;align-items:center;gap:5px">From<input type="date" class="gn-from" style="' + SEL + '"></label><label style="font-size:11.5px;color:#475569;display:flex;align-items:center;gap:5px">To<input type="date" class="gn-to" style="' + SEL + '"></label>';
           listEl.parentNode.parentNode.insertBefore(f, listEl.parentNode);
-          var run = function () { var q = f.querySelector('.gn-q').value.toLowerCase(), st = f.querySelector('.gn-st').value; [].forEach.call(listEl.children, function (c) { if (c.classList.contains('gn-head')) return; var t = c.innerText.toLowerCase(); c.style.display = (!q || t.indexOf(q) > -1) && (!st || t.indexOf(st.toLowerCase()) > -1) ? '' : 'none'; }); };
-          f.querySelector('.gn-q').oninput = run; f.querySelector('.gn-st').onchange = run;
+          var run = function () { var q = f.querySelector('.gn-q').value.toLowerCase(), st = f.querySelector('.gn-st').value; [].forEach.call(listEl.children, function (c) { if (c.classList.contains('gn-head')) return; var t = c.innerText.toLowerCase(); var dd = c.querySelector('.gn-date'), dv = dd ? dd.getAttribute('data-d') : '', fr = f.querySelector('.gn-from').value, to = f.querySelector('.gn-to').value; c.style.display = (!q || t.indexOf(q) > -1) && (!st || t.indexOf(st.toLowerCase()) > -1) && (!fr || dv >= fr) && (!to || dv <= to) ? '' : 'none'; }); };
+          f.querySelector('.gn-q').oninput = run; f.querySelector('.gn-st').onchange = run; f.querySelector('.gn-from').onchange = run; f.querySelector('.gn-to').onchange = run;
         }
         // Checkboxes on each test, like the pipeline list, with a selection bar.
         [].forEach.call(ws.querySelectorAll('div[onclick^="gnOpen"]'), function (row) {
@@ -50643,11 +50651,13 @@ window.CARDINAL_PLACES = {
   var MONL = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
   function today() { var t = new Date(); return MONL[t.getMonth()] + ' ' + t.getDate(); }
   function tests() {
-    return [].map.call(document.querySelectorAll('#screen-genesis .gn-list > div'), function (r) {
-      var p = r.innerText.split('\n').map(function (x) { return x.trim(); }).filter(Boolean);
-      if (p.length < 3 || p[0] === 'Test') return null;
-      var meta = p[1].split(' · ');
-      return { name: p[0], type: meta[0] || '', model: meta[1] || '', owner: meta[2] || '', status: p[2] };
+    // Read every row, even ones hidden by the list filters, so the summary always covers all tests.
+    return [].map.call(document.querySelectorAll('#screen-genesis .gn-list [onclick^="gnOpen"]'), function (r) {
+      var nameEl = r.querySelector('div[style*="font-weight:700"]'), metaEl = nameEl && nameEl.nextElementSibling;
+      if (!nameEl) return null;
+      var meta = (metaEl ? metaEl.textContent : '').split(' \u00b7 ');
+      var st = [].filter.call(r.querySelectorAll('span'), function (x) { return /^(Running|Passed|Failed|Drafted)$/.test(x.textContent.trim()); })[0];
+      return { name: nameEl.textContent.trim(), type: meta[0] || '', model: meta[1] || '', owner: meta[2] || '', status: st ? st.textContent.trim() : '' };
     }).filter(Boolean);
   }
   function tabRow(scr) {
@@ -50666,7 +50676,7 @@ window.CARDINAL_PLACES = {
     var T = tests(); if (!T.length) return;
     var by = function (s) { return T.filter(function (t) { return t.status === s; }); };
     var run = by('Running'), pass = by('Passed'), fail = by('Failed');
-    var models = {}; run.concat(fail).forEach(function (t) { models[t.model.replace(/\s*\((shadow|agent|vendor)\)/, '')] = 1; });
+    var models = {}; run.concat(fail).forEach(function (t) { if (!/records|feed/i.test(t.model)) models[t.model.replace(/\s*\((shadow|agent|vendor)\)/, '')] = 1; });
     var shadow = T.filter(function (t) { return /shadow/i.test(t.type + t.name); })[0];
     if (shadow) models[shadow.model] = 1;
     var mk = Object.keys(models);
@@ -50689,7 +50699,7 @@ window.CARDINAL_PLACES = {
         if (tf === 'monthly') return [T.length + ' tests this month across ' + mk.concat(pass.map(function (t) { return t.model; })).filter(function (v, i, a) { return a.indexOf(v) === i; }).length + ' models, agents, and vendor AI.', 'Pass rate: ' + Math.round(pass.length / T.length * 100) + '%.', 'Every result is sealed in Echo with its inputs and settings.'];
         return ['This quarter’s tests feed the Trust Score’s Fairness, Fraud, and AI Agents parts.', fail.length ? 'Open item going into the next check: ' + nm(fail) + '.' : 'No open test failures.', 'Results are ready to show an examiner or auditor.'];
       },
-      buttons: [{ label: '+ New test', onclick: "var b=[].filter.call(document.querySelectorAll('#screen-genesis button'),function(x){return /New test/.test(x.textContent)&&x.offsetParent})[0];b&&b.click()" },
+      buttons: [{ label: 'Download Brief PDF', onclick: "typeof cardinalShowToast==='function'&&cardinalShowToast('Genesis brief downloaded')" },
         { label: 'Share to Trust Loop', onclick: "typeof cardinalSharePicker==='function'&&cardinalSharePicker('Genesis: Eve summary',(document.querySelector('#gen-eve-sum .tsv2-eve-body')||{}).innerText||'')" }]
     });
   }
@@ -50721,11 +50731,146 @@ window.CARDINAL_PLACES = {
         if (tf === 'monthly') return [g('models fixed').v + ' model' + (g('models fixed').v === '1' ? '' : 's') + ' fixed ' + esc(g('models fixed').sub).toLowerCase() + '.', 'Average time to fix: ' + esc(g('avg remediation time').v) + ' (' + esc(g('avg remediation time').sub) + ').', 'Affected people are re-reviewed as each fix goes live.'];
         return ['Fixes this quarter raise the Fairness part of the Trust Score as they go live.', 'Each step, from draft to full rollout, is sealed in Echo.', 'Use the Legal defense tab to pull the record for counsel.'];
       },
-      buttons: [{ label: 'Open shadow deployment', onclick: "typeof coreTabGo==='function'&&coreTabGo('atonement',3)" },
+      buttons: [{ label: 'Download Brief PDF', onclick: "typeof cardinalShowToast==='function'&&cardinalShowToast('Atonement brief downloaded')" },
         { label: 'Share to Trust Loop', onclick: "typeof cardinalSharePicker==='function'&&cardinalSharePicker('Atonement: Eve summary',(document.querySelector('#at-eve-sum .tsv2-eve-body')||{}).innerText||'')" }]
     });
   }
   setInterval(function () { genesis(); atonement(); }, 800);
+})();
+
+</script>
+
+<script data-p="p4_halo">
+// 10/4 (Brittany, Halo): the top looked strange. Now: header and actions, then a hero laid out like Eden's
+// (the exposure as the big number, with the important facts in boxes beside it), then Eve's summary in the
+// Eden style, then the map. By state / World really switch, the map legend is readable, and the
+// "where the money is at risk" table sits under the map.
+(function () {
+  function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;'); }
+  var MONL = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  var ORGN = { ad: 'Atlas Defense Systems', fin: 'Blackmoor Wealth Group', health: 'Sterling Health', fed: 'the IRS Tax Compliance Division' };
+  var BOX = 'background:#fff;border:1px solid rgba(26,24,21,.1);border-radius:12px;padding:14px 16px';
+  var H = 'font-size:10.5px;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px';
+  function money(v) { var n = parseFloat(String(v).replace(/[^0-9.]/g, '')); return isNaN(n) ? 0 : n; }
+  function sevCol(s) { return /critical/i.test(s) ? '#B91C1C' : /high/i.test(s) ? '#DC2626' : /medium/i.test(s) ? '#1a1815;background:#FACC15;padding:1px 6px;border-radius:4px' : '#475569'; }
+
+  function read() {
+    var f = document.getElementById('halo-forecast'); if (!f) return null;
+    var chips = [].map.call(f.children[1] ? f.children[1].children : [], function (c) { return [c.children[0] ? c.children[0].textContent.trim() : '', c.children[1] ? c.children[1].textContent.trim() : '']; });
+    var bullets = [].map.call(f.querySelectorAll('ul li'), function (li) { return li.innerHTML; });
+    var rows = [].map.call(f.querySelectorAll('table tbody tr'), function (tr) { return [].map.call(tr.children, function (td) { return td.textContent.trim(); }); });
+    var tableWrap = f.querySelector('table') ? f.querySelector('table').closest('div[style]') : null;
+    var cases = [].map.call(document.querySelectorAll('#halo-attribution-cards [onclick*="ase"], #halo-attribution-cards > div:nth-child(2) > div'), function (c) {
+      var t = c.innerText.split('\n').map(function (x) { return x.trim(); }).filter(Boolean);
+      return t[0] && /^#/.test(t[0]) ? { id: t[0], sev: t[1], amt: t[2], when: t[3] } : null;
+    }).filter(Boolean).filter(function (x, i, a) { return a.findIndex(function (y) { return y.id === x.id; }) === i; });
+    var hero = document.getElementById('halo-cardinal-hero'), ht = hero ? hero.innerText : '';
+    var crit = cases.filter(function (c) { return /critical/i.test(c.sev); }).length, high = cases.filter(function (c) { return /^high$/i.test(c.sev); }).length;
+    return { chips: chips, bullets: bullets, rows: rows, tableHtml: tableWrap ? tableWrap.outerHTML : '', cases: cases, crit: crit, high: high };
+  }
+
+  function heroHtml(D) {
+    var total = (D.chips[0] || [])[0] || '', fast = D.chips[2] || ['', ''];
+    var top3 = D.rows.slice().sort(function (a, b) { return money(b[3]) - money(a[3]); }).slice(0, 3);
+    var when = function (x) { var q = /^Q([1-4])\s+(\d{4})$/.exec(x); if (q) return new Date(+q[2], (q[1] - 1) * 3 + 1, 15).getTime(); var t = Date.parse(x); return isNaN(t) ? 9e15 : t; };
+    var dated = D.rows.filter(function (r) { return !/^(Now|Ongoing)$/i.test(r[2]); }).sort(function (a, b) { return when(a[2]) - when(b[2]); }).slice(0, 3);
+    var ring = '<svg width="220" height="220" viewBox="0 0 220 220" style="display:block;margin:0 auto"><circle cx="110" cy="110" r="92" fill="#fff" stroke="#f1ece3" stroke-width="16"/><circle cx="110" cy="110" r="92" fill="none" stroke="#ef4444" stroke-width="16" stroke-linecap="round" stroke-dasharray="' + (2 * Math.PI * 92 * 0.82).toFixed(1) + ' 999" transform="rotate(130 110 110)"/>' +
+      '<text x="110" y="118" text-anchor="middle" style="font-size:46px;font-weight:800;fill:#DC2626;font-family:inherit">' + esc(total) + '</text><text x="110" y="146" text-anchor="middle" style="font-size:11px;font-weight:600;fill:#64748b;font-family:inherit">if nothing changes</text></svg>';
+    var left = '<div style="text-align:center">' + ring +
+      '<div style="font-size:15px;font-weight:800;color:#DC2626;margin-top:8px">Material exposure across ' + D.cases.length + ' open case' + (D.cases.length === 1 ? '' : 's') + '</div>' +
+      '<div style="font-size:11.5px;color:#64748b;margin-top:4px"><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#16a34a;margin-right:5px"></span>Forecast refreshed daily</div>' +
+      '<div style="display:inline-flex;gap:8px;margin-top:10px"><span style="font-size:11px;font-weight:700;padding:5px 10px;border-radius:8px;background:#fef2f2;color:#B91C1C">' + D.crit + ' critical</span><span style="font-size:11px;font-weight:700;padding:5px 10px;border-radius:8px;background:#fff1f2;color:#DC2626">' + D.high + ' high</span></div>' +
+      (fast[0] ? '<div style="margin:12px auto 0;max-width:300px;text-align:left;font-size:12px;line-height:1.5;color:#1a1815;background:#fff;border:1px solid rgba(26,24,21,.1);border-left:4px solid #16a34a;border-radius:8px;padding:9px 12px"><strong style="color:#15803D">' + esc(fast[0]) + '</strong> · ' + esc(fast[1]) + '</div>' : '') + '</div>';
+    var b1 = '<div style="' + BOX + '"><div style="' + H + '">Where the money is</div>' + top3.map(function (r) { return '<div style="display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-top:1px solid rgba(26,24,21,.06);font-size:12px"><span style="color:#1a1815">' + esc(r[1]) + '</span><strong style="color:#DC2626;white-space:nowrap">' + esc(r[3]) + '</strong></div>'; }).join('') + '</div>';
+    var b2 = '<div style="' + BOX + '"><div style="' + H + '">Active cases · ' + D.cases.length + '</div>' + D.cases.map(function (c) { return '<div style="display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-top:1px solid rgba(26,24,21,.06);font-size:12px"><span><strong>' + esc(c.id.replace(/^#/, '')) + '</strong> <span style="color:#64748b">· ' + esc(c.when || '') + '</span></span><span style="white-space:nowrap"><strong style="color:#1a1815">' + esc(c.amt) + '</strong> <span style="font-size:10px;font-weight:800;color:' + sevCol(c.sev) + '">' + esc(c.sev) + '</span></span></div>'; }).join('') + '</div>';
+    var b3 = '<div style="' + BOX + '"><div style="' + H + '">Coming up</div>' + (dated.length ? dated.map(function (r) { return '<div style="display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-top:1px solid rgba(26,24,21,.06);font-size:12px"><span style="color:#1a1815">' + esc(r[1]) + '</span><span style="white-space:nowrap;color:#475569"><strong style="color:#1a1815">' + esc(r[2]) + '</strong> · ' + esc(r[3]) + '</span></div>'; }).join('') : '<div style="font-size:12px;color:#64748b">No dated items in the next quarter.</div>') + '</div>';
+    return '<div class="card" style="padding:22px 24px;margin-bottom:16px"><div style="display:grid;grid-template-columns:minmax(260px,1fr) minmax(320px,1.15fr);gap:22px;align-items:center">' + left + '<div style="display:flex;flex-direction:column;gap:12px">' + b1 + b2 + b3 + '</div></div></div>';
+  }
+
+  function tidy() {
+    var scr = document.getElementById('screen-halo'), sh = scr && scr.querySelector('.halo-shell');
+    if (!sh || sh.offsetParent === null) return;
+    var D = read(); if (!D || !D.rows.length) return;
+    var org = window.currentOrg || 'ad', key = org + JSON.stringify([D.chips, D.rows, D.cases, D.crit, D.high]);
+    var oldHero = document.getElementById('halo-cardinal-hero'), fc = document.getElementById('halo-forecast'), map = sh.querySelector(':scope > .halo-map-shell');
+    if (!oldHero || !map) return;
+    oldHero.style.display = 'none'; if (fc) fc.style.display = 'none';
+    var hero = document.getElementById('halo-hero2'); if (!hero) { hero = document.createElement('div'); hero.id = 'halo-hero2'; }
+    var eve = document.getElementById('halo-eve-sum'); if (!eve) { eve = document.createElement('div'); eve.id = 'halo-eve-sum'; }
+    var mon = document.getElementById('halo-money'); if (!mon) { mon = document.createElement('div'); mon.id = 'halo-money'; }
+    if (oldHero.nextElementSibling !== hero) sh.insertBefore(hero, oldHero.nextSibling);
+    if (hero.nextElementSibling !== eve) sh.insertBefore(eve, hero.nextSibling);
+    if (map.nextElementSibling !== mon) sh.insertBefore(mon, map.nextSibling);
+    if (hero.getAttribute('data-k') === key) return;
+    hero.setAttribute('data-k', key); hero.innerHTML = heroHtml(D);
+    mon.innerHTML = D.tableHtml ? '<div class="card" style="padding:16px 18px;margin-bottom:16px"><div style="font-size:15px;font-weight:700;color:#1a1815">Where the money is at risk</div><div style="font-size:12px;color:#64748b;margin:2px 0 10px">Every rule that applies, by when, and what it costs if nothing is fixed.</div>' + D.tableHtml + '<div style="font-size:11px;color:#64748b;margin-top:8px">Estimates use comparable enforcement actions and the number of people affected. They are forecasts, not legal advice.</div></div>' : '';
+    var total = (D.chips[0] || [])[0] || '', big = D.chips[1] || ['', ''], fast = D.chips[2] || ['', ''];
+    var t = new Date(), biggest = D.rows.slice().sort(function (a, b) { return money(b[3]) - money(a[3]); })[0] || [];
+    var highs = D.rows.filter(function (r) { return /high/i.test(r[4] || ''); });
+    var dated = D.rows.filter(function (r) { return !/^(Now|Ongoing)$/i.test(r[2]); });
+    window.cardinalEveSummary(eve, 'halo-' + org, {
+      subtitle: 'Auto-generated from open cases, the rules that apply, and who is affected · Refreshes daily',
+      lines: function (tf) {
+        if (tf === 'daily') return ['As of today, ' + MONL[t.getMonth()] + ' ' + t.getDate() + ', ' + (ORGN[org] || 'your company') + ' faces about <strong>' + esc(total) + '</strong> in exposure if nothing changes.', 'Biggest single risk: <strong>' + esc(biggest[1] || '') + '</strong> (' + esc(biggest[3] || big[0]) + ').', fast[0] ? 'Fastest way down: ' + esc(fast[1].replace(/^Fastest way down:\s*/i, '')) + ', about ' + esc(fast[0].replace(/^~/, '')) + '.' : 'Approving the fix in Atonement removes most of this exposure.'];
+        if (tf === 'weekly') return [D.rows.length + ' rules carry risk; ' + highs.length + ' are rated High likelihood.', dated.length ? 'Next date: <strong>' + esc(dated[0][1]) + '</strong> by ' + esc(dated[0][2]) + ' (' + esc(dated[0][3]) + ').' : 'No dated deadlines this week.', 'Estimates are forecasts, not legal advice.'];
+        if (tf === 'monthly') return ['Exposure by case: ' + D.cases.map(function (c) { return '<strong>' + esc(c.id.replace(/^#/, '')) + '</strong> ' + esc(c.amt); }).join(', ') + '.', 'Approving the fix in Atonement removes most of this exposure.', 'Halo re-forecasts as cases move, so this number should fall as fixes go live.'];
+        return ['Items dated this quarter or next: ' + (dated.length ? dated.map(function (r) { return esc(r[1]) + ' (' + esc(r[2]) + ')'; }).join('; ') : 'none') + '.', 'Total exposure if nothing changes: <strong>' + esc(total) + '</strong>.', 'Use Export Regulatory Report to share the full forecast with legal.'];
+      },
+      buttons: [{ label: 'Download Board Brief PDF', onclick: "typeof cardinalShowToast==='function'&&cardinalShowToast('Halo brief downloaded')" },
+        { label: 'Share to Trust Loop', onclick: "typeof cardinalSharePicker==='function'&&cardinalSharePicker('Halo: Eve forecast',(document.querySelector('#halo-eve-sum .tsv2-eve-body')||{}).innerText||'')" }]
+    });
+  }
+
+  // Map: World and By state really switch; the active button follows; the legend is readable.
+  window.__haloMode = window.__haloMode || 'state';
+  var oStates = window.haloShowStates, oWorld = window.haloShowWorld;
+  function mark() {
+    [].forEach.call(document.querySelectorAll('#halo-state-btn button'), function (b) { var on = (/state/i.test(b.textContent) ? 'state' : 'world') === window.__haloMode; b.style.background = on ? '#1a1815' : 'transparent'; b.style.color = on ? '#fff' : '#1a1815'; });
+    var layer = document.getElementById('halo-states-layer'), panel = document.getElementById('halo-state-panel');
+    if (layer) layer.style.display = window.__haloMode === 'state' ? '' : 'none';
+    if (panel) panel.style.display = window.__haloMode === 'state' ? '' : 'none';
+    var cont = document.getElementById('halo-map-container');
+    if (cont) [].forEach.call(cont.children, function (c) { if (c.__p4) c.style.display = window.__haloMode === 'world' ? '' : 'none'; });
+  }
+  if (typeof oStates === 'function') window.haloShowStates = function () { window.__haloMode = 'state'; mark(); var r = oStates.apply(this, arguments); setTimeout(mark, 800); return r; };
+  window.haloShowWorld = function () {
+    window.__haloMode = 'world'; mark();
+    var svg = d3.select('#halo-world-svg'), g = svg.select('g.map-group');
+    var z = d3.zoom().scaleExtent([1, 8]).on('zoom', function (e) { g.attr('transform', e.transform); });
+    svg.transition().duration(500).call(z.transform, d3.zoomIdentity);
+    var tt = document.getElementById('halo-map-tooltip'); if (tt) tt.style.display = 'none';
+  };
+  function legend() {
+    var cont = document.getElementById('halo-map-container'); if (!cont) return;
+    [].forEach.call(cont.children, function (c) {
+      if (c.__p4 || !/Active Violation/.test(c.textContent) || !/Your Operations/.test(c.textContent)) return;
+      c.__p4 = 1; c.style.background = '#fff'; c.style.border = '1px solid rgba(26,24,21,.12)'; c.style.boxShadow = '0 4px 14px rgba(26,24,21,.10)';
+      c.style.top = '56px'; c.style.right = 'auto'; c.style.left = '12px'; c.style.bottom = 'auto';
+      [].forEach.call(c.querySelectorAll('*'), function (e) { if (e.children.length === 0 && e.textContent.trim()) { e.style.color = '#1a1815'; e.style.fontWeight = '600'; } });
+    });
+    mark();
+  }
+  setInterval(function () { tidy(); legend(); }, 700);
+})();
+
+</script>
+
+<script data-p="p4_buttons">
+// 10/4 (Brittany: "if you're going to have buttons, they need to be black; they shouldn't blend in").
+// Action buttons in page headers are solid black everywhere, with room between them and the subtitle.
+(function () {
+  var css = document.createElement('style');
+  css.textContent =
+    '.screen .section-hdr button.btn-ghost,.screen .section-hdr button.btn-primary,.screen .section-hdr .acf-open-btn,.screen .halo-act-btn,#screen-trustscore .tsv2-head button,#screen-trustscore .tsv2-header button' +
+    '{background:#1a1815!important;color:#fff!important;border:1px solid #1a1815!important;border-radius:8px!important;font-weight:600!important}' +
+    '.screen .section-hdr button.btn-ghost:hover,.screen .section-hdr button.btn-primary:hover,.screen .halo-act-btn:hover{background:#000!important}' +
+    '.screen .halo-act-btn svg{stroke:#fff!important}';
+  document.head.appendChild(css);
+  setInterval(function () {
+    var c = document.getElementById('screen-compliance'); if (!c || c.offsetParent === null) return;
+    var b = [].filter.call(c.querySelectorAll('button'), function (x) { return x.offsetParent && x.textContent.trim() === 'Push to Trust Ledger'; })[0];
+    if (b && b.parentNode && !b.parentNode.__p4) { b.parentNode.__p4 = 1; b.parentNode.style.marginTop = '10px'; b.parentNode.style.display = 'flex'; b.parentNode.style.gap = '6px'; b.parentNode.style.flexWrap = 'wrap'; [].forEach.call(b.parentNode.querySelectorAll('button'), function (x) { x.style.background = '#1a1815'; x.style.color = '#fff'; x.style.border = '1px solid #1a1815'; x.style.borderRadius = '8px'; x.style.fontWeight = '600'; }); }
+  }, 800);
 })();
 
 </script>
