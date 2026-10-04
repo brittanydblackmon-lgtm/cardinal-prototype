@@ -49180,7 +49180,8 @@ window.CARDINAL_PLACES = {
       box.innerHTML =
         card('Where you stand', '<div style="font-size:12.5px;color:#1a1815;line-height:1.55">You score <b>' + you + '</b>, ahead of <b>' + below + ' of ' + n + '</b> peers. The median is ' + med + ' (you are ' + Math.abs(diff) + ' points ' + (diff >= 0 ? 'above' : 'below') + '). Certification starts at 80' + (you >= 80 ? ', and you clear it.' : ', ' + (80 - you) + ' points away.') + '</div>') +
         card('Where peers are ahead', behind.length ? behind.slice(0, 4).map(function (p) { return '<div style="display:flex;justify-content:space-between;font-size:12px;padding:3px 0;border-bottom:1px solid rgba(26,24,21,.05)"><span>' + esc(p.name) + '</span><span><b style="color:#B91C1C">' + p.you + '</b> <span style="color:#64748b">vs ' + p.ind + '</span></span></div>'; }).join('') + '<div style="font-size:10.5px;color:#64748b;margin-top:4px">You vs the industry average for each part</div>' : '<div style="font-size:12px;color:#15803D">You are at or above the industry average on every part.</div>') +
-        card('If your open fixes land', '<div style="font-size:12.5px;color:#1a1815;line-height:1.55">Projected score <b style="color:#15803D">' + proj + '</b>, ahead of <b>' + below2 + ' of ' + n + '</b> peers' + (proj >= 80 && you < 80 ? ', and over the certification line.' : '.') + (behind[0] ? ' The biggest lift is ' + esc(behind[0].name) + '.' : '') + '</div>');
+        card('If your open fixes land', '<div style="font-size:12.5px;color:#1a1815;line-height:1.55">Projected score <b style="color:#15803D">' + proj + '</b>, ahead of <b>' + below2 + ' of ' + n + '</b> peers' + (proj >= 80 && you < 80 ? ', and over the certification line.' : '.') + (behind[0] ? ' The biggest lift is ' + esc(behind[0].name) + '.' : '') + '</div>') +
+        card('What certified peers do', '<ul style="margin:0;padding-left:16px;font-size:12px;color:#334155;line-height:1.55"><li>No part under 70, so one weak area never blocks them</li><li>Fix a flagged model within about 30 days</li><li>Every model and agent has a named owner</li><li>Vendor AI is checked the same way as their own</li></ul>');
     } catch (e) { console.warn('peers', e); }
     return r;
   };
@@ -49302,6 +49303,18 @@ window.CARDINAL_PLACES = {
   }
   function hidden(scr) { try { return JSON.parse(localStorage.getItem('cardinal-hidden-' + scr) || '{}'); } catch (e) { return {}; } }
   function saveHidden(scr, o) { try { localStorage.setItem('cardinal-hidden-' + scr, JSON.stringify(o)); } catch (e) {} }
+  // 10/3 evening (Brittany: "what is cohort explorer telling me? I can't click on it").
+  setInterval(function () {
+    ['eden', 'obsidian'].forEach(function (scr) {
+      var e = document.getElementById('screen-' + scr); if (!e || e.offsetParent === null) return;
+      var sec = e.querySelector('#edo-sec-cohort'); if (!sec) return;
+      if (!sec.querySelector('.cohort-intro')) { var h = sec.querySelector('h2'); if (h) { var p = document.createElement('div'); p.className = 'cohort-intro'; p.style.cssText = 'font-size:12px;color:#475569;margin:4px 0 10px;line-height:1.5'; p.textContent = 'The groups behind the numbers above. Each row is a group of affected ' + ((window.currentOrg || 'ad') === 'ad' ? 'aircraft' : 'people') + ', with its gap, its link to fraud, and its case. Opening the individual records inside a group is limited to Admin and Legal; switch "Demo as" to Admin to see it.'; h.parentNode.insertBefore(p, h.nextSibling); } }
+      [].forEach.call(sec.querySelectorAll('tbody tr'), function (tr) {
+        if (tr.__ck) return; tr.__ck = 1; tr.style.cursor = 'pointer';
+        tr.addEventListener('click', function (ev) { if (ev.target.closest('button,a')) return; var b = tr.querySelector('button'); if (b) { b.click(); return; } try { cardinalShowToast('Opening individual records needs Admin or Legal access. Switch "Demo as" to Admin to see this group.'); } catch (e2) {} });
+      });
+    });
+  }, 1200);
   window.edoReorderNow = run;
   // Redraws (filters, sorts, expands) keep your place: reorder right away and restore the scroll position.
   ['renderEden', 'renderObsidian'].forEach(function (fn) {
