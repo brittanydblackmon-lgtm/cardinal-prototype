@@ -50877,13 +50877,15 @@ window.CARDINAL_PLACES = {
 
 <script data-p="p4_analytics">
 // 10/6 (Brittany: know when someone other than me opens the prototype). Three kinds of access codes:
-//   owner: cardinal, demo        (Brittany; never tracked)
-//   friends: cardinal2026
-//   investors: invest
+//   friends and Brittany: cardinal2026
+//   investors: cardinal (or invest)
+// Brittany's own browser is never tracked: open the site once with ?me=1 (?me=0 undoes it).
 // A personal link (?r=name, e.g. /?r=pear) tags the visit with who it was sent to. Visits are recorded in
 // Vercel Web Analytics as page paths like /view/investor/pear/eden, so each screen they open shows up too.
 (function () {
-  var GROUP = { cardinal: 'owner', demo: 'owner', cardinal2026: 'friend', invest: 'investor' };
+  var GROUP = { cardinal2026: 'friend', cardinal: 'investor', invest: 'investor', demo: 'friend' };
+  try { var me = new URLSearchParams(location.search).get('me'); if (me === '1') localStorage.setItem('cardinal-owner', '1'); if (me === '0') localStorage.removeItem('cardinal-owner'); } catch (e) {}
+  function isOwner() { try { return localStorage.getItem('cardinal-owner') === '1'; } catch (e) { return false; } }
   window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
   try { var s = document.createElement('script'); s.defer = true; s.src = '/_vercel/insights/script.js'; document.head.appendChild(s); } catch (e) {}
   function clean(x) { return String(x || '').toLowerCase().replace(/[^a-z0-9-]/g, '').slice(0, 40); }
@@ -50895,7 +50897,7 @@ window.CARDINAL_PLACES = {
   } catch (e) {}
   window.__cardinalViewer = null;
   function track(screen) {
-    var v = window.__cardinalViewer; if (!v || v.group === 'owner') return;
+    var v = window.__cardinalViewer; if (!v || isOwner()) return;
     var path = '/view/' + v.group + '/' + (v.ref || 'direct') + (screen ? '/' + clean(screen) : '');
     try { if (location.pathname !== path) history.replaceState(history.state, '', path); } catch (e) {}
     try { window.va('pageview', { route: '/view/[group]/[ref]' + (screen ? '/[screen]' : ''), path: path }); } catch (e) {}
@@ -50905,7 +50907,7 @@ window.CARDINAL_PLACES = {
   if (typeof oGate === 'function') window.checkGate = checkGate = function () {
     var pw = document.getElementById('gate-password'), val = pw ? pw.value.trim().toLowerCase() : '';
     var g = GROUP[val];
-    if (g === 'investor' && pw) pw.value = 'cardinal2026'; // the original check accepts it; the group is remembered here
+    if (g === 'investor' && pw && val === 'invest') pw.value = 'cardinal2026'; // the original check accepts it; the group is remembered here
     var r = oGate.apply(this, arguments);
     if (g) { window.__cardinalViewer = { group: g, ref: ref }; track(''); }
     return r;
@@ -50922,6 +50924,90 @@ window.CARDINAL_PLACES = {
     if (typeof org === 'string') track('company-' + org);
     return r;
   };
+})();
+
+</script>
+
+<script data-p="p5_standard">
+// 10/6 (Brittany, after the Founder Playbook): the Trust Score shows the named, versioned Cardinal Standard each
+// model is evaluated against (core + industry profile), who governs it, and that the methodology stays private.
+// "Certified" stays visible as the full vision, with a hover note that today it reads "evaluated against the
+// Cardinal Standard." Trust Ledger's tiers are previews of a shared view, and the Consumer View is labeled as
+// the long-term Passport vision.
+(function () {
+  function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;'); }
+  var P = {
+    fin: { profile: 'Financial Services · Lending', v: 'v1.2', group: 'Financial Services Working Group', alt: [[/fraud/i, 'Financial Services · Fraud Decisions v1.0']],
+      hist: [['v1.2', 'Jul 2026', 'Added checks on the reasons given in adverse action notices and state disclosure timing.'], ['v1.1', 'Feb 2026', 'Added the AI Agents & Security part.'], ['v1.0', 'Oct 2025', 'First release.']] },
+    ad: { profile: 'Aerospace & Defense · Maintenance & Readiness', v: 'v1.0', group: 'Aerospace & Defense Working Group', alt: [[/readiness/i, 'Aerospace & Defense · Readiness Forecasting v1.0']],
+      hist: [['v1.0', 'Apr 2026', 'First release: accuracy by operating environment, parts traceability, and authority limits for agents.']] },
+    health: { profile: 'Healthcare · Claims & Coverage', v: 'v1.1', group: 'Healthcare Working Group', alt: [[/messag|assistant/i, 'Healthcare · Patient Communication v1.0']],
+      hist: [['v1.1', 'Jun 2026', 'Added checks for clinician review on every denial.'], ['v1.0', 'Jan 2026', 'First release.']] },
+    fed: { profile: 'Government · Tax Administration', v: 'v1.0', group: 'Government Working Group', alt: [[/assistant|help/i, 'Government · Public Information Assistants v1.0']],
+      hist: [['v1.0', 'May 2026', 'First release: public accountability, appeals, and transparency checks.']] }
+  };
+  var PARTS = ['Fairness', 'Fraud', 'Transparency', 'Privacy', 'Governance', 'Monitoring', 'AI Agents & Security'];
+  var BOX = 'background:#fff;border:1px solid rgba(26,24,21,.1);border-radius:12px;padding:14px 16px';
+  var H = 'font-size:10.5px;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px';
+  function profileFor(org, name) {
+    var p = P[org] || P.fin;
+    if (/agent|collections|chatbot/i.test(name) && !/assistant/i.test(name)) return 'Core · AI Agents v1.0';
+    for (var i = 0; i < p.alt.length; i++) if (p.alt[i][0].test(name)) return p.alt[i][1];
+    return p.profile + ' ' + p.v;
+  }
+  function html(org) {
+    var p = P[org] || P.fin;
+    var models = (window.CARDINAL_MODELS || []).filter(function (m) { return m.industry === org && m.status !== 'archive'; }).slice(0, 7);
+    var rows = models.map(function (m, i) { return '<tr style="background:' + (i % 2 ? '#f7f3ea' : '#fff') + '"><td style="padding:7px 10px;font-weight:600">' + esc(m.name) + '</td><td style="padding:7px 10px">' + esc(profileFor(org, m.name)) + '</td></tr>'; }).join('');
+    return '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:12px"><div><div style="font-size:16px;font-weight:700;color:#1a1815">The Cardinal Standard</div><div style="font-size:12px;color:#64748b;margin-top:2px">What you are evaluated against. The standard isn’t universal; the independence is.</div></div>' +
+      '<span style="font-size:11.5px;font-weight:700;padding:5px 10px;border-radius:8px;background:#1a1815;color:#fff">Core Standard v1.0 + ' + esc(p.profile) + ' ' + p.v + '</span></div>' +
+      '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px">' +
+      '<div style="display:flex;flex-direction:column;gap:12px">' +
+      '<div style="' + BOX + '"><div style="' + H + '">Meets the Standard when</div><div style="font-size:13px;color:#1a1815;line-height:1.55">The overall score is <strong>80 or higher</strong> and <strong>no part is below 70</strong>, under ' + esc(p.profile) + ' ' + p.v + '.</div><div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px">' + PARTS.map(function (x) { return '<span style="font-size:11px;font-weight:600;padding:3px 9px;border-radius:999px;background:#f3f0e9;color:#1a1815">' + x + '</span>'; }).join('') + '</div></div>' +
+      '<div style="' + BOX + '"><div style="' + H + '">Who governs it</div><div style="font-size:13px;color:#1a1815;line-height:1.55">The <strong>Cardinal Standards Council</strong> and the <strong>' + esc(p.group) + '</strong> decide what is measured and when the Standard changes. They never grade a single company.</div><div style="font-size:12px;color:#475569;margin-top:8px">Your team can set its own alert thresholds and risk appetite. It can’t change the Standard it’s evaluated against.</div></div>' +
+      '<div style="' + BOX + ';background:#fbfaf7"><div style="' + H + '">How it’s measured · Cardinal Methodology</div><div style="display:flex;gap:10px;align-items:flex-start"><svg width="16" height="18" viewBox="0 0 16 18" aria-hidden="true" style="flex:none;margin-top:2px"><rect x="2" y="8" width="12" height="9" rx="2" fill="#1a1815"/><path d="M5 8V5.5a3 3 0 0 1 6 0V8" fill="none" stroke="#1a1815" stroke-width="1.8"/></svg><div style="font-size:12.5px;color:#475569;line-height:1.55">Private to Cardinal. You can see what is measured and why a score moved. The exact weights, formulas, and thresholds stay private, so the score can’t be gamed. A summary of the approach, its validation, and its limits is available on request.</div></div></div>' +
+      '</div><div style="display:flex;flex-direction:column;gap:12px">' +
+      '<div style="' + BOX + '"><div style="' + H + '">Which profile each model is evaluated against</div><table style="width:100%;border-collapse:collapse;font-size:12px;color:#1a1815">' + rows + '</table></div>' +
+      '<div style="' + BOX + '"><div style="' + H + '">Version history</div>' + p.hist.map(function (h) { return '<div style="display:grid;grid-template-columns:44px 72px 1fr;gap:8px;padding:6px 0;border-top:1px solid rgba(26,24,21,.06);font-size:12px"><strong>' + h[0] + '</strong><span style="color:#64748b">' + h[1] + '</span><span>' + esc(h[2]) + '</span></div>'; }).join('') + '</div>' +
+      '<div style="font-size:11.5px;color:#64748b">Other industries use their own profiles: Healthcare · Clinical Decision Support, Aerospace & Defense, Government. Every profile sits on the same Core Standard.</div>' +
+      '</div></div>';
+  }
+  var CERT = 'Where this is going: today Cardinal reports "Evaluated against the Cardinal Standard." A formal Cardinal certification comes later, once the Standard’s governance, re-checks, and revocation rules are mature. This prototype shows the full picture.';
+  function tick() {
+    var org = window.currentOrg || 'ad';
+    var ts = document.getElementById('ts-v2-root');
+    if (ts && ts.offsetParent !== null) {
+      var box = document.getElementById('ts-standard');
+      var why = [].filter.call(ts.children, function (c) { return /^Why is your score/i.test((c.innerText || '').trim()); })[0];
+      if (!box) { box = document.createElement('section'); box.id = 'ts-standard'; box.className = 'tsv2-section'; }
+      var anchor = why || ts.children[3];
+      if (anchor && anchor.nextElementSibling !== box) anchor.parentNode.insertBefore(box, anchor.nextSibling);
+      if (box.getAttribute('data-o') !== org) { box.setAttribute('data-o', org); box.innerHTML = html(org); }
+    }
+    // "Certified" stays as the vision, with the honest note on hover.
+    var a = document.querySelector('.screen.active');
+    if (a) [].forEach.call(a.querySelectorAll('button, span, div, p, strong, h3'), function (e) {
+      if (e.__cert || e.children.length > 1) return;
+      var t = (e.textContent || '').trim();
+      if (t.length < 60 && /certif/i.test(t)) { e.__cert = 1; if (!e.title) e.title = CERT; e.style.cursor = e.style.cursor || 'help'; }
+    });
+    // Trust Ledger tiers are previews of what an authorized party would see.
+    var tiers = document.getElementById('tl-preview-tier-pills');
+    if (tiers && !tiers.__p5) {
+      tiers.__p5 = 1;
+      var lab = tiers.previousElementSibling; if (lab && /view as/i.test(lab.textContent)) lab.textContent = 'Preview what you share with';
+      tiers.title = 'Outside parties never log in to your Cardinal. You choose what to share; each preview shows what that party would see once you authorize it.';
+    }
+    // Consumer View = the long-term Passport vision.
+    var cv = document.querySelector('.top-view-btn[data-view="consumer"]');
+    if (cv && !cv.__p5) { cv.__p5 = 1; cv.title = 'Long-term vision: Cardinal Passport. How a borrower, patient, or citizen could someday see the AI that affects them. Not part of the first product.'; }
+    var pm = document.getElementById('passport-selfview-modal');
+    if (pm && pm.style.display !== 'none' && !document.getElementById('psv-vision')) {
+      var hdr = document.getElementById('psv-name'); var host = hdr && hdr.parentNode;
+      if (host) { var n = document.createElement('div'); n.id = 'psv-vision'; n.style.cssText = 'font-size:11.5px;font-weight:600;color:#1a1815;background:#f3f0e9;border-radius:8px;padding:6px 10px;margin:6px 0 2px;display:inline-block'; n.textContent = 'Long-term vision: Cardinal Passport. Not part of the first product.'; host.insertBefore(n, hdr.nextSibling); }
+    }
+  }
+  setInterval(tick, 800);
 })();
 
 </script>
