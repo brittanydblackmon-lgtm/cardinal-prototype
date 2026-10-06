@@ -51014,6 +51014,167 @@ window.CARDINAL_PLACES = {
 
 </script>
 
+<script data-p="p5_launch">
+// 10/6 (Brittany: remediation and launch sign-off). A data scientist, an engineer, or Adam builds and tests a fix
+// in Genesis / Atonement, always in shadow first. Adam never launches on his own: when a fix passes, he saves the
+// model to the Cardinal Library with a note. Before any model launches, a checklist collects a sign-off from each
+// required person (data science, compliance, legal, model owner); each one is recorded with name, role and time
+// in Echo and the Trust Ledger. A person gives the final launch approval, or explicitly tells Adam to launch it,
+// which is logged as "launched by Adam at [person]'s instruction."
+(function () {
+  function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;'); }
+  function me() { var p = window.getActivePersona ? getActivePersona() : null; return p ? { name: p.name, role: p.role } : { name: 'You', role: '' }; }
+  function ago(d) { var x = new Date(); x.setDate(x.getDate() - d); return x; }
+  function fmt(d) { return d.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }); }
+  var SIGNERS = {
+    fin: [['Data science', 'Nina Shah', 'Lead Data Scientist, Credit'], ['Compliance', 'Riley Whitmore', 'Chief Compliance Officer'], ['Legal', 'Morgan Hale', 'General Counsel'], ['Model owner', 'Hannah Brooks', 'Product Manager, Digital Lending']],
+    ad: [['Data science', 'Sarah Chen', 'Lead Data Scientist'], ['Compliance', 'James Martinez', 'Compliance Lead'], ['Legal', "Kevin O'Brien", 'General Counsel'], ['Model owner', 'Lisa Walker', 'CTO']],
+    health: [['Data science', 'Priyanka Rao', 'Senior Data Scientist'], ['Compliance', 'Elena Ruiz', 'Chief Compliance Officer'], ['Legal', 'Marcus Bell', 'General Counsel'], ['Model owner', 'Dr. Aisha Patel', 'Head of Clinical AI']],
+    fed: [['Data science', 'Andre Lewis', 'Lead Data Scientist'], ['Compliance', 'Patricia Alvarez', 'Chief Privacy Officer'], ['Legal', 'Owen Clarke', 'Chief Counsel'], ['Model owner', 'Dana Kim', 'Chief AI Officer']]
+  };
+  var SEED = {
+    fin: { model: 'Credit Scoring v3.5', cs: 'FIN-1203', issue: 'ZIP code acting as a stand-in for race in Credit Scoring v3.4', result: 'Passed the shadow test: DI 0.83 on 3,241 real decisions, default rate unchanged.', test: 'Credit Scoring v3.5 vs v3.4 (shadow A/B)' },
+    ad: { model: 'Fleet Health v2.5', cs: 'AD-2847', issue: 'engine-wear warnings arriving late at desert and coastal bases in Fleet Health v2.4', result: 'Passed the shadow test: warnings now arrive on time at every base type.', test: 'Fleet Health v2.5 vs v2.4 (shadow A/B)' },
+    health: { model: 'Claims Adjudication v2.0', cs: 'HS-2847', issue: 'age used as a cost stand-in, cutting specialty care for members 65 and older', result: 'Passed the shadow test: DI 0.89 on 4,102 real claims.', test: 'Claims Adjudication v2.0 vs v1.9 (shadow A/B)' },
+    fed: { model: 'IRS Tax Fraud Detection v3.2', cs: 'FED-PDV-001', issue: 'self-employed filers in some metros flagged far more often', result: 'Passed the shadow test: DI 0.82 with no drop in real fraud caught.', test: 'IRS Tax Fraud Detection v3.2 vs v3.1 (shadow A/B)' }
+  };
+  var Q = {}, LEDGER = {};
+  function queue(org) {
+    if (!Q[org]) { var s = SEED[org]; Q[org] = s ? [{ id: org + 'L0', model: s.model, cs: s.cs, issue: s.issue, result: s.result, test: s.test, by: 'Adam (AI)', saved: ago(2), signs: {}, status: 'Ready for launch review' }] : []; }
+    return Q[org];
+  }
+  window.cardinalLaunchQueue = queue;
+  function note(e) { return 'This model was built and tested for ' + e.cs + ' (' + e.issue + '). ' + e.result + ' If you want to use it, review it one more time and complete the launch checklist before deploying.'; }
+  function hash() { var x = ''; for (var i = 0; i < 16; i++) x += '0123456789abcdef'[Math.floor(Math.random() * 16)]; return x; }
+  function seal(org, e, type, summary, author, role) {
+    var t = new Date();
+    try {
+      var CD = window.CARDINAL_DATA && CARDINAL_DATA[org];
+      if (CD && CD.echoMemories) CD.echoMemories.unshift({ id: 'echo-launch-' + Date.now(), timestamp: t.toISOString(), author: author, authorRole: role, eventType: type, core: 'atonement', severity: 'info', summary: summary, content: summary, hash: '0x' + hash() + hash(), signature: 'sig-' + hash(), isPinned: false, isSealed: true, addendums: [], linkedMemories: [], comments: [], accessTier: 'org-wide', accessRoles: [], caseId: e.cs, modelId: e.model, userId: null, industryContext: org });
+    } catch (x) {}
+    (LEDGER[org] = LEDGER[org] || []).unshift({ t: t, text: summary, by: author + (role ? ', ' + role : ''), id: 'TL-LAUNCH-' + hash().slice(0, 8).toUpperCase() });
+    try { cardinalLogActivity('edit', summary, e.cs); } catch (x) {}
+  }
+  window.cardinalSaveToLibrary = function (model, cs, issue, result, test, by) {
+    var org = window.currentOrg || 'ad', q = queue(org);
+    if (q.some(function (x) { return x.model === model; })) { cardinalOpenLaunch(model); return; }
+    var e = { id: org + 'L' + Date.now(), model: model, cs: cs || '', issue: issue || 'the issue this test addressed', result: result || 'Passed testing.', test: test || '', by: by || me().name, saved: new Date(), signs: {}, status: 'Ready for launch review' };
+    q.unshift(e);
+    seal(org, e, 'model-updated', e.model + ' saved to the Cardinal Library for launch review by ' + e.by, e.by, '');
+    try { cardinalShowToast(e.model + ' saved to the Cardinal Library'); } catch (x) {}
+  };
+
+  // The checklist pop-up.
+  function find(model) { var org = window.currentOrg || 'ad'; return queue(org).filter(function (x) { return x.model === model; })[0]; }
+  window.cardinalOpenLaunch = function (model) {
+    var e = find(model); if (!e) return;
+    var org = window.currentOrg || 'ad', S = SIGNERS[org] || SIGNERS.fin, done = S.filter(function (s) { return e.signs[s[0]]; }).length, all = done === S.length;
+    var o = document.getElementById('launch-modal'); if (o) o.remove();
+    o = document.createElement('div'); o.id = 'launch-modal';
+    o.style.cssText = 'position:fixed;inset:0;z-index:9995;background:rgba(17,17,17,.5);display:flex;align-items:center;justify-content:center;padding:20px';
+    var BTN = 'font:inherit;font-size:12px;font-weight:600;padding:7px 14px;border-radius:8px;cursor:pointer;';
+    var rows = S.map(function (s, i) {
+      var sg = e.signs[s[0]];
+      return '<div style="display:grid;grid-template-columns:22px 1fr auto;gap:10px;align-items:center;padding:10px 12px;border-radius:8px;background:' + (i % 2 ? '#f7f3ea' : '#fff') + '">' +
+        '<span style="width:18px;height:18px;border-radius:5px;border:2px solid ' + (sg ? '#15803D' : 'rgba(26,24,21,.25)') + ';background:' + (sg ? '#15803D' : '#fff') + ';display:inline-flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:800">' + (sg ? '✓' : '') + '</span>' +
+        '<div><div style="font-size:12.5px;font-weight:700;color:#1a1815">' + s[0] + ' · ' + esc(s[1]) + '</div><div style="font-size:11px;color:#64748b">' + (sg ? 'Signed off by ' + esc(sg.name) + ', ' + esc(sg.role) + ' · ' + fmt(sg.at) + ' · sealed in Echo and the Trust Ledger' : esc(s[2]) + ' · waiting') + '</div></div>' +
+        (sg ? '<span style="font-size:11px;font-weight:700;color:#15803D">Signed</span>' : '<button type="button" onclick="cardinalLaunchSign(\'' + esc(e.model) + '\',' + i + ')" style="' + BTN + 'border:0;background:#1a1815;color:#fff">Sign off</button>') + '</div>';
+    }).join('');
+    var final = e.status === 'Launched' ?
+      '<div style="padding:12px 14px;border-radius:10px;background:#f0fdf4;border:1px solid #bbf7d0;font-size:12.5px;color:#14532d"><strong>Launched.</strong> ' + esc(e.launchNote) + '</div>' :
+      '<div style="font-size:12px;color:#475569;margin-bottom:8px">' + (all ? 'Every required person has signed off. A person gives the final approval.' : 'The model can’t launch until every required person signs off (' + done + ' of ' + S.length + ').') + '</div>' +
+      '<div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" ' + (all ? '' : 'disabled ') + 'onclick="cardinalLaunchGo(\'' + esc(e.model) + '\',false)" style="' + BTN + 'border:0;background:' + (all ? '#1a1815' : '#cbd5e1') + ';color:#fff;cursor:' + (all ? 'pointer' : 'not-allowed') + '">Approve launch</button>' +
+      '<button type="button" ' + (all ? '' : 'disabled ') + 'onclick="cardinalLaunchGo(\'' + esc(e.model) + '\',true)" style="' + BTN + 'border:1px solid rgba(26,24,21,.2);background:#fff;color:' + (all ? '#1a1815' : '#94a3b8') + ';cursor:' + (all ? 'pointer' : 'not-allowed') + '">Have Adam launch it for me</button></div>';
+    o.innerHTML = '<div style="width:min(640px,100%);max-height:90vh;overflow:auto;background:#fff;border-radius:14px;padding:20px 22px;box-shadow:0 24px 60px rgba(0,0,0,.3)">' +
+      '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px"><div><div style="font-size:10.5px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.6px">Launch checklist</div><div style="font-size:17px;font-weight:700;color:#1a1815;margin-top:2px">' + esc(e.model) + '</div><div style="font-size:11.5px;color:#64748b;margin-top:2px">Saved to the Cardinal Library by ' + esc(e.by) + ' · ' + fmt(e.saved) + (e.test ? ' · Test: ' + esc(e.test) : '') + '</div></div>' +
+      '<button type="button" aria-label="Close" onclick="document.getElementById(\'launch-modal\').remove()" style="border:0;background:rgba(26,24,21,.06);width:30px;height:30px;border-radius:8px;cursor:pointer;font-size:16px">&times;</button></div>' +
+      '<div style="margin:14px 0;padding:12px 14px;border-radius:10px;background:#f3f0e9;font-size:12.5px;line-height:1.55;color:#1a1815"><strong>' + (/adam/i.test(e.by) ? 'Adam’s note' : 'Note') + ':</strong> ' + esc(note(e)) + '</div>' +
+      '<div style="font-size:10.5px;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px">Required sign-offs</div><div style="border:1px solid rgba(26,24,21,.1);border-radius:10px;overflow:hidden">' + rows + '</div>' +
+      '<div style="font-size:11px;color:#64748b;margin:6px 0 14px">In a live deployment, each person signs from their own account.</div>' +
+      '<div style="font-size:10.5px;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px">Final launch approval</div>' + final + '</div>';
+    o.onclick = function (ev) { if (ev.target === o) o.remove(); };
+    document.body.appendChild(o);
+  };
+  window.cardinalLaunchSign = function (model, i) {
+    var e = find(model); if (!e) return;
+    var org = window.currentOrg || 'ad', s = (SIGNERS[org] || SIGNERS.fin)[i];
+    e.signs[s[0]] = { name: s[1], role: s[2], at: new Date() };
+    seal(org, e, 'document-approved', s[0] + ' sign-off for launching ' + e.model + ': ' + s[1] + ' (' + s[2] + ')', s[1], s[2]);
+    cardinalOpenLaunch(model);
+  };
+  window.cardinalLaunchGo = function (model, viaAdam) {
+    var e = find(model); if (!e) return;
+    var org = window.currentOrg || 'ad', S = SIGNERS[org] || SIGNERS.fin;
+    if (S.some(function (s) { return !e.signs[s[0]]; })) return;
+    var who = me();
+    e.status = 'Launched';
+    e.launchNote = viaAdam ? 'Launched by Adam at ' + who.name + '’s instruction · ' + fmt(new Date()) + '. Authorized by ' + who.name + (who.role ? ', ' + who.role : '') + '.' : 'Approved and launched by ' + who.name + (who.role ? ', ' + who.role : '') + ' · ' + fmt(new Date()) + '.';
+    seal(org, e, 'model-deployed', e.model + ': ' + e.launchNote + ' All ' + S.length + ' sign-offs complete.', viaAdam ? 'Adam (AI)' : who.name, viaAdam ? 'at ' + who.name + '’s instruction' : who.role);
+    try { cardinalShowToast(e.model + ' launched. Sealed in Echo and the Trust Ledger.'); } catch (x) {}
+    cardinalOpenLaunch(model);
+  };
+
+  // Where the flow shows up: Library (ready for review), Genesis (save a passed test), Atonement (open the checklist),
+  // Trust Ledger (sealed launch records).
+  function chip(e) { return '<span style="font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:999px;' + (e.status === 'Launched' ? 'background:#f0fdf4;color:#15803D' : 'background:#1a1815;color:#fff') + '">' + e.status + '</span>'; }
+  function library() {
+    var grid = document.getElementById('lib-models-grid'); if (!grid || grid.offsetParent === null) return;
+    var org = window.currentOrg || 'ad', q = queue(org), key = org + JSON.stringify(q.map(function (e) { return [e.model, e.status, Object.keys(e.signs).length]; }));
+    var box = document.getElementById('lib-launch'); if (!box) { box = document.createElement('div'); box.id = 'lib-launch'; }
+    if (grid.previousElementSibling !== box) grid.parentNode.insertBefore(box, grid);
+    if (box.getAttribute('data-k') === key) return; box.setAttribute('data-k', key);
+    if (!q.length) { box.innerHTML = ''; return; }
+    box.innerHTML = '<div class="card" style="padding:14px 16px;margin-bottom:12px"><div style="font-size:14px;font-weight:700;color:#1a1815">Ready for launch review</div><div style="font-size:11.5px;color:#64748b;margin:2px 0 10px">Models that passed testing. Nothing launches until every required person signs off.</div>' +
+      q.map(function (e, i) { var n = Object.keys(e.signs).length; return '<div style="display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;padding:10px 12px;border-radius:8px;background:' + (i % 2 ? '#f7f3ea' : '#fff') + '"><div><div style="font-size:12.5px;font-weight:700;color:#1a1815">' + esc(e.model) + ' ' + chip(e) + '</div><div style="font-size:11.5px;color:#475569;margin-top:3px">' + (/adam/i.test(e.by) ? '<strong>Adam:</strong> ' : '') + esc(note(e)) + '</div><div style="font-size:11px;color:#64748b;margin-top:3px">Sign-offs: ' + n + ' of 4</div></div><button type="button" onclick="cardinalOpenLaunch(\'' + esc(e.model) + '\')" style="font:inherit;font-size:12px;font-weight:600;padding:7px 14px;border-radius:8px;border:0;background:#1a1815;color:#fff;cursor:pointer;white-space:nowrap">Open launch checklist</button></div>'; }).join('') + '</div>';
+  }
+  function genesis() {
+    var ws = document.getElementById('gnws'); if (!ws || ws.offsetParent === null) return;
+    [].forEach.call(ws.querySelectorAll('button'), function (b) {
+      if (b.__l5 || !/Send winner to Atonement/.test(b.textContent)) return;
+      b.__l5 = 1;
+      var card = b.closest('[style*="border-radius"]'); var head = card && card.parentNode && card.parentNode.querySelector('[onclick^="gnOpen"]');
+      var name = head ? (head.querySelector('div[style*="font-weight:700"]') || {}).textContent || '' : '';
+      var meta = head ? ((head.querySelector('div[style*="font-weight:700"]') || {}).nextElementSibling || {}).textContent || '' : '';
+      var model = (meta.split(' · ')[1] || '').replace(/\s*\((vendor|agent|shadow)\)/, '');
+      var passed = head && /Passed/.test(head.textContent);
+      if (!model || !passed) return;
+      var org = window.currentOrg || 'ad', inQ = queue(org).some(function (x) { return x.model === model; });
+      var nb = document.createElement('button'); nb.type = 'button'; nb.className = 'btn-ghost'; nb.style.fontSize = '11px';
+      nb.textContent = inQ ? 'Open launch checklist' : 'Save to Cardinal Library';
+      nb.onclick = function () { if (queue(org).some(function (x) { return x.model === model; })) cardinalOpenLaunch(model); else { var s = SEED[org] || {}; cardinalSaveToLibrary(model, s.cs, s.issue, 'Passed testing in Genesis (' + name + ').', name, /Adam/.test(meta) ? 'Adam (AI)' : null); nb.textContent = 'Open launch checklist'; } };
+      b.parentNode.insertBefore(nb, b.nextSibling);
+      if (inQ) { var n = document.createElement('div'); n.style.cssText = 'font-size:11.5px;color:#1a1815;background:#f3f0e9;border-radius:8px;padding:8px 10px;margin-top:8px'; n.innerHTML = '<strong>Adam saved this model to the Cardinal Library for launch review.</strong> It won’t launch until every required person signs off.'; b.parentNode.parentNode.insertBefore(n, b.parentNode.nextSibling); }
+    });
+  }
+  function atonement() {
+    var ws = document.getElementById('atws'); if (!ws || ws.offsetParent === null) return;
+    var org = window.currentOrg || 'ad';
+    [].forEach.call(ws.querySelectorAll('button'), function (b) {
+      if (b.__l5 || !/Approve next step/.test(b.textContent)) return;
+      b.__l5 = 1;
+      var panel = b.closest('div[style*="padding:14px"]'), card = panel && panel.parentNode, head = card && card.querySelector('[onclick^="atwsOpen"]');
+      var txt = head ? head.textContent : '';
+      var e = queue(org).filter(function (x) { return txt.indexOf(x.model) > -1; })[0];
+      if (!e) return;
+      var nb = document.createElement('button'); nb.type = 'button'; nb.className = 'btn-primary'; nb.style.fontSize = '11px'; nb.textContent = 'Open launch checklist';
+      nb.onclick = function () { cardinalOpenLaunch(e.model); };
+      b.parentNode.insertBefore(nb, b.nextSibling);
+    });
+  }
+  function ledger() {
+    var scr = document.getElementById('screen-trustledger'); if (!scr || scr.offsetParent === null) return;
+    var org = window.currentOrg || 'ad', L = LEDGER[org] || [], box = document.getElementById('tl-launch');
+    if (!L.length) { if (box) box.remove(); return; }
+    if (!box) { box = document.createElement('div'); box.id = 'tl-launch'; box.className = 'card'; box.style.cssText = 'padding:14px 16px;margin:0 0 14px'; var anchor = scr.querySelector('.section-hdr'); if (anchor) anchor.parentNode.insertBefore(box, anchor.nextSibling); else scr.insertBefore(box, scr.firstChild); }
+    var key = org + L.length; if (box.getAttribute('data-k') === key) return; box.setAttribute('data-k', key);
+    box.innerHTML = '<div style="font-size:14px;font-weight:700;color:#1a1815">Launch sign-offs (sealed)</div><div style="font-size:11.5px;color:#64748b;margin:2px 0 10px">Every sign-off and launch approval, with name, role, and time. Can’t be edited.</div>' +
+      L.map(function (x, i) { return '<div style="display:grid;grid-template-columns:120px 1fr auto;gap:10px;padding:8px 12px;border-radius:8px;font-size:12px;background:' + (i % 2 ? '#f7f3ea' : '#fff') + '"><span style="font-family:monospace;color:#475569">' + x.id + '</span><span style="color:#1a1815">' + esc(x.text) + '</span><span style="color:#64748b;white-space:nowrap">' + fmt(x.t) + '</span></div>'; }).join('');
+  }
+  setInterval(function () { library(); genesis(); atonement(); ledger(); }, 800);
+})();
+
+</script>
+
 </body>
 
 </html>
