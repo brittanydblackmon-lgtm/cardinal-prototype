@@ -50875,6 +50875,57 @@ window.CARDINAL_PLACES = {
 
 </script>
 
+<script data-p="p4_analytics">
+// 10/6 (Brittany: know when someone other than me opens the prototype). Three kinds of access codes:
+//   owner: cardinal, demo        (Brittany; never tracked)
+//   friends: cardinal2026
+//   investors: invest
+// A personal link (?r=name, e.g. /?r=pear) tags the visit with who it was sent to. Visits are recorded in
+// Vercel Web Analytics as page paths like /view/investor/pear/eden, so each screen they open shows up too.
+(function () {
+  var GROUP = { cardinal: 'owner', demo: 'owner', cardinal2026: 'friend', invest: 'investor' };
+  window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
+  try { var s = document.createElement('script'); s.defer = true; s.src = '/_vercel/insights/script.js'; document.head.appendChild(s); } catch (e) {}
+  function clean(x) { return String(x || '').toLowerCase().replace(/[^a-z0-9-]/g, '').slice(0, 40); }
+  var ref = '';
+  try {
+    var q = new URLSearchParams(location.search).get('r'), m = location.pathname.match(/^\/view\/[a-z]+\/([a-z0-9-]+)/);
+    ref = clean(q || (m && m[1]) || sessionStorage.getItem('cardinal-ref') || '');
+    if (ref) sessionStorage.setItem('cardinal-ref', ref);
+  } catch (e) {}
+  window.__cardinalViewer = null;
+  function track(screen) {
+    var v = window.__cardinalViewer; if (!v || v.group === 'owner') return;
+    var path = '/view/' + v.group + '/' + (v.ref || 'direct') + (screen ? '/' + clean(screen) : '');
+    try { if (location.pathname !== path) history.replaceState(history.state, '', path); } catch (e) {}
+    try { window.va('pageview', { route: '/view/[group]/[ref]' + (screen ? '/[screen]' : ''), path: path }); } catch (e) {}
+    try { window.va('event', { name: screen ? 'screen' : 'login', data: { group: v.group, ref: v.ref || 'direct', screen: screen || '' } }); } catch (e) {}
+  }
+  var oGate = window.checkGate;
+  if (typeof oGate === 'function') window.checkGate = checkGate = function () {
+    var pw = document.getElementById('gate-password'), val = pw ? pw.value.trim().toLowerCase() : '';
+    var g = GROUP[val];
+    if (g === 'investor' && pw) pw.value = 'cardinal2026'; // the original check accepts it; the group is remembered here
+    var r = oGate.apply(this, arguments);
+    if (g) { window.__cardinalViewer = { group: g, ref: ref }; track(''); }
+    return r;
+  };
+  var oShow = window.showScreen;
+  if (typeof oShow === 'function') window.showScreen = showScreen = function (name) {
+    var r = oShow.apply(this, arguments);
+    if (typeof name === 'string') track(name);
+    return r;
+  };
+  var oSwitch = window.switchIndustry;
+  if (typeof oSwitch === 'function') window.switchIndustry = switchIndustry = function (org) {
+    var r = oSwitch.apply(this, arguments);
+    if (typeof org === 'string') track('company-' + org);
+    return r;
+  };
+})();
+
+</script>
+
 </body>
 
 </html>
