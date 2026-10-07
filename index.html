@@ -52023,6 +52023,309 @@ window.CARDINAL_PLACES = {
 
 </script>
 
+<script data-p="p8_uniform">
+// 10/7 (Brittany: "the cores do not look the same"). Genesis, Atonement, Halo, Trust Ledger, Watchman, and Echo now
+// open with the same hero as Eden, Obsidian, and Trust Score (one big shadowed circle, status, industry position,
+// confidence card) and use the same history chart (search, Week/Month/Quarter/Year, series tabs, threshold line,
+// event pins, summary strip). Boxes on these screens share the Eden box style.
+(function () {
+  function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;'); }
+  function tt(t, b) { return ' onmouseenter="showTooltip(' + esc(JSON.stringify(t)) + ',' + esc(JSON.stringify(b)) + ',event)"'; }
+  function num(s) { var m = String(s == null ? '' : s).replace(/,/g, '').match(/-?\d+(\.\d+)?/); return m ? +m[0] : 0; }
+  function col(n) { return n >= 80 ? '#22c55e' : n >= 70 ? '#FACC15' : '#ef4444'; }
+  function org() { return window.currentOrg || 'fin'; }
+  var SCR = ['genesis', 'atonement', 'halo', 'trustledger', 'sentinel', 'echo'];
+
+  var css = document.createElement('style');
+  css.textContent = SCR.map(function (s) { return '#screen-' + s + ' .card:not(.card .card)'; }).join(',') +
+    '{background:linear-gradient(180deg,rgba(26,24,21,.045) 0%,rgba(30,28,24,.035) 100%)!important;border:1px solid rgba(167,167,167,.15)!important;border-radius:14px!important;box-shadow:0 1px 3px rgba(26,24,21,.05),0 6px 18px rgba(26,24,21,.04)!important}' +
+    '.u-hero{margin:0 0 20px;padding:16px 18px 20px!important;border:1px solid rgba(167,167,167,.14)!important;border-radius:14px;background:rgba(167,167,167,.04)!important}' +
+    '.u-hist{margin:0 0 20px}.u-hist .tsv2-history-canvas-wrap{position:relative;min-height:320px}' +
+    '.u-delta{font-size:11px;color:var(--muted2);text-align:center;margin-top:6px}.u-proj{font-size:11.5px;color:var(--muted2);text-align:center;margin-top:10px}';
+  document.head.appendChild(css);
+
+  // ── Ring items already on each screen (value, label, sub) ─────────
+  function items(el) {
+    if (!el) return [];
+    return [].map.call(el.querySelectorAll('.cr-item'), function (c) {
+      var v = c.querySelector('.cr-val'), l = c.querySelector('.cr-label'), s = c.querySelector('.cr-sub');
+      return { value: v ? v.textContent.trim() : '', label: l ? l.textContent.trim() : '', sub: s ? s.textContent.trim() : '' };
+    });
+  }
+  function find(list, re) { return list.filter(function (x) { return re.test(x.label); })[0] || { value: '', label: '', sub: '' }; }
+  function cap(s) { s = String(s || '').toLowerCase(); return s.charAt(0).toUpperCase() + s.slice(1); }
+
+  // ── History data (12 months ending this month) ──────────────────
+  var MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  function monthLabels() { var t = new Date(), out = []; for (var i = 11; i >= 0; i--) { var d = new Date(t.getFullYear(), t.getMonth() - i, 1); out.push(MON[d.getMonth()] + ' ' + d.getFullYear()); } return out; }
+  // Each series: [key, tab label, 12 monthly values, unit]. Pins: month offset from the end (0 = this month).
+  var H = {
+    genesis: { title: 'Testing History', sub: 'Hover any month for full context · Dashed line = 80 coverage target · Pins open the model', thr: 80, thrLabel: 'Coverage Target (80)',
+      series: [['coverage', 'Coverage Score', [58, 59, 61, 60, 62, 63, 64, 63, 65, 66, 66, 67]], ['pass', 'Pass Rate', [83, 84, 83, 85, 86, 84, 87, 88, 86, 85, 84, 83]], ['fair', 'Fairness Checks Passed', [70, 71, 73, 72, 74, 75, 76, 74, 78, 80, 82, 84]], ['red', 'Attacks Blocked', [91, 92, 92, 93, 94, 95, 95, 96, 97, 98, 99, 99]]],
+      pins: [[3, 'Counterfactual test proves ZIP code drives denials in Credit Scoring v3.4', 'Credit Scoring v3.4'], [1, 'Credit Scoring v3.5 passes the shadow A/B test: fairness ratio 0.83', 'Credit Scoring v3.5'], [0, 'Prompt-injection red team fails on the Collections agent; Adam drafting a fix', '']] },
+    atonement: { title: 'Remediation History', sub: 'Hover any month for full context · Dashed line = 80 target · Pins open the model', thr: 80, thrLabel: 'Target (80)',
+      series: [['progress', 'Remediation Progress', [0, 0, 3, 5, 9, 14, 18, 24, 31, 38, 49, 57]], ['ontime', 'Fixes On Time', [70, 72, 75, 74, 78, 80, 79, 82, 84, 83, 85, 86]], ['fair', 'Fairness After Fix', [74, 74, 74, 74, 74, 74, 74, 76, 79, 81, 83, 83]], ['shadow', 'Shadow Health', [80, 81, 82, 82, 84, 85, 86, 88, 90, 92, 93, 94]]],
+      pins: [[3, 'FIN-1203 opened: 1,203 applicants affected by the ZIP code proxy', 'Credit Scoring v3.4'], [1, 'Credit Scoring v3.5 enters shadow on 5% of traffic', 'Credit Scoring v3.5'], [0, '687 of 1,203 applicants re-decided so far', '']] },
+    halo: { title: 'Predicted vs Actual Losses', sub: 'Hover any month for full context · Predicted exposure, actual losses, and losses fixes prevented ($M) · Pins open the model', unit: '$M',
+      series: [['pred', 'Predicted Exposure', [18, 21, 24, 26, 31, 38, 52, 61, 70, 73, 73, 73]], ['actual', 'Actual Losses', [0.4, 0.5, 0.3, 0.6, 0.4, 0.7, 0.9, 1.1, 0.8, 0.6, 0.5, 0.4]], ['prevented', 'Prevented by Fixes', [0, 0, 2, 3, 4, 6, 9, 12, 15, 18, 22, 26]]],
+      pins: [[3, 'ZIP code proxy found in Credit Scoring v3.4; exposure forecast jumps', 'Credit Scoring v3.4'], [0, 'CFPB fair lending exam scheduled for Oct 20', '']] },
+    trustledger: { title: 'Evidence History', sub: 'Hover any month for full context · Dashed line = 80 exam-ready line · Pins open the record', thr: 80, thrLabel: 'Exam-Ready (80)',
+      series: [['complete', 'Evidence Completeness', [81, 82, 84, 85, 86, 88, 89, 90, 91, 92, 93, 94]], ['verified', 'Records Verified', [88, 89, 90, 90, 91, 92, 93, 93, 94, 95, 96, 97]], ['cert', 'Certification Coverage', [62, 64, 66, 68, 70, 71, 72, 73, 75, 77, 78, 80]], ['approvals', 'Approvals Sealed', [70, 72, 74, 77, 79, 81, 83, 85, 87, 90, 92, 95]]],
+      pins: [[1, 'Credit Scoring v3.5 shadow results sealed for the exam file', 'Credit Scoring v3.5'], [0, 'Shared view sent to the sponsor bank, Harbor Point Bank', '']] },
+    sentinel: { title: 'Response History', sub: 'Hover any month for full context · Dashed line = 80 response target · Pins open the model', thr: 80, thrLabel: 'Response Target (80)',
+      series: [['response', 'Response Score', [78, 80, 79, 82, 81, 84, 83, 80, 79, 82, 84, 83]], ['ontime', 'Cases On Time', [80, 82, 81, 84, 83, 86, 85, 82, 80, 83, 85, 83]], ['clocks', 'Incident Clock Health', [90, 91, 88, 92, 90, 93, 91, 86, 84, 87, 88, 86]], ['contain', 'Containment', [85, 86, 86, 88, 89, 90, 91, 89, 90, 92, 93, 94]]],
+      pins: [[3, 'War room opened for FIN-1203 (ZIP code proxy in Credit Scoring v3.4)', 'Credit Scoring v3.4'], [0, 'Fraud ring blocked by Fraud Screening v2.7', 'Fraud Screening v2.7']] },
+    echo: { title: 'Record History', sub: 'Hover any month for full context · Dashed line = 80 record target · Pins open the model', thr: 80, thrLabel: 'Record Target (80)',
+      series: [['coverage', 'Record Coverage', [88, 89, 90, 91, 92, 92, 93, 94, 95, 96, 96, 97]], ['access', 'Access Reviews', [75, 77, 78, 80, 81, 83, 84, 85, 86, 88, 89, 90]], ['integrity', 'Integrity Checks', [99, 99, 100, 100, 99, 100, 100, 100, 100, 100, 100, 100]]],
+      pins: [[3, 'Counterfactual proof for Credit Scoring v3.4 sealed in Echo', 'Credit Scoring v3.4'], [0, 'Exam evidence package assembled for the CFPB', '']] }
+  };
+  var ST = {}; // per screen: range, series, filter
+  function st(k) { if (!ST[k]) ST[k] = { range: 'year', series: H[k].series[0][0], filter: '' }; return ST[k]; }
+  function hash(s) { var h = 0; for (var i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0; return Math.abs(h); }
+  function points(k) {
+    var cfg = H[k], s = st(k), ser = cfg.series.filter(function (x) { return x[0] === s.series; })[0] || cfg.series[0];
+    var shift = s.filter ? (hash(s.filter) % 11) - 6 : 0, money = !!cfg.unit;
+    var vals = ser[2].map(function (v) { var r = money ? v * (1 + shift / 40) : v + shift; return money ? Math.max(0, Math.round(r * 10) / 10) : Math.max(0, Math.min(100, Math.round(r))); });
+    var mon = monthLabels(), out;
+    if (s.range === 'year' || s.range === 'quarter') {
+      out = mon.map(function (m, i) { var p = { month: m, v: vals[i] }; cfg.pins.forEach(function (pn) { if (11 - pn[0] === i) p.annotation = { summary: pn[1], linkedModelId: pn[2] || '' }; }); return p; });
+      if (s.range === 'quarter') out = out.slice(-3);
+    } else {
+      var a = vals[10], b = vals[11], t = new Date(), n = s.range === 'month' ? 5 : 7, step = s.range === 'month' ? 7 : 1;
+      out = [];
+      for (var i = n - 1; i >= 0; i--) {
+        var d = new Date(t.getTime() - i * step * 864e5), f = (n - 1 - i) / (n - 1);
+        var v = s.range === 'month' ? a + (b - a) * f : b + ((hash(k + i) % 3) - 1) * (money ? 0.1 : 1);
+        out.push({ month: MON[d.getMonth()] + ' ' + d.getDate(), v: money ? Math.round(v * 10) / 10 : Math.round(v) });
+      }
+    }
+    return { pts: out, ser: ser, money: money };
+  }
+  function models() {
+    var d = (window.CARDINAL_DATA || {})[org()] || {}, seen = {}, out = [];
+    (d.biasMetricsByModel || []).concat(d.fraudMetricsByModel || []).concat(d.modelLevelScores || []).forEach(function (m) { var n = m.modelId || m.name || m.model; if (n && !seen[n]) { seen[n] = 1; out.push(n); } });
+    return out;
+  }
+  window.uHist = function (k, what, val) {
+    var s = st(k);
+    if (what === 'range') s.range = val;
+    if (what === 'series') s.series = val;
+    if (what === 'filter') { if (models().indexOf(val) < 0) return; s.filter = val; }
+    if (what === 'clear') s.filter = '';
+    var el = document.getElementById('u-' + k + '-hist'); if (el) el.removeAttribute('data-k');
+    tick();
+  };
+  function histHtml(k) {
+    var cfg = H[k], s = st(k);
+    var tf = [['week', 'Week'], ['month', 'Month'], ['quarter', 'Quarter'], ['year', 'Year']].map(function (x) { return '<button type="button" class="' + (s.range === x[0] ? 'active' : '') + '" onclick="uHist(\'' + k + '\',\'range\',\'' + x[0] + '\')">' + x[1] + '</button>'; }).join('');
+    var sb = cfg.series.map(function (x) { return '<button type="button" class="' + (s.series === x[0] ? 'active' : '') + '" onclick="uHist(\'' + k + '\',\'series\',\'' + x[0] + '\')">' + x[1] + '</button>'; }).join('');
+    return '<div class="tsv2-section-title"' + tt(cfg.title, 'Twelve-month series from Echo Core. Hover points for values; click a pin for the model.') + '>' + cfg.title + '</div>' +
+      '<div class="tsv2-section-sub">' + cfg.sub + '</div>' +
+      '<div style="width:100%"><div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:8px 0 10px">' +
+      '<input type="search" list="u-' + k + '-models" placeholder="Search models in this industry…" value="' + esc(s.filter) + '" onchange="uHist(\'' + k + '\',\'filter\',this.value)" style="flex:1;min-width:200px;font-size:11px;padding:8px 10px;border-radius:8px;border:1px solid var(--border2);background:var(--bg3);color:var(--text);font-family:var(--sans)">' +
+      '<datalist id="u-' + k + '-models">' + models().map(function (m) { return '<option value="' + esc(m) + '">'; }).join('') + '</datalist>' +
+      '<button type="button" class="btn-ghost" style="font-size:10px" onclick="uHist(\'' + k + '\',\'clear\')">Clear filter</button>' +
+      (s.filter ? '<span class="badge badge-blue" style="font-size:9px">Chart: ' + esc(s.filter) + '</span>' : '') + '</div>' +
+      '<div class="tsv2-history-tf">' + tf + '</div><div class="tsv2-history-toggle">' + sb + '</div>' +
+      '<div class="tsv2-history-canvas-wrap" id="u-' + k + '-wrap"><div id="u-' + k + '-svg" style="position:absolute;inset:0;width:100%;height:100%"></div><div id="u-' + k + '-pins"></div></div>' +
+      '<div class="tsv2-history-caption" id="u-' + k + '-cap">—</div></div>';
+  }
+  function drawHist(k) {
+    if (typeof cardinalHistoryChartRender !== 'function' || typeof d3 === 'undefined') return;
+    var cfg = H[k], P = points(k), wrap = document.getElementById('u-' + k + '-wrap'); if (!wrap) return;
+    var vals = P.pts.map(function (p) { return p.v; }), last = vals[vals.length - 1];
+    var dom, ticks, step;
+    if (P.money) { var mx = Math.max(10, Math.ceil(Math.max.apply(null, vals) * 1.15 / 10) * 10); step = mx / 5; dom = [0, mx]; ticks = [0, 1, 2, 3, 4, 5].map(function (i) { return i * step; }); }
+    else { var lo = Math.min(50, Math.floor((Math.min.apply(null, vals) - 5) / 10) * 10); lo = Math.max(0, lo); dom = [lo, 100]; ticks = []; for (var t = lo; t <= 100; t += 10) ticks.push(t); step = 10; }
+    var fmt = function (v) { return P.money ? '$' + v + 'M' : v; };
+    cardinalHistoryChartRender({
+      wrap: wrap, svgWrap: document.getElementById('u-' + k + '-svg'), pinsWrap: document.getElementById('u-' + k + '-pins'),
+      hist: P.pts, getValue: function (p) { return p.v; },
+      lineColor: P.money ? (P.ser[0] === 'prevented' ? '#22c55e' : P.ser[0] === 'actual' ? '#FACC15' : '#ef4444') : col(last),
+      yDomain: dom, yTickValues: ticks, gridStep: step,
+      gradientIdBase: 'u-' + k + '-grad', gradientSuffix: P.ser[0],
+      thresholds: cfg.thr ? [{ y: cfg.thr, stroke: 'rgba(34,197,94,0.55)', label: cfg.thrLabel, labelAnchor: 'end', labelFill: 'rgba(34,197,94,0.85)' }] : [],
+      thresholdGroupId: null, thresholdTooltip: cfg.thr ? { title: cfg.thrLabel, body: 'At or above this line is on target.' } : null,
+      pointClass: 'tsv2-pt', pointTooltipTitle: P.ser[1], pointTooltipLabel: P.ser[1],
+      pinSourceContext: cfg.title + ' annotation',
+      formatPointAnnotation: function (p) { return p.annotation ? p.annotation.summary : ''; },
+      formatPointTooltipBody: function (p) { return P.ser[1] + ': <span class="tt-accent">' + fmt(p.v) + '</span>' + (p.annotation ? '<br>Event: ' + esc(p.annotation.summary) : ''); }
+    });
+    var c = document.getElementById('u-' + k + '-cap');
+    if (c) {
+      var f = vals[0], dd = Math.round((last - f) * 10) / 10, ev = P.pts.filter(function (p) { return p.annotation; }).length;
+      var hi = Math.max.apply(null, vals), lo2 = Math.min.apply(null, vals), useHi = cfg.thr ? last >= f : true, ext = useHi ? hi : lo2;
+      var span = { year: 'Past 12 months', quarter: 'Past quarter', month: 'Past month', week: 'Past week' }[st(k).range];
+      c.innerHTML = span + ': ' + P.ser[1] + ' moved from <strong>' + fmt(f) + '</strong> to <strong>' + fmt(last) + '</strong> (<strong>' + (dd >= 0 ? '+' : '') + (P.money ? '$' + dd + 'M' : dd + ' pts') + '</strong>)' + (ev ? ' · ' + ev + ' events' : '') + ' · ' + (useHi ? 'Peak' : 'Low') + ' at ' + P.pts[vals.indexOf(ext)].month + ' <strong>' + fmt(ext) + '</strong>';
+    }
+  }
+
+  // ── Hero (same markup as Eden, Obsidian, and Trust Score) ─────────
+  function heroHtml(k, o) {
+    var c = col(o.score), circ = 2 * Math.PI * 86, ok = o.score >= 80, pre = 'u' + k;
+    var badge = ok
+      ? '<div class="tsv2-cert-badge green"' + tt(o.okTitle, o.okBody) + '><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 4v6c0 5-3.5 9-8 10-4.5-1-8-5-8-10V6l8-4z"/><path d="M9 12l2 2 4-4"/></svg><span>' + o.okBadge + '</span></div>'
+      : '<div class="tsv2-cert-badge amber"' + tt(o.badTitle, o.badBody) + '><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/></svg><span>' + o.badBadge + '</span></div>';
+    var gauge = typeof edoHeroGaugeInner === 'function' ? edoHeroGaugeInner(pre, c, circ, -90 + o.score * 3.6, -90 + 80 * 3.6) : '';
+    var pct = o.pct, ord = typeof edoOrdFromPct === 'function' ? edoOrdFromPct(pct) : pct + 'th';
+    return '<div style="display:flex;justify-content:flex-end;margin-bottom:10px">' + badge + '</div>' +
+      '<div class="edo-ts-hero"><div class="edo-ts-hero-left-col">' +
+      '<div style="text-align:center;width:100%"' + tt(o.title, o.titleBody) + '><div class="edo-ts-gauge tsv2-gauge">' + gauge + '</div></div>' +
+      '<div class="tsv2-status" style="text-align:center;margin-top:10px;color:' + c + '">' + (ok ? o.okStatus : o.badStatus) + '</div>' +
+      '<div class="tsv2-live-stamp-inline" style="justify-content:center;margin-top:8px"><span class="dot"></span><span>Last calculated <strong style="color:var(--chrome2)">2 minutes ago</strong></span></div>' +
+      (o.delta ? '<div class="u-delta"><span style="color:' + (o.delta > 0 ? '#16a34a' : '#dc2626') + ';font-weight:700">' + (o.delta > 0 ? '▲ +' : '▼ ') + o.delta + '</span> since last week</div>' : '') +
+      '<div style="text-align:center;margin-top:14px;max-width:340px"><div class="tsv2-sub-pill" style="margin:0 auto;display:inline-flex"><span class="pill-label">' + esc(o.pillLabel) + '</span><span class="pill-num">' + esc(o.pillVal) + '</span></div>' +
+      '<div style="font-size:10px;color:var(--muted2);margin-top:8px;line-height:1.4">' + esc(o.subline) + '</div></div>' +
+      (o.proj ? '<div class="u-proj">' + o.proj + '</div>' : '') + '</div>' +
+      '<div class="edo-ts-hero-right tsv2-hero-right">' +
+      '<div class="tsv2-peer-block"' + tt('Industry Position', 'Where you rank against anonymized peers using Cardinal.') + '>' +
+      '<div class="tsv2-peer-line"><span>Industry Position</span><span class="tsv2-peer-percentile">' + ord + ' percentile</span></div>' +
+      '<div style="font-size:11px;color:var(--muted2);margin-bottom:4px"><strong>Your Score</strong> ' + o.score + ' · Industry Avg ' + o.avg + ' · ' + ord + ' Percentile</div>' +
+      '<div class="tsv2-peer-track edo-ip-track-gradient"><div class="threshold edo-ip-threshold-mark" style="left:80%"></div><div class="you" style="left:' + Math.max(0, Math.min(100, o.score)) + '%;color:' + c + ';background:' + c + '"></div></div>' +
+      '<div style="display:flex;justify-content:space-between;font-size:9.5px;color:var(--muted);margin-top:2px"><span>0</span><span>50</span><span>80 threshold</span><span>100</span></div></div>' +
+      '<div class="tsv2-conf-card"><div class="tsv2-conf-title">' + esc(o.confTitle) + '</div><div class="tsv2-conf-sub">' + esc(o.confSub) + '</div>' +
+      o.rows.map(function (r) { return '<div class="tsv2-conf-row"><span' + (r[2] ? tt(r[0], r[2]) : '') + '>' + esc(r[0]) + '</span><span class="v">' + esc(r[1]) + '</span></div>'; }).join('') +
+      '</div></div></div>';
+  }
+  function placeHero(k, parent, before, o) {
+    var id = 'u-' + k + '-hero', el = document.getElementById(id);
+    if (!el) { el = document.createElement('section'); el.id = id; el.className = 'tsv2-section u-hero'; }
+    if (el.parentNode !== parent || el.nextElementSibling !== before) parent.insertBefore(el, before);
+    var key = org() + JSON.stringify(o);
+    if (el.getAttribute('data-k') !== key) {
+      el.setAttribute('data-k', key); el.innerHTML = heroHtml(k, o);
+      try { edoWireHeroGauge('u' + k, o.score, col(o.score)); } catch (e) {}
+    }
+    return el;
+  }
+  function placeHist(k, parent, after) {
+    var id = 'u-' + k + '-hist', el = document.getElementById(id);
+    if (!el) { el = document.createElement('section'); el.id = id; el.className = 'tsv2-section u-hist'; }
+    var before = after ? after.nextSibling : parent.firstChild;
+    if (el.parentNode !== parent || (after && el.previousElementSibling !== after)) parent.insertBefore(el, before);
+    var s = st(k), key = org() + s.range + s.series + s.filter;
+    var w = (document.getElementById('u-' + k + '-wrap') || {}).clientWidth || 0;
+    if (el.getAttribute('data-k') !== key) { el.setAttribute('data-k', key); el.innerHTML = histHtml(k); el.__w = 0; }
+    var w2 = document.getElementById('u-' + k + '-wrap').clientWidth;
+    if (w2 && el.__w !== w2) { el.__w = w2; drawHist(k); }
+    return el;
+  }
+  function hide(el) { if (el && el.style.display !== 'none') el.style.display = 'none'; }
+  function fin() { return org() === 'fin'; }
+
+  // ── Screens ─────────────────────────────────────────────────────
+  function genesis() {
+    var r = document.getElementById('gen-rings'); if (!r || !r.parentNode || document.getElementById('screen-genesis').offsetParent === null) return;
+    var it = items(r); if (it.length < 4) return;
+    var cov = find(it, /coverage/i), score = Math.round(num(cov.value)) || 70;
+    placeHero('genesis', r.parentNode, r, {
+      score: score, title: 'Testing Coverage Score', titleBody: 'Share of your AI models with current fairness, accuracy, and security tests. 80 is the target.',
+      okBadge: 'Coverage Strong', okTitle: 'Coverage Strong', okBody: 'Most models have current tests.',
+      badBadge: 'Coverage Below 80: Gaps to Close', badTitle: 'Coverage Gap', badBody: 'Some models have no current tests. Close the gaps before the next exam.',
+      okStatus: 'Above Target: Coverage Strong', badStatus: 'Below Target: Coverage Gap',
+      delta: 1, pillLabel: 'Tests Passed', pillVal: find(it, /passed/i).value, subline: 'Active tests ' + find(it, /active/i).value + ' · Models in testing ' + find(it, /models/i).value,
+      proj: 'Projected: <strong style="color:#16a34a">' + Math.min(100, score + 9) + '</strong> (+9 pts once the income-feature test finishes)',
+      avg: score + 5, pct: 34, confTitle: 'Test Confidence', confSub: 'How reliable are these results?',
+      rows: it.map(function (x) { return [cap(x.label), x.value, x.sub]; }).concat([['Confidence Band', '±3 points', 'Expected swing if the tests were re-run on fresh data.']])
+    });
+    hide(r);
+    var old = document.getElementById('gen-hist'); if (old) { hide(old); placeHist('genesis', old.parentNode, old); }
+  }
+  function atonement() {
+    var r = document.getElementById('at-rings'); if (!r || !r.parentNode || document.getElementById('screen-atonement').offsetParent === null) return;
+    var it = items(r); if (it.length < 4) return;
+    var a = num(find(it, /active/i).value), f = num(find(it, /fixed/i).value);
+    var score = fin() ? 57 : Math.round(100 * f / Math.max(1, a + f));
+    placeHero('atonement', r.parentNode, r, {
+      score: score, title: 'Remediation Progress', titleBody: fin() ? 'Share of the 1,203 affected applicants re-reviewed so far. 80 is the target before the exam.' : 'Share of flagged models fixed so far. 80 is the target.',
+      okBadge: 'On Track', okTitle: 'On Track', okBody: 'Fixes are moving on schedule.',
+      badBadge: 'Fixes Underway: Below 80% Complete', badTitle: 'Fixes Underway', badBody: 'Fixes are in progress but not finished. Each needs a named person to approve the next step.',
+      okStatus: 'Above Target: Fixes On Track', badStatus: 'In Progress: Fixes Still Underway',
+      delta: fin() ? 8 : 2, pillLabel: fin() ? 'People Re-reviewed' : 'Models Fixed', pillVal: fin() ? '687 of 1,203' : find(it, /fixed/i).value,
+      subline: 'Active fixes ' + find(it, /active/i).value + ' · In shadow ' + find(it, /shadow/i).value,
+      proj: 'Projected: <strong style="color:#16a34a">' + Math.min(100, score + 31) + '</strong> once Credit v3.5 is approved for full traffic',
+      avg: 61, pct: 44, confTitle: 'Remediation Confidence', confSub: 'How reliable is this progress?',
+      rows: it.map(function (x) { return [cap(x.label), x.value, x.sub]; }).concat([['Rollback Ready', 'Yes', 'Every fix in shadow rolls back on its own if fairness slips.']])
+    });
+    hide(r);
+    var old = document.getElementById('at-hist'); if (old) { hide(old); placeHist('atonement', old.parentNode, old); }
+  }
+  function halo() {
+    var h2 = document.getElementById('halo-hero2'); if (!h2 || h2.offsetParent === null) return;
+    var mini = document.getElementById('halo-mini-rings'), it = items(mini);
+    var cfg = (window.HALO_CFG || {})[org()] || {}, none = (cfg.forecast && cfg.forecast.none) || [];
+    var score = none.length ? none[none.length - 1] : 72;
+    var money = fin() ? '$73M' : (cfg.exposureQ4 || (h2.textContent.match(/\$[\d.]+M/) || ['--'])[0]);
+    placeHero('halo', h2.parentNode, h2, {
+      score: score, title: 'Projected Trust Score', titleBody: 'Where your Trust Score lands in 90 days if nothing is fixed. 80 is the certification line.',
+      okBadge: 'Holds Above 80 Without Fixes', okTitle: 'Low Risk', okBody: 'The score stays above 80 even with no action.',
+      badBadge: 'Falls Below 80 Without Fixes', badTitle: 'Action Needed', badBody: 'If nothing is fixed, the score drops under the 80 certification line and exposure stays on the table.',
+      okStatus: 'Above Threshold: Holds Without Fixes', badStatus: 'Below Threshold: Falls Under 80 Without Fixes',
+      delta: -2, pillLabel: 'Projected Exposure', pillVal: money, subline: 'In 90 days if nothing changes · Today ' + ((cfg.forecast && cfg.forecast.start) || '') ,
+      proj: 'With the fixes: <strong style="color:#16a34a">' + ((cfg.forecast && cfg.forecast.full && cfg.forecast.full[3]) || 88) + '</strong> in 90 days',
+      avg: 79, pct: 38, confTitle: 'Forecast Confidence', confSub: 'How reliable is this forecast?',
+      rows: it.map(function (x) { return [cap(x.label), x.value, x.sub]; }).concat([['Prediction Accuracy', '91%', 'How often past Halo forecasts landed within range.']])
+    });
+    hide(mini);
+    var first = h2.querySelector('.card > div > div'); if (first && /projected exposure/i.test(first.textContent)) hide(first);
+    var old = document.getElementById('halo-hist'); if (old) { hide(old); placeHist('halo', old.parentNode, old); }
+  }
+  function ledger() {
+    var r = document.getElementById('tl-rings'); if (!r || !r.parentNode || document.getElementById('screen-trustledger').offsetParent === null) return;
+    var it = items(r); if (it.length < 4) return;
+    var score = 94;
+    var hero = placeHero('trustledger', r.parentNode, r, {
+      score: score, title: 'Evidence Completeness', titleBody: 'Share of decisions, tests, fixes, and approvals with a sealed record an examiner can check.',
+      okBadge: 'Exam-Ready Records', okTitle: 'Exam-Ready', okBody: 'Records are complete enough to hand to an examiner or sponsor bank.',
+      badBadge: 'Records Incomplete', badTitle: 'Records Incomplete', badBody: 'Some evidence is missing.',
+      okStatus: 'Above Threshold: Exam-Ready Records', badStatus: 'Below Threshold: Records Incomplete',
+      delta: 1, pillLabel: 'Records Sealed', pillVal: find(it, /records/i).value, subline: 'Verified today ' + find(it, /verified/i).value + ' · Can’t be edited after sealing',
+      avg: 86, pct: 81, confTitle: 'Record Confidence', confSub: 'How reliable are these records?',
+      rows: it.map(function (x) { return [cap(x.label), x.value, x.sub]; }).concat([['Tamper Checks', '100% passed', 'Every record is checked against its seal each night.']])
+    });
+    hide(r);
+    placeHist('trustledger', hero.parentNode, hero);
+  }
+  function sentinel() {
+    var top = document.getElementById('sent-top'); if (!top || top.offsetParent === null) return;
+    var grid = top.querySelector('.cr-wrap'); grid = grid && grid.parentNode; if (!grid) return;
+    var it = items(grid); if (it.length < 4) return;
+    var open = num(it[0].value), crit = num(it[1].value), score = open ? Math.round(100 * (open - crit) / open) : 100;
+    placeHero('sentinel', top.parentNode, top, {
+      score: score, title: 'Response Score', titleBody: 'Share of open cases moving inside their deadline. 80 is the target.',
+      okBadge: 'Response On Target', okTitle: 'On Target', okBody: 'Cases are moving inside their deadlines.',
+      badBadge: 'Response Below Target', badTitle: 'Below Target', badBody: 'Some cases are behind their deadlines.',
+      okStatus: 'Above Target: Cases Moving On Time', badStatus: 'Below Target: Cases Falling Behind',
+      delta: 1, pillLabel: 'Open Cases', pillVal: it[0].value, subline: 'Critical ' + it[1].value + ' · War rooms ' + it[3].value,
+      avg: 77, pct: 68, confTitle: 'Response Confidence', confSub: 'How reliable is this score?',
+      rows: it.map(function (x) { return [cap(x.label), x.value, x.sub]; }).concat([['Median Time to Owner', '38 minutes', 'How long a new case waits before someone owns it.']])
+    });
+    hide(grid);
+    var old = document.getElementById('sent-hist'); if (old) { hide(old); placeHist('sentinel', old.parentNode, old); }
+  }
+  function echo() {
+    var r = document.getElementById('echo-rings'); if (!r || !r.parentNode || r.offsetParent === null && r.style.display !== 'none') return;
+    if (document.getElementById('screen-echo').offsetParent === null) return;
+    var it = items(r); if (it.length < 4) return;
+    var score = 97;
+    var hero = placeHero('echo', r.parentNode, r, {
+      score: score, title: 'Record Coverage', titleBody: 'Share of AI decisions, cases, and approvals Echo has captured as memories.',
+      okBadge: 'Full Memory Coverage', okTitle: 'Full Coverage', okBody: 'Echo is capturing nearly every decision and action.',
+      badBadge: 'Memory Gaps', badTitle: 'Gaps', badBody: 'Some decisions are not being captured.',
+      okStatus: 'Above Threshold: Full Memory Coverage', badStatus: 'Below Threshold: Memory Gaps',
+      delta: 1, pillLabel: 'Critical Issues', pillVal: find(it, /critical issues/i).value, subline: 'Active investigations ' + find(it, /investigations/i).value + ' · Days since last critical ' + find(it, /days since/i).value,
+      avg: 88, pct: 84, confTitle: 'Memory Confidence', confSub: 'How complete is the record?',
+      rows: it.map(function (x) { return [cap(x.label), x.value, x.sub]; })
+    });
+    hide(r);
+    placeHist('echo', hero.parentNode, hero);
+  }
+  function tick() { [genesis, atonement, halo, ledger, sentinel, echo].forEach(function (f) { try { f(); } catch (e) {} }); }
+  setInterval(tick, 800);
+})();
+
+</script>
+
 </body>
 
 </html>
