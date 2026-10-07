@@ -51188,6 +51188,160 @@ window.CARDINAL_PLACES = {
 
 </script>
 
+<script data-p="p6_additions">
+// 10/6 (Brittany: three additions only; nothing existing changes).
+// 1. Echo: a case history that shows the existing sealed records for a case in order, from detection to outcome.
+// 2. Settings: the Cardinal Standard shown as a locked setting next to alert settings Blackmoor can edit.
+// 3. Trust Ledger: "Share a view" with a sponsor bank (or another outside party), without giving them access.
+(function () {
+  function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;'); }
+  function org() { return window.currentOrg || 'ad'; }
+  function fmt(d) { return new Date(d).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' }); }
+  function rnd(n) { var x = ''; for (var i = 0; i < n; i++) x += '0123456789ABCDEF'[Math.floor(Math.random() * 16)]; return x; }
+  var LOCK = '<svg width="13" height="15" viewBox="0 0 16 18" aria-hidden="true" style="flex:none;vertical-align:-2px"><rect x="2" y="8" width="12" height="9" rx="2" fill="#1a1815"/><path d="M5 8V5.5a3 3 0 0 1 6 0V8" fill="none" stroke="#1a1815" stroke-width="1.8"/></svg>';
+
+  // ── 1. Echo case history ─────────────────────────────────────────
+  var PRIMARY = { fin: 'FIN-1203', ad: 'AD-2847', health: 'HS-2847', fed: 'FED-PDV-001' };
+  var STAGE = {
+    'bias-detected': ['Detection', '#B91C1C', '#fef2f2'], 'fraud-detected': ['Detection', '#B91C1C', '#fef2f2'],
+    'case-opened': ['Investigation', '#1d4ed8', '#eff6ff'], 'team-decision': ['Investigation', '#1d4ed8', '#eff6ff'],
+    'decision-made': ['Testing', '#6d28d9', '#f5f3ff'], 'model-updated': ['Testing', '#6d28d9', '#f5f3ff'],
+    'remediation-started': ['Remediation', '#0f766e', '#f0fdfa'], 'remediation-completed': ['Remediation', '#0f766e', '#f0fdfa'],
+    'audit-filed': ['Compliance', '#475569', '#f3f0e9'], 'document-approved': ['Human approval', '#1a1815', '#ede5d6'],
+    'permission-changed': ['Shared', '#475569', '#f3f0e9'], 'model-deployed': ['Launch', '#15803D', '#f0fdf4'],
+    'score-change': ['Outcome', '#15803D', '#f0fdf4'], 'case-closed': ['Outcome', '#15803D', '#f0fdf4']
+  };
+  window.__echoCase = window.__echoCase || {};
+  function mems(o, cs) { var d = (window.CARDINAL_DATA || {})[o] || {}; return (d.echoMemories || []).filter(function (m) { return String(m.caseId || '').replace(/^#/, '') === cs; }).slice().sort(function (a, b) { return a.timestamp < b.timestamp ? -1 : 1; }); }
+  function caseList(o) { var d = (window.CARDINAL_DATA || {})[o] || {}, c = {}; (d.echoMemories || []).forEach(function (m) { var k = String(m.caseId || '').replace(/^#/, ''); if (k) c[k] = (c[k] || 0) + 1; }); return Object.keys(c).filter(function (k) { return c[k] >= 3; }).sort(function (a, b) { return c[b] - c[a]; }); }
+  window.echoCaseSet = function (cs) { window.__echoCase[org()] = cs; var b = document.getElementById('echo-case-history'); if (b) b.removeAttribute('data-k'); echoCase(); };
+  function echoCase() {
+    var scr = document.getElementById('screen-echo'); if (!scr || scr.offsetParent === null) return;
+    var anchor = document.getElementById('echo-eve-sum') || document.getElementById('echo-cardinal-hero'); if (!anchor) return;
+    var o = org(), cs = window.__echoCase[o] || PRIMARY[o], list = mems(o, cs);
+    var box = document.getElementById('echo-case-history');
+    if (!box) { box = document.createElement('div'); box.id = 'echo-case-history'; box.className = 'card'; box.style.cssText = 'padding:16px 18px;margin:0 0 16px'; }
+    if (anchor.nextElementSibling !== box) anchor.parentNode.insertBefore(box, anchor.nextSibling);
+    var key = o + cs + list.length; if (box.getAttribute('data-k') === key) return; box.setAttribute('data-k', key);
+    var cases = caseList(o); if (cases.indexOf(cs) < 0) cases.unshift(cs);
+    var span = list.length ? fmt(list[0].timestamp).replace(/,\s*\d+:\d+.*$/, '') + ' to ' + fmt(list[list.length - 1].timestamp).replace(/,\s*\d+:\d+.*$/, '') : '';
+    var rows = list.map(function (m, i) {
+      var st = STAGE[m.eventType] || ['Record', '#475569', '#f3f0e9'];
+      return '<div style="display:grid;grid-template-columns:18px 150px 120px 1fr;gap:12px;align-items:start;padding:10px 12px;border-radius:8px;background:' + (i % 2 ? '#f7f3ea' : '#fff') + '">' +
+        '<span style="position:relative;display:flex;justify-content:center"><span style="width:10px;height:10px;border-radius:50%;background:' + st[1] + ';margin-top:4px"></span></span>' +
+        '<span style="font-size:11.5px;color:#475569;font-variant-numeric:tabular-nums">' + fmt(m.timestamp) + '</span>' +
+        '<span><span style="font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:999px;background:' + st[2] + ';color:' + st[1] + '">' + st[0] + '</span></span>' +
+        '<span style="font-size:12.5px;color:#1a1815;line-height:1.45">' + esc(m.summary) + '<span style="display:block;font-size:11px;color:#64748b;margin-top:2px">' + esc(m.author) + (m.authorRole && m.authorRole !== 'system' ? ', ' + esc(m.authorRole) : '') + ' · sealed ' + esc(String(m.hash || '').slice(0, 12)) + '</span></span></div>';
+    }).join('');
+    box.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:10px"><div><div style="font-size:15px;font-weight:700;color:#1a1815">Case history: ' + esc(cs) + '</div><div style="font-size:12px;color:#64748b;margin-top:2px">Every sealed record for this case, in order. ' + list.length + ' records' + (span ? ' · ' + span : '') + '.</div></div>' +
+      '<label style="font-size:11.5px;color:#475569;display:flex;align-items:center;gap:6px">Case<select onchange="echoCaseSet(this.value)" style="font:inherit;font-size:12px;padding:6px 8px;border:1px solid rgba(26,24,21,.15);border-radius:8px;background:#fff">' + cases.map(function (c) { return '<option' + (c === cs ? ' selected' : '') + '>' + esc(c) + '</option>'; }).join('') + '</select></label></div>' +
+      '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px">' + ['Detection', 'Investigation', 'Testing', 'Remediation', 'Human approval', 'Launch', 'Outcome'].map(function (s, i, a) { return '<span style="font-size:11px;color:#475569">' + s + (i < a.length - 1 ? ' →' : '') + '</span>'; }).join('') + '</div>' +
+      '<div style="border:1px solid rgba(26,24,21,.1);border-radius:10px;overflow:hidden">' + (rows || '<div style="padding:12px;font-size:12px;color:#64748b">No sealed records for this case yet.</div>') + '</div>';
+  }
+
+  // ── 2. Settings: the locked Standard next to editable alert settings ─────
+  var STD = { fin: ['Financial Services · Lending', 'v1.2', 'Financial Services Working Group'], ad: ['Aerospace & Defense · Maintenance & Readiness', 'v1.0', 'Aerospace & Defense Working Group'], health: ['Healthcare · Claims & Coverage', 'v1.1', 'Healthcare Working Group'], fed: ['Government · Tax Administration', 'v1.0', 'Government Working Group'] };
+  window.__alertCfg = window.__alertCfg || { part: 75, di: '0.80', exposure: 5 };
+  window.settingsSaveAlerts = function () {
+    var g = function (id) { return (document.getElementById(id) || {}).value; };
+    window.__alertCfg = { part: g('al-part'), di: g('al-di'), exposure: g('al-exp') };
+    try { cardinalShowToast('Alert settings saved. The Cardinal Standard is unchanged.'); } catch (e) {}
+  };
+  function settings() {
+    var scr = document.getElementById('screen-settings'); if (!scr || scr.offsetParent === null) return;
+    var o = org(), box = document.getElementById('settings-standard');
+    var anchor = scr.querySelector('.grid-4') || scr.querySelector('.screen-header'); if (!anchor) return;
+    if (!box) { box = document.createElement('div'); box.id = 'settings-standard'; box.className = 'card'; box.style.cssText = 'padding:16px 18px;margin:0 0 16px'; }
+    if (anchor.nextElementSibling !== box) anchor.parentNode.insertBefore(box, anchor.nextSibling);
+    if (box.getAttribute('data-o') === o) return; box.setAttribute('data-o', o);
+    var s = STD[o] || STD.fin, c = window.__alertCfg, INP = 'font:inherit;font-size:12.5px;padding:7px 10px;border:1px solid rgba(26,24,21,.18);border-radius:8px;background:#fff;color:#1a1815;width:110px';
+    box.innerHTML = '<div style="font-size:15px;font-weight:700;color:#1a1815">Evaluation standard and alerts</div><div style="font-size:12px;color:#64748b;margin:2px 0 12px">Your team controls how and when you are alerted. The standard you are evaluated against is set independently.</div>' +
+      '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px">' +
+      '<div style="border:1px solid rgba(26,24,21,.12);border-radius:12px;padding:14px 16px;background:#f7f3ea" title="Blackmoor can improve its AI, but it can’t change the standard it is evaluated against. Changes to the Standard go through the Cardinal Standards Council and are released as new versions.">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><div style="font-size:10.5px;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:.6px">Cardinal Standard</div><span style="display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;color:#1a1815;background:#fff;border:1px solid rgba(26,24,21,.15);border-radius:999px;padding:2px 9px">' + LOCK + ' Locked</span></div>' +
+      '<div aria-disabled="true" style="margin-top:10px;display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:12.5px;padding:8px 10px;border:1px solid rgba(26,24,21,.15);border-radius:8px;background:#efe9dc;color:#1a1815;cursor:not-allowed"><span><strong>Core Standard v1.0</strong> + ' + esc(s[0]) + ' ' + s[1] + '</span>' + LOCK + '</div>' +
+      '<div style="font-size:12px;color:#475569;line-height:1.55;margin-top:10px">Set by the <strong style="color:#1a1815">Cardinal Standards Council</strong> and the ' + esc(s[2]) + '. Your team can’t edit it. New versions are announced in advance and shown in the version history on the Trust Score page.</div></div>' +
+      '<div style="border:1px solid rgba(26,24,21,.12);border-radius:12px;padding:14px 16px;background:#fff">' +
+      '<div style="font-size:10.5px;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:.6px">Your alert settings · editable</div>' +
+      '<div style="display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;margin-top:10px;font-size:12.5px;color:#1a1815">' +
+      '<label for="al-part">Alert me when any part of the score drops below</label><input id="al-part" type="number" min="50" max="99" value="' + esc(c.part) + '" style="' + INP + '">' +
+      '<label for="al-di">Flag a model when its fairness ratio (DI) falls below</label><input id="al-di" type="number" step="0.01" min="0.5" max="1" value="' + esc(c.di) + '" style="' + INP + '">' +
+      '<label for="al-exp">Open a war room when exposure exceeds ($M)</label><input id="al-exp" type="number" min="1" value="' + esc(c.exposure) + '" style="' + INP + '">' +
+      '</div><button type="button" onclick="settingsSaveAlerts()" style="margin-top:12px;font:inherit;font-size:12px;font-weight:600;padding:7px 14px;border-radius:8px;border:0;background:#1a1815;color:#fff;cursor:pointer">Save alert settings</button>' +
+      '<div style="font-size:11px;color:#64748b;margin-top:8px">These change when you are alerted. They don’t change how you are evaluated.</div></div></div>';
+  }
+
+  // ── 3. Trust Ledger: share a view ───────────────────────────────
+  var BANK = { fin: 'Harbor Point Bank', ad: 'Prime contractor', health: 'Partner health system', fed: 'Oversight office' };
+  var AUD = [['sponsor', 'Sponsor bank'], ['regulator', 'Regulator'], ['auditor', 'Third-party auditor'], ['partner', 'Partner or customer']];
+  var ITEMS = [['standard', 'Standard and version you are evaluated against', true], ['score', 'Current Trust Score and its 7 parts', true], ['issues', 'Open material issues and their status (for example FIN-1203)', true], ['monitoring', 'Monitoring status: models covered, last check', true], ['signoffs', 'Sealed launch sign-offs and approvals', true], ['remediation', 'Remediation evidence: shadow results, re-review progress', false]];
+  var SHARES = {};
+  window.tlShareOpen = function () {
+    var o = org(), old = document.getElementById('tl-share-modal'); if (old) old.remove();
+    var m = document.createElement('div'); m.id = 'tl-share-modal'; m.style.cssText = 'position:fixed;inset:0;z-index:9995;background:rgba(17,17,17,.5);display:flex;align-items:center;justify-content:center;padding:20px';
+    var INP = 'width:100%;box-sizing:border-box;font:inherit;font-size:12.5px;padding:8px 10px;border:1px solid rgba(26,24,21,.15);border-radius:8px;background:#fff;color:#1a1815';
+    m.innerHTML = '<div style="width:min(620px,100%);max-height:90vh;overflow:auto;background:#fff;border-radius:14px;padding:20px 22px;box-shadow:0 24px 60px rgba(0,0,0,.3)">' +
+      '<div style="display:flex;justify-content:space-between;align-items:flex-start"><div><div style="font-size:17px;font-weight:700;color:#1a1815">Share a view</div><div style="font-size:12px;color:#64748b;margin-top:2px">Create a verified, time-stamped view for an outside party. They see only what you choose here. They never get access to your Cardinal environment.</div></div><button type="button" aria-label="Close" onclick="document.getElementById(\'tl-share-modal\').remove()" style="border:0;background:rgba(26,24,21,.06);width:30px;height:30px;border-radius:8px;cursor:pointer;font-size:16px">&times;</button></div>' +
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px"><label style="font-size:11.5px;color:#475569">Who is it for<select id="tls-aud" style="' + INP + ';margin-top:4px" onchange="var n=document.getElementById(\'tls-name\');if(this.value===\'sponsor\')n.value=\'' + esc(BANK[o] || '') + '\';else if(n.value===\'' + esc(BANK[o] || '') + '\')n.value=\'\'">' + AUD.map(function (a) { return '<option value="' + a[0] + '">' + a[1] + '</option>'; }).join('') + '</select></label>' +
+      '<label style="font-size:11.5px;color:#475569">Organization<input id="tls-name" value="' + esc(BANK[o] || '') + '" style="' + INP + ';margin-top:4px"></label></div>' +
+      '<div style="font-size:10.5px;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:.6px;margin:14px 0 6px">What they can see</div>' +
+      ITEMS.map(function (it, i) { return '<label style="display:flex;gap:8px;align-items:center;padding:7px 10px;border-radius:8px;font-size:12.5px;color:#1a1815;background:' + (i % 2 ? '#f7f3ea' : '#fff') + '"><input type="checkbox" class="tls-item" value="' + it[0] + '"' + (it[2] ? ' checked' : '') + ' style="accent-color:#1a1815">' + it[1] + '</label>'; }).join('') +
+      '<div style="font-size:10.5px;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:.6px;margin:14px 0 6px">Always stays private</div>' +
+      '<div style="font-size:12px;color:#475569;line-height:1.6;padding:8px 10px;border-radius:8px;background:#fbfaf7;border:1px solid rgba(26,24,21,.08)">' + LOCK + ' Applicant personal data · model code and weights · internal conversations and war rooms · Cardinal’s scoring methodology · everything else in your Cardinal environment</div>' +
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px"><label style="font-size:11.5px;color:#475569">Access ends<select id="tls-exp" style="' + INP + ';margin-top:4px"><option>30 days</option><option>90 days</option><option>Until revoked</option></select></label>' +
+      '<label style="font-size:11.5px;color:#475569">Updates<select id="tls-live" style="' + INP + ';margin-top:4px"><option>Snapshot as of today</option><option>Stays current as evidence changes</option></select></label></div>' +
+      '<div style="display:flex;justify-content:flex-end;gap:8px;margin-top:16px"><button type="button" onclick="document.getElementById(\'tl-share-modal\').remove()" style="font:inherit;font-size:12px;padding:7px 14px;border-radius:8px;border:1px solid rgba(26,24,21,.15);background:#fff;cursor:pointer">Cancel</button><button type="button" onclick="tlShareCreate()" style="font:inherit;font-size:12px;font-weight:600;padding:7px 14px;border-radius:8px;border:0;background:#1a1815;color:#fff;cursor:pointer">Create shared view</button></div></div>';
+    m.onclick = function (e) { if (e.target === m) m.remove(); };
+    document.body.appendChild(m);
+  };
+  window.tlShareCreate = function () {
+    var o = org(), audSel = document.getElementById('tls-aud'), aud = AUD.filter(function (a) { return a[0] === audSel.value; })[0][1];
+    var name = (document.getElementById('tls-name').value || aud).trim();
+    var picked = [].map.call(document.querySelectorAll('.tls-item:checked'), function (c) { return c.value; });
+    var labels = ITEMS.filter(function (it) { return picked.indexOf(it[0]) > -1; }).map(function (it) { return it[1]; });
+    var p = window.getActivePersona ? getActivePersona() : null, who = p ? p.name : 'You';
+    var sh = { id: 'TLV-' + rnd(4) + '-' + rnd(4), aud: aud, name: name, items: labels, exp: document.getElementById('tls-exp').value, live: document.getElementById('tls-live').value, by: who, at: new Date(), revoked: false };
+    (SHARES[o] = SHARES[o] || []).unshift(sh);
+    try { var CD = CARDINAL_DATA[o]; if (CD && CD.echoMemories) CD.echoMemories.unshift({ id: 'echo-share-' + Date.now(), timestamp: sh.at.toISOString(), author: who, authorRole: p ? p.role : '', eventType: 'permission-changed', core: 'trustledger', severity: 'info', summary: 'Shared a Trust Ledger view with ' + name + ' (' + aud + '): ' + labels.length + ' items, ' + sh.exp.toLowerCase(), content: 'Shared items: ' + labels.join('; '), hash: '0x' + rnd(32), signature: 'sig-' + rnd(16), isPinned: false, isSealed: true, addendums: [], linkedMemories: [], comments: [], accessTier: 'org-wide', accessRoles: [], caseId: PRIMARY[o], modelId: null, userId: null, industryContext: o }); } catch (e) {}
+    try { cardinalLogActivity('edit', 'Shared a Trust Ledger view with ' + name, null); } catch (e) {}
+    var m = document.getElementById('tl-share-modal'); if (m) m.remove();
+    tlShareShow(sh.id);
+  };
+  window.tlShareShow = function (id) {
+    var o = org(), sh = (SHARES[o] || []).filter(function (x) { return x.id === id; })[0]; if (!sh) return;
+    var d = (window.CARDINAL_DATA || {})[o] || {}, oname = d.orgName || (window.__CARDINAL_ORG_NAME_BY_INDUSTRY || {})[o] || 'Your company', score = window.cardinalLiveScore ? cardinalLiveScore(o) : '', s = STD[o] || STD.fin;
+    var m = document.createElement('div'); m.id = 'tl-share-modal'; m.style.cssText = 'position:fixed;inset:0;z-index:9995;background:rgba(17,17,17,.5);display:flex;align-items:center;justify-content:center;padding:20px';
+    m.innerHTML = '<div style="width:min(620px,100%);max-height:90vh;overflow:auto;background:#fff;border-radius:14px;padding:20px 22px;box-shadow:0 24px 60px rgba(0,0,0,.3)">' +
+      '<div style="display:flex;justify-content:space-between;align-items:flex-start"><div><div style="font-size:10.5px;font-weight:800;color:#15803D;text-transform:uppercase;letter-spacing:.6px">Shared view created</div><div style="font-size:17px;font-weight:700;color:#1a1815;margin-top:2px">What ' + esc(sh.name) + ' will see</div></div><button type="button" aria-label="Close" onclick="document.getElementById(\'tl-share-modal\').remove()" style="border:0;background:rgba(26,24,21,.06);width:30px;height:30px;border-radius:8px;cursor:pointer;font-size:16px">&times;</button></div>' +
+      '<div style="margin-top:12px;padding:10px 12px;border-radius:10px;background:#f3f0e9;font-size:12px;color:#1a1815;line-height:1.6">Link: <strong style="font-family:monospace">trustledger.cardinal/v/' + sh.id + '</strong><br>Verified and time-stamped ' + fmt(sh.at) + ' · ' + esc(sh.live) + ' · access ends: ' + esc(sh.exp.toLowerCase()) + '<br>' + esc(sh.name) + ' opens this read-only page. They get no login to ' + esc(oname) + '’s Cardinal environment.</div>' +
+      '<div style="margin-top:12px;border:1px solid rgba(26,24,21,.12);border-radius:12px;overflow:hidden"><div style="padding:10px 14px;background:#1a1815;color:#fff;font-size:12.5px;font-weight:700">' + esc(oname) + ' · Trust Ledger view for ' + esc(sh.name) + '</div>' +
+      sh.items.map(function (it, i) {
+        var v = /Standard/.test(it) ? 'Core Standard v1.0 + ' + s[0] + ' ' + s[1] : /Trust Score/.test(it) ? score + ' (evaluated against the Cardinal Standard)' : /material issues/.test(it) ? (o === 'fin' ? 'FIN-1203: fairness signal in Credit Scoring v3.4, fix in shadow, under review' : 'Open issues and status') : /Monitoring/.test(it) ? 'All production models covered · checked today' : /sign-offs/.test(it) ? 'Sealed approvals with name, role, and time' : 'Shadow results and re-review progress';
+        return '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:9px 14px;font-size:12px;background:' + (i % 2 ? '#f7f3ea' : '#fff') + '"><span style="color:#475569">' + esc(it) + '</span><span style="color:#1a1815;font-weight:600">' + esc(v) + '</span></div>';
+      }).join('') + '</div>' +
+      '<div style="font-size:11.5px;color:#64748b;margin-top:10px">' + LOCK + ' Not included: applicant personal data, model code, internal conversations, and Cardinal’s methodology. Sharing is sealed in Echo.</div>' +
+      '<div style="display:flex;justify-content:flex-end;gap:8px;margin-top:14px"><button type="button" onclick="try{navigator.clipboard.writeText(\'trustledger.cardinal/v/' + sh.id + '\')}catch(e){};try{cardinalShowToast(\'Link copied\')}catch(e){}" style="font:inherit;font-size:12px;padding:7px 14px;border-radius:8px;border:1px solid rgba(26,24,21,.15);background:#fff;cursor:pointer">Copy link</button><button type="button" onclick="document.getElementById(\'tl-share-modal\').remove()" style="font:inherit;font-size:12px;font-weight:600;padding:7px 14px;border-radius:8px;border:0;background:#1a1815;color:#fff;cursor:pointer">Done</button></div></div>';
+    m.onclick = function (e) { if (e.target === m) m.remove(); };
+    var old = document.getElementById('tl-share-modal'); if (old) old.remove();
+    document.body.appendChild(m);
+  };
+  window.tlShareRevoke = function (id) { var sh = (SHARES[org()] || []).filter(function (x) { return x.id === id; })[0]; if (!sh) return; sh.revoked = true; try { cardinalShowToast('Access revoked for ' + sh.name); } catch (e) {} var b = document.getElementById('tl-shares'); if (b) b.removeAttribute('data-k'); };
+  function ledger() {
+    var scr = document.getElementById('screen-trustledger'); if (!scr || scr.offsetParent === null) return;
+    var push = document.getElementById('tl-push-update-btn');
+    if (push && !document.getElementById('tl-share-btn')) { var b = document.createElement('button'); b.id = 'tl-share-btn'; b.type = 'button'; b.className = push.className; b.style.cssText = push.style.cssText; b.style.marginLeft = '6px'; b.textContent = 'Share a view'; b.title = 'Create a verified, time-stamped view for a sponsor bank, regulator, auditor, or partner. They never get access to your Cardinal environment.'; b.onclick = tlShareOpen; push.parentNode.insertBefore(b, push.nextSibling); }
+    var o = org(), L = SHARES[o] || [], box = document.getElementById('tl-shares');
+    if (!L.length) { if (box) box.remove(); return; }
+    if (!box) { box = document.createElement('div'); box.id = 'tl-shares'; box.className = 'card'; box.style.cssText = 'padding:14px 16px;margin:0 0 14px'; var a = scr.querySelector('.section-hdr'); if (a) a.parentNode.insertBefore(box, a.nextSibling); else scr.insertBefore(box, scr.firstChild); }
+    var key = o + JSON.stringify(L.map(function (x) { return [x.id, x.revoked]; })); if (box.getAttribute('data-k') === key) return; box.setAttribute('data-k', key);
+    box.innerHTML = '<div style="font-size:14px;font-weight:700;color:#1a1815">Shared views</div><div style="font-size:11.5px;color:#64748b;margin:2px 0 10px">Outside parties you shared a view with. They see only what you chose, and never your Cardinal environment.</div>' +
+      L.map(function (x, i) { return '<div style="display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;padding:9px 12px;border-radius:8px;background:' + (i % 2 ? '#f7f3ea' : '#fff') + '"><div><div style="font-size:12.5px;font-weight:700;color:#1a1815">' + esc(x.name) + ' <span style="font-size:11px;font-weight:600;color:#64748b">· ' + esc(x.aud) + '</span>' + (x.revoked ? ' <span style="font-size:10.5px;font-weight:700;color:#B91C1C">Revoked</span>' : '') + '</div><div style="font-size:11.5px;color:#475569">' + x.items.length + ' items · ' + esc(x.live.toLowerCase()) + ' · access ends: ' + esc(x.exp.toLowerCase()) + ' · shared by ' + esc(x.by) + ', ' + fmt(x.at) + '</div></div><div style="display:flex;gap:6px"><button type="button" onclick="tlShareShow(\'' + x.id + '\')" style="font:inherit;font-size:11.5px;font-weight:600;padding:6px 12px;border-radius:8px;border:1px solid rgba(26,24,21,.15);background:#fff;cursor:pointer">See their view</button>' + (x.revoked ? '' : '<button type="button" onclick="tlShareRevoke(\'' + x.id + '\')" style="font:inherit;font-size:11.5px;font-weight:600;padding:6px 12px;border-radius:8px;border:1px solid rgba(185,28,28,.3);background:#fff;color:#B91C1C;cursor:pointer">Revoke</button>') + '</div></div>'; }).join('');
+  }
+  setInterval(function () { echoCase(); settings(); ledger(); }, 800);
+})();
+
+</script>
+
 </body>
 
 </html>
