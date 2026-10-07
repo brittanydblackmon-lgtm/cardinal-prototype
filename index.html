@@ -48931,7 +48931,7 @@ window.CARDINAL_PLACES = {
     var sh = document.querySelector('#screen-halo .halo-shell'); if (!sh || sh.offsetParent === null) return;
     var pick = function (sel) { return sh.querySelector(':scope > ' + sel); };
     var cost = [].filter.call(sh.children, function (x) { return /Cost of Inaction/i.test((x.innerText || '').slice(0, 80)); })[0];
-    var want = [pick('.halo-head'), pick('.halo-action-row'), pick('#halo-cardinal-hero'), pick('#halo-hero2'), pick('#halo-eve-sum'), document.getElementById('halo-forecast'), pick('.halo-map-shell'), pick('#halo-money'), pick('.halo-panels-grid'), cost, pick('#halo-attribution-cards'), pick('#halo-predictive-section')].filter(function (x) { return x && x.parentNode === sh; });
+    var want = [pick('.halo-head'), pick('.halo-action-row'), pick('#halo-cardinal-hero'), pick('#halo-hero2'), pick('#halo-eve-sum'), pick('#halo-hist'), document.getElementById('halo-forecast'), pick('.halo-map-shell'), pick('#halo-money'), pick('#halo-predictive-section'), pick('#halo-signals'), pick('.halo-panels-grid'), cost, pick('#halo-attribution-cards')].filter(function (x) { return x && x.parentNode === sh; });
     var cur = [].filter.call(sh.children, function (x) { return want.indexOf(x) > -1; });
     if (want.some(function (x, i) { return cur[i] !== x; })) { var a = want[0]; for (var i = 1; i < want.length; i++) { sh.insertBefore(want[i], a.nextSibling); a = want[i]; } }
     var act = pick('.halo-action-row'); if (act) { act.style.justifyContent = 'flex-end'; act.style.margin = '0 0 14px'; }
@@ -50686,7 +50686,8 @@ window.CARDINAL_PLACES = {
   }
   function place(scr, box) {
     var bar = document.querySelector('#screen-' + scr + ' .core-tabbar'); if (!bar) return false;
-    if (bar.previousElementSibling !== box) bar.parentNode.insertBefore(box, bar);
+    var tgt = document.getElementById(scr === 'genesis' ? 'gen-hist' : 'at-hist'); if (!tgt || tgt.parentNode !== bar.parentNode) tgt = bar;
+    if (tgt.previousElementSibling !== box) tgt.parentNode.insertBefore(box, tgt);
     return true;
   }
   function genesis() {
@@ -50794,7 +50795,7 @@ window.CARDINAL_PLACES = {
     var when = function (x) { var q = /^Q([1-4])\s+(\d{4})$/.exec(x); if (q) return new Date(+q[2], (q[1] - 1) * 3 + 1, 15).getTime(); var t = Date.parse(x); return isNaN(t) ? 9e15 : t; };
     var dated = D.rows.filter(function (r) { return !/^(Now|Ongoing)$/i.test(r[2]); }).sort(function (a, b) { return when(a[2]) - when(b[2]); }).slice(0, 3);
     var ring = '<svg width="220" height="220" viewBox="0 0 220 220" style="display:block;margin:0 auto"><circle cx="110" cy="110" r="92" fill="#fff" stroke="#f1ece3" stroke-width="16"/><circle cx="110" cy="110" r="92" fill="none" stroke="#ef4444" stroke-width="16" stroke-linecap="round" stroke-dasharray="' + (2 * Math.PI * 92 * 0.82).toFixed(1) + ' 999" transform="rotate(130 110 110)"/>' +
-      '<text x="110" y="118" text-anchor="middle" style="font-size:46px;font-weight:800;fill:#DC2626;font-family:inherit">' + esc(total) + '</text><text x="110" y="146" text-anchor="middle" style="font-size:11px;font-weight:600;fill:#64748b;font-family:inherit">if nothing changes</text></svg>';
+      '<text x="110" y="118" text-anchor="middle" style="font-size:46px;font-weight:800;fill:#DC2626;font-family:inherit">' + esc(total) + '</text><text x="110" y="146" text-anchor="middle" style="font-size:11px;font-weight:600;fill:#64748b;font-family:inherit">projected exposure</text></svg>';
     var left = '<div style="text-align:center">' + ring +
       '<div style="font-size:15px;font-weight:800;color:#DC2626;margin-top:8px">Material exposure across ' + D.cases.length + ' open case' + (D.cases.length === 1 ? '' : 's') + '</div>' +
       '<div style="font-size:11.5px;color:#64748b;margin-top:4px"><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#16a34a;margin-right:5px"></span>Forecast refreshed daily</div>' +
@@ -50823,6 +50824,9 @@ window.CARDINAL_PLACES = {
     if (hero.getAttribute('data-k') === key) return;
     hero.setAttribute('data-k', key); hero.innerHTML = heroHtml(D);
     mon.innerHTML = D.tableHtml ? '<div class="card" style="padding:16px 18px;margin-bottom:16px"><div style="font-size:15px;font-weight:700;color:#1a1815">Where the money is at risk</div><div style="font-size:12px;color:#64748b;margin:2px 0 10px">Every rule that applies, by when, and what it costs if nothing is fixed.</div>' + D.tableHtml + '<div style="font-size:11px;color:#64748b;margin-top:8px">Estimates use comparable enforcement actions and the number of people affected. They are forecasts, not legal advice.</div></div>' : '';
+    // Emerging regulation signals get their own row, near the top.
+    var pd = document.querySelector('#screen-halo .halo-panel-d'), sig = document.getElementById('halo-signals');
+    if (pd) { if (!sig) { sig = document.createElement('div'); sig.id = 'halo-signals'; sig.className = 'card'; sig.style.cssText = 'padding:16px 18px;margin:0 0 16px'; } if (pd.parentNode !== sig) { sig.appendChild(pd); pd.style.cssText += ';width:auto;border:0;box-shadow:none;padding:0;background:transparent'; var cards = pd.querySelectorAll('.halo-risk-card'); if (cards.length) { var g = document.createElement('div'); g.style.cssText = 'display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin-top:10px'; cards[0].parentNode.insertBefore(g, cards[0]); [].forEach.call(cards, function (c) { g.appendChild(c); c.style.margin = '0'; }); } } if (sig.parentNode !== sh) sh.appendChild(sig); }
     var total = (D.chips[0] || [])[0] || '', big = D.chips[1] || ['', ''], fast = D.chips[2] || ['', ''];
     var t = new Date(), biggest = D.rows.slice().sort(function (a, b) { return money(b[3]) - money(a[3]); })[0] || [];
     var highs = D.rows.filter(function (r) { return /high/i.test(r[4] || ''); });
@@ -50830,10 +50834,10 @@ window.CARDINAL_PLACES = {
     window.cardinalEveSummary(eve, 'halo-' + org, {
       subtitle: 'Auto-generated from open cases, the rules that apply, and who is affected · Refreshes daily',
       lines: function (tf) {
-        if (tf === 'daily') return ['As of today, ' + MONL[t.getMonth()] + ' ' + t.getDate() + ', ' + (ORGN[org] || 'your company') + ' faces about <strong>' + esc(total) + '</strong> in exposure if nothing changes.', 'Biggest single risk: <strong>' + esc(biggest[1] || '') + '</strong> (' + esc(biggest[3] || big[0]) + ').', fast[0] ? 'Fastest way down: ' + esc(fast[1].replace(/^Fastest way down:\s*/i, '')) + ', about ' + esc(fast[0].replace(/^~/, '')) + '.' : 'Approving the fix in Atonement removes most of this exposure.'];
+        if (tf === 'daily') return ['As of today, ' + MONL[t.getMonth()] + ' ' + t.getDate() + ', ' + (ORGN[org] || 'your company') + ' faces about <strong>' + esc(total) + '</strong> in projected exposure if no fixes go live.', 'Biggest single risk: <strong>' + esc(biggest[1] || '') + '</strong> (' + esc(biggest[3] || big[0]) + ').', fast[0] ? 'Fastest way down: ' + esc(fast[1].replace(/^Fastest way down:\s*/i, '')) + ', about ' + esc(fast[0].replace(/^~/, '')) + '.' : 'Approving the fix in Atonement removes most of this exposure.'];
         if (tf === 'weekly') return [D.rows.length + ' rules carry risk; ' + highs.length + ' are rated High likelihood.', dated.length ? 'Next date: <strong>' + esc(dated[0][1]) + '</strong> by ' + esc(dated[0][2]) + ' (' + esc(dated[0][3]) + ').' : 'No dated deadlines this week.', 'Estimates are forecasts, not legal advice.'];
         if (tf === 'monthly') return ['Exposure by case: ' + D.cases.map(function (c) { return '<strong>' + esc(c.id.replace(/^#/, '')) + '</strong> ' + esc(c.amt); }).join(', ') + '.', 'Approving the fix in Atonement removes most of this exposure.', 'Halo re-forecasts as cases move, so this number should fall as fixes go live.'];
-        return ['Items dated this quarter or next: ' + (dated.length ? dated.map(function (r) { return esc(r[1]) + ' (' + esc(r[2]) + ')'; }).join('; ') : 'none') + '.', 'Total exposure if nothing changes: <strong>' + esc(total) + '</strong>.', 'Use Export Regulatory Report to share the full forecast with legal.'];
+        return ['Items dated this quarter or next: ' + (dated.length ? dated.map(function (r) { return esc(r[1]) + ' (' + esc(r[2]) + ')'; }).join('; ') : 'none') + '.', 'Total projected exposure: <strong>' + esc(total) + '</strong>.', 'Use Export Regulatory Report to share the full forecast with legal.'];
       },
       buttons: [{ label: 'Download Board Brief PDF', onclick: "typeof cardinalShowToast==='function'&&cardinalShowToast('Halo brief downloaded')" },
         { label: 'Share to Trust Loop', onclick: "typeof cardinalSharePicker==='function'&&cardinalSharePicker('Halo: Eve forecast',(document.querySelector('#halo-eve-sum .tsv2-eve-body')||{}).innerText||'')" }]
@@ -51533,6 +51537,185 @@ window.CARDINAL_PLACES = {
   var css = document.createElement('style');
   css.textContent = '.lucid-agent-card.is-eve{background:linear-gradient(rgba(21,128,61,.08) 0%,#fff 110px)!important}.lucid-agent-card.is-adam{background:linear-gradient(rgba(21,128,61,.05) 0%,#fff 110px)!important}';
   document.head.appendChild(css);
+})();
+
+</script>
+
+<script data-p="p7_rings">
+// 10/7 (Brittany: "every page should look the same so they're not learning a new page"). One top box with shadowed
+// circles, like Eden, Obsidian, and Trust Score, on Genesis, Atonement, Echo, Sentinel, Trust Ledger, Library, and
+// under Halo's exposure ring; plus a history chart under Eve's summary on Genesis, Atonement, Halo, and Sentinel.
+(function () {
+  function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;'); }
+  var css = document.createElement('style');
+  css.textContent =
+    '.cr-wrap{display:flex;flex-wrap:wrap;justify-content:center;gap:26px 34px;padding:6px 0 2px}' +
+    '.cr-item{display:flex;flex-direction:column;align-items:center;width:150px;cursor:default}' +
+    '.cr-item.click{cursor:pointer}.cr-item.click:hover .cr-disc{transform:translateY(-2px)}' +
+    '.cr-disc{position:relative;width:132px;height:132px;border-radius:50%;background:radial-gradient(circle at 50% 35%,#ffffff 0%,#f3eee5 100%);box-shadow:0 14px 28px rgba(26,24,21,.13),0 3px 8px rgba(26,24,21,.08),inset 0 2px 4px rgba(255,255,255,.9),inset 0 -6px 12px rgba(26,24,21,.05);transition:transform .15s}' +
+    '.cr-disc svg{position:absolute;inset:0;width:100%;height:100%}' +
+    '.cr-val{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:30px;font-weight:800;letter-spacing:-.5px;color:#1a1815;text-align:center;line-height:1}' +
+    '.cr-val.small{font-size:22px}' +
+    '.cr-label{margin-top:12px;font-size:11px;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:.6px;text-align:center;line-height:1.3}' +
+    '.cr-sub{margin-top:3px;font-size:11px;color:#64748b;text-align:center;line-height:1.35}' +
+    '.ch-bar:hover{opacity:.75}';
+  document.head.appendChild(css);
+  function ring(r) {
+    var C = 2 * Math.PI * 56, pct = r.pct == null ? 1 : Math.max(0.04, Math.min(1, r.pct)), col = r.color || '#1a1815';
+    var v = String(r.value);
+    return '<div class="cr-item' + (r.onclick ? ' click' : '') + '"' + (r.onclick ? ' onclick="' + esc(r.onclick) + '"' : '') + (r.tip ? ' title="' + esc(r.tip) + '"' : '') + '><div class="cr-disc"><svg viewBox="0 0 132 132"><circle cx="66" cy="66" r="56" fill="none" stroke="rgba(26,24,21,.07)" stroke-width="10"/>' +
+      '<circle cx="66" cy="66" r="56" fill="none" stroke="' + col + '" stroke-width="10" stroke-linecap="round" stroke-dasharray="' + (C * pct).toFixed(1) + ' 999" transform="rotate(-90 66 66)" style="filter:drop-shadow(0 4px 6px rgba(0,0,0,.18))"/></svg>' +
+      '<div class="cr-val' + (v.length > 5 ? ' small' : '') + '" style="color:' + (r.valColor || '#1a1815') + '">' + esc(v) + '</div></div><div class="cr-label">' + esc(r.label) + '</div>' + (r.sub ? '<div class="cr-sub">' + esc(r.sub) + '</div>' : '') + '</div>';
+  }
+  window.cardinalRings = function (rings) { return '<div class="cr-wrap">' + rings.map(ring).join('') + '</div>'; };
+  function place(id, parent, before, html, key, cls) {
+    var el = document.getElementById(id);
+    if (!el) { el = document.createElement('div'); el.id = id; if (cls !== false) { el.className = 'card'; el.style.cssText = 'padding:20px 22px;margin:0 0 16px'; } }
+    if (el.parentNode !== parent || el.nextElementSibling !== before) parent.insertBefore(el, before);
+    if (el.getAttribute('data-k') !== key) { el.setAttribute('data-k', key); el.innerHTML = html; }
+    return el;
+  }
+  var RED = '#DC2626', YEL = '#FACC15', GRN = '#16a34a', INK = '#1a1815';
+  function num(s) { var m = String(s || '').replace(/,/g, '').match(/-?\d+(\.\d+)?/); return m ? +m[0] : 0; }
+  function statCards(container) { return [].map.call(container.querySelectorAll('.stat-card'), function (c) { var p = [].map.call(c.children, function (x) { return (x.textContent || '').trim(); }).filter(Boolean); return { label: p[0] || '', value: p[1] || '', sub: p[2] || '' }; }); }
+
+  // ── History chart ───────────────────────────────────────────────
+  var MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  function months() { var t = new Date(), out = []; for (var i = 11; i >= 0; i--) { var d = new Date(t.getFullYear(), t.getMonth() - i, 1); out.push(MON[d.getMonth()] + (d.getMonth() === 0 || i === 11 ? ' ' + String(d.getFullYear()).slice(2) : '')); } return out; }
+  window.__chartRange = window.__chartRange || {};
+  window.cardinalChartRange = function (key, r) { window.__chartRange[key] = r; var el = document.querySelector('[data-chart="' + key + '"]'); if (el) el.removeAttribute('data-ck'); };
+  function chart(key, o) {
+    var range = window.__chartRange[key] || 'month', labels = months(), series = o.series;
+    if (range === 'quarter') { labels = ['Q1', 'Q2', 'Q3', 'Q4'].map(function (q, i) { return labels[i * 3 + 2]; }); labels = ['3 quarters ago', '2 quarters ago', 'Last quarter', 'This quarter']; series = series.map(function (s) { var d = []; for (var i = 0; i < 4; i++) d.push(s.data.slice(i * 3, i * 3 + 3).reduce(function (a, b) { return a + b; }, 0) / (s.avg ? 3 : 1)); return { name: s.name, color: s.color, data: d, line: s.line, avg: s.avg }; }); }
+    var W = 900, H = 220, P = 36, n = labels.length, max = 0;
+    series.forEach(function (s) { s.data.forEach(function (v) { if (v > max) max = v; }); }); max = max * 1.15 || 1;
+    var bars = series.filter(function (s) { return !s.line; }), lines = series.filter(function (s) { return s.line; });
+    var gw = (W - P * 2) / n, bw = Math.min(26, (gw - 10) / Math.max(1, bars.length));
+    var y = function (v) { return H - 28 - (v / max) * (H - 50); };
+    var svg = '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%;height:auto;display:block">';
+    for (var g = 0; g <= 4; g++) { var gy = y(max / 1.15 * g / 4); svg += '<line x1="' + P + '" x2="' + (W - P) + '" y1="' + gy + '" y2="' + gy + '" stroke="rgba(26,24,21,.07)"/><text x="' + (P - 6) + '" y="' + (gy + 4) + '" text-anchor="end" font-size="10" fill="#94a3b8">' + (o.fmt ? o.fmt(max / 1.15 * g / 4) : Math.round(max / 1.15 * g / 4)) + '</text>'; }
+    labels.forEach(function (l, i) {
+      var x0 = P + gw * i + (gw - bw * bars.length) / 2;
+      bars.forEach(function (s, j) { var v = s.data[i], yy = y(v); svg += '<rect class="ch-bar" x="' + (x0 + j * bw).toFixed(1) + '" y="' + yy.toFixed(1) + '" width="' + (bw - 3).toFixed(1) + '" height="' + (H - 28 - yy).toFixed(1) + '" rx="3" fill="' + s.color + '"><title>' + esc(l + ': ' + s.name + ' ' + (o.fmt ? o.fmt(v) : Math.round(v))) + '</title></rect>'; });
+      svg += '<text x="' + (P + gw * i + gw / 2) + '" y="' + (H - 10) + '" text-anchor="middle" font-size="10" fill="#64748b">' + esc(l) + '</text>';
+    });
+    lines.forEach(function (s) {
+      var pts = s.data.map(function (v, i) { return (P + gw * i + gw / 2).toFixed(1) + ',' + y(v).toFixed(1); });
+      svg += '<polyline points="' + pts.join(' ') + '" fill="none" stroke="' + s.color + '" stroke-width="2.5" stroke-linejoin="round"/>' + s.data.map(function (v, i) { return '<circle cx="' + (P + gw * i + gw / 2).toFixed(1) + '" cy="' + y(v).toFixed(1) + '" r="3.5" fill="' + s.color + '"><title>' + esc(labels[i] + ': ' + s.name + ' ' + (o.fmt ? o.fmt(v) : Math.round(v))) + '</title></circle>'; }).join('');
+    });
+    svg += '</svg>';
+    var seg = function (r, l) { var on = range === r; return '<button type="button" onclick="cardinalChartRange(\'' + key + '\',\'' + r + '\')" style="font:inherit;font-size:11.5px;font-weight:600;padding:5px 11px;border:0;border-radius:7px;cursor:pointer;background:' + (on ? '#fff' : 'transparent') + ';color:' + (on ? '#1a1815' : '#64748b') + ';box-shadow:' + (on ? '0 1px 3px rgba(26,24,21,.12)' : 'none') + '">' + l + '</button>'; };
+    return '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap"><div><div style="font-size:11px;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:.6px">' + esc(o.title) + '</div><div style="font-size:12px;color:#64748b;margin-top:2px">' + esc(o.sub) + '</div></div>' +
+      '<div style="display:flex;gap:2px;background:#f3f0e9;padding:3px;border-radius:9px">' + seg('month', 'Last 12 months') + seg('quarter', 'By quarter') + '</div></div>' +
+      '<div style="display:flex;gap:14px;flex-wrap:wrap;margin:10px 0 2px">' + series.map(function (s) { return '<span style="display:inline-flex;align-items:center;gap:6px;font-size:11.5px;color:#475569"><span style="width:' + (s.line ? '16px;height:3px' : '10px;height:10px') + ';border-radius:2px;background:' + s.color + '"></span>' + esc(s.name) + '</span>'; }).join('') + '</div>' + svg +
+      (o.note ? '<div style="font-size:11.5px;color:#475569;margin-top:6px">' + o.note + '</div>' : '');
+  }
+  function chartBox(id, parent, before, key, o) {
+    var el = place(id, parent, before, '', 'x', true); el.setAttribute('data-chart', key);
+    var k = key + (window.__chartRange[key] || 'month'); if (el.getAttribute('data-ck') !== k) { el.setAttribute('data-ck', k); el.innerHTML = chart(key, o); }
+  }
+  var DATA = {
+    genesis: { fin: [[6, 8, 7, 9, 11, 10, 12, 14, 13, 15, 16, 18], [5, 6, 6, 7, 9, 8, 10, 11, 11, 12, 13, 14], [1, 1, 0, 2, 1, 2, 1, 2, 1, 2, 2, 3]] },
+    atonement: { fin: [[1, 1, 2, 1, 2, 3, 2, 3, 4, 3, 4, 5], [0, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 4], [0, 0, 120, 80, 210, 340, 260, 410, 520, 380, 610, 687]] },
+    halo: { fin: [[18, 21, 24, 26, 31, 38, 52, 61, 70, 73, 73, 73], [0.4, 0.5, 0.3, 0.6, 0.4, 0.7, 0.9, 1.1, 0.8, 0.6, 0.5, 0.4], [0, 0, 2, 3, 4, 6, 9, 12, 15, 18, 22, 26]] },
+    sentinel: { fin: [[2, 3, 2, 4, 3, 5, 6, 4, 5, 7, 6, 5], [0, 1, 0, 1, 1, 1, 2, 1, 1, 2, 2, 2], [1, 0, 1, 2, 1, 1, 2, 3, 2, 3, 2, 3]] }
+  };
+  function d(kind, o) { var x = DATA[kind] || {}; return x[o] || x.fin; }
+  var M = function (v) { return '$' + (Math.round(v * 10) / 10) + 'M'; };
+
+  // ── Screens ─────────────────────────────────────────────────────
+  function genesis() {
+    var scr = document.getElementById('screen-genesis'); if (!scr || scr.offsetParent === null) return;
+    var stats = document.getElementById('gen-stats-row'); if (!stats) return;
+    var s = statCards(stats); if (s.length < 4) return;
+    stats.style.display = 'none';
+    var cov = num(s[2].value), key = JSON.stringify(s);
+    place('gen-rings', stats.parentNode, stats, '<div style="font-size:11px;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px;text-align:center">Testing at a glance</div>' + cardinalRings([
+      { value: s[0].value, label: 'Active tests', sub: s[0].sub, color: INK, pct: 0.35 },
+      { value: s[1].value, label: 'Models in testing', sub: s[1].sub, color: '#1d4ed8', pct: 0.5 },
+      { value: s[2].value, label: 'Coverage rate', sub: s[2].sub, color: cov >= 90 ? GRN : YEL, pct: cov / 100 },
+      { value: s[3].value, label: 'Tests passed', sub: s[3].sub, color: GRN, pct: 0.75 }
+    ]), key);
+    var eve = document.getElementById('gen-eve-sum'); if (eve && eve.parentNode) { var x = d('genesis', window.currentOrg || 'fin');
+      chartBox('gen-hist', eve.parentNode, eve.nextSibling, 'genesis', { title: 'Testing history', sub: 'Tests run, passed, and failed each month', series: [{ name: 'Tests run', color: '#cbd5e1', data: x[0] }, { name: 'Passed', color: GRN, data: x[1] }, { name: 'Failed', color: RED, data: x[2] }] }); }
+  }
+  function atonement() {
+    var scr = document.getElementById('screen-atonement'); if (!scr || scr.offsetParent === null) return;
+    var grid = [].filter.call(scr.querySelectorAll('.grid-4'), function (g) { return /ACTIVE REMEDIATIONS/i.test(g.innerText); })[0]; if (!grid) return;
+    var s = statCards(grid); if (s.length < 4) return;
+    grid.style.display = 'none';
+    place('at-rings', grid.parentNode, grid, '<div style="font-size:11px;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px;text-align:center">Fixes at a glance</div>' + cardinalRings([
+      { value: s[0].value, label: 'Active fixes', sub: s[0].sub, color: YEL, pct: 0.5 },
+      { value: s[1].value, label: 'In shadow', sub: s[1].sub, color: '#1d4ed8', pct: 0.25 },
+      { value: s[2].value, label: 'Models fixed', sub: s[2].sub, color: GRN, pct: 0.75 },
+      { value: s[3].value, label: 'Avg time to fix', sub: s[3].sub, color: GRN, pct: 0.26 }
+    ]), JSON.stringify(s));
+    var eve = document.getElementById('at-eve-sum'); if (eve && eve.parentNode) { var x = d('atonement', window.currentOrg || 'fin');
+      chartBox('at-hist', eve.parentNode, eve.nextSibling, 'atonement', { title: 'Remediation history', sub: 'Fixes started and finished each month, and people re-reviewed', series: [{ name: 'Fixes started', color: '#cbd5e1', data: x[0] }, { name: 'Fixes finished', color: GRN, data: x[1] }, { name: 'People re-reviewed (hundreds)', color: '#1d4ed8', data: x[2].map(function (v) { return v / 100; }), line: true }], fmt: function (v) { return Math.round(v * 10) / 10; } }); }
+  }
+  function ledger() {
+    var scr = document.getElementById('screen-trustledger'); if (!scr || scr.offsetParent === null) return;
+    var grid = [].filter.call(scr.querySelectorAll('.grid-4'), function (g) { return /RECORDS LOGGED/i.test(g.innerText) && g.offsetParent !== null; })[0];
+    var hidden = document.getElementById('tl-rings') && document.getElementById('tl-rings').__src;
+    if (!grid && !hidden) return;
+    var src = grid || hidden, s = statCards(src); if (s.length < 4) return;
+    src.style.display = 'none';
+    var el = place('tl-rings', src.parentNode, src, '<div style="font-size:11px;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px;text-align:center">Trust Ledger at a glance</div>' + cardinalRings([
+      { value: s[0].value, label: 'Records sealed', sub: s[0].sub, color: INK, pct: 0.85 },
+      { value: s[1].value, label: 'Verified today', sub: s[1].sub, color: '#1d4ed8', pct: 0.4 },
+      { value: s[2].value, label: 'Active certifications', sub: s[2].sub, color: GRN, pct: 0.75 },
+      { value: s[3].value, label: 'Whistleblower cases', sub: s[3].sub, color: YEL, pct: 0.2 }
+    ]), JSON.stringify(s));
+    el.__src = src;
+  }
+  function library() {
+    var top = document.getElementById('lib-top'); if (!top || top.offsetParent === null) return;
+    if (top.querySelector('.cr-wrap') && top.getAttribute('data-rk')) return;
+    var tiles = [].filter.call(top.querySelectorAll('button'), function (t) { return t.children.length >= 2 && /^\d+$/.test((t.children[0].textContent || '').trim()); });
+    if (!tiles.length) return;
+    var data = tiles.map(function (t) { return { value: t.children[0].textContent.trim(), label: t.children[1].textContent.trim(), click: t.getAttribute('onclick') }; }).filter(function (x, i, a) { return a.findIndex(function (y) { return y.label === x.label; }) === i; }).slice(0, 5);
+    var key = JSON.stringify(data) + (window.currentOrg || ''); if (top.getAttribute('data-rk') === key && top.querySelector('.cr-wrap')) return; top.setAttribute('data-rk', key); top.style.display = 'block';
+    var cols = [INK, '#1d4ed8', '#0f766e', YEL, GRN];
+    top.innerHTML = '<div class="card" style="padding:20px 22px;margin:0 0 4px">' + cardinalRings(data.map(function (x, i) { return { value: x.value, label: x.label, color: cols[i % cols.length], pct: Math.min(1, 0.25 + num(x.value) / 16), onclick: x.click || '' }; })) + '</div>';
+  }
+  function sentinel() {
+    var scr = document.getElementById('screen-sentinel'); if (!scr || scr.offsetParent === null) return;
+    var top = document.getElementById('sent-top'); if (!top || top.style.display === 'none') return;
+    var grid = [].filter.call(top.children, function (c) { return /Open cases/.test(c.innerText || '') && /grid/.test(c.getAttribute('style') || ''); })[0];
+    if (grid && !grid.__p7) {
+      var s = [].map.call(grid.children, function (c) { var p = [].map.call(c.children, function (x) { return (x.textContent || '').trim(); }).filter(Boolean); return { value: p[0], label: p[1] }; });
+      grid.__p7 = 1; grid.style.cssText = 'margin-top:14px';
+      grid.innerHTML = cardinalRings([
+        { value: s[0].value, label: s[0].label, color: INK, pct: 0.6, onclick: "cardinalSentinelUiSetMainTab('cases')" },
+        { value: s[1].value, label: s[1].label, color: num(s[1].value) ? RED : GRN, pct: num(s[1].value) ? 0.3 : 1, onclick: "cardinalSentinelUiSetMainTab('cases')" },
+        { value: s[2].value, label: s[2].label, color: num(s[2].value) ? YEL : GRN, pct: 0.45, onclick: "cardinalSentinelUiSetMainTab('incidents')" },
+        { value: s[3].value, label: s[3].label, color: '#1d4ed8', pct: 0.4, onclick: "cardinalSentinelUiSetMainTab('warrooms')" }
+      ]);
+    }
+    var eve = document.getElementById('sentinel-weekly-digest'); if (eve && eve.parentNode && eve.style.display !== 'none') { var x = d('sentinel', window.currentOrg || 'fin');
+      chartBox('sent-hist', eve.parentNode, eve.nextSibling, 'sentinel', { title: 'Case history', sub: 'Cases, war rooms, and incidents opened each month', series: [{ name: 'Cases opened', color: INK, data: x[0] }, { name: 'War rooms opened', color: '#1d4ed8', data: x[1] }, { name: 'Incidents (reporting clocks)', color: YEL, data: x[2] }] }); }
+  }
+  function halo() {
+    var hero = document.getElementById('halo-hero2'); if (!hero || hero.offsetParent === null) return;
+    var card = hero.querySelector('.card'); if (!card) return;
+    var t = hero.innerText, money = t.match(/\$[\d.]+M/), cases = (t.match(/Active cases\s*·\s*(\d+)/i) || [])[1] || '0';
+    var rows = [].map.call(document.querySelectorAll('#halo-money table tbody tr'), function (tr) { return [].map.call(tr.children, function (td) { return td.textContent.trim(); }); });
+    var high = rows.filter(function (r) { return /high/i.test(r[4] || ''); }).length;
+    var dated = rows.map(function (r) { return Date.parse(r[2]); }).filter(function (v) { return !isNaN(v) && v > Date.now(); }).sort();
+    var days = dated.length ? Math.ceil((dated[0] - Date.now()) / 864e5) : '--';
+    var key = [money, cases, rows.length, high, days].join('|'), id = 'halo-mini-rings', el = document.getElementById(id);
+    if (!el) { el = document.createElement('div'); el.id = id; el.style.cssText = 'margin-top:18px;padding-top:16px;border-top:1px solid rgba(26,24,21,.08)'; }
+    if (el.parentNode !== card) card.appendChild(el);
+    if (el.getAttribute('data-k') !== key) { el.setAttribute('data-k', key); el.innerHTML = cardinalRings([
+      { value: rows.length, label: 'Rules at risk', sub: 'that apply to these cases', color: INK, pct: 0.6 },
+      { value: high, label: 'High likelihood', sub: 'of a penalty if not fixed', color: RED, pct: rows.length ? high / rows.length : 0 },
+      { value: days === '--' ? '--' : days + 'd', label: 'Next deadline', sub: 'until the nearest date', color: YEL, pct: days === '--' ? 0 : Math.max(0.08, 1 - days / 120) },
+      { value: cases, label: 'Open cases', sub: 'driving the exposure', color: '#1d4ed8', pct: 0.5 }
+    ]); }
+    var eve = document.getElementById('halo-eve-sum'); if (eve && eve.parentNode) { var x = d('halo', window.currentOrg || 'fin');
+      chartBox('halo-hist', eve.parentNode, eve.nextSibling, 'halo', { title: 'Predicted vs actual losses', sub: 'What Halo predicted each month, what was actually lost, and what fixes kept from happening', series: [{ name: 'Predicted exposure', color: '#cbd5e1', data: x[0] }, { name: 'Avoided by fixes', color: GRN, data: x[2] }, { name: 'Actually lost', color: RED, data: x[1], line: true }], fmt: M, note: 'Actual losses stayed small because problems were caught and fixed before penalties or large fraud losses landed.' }); }
+  }
+  setInterval(function () { try { genesis(); } catch (e) {} try { atonement(); } catch (e) {} try { ledger(); } catch (e) {} try { library(); } catch (e) {} try { sentinel(); } catch (e) {} try { halo(); } catch (e) {} }, 800);
 })();
 
 </script>
