@@ -9546,8 +9546,8 @@ const DATA = {
  edenRows:[['Credit Scoring v3.4','0.74','1,203','ZIP code proxy','High'],['Fraud Screening v2.7','0.88','—','None detected','Passing'],['Underwriting v4.1','0.82','—','Minor drift','Watch'],['Customer Risk v4.0','0.91','—','None detected','Passing']],
  modelTable:[['Credit Scoring v3.4','74','amber'],['Fraud Screening v2.7','88','green'],['Underwriting v4.1','82','green'],['Customer Risk v4.0','91','green']],
  demoBreakdown:[{label:'Geographic Proxy',score:'0.68',status:'Critical',c:'red'},{label:'Racial/Ethnic',score:'0.74',status:'Watch',c:'amber'},{label:'Income Level',score:'0.79',status:'Watch',c:'amber'}],
- bfTitle:'ZIP Code: Bias AND Fraud Vulnerability',
- bfBody:'ZIP code blocks South Bronx legitimate applicants while fraudsters use Upper East Side fake addresses. One fix solves both.',
+ bfTitle:'Geography: one signal, two systems',
+ bfBody:'Underwriting approves fewer South Bronx applicants, and the fraud model flags more of them on geography. Each system looks fine alone; Cardinal sees the combined effect across the funnel.',
  bfBias:'$2.0M/yr', bfFraud:'$5.0M/yr', bfTotal:'$7.0M/yr',
  bfRoi:'✓ Fix ROI: Remove ZIP code → Save $7M. Cost: ~$50K. ROI: 140x',
  cfTitle:'Proving Causation: ZIP Code as Race Proxy',
@@ -9562,7 +9562,7 @@ const DATA = {
  haloScenarios:[{label:'Do Nothing',val:'$40M',sub:'state fair lending enforcement likely',c:'red'},{label:'Optimal Fix ✓',val:'$8M',sub:'80% reduction · 14 days',c:'green'},{label:'Partial Fix',val:'$20M',sub:'50% reduction · 7 days',c:'amber'}],
  regs:[{name:'ECOA (Equal Credit Opportunity Act)',status:'At Risk',deadline:'30 days',c:'red'},{name:'CFPB fair lending exam',status:'Exam Due',deadline:'13 days',c:'amber'},{name:'California ADMT rules',status:'On Track',deadline:'Jan 1, 2027',c:'green'},{name:'EU AI Act',status:'Review Needed',deadline:'Aug 2027',c:'amber'}],
  cases:[{id:'#FIN-1203',title:'Credit Scoring v3.4: ZIP Code Proxy Bias',sev:'High',age:'Day 5 of 30',status:'Fix Development'},{id:'#FIN-1204',title:'CFPB Fair Lending Exam: Due 13 Days',sev:'High',age:'Day 16 of 30',status:'Generating Report'}],
- threats:[{type:'Synthetic Identity Ring (47 apps)',date:'' + __cdr('Apr 3, 2026','fin') + '',amt:'$2.3M'},{type:'ZIP Code Exploitation',date:'' + __cdr('Mar 22, 2026','fin') + '',amt:'$890K'},{type:'Deepfake Document Forgery',date:'' + __cdr('Mar 10, 2026','fin') + '',amt:'$445K'}],
+ threats:[{type:'Synthetic Identity Ring (47 apps)',date:'' + __cdr('Apr 3, 2026','fin') + '',amt:'$2.3M'},{type:'Geography signal overlap',date:'' + __cdr('Mar 22, 2026','fin') + '',amt:'$890K'},{type:'Deepfake Document Forgery',date:'' + __cdr('Mar 10, 2026','fin') + '',amt:'$445K'}],
  },
  health: {
  orgName:'Sterling Health', industry:'Healthcare',
@@ -9651,7 +9651,7 @@ EDEN_INDUSTRY.fin = {
  features:[
    {n:'zip_code',v:0.82,k:'proxyR'},{n:'credit_score',v:0.41,k:'valid'},{n:'income',v:0.38,k:'valid'},
    {n:'employment_type',v:0.71,k:'proxyA'},{n:'loan_amount',v:0.19,k:'valid'}],
- obsidianText:'The zip_code proxy creating proxy discrimination is being exploited by a synthetic identity ring. 47 applications from a single device used upscale ZIP codes specifically because the model trusts them.',
+ obsidianText:'Fraud Screening v2.7 weighs geography-related signals (ZIP risk and device location) when it flags applications. In NYC ZIPs 10453 and 11212 it sends more applicants to manual review, and those applicants are approved less often. On its own the fraud model looks like it is doing its job; combined with Credit Scoring v3.4, it widens the approval gap across the funnel.',
  blocked:'$2.3M', expose:'$890K'};
 EDEN_INDUSTRY.health = {
  subtitle:'Clinical Claims Bias Detection: Sterling Health',
@@ -11276,7 +11276,7 @@ var CARDINAL_DATA = {
           {label:'Synthetic identity detection', sub:'91% catch rate', impact:'+0 pts'},
           {label:'Behavioral anomaly detection', sub:'87% catch rate', impact:'-1 pt'},
           {label:'Cluster fraud detection', sub:'88% catch rate', impact:'-1 pt'}
-        ], biasFraudConnection:'2 cases where ZIP-cluster bias gaps masked synthetic-identity rings', coreScreen:'obsidian' },
+        ], biasFraudConnection:'2 cases where geography shaped both underwriting and fraud decisions', coreScreen:'obsidian' },
       compliance: { weight:30, score:76, headline:'Regulatory Compliance',
         regulations:[
           {name:'ECOA', pct:68.3, key:'ecoa', issue:'Credit v3.4 proxy discrimination, v3.5 fix in shadow'},
@@ -11747,7 +11747,7 @@ var BIAS_FIN = [
   { stamped: true, modelId: 'Collections AI v1.3', di: 0.81, equalizedOdds: 0.09, demographicParity: 0.89, calibration: 0.90, topProxyVariable: { name: 'neighborhood_risk_index', correlation: 0.48, correlatesWith: 'zip' }, affectedCohort: { totalCount: 56, breakdownByDemo: { Black: 18, Hispanic: 14, White: 17, Asian: 5, Other: 2 } }, status: 'Watch', trend30d: 'down' }
 ];
 var FRAUD_FIN = [
-  { stamped: true, modelId: 'Credit Scoring v3.4', syntheticIdentityRate: 91, behavioralAnomalyRate: 88, clusterFraudRate: 90, velocityFraudRate: 86, topFraudPattern: { type: 'Synthetic identity at ZIP clusters', casesDetected: 47, dollarsBlocked: 2300000 }, biasFraudConnection: { caseCount: 12, summary: 'ZIP-cluster bias gaps masked synthetic-identity rings: 12 linked cases where adverse-action friction reduced verification depth' }, status: 'Watch', trend30d: 'flat' },
+  { stamped: true, modelId: 'Credit Scoring v3.4', syntheticIdentityRate: 91, behavioralAnomalyRate: 88, clusterFraudRate: 90, velocityFraudRate: 86, topFraudPattern: { type: 'Synthetic identity at ZIP clusters', casesDetected: 47, dollarsBlocked: 2300000 }, biasFraudConnection: { caseCount: 12, summary: 'Geography shapes both underwriting and fraud decisions: 12 linked cases in the same ZIP codes' }, status: 'Watch', trend30d: 'flat' },
   { stamped: true, modelId: 'Fraud Screening v2.7', syntheticIdentityRate: 94, behavioralAnomalyRate: 92, clusterFraudRate: 93, velocityFraudRate: 91, topFraudPattern: { type: 'Device farm velocity', casesDetected: 31, dollarsBlocked: 1890000 }, biasFraudConnection: { caseCount: 2, summary: 'Minor overlap: high-ZIP-risk cohorts saw both fair lending friction and lighter fraud checks' }, status: 'Passing', trend30d: 'up' },
   { stamped: true, modelId: 'Underwriting v4.1', syntheticIdentityRate: 88, behavioralAnomalyRate: 85, clusterFraudRate: 87, velocityFraudRate: 84, topFraudPattern: { type: 'Shell employer ring', casesDetected: 9, dollarsBlocked: 420000 }, biasFraudConnection: { caseCount: 1, summary: 'Single case: sector proxy bias correlated with missed employer verification' }, status: 'Watch', trend30d: 'down' },
   { stamped: true, modelId: 'Collections AI v1.3', syntheticIdentityRate: 86, behavioralAnomalyRate: 83, clusterFraudRate: 85, velocityFraudRate: 82, topFraudPattern: { type: 'Payment velocity spike', casesDetected: 14, dollarsBlocked: 310000 }, biasFraudConnection: { caseCount: 0, summary: 'No bias-fraud overlap' }, status: 'Passing', trend30d: 'flat' }
@@ -11958,10 +11958,10 @@ function _overlapCasesListFromOrg(ok, nOverlap, primaryCase) {
     if (ok === 'fin') cid = i === 0 ? 'FIN-1203' : 'FIN-' + String(1203 + i);
     if (ok === 'health') cid = i === 0 ? 'HS-2847' : 'HS-' + String(2847 + i);
     var biasAsp = ok === 'fin' ? 'DI 0.74 vs ZIP proxy' : ok === 'health' ? 'DI 0.64: Claims v1.9' : 'DI 0.67 vs 0.80 floor';
-    var fraudAsp = ok === 'fin' ? 'Synthetic ring: NYC ZIP' : ok === 'health' ? 'Specialty upcoding cluster' : 'Credential synthesis ring';
+    var fraudAsp = ok === 'fin' ? 'Geography in fraud flags: NYC ZIPs' : ok === 'health' ? 'Specialty upcoding cluster' : 'Credential synthesis ring';
     list.push({
       caseId: cid,
-      summary: i === 0 ? (ok === 'ad' ? 'Hispanic technicians at Pendleton denied premium-base placement (bias), credential verification skipped on denial pattern, allowing synthetic credential ring through (fraud blind spot).' : ok === 'fin' ? 'NYC ZIP-cluster denials on Credit Scoring v3.4 masked synthetic identity ring: 12 overlap cases on bias-fraud boundary.' : 'Patients 65+ specialty denials on Claims v1.9, provider collusion ring exploited calibration gap (Diagnosis Support cross-signal).') : ('Linked overlap segment ' + (i + 1) + ', bias corridor reduced fraud signal until Cardinal fused lenses.'),
+      summary: i === 0 ? (ok === 'ad' ? 'Hispanic technicians at Pendleton denied premium-base placement (bias), credential verification skipped on denial pattern, allowing synthetic credential ring through (fraud blind spot).' : ok === 'fin' ? 'Applicants in NYC ZIP clusters approved less by Credit Scoring v3.4 and flagged more by Fraud Screening v2.7 on geography: 12 overlap cases.' : 'Patients 65+ specialty denials on Claims v1.9, provider collusion ring exploited calibration gap (Diagnosis Support cross-signal).') : ('Linked overlap segment ' + (i + 1) + ', bias corridor reduced fraud signal until Cardinal fused lenses.'),
       biasAspect: biasAsp,
       fraudAspect: fraudAsp + (i ? ' · segment ' + (i + 1) : ''),
       dollarsAtRisk: ok === 'ad' ? 67000000 - i * 900000 : ok === 'fin' ? 73000000 - i * 2100000 : 150000000 - i * 4100000
@@ -12037,7 +12037,7 @@ function _edoAssignEveHist(dst, ok) {
     };
     dst.obsidianEveSummary = {
       daily: { para1: 'As of today, ' + new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric' }) + ', ' + orgLabel + '\u2019s Fraud Detection score is ' + dst.fraudScore + '. No new synthetic-identity or velocity spikes in the last 24 hours.', para2: (ok === 'fin' ? 'Overnight device-farm monitoring came back clean.' : 'Midday velocity monitoring came back clean.') + ' No new anomalies flagged today.', para3: 'Queues remain current. Bias\u2011Fraud Connection: ' + (ok === 'fin' ? 'twelve' : 'nine') + ' fraud cases remain linked to bias-thinned lanes, see the overlap cases.' },
-      monthly: { para1: orgLabel + ' ' + new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) + ' Fraud Detection score is ' + dst.fraudScore + ', in the ' + pctF + 'th percentile of peers and above the 80 detection threshold. Synthetic identity, behavioral anomaly, cluster, and velocity sub-scores are tracked in Obsidian.', para2: ok === 'fin' ? 'Device-farm replay risk peaks overnight Eastern; align staffing with the velocity heatmap and credential queues.' : 'Midday velocity collusion windows persist on specialty/provider pathways; align clinical ops alerting with Obsidian spikes.', para3: 'Tighten queue governance before batch releases. Bias\u2011Fraud Connection: ' + (ok === 'fin' ? 'twelve' : 'nine') + ' fraud cases exploited bias-thinned verification lanes, see the overlap cases.' },
+      monthly: { para1: orgLabel + ' ' + new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) + ' Fraud Detection score is ' + dst.fraudScore + ', in the ' + pctF + 'th percentile of peers and above the 80 detection threshold. Synthetic identity, behavioral anomaly, cluster, and velocity sub-scores are tracked in Obsidian.', para2: ok === 'fin' ? 'Device-farm replay risk peaks overnight Eastern; align staffing with the velocity heatmap and credential queues.' : 'Midday velocity collusion windows persist on specialty/provider pathways; align clinical ops alerting with Obsidian spikes.', para3: 'Tighten queue governance before batch releases. Bias\u2011Fraud Connection: ' + (ok === 'fin' ? 'twelve' : 'nine') + (ok === 'fin' ? ' cases where geography shaped both underwriting and fraud decisions, see the overlap cases.' : ' fraud cases exploited bias-thinned verification lanes, see the overlap cases.') },
       quarterly: { para1: orgLabel + ' Q' + (Math.floor(new Date().getMonth() / 3) + 1) + ' ' + new Date().getFullYear() + ' Fraud Detection score is ' + dst.fraudScore + ', above the 80 detection threshold and near the ' + pctF + 'th percentile of peers. Synthetic identity lanes, behavioral anomaly scoring, cluster resolution, and velocity detection remain on watch with Echo-signed receipts.', para2: ok === 'fin' ? '$60M+ in exposure avoided across Morris Heights / Brownsville synthetic rings and velocity abuse; FIN-R-10453 disruption held the largest dollar at-risk cluster.' : '$40M+ in exposure avoided across specialty upcoding and provider-collusion patterns; elder-care velocity lanes remain the busiest fraud surface.', para3: 'Maintain staffed reviews on overnight replay spikes and keep cluster playbooks current for NYC mesh ' + (ok === 'fin' ? 'ZIPs' : 'CMS regions') + '. Bias\u2011Fraud Connection: ' + (ok === 'fin' ? '12' : '9') + ' cases linked bias-blind documentation to fraud entry points, see the overlap cases.' },
       ytd: { para1: orgLabel + ' fraud trajectory improved as Obsidian expanded coverage, tuned cluster thresholds, and kept false positives within board tolerance.', para2: 'Velocity monitoring should stay hottest where enrollment or pharmacy throughput spikes coincide with fraud replay tactics.', para3: 'Continue Echo Memory pinning for every major catch; regulators expect dual-evidence packages. Bias\u2011Fraud Connection reviews stay on the overlap case list.' }
     };
@@ -12223,7 +12223,7 @@ function _edoMergeVisualExt(dst, ok) {
     };
     dst.protectedGroupImpactFraud = {
       fraudPatternHotspots: [
-        { text: 'Synthetic identity rings concentrated at NYC ZIPs 10453 and 11212: 47 linked applications', severity: 'high' },
+        { text: 'Fraud flags concentrated in NYC ZIPs 10453 and 11212, partly driven by geography signals', severity: 'high' },
         { text: 'Weekday late-night velocity burst 23:00-03:00 ET, device farm replay', severity: 'medium' },
         { text: 'Cross-ZIP identity recycling between Morris Heights and Brownsville bands', severity: 'medium' }
       ],
@@ -12291,7 +12291,7 @@ function _edoMergeVisualExt(dst, ok) {
     dst.expandedGeographicFraudConcentration = {
       title: 'NYC ZIP fraud concentration',
       cells: [
-        { label: '10453', fraudRate: 45, severity: 'high', cohortFilter: '10453', tipBody: 'Fraud Targeting Rate / 10453: synthetic identity ring core, aligns with worst bias ZIP.' },
+        { label: '10453', fraudRate: 45, severity: 'high', cohortFilter: '10453', tipBody: 'Fraud Targeting Rate / 10453: the fraud model flags more applicants here, partly on geography. This is also where the underwriting approval gap is widest.' },
         { label: '11212', fraudRate: 41, severity: 'high', cohortFilter: '11212', tipBody: 'Fraud Targeting Rate / 11212: credential recycling mesh.' },
         { label: '10456', fraudRate: 36, severity: 'high', cohortFilter: '10456', tipBody: 'Fraud Targeting Rate / 10456: high cluster activity.' },
         { label: '11206', fraudRate: 33, severity: 'high', cohortFilter: '11206', tipBody: 'Fraud Targeting Rate / 11206: high.' },
@@ -12489,10 +12489,15 @@ function _edoMergeVisualExt(dst, ok) {
       overlapCases: 12,
       primaryModel: 'Credit Scoring v3.4',
       exposureM: 73,
-      eveSummaryLine: '12 cases this quarter where bias in Credit Scoring v3.4 created identity verification gaps, combined exposure $73M',
+      eveSummaryLine: '12 cases this quarter where geography shaped both underwriting and fraud decisions in the same ZIP codes, combined exposure $73M',
+      obsLine: '286 applicants in NYC ZIPs 10453 and 11212 were sent to manual review partly on geography, the same ZIP codes where Credit Scoring v3.4 approves fewer people. Neither system looks wrong alone.',
+      stepTitles: ['Step 1: Underwriting approval gap', 'Step 2: Shared signal: geography', 'Step 3: More fraud flags, same ZIPs'],
+      step2Badge: 'Where the two systems meet',
+      subMirror: 'See the same overlap from the fraud side in Obsidian.',
+      subMirrorObs: 'The same overlap Eden found, read from the fraud side: who the fraud model flagged, and on what signals.',
       biasPattern: { text: 'Black and Hispanic applicants in NYC ZIP clusters 10453 / 11212 face 2.1x adverse-action friction vs comparable profiles', metric: 'DI 0.74 | 1,203 flagged' },
-      verificationGap: { text: 'Adverse-action cohorts received lighter manual identity corroboration because fraud systems deprioritized ZIPs already flagged for bias remediation', metric: '38% less deep verification on adverse cohort' },
-      fraudExploit: { text: 'Synthetic identity rings replayed applicants through Morris Heights and Brownsville meshes where verification depth was thinnest', metric: '$2.3M blocked | 47 linked apps' }
+      verificationGap: { text: 'Geography appears in both systems: Credit Scoring v3.4 leans on ZIP code, and Fraud Screening v2.7 weighs ZIP risk and device location. Each team sees a system doing its job.', metric: '2 systems · 1 shared signal' },
+      fraudExploit: { text: 'Fraud Screening v2.7 leans on geography-related signals, so applicants from Morris Heights and Brownsville are sent to manual review more often, and approved less', metric: '286 extra manual reviews' }
     };
   } else {
     dst.biasFraudConnectionFlow = {
@@ -12564,7 +12569,7 @@ var EXT = {
       { caseId: '#FIN-2340', caseType: 'incident', sentinelCaseType: 'drift-alert', modelId: 'Underwriting v4.1', severity: 'Medium', affectedCount: 134, cohortDescription: 'Self-employed applicants from minority-owned businesses', metricViolation: 'Income volatility proxy 0.62', detectedDate: '2026-04-10T13:00:00Z', slaDeadline: _iso(50, 17), status: 'monitoring', leadAssignee: 'Marcus Chen', echoMemoryId: 'echo-FIN-' + __cdrId('2026-04-10','fin','DD') + '-1300-eden04' }
     ],
     fraudIncidentsActive: [
-      { caseId: '#FIN-1203', caseType: 'lifecycle', sentinelCaseType: 'repeat-fraud', modelId: 'Credit Scoring v3.4', severity: 'High', affectedCount: 47, cohortDescription: 'Synthetic identity ring at NYC ZIPs 10453, 11212', metricViolation: 'Cluster fraud + velocity anomaly', detectedDate: '2026-02-18T09:30:00Z', slaDeadline: _iso(12, 17), status: 'open', leadAssignee: 'Lisa Torres', echoMemoryId: 'echo-FIN-' + __cdrId('2026-02-15','fin','DD') + '-1015-wr01' },
+      { caseId: '#FIN-1203', caseType: 'lifecycle', sentinelCaseType: 'repeat-fraud', modelId: 'Fraud Screening v2.7', severity: 'High', affectedCount: 286, cohortDescription: 'Applicants in NYC ZIPs 10453 and 11212 flagged for manual review more often', metricViolation: 'Geography signals in fraud flags overlap the underwriting approval gap', detectedDate: '2026-02-18T09:30:00Z', slaDeadline: _iso(12, 17), status: 'open', leadAssignee: 'Lisa Torres', echoMemoryId: 'echo-FIN-' + __cdrId('2026-02-15','fin','DD') + '-1015-wr01' },
       { caseId: '#FIN-2207', caseType: 'incident', sentinelCaseType: 'drift-alert', modelId: 'Fraud Screening v2.7', severity: 'Medium', affectedCount: 31, cohortDescription: 'Device farm velocity cluster (Chicago)', metricViolation: 'Velocity fraud pattern', detectedDate: '2026-04-03T08:00:00Z', slaDeadline: _iso(25, 17), status: 'remediation-in-progress', leadAssignee: 'Adam: Cardinal', echoMemoryId: 'echo-FIN-' + __cdrId('2026-04-25','fin','DD') + '-1500-sn01' },
       { caseId: '#FIN-3045', caseType: 'incident', sentinelCaseType: 'drift-alert', modelId: 'Underwriting v4.1', severity: 'Medium', affectedCount: 19, cohortDescription: 'Shell company applications clustered in NYC', metricViolation: 'Velocity 73, overnight submissions', detectedDate: '2026-04-12T07:30:00Z', slaDeadline: _iso(48, 17), status: 'under-investigation', leadAssignee: 'Lisa Torres', echoMemoryId: 'echo-FIN-' + __cdrId('2026-04-12','fin','DD') + '-0730-obsidian03' }
     ],
@@ -12593,7 +12598,7 @@ var EXT = {
     peerPercentileLabel: '64th percentile in Finance',
     statBiasCallout: 'Black applicants in ZIP 10453: 2.1x adverse rate vs comparable profiles',
     statVulnerableIntersection: 'Black women applicants age 35-50 in 10453/11212: 2.4x denial vs baseline',
-    obsidianTargetCohort: 'Synthetic identity ring at NYC ZIPs 10453, 11212: 47 fake applicants caught',
+    obsidianTargetCohort: 'Applicants in NYC ZIPs 10453 and 11212 flagged more often on geography signals',
     obsidianMostTargeted: 'Applicants in Morris Heights and Brownsville ZIP bands: 2.2x targeted by synthetic identity fraud'
   },
   health: {
@@ -14450,8 +14455,8 @@ function edoBuildBfVennHtml(d, org, screenIsObsidian) {
   var biasP = flow.biasPattern || { text: 'Bias blind spot flagged by Eden on the monitored cohort.', metric: '' };
   var verG = flow.verificationGap || { text: 'Downstream verification deprioritized the cohort where bias concentrated.', metric: '' };
   var frE = flow.fraudExploit || { text: 'Fraud operators exploited the lighter verification path.', metric: '' };
-  var subMirror = screenIsObsidian ? 'Same overlap set Eden flagged first, here it’s read from the fraud side: what got through, and why.' : 'This is the bias signal before it becomes a fraud story, see it from the fraud side in Obsidian.';
-  var lensHeroLine = screenIsObsidian
+  var subMirror = (screenIsObsidian && flow.subMirrorObs) ? flow.subMirrorObs : (flow.subMirror && !screenIsObsidian) ? flow.subMirror : screenIsObsidian ? 'Same overlap set Eden flagged first, here it’s read from the fraud side: what got through, and why.' : 'This is the bias signal before it becomes a fraud story, see it from the fraud side in Obsidian.';
+  var lensHeroLine = (screenIsObsidian && flow.obsLine) ? flow.obsLine : screenIsObsidian
     ? ((frE.metric || 'Fraud caught') + ' traced back to a bias gap Eden already flagged: ' + (flow.overlapCases || oCount) + ' cases this quarter on ' + (flow.primaryModel || 'the primary model') + '.')
     : (heroLine);
   var sid = screenIsObsidian ? 'obs' : 'eden';
@@ -14469,23 +14474,23 @@ function edoBuildBfVennHtml(d, org, screenIsObsidian) {
     '<div style="font-size:10px;font-weight:800;color:var(--muted);margin-bottom:10px;text-transform:uppercase;letter-spacing:.06em"' + edoT('Visual story', 'Three-step causality: bias signal, verification gap, fraud exploit.') + '>Visual story</div>' +
     '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px">' +
     '<div class="card" style="padding:14px;display:flex;flex-direction:column;gap:8px;background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.22)"' + edoT('Step 1', 'Bias pattern / Eden-disparate impact cohort driving the story.') + '>' +
-    '<div style="font-size:18px;line-height:1">\u25CE</div><div style="font-size:11px;font-weight:800;color:var(--chrome2)">Step 1: Bias Pattern Detected</div>' +
+    '<div style="font-size:18px;line-height:1">\u25CE</div><div style="font-size:11px;font-weight:800;color:var(--chrome2)">' + ((flow.stepTitles || [])[0] || 'Step 1: Bias Pattern Detected') + '</div>' +
     '<p style="margin:0;font-size:10px;color:var(--muted);line-height:1.5;flex:1">' + biasP.text + '</p>' +
     '<div style="font-size:10px;font-weight:700;color:#f87171"' + edoT('Bias metrics', biasP.metric) + '>' + biasP.metric + '</div></div>' +
     '<div class="card" style="padding:14px;display:flex;flex-direction:column;gap:8px;background:rgba(250,204,21,.08);border:1px solid rgba(250,204,21,.28)"' + edoT('Step 2', 'Blind spot / Where verification depth dropped because bias queues deprioritized work.') + '>' +
-    '<div style="font-size:18px;line-height:1">\u2192</div><div style="font-size:11px;font-weight:800;color:var(--chrome2)">Step 2: Verification Skipped</div>' +
-    '<div style="font-size:10px;font-weight:700;color:#fda4af;text-transform:uppercase;letter-spacing:.04em">Blind spot created</div>' +
+    '<div style="font-size:18px;line-height:1">\u2192</div><div style="font-size:11px;font-weight:800;color:var(--chrome2)">' + ((flow.stepTitles || [])[1] || 'Step 2: Verification Skipped') + '</div>' +
+    '<div style="font-size:10px;font-weight:700;color:#fda4af;text-transform:uppercase;letter-spacing:.04em">' + (flow.step2Badge || 'Blind spot created') + '</div>' +
     '<p style="margin:0;font-size:10px;color:var(--muted);line-height:1.5;flex:1">' + verG.text + '</p>' +
     '<div style="font-size:10px;font-weight:700;color:#FACC15"' + edoT('Verification gap', verG.metric) + '>' + verG.metric + '</div></div>' +
     '<div class="card" style="padding:14px;display:flex;flex-direction:column;gap:8px;background:rgba(251,146,60,.08);border:1px solid rgba(234,88,12,.25)"' + edoT('Step 3', 'Fraud exploit / Obsidian-detected abuse through the gap.') + '>' +
-    '<div style="font-size:18px;line-height:1">\u26A0</div><div style="font-size:11px;font-weight:800;color:var(--chrome2)">Step 3: Fraud Exploits Gap</div>' +
+    '<div style="font-size:18px;line-height:1">\u26A0</div><div style="font-size:11px;font-weight:800;color:var(--chrome2)">' + ((flow.stepTitles || [])[2] || 'Step 3: Fraud Exploits Gap') + '</div>' +
     '<p style="margin:0;font-size:10px;color:var(--muted);line-height:1.5;flex:1">' + frE.text + '</p>' +
     '<div style="font-size:10px;font-weight:700;color:#fb923c"' + edoT('Fraud metrics', frE.metric) + '>' + frE.metric + '</div></div></div></div>';
   var moat = '' && '<div style="margin-top:20px;padding:14px 16px;border-radius:12px;border:1px solid rgba(167, 167, 167,.2);background:linear-gradient(90deg,rgba(10,14,22,.92),rgba(15,18,26,.88));display:flex;gap:14px;align-items:center;flex-wrap:wrap"' + edoT('Why this matters', 'Dual-lens posture / Other vendors offer bias detection OR fraud detection. This deployment ties both to shared audit infrastructure (Echo Core), so cross-lens cases surface together.') + '>' +
     '<div style="flex:1;min-width:240px"><div style="font-size:11px;font-weight:800;margin-bottom:6px;color:#F5F3EF">Why this matters</div><div style="font-size:10px;color:rgba(245,243,239,0.72);line-height:1.55">Bias detection tools see Step 1. Fraud detection tools see Step 3. Cardinal is the only platform that connects them. Every overlap case here was caught because Eden and Obsidian share the same audit core.</div></div>' +
     '<div style="font-size:12px;font-weight:900;letter-spacing:.12em;color:var(--accent);opacity:.9"' + edoT('Cardinal', 'Unified Eden + Obsidian core.') + '>CARDINAL</div></div>';
   return '<section id="' + (screenIsObsidian ? 'obs-sec-bf' : 'eden-sec-bf') + '" style="margin-bottom:24px">' +
-    '<h2 style="font-size:15px;margin:0 0 6px"' + edoT('Bias-Fraud Overlap', 'Visualization of cases where bias and fraud share the same root proxy variable. The only platform monitoring both lenses on the same model decisions.') + '>' + (screenIsObsidian ? 'Where Fraud Traces Back to Bias' : 'Where Bias Creates Fraud Exposure') + '</h2>' +
+    '<h2 style="font-size:15px;margin:0 0 6px"' + edoT('Bias-Fraud Overlap', 'Visualization of cases where bias and fraud share the same root proxy variable. The only platform monitoring both lenses on the same model decisions.') + '>' + (screenIsObsidian ? 'Where Fraud Traces Back to Bias' : 'Where Bias and Fraud Signals Overlap') + '</h2>' +
     '<p style="font-size:11px;color:var(--muted);margin:0 0 10px;max-width:760px">The only dual-lens view where bias signals and fraud telemetry converge on the same model decisions. ' + subMirror + '</p>' +
     heroBand + stepGrid +
     '<div style="display:flex;justify-content:center;margin:8px 0 20px;overflow-x:auto"' + edoT('Venn Diagram', 'Click a region to filter the case list: bias-only left lobe, fraud-only right lobe, or overlap (Bias-Fraud Connection).') + '>' +
@@ -20803,7 +20808,7 @@ function getDashboardCorePanelsConfig(org) {
         prioHex: '#FACC15',
         badge: '2 FLAGS',
         caseId: 'FIN-1203',
-        eve: 'A synthetic identity ring is exploiting the ZIP code bias blind spot. 47 applications came from a single device. $890K in fraudulent loans blocked.',
+        eve: 'Two systems, one pattern: Credit Scoring v3.4 approves fewer applicants in certain ZIP codes, and Fraud Screening v2.7 weighs geography when it flags applications in the same ZIPs. Each looks fine alone; together they widen the approval gap.',
         rows: [
           {
             ic: 'clock',
@@ -20821,7 +20826,7 @@ function getDashboardCorePanelsConfig(org) {
             bd: '#FACC15',
             pct: 70,
             bc: '#FACC15',
-            cx: 'Same ZIP exploitation enabling discrimination and synthetic identity passes'
+            cx: 'Geography shows up in both underwriting and fraud decisions in the same ZIP codes'
           },
           { ic: 'person', lb: 'Fraud blocked this quarter', bg: 'BLOCKED', bd: '#22c55e', pct: 100, bc: '#22c55e', cx: '$890K in fraudulent loans blocked' }
         ]
@@ -23032,7 +23037,7 @@ var TRUST_LEDGER_DATA = {
       { name: 'SOC 2 Type II', statusLabel: 'Active', statusColor: 'green', desc: 'Security, availability, confidentiality controls · Annual audit, no exceptions', certLabel: 'Certified', certVal: 'Apr 2026', renewalLabel: 'Renewal', renewalVal: 'Apr 2027', renewalColor: 'muted', hash: 'TL-' + __cdrId('2026-04-05','fin','DD') + '-SOC2-9c3d' }
     ],
     issues: [
-      { title: 'Case #FIN-1203: Proxy Discrimination Risk', badge: 'Active · Must Report', badgeColor: 'red', desc: 'Credit Scoring v3.4 shows disparate impact on Hispanic applicants. Synthetic identity ring exploiting bias-blind verification gap. 1,203 affected records.', fields: [['Detected','' + __cdr('Apr 24, 2026','fin') + '','muted'],['Report By','' + __cdr('May 24, 2026','fin') + '','amber'],['Regulator','CFPB'],['Status','Shadow Deploy','amber']], hash: 'Ledger Hash: TL-' + __cdrId('2026-04-24','fin','DD') + '-CASEFIN1203-7d2e · Tamper-proof' }
+      { title: 'Case #FIN-1203: Proxy Discrimination Risk', badge: 'Active · Must Report', badgeColor: 'red', desc: 'Credit Scoring v3.4 shows an approval gap for Hispanic and Black applicants in certain ZIP codes, and Fraud Screening v2.7 weighs geography in the same ZIPs. 1,203 affected records.', fields: [['Detected','' + __cdr('Apr 24, 2026','fin') + '','muted'],['Report By','' + __cdr('May 24, 2026','fin') + '','amber'],['Regulator','CFPB'],['Status','Shadow Deploy','amber']], hash: 'Ledger Hash: TL-' + __cdrId('2026-04-24','fin','DD') + '-CASEFIN1203-7d2e · Tamper-proof' }
     ],
     verificationLog: [
       { date: '' + __cdr('Apr 24, 2026','fin') + '', time: '11:40 AM', who: 'CFPB Examiner: Fair Lending Review', desc: 'Queried certification status and remediation timeline for Case #FIN-1203. No internal data accessed.', badge: 'Read-only' },
@@ -24425,7 +24430,7 @@ function queryLedger() {
           C('Colorado SB 26-189 readiness', 'Gap', 'red', 'Starts Jan 1, 2027. The 30-day adverse-outcome disclosure is not generated yet.', 'Assessed', mo(0), 'Effective', 'Jan 1, 2027', 'amber', 15)
         ],
         issues: [
-          { title: 'Case #FIN-1203: Credit Scoring bias', badge: 'Active · Must Report', badgeColor: 'red', desc: 'Credit Scoring v3.4 approves Hispanic and Black applicants at 0.74 the rate of others, driven by a ZIP code proxy. A synthetic identity ring was exploiting the same gap.', fields: [['Affected', '1,203', 'amber'], ['DI', '0.74', 'red'], ['Fix', 'v3.5 · DI 0.83', 'green'], ['Reported to', 'CFPB (exam)', null]], hash: 'TL-CASE-FIN-1203' }
+          { title: 'Case #FIN-1203: Credit Scoring bias', badge: 'Active · Must Report', badgeColor: 'red', desc: 'Credit Scoring v3.4 approves Hispanic and Black applicants at 0.74 the rate of others, driven by a ZIP code proxy. The fraud model also weighs geography in the same ZIP codes.', fields: [['Affected', '1,203', 'amber'], ['DI', '0.74', 'red'], ['Fix', 'v3.5 · DI 0.83', 'green'], ['Reported to', 'CFPB (exam)', null]], hash: 'TL-CASE-FIN-1203' }
         ],
         verificationLog: [
           V(0, 4, 'CFPB examiner: pre-exam request', 'Checked certification status, the #FIN-1203 remediation timeline, and adverse action notice samples. No applicant data accessed.', 'Read-only'),
@@ -25215,7 +25220,7 @@ function initHaloMap() {
             type: 'FRAUD',
             case: '#FIN-FRAUD-089',
             model: 'Auto Loan v2.1',
-            issue: 'Synthetic identity ring: 47 applications from 1 device. Upscale ZIP exploitation.',
+            issue: 'Fraud model flags applicants in NYC ZIPs 10453 and 11212 more often, partly on geography.',
             affected: '47 blocked applications: $890K protected',
             severity: 'HIGH',
             stage: 'IN_MODEL_LIBRARY',
@@ -25343,7 +25348,7 @@ function initHaloMap() {
           {label:'Yokota Japan Operations', models:['Mission Readiness v1.1'], bias:'None', fraud:'Clean', reg:'APPI: Review needed'}
         ],
         fin: [
-          {label:'New York Metro Operations', models:['Credit Scoring v3.4','Auto Loan v2.1'], bias:'Case #FIN-1203: 1,203 applicants', fraud:'Synthetic identity ring detected', reg:'CFPB fair lending exam in 13 days'},
+          {label:'New York Metro Operations', models:['Credit Scoring v3.4','Auto Loan v2.1'], bias:'Case #FIN-1203: 1,203 applicants', fraud:'Geography signals in fraud flags', reg:'CFPB fair lending exam in 13 days'},
           {label:'Chicago Operations', models:['Fraud Detection v3.2'], bias:'None', fraud:'47 blocked applications', reg:'ECOA: Monitoring'},
           {label:'London Operations', models:['Credit Scoring v3.4'], bias:'None', fraud:'Clean', reg:'FCA AI Rules: Compliant'},
           {label:'Toronto Operations', models:['Auto Loan v2.1'], bias:'None', fraud:'Clean', reg:'OSFI: Compliant'}
@@ -26540,14 +26545,14 @@ const GENESIS_DATA = {
  ],
  adamTests:[
  {id:'AT-011',trigger:'Obsidian: 47 applications from 1 iPhone',status:'Complete',profiles:200,finding:'Model catches device fingerprint ring. Prevention model stored.'},
- {id:'AT-012',trigger:'Eden: ZIP code racial proxy',status:'Running',profiles:600,finding:'Testing whether fix prevents fraudster ZIP exploitation'},
+ {id:'AT-012',trigger:'Eden: ZIP code racial proxy',status:'Running',profiles:600,finding:'Testing that the underwriting fix does not weaken fraud detection'},
  ],
  adamProposals:[
  {id:'AP-033',persona:'Synthetic Thin-File Identity Ring',rationale:'Industry fraud reporting shows rings building thin-file synthetic identities specifically to exploit new-account lending models. No current test cohort targets this pattern.',profiles:200,source:'Adam: proactive scan, not tied to a detected case'},
  ],
  adamProfiles:[
  {type:'Synthetic Identity Ring',count:47,criteria:'Same iPhone device ID, varied names and SSNs, staggered timing',goal:'Prove model catches coordinated device-based fraud'},
- {type:'ZIP Code Exploiters',count:120,criteria:'High-risk applicants using Upper East Side ZIP codes as cover',goal:'Test if ZIP removal closes the fraud blind spot'},
+ {type:'Geography-heavy fraud flags',count:120,criteria:'Legitimate applicants in ZIPs the fraud model rates as higher risk',goal:'Test how often geography alone sends a real applicant to manual review'},
  ],
  modelLibrary:[
  {id:'ML-031',name:'Device Fingerprint Ring Detector',type:'Fraud Prevention',trained:'' + __cdr('Apr 3, 2026','fin') + '',di:'N/A',accuracy:'99.1%',status:'Active'},
@@ -26718,7 +26723,7 @@ const EVE_RESPONSES = {
  fin:{
  default:"Watching your models. Credit Scoring model is the priority: ZIP code creates both fair lending exposure and fraud vulnerability. CFPB fair lending exam in 13 days.",
  bias:"Credit Scoring v3.4 uses ZIP code correlating 0.82 with race: proxy discrimination. 1,203 applicants affected. Fix: replace ZIP with verified_income_12mo and employment_stability.",
- fraud:"ZIP code does not just create bias, it creates a fraud vector. Fraudsters use high-class ZIP codes on applications to game the system. We also blocked a synthetic identity ring: 47 apps from one iPhone.",
+ fraud:"The fraud model, Fraud Screening v2.7, weighs geography-related signals when it flags applications. In the same ZIP codes where underwriting approves fewer people, it also sends more applicants to manual review. Each system looks fine alone; together they widen the gap. Separately, the fraud model blocked a synthetic identity ring this week: 47 applications from one device.",
  fix:"Replace ZIP code with income stability and employment verification. Eliminates proxy discrimination, closes fraud vector, improves credit accuracy. Ready in Atonement Core.",
  penalty:"fair lending penalty exposure: $40M. CFPB fair lending exam in 13 days. Optimal fix reduces to $8M · 80% reduction. Fix cost: $50K. ROI: 140x.",
  human:"1,203 families denied loans they qualify for. For many, this is the house, the business, the next chapter. A ZIP code is making that decision instead of their creditworthiness.",
@@ -28061,7 +28066,7 @@ const TL_SEED = {
  {who:'eve',text:"Morning. CFPB fair lending exam is 13 days away. Credit Scoring model ZIP issue, no updates in 3 days. 1,203 applicants still affected."},
  {who:'adam',text:"ZIP-race correlation: 0.82. Proxy discrimination confirmed. Proposed replacement: verified_income_12mo (DI projection: 0.91), employment_stability (DI: 0.89). Equal or better predictive accuracy."},
  {who:'eve',text:"Adam, will fixing the bias affect our fraud detection?"},
- {who:'adam',text:"Negative. ZIP code removal improves fraud detection. Fraudsters currently exploit ZIP-based scoring. Removing it closes that vector. Net fraud detection improvement: estimated +3.2%."},
+ {who:'adam',text:"No. Removing ZIP code from underwriting does not weaken fraud detection; the fraud model has its own signals. Its geography signals are reviewed separately in the same case, so the two fixes do not work against each other."},
  {who:'eve',text:"So fixing bias also improves fraud detection. That's the Cardinal insight. When can engineering start?"},
  ],
  health:[
@@ -29664,7 +29669,7 @@ const ATONEMENT_DATA = {
  {label:'DI under corrected model',val:'0.91 ✓',c:'green'},
  {label:'Fraud detection delta',val:'+3.2% improvement',c:'green'},
  ],
- rerunVerdict:'Corrected model passes fair lending thresholds. 687 applicants would have been approved. Fixing bias also improves fraud detection, removing ZIP closes the fraud exploitation vector.',
+ rerunVerdict:'Corrected model passes fair lending thresholds. 687 applicants would have been approved. Adam confirmed fraud detection holds steady; the geography signals in the fraud model are reviewed in the same investigation.',
  shadowModelLabel:'Shadow Model', shadowModelName:'Credit Scoring v3.5 (Fixed)',
  shadowDecisions:'3,241',
  shadowMetrics:[
@@ -30165,7 +30170,7 @@ const HALO_DATA = {
  {category:'Fair lending enforcement exposure',amount:'$40M',c:'red',note:'CFPB exam and state attorneys general'},
  {category:'State fair lending settlement',amount:'$2.5M',c:'red',note:'Comparable: Massachusetts AG, Jul 2025'},
  {category:'Revenue lost (denied legit)',amount:'$5.0M/yr',c:'red',note:'1,203 families/year blocked'},
- {category:'Fraud losses (ZIP exploit)',amount:'$2.3M/yr',c:'red',note:'Fraudsters gaming ZIP scoring'},
+ {category:'Fraud losses',amount:'$2.3M/yr',c:'red',note:'Blocked by Fraud Screening v2.7'},
  {category:'Remediation cost (act now)',amount:'$50K',c:'green',note:'One-time retrain'},
  {category:'Net savings (act now)',amount:'$47.8M',c:'green',note:'vs doing nothing'},
  ],
@@ -30200,7 +30205,7 @@ const HALO_DATA = {
  optimalConfig:[
  {obj:'Fairness (DI)',val:'0.91',change:'+23% improvement',c:'green'},
  {obj:'Profit impact',val:'-1%',change:'Within acceptable margin',c:'green'},
- {obj:'Fraud detection',val:'+3.2%',change:'Improved: ZIP exploit closed',c:'green'},
+ {obj:'Fraud detection',val:'Steady',change:'No loss after the underwriting fix',c:'green'},
  {obj:'Penalty reduction',val:'-90%',change:'$40M → $4M',c:'green'},
  ],
  paretoVerdict:'Configuration reduces fair lending penalty exposure 90% while improving fraud detection 3%. Profit impact is 1%, mathematically optimal under equal-risk-exposure constraints. Defensible to CFPB.',
@@ -30849,7 +30854,7 @@ const LUCID_DATA = {
  {time:'3d ago',event:'Shadow deployment initiated: Credit v3.5',type:'success',c:'green'},
  {time:'1d ago',event:'3,241 shadow decisions, all fair lending metrics passing',type:'success',c:'green'},
  ],
- adamSummary:'ZIP code feature, race correlation 0.82. Proxy discrimination confirmed (Cardinal flags any feature above 0.75 correlation with a protected trait). Disparate impact 0.74. Features to remove: [zip_code_5digit, phone_area_code]. Replace with: [verified_income_12mo (DI: 0.91, default correlation: 0.41), employment_stability (DI: 0.89, default correlation: 0.38)]. Expected DI post-fix: 0.91 ±0.02. Fraud detection improves +3.2% · ZIP removal closes exploitation vector. CFPB fair lending exam in 13 days.',
+ adamSummary:'ZIP code feature, race correlation 0.82. Proxy discrimination confirmed (Cardinal flags any feature above 0.75 correlation with a protected trait). Disparate impact 0.74. Features to remove: [zip_code_5digit, phone_area_code]. Replace with: [verified_income_12mo (DI: 0.91, default correlation: 0.41), employment_stability (DI: 0.89, default correlation: 0.38)]. Expected DI post-fix: 0.91 ±0.02. Fraud Screening v2.7 also weighs geography; its signals are reviewed in the same case so the two fixes do not work against each other. CFPB fair lending exam in 13 days.',
  adamFeatures:[
  {name:'zip_code_5digit',correlation:0.82,impact:'Critical',decision:'Remove: proxy for race'},
  {name:'phone_area_code',correlation:0.71,impact:'High',decision:'Remove: geographic proxy'},
@@ -30858,7 +30863,7 @@ const LUCID_DATA = {
  {name:'payment_history_24mo',correlation:0.06,impact:'Medium',decision:'Keep: legitimate'},
  ],
  adamRecs:[
- {rec:'Remove zip_code_5digit immediately',rationale:'Race correlation 0.82: a proxy for race, a fair lending risk. Fraudsters also exploit this feature.',priority:'Critical'},
+ {rec:'Remove zip_code_5digit immediately',rationale:'Race correlation 0.82: a proxy for race, a fair lending risk. The fraud model weighs related geography signals, so review both together.',priority:'Critical'},
  {rec:'Remove phone_area_code',rationale:'Geographic proxy correlation 0.71. Same demographic bias pattern as ZIP.',priority:'Critical'},
  {rec:'Add verified_income_12mo',rationale:'Best replacement. Default prediction correlation 0.41. Zero race correlation. Closes fraud vector.',priority:'High'},
  {rec:'Complete before CFPB fair lending exam',rationale:'Audit in 13 days. Shadow deployment at 3,241 decisions, escalate to full deployment now.',priority:'Critical'},
@@ -30889,7 +30894,7 @@ const LUCID_DATA = {
  proactiveRecs:[
  {type:'warning',title:'NYC Law 144 audit in 13 days',body:'Shadow deployment is passing. Recommend escalating to full deployment now to complete before audit.',action:'Escalate in Atonement'},
  {type:'info',title:'687 of 1,203 re-evaluations complete',body:'57.1% remediation rate. 516 remaining. Estimated completion: ' + __cdr('April 20','fin') + '.',action:'View Cohort'},
- {type:'success',title:'Fraud detection improved +3.2%',body:'ZIP code removal also closed the fraud exploitation vector. Adam confirmed no new bias introduced.',action:'View in Halo'},
+ {type:'success',title:'Fraud detection held steady',body:'Adam checked that removing ZIP from underwriting does not weaken fraud detection. The fraud model\'s own geography signals are in review.',action:'View in Halo'},
  ],
  remediationTracking:[
  {id:'#AT-1203',title:'Credit Scoring: ZIP Code Proxy (Hispanic/Black)',affected:1203,done:687,rate:'57.1%',deadline:'' + __cdr('Apr 20','fin') + '',status:'In Progress',c:'green'},
@@ -46345,7 +46350,7 @@ applyClientView = window.applyClientView = (function (orig) {
 })();
 window.GROUP_STORY = {
   fin: {
-    'race:Hispanic': ['Los Angeles, CA and Chicago, IL ZIP clusters', 'FIN-1203', 'First-time borrowers with thin credit files in majority-Hispanic ZIP codes', 'ZIP code acts as a proxy for race (0.82 correlation) inside Credit Scoring v3.4.', 'Credit Scoring v3.5 in shadow at 5% of traffic, DI 0.83. Affected applicants are being re-reviewed.'],
+    'race:Hispanic': ['Los Angeles, CA and Chicago, IL ZIP clusters', 'FIN-1203', 'First-time borrowers with thin credit files in majority-Hispanic ZIP codes', 'ZIP code acts as a proxy for race (0.82 correlation) inside Credit Scoring v3.4, and the fraud model flags more of these applicants on geography.', 'Credit Scoring v3.5 in shadow at 5% of traffic, DI 0.83. Affected applicants are being re-reviewed.'],
     'race:Black/AA': ['Atlanta, GA and Chicago, IL', 'FIN-1203', 'Applicants with similar income and debt to approved White applicants', 'Same ZIP proxy, plus a "branch distance" feature that tracks historic redlining maps.', 'Both features removed in v3.5; re-review queue open.'],
     'race:Other': ['Honolulu, HI and Seattle, WA', 'TEST-628', 'Pacific Islander and multiracial applicants (a 200-person test cohort)', 'Coverage gap: almost no examples of this group in training data, so the model defaults to denial.', 'Genesis coverage test running; synthetic and partner data being added before v3.5 ships.'],
     'age:75+': ['Florida and Arizona retiree markets', 'FIN-1203', 'Applicants 75+ on fixed incomes', 'Fixed retirement income is scored as "no income growth."', 'Feature reweighted in v3.5; ECOA allows age only in limited, justified ways.'],
@@ -48772,7 +48777,7 @@ body.sidebar-collapsed .sidebar-bottom > div[style*="border-top"] { width: 60%; 
 // [state, place, bias gap vs baseline %, fraud targeting rate %, case, who]
 window.CARDINAL_PLACES = {
   ad: [['NC', 'Fort Bragg', -16, 40, 'AD-2847', 'Junior enlisted technicians up for premium-base placement'], ['DC', 'Pentagon / Arlington corridor', -13, 36, 'AD-2847', 'Officers and civilian analysts in clearance-gated roles'], ['TX', 'Fort Hood and San Antonio', -9, 26, 'AD-2847', 'Hispanic maintenance technicians on rotation'], ['GA', 'Fort Stewart', -8, 23, 'AD-2847', 'Technicians at southern bases'], ['KY', 'Fort Knox', -7, 21, 'AD-2889', 'Senior technicians and reservists'], ['FL', 'MacDill AFB', -6, 12, 'AD-2847', 'Logistics personnel'], ['CA', 'Camp Pendleton', -5, 14, 'AD-2847', 'Technicians and support staff'], ['VA', 'Langley AFB and Hampton Roads', -4, 13, 'AD-2847', 'Multiracial and Native American technicians'], ['WA', 'Joint Base Lewis-McChord', -3, 12, 'AD-2847', 'Maintenance crews'], ['HI', 'Pearl Harbor-Hickam', -2, 9, 'AD-2847', 'Pacific hub crews']],
-  fin: [['NY', 'Bronx and Brooklyn ZIPs (10453, 11212)', -24, 45, 'FIN-1203', 'Applicants in ZIP codes with a history of redlining; a synthetic identity ring used the same ZIPs'], ['IL', 'Chicago metro', -18, 24, 'FIN-1203', 'Applicants in majority-Black and Hispanic ZIP codes'], ['CA', 'Los Angeles metro', -11, 18, 'FIN-1203', 'First-time borrowers with thin credit files'], ['FL', 'Miami and Orlando metros', -9, 12, 'FIN-1203', 'Applicants 75+ on fixed incomes'], ['TX', 'Dallas and Houston metros', -8, 14, 'FIN-2207', 'Applicants paid on commission or gig income'], ['UT', 'Salt Lake City', -7, 6, 'TEST-628', 'Pacific Islander applicants (coverage gap)'], ['CO', 'Denver metro', -5, 9, 'FIN-2207', 'Commission and gig income applicants'], ['MA', 'Boston metro', -2, 7, '', 'No group below the line']],
+  fin: [['NY', 'Bronx and Brooklyn ZIPs (10453, 11212)', -24, 45, 'FIN-1203', 'Applicants in ZIP codes with a history of redlining; the fraud model also flags more applicants here on geography'], ['IL', 'Chicago metro', -18, 24, 'FIN-1203', 'Applicants in majority-Black and Hispanic ZIP codes'], ['CA', 'Los Angeles metro', -11, 18, 'FIN-1203', 'First-time borrowers with thin credit files'], ['FL', 'Miami and Orlando metros', -9, 12, 'FIN-1203', 'Applicants 75+ on fixed incomes'], ['TX', 'Dallas and Houston metros', -8, 14, 'FIN-2207', 'Applicants paid on commission or gig income'], ['UT', 'Salt Lake City', -7, 6, 'TEST-628', 'Pacific Islander applicants (coverage gap)'], ['CO', 'Denver metro', -5, 9, 'FIN-2207', 'Commission and gig income applicants'], ['MA', 'Boston metro', -2, 7, '', 'No group below the line']],
   health: [['AZ', 'Phoenix specialty networks', -26, 38, 'HS-2847', 'Medicare Advantage members 75-84 needing specialty care; a provider billing ring used the same gap'], ['CA', 'Los Angeles specialty networks', -22, 24, 'HS-2847', 'Members 75+ and Spanish-preferred members'], ['TX', 'Houston', -17, 21, 'HS-2104', 'Spanish-preferred members (prior-auth forms parsed less accurately)'], ['IL', 'Chicago', -14, 12, 'HS-2901', 'Women referred for cardiology'], ['UT', 'Salt Lake City', -11, 8, 'HS-2104', 'Pacific Islander members'], ['NY', 'New York metro', -5, 10, 'HS-2847', 'Members 65-74'], ['CO', 'Denver metro', -3, 7, '', 'No group below the line']],
   fed: [['GA', 'Atlanta metro', -38, 36, 'FED-PDV-001', 'Self-employed filers claiming refundable credits (BISG estimate)'], ['MS', 'Jackson metro', -33, 18, 'FED-PDV-001', 'Self-employed filers (BISG estimate)'], ['LA', 'New Orleans metro', -32, 22, 'FED-PDV-001', 'Self-employed filers (BISG estimate)'], ['TX', 'Dallas, Houston, and border metros', -29, 30, 'FED-PDV-001', 'Filers with seasonal income'], ['AL', 'Birmingham metro', -24, 16, 'FED-PDV-001', 'Self-employed filers (BISG estimate)'], ['CA', 'Los Angeles, Bay Area, and border metros', -19, 25, 'FED-PDV-001', 'Gig and seasonal income filers'], ['FL', 'Miami metro', -12, 34, 'FED-PDV-001', 'Identity theft refund fraud is highest here'], ['NY', 'New York metro', -6, 19, '', 'Gig filers'], ['WA', 'Seattle metro', -3, 8, '', 'No group below the line'], ['MN', 'Minneapolis metro', -2, 7, '', 'No group below the line']]
 };
@@ -49629,7 +49634,7 @@ window.CARDINAL_PLACES = {
   // 10/3 evening (Brittany: put the scenario under the company name so anyone clicking around knows the story).
   var SCEN = {
     ad: 'Scenario: Atlas\u2019s Fleet Health model warns desert and coastal bases too late that engine parts are wearing out, and counterfeit parts with forged paperwork slip through the same gap.',
-    fin: 'Scenario: Blackmoor\u2019s credit model uses ZIP code as a stand-in for race, a fraud ring exploits the same ZIP codes, and a fair lending exam is coming.',
+    fin: 'Scenario: Blackmoor, a fintech lender, is preparing for a fair lending exam. A recent underwriting update improved conversion, and a separate fraud model uses geography signals to flag suspicious applications. Each team sees a system doing its job. Across the full funnel, Cardinal finds geography widening the approval gap in certain ZIP codes while also showing up in fraud decisions, then traces it, sizes the exposure, tests a fix in shadow, gets a named person to approve it, verifies the result, seals the history in Echo, and updates the Trust Score.',
     health: 'Scenario: Sterling\u2019s claims model cuts specialty care short for members 75 and older, and a provider billing ring games the same gap.',
     fed: 'Scenario: The tax fraud model flags self-employed filers in some metros far more often, so launch is paused until it passes review.'
   };
