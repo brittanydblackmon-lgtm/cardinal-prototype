@@ -51421,9 +51421,21 @@ window.CARDINAL_PLACES = {
     els.forEach(function (el) { try { el.scrollTop = 0; } catch (e) {} });
   }
   var oShow = window.showScreen;
+  ['wheel', 'touchmove', 'keydown'].forEach(function (ev) { window.addEventListener(ev, function () { window.__keepUntil = 0; }, { passive: true }); });
+  function scrollers() { var a = document.querySelector('.screen.active'); var els = [document.scrollingElement].concat([].slice.call(document.querySelectorAll('.main, .main-content, #main-content, .content'))); if (a) els.push(a); return els.filter(Boolean); }
   if (typeof oShow === 'function') window.showScreen = showScreen = function (name) {
+    // Switching tabs inside the same screen (Watchman cases, war rooms, stress tests) keeps your place.
+    var act = document.querySelector('.screen.active'), same = typeof name === 'string' && act && act.id === 'screen-' + name;
+    var keep = same ? scrollers().map(function (e) { return [e, e.scrollTop]; }) : null;
+    if (same) { act.style.minHeight = act.scrollHeight + 'px'; window.__keepUntil = Date.now() + 1300; }
     var r = oShow.apply(this, arguments);
-    if (typeof name === 'string') [0, 120, 350, 700, 1200].forEach(function (t) { setTimeout(function () { top(name); }, t); });
+    if (same) {
+      var put = function () { if (Date.now() > window.__keepUntil) return; keep.forEach(function (k) { if (Math.abs(k[0].scrollTop - k[1]) > 2) k[0].scrollTop = k[1]; }); };
+      put(); requestAnimationFrame(put);
+      [40, 120, 250, 450, 700, 950, 1250].forEach(function (t) { setTimeout(put, t); });
+      setTimeout(function () { act.style.minHeight = ''; }, 1400);
+    }
+    else if (typeof name === 'string') [0, 120, 350, 700, 1200].forEach(function (t) { setTimeout(function () { top(name); }, t); });
     return r;
   };
 
@@ -52077,9 +52089,9 @@ window.CARDINAL_PLACES = {
     trustledger: { title: 'Evidence History', sub: 'Hover any month for full context · Dashed line = 80 exam-ready line · Pins open the record', thr: 80, thrLabel: 'Exam-Ready (80)',
       series: [['complete', 'Evidence Completeness', [81, 82, 84, 85, 86, 88, 89, 90, 91, 92, 93, 94]], ['verified', 'Records Verified', [88, 89, 90, 90, 91, 92, 93, 93, 94, 95, 96, 97]], ['cert', 'Certification Coverage', [62, 64, 66, 68, 70, 71, 72, 73, 75, 77, 78, 80]], ['approvals', 'Approvals Sealed', [70, 72, 74, 77, 79, 81, 83, 85, 87, 90, 92, 95]]],
       pins: [[1, 'Credit Scoring v3.5 shadow results sealed for the exam file', 'Credit Scoring v3.5'], [0, 'Shared view sent to the sponsor bank, Harbor Point Bank', '']] },
-    sentinel: { title: 'Response History', sub: 'Hover any month for full context · Dashed line = 80 response target · Pins open the model', thr: 80, thrLabel: 'Response Target (80)',
-      series: [['response', 'Response Score', [78, 80, 79, 82, 81, 84, 83, 80, 79, 82, 84, 83]], ['ontime', 'Cases On Time', [80, 82, 81, 84, 83, 86, 85, 82, 80, 83, 85, 83]], ['clocks', 'Incident Clock Health', [90, 91, 88, 92, 90, 93, 91, 86, 84, 87, 88, 86]], ['contain', 'Containment', [85, 86, 86, 88, 89, 90, 91, 89, 90, 92, 93, 94]]],
-      pins: [[3, 'War room opened for FIN-1203 (ZIP code proxy in Credit Scoring v3.4)', 'Credit Scoring v3.4'], [0, 'Fraud ring blocked by Fraud Screening v2.7', 'Fraud Screening v2.7']] },
+    sentinel: { title: 'Response History', sub: 'Hover any month for full context · Cases opened and closed, how fast incidents were contained, and the on-time rate · Pins open the case', searchPh: 'Search a case or model\u2026',
+      series: [['opened', 'Cases Opened', [2, 3, 2, 4, 3, 5, 6, 4, 5, 7, 6, 5], ' cases', '#a78bfa'], ['closed', 'Cases Closed', [2, 2, 3, 3, 3, 4, 5, 5, 4, 6, 6, 5], ' cases', '#22c55e'], ['contain', 'Hours to Contain', [30, 28, 26, 27, 22, 20, 24, 18, 16, 14, 12, 11], ' hrs', '#FACC15'], ['ontime', 'Cases On Time', [80, 82, 81, 84, 83, 86, 85, 82, 80, 83, 85, 83], '']],
+      pins: [[3, 'War room opened for FIN-1203 (ZIP code proxy in Credit Scoring v3.4)', 'Credit Scoring v3.4'], [1, 'FIN-0891 opened: state review of Auto Loan v2.1', ''], [0, 'Fraud ring blocked by Fraud Screening v2.7 within 40 minutes', 'Fraud Screening v2.7']], thr: 80, thrLabel: 'On-Time Target (80)' },
     marketing: { title: 'Review History', sub: 'Hover any month for full context · Dashed line = 80 target · Pins open the model', thr: 80, thrLabel: 'Target (80)',
       series: [['cleared', 'Documents Cleared', [50, 52, 55, 54, 58, 60, 57, 55, 53, 56, 55, 57]], ['ontime', 'Reviewed On Time', [78, 80, 82, 81, 84, 85, 86, 84, 85, 87, 88, 90]], ['clean', 'No High-Risk Findings', [80, 82, 81, 84, 83, 85, 78, 74, 72, 70, 71, 71]]],
       pins: [[3, 'Marketing email for refinancing flagged: offer language tied to ZIP code targeting', 'Credit Scoring v3.4'], [0, 'Two documents sent back with high-risk findings', '']] },
@@ -52095,7 +52107,7 @@ window.CARDINAL_PLACES = {
   function hash(s) { var h = 0; for (var i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0; return Math.abs(h); }
   function points(k) {
     var cfg = H[k], s = st(k), ser = cfg.series.filter(function (x) { return x[0] === s.series; })[0] || cfg.series[0];
-    var shift = s.filter ? (hash(s.filter) % 11) - 6 : 0, money = !!cfg.unit;
+    var unit = ser[3] != null ? ser[3] : (cfg.unit || ''), shift = s.filter ? (hash(s.filter) % 11) - 6 : 0, money = !!unit;
     var vals = ser[2].map(function (v) { var r = money ? v * (1 + shift / 40) : v + shift; return money ? Math.max(0, Math.round(r * 10) / 10) : Math.max(0, Math.min(100, Math.round(r))); });
     var mon = monthLabels(), out;
     if (s.range === 'year' || s.range === 'quarter') {
@@ -52110,18 +52122,23 @@ window.CARDINAL_PLACES = {
         out.push({ month: MON[d.getMonth()] + ' ' + d.getDate(), v: money ? Math.round(v * 10) / 10 : Math.round(v) });
       }
     }
-    return { pts: out, ser: ser, money: money };
+    return { pts: out, ser: ser, money: money, unit: unit };
   }
   function models() {
     var d = (window.CARDINAL_DATA || {})[org()] || {}, seen = {}, out = [];
     (d.biasMetricsByModel || []).concat(d.fraudMetricsByModel || []).concat(d.modelLevelScores || []).forEach(function (m) { var n = m.modelId || m.name || m.model; if (n && !seen[n]) { seen[n] = 1; out.push(n); } });
     return out;
   }
+  function searchList(k) {
+    var d = (window.CARDINAL_DATA || {})[org()] || {}, out = [];
+    if (k === 'sentinel' || k === 'echo') { (d.caseChannels || []).forEach(function (c) { out.push(c.caseId); }); ['FIN-1203', 'FIN-0891', 'FIN-0842', 'FIN-2340'].forEach(function (c) { if (org() === 'fin' && out.indexOf(c) < 0) out.push(c); }); }
+    return out.concat(models());
+  }
   window.uHist = function (k, what, val) {
     var s = st(k);
     if (what === 'range') s.range = val;
     if (what === 'series') s.series = val;
-    if (what === 'filter') { if (models().indexOf(val) < 0) return; s.filter = val; }
+    if (what === 'filter') { if (searchList(k).indexOf(val) < 0) return; s.filter = val; }
     if (what === 'clear') s.filter = '';
     var el = document.getElementById('u-' + k + '-hist'); if (el) el.removeAttribute('data-k');
     tick();
@@ -52133,8 +52150,8 @@ window.CARDINAL_PLACES = {
     return '<div class="tsv2-section-title"' + tt(cfg.title, 'Twelve-month series from Echo Core. Hover points for values; click a pin for the model.') + '>' + cfg.title + '</div>' +
       '<div class="tsv2-section-sub">' + cfg.sub + '</div>' +
       '<div style="width:100%"><div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:8px 0 10px">' +
-      '<input type="search" list="u-' + k + '-models" placeholder="Search models in this industry…" value="' + esc(s.filter) + '" onchange="uHist(\'' + k + '\',\'filter\',this.value)" style="flex:1;min-width:200px;font-size:11px;padding:8px 10px;border-radius:8px;border:1px solid var(--border2);background:var(--bg3);color:var(--text);font-family:var(--sans)">' +
-      '<datalist id="u-' + k + '-models">' + models().map(function (m) { return '<option value="' + esc(m) + '">'; }).join('') + '</datalist>' +
+      '<input type="search" list="u-' + k + '-models" placeholder="' + esc(cfg.searchPh || 'Search models in this industry…') + '" value="' + esc(s.filter) + '" onchange="uHist(\'' + k + '\',\'filter\',this.value)" style="flex:1;min-width:200px;font-size:11px;padding:8px 10px;border-radius:8px;border:1px solid var(--border2);background:var(--bg3);color:var(--text);font-family:var(--sans)">' +
+      '<datalist id="u-' + k + '-models">' + searchList(k).map(function (m) { return '<option value="' + esc(m) + '">'; }).join('') + '</datalist>' +
       '<button type="button" class="btn-ghost" style="font-size:10px" onclick="uHist(\'' + k + '\',\'clear\')">Clear filter</button>' +
       (s.filter ? '<span class="badge badge-blue" style="font-size:9px">Chart: ' + esc(s.filter) + '</span>' : '') + '</div>' +
       '<div class="tsv2-history-tf">' + tf + '</div><div class="tsv2-history-toggle">' + sb + '</div>' +
@@ -52148,14 +52165,14 @@ window.CARDINAL_PLACES = {
     var dom, ticks, step;
     if (P.money) { var mx = Math.max(10, Math.ceil(Math.max.apply(null, vals) * 1.15 / 10) * 10); step = mx / 5; dom = [0, mx]; ticks = [0, 1, 2, 3, 4, 5].map(function (i) { return i * step; }); }
     else { var lo = Math.min(50, Math.floor((Math.min.apply(null, vals) - 5) / 10) * 10); lo = Math.max(0, lo); dom = [lo, 100]; ticks = []; for (var t = lo; t <= 100; t += 10) ticks.push(t); step = 10; }
-    var fmt = function (v) { return P.money ? '$' + v + 'M' : v; };
+    var fmt = function (v) { return P.unit === '$M' ? '$' + v + 'M' : v + (P.unit || ''); };
     cardinalHistoryChartRender({
       wrap: wrap, svgWrap: document.getElementById('u-' + k + '-svg'), pinsWrap: document.getElementById('u-' + k + '-pins'),
       hist: P.pts, getValue: function (p) { return p.v; },
-      lineColor: P.money ? (P.ser[0] === 'prevented' ? '#22c55e' : P.ser[0] === 'actual' ? '#FACC15' : '#ef4444') : col(last),
+      lineColor: P.ser[4] || (P.money ? (P.ser[0] === 'prevented' ? '#22c55e' : P.ser[0] === 'actual' ? '#FACC15' : '#ef4444') : col(last)),
       yDomain: dom, yTickValues: ticks, gridStep: step,
       gradientIdBase: 'u-' + k + '-grad', gradientSuffix: P.ser[0],
-      thresholds: cfg.thr ? [{ y: cfg.thr, stroke: 'rgba(34,197,94,0.55)', label: cfg.thrLabel, labelAnchor: 'end', labelFill: 'rgba(34,197,94,0.85)' }] : [],
+      thresholds: cfg.thr && !P.money ? [{ y: cfg.thr, stroke: 'rgba(34,197,94,0.55)', label: cfg.thrLabel, labelAnchor: 'end', labelFill: 'rgba(34,197,94,0.85)' }] : [],
       thresholdGroupId: null, thresholdTooltip: cfg.thr ? { title: cfg.thrLabel, body: 'At or above this line is on target.' } : null,
       pointClass: 'tsv2-pt', pointTooltipTitle: P.ser[1], pointTooltipLabel: P.ser[1],
       pinSourceContext: cfg.title + ' annotation',
@@ -52165,9 +52182,9 @@ window.CARDINAL_PLACES = {
     var c = document.getElementById('u-' + k + '-cap');
     if (c) {
       var f = vals[0], dd = Math.round((last - f) * 10) / 10, ev = P.pts.filter(function (p) { return p.annotation; }).length;
-      var hi = Math.max.apply(null, vals), lo2 = Math.min.apply(null, vals), useHi = cfg.thr ? last >= f : true, ext = useHi ? hi : lo2;
+      var hi = Math.max.apply(null, vals), lo2 = Math.min.apply(null, vals), useHi = cfg.thr && !P.money ? last >= f : true, ext = useHi ? hi : lo2;
       var span = { year: 'Past 12 months', quarter: 'Past quarter', month: 'Past month', week: 'Past week' }[st(k).range];
-      c.innerHTML = span + ': ' + P.ser[1] + ' moved from <strong>' + fmt(f) + '</strong> to <strong>' + fmt(last) + '</strong> (<strong>' + (dd >= 0 ? '+' : '') + (P.money ? '$' + dd + 'M' : dd + ' pts') + '</strong>)' + (ev ? ' · ' + ev + ' events' : '') + ' · ' + (useHi ? 'Peak' : 'Low') + ' at ' + P.pts[vals.indexOf(ext)].month + ' <strong>' + fmt(ext) + '</strong>';
+      c.innerHTML = span + ': ' + P.ser[1] + ' moved from <strong>' + fmt(f) + '</strong> to <strong>' + fmt(last) + '</strong> (<strong>' + (dd >= 0 ? '+' : '') + (P.unit === '$M' ? '$' + dd + 'M' : dd + (P.unit || ' pts')) + '</strong>)' + (ev ? ' · ' + ev + ' events' : '') + ' · ' + (useHi ? 'Peak' : 'Low') + ' at ' + P.pts[vals.indexOf(ext)].month + ' <strong>' + fmt(ext) + '</strong>';
     }
   }
 
@@ -52751,6 +52768,56 @@ window.CARDINAL_PLACES = {
       if (x.__ann || !/new announcement/i.test(x.textContent)) return;
       x.__ann = 1; x.setAttribute('onclick', 'cardinalNewAnnouncement()'); x.onclick = function (e) { e.preventDefault(); cardinalNewAnnouncement(); };
     });
+  }, 800);
+})();
+
+</script>
+
+<script data-p="p14_workspace">
+// 10/7 (Brittany: "My work and going out of office, make it look a little better, cooler"). Styling only.
+(function () {
+  var css = document.createElement('style');
+  css.textContent =
+    '#myws-work{padding:20px 22px!important}' +
+    '#myws-work .mw-list{gap:0!important;margin-top:14px!important;border:1px solid rgba(26,24,21,.08);border-radius:12px;overflow:hidden}' +
+    '#myws-work .mw-item{border:0!important;border-radius:0!important;box-shadow:none!important;padding:13px 16px 13px 18px!important;position:relative;border-bottom:1px solid rgba(26,24,21,.06)!important;transition:background .15s}' +
+    '#myws-work .mw-item:nth-child(odd){background:#fff!important}#myws-work .mw-item:nth-child(even){background:#f4efe6!important}' +
+    '#myws-work .mw-item:hover{background:#ece5d6!important}' +
+    '#myws-work .mw-item::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--mw-c,transparent)}' +
+    '#myws-work .mw-item div[style*="font-size:12px;font-weight:700"]{font-size:13.5px!important}' +
+    '.mw-pri{display:inline-block;font-size:10px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;padding:3px 9px;border-radius:999px;margin-bottom:4px}' +
+    '#ooo-card{padding:20px 22px!important;border-radius:14px!important;border:1px solid rgba(167,167,167,.15)!important;background:linear-gradient(135deg,rgba(167,139,250,.10),rgba(244,239,230,.6))!important;box-shadow:0 1px 3px rgba(26,24,21,.05),0 6px 18px rgba(26,24,21,.04)!important}' +
+    '#ooo-card>div:first-child{font-size:15px!important;display:flex;align-items:center;gap:10px}' +
+    '#ooo-card .ooo-ico{width:34px;height:34px;border-radius:10px;background:#fff;display:inline-flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(26,24,21,.08)}' +
+    '#ooo-card .ooo-grid{display:grid!important;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px!important;font-size:11px!important;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:#475569!important}' +
+    '#ooo-card input,#ooo-card select{display:block;width:100%;box-sizing:border-box;margin-top:5px;font-size:13px!important;padding:9px 11px!important;border-radius:9px!important;border:1px solid rgba(26,24,21,.15)!important;background:#fff!important;color:#1a1815!important;text-transform:none;letter-spacing:0;font-weight:500;max-width:none!important}' +
+    '#ooo-card button.btn-primary,#ooo-card button:not(.ws-collapse-btn){border-radius:10px!important;padding:10px 16px!important;font-size:12.5px!important}';
+  css.textContent += '#lucid-eve-human{font-size:12.5px!important;line-height:1.7!important;color:#334155!important}';
+  document.head.appendChild(css);
+  var COL = { critical: ['#DC2626', 'rgba(220,38,38,.1)'], high: ['#EA580C', 'rgba(234,88,12,.1)'], medium: ['#CA8A04', 'rgba(250,204,21,.18)'], low: ['#15803D', 'rgba(21,128,61,.1)'] };
+  setInterval(function () {
+    var w = document.getElementById('myws-work'); if (!w || w.offsetParent === null) return;
+    var list = w.children[1]; if (list && !list.classList.contains('mw-list')) list.classList.add('mw-list');
+    if (list) [].forEach.call(list.children, function (it) {
+      if (it.__mw) return; it.__mw = 1; it.classList.add('mw-item');
+      var t = (it.textContent || '').toLowerCase(), k = /critical/.test(t) ? 'critical' : /\bhigh\b/.test(t) ? 'high' : /medium/.test(t) ? 'medium' : /\blow\b/.test(t) ? 'low' : null;
+      if (k) {
+        it.style.setProperty('--mw-c', COL[k][0]);
+        var right = it.querySelector('div[style*="text-align:right"]'), lab = right && right.querySelector('div[style*="font-weight:700"]');
+        if (lab && !lab.__mw) { lab.__mw = 1; lab.className = 'mw-pri'; lab.style.cssText = 'color:' + COL[k][0] + ';background:' + COL[k][1]; }
+      }
+    });
+    var o = document.getElementById('ooo-card');
+    var f = document.getElementById('ooo-from'), t2 = document.getElementById('ooo-to'), cv = document.getElementById('ooo-cover');
+    if (o && f && t2 && cv && !o.querySelector('.ooo-grid')) {
+      var row = f.parentNode, g = document.createElement('div'); g.className = 'ooo-grid';
+      [['Leaving', f], ['Back', t2], ['Who covers', cv]].forEach(function (x) { var l = document.createElement('label'); l.textContent = x[0]; l.appendChild(x[1]); g.appendChild(l); });
+      [].slice.call(row.childNodes).forEach(function (n) { if (n.nodeType === 3 && /^\s*(From|to|Covering:)\s*$/i.test(n.textContent)) n.remove(); });
+      row.insertBefore(g, row.firstChild);
+    }
+    if (o && !o.querySelector('.ooo-ico')) {
+      var h = o.firstElementChild; if (h) { var i = document.createElement('span'); i.className = 'ooo-ico'; i.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><path d="M9 16l2 2 4-4"/></svg>'; h.insertBefore(i, h.firstChild); }
+    }
   }, 800);
 })();
 
