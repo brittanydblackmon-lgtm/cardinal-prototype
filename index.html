@@ -51559,6 +51559,30 @@ window.CARDINAL_PLACES = {
     [].forEach.call(bar.children, function (b) { var t = b.textContent.trim(); if (TIP[t] && b.title !== TIP[t]) b.title = TIP[t]; });
   }, 1000);
 })();
+(function () {
+  // My Workspace: a top box with circles, like the cores, so the page reads at a glance.
+  setInterval(function () {
+    var c = document.getElementById('myworkspace-content'); if (!c || c.offsetParent === null || !window.cardinalRings) return;
+    var counts = {};
+    [].forEach.call(c.querySelectorAll('button, div, span'), function (e) { if (e.children.length) return; var m = /^(Action items|Active cases|Discussions|Key notes)\s*\((\d+)\)$/.exec((e.textContent || '').trim()); if (m) counts[m[1]] = m[2]; });
+    var pm = (c.innerText.match(/MY PINNED ITEMS \((\d+)\)/i) || [])[1], nt = (c.innerText.match(/MY NOTES \((\d+)\)/i) || [])[1];
+    if (!counts['Action items']) return;
+    var p = window.getActivePersona ? getActivePersona() : null, key = JSON.stringify([counts, pm, nt, p && p.id]);
+    var box = document.getElementById('myws-rings');
+    if (!box) { box = document.createElement('div'); box.id = 'myws-rings'; box.className = 'card'; box.style.cssText = 'padding:18px 22px;margin:0 0 16px'; }
+    if (c.firstElementChild !== box) c.insertBefore(box, c.firstElementChild);
+    if (box.getAttribute('data-k') === key) return; box.setAttribute('data-k', key);
+    var h = new Date().getHours(), greet = h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening';
+    box.innerHTML = '<div style="font-size:16px;font-weight:700;color:#1a1815">' + greet + (p ? ', ' + p.name.split(' ')[0] : '') + '</div><div style="font-size:12px;color:#64748b;margin:2px 0 14px">Your day at a glance' + (p ? ' · ' + p.role : '') + '</div>' +
+      cardinalRings([
+        { value: counts['Action items'] || 0, label: 'Action items', sub: 'assigned to you', color: '#DC2626', pct: 0.4 },
+        { value: counts['Active cases'] || 0, label: 'Active cases', sub: 'you are on', color: '#1d4ed8', pct: 0.3 },
+        { value: counts['Discussions'] || 0, label: 'Discussions', sub: 'you are in', color: '#0f766e', pct: 0.3 },
+        { value: counts['Key notes'] || 0, label: 'Key notes', sub: 'flagged for you', color: '#FACC15', pct: 0.35 },
+        { value: pm || 0, label: 'Pinned', sub: 'items you saved', color: '#1a1815', pct: 0.3 }
+      ]);
+  }, 900);
+})();
 
 </script>
 
@@ -51817,6 +51841,15 @@ window.CARDINAL_PLACES = {
       CARDINAL_COHORTS.push({ id: c[0], name: c[1], type: c[2], industry: 'fin', size: c[3], status: c[4], restored: c[5], owner: c[6], linkedCase: c[8], created: iso(ago(c[7])) });
     });
   }
+  // Nina leads the FIN-1203 fix, so she is in its war rooms and the main discussion channels.
+  try {
+    var FD = window.CARDINAL_DATA && CARDINAL_DATA.fin;
+    if (FD && !window.__ninaAdded) {
+      window.__ninaAdded = true;
+      (FD.caseChannels || []).forEach(function (c) { if (c.members && c.members.indexOf('Nina Roberts') < 0) c.members.splice(1, 0, 'Nina Roberts'); });
+      (FD.trustLoopChannels || []).slice(0, 4).forEach(function (c) { if (c.members && c.members.indexOf('Nina Roberts') < 0) c.members.push('Nina Roberts'); });
+    }
+  } catch (e) {}
   // Shared table helpers.
   var TH = 'text-align:left;padding:9px 10px;font-size:11.5px;font-weight:700;color:#475569;background:#f3f0e9';
   var TD = 'padding:9px 10px;font-size:12px;color:#1a1815';
