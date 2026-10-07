@@ -26721,7 +26721,7 @@ const EVE_RESPONSES = {
  human:"847 personnel are being denied mission assignments they qualify for. The right skills, the right qualifications, blocked by a feature that correlates with demographic data, not performance.",
  },
  fin:{
- default:"Watching your models. Credit Scoring model is the priority: ZIP code creates both fair lending exposure and fraud vulnerability. CFPB fair lending exam in 13 days.",
+ default:"Watching your models. Credit Scoring v3.4 is the priority: it approves fewer applicants in certain ZIP codes, and the fraud model weighs geography in the same ZIPs. CFPB fair lending exam in 13 days.",
  bias:"Credit Scoring v3.4 uses ZIP code correlating 0.82 with race: proxy discrimination. 1,203 applicants affected. Fix: replace ZIP with verified_income_12mo and employment_stability.",
  fraud:"The fraud model, Fraud Screening v2.7, weighs geography-related signals when it flags applications. In the same ZIP codes where underwriting approves fewer people, it also sends more applicants to manual review. Each system looks fine alone; together they widen the gap. Separately, the fraud model blocked a synthetic identity ring this week: 47 applications from one device.",
  fix:"Replace ZIP code with income stability and employment verification. Eliminates proxy discrimination, closes fraud vector, improves credit accuracy. Ready in Atonement Core.",
@@ -48045,7 +48045,7 @@ window.genRenderScenarios = function () {
   // ── Atonement fixes ───────────────────────────────────────────────
   var FIX = {
     fin: [
-      ['adam', 'Replace zip_code with cash-flow features', 'Credit Scoring v3.5', 'In shadow', 'DI 0.74 → 0.91 expected; default rate unchanged', ['zip_code', 'phone_area_code'], ['verified_income_12mo', 'employment_stability'], 5, 'Riley Whitmore'],
+      ['adam', 'Replace zip_code with cash-flow features', 'Credit Scoring v3.5', 'In shadow', 'DI 0.74 → 0.83 in shadow; default rate unchanged', ['zip_code', 'phone_area_code'], ['verified_income_12mo', 'employment_stability'], 5, 'Riley Whitmore'],
       ['adam', 'Recalibrate fraud thresholds for thin-file applicants', 'Fraud Screening v2.7', 'Drafted', 'Cuts false fraud flags on thin-file applicants by about a third', ['credit_history_months'], ['device_tenure', 'income_verification'], 0, 'Daniel Okafor'],
       ['agent', 'Collections agent: pause reminders for the re-review cohort', 'Collections AI v1.3 (agent)', 'Applied', 'Suppression keeps 1,203 people out of collections outreach during re-review', [], [], 0, 'Marco Ruiz'],
       ['agent', 'Pre-qual Chatbot vendor patch: correct rate-disclosure answers', 'Pre-qual Chatbot (vendor)', 'Waiting on vendor', '3 answers misstated APR ranges; vendor patch under test', [], [], 0, 'Hannah Brooks'],
@@ -48126,7 +48126,7 @@ window.genRenderScenarios = function () {
   var M = { di: 'Fairness (DI)', acc: 'Accuracy', hall: 'Hallucination rate', fraud: 'Fraud caught', lat: 'Latency', tok: 'Tokens per call', cost: 'Cost per 1k calls', temp: 'Temperature', attack: 'Attacks blocked', flip: 'Decisions that flip' };
   var TESTS = {
     fin: [
-      ['adam', 'Credit Scoring v3.5 vs v3.4 (shadow A/B)', 'A/B shadow test', 'Passed', 'Credit Scoring v3.5', 'Replacing zip_code with cash-flow features brings DI above 0.80 without raising defaults.', 6, 5, [['A · v3.4', 95, { di: '0.74', acc: '91.2%', lat: '42 ms' }], ['B · v3.5', 5, { di: '0.91', acc: '91.0%', lat: '45 ms' }]], 'Ramp B to 25% for 7 days, then 100% if DI stays at 0.80 or above.'],
+      ['adam', 'Credit Scoring v3.5 vs v3.4 (shadow A/B)', 'A/B shadow test', 'Passed', 'Credit Scoring v3.5', 'Replacing zip_code with cash-flow features brings DI above 0.80 without raising defaults.', 6, 5, [['A · v3.4', 95, { di: '0.74', acc: '91.2%', lat: '42 ms' }], ['B · v3.5', 5, { di: '0.83', acc: '91.0%', lat: '45 ms' }]], 'Ramp B to 25% for 7 days, then 100% if DI stays at 0.80 or above.'],
       ['team', 'Pre-qual Chatbot accuracy, temperature, and cost', 'LLM evaluation', 'Passed', 'Pre-qual Chatbot (vendor)', 'A lower temperature cuts wrong rate answers without raising cost.', 3, 100, [['A · temp 0.2', 50, { acc: '96%', hall: '1.2%', lat: '820 ms', tok: '410', cost: '$3.10', temp: '0.2' }], ['B · temp 0.7', 50, { acc: '89%', hall: '4.8%', lat: '790 ms', tok: '455', cost: '$3.40', temp: '0.7' }]], 'Keep temperature 0.2. Ask the vendor to fix 3 rate-disclosure answers, then retest.'],
       ['adam', 'Prompt-injection red team: Collections agent', 'Security test', 'Failed', 'Collections AI v1.3 (agent)', 'The agent never waives fees or changes payment plans without a human.', 1, 0, [['240 attack prompts', 100, { attack: '238 of 240' }]], 'Block the waive_fee tool unless a human approves, then rerun the same 240 attacks.'],
       ['team', 'Counterfactual: swap ZIP code only', 'Counterfactual test', 'Passed', 'Credit Scoring v3.4', 'If ZIP drives denials, swapping it alone will flip decisions.', 2, 0, [['1,203 past decisions', 100, { flip: '38%' }]], 'Proof of causation is sealed in Echo for the exam file.'],
@@ -49583,6 +49583,14 @@ window.CARDINAL_PLACES = {
   function rundown(screen) {
     var el = document.getElementById('screen-' + screen); if (!el) return '';
     var t = el.innerText, lines = [];
+    // Prefer the screen's own Eve summary: it is the real story for this company.
+    var ev = [].filter.call(el.querySelectorAll('.tsv2-eve-body p'), function (p) { return p.innerText.trim() && p.offsetParent !== null; }).slice(0, 3).map(function (p) { return p.innerText.trim(); });
+    if (ev.length) {
+      // Eden and Obsidian lead with the cross-system finding, then the summary.
+      var cross = [].filter.call(el.querySelectorAll('div'), function (d) { return d.children.length === 0 && /cases this quarter where|Neither system necessarily/.test(d.textContent); })[0];
+      if (cross) ev = [cross.textContent.trim()].concat(ev.slice(0, 2));
+      return ev.map(function (x) { return '\u2022 ' + x; }).join('\n');
+    }
     var stats = [].slice.call(el.querySelectorAll('.stat-card, .tsv2-hero, .dash-exec-card')).slice(0, 3).map(function (c) { return c.innerText.replace(/\s*\n\s*/g, ' ').slice(0, 90); });
     lines = stats.filter(Boolean);
     if (!lines.length) { var parts = t.split('\n').map(function (x) { return x.trim(); }).filter(function (x) { return x.length > 25 && x.length < 140 && !/^(Ask|Search)/.test(x); }); lines = parts.slice(0, 3); }
@@ -49591,7 +49599,7 @@ window.CARDINAL_PLACES = {
   function go(msg, reply) {
     var it = intent(msg); if (!it) return false;
     try { showScreen(it.screen, null); } catch (e) {}
-    setTimeout(function () { var r = rundown(it.screen); reply('Here is ' + NAMES[it.screen] + '.' + (r ? ' Quick rundown:\n' + r : '')); }, 900);
+    setTimeout(function () { var r = rundown(it.screen); reply('Here is ' + NAMES[it.screen] + '.' + (r ? ' Quick rundown:\n' + r : '')); }, 1700);
     return true;
   }
   var oSend = window.sendEveMessage;
