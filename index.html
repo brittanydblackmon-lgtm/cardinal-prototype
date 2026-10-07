@@ -52199,7 +52199,7 @@ window.CARDINAL_PLACES = {
     var pct = o.pct, ord = typeof edoOrdFromPct === 'function' ? edoOrdFromPct(pct) : pct + 'th';
     var main = { value: o.score, pct: o.score / 100, color: c, label: o.title, tip: o.titleBody, status: ok ? o.okStatus : o.badStatus,
       delta: o.delta ? { d: o.delta, text: (o.delta > 0 ? '+' : '') + o.delta } : { d: 0, text: '' }, good: o.good || 'up',
-      pillLabel: o.pillLabel, pillVal: o.pillVal, sub: o.subline, proj: o.proj, pill100: '/ 100' };
+      pillLabel: o.pillLabel, pillVal: o.pillVal, sub: o.subline, proj: o.proj, pill100: '/ 100', go: o.mainGo };
     var units = [main].concat(o.units || []);
     return '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px"><div class="tsv2-section-title" style="margin:0">' + esc(o.boxTitle || 'At a glance') + '</div>' + badge + '</div>' +
       (window.cardinalGaugeRow ? cardinalGaugeRow(units) : '') +
@@ -52213,7 +52213,23 @@ window.CARDINAL_PLACES = {
       o.rows.map(function (r) { return '<div class="tsv2-conf-row"><span' + (r[2] ? tt(r[0], r[2]) : '') + '>' + esc(r[0]) + '</span><span class="v">' + esc(r[1]) + '</span></div>'; }).join('') +
       '</div></div>';
   }
+  function J(code, sel) { return 'cardinalJump(' + JSON.stringify(code) + ',' + JSON.stringify(sel || '') + ')'; }
+  function T(scr, i) { return J("coreTabGo('" + scr + "'," + i + ")", '#screen-' + scr + ' .core-tabbar'); }
+  var GO = {
+    genesis: [[/without tests|coverage/i, T('genesis', 1)], [/active tests/i, T('genesis', 0)], [/models in testing/i, T('genesis', 4)], [/tests passed/i, T('genesis', 0)]],
+    atonement: [[/re-reviewed|people/i, T('atonement', 4)], [/active fixes|models fixed/i, T('atonement', 0)], [/shadow/i, T('atonement', 3)], [/time to fix/i, T('atonement', 1)]],
+    halo: [[/exposure|rules at risk|likelihood/i, J('', '#halo-money')], [/deadline/i, J('', '#halo-hero2')], [/open cases/i, J("cardinalSentinelUiSetMainTab('cases')", '#sentinel-engine-root')]],
+    trustledger: [[/tamper/i, J("switchTLTopTab('privacy',3)", '#screen-trustledger .gen-tab.active, #screen-trustledger [onclick*=switchTLTopTab]')], [/records|certif/i, J("switchTLTopTab('entries',0)", '#screen-trustledger [onclick*=switchTLTopTab]')], [/verified/i, J("switchTLTopTab('query',4)", '#screen-trustledger [onclick*=switchTLTopTab]')], [/whistle/i, J("switchTLTopTab('whistleblower',2)", '#screen-trustledger [onclick*=switchTLTopTab]')], [/regulator/i, J("switchTLTopTab('access',1)", '#screen-trustledger [onclick*=switchTLTopTab]')]],
+    sentinel: [[/incident|clock/i, J("cardinalSentinelUiSetMainTab('incidents')", '#sentinel-engine-root')], [/war room/i, J("cardinalSentinelUiSetMainTab('warrooms')", '#sentinel-engine-root')], [/./, J("cardinalSentinelUiSetMainTab('cases')", '#sentinel-engine-root')]],
+    echo: [[/sources/i, "showScreen('pipeline')"], [/ignored/i, J("echoEnterRoom('cases');echoGo('ignored')", '#echo-rooms-bar')], [/sign-off|pending/i, J("echoEnterRoom('decisions')", '#echo-rooms-bar')], [/whistle/i, J("echoEnterRoom('wb')", '#echo-rooms-bar')], [/days since/i, J("echoEnterRoom('hall')", '#echo-rooms-bar')], [/./, J("echoEnterRoom('cases')", '#echo-rooms-bar')]],
+    compliance: [[/evidence/i, J("switchCompTab('packets')", '#screen-compliance .comp-tab, #screen-compliance [onclick*=switchCompTab]')], [/regulation/i, J("switchCompTab('regulations')", '#screen-compliance [onclick*=switchCompTab]')], [/deadline|due/i, J("switchCompTab('calendar')", '#screen-compliance [onclick*=switchCompTab]')], [/whistle/i, J("switchCompTab('whistleblower')", '#screen-compliance [onclick*=switchCompTab]')], [/issue/i, J("switchCompTab('audit')", '#screen-compliance [onclick*=switchCompTab]')]],
+    marketing: [[/in review/i, J("cardinalDocStatus('In review')", '#docs-core table')], [/changes/i, J("cardinalDocStatus('Changes needed')", '#docs-core table')], [/./, J("cardinalDocStatus('')", '#docs-core table')]]
+  };
+  window.cardinalDocStatus = function (v) { var s = [].filter.call(document.querySelectorAll('#docs-core select'), function (x) { return [].some.call(x.options, function (o) { return o.value === 'Changes needed'; }); })[0]; if (s) { s.value = v; s.dispatchEvent(new Event('change', { bubbles: true })); s.dispatchEvent(new Event('input', { bubbles: true })); } };
+  function goFor(k, label) { var g = (GO[k] || []).filter(function (x) { return x[0].test(label || ''); })[0]; return g ? g[1] : ''; }
   function placeHero(k, parent, before, o) {
+    o.units = (o.units || []).map(function (x) { var y = {}; for (var kk in x) y[kk] = x[kk]; y.go = goFor(k, x.label) || x.onclick || ''; return y; });
+    o.mainGo = goFor(k, o.pillLabel) || goFor(k, o.title);
     var id = 'u-' + k + '-hero', el = document.getElementById(id);
     if (!el) { el = document.createElement('section'); el.id = id; el.className = 'tsv2-section u-hero'; }
     if (el.parentNode !== parent || el.nextElementSibling !== before) parent.insertBefore(el, before);
@@ -52406,7 +52422,7 @@ window.CARDINAL_PLACES = {
       rows: [['Median Review Time', '1.6 days', 'From upload to a decision.'], ['Tied to a Model', '100%', 'Every document is linked to the model or customer group it touches.'], ['Rules Checked', '12', 'Regulations each document is checked against.'], ['Confidence Band', '\u00b13 points', 'Expected swing if re-measured.']]
     });
     hide(sg);
-    placeHist('marketing', dc, sg);
+    var oh = document.getElementById('u-marketing-hist'); if (oh) oh.remove();
   }
   function tick() { [genesis, atonement, halo, ledger, sentinel, echo, compliance, codex].forEach(function (f) { try { f(); } catch (e) {} }); }
   setInterval(tick, 800);
@@ -52525,6 +52541,7 @@ window.CARDINAL_PLACES = {
     '.g-live .dot{width:7px;height:7px;border-radius:50%;background:#4ade80;box-shadow:0 0 6px rgba(74,222,128,.7)}' +
     '.g-delta{font-size:11px;color:var(--muted2,#64748b);margin-top:4px}' +
     '.g-pill{display:inline-flex;align-items:center;gap:8px;margin-top:10px;padding:6px 12px;border-radius:9px;border:1px solid rgba(26,24,21,.1);background:rgba(255,255,255,.55);font-size:10.5px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:#475569}' +
+    '.g-go{font-family:inherit;cursor:pointer;transition:background .15s,box-shadow .15s,transform .15s}.g-go:hover{background:#fff;box-shadow:0 2px 8px rgba(26,24,21,.12);transform:translateY(-1px);color:#1a1815}.g-go .g-arrow{font-size:12px;color:#8b5cf6;letter-spacing:0}' +
     '.g-pill b{font-size:13px;color:#1a1815;letter-spacing:0}' +
     '.g-sub{font-size:11px;color:var(--muted2,#64748b);margin-top:6px;line-height:1.4;max-width:230px}' +
     '.g-proj{font-size:11px;color:var(--muted2,#64748b);margin-top:6px;line-height:1.4;max-width:230px}' +
@@ -52575,9 +52592,14 @@ window.CARDINAL_PLACES = {
       '<div class="g-status" style="color:' + (col === BLU ? '#8b5cf6' : col) + '">' + esc(status) + '</div>' +
       '<div class="g-live"><span class="dot"></span><span>Last calculated <strong style="color:var(--chrome2,#1a1815)">' + esc(u.calc || '2 minutes ago') + '</strong></span></div>' +
       deltaHtml +
-      '<div class="g-pill">' + esc(u.pillLabel || u.label) + (u.pillVal != null && u.pillVal !== '' ? ' <b>' + esc(u.pillVal) + '</b>' : '') + '</div>' +
+      (u.go || u.onclick ? '<button type="button" class="g-pill g-go" title="Go to this section" onclick="event.stopPropagation();' + esc(u.go || u.onclick) + '">' : '<div class="g-pill">') + esc(u.pillLabel || u.label) + (u.pillVal != null && u.pillVal !== '' ? ' <b>' + esc(u.pillVal) + '</b>' : '') + (u.go || u.onclick ? ' <span class="g-arrow">\u2192</span></button>' : '</div>') +
       (u.sub ? '<div class="g-sub">' + esc(u.sub) + '</div>' : '') +
       (u.proj ? '<div class="g-proj">' + u.proj + '</div>' : '') + '</div>';
+  };
+  window.cardinalJump = function (code, sel) {
+    try { (new Function(code))(); } catch (e) {}
+    window.__deepLinkUntil = Date.now() + 3000;
+    setTimeout(function () { var el = sel && [].filter.call(document.querySelectorAll(sel), function (x) { return x.offsetParent !== null; })[0]; if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 450);
   };
   window.cardinalGaugeRow = function (units) {
     var min = units.length >= 7 ? 108 : units.length === 6 ? 115 : units.length === 5 ? 122 : 140;
