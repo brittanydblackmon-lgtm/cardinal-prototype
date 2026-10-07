@@ -49998,7 +49998,7 @@ window.CARDINAL_PLACES = {
     var hdr = root.querySelector('.section-hdr'); if (!hdr) return;
     if (scr === 'genesis') {
       var stats = document.getElementById('gen-stats-row');
-      if (stats && stats.previousElementSibling !== hdr) { hdr.parentNode.insertBefore(stats, hdr.nextSibling); stats.classList.add('card'); stats.style.padding = '14px'; stats.style.marginBottom = '14px'; }
+      if (stats && !document.getElementById('gen-rings') && stats.previousElementSibling !== hdr) { hdr.parentNode.insertBefore(stats, hdr.nextSibling); stats.classList.add('card'); stats.style.padding = '14px'; stats.style.marginBottom = '14px'; }
       // One "New test": the header button goes, and the builder opens as a pop-up.
       [].forEach.call(hdr.querySelectorAll('button'), function (x) { if (/^\+?\s*New Test$/i.test(x.textContent.trim())) x.style.display = 'none'; });
       var ws = document.getElementById('gnws');
@@ -50062,7 +50062,7 @@ window.CARDINAL_PLACES = {
     var crit = uniq.filter(function (c) { return /critical/i.test(c.severity); }).length, rooms = d.caseChannels || [];
     var inc = (window.SENTINEL_INCIDENTS || {})[org] || [], key = org + uniq.length + rooms.length + inc.length;
     var top = document.getElementById('sent-top');
-    if (top && top.getAttribute('data-k') === key) { if (top.parentNode.firstElementChild !== top) scr.insertBefore(top, scr.firstChild); return; }
+    if (top && top.getAttribute('data-k') === key) { var uh = document.getElementById('u-sentinel-hero'), want = uh && uh.parentNode === scr ? uh.nextElementSibling : scr.firstElementChild; if (want !== top) scr.insertBefore(top, uh && uh.parentNode === scr ? uh.nextSibling : scr.firstChild); return; }
     if (!top) { top = document.createElement('div'); top.id = 'sent-top'; top.className = 'card'; top.style.cssText = 'padding:16px 18px;margin:0 0 14px'; }
     top.setAttribute('data-k', key);
     var stat = function (n, l, c) { return '<div style="padding:10px 12px;border-radius:10px;border:1px solid rgba(26,24,21,.08);background:#fff"><div style="font-size:22px;font-weight:800;color:' + (c || '#1a1815') + '">' + n + '</div><div style="font-size:11px;color:#64748b">' + l + '</div></div>'; };
@@ -51656,7 +51656,7 @@ window.CARDINAL_PLACES = {
   function place(id, parent, before, html, key, cls) {
     var el = document.getElementById(id);
     if (!el) { el = document.createElement('div'); el.id = id; if (cls !== false) { el.className = 'card'; el.style.cssText = 'padding:20px 22px;margin:0 0 16px'; } }
-    if (el.parentNode !== parent || el.nextElementSibling !== before) parent.insertBefore(el, before);
+    if (before !== el && (el.parentNode !== parent || el.nextElementSibling !== before)) parent.insertBefore(el, before);
     if (el.getAttribute('data-k') !== key) { el.setAttribute('data-k', key); el.innerHTML = html; }
     return el;
   }
@@ -51826,7 +51826,8 @@ window.CARDINAL_PLACES = {
     ['echo-kpi-row-alerts', 'echo-kpi-row-activity'].forEach(function (id) { var e = document.getElementById(id); if (e) e.style.display = 'none'; });
     var rings = document.getElementById('echo-rings');
     if (!rings) { rings = document.createElement('div'); rings.id = 'echo-rings'; rings.className = 'card'; rings.style.cssText = 'padding:20px 22px;margin:0 0 16px'; }
-    if (ts.nextElementSibling !== rings) ts.parentNode.insertBefore(rings, ts.nextSibling);
+    var uEh = document.getElementById('u-echo-hero'), aft = uEh && uEh.parentNode === ts.parentNode && uEh.previousElementSibling === ts ? uEh : ts;
+    if (aft.nextElementSibling !== rings) ts.parentNode.insertBefore(rings, aft.nextSibling);
     var key = JSON.stringify(cards);
     if (cards.length && rings.getAttribute('data-k') !== key && window.cardinalRings) {
       rings.setAttribute('data-k', key);
@@ -52034,7 +52035,7 @@ window.CARDINAL_PLACES = {
   function num(s) { var m = String(s == null ? '' : s).replace(/,/g, '').match(/-?\d+(\.\d+)?/); return m ? +m[0] : 0; }
   function col(n) { return n >= 80 ? '#22c55e' : n >= 70 ? '#FACC15' : '#ef4444'; }
   function org() { return window.currentOrg || 'fin'; }
-  var SCR = ['genesis', 'atonement', 'halo', 'trustledger', 'sentinel', 'echo'];
+  var SCR = ['genesis', 'atonement', 'halo', 'trustledger', 'sentinel', 'echo', 'compliance'];
 
   var css = document.createElement('style');
   css.textContent = SCR.map(function (s) { return '#screen-' + s + ' .card:not(.card .card)'; }).join(',') +
@@ -52075,6 +52076,9 @@ window.CARDINAL_PLACES = {
     sentinel: { title: 'Response History', sub: 'Hover any month for full context · Dashed line = 80 response target · Pins open the model', thr: 80, thrLabel: 'Response Target (80)',
       series: [['response', 'Response Score', [78, 80, 79, 82, 81, 84, 83, 80, 79, 82, 84, 83]], ['ontime', 'Cases On Time', [80, 82, 81, 84, 83, 86, 85, 82, 80, 83, 85, 83]], ['clocks', 'Incident Clock Health', [90, 91, 88, 92, 90, 93, 91, 86, 84, 87, 88, 86]], ['contain', 'Containment', [85, 86, 86, 88, 89, 90, 91, 89, 90, 92, 93, 94]]],
       pins: [[3, 'War room opened for FIN-1203 (ZIP code proxy in Credit Scoring v3.4)', 'Credit Scoring v3.4'], [0, 'Fraud ring blocked by Fraud Screening v2.7', 'Fraud Screening v2.7']] },
+    compliance: { title: 'Compliance History', sub: 'Hover any month for full context · Dashed line = 80 target · Pins open the model', thr: 80, thrLabel: 'Target (80)',
+      series: [['rate', 'Compliance Rate', [74, 75, 76, 76, 77, 78, 79, 77, 76, 78, 80, 81]], ['deadlines', 'Deadlines Met', [88, 90, 89, 91, 92, 92, 93, 90, 91, 93, 94, 95]], ['evidence', 'Evidence Ready', [70, 72, 74, 75, 77, 79, 81, 83, 85, 88, 90, 92]]],
+      pins: [[3, 'ZIP code proxy in Credit Scoring v3.4 puts fair lending at risk', 'Credit Scoring v3.4'], [0, 'CFPB fair lending exam scheduled for Oct 20', '']] },
     echo: { title: 'Record History', sub: 'Hover any month for full context · Dashed line = 80 record target · Pins open the model', thr: 80, thrLabel: 'Record Target (80)',
       series: [['coverage', 'Record Coverage', [88, 89, 90, 91, 92, 92, 93, 94, 95, 96, 96, 97]], ['access', 'Access Reviews', [75, 77, 78, 80, 81, 83, 84, 85, 86, 88, 89, 90]], ['integrity', 'Integrity Checks', [99, 99, 100, 100, 99, 100, 100, 100, 100, 100, 100, 100]]],
       pins: [[3, 'Counterfactual proof for Credit Scoring v3.4 sealed in Echo', 'Credit Scoring v3.4'], [0, 'Exam evidence package assembled for the CFPB', '']] }
@@ -52226,9 +52230,8 @@ window.CARDINAL_PLACES = {
       delta: 1, pillLabel: 'Tests Passed', pillVal: find(it, /passed/i).value, subline: 'Active tests ' + find(it, /active/i).value + ' · Models in testing ' + find(it, /models/i).value,
       proj: 'Projected: <strong style="color:#16a34a">' + Math.min(100, score + 9) + '</strong> (+9 pts once the income-feature test finishes)',
       avg: score + 5, pct: 34, confTitle: 'Test Confidence', confSub: 'How reliable are these results?',
-      rows: it.map(function (x) { return [cap(x.label), x.value, x.sub]; }).concat([['Confidence Band', '±3 points', 'Expected swing if the tests were re-run on fresh data.']])
+      rows: [['Confidence Band', '±3 points', 'Expected swing if the tests were re-run on fresh data.'], ['Models Without Current Tests', fin() ? '7 of 22' : '--', 'Models with no fairness, accuracy, or security test in the last 90 days. This is the coverage gap.'], ['Last Full Scan', 'Today, 6:00 AM', 'Cardinal re-checks every model for test coverage each morning.'], ['Data Completeness', '94%', 'Share of model decisions available to test against.']]
     });
-    hide(r);
     var old = document.getElementById('gen-hist'); if (old) { hide(old); placeHist('genesis', old.parentNode, old); }
   }
   function atonement() {
@@ -52245,9 +52248,8 @@ window.CARDINAL_PLACES = {
       subline: 'Active fixes ' + find(it, /active/i).value + ' · In shadow ' + find(it, /shadow/i).value,
       proj: 'Projected: <strong style="color:#16a34a">' + Math.min(100, score + 31) + '</strong> once Credit v3.5 is approved for full traffic',
       avg: 61, pct: 44, confTitle: 'Remediation Confidence', confSub: 'How reliable is this progress?',
-      rows: it.map(function (x) { return [cap(x.label), x.value, x.sub]; }).concat([['Rollback Ready', 'Yes', 'Every fix in shadow rolls back on its own if fairness slips.']])
+      rows: [['Confidence Band', '±2 points', 'Expected swing in progress if re-measured.'], ['Rollback Ready', 'Yes', 'Every fix in shadow rolls back on its own if fairness slips.'], ['Fixes With an Approver', fin() ? '13 of 13' : 'All', 'Every fix has a named person who approves the next step.'], ['Shadow Traffic', fin() ? '5% on Credit v3.5' : '--', 'How much live traffic the fix is quietly tested on.']]
     });
-    hide(r);
     var old = document.getElementById('at-hist'); if (old) { hide(old); placeHist('atonement', old.parentNode, old); }
   }
   function halo() {
@@ -52256,7 +52258,8 @@ window.CARDINAL_PLACES = {
     var cfg = (window.HALO_CFG || {})[org()] || {}, none = (cfg.forecast && cfg.forecast.none) || [];
     var score = none.length ? none[none.length - 1] : 72;
     var money = fin() ? '$73M' : (cfg.exposureQ4 || (h2.textContent.match(/\$[\d.]+M/) || ['--'])[0]);
-    placeHero('halo', h2.parentNode, h2, {
+    var anchor = document.getElementById('halo-cardinal-hero'); if (!anchor || anchor.parentNode !== h2.parentNode) anchor = h2;
+    placeHero('halo', h2.parentNode, anchor, {
       score: score, title: 'Projected Trust Score', titleBody: 'Where your Trust Score lands in 90 days if nothing is fixed. 80 is the certification line.',
       okBadge: 'Holds Above 80 Without Fixes', okTitle: 'Low Risk', okBody: 'The score stays above 80 even with no action.',
       badBadge: 'Falls Below 80 Without Fixes', badTitle: 'Action Needed', badBody: 'If nothing is fixed, the score drops under the 80 certification line and exposure stays on the table.',
@@ -52264,10 +52267,10 @@ window.CARDINAL_PLACES = {
       delta: -2, pillLabel: 'Projected Exposure', pillVal: money, subline: 'In 90 days if nothing changes · Today ' + ((cfg.forecast && cfg.forecast.start) || '') ,
       proj: 'With the fixes: <strong style="color:#16a34a">' + ((cfg.forecast && cfg.forecast.full && cfg.forecast.full[3]) || 88) + '</strong> in 90 days',
       avg: 79, pct: 38, confTitle: 'Forecast Confidence', confSub: 'How reliable is this forecast?',
-      rows: it.map(function (x) { return [cap(x.label), x.value, x.sub]; }).concat([['Prediction Accuracy', '91%', 'How often past Halo forecasts landed within range.']])
+      rows: [['Prediction Accuracy', '91%', 'How often past Halo forecasts landed within range.'], ['Confidence Band', '±4 points', 'Expected swing in the projected score.'], ['Forecast Refreshed', 'Daily', 'Halo re-runs the forecast every morning.'], ['Regulations Tracked', '12', 'Active rules Halo checks your models against.']]
     });
-    hide(mini);
-    var first = h2.querySelector('.card > div > div'); if (first && /projected exposure/i.test(first.textContent)) hide(first);
+    if (mini && mini.style.display === 'none') mini.style.display = '';
+    var first = h2.querySelector('.card > div > div'); if (first && /projected exposure/i.test(first.textContent)) { hide(first); if (first.parentNode.style.gridTemplateColumns !== '1fr') first.parentNode.style.gridTemplateColumns = '1fr'; }
     var old = document.getElementById('halo-hist'); if (old) { hide(old); placeHist('halo', old.parentNode, old); }
   }
   function ledger() {
@@ -52281,13 +52284,14 @@ window.CARDINAL_PLACES = {
       okStatus: 'Above Threshold: Exam-Ready Records', badStatus: 'Below Threshold: Records Incomplete',
       delta: 1, pillLabel: 'Records Sealed', pillVal: find(it, /records/i).value, subline: 'Verified today ' + find(it, /verified/i).value + ' · Can’t be edited after sealing',
       avg: 86, pct: 81, confTitle: 'Record Confidence', confSub: 'How reliable are these records?',
-      rows: it.map(function (x) { return [cap(x.label), x.value, x.sub]; }).concat([['Tamper Checks', '100% passed', 'Every record is checked against its seal each night.']])
+      rows: [['Tamper Checks', '100% passed', 'Every record is checked against its seal each night.'], ['Last Record Sealed', '2 minutes ago', 'Records are sealed as they happen.'], ['Missing Evidence', fin() ? '1 approval' : 'None', fin() ? 'The Credit v3.5 launch sign-off is not sealed yet because it has not happened.' : 'Nothing missing.'], ['Kept For', '7 years', 'How long sealed records are retained.']]
     });
-    hide(r);
-    placeHist('trustledger', hero.parentNode, hero);
+    var src = r.__src && r.__src.parentNode === r.parentNode ? r.__src : r; placeHist('trustledger', r.parentNode, src);
   }
   function sentinel() {
-    var top = document.getElementById('sent-top'); if (!top || top.offsetParent === null) return;
+    var top = document.getElementById('sent-top'); if (!top) return;
+    ['u-sentinel-hero', 'u-sentinel-hist'].forEach(function (id) { var x = document.getElementById(id); if (x) x.style.display = top.style.display === 'none' ? 'none' : ''; });
+    if (top.offsetParent === null) return;
     var grid = top.querySelector('.cr-wrap'); grid = grid && grid.parentNode; if (!grid) return;
     var it = items(grid); if (it.length < 4) return;
     var open = num(it[0].value), crit = num(it[1].value), score = open ? Math.round(100 * (open - crit) / open) : 100;
@@ -52298,29 +52302,133 @@ window.CARDINAL_PLACES = {
       okStatus: 'Above Target: Cases Moving On Time', badStatus: 'Below Target: Cases Falling Behind',
       delta: 1, pillLabel: 'Open Cases', pillVal: it[0].value, subline: 'Critical ' + it[1].value + ' · War rooms ' + it[3].value,
       avg: 77, pct: 68, confTitle: 'Response Confidence', confSub: 'How reliable is this score?',
-      rows: it.map(function (x) { return [cap(x.label), x.value, x.sub]; }).concat([['Median Time to Owner', '38 minutes', 'How long a new case waits before someone owns it.']])
+      rows: [['Median Time to Owner', '38 minutes', 'How long a new case waits before someone owns it.'], ['Cases Past Deadline', String(crit), 'Critical cases are the ones at risk of missing their deadline.'], ['Escalations This Month', '2', 'Cases moved up to leadership.'], ['Confidence Band', '±3 points', 'Expected swing if re-measured.']]
     });
-    hide(grid);
     var old = document.getElementById('sent-hist'); if (old) { hide(old); placeHist('sentinel', old.parentNode, old); }
   }
   function echo() {
-    var r = document.getElementById('echo-rings'); if (!r || !r.parentNode || r.offsetParent === null && r.style.display !== 'none') return;
+    var r = document.getElementById('echo-rings'); if (!r || !r.parentNode) return; if (r.style.display === 'none') r.style.display = '';
     if (document.getElementById('screen-echo').offsetParent === null) return;
     var it = items(r); if (it.length < 4) return;
     var score = 97;
-    var hero = placeHero('echo', r.parentNode, r, {
-      score: score, title: 'Record Coverage', titleBody: 'Share of AI decisions, cases, and approvals Echo has captured as memories.',
-      okBadge: 'Full Memory Coverage', okTitle: 'Full Coverage', okBody: 'Echo is capturing nearly every decision and action.',
+    var ts = document.getElementById('echo-topsearch'), hb = ts && ts.parentNode === r.parentNode ? ts.nextElementSibling : r; if (hb && hb.id === 'u-echo-hero') hb = hb.nextElementSibling;
+    var hero = placeHero('echo', r.parentNode, hb || r, {
+      score: score, title: 'Record Coverage', titleBody: 'Share of AI decisions, cases, and approvals Echo has recorded. It drops when a data source disconnects. Today Salesforce is not connected, so it is 97, not 100.',
+      okBadge: '97% of Decisions Recorded', okTitle: 'Nearly Everything Recorded', okBody: 'Echo records nearly every AI decision and action. The gap is Salesforce, which is not connected yet.',
       badBadge: 'Memory Gaps', badTitle: 'Gaps', badBody: 'Some decisions are not being captured.',
-      okStatus: 'Above Threshold: Full Memory Coverage', badStatus: 'Below Threshold: Memory Gaps',
+      okStatus: 'Above 80: Nearly Everything Recorded', badStatus: 'Below 80: Decisions Going Unrecorded',
       delta: 1, pillLabel: 'Critical Issues', pillVal: find(it, /critical issues/i).value, subline: 'Active investigations ' + find(it, /investigations/i).value + ' · Days since last critical ' + find(it, /days since/i).value,
       avg: 88, pct: 84, confTitle: 'Memory Confidence', confSub: 'How complete is the record?',
-      rows: it.map(function (x) { return [cap(x.label), x.value, x.sub]; })
+      rows: [['Sources Connected', fin() ? '5 of 6' : 'All', fin() ? 'Salesforce is not connected yet, which is why coverage is 97 and not 100.' : 'Every source is connected.'], ['Integrity Checks', '100% passed', 'Every memory is checked against its seal.'], ['Last Memory', 'Just now', 'Echo records continuously.'], ['Kept For', '7 years', 'How long memories are retained.']]
     });
-    hide(r);
-    placeHist('echo', hero.parentNode, hero);
+    var rec = document.getElementById('echo-recent-access-panel'), live = r.nextElementSibling; placeHist('echo', r.parentNode, rec && rec.parentNode === r.parentNode ? rec : (live && live.id !== 'u-echo-hist' ? live : r));
   }
-  function tick() { [genesis, atonement, halo, ledger, sentinel, echo].forEach(function (f) { try { f(); } catch (e) {} }); }
+  function compliance() {
+    var scr = document.getElementById('screen-compliance'); if (!scr || scr.offsetParent === null) return;
+    var head = scr.querySelector(':scope > .screen-header'); if (!head) return;
+    var g = [].filter.call(scr.children, function (x) { return x.children.length >= 4 && [].every.call(x.children, function (c) { return /stat-card/.test(c.className); }); })[0]; if (!g) return;
+    var cards = [].map.call(g.children, function (c) { var p = [].map.call(c.children, function (x) { return (x.textContent || '').trim(); }).filter(Boolean); return { label: p[0] || '', value: p[1] || '', sub: p[2] || '' }; });
+    var rate = cards.filter(function (c) { return /rate/i.test(c.label); })[0], score = Math.round(num(rate && rate.value)) || 80;
+    var dl = cards.filter(function (c) { return /due in/i.test(c.label); })[0] || cards.filter(function (c) { return /deadline/i.test(c.label); })[0] || { value: '' };
+    var nxt = head.nextElementSibling; if (nxt && nxt.id === 'u-compliance-hero') nxt = nxt.nextElementSibling;
+    var hero = placeHero('compliance', scr, nxt, {
+      score: score, title: 'Compliance Rate', titleBody: 'How closely your AI meets the rules that apply to it, across every regulation Cardinal tracks. 80 is the target.',
+      okBadge: 'On Track: Above 80', okTitle: 'On Track', okBody: 'Most rules are met. Open issues still need to close before the exam.',
+      badBadge: 'Below 80: Gaps to Close', badTitle: 'Gaps', badBody: 'Some rules are not met yet.',
+      okStatus: 'Above Target: On Track, Issues Still Open', badStatus: 'Below Target: Rules Not Met',
+      delta: 1, pillLabel: 'Open Issues', pillVal: (cards.filter(function (c) { return /open issues/i.test(c.label); })[0] || { value: '' }).value,
+      subline: fin() ? 'CFPB fair lending exam in 13 days' : 'Due in 30 days ' + dl.value,
+      proj: 'Projected: <strong style="color:#16a34a">' + Math.min(100, score + 7) + '</strong> once the open issues close',
+      avg: 78, pct: 61, confTitle: 'Compliance Confidence', confSub: 'How reliable is this rate?',
+      rows: [['Confidence Band', '±2 points', 'Expected swing if re-measured.'], ['Evidence Ready', '92%', 'Share of required documents already in the exam file.'], ['States Covered', fin() ? '38' : '--', 'Where you operate and Cardinal tracks state rules.'], ['Last Rule Update', 'Oct 6', 'When Cardinal last checked for new or changed rules.']]
+    });
+    var rings = document.getElementById('comp-rings');
+    if (rings && rings.previousElementSibling !== hero) scr.insertBefore(rings, hero.nextSibling);
+    placeHist('compliance', scr, rings || hero);
+  }
+  function tick() { [genesis, atonement, halo, ledger, sentinel, echo, compliance].forEach(function (f) { try { f(); } catch (e) {} }); }
+  setInterval(tick, 800);
+})();
+
+</script>
+
+<script data-p="p9_circles">
+// 10/7 (Brittany: "it shouldn't just be one circle... multiple boxes in a row, with the shadows"). Every row of
+// circles now looks like the big Trust Score circle (beige disc, colored ring with shadow, soft glow, colored number):
+// cores, Library, My Workspace, Watchman. Stat-box rows on Trust Ledger and Compliance become circles too.
+(function () {
+  function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;'); }
+  function hexA(h, a) { h = String(h || '#1a1815').replace('#', ''); if (h.length === 3) h = h.split('').map(function (c) { return c + c; }).join(''); var n = parseInt(h, 16); return 'rgba(' + (n >> 16 & 255) + ',' + (n >> 8 & 255) + ',' + (n & 255) + ',' + a + ')'; }
+  var css = document.createElement('style');
+  css.textContent =
+    '.cr-wrap{display:flex;flex-wrap:wrap;justify-content:center;gap:26px 30px;padding:8px 0 4px}' +
+    '.cr-item{width:150px}' +
+    '.u-disc{position:relative;width:136px;height:136px;border-radius:50%;background:radial-gradient(circle at 50% 46%,#efede8 0%,#ebe9e3 58%,#e2dfd8 74%,#f2f0eb 100%);transition:transform .2s}' +
+    '.cr-item.click:hover .u-disc{transform:translateY(-2px)}' +
+    '.u-disc .u-glow{position:absolute;inset:0;border-radius:50%;pointer-events:none;animation:tsv2GaugePulse 3.4s ease-in-out infinite}' +
+    '.u-disc svg{position:absolute;inset:0;width:100%;height:100%}' +
+    '.u-disc .cr-val{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:32px;font-weight:800;letter-spacing:-.8px;font-family:var(--sans);line-height:1;text-align:center}' +
+    '.u-disc .cr-val.small{font-size:22px}' +
+    '.cr-label{margin-top:12px;font-size:11px;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:.6px;text-align:center;line-height:1.3}' +
+    '.cr-sub{margin-top:3px;font-size:11px;color:#64748b;text-align:center;line-height:1.35}' +
+    '#screen-atonement>.section-hdr>#u-atonement-hero,#screen-atonement>.section-hdr>#at-rings{flex:1 1 100%;width:100%;box-sizing:border-box}#screen-atonement>.section-hdr>#u-atonement-hero{order:4;margin:4px 0 0}#screen-atonement>.section-hdr>#at-rings{order:5;margin:0}' +
+    '#screen-atonement>.section-hdr>.grid-4[style*="display: none"]{display:none!important}' +
+    '.grid-4[style*="display: none"],.grid-4[style*="display:none"]{display:none!important}' +
+    '.u-glance-title{font-size:11px;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px;text-align:center}';
+  document.head.appendChild(css);
+
+  function ring(r) {
+    var R = 86, C = 2 * Math.PI * R, pct = r.pct == null ? 1 : Math.max(0.04, Math.min(1, r.pct)), col = r.color || '#1a1815', v = String(r.value);
+    var numCol = r.valColor || (col === '#1a1815' ? '#1a1815' : col);
+    return '<div class="cr-item' + (r.onclick ? ' click' : '') + '"' + (r.onclick ? ' onclick="' + esc(r.onclick) + '"' : '') + (r.tip ? ' title="' + esc(r.tip) + '"' : '') + ' style="display:flex;flex-direction:column;align-items:center;cursor:' + (r.onclick ? 'pointer' : 'default') + '">' +
+      '<div class="u-disc"><div class="u-glow" style="box-shadow:0 0 40px 2px ' + hexA(col, .28) + ',0 10px 18px -8px rgba(0,0,0,.32)"></div>' +
+      '<svg viewBox="0 0 200 200"><circle cx="100" cy="100" r="' + R + '" fill="none" stroke="rgba(167,167,167,.10)" stroke-width="14"/>' +
+      '<circle cx="100" cy="100" r="' + R + '" fill="none" stroke="' + col + '" stroke-width="14" stroke-linecap="round" stroke-dasharray="' + (C * pct).toFixed(1) + ' 999" transform="rotate(-90 100 100)" style="filter:drop-shadow(0 6px 10px rgba(0,0,0,.30))"/></svg>' +
+      '<div class="cr-val' + (v.length > 5 ? ' small' : '') + '" style="color:' + numCol + '">' + esc(v) + '</div></div>' +
+      '<div class="cr-label">' + esc(r.label) + '</div>' + (r.sub ? '<div class="cr-sub">' + esc(r.sub) + '</div>' : '') + '</div>';
+  }
+  window.cardinalRings = function (rings) { return '<div class="cr-wrap">' + rings.map(ring).join('') + '</div>'; };
+
+  // Stat-box rows into circles.
+  var RED = '#DC2626', YEL = '#FACC15', GRN = '#16a34a', INK = '#1a1815', BLU = '#1d4ed8';
+  function num(s) { var m = String(s || '').replace(/,/g, '').match(/-?\d+(\.\d+)?/); return m ? +m[0] : 0; }
+  function pick(label, value) {
+    var n = num(value), L = label.toLowerCase();
+    if (/cert/.test(L)) return { color: GRN, pct: 0.75 };
+    if (/rate|%|coverage/.test(L) || /%/.test(value)) return { color: n >= 80 ? GRN : n >= 70 ? YEL : RED, pct: n / 100 };
+    if (/issues\b|critical|violation|whistle|at risk/.test(L)) return { color: n ? RED : GRN, pct: n ? Math.min(1, 0.2 + n / 10) : 1 };
+    if (/deadline|due|quer|pending/.test(L)) return { color: n ? YEL : GRN, pct: n ? Math.min(1, 0.25 + n / 10) : 1 };
+    if (/entries|records|regulations/.test(L)) return { color: INK, pct: 0.85 };
+    return { color: BLU, pct: 0.5 };
+  }
+  function convert(grid, id, title, before) {
+    if (!grid) return;
+    var cards = [].filter.call(grid.children, function (c) { return /stat-card/.test(c.className); });
+    if (cards.length < 3) return;
+    var data = cards.map(function (c) { var p = [].map.call(c.children, function (x) { return (x.textContent || '').trim(); }).filter(Boolean); return { label: p[0] || '', value: p[1] || '', sub: p[2] || '' }; });
+    var el = document.getElementById(id);
+    if (!el) { el = document.createElement('div'); el.id = id; el.className = 'card'; el.style.cssText = 'padding:20px 22px;margin:0 0 16px'; }
+    var at = before || grid;
+    if (!el.parentNode) at.parentNode.insertBefore(el, at);
+    var key = (window.currentOrg || '') + JSON.stringify(data);
+    if (el.getAttribute('data-k') !== key) {
+      el.setAttribute('data-k', key);
+      el.innerHTML = (title ? '<div class="u-glance-title">' + title + '</div>' : '') + cardinalRings(data.map(function (d) { var p = pick(d.label, d.value); var lab = d.label.toLowerCase(); return { value: d.value, label: lab.charAt(0).toUpperCase() + lab.slice(1), sub: d.sub, color: p.color, pct: p.pct }; }));
+    }
+    if (grid.style.display !== 'none') grid.style.display = 'none';
+  }
+  function tick() {
+    var tl = document.getElementById('screen-trustledger');
+    if (tl && tl.offsetParent !== null) {
+      var g = [].filter.call(tl.querySelectorAll('.grid-4'), function (x) { return /TOTAL ENTRIES/i.test(x.textContent) && /REGULATOR QUERIES/i.test(x.textContent); })[0];
+      convert(g, 'tl-entry-rings', 'Ledger entries at a glance');
+    }
+    var cp = document.getElementById('screen-compliance');
+    if (cp && cp.offsetParent !== null) {
+      var g2 = [].filter.call(cp.children, function (x) { return x.children.length >= 4 && [].every.call(x.children, function (c) { return /stat-card/.test(c.className); }); })[0];
+      if (g2) convert(g2, 'comp-rings', 'Compliance at a glance');
+    }
+  }
   setInterval(tick, 800);
 })();
 
