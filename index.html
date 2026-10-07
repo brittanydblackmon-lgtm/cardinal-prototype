@@ -51272,7 +51272,8 @@ window.CARDINAL_PLACES = {
     var o = org(), cs = window.__echoCase[o] || PRIMARY[o], list = mems(o, cs);
     var box = document.getElementById('echo-case-history');
     if (!box) { box = document.createElement('div'); box.id = 'echo-case-history'; box.className = 'card'; box.style.cssText = 'padding:16px 18px;margin:0 0 16px'; }
-    if (feed) { if (feed.previousElementSibling !== box) feed.parentNode.insertBefore(box, feed); } else if (anchor.nextElementSibling !== box) anchor.parentNode.insertBefore(box, anchor.nextSibling);
+    var slot = document.getElementById('echo-x-casehist-slot');
+    if (slot) { if (box.parentNode !== slot) slot.appendChild(box); } else if (feed) { if (feed.previousElementSibling !== box) feed.parentNode.insertBefore(box, feed); } else if (anchor.nextElementSibling !== box) anchor.parentNode.insertBefore(box, anchor.nextSibling);
     var key = o + cs + list.length; if (box.getAttribute('data-k') === key) return; box.setAttribute('data-k', key);
     var cases = caseList(o); if (cases.indexOf(cs) < 0) cases.unshift(cs);
     var span = list.length ? fmt(list[0].timestamp).replace(/,\s*\d+:\d+.*$/, '') + ' to ' + fmt(list[list.length - 1].timestamp).replace(/,\s*\d+:\d+.*$/, '') : '';
@@ -52819,6 +52820,346 @@ window.CARDINAL_PLACES = {
       var h = o.firstElementChild; if (h) { var i = document.createElement('span'); i.className = 'ooo-ico'; i.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><path d="M9 16l2 2 4-4"/></svg>'; h.insertBefore(i, h.firstChild); }
     }
   }, 800);
+})();
+
+</script>
+
+<script data-p="p15_echo">
+// 10/7 (Brittany: "the Echo core needs to have everything... employees, every case, the AI systems and models,
+// everything about Eden, Obsidian, Genesis... looking back years"). Echo is now the full record:
+//   - Sections bar (Hallway, Cases, Models, People, Decisions, Whistleblower, Case history, Your Desk), each with its
+//     own sub-tabs right under it.
+//   - People: everyone at the company. Click a name for everything they logged, changed, tried to change (blocked),
+//     updated, approved, viewed, and exported, back to the day they joined.
+//   - Cases: every case since 2019. Click one for its full timeline.
+//   - Models and AI systems: every model, agent, system, and vendor AI. Click one for every version and every check.
+//   - Score history looks like the detection history charts. Pinned memories are a searchable table.
+//   - The live event stream is gone from Echo (it is on the dashboard); the record history chart is shorter.
+(function () {
+  function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;'); }
+  function hash(s) { var h = 0x811c9dc5; s = String(s); for (var i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } h ^= h >>> 15; h = Math.imul(h, 0x2c1b3c6d); h ^= h >>> 12; return Math.abs(h); }
+  function org() { return window.currentOrg || 'fin'; }
+  function D() { return (window.CARDINAL_DATA || {})[org()] || {}; }
+  var MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  function fd(d) { d = new Date(d); return MON[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear(); }
+  function sealOf(s) { var x = ''; for (var i = 0; i < 3; i++) x += ('00000000' + hash(s + '|' + i).toString(16)).slice(-8); return x.slice(2, 14); }
+  var NOW = new Date();
+  var css = document.createElement('style');
+  css.textContent =
+    '#u-echo-hist .tsv2-history-canvas-wrap{min-height:210px!important;height:210px}' +
+    '#echo-x-subbar{display:flex;flex-wrap:wrap;gap:4px;background:#f3f0e9;padding:4px;border-radius:12px;margin:12px 0 14px}' +
+    '#echo-x-subbar button{font:inherit;font-size:12px;font-weight:600;padding:8px 14px;border:0;border-radius:9px;cursor:pointer;background:transparent;color:#475569}' +
+    '#echo-x-subbar button.on{background:#fff;color:#1a1815;box-shadow:0 1px 3px rgba(26,24,21,.12)}' +
+    '.ex-bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 12px}' +
+    '.ex-bar input,.ex-bar select{font:inherit;font-size:12px;padding:8px 10px;border:1px solid rgba(26,24,21,.15);border-radius:8px;background:#fff;color:#1a1815}' +
+    '.ex-tbl{width:100%;border-collapse:collapse;font-size:12.5px}.ex-wrap{border:1px solid rgba(26,24,21,.08);border-radius:12px;overflow:auto}' +
+    '.ex-tbl th{text-align:left;font-size:10.5px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.4px;padding:10px 12px;background:#f4efe6;border-bottom:1px solid rgba(26,24,21,.1);white-space:nowrap}' +
+    '.ex-tbl td{padding:10px 12px;border-bottom:1px solid rgba(26,24,21,.06);vertical-align:top;color:#1a1815}' +
+    '.ex-tbl tbody tr:nth-child(odd){background:#fff}.ex-tbl tbody tr:nth-child(even){background:#f4efe6}' +
+    '.ex-tbl tbody tr.ex-click{cursor:pointer}.ex-tbl tbody tr.ex-click:hover{background:#ece5d6}' +
+    '.ex-name{font-weight:700;color:#1a1815}.ex-sub{font-size:11px;color:#64748b;margin-top:2px}' +
+    '.ex-pill{display:inline-block;font-size:10.5px;font-weight:700;padding:2px 9px;border-radius:999px;white-space:nowrap}' +
+    '.ex-pager{display:flex;justify-content:space-between;align-items:center;margin-top:10px;font-size:12px;color:#64748b}' +
+    '.ex-pager button{font:inherit;font-size:12px;padding:6px 12px;border-radius:8px;border:1px solid rgba(26,24,21,.15);background:#fff;cursor:pointer}' +
+    '.ex-head{display:flex;gap:14px;align-items:center;flex-wrap:wrap;padding:16px 18px;border-radius:14px;background:linear-gradient(180deg,rgba(26,24,21,.045),rgba(30,28,24,.035));border:1px solid rgba(167,167,167,.15);margin-bottom:14px}' +
+    '.ex-av{width:52px;height:52px;border-radius:50%;background:#ede9fe;color:#6d28d9;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:17px}' +
+    '.ex-chips{display:flex;flex-wrap:wrap;gap:8px;margin-left:auto}.ex-chip{background:#fff;border:1px solid rgba(26,24,21,.08);border-radius:10px;padding:8px 12px;text-align:center;min-width:86px}' +
+    '.ex-chip b{display:block;font-size:18px;color:#1a1815}.ex-chip span{font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.4px}' +
+    '.ex-back{font:inherit;font-size:12px;font-weight:700;color:#1e3a8a;background:transparent;border:0;cursor:pointer;padding:0;margin-bottom:10px}' +
+    '.ex-note{font-size:12px;color:#475569;background:#f4efe6;border-radius:10px;padding:10px 12px;margin:0 0 12px;line-height:1.5}';
+  document.head.appendChild(css);
+
+  // ── Data ─────────────────────────────────────────────────────────
+  var CORES = ['Eden', 'Obsidian', 'Genesis', 'Atonement', 'Halo', 'Watchman', 'Codex', 'Compliance', 'Trust Ledger', 'Echo'];
+  var CORE_COL = { Eden: '#15803D', Obsidian: '#B45309', Genesis: '#6d28d9', Atonement: '#0f766e', Halo: '#1e3a8a', Watchman: '#B91C1C', Codex: '#475569', Compliance: '#334155', 'Trust Ledger': '#1a1815', Echo: '#7c3aed' };
+  var ACT_COL = { Logged: ['#475569', '#f1f5f9'], Changed: ['#1d4ed8', '#eff6ff'], 'Tried to change (blocked)': ['#B91C1C', '#fef2f2'], Updated: ['#0f766e', '#f0fdfa'], Approved: ['#15803D', '#f0fdf4'], 'Viewed restricted record': ['#B45309', '#fffbeb'], Exported: ['#6d28d9', '#f5f3ff'], Commented: ['#334155', '#f3f0e9'], Opened: ['#1e3a8a', '#eff6ff'], Closed: ['#15803D', '#f0fdf4'] };
+  function companyName() { return D().org || ''; }
+  function models() {
+    var o = org(), seen = {}, out = [];
+    (window.CARDINAL_MODELS || []).forEach(function (m) { if (m.industry === o && !seen[m.name]) { seen[m.name] = 1; out.push({ name: m.name, kind: 'Model', owner: m.owner, status: m.status, score: m.trustScore, deployed: m.deployedDate, cases: m.cases || [] }); } });
+    (D().modelLevelScores || []).forEach(function (m) { if (!seen[m.name]) { seen[m.name] = 1; out.push({ name: m.name, kind: 'Model', status: m.status, score: m.score, cases: [] }); } });
+    ((window.CARDINAL_SYSTEMS || {})[o] || []).forEach(function (s) { if (!seen[s.name]) { seen[s.name] = 1; out.push({ name: s.name, kind: 'AI system', status: s.status, parts: (s.models || []).concat(s.agents || []), cases: [] }); } (s.agents || []).forEach(function (a) { if (!seen[a]) { seen[a] = 1; out.push({ name: a, kind: 'AI agent', status: 'Live', cases: [] }); } }); });
+    ((window.SENTINEL_VENDORS || {})[o] || []).forEach(function (v) { var n = Array.isArray(v) ? v[0] : v.name; if (n && !seen[n]) { seen[n] = 1; out.push({ name: n, kind: 'Vendor AI', status: Array.isArray(v) ? v[5] : v.status, what: Array.isArray(v) ? v[1] : v.what, cases: [] }); } });
+    return out;
+  }
+  function people() {
+    var o = org(), cn = companyName(), seen = {}, out = [];
+    var ps = window.CARDINAL_PERSONAS ? (Array.isArray(CARDINAL_PERSONAS) ? CARDINAL_PERSONAS : Object.values(CARDINAL_PERSONAS)) : [];
+    ps.forEach(function (p) { if (p.org === cn && !seen[p.name]) { seen[p.name] = 1; out.push({ name: p.name, role: p.role, id: p.id }); } });
+    (D().echoMemories || []).forEach(function (m) { var a = m.author; if (a && !seen[a] && !/Core$|^Eve|^Adam|War Room|Watchman|Trust Ledger|Compliance Exchange|system/i.test(a) && m.authorRole !== 'system') { seen[a] = 1; out.push({ name: a, role: m.authorRole || 'Team member' }); } });
+    out.forEach(function (p) { var h = hash(o + p.name); p.joined = new Date(2018 + (h % 6), h % 12, 1 + (h >> 4) % 27); p.access = /counsel|chief|compliance|officer/i.test(p.role) ? 'Restricted records' : /scien|engineer/i.test(p.role) ? 'Models and data' : 'Standard'; p.passport = 'CP-' + o.toUpperCase() + '-' + (1000 + h % 9000); });
+    return out;
+  }
+  function memories() { return (D().echoMemories || []).slice().sort(function (a, b) { return a.timestamp < b.timestamp ? 1 : -1; }); }
+  function coreOf(m) { var c = String(m.core || '').toLowerCase(); var map = { eden: 'Eden', obsidian: 'Obsidian', genesis: 'Genesis', atonement: 'Atonement', halo: 'Halo', sentinel: 'Watchman', watchman: 'Watchman', compliance: 'Compliance', trustledger: 'Trust Ledger', echo: 'Echo', marketing: 'Codex', warroom: 'Watchman' }; return map[c] || 'Echo'; }
+  var CACHE = {};
+  function personEvents(p) {
+    var key = org() + '|p|' + p.name; if (CACHE[key]) return CACHE[key];
+    var ms = models(), mn = ms.filter(function (m) { return m.kind === 'Model'; }).map(function (m) { return m.name; }), cs = caseRows().map(function (c) { return c.id; });
+    var out = memories().filter(function (m) { return m.author === p.name; }).map(function (m) { return { t: new Date(m.timestamp), core: coreOf(m), act: /approved/.test(m.eventType) ? 'Approved' : /updated|deployed/.test(m.eventType) ? 'Updated' : 'Logged', what: m.summary, ref: String(m.caseId || '').replace(/^#/, ''), seal: String(m.hash || sealOf(m.id)).slice(0, 12), real: 1 }; });
+    var h = hash(key), n = 60 + h % 80, span = NOW - p.joined;
+    var T = [
+      ['Logged', 'Eden', 'Logged a fairness review of %m'], ['Changed', 'Genesis', 'Changed the test plan for %m: added a counterfactual check'], ['Tried to change (blocked)', 'Atonement', 'Tried to raise %m to 100% traffic without sign-off. Blocked until General Counsel and Compliance approve.'],
+      ['Updated', 'Codex', 'Updated the model card for %m'], ['Approved', 'Atonement', 'Approved the next step on a fix for %m'], ['Viewed restricted record', 'Echo', 'Opened sealed records for %c'], ['Exported', 'Compliance', 'Exported the exam evidence packet for %c'],
+      ['Commented', 'Watchman', 'Commented in the war room for %c'], ['Changed', 'Obsidian', 'Changed the fraud alert threshold on %m from 0.72 to 0.70'], ['Logged', 'Halo', 'Logged a regulatory forecast review'], ['Tried to change (blocked)', 'Eden', 'Tried to dismiss a fairness flag on %m without a reason. Blocked: a reason is required.'],
+      ['Updated', 'Trust Ledger', 'Updated sharing for the sponsor bank view'], ['Opened', 'Watchman', 'Opened a case on %m'], ['Approved', 'Codex', 'Approved a customer-facing document tied to %m'], ['Changed', 'Genesis', 'Changed the synthetic cohort for %m to include thin-file applicants']
+    ];
+    for (var i = 0; i < n; i++) {
+      var hh = hash(key + '#' + i), tp = T[hh % T.length], t = new Date(p.joined.getTime() + span * ((hash('t' + key + i) % 10000) / 10000));
+      var m = mn[(hh >> 5) % Math.max(1, mn.length)] || 'a model', c = cs[(hh >> 7) % Math.max(1, cs.length)] || 'a case';
+      out.push({ t: t, core: tp[1], act: tp[0], what: tp[2].replace('%m', m).replace('%c', c), ref: /%c/.test(tp[2]) ? c : m, seal: sealOf(key + i) });
+    }
+    (STORY[org() + '|' + p.name] || []).forEach(function (e, i) { out.push({ t: new Date(e[0]), core: e[1], act: e[2], what: e[3], ref: '', seal: sealOf(key + 'story' + i) }); });
+    out.sort(function (a, b) { return b.t - a.t; });
+    return (CACHE[key] = out);
+  }
+  // Real story events for the people a demo walks through.
+  var STORY = {
+    'fin|Nina Roberts': [
+      ['2026-07-22T14:10:00', 'Eden', 'Logged', 'Reviewed the Eden flag: zip_code correlates 0.82 with race in Credit Scoring v3.4'],
+      ['2026-07-24T10:30:00', 'Genesis', 'Changed', 'Ran the counterfactual test: swapping ZIP code alone flips 38% of 1,203 denials'],
+      ['2026-08-02T09:00:00', 'Atonement', 'Changed', 'Proposed Credit Scoring v3.5: replace zip_code with verified income and cash-flow features'],
+      ['2026-08-19T16:45:00', 'Atonement', 'Tried to change (blocked)', 'Tried to raise Credit Scoring v3.5 above 5% shadow traffic. Blocked until General Counsel and Compliance sign off.'],
+      ['2026-09-03T11:20:00', 'Genesis', 'Approved', 'Approved the shadow A/B result: fairness ratio 0.74 to 0.83, default rate unchanged'],
+      ['2026-09-18T15:00:00', 'Genesis', 'Changed', 'Started the income-features test, four combinations'],
+      ['2026-10-01T09:30:00', 'Compliance', 'Exported', 'Exported the fair lending evidence packet for the CFPB exam'],
+      ['2026-10-06T17:05:00', 'Watchman', 'Commented', 'Posted the v3.5 readiness note in the FIN-1203 war room']
+    ],
+    'ad|Anthony Broadnax': [
+      ['2026-09-14T09:40:00', 'Watchman', 'Opened', 'Opened case AD-2847 on Fleet Health v2.4'],
+      ['2026-09-20T13:00:00', 'Atonement', 'Changed', 'Started Fleet Health v2.5 in shadow at 5%']
+    ]
+  };
+  var PREFIX = { fin: 'FIN', ad: 'AD', health: 'HS', fed: 'FED' };
+  var TITLES = ['Fairness drift in %m', 'Fraud spike caught by %m', 'Vendor model changed without notice', 'Data quality break in a %m feed', 'Quarterly access review', 'Adverse action reasons did not match %m', 'Model drift after retraining %m', 'Privacy request backlog', 'Proxy variable found in %m', 'Agent acted outside its permissions', 'Exam evidence request', 'Customer complaint about an automated decision'];
+  function caseRows() {
+    var key = org() + '|cases'; if (CACHE[key]) return CACHE[key];
+    var o = org(), mn = models().filter(function (m) { return m.kind === 'Model'; }).map(function (m) { return m.name; }), ppl = people().map(function (p) { return p.name; });
+    var real = {}, out = [];
+    memories().forEach(function (m) { var c = String(m.caseId || '').replace(/^#/, ''); if (!c) return; (real[c] = real[c] || []).push(m); });
+    (D().caseChannels || []).forEach(function (c) { real[c.caseId] = real[c.caseId] || []; });
+    Object.keys(real).forEach(function (c) {
+      var ms = real[c].slice().sort(function (a, b) { return a.timestamp < b.timestamp ? -1 : 1; }), first = ms[0];
+      out.push({ id: c, title: first ? first.summary : 'Case ' + c, model: first && (first.summary.match(/^[^:]+v\d+(\.\d+)?/) || [''])[0], opened: first ? new Date(first.timestamp) : new Date(2026, 8, 1), closed: null, status: 'Open', owner: (ms.filter(function (m) { return m.authorRole && m.authorRole !== 'system'; })[0] || {}).author || ppl[0], real: ms.length });
+    });
+    for (var i = 0; i < 42; i++) {
+      var h = hash(o + 'case' + i), y = 2019 + Math.floor(i / 6), op = new Date(y, h % 12, 1 + (h >> 4) % 27); if (op > NOW) op = new Date(2026, (h % 8), 3);
+      var cl = new Date(op.getTime() + (5 + h % 70) * 864e5), m = mn[(h >> 6) % Math.max(1, mn.length)] || 'a model';
+      out.push({ id: PREFIX[o] + '-' + String(100 + i * 23 + h % 20).padStart(4, '0'), title: TITLES[h % TITLES.length].replace('%m', m), model: m, opened: op, closed: cl > NOW ? null : cl, status: cl > NOW ? 'Open' : 'Closed', owner: ppl[(h >> 9) % Math.max(1, ppl.length)] || '', gen: 1 });
+    }
+    out.sort(function (a, b) { return b.opened - a.opened; });
+    return (CACHE[key] = out);
+  }
+  function caseTimeline(c) {
+    var key = org() + '|ct|' + c.id; if (CACHE[key]) return CACHE[key];
+    var st = [['Detection', 'Eden', 'Cardinal flagged the issue on ' + (c.model || 'the model')], ['Investigation', 'Watchman', 'Case opened and assigned to ' + c.owner], ['Testing', 'Genesis', 'Counterfactual and fairness tests run; results sealed'], ['Remediation', 'Atonement', 'Fix proposed and tested in shadow'], ['Human approval', 'Atonement', 'Named approvers signed off'], ['Launch', 'Trust Ledger', 'Fix launched at their instruction; launch sealed'], ['Outcome', 'Echo', 'Case closed. Outcome and evidence kept for 7 years.']];
+    var end = c.closed || NOW, step = (end - c.opened) / (st.length - 1), out = [];
+    st.forEach(function (s, i) { if (!c.closed && i > 3) return; out.push({ t: new Date(c.opened.getTime() + step * i), stage: s[0], core: s[1], what: s[2], seal: sealOf(key + i) }); });
+    return (CACHE[key] = out);
+  }
+  function modelEvents(m) {
+    var key = org() + '|m|' + m.name; if (CACHE[key]) return CACHE[key];
+    var h = hash(key), first = 2019 + h % 4, ver = (m.name.match(/v(\d+)\.(\d+)/) || [0, 1, 0]), major = +ver[1] || 1, minor = +ver[2] || 0;
+    var real = memories().filter(function (x) { return String(x.summary || '').indexOf(m.name.replace(/ v\d.*$/, '')) > -1; }).map(function (x) { return { t: new Date(x.timestamp), core: coreOf(x), what: x.summary, who: x.author, seal: String(x.hash || sealOf(x.id)).slice(0, 12), ver: (x.summary.match(/v\d+\.\d+/) || [''])[0] }; });
+    var out = real.slice(), vers = [];
+    for (var a = 1; a <= major; a++) for (var b = 0; b <= (a === major ? minor : 2 + (h % 3)); b++) vers.push('v' + a + '.' + b);
+    var span = NOW - new Date(first, 0, 1);
+    vers.forEach(function (v, i) {
+      var t = new Date(new Date(first, 0, 1).getTime() + span * (i / Math.max(1, vers.length)));
+      var ppl = people(); var who = function (k) { return (ppl[(h >> k) % Math.max(1, ppl.length)] || {}).name || 'Team'; };
+      [[0, 'Genesis', v + ': accuracy, fairness, and security tests run (' + (20 + (hash(v + key) % 30)) + ' tests)', who(2)], [3, 'Eden', v + ': fairness check, ratio ' + (0.78 + (hash(v) % 18) / 100).toFixed(2), 'Eden Core'], [5, 'Obsidian', v + ': fraud and abuse check passed', 'Obsidian Core'], [8, 'Atonement', v + ': launch approved by ' + who(4), who(4)], [9, 'Trust Ledger', v + ': launch sealed', 'Trust Ledger']].forEach(function (e) {
+        out.push({ t: new Date(t.getTime() + e[0] * 864e5), core: e[1], what: e[2], who: e[3], seal: sealOf(key + v + e[0]), ver: v });
+      });
+    });
+    out.sort(function (a, b) { return b.t - a.t; });
+    return (CACHE[key] = out);
+  }
+
+  // ── State and navigation ─────────────────────────────────────────
+  var ROOMS = {
+    hall: [['memories', 'Logged events'], ['x-score', 'Score history']],
+    cases: [['x-cases', 'All cases'], ['x-casehist', 'Case history'], ['conversations', 'Conversations'], ['ignored', 'Ignored flags']],
+    models: [['x-models', 'Models and AI systems'], ['lineage', 'Version lineage']],
+    people: [['x-people', 'Everyone'], ['peoplelog', 'People log'], ['pmprofiles', 'Passport profiles']],
+    decisions: [['receipts', 'Decision receipts']],
+    wb: [['whistleblower', 'Sealed reports']],
+    desk: [['x-pins', 'Pinned memories'], ['myworkspace', 'My notes and activity']]
+  };
+  var NATIVE_FIRST = { hall: 'memories', cases: 'conversations', models: 'lineage', people: 'peoplelog', decisions: 'receipts', wb: 'whistleblower', desk: 'myworkspace' };
+  var X = { room: 'hall', bucket: 'memories', detail: null, f: {}, page: 0 };
+  window.__echoX = 1;
+  var oEnter = window.echoEnterRoom;
+  window.echoEnterRoom = echoEnterRoom = function (id) { X.room = ROOMS[id] ? id : 'hall'; echoGo(ROOMS[X.room][0][0]); };
+  window.echoGo = function (b) {
+    X.bucket = b; X.detail = null; X.f = {}; X.page = 0;
+    var native = b.indexOf('x-') !== 0;
+    try { if (typeof echoSwitchTab === 'function') echoSwitchTab(native ? b : NATIVE_FIRST[X.room]); } catch (e) {}
+    render();
+  };
+  window.echoOpen = function (kind, id) { X.detail = { kind: kind, id: id }; X.f = {}; X.page = 0; render(); var p = document.getElementById('echo-x-panel'); if (p) { window.__deepLinkUntil = Date.now() + 2500; p.scrollIntoView({ behavior: 'smooth', block: 'start' }); } };
+  window.echoBack = function () { X.detail = null; X.f = {}; X.page = 0; render(); };
+  window.echoF = function (k, v) { X.f[k] = v; X.page = 0; render(true); };
+  window.echoPage = function (d) { X.page = Math.max(0, X.page + d); render(true); };
+  window.echoCaseGo = function (id) {
+    var c = caseRows().filter(function (x) { return x.id === id; })[0];
+    if (c && !c.gen && typeof echoCaseSet === 'function' && (D().echoMemories || []).some(function (m) { return String(m.caseId || '').replace(/^#/, '') === id; })) { X.room = 'cases'; echoGo('x-casehist'); echoCaseSet(id); return; }
+    echoOpen('case', id);
+  };
+
+  function sel(k, label, opts) { return '<label style="font-size:11.5px;color:#64748b">' + label + ' <select onchange="echoF(\'' + k + '\',this.value)"><option value="">All</option>' + opts.map(function (o) { return '<option' + (X.f[k] === o ? ' selected' : '') + '>' + esc(o) + '</option>'; }).join('') + '</select></label>'; }
+  function search(ph) { return '<input placeholder="' + esc(ph) + '" value="' + esc(X.f.q || '') + '" oninput="clearTimeout(window.__exQ);var v=this.value;window.__exQ=setTimeout(function(){echoF(\'q\',v)},250)" style="flex:1;min-width:200px">'; }
+  function years(list, get) { var y = {}; list.forEach(function (x) { y[get(x).getFullYear()] = 1; }); return Object.keys(y).sort().reverse(); }
+  function pager(total, per) {
+    var from = X.page * per, to = Math.min(total, from + per);
+    return '<div class="ex-pager"><span>Showing ' + (total ? from + 1 : 0) + '–' + to + ' of ' + total.toLocaleString() + '</span><span>' + (X.page > 0 ? '<button type="button" onclick="echoPage(-1)">Previous</button> ' : '') + (to < total ? '<button type="button" onclick="echoPage(1)">Next</button>' : '') + '</span></div>';
+  }
+  function pill(t, c) { return '<span class="ex-pill" style="color:' + c[0] + ';background:' + c[1] + '">' + esc(t) + '</span>'; }
+  function coreTag(c) { return '<span style="font-size:11px;font-weight:700;color:' + (CORE_COL[c] || '#475569') + '">' + esc(c) + '</span>'; }
+  function q(x) { return !X.f.q || JSON.stringify(x).toLowerCase().indexOf(String(X.f.q).toLowerCase()) > -1; }
+
+  function timelineTable(list, cols) {
+    var per = 25, f = X.f;
+    var rows = list.filter(function (e) { return q(e) && (!f.year || String(e.t.getFullYear()) === f.year) && (!f.core || e.core === f.core) && (!f.act || e.act === f.act) && (!f.ver || e.ver === f.ver); });
+    var page = rows.slice(X.page * per, X.page * per + per);
+    return '<div class="ex-wrap"><table class="ex-tbl"><thead><tr>' + cols.map(function (c) { return '<th>' + c[0] + '</th>'; }).join('') + '</tr></thead><tbody>' +
+      (page.map(function (e) { return '<tr>' + cols.map(function (c) { return '<td>' + c[1](e) + '</td>'; }).join('') + '</tr>'; }).join('') || '<tr><td colspan="' + cols.length + '" style="color:#64748b">Nothing matches.</td></tr>') +
+      '</tbody></table></div>' + pager(rows.length, per);
+  }
+
+  // ── Panels ───────────────────────────────────────────────────────
+  function pPeople() {
+    if (X.detail && X.detail.kind === 'person') {
+      var p = people().filter(function (x) { return x.name === X.detail.id; })[0]; if (!p) return '';
+      var ev = personEvents(p), cnt = function (a) { return ev.filter(function (e) { return e.act === a; }).length; };
+      var ini = p.name.split(' ').map(function (w) { return w[0]; }).join('').slice(0, 2);
+      return '<button type="button" class="ex-back" onclick="echoBack()">← Everyone</button>' +
+        '<div class="ex-head"><div class="ex-av">' + esc(ini) + '</div><div><div style="font-size:17px;font-weight:700;color:#1a1815">' + esc(p.name) + '</div><div class="ex-sub">' + esc(p.role) + ' · ' + esc(companyName()) + ' · Joined ' + fd(p.joined) + ' · Passport ' + esc(p.passport) + ' · Access: ' + esc(p.access) + '</div></div>' +
+        '<div class="ex-chips"><div class="ex-chip"><b>' + ev.length + '</b><span>Records</span></div><div class="ex-chip"><b>' + cnt('Changed') + '</b><span>Changes</span></div><div class="ex-chip"><b>' + cnt('Tried to change (blocked)') + '</b><span>Blocked</span></div><div class="ex-chip"><b>' + cnt('Approved') + '</b><span>Approvals</span></div><div class="ex-chip"><b>' + cnt('Viewed restricted record') + '</b><span>Restricted views</span></div></div></div>' +
+        '<div class="ex-note"><strong>Whistleblower reports:</strong> never linked to a person. Reports are anonymous by design, so they do not appear on anyone’s record, including this one. They live, sealed, under Whistleblower.</div>' +
+        '<div class="ex-bar">' + search('Search what ' + p.name.split(' ')[0] + ' did') + sel('year', 'Year', years(ev, function (e) { return e.t; })) + sel('core', 'Core', CORES) + sel('act', 'Action', Object.keys(ACT_COL)) + '</div>' +
+        timelineTable(ev, [['When', function (e) { return '<span style="white-space:nowrap;color:#475569">' + fd(e.t) + '</span>'; }], ['Action', function (e) { return pill(e.act, ACT_COL[e.act] || ACT_COL.Logged); }], ['Core', function (e) { return coreTag(e.core); }], ['What happened', function (e) { return esc(e.what); }], ['Sealed', function (e) { return '<span style="font-family:monospace;font-size:11px;color:#64748b">' + esc(e.seal) + '</span>'; }]]);
+    }
+    var ps = people().map(function (p) { var ev = personEvents(p); return { p: p, n: ev.length, last: ev[0] }; }).filter(function (x) { return q(x.p); });
+    return '<div class="ex-note">Everyone at ' + esc(companyName()) + ' who has touched an AI system. Click a name for everything they have done, back to the day they joined.</div>' +
+      '<div class="ex-bar">' + search('Search people by name or role') + '</div>' +
+      '<div class="ex-wrap"><table class="ex-tbl"><thead><tr><th>Person</th><th>Role</th><th>Joined</th><th>Records</th><th>Last activity</th><th>Access</th></tr></thead><tbody>' +
+      ps.map(function (x) { return '<tr class="ex-click" onclick="echoOpen(\'person\',' + esc(JSON.stringify(x.p.name)) + ')"><td><div class="ex-name">' + esc(x.p.name) + '</div></td><td>' + esc(x.p.role) + '</td><td style="white-space:nowrap">' + fd(x.p.joined) + '</td><td>' + x.n + '</td><td><div>' + esc(x.last ? x.last.what : '') + '</div><div class="ex-sub">' + (x.last ? fd(x.last.t) : '') + '</div></td><td>' + esc(x.p.access) + '</td></tr>'; }).join('') + '</tbody></table></div>';
+  }
+  function pCases() {
+    if (X.detail && X.detail.kind === 'case') {
+      var c = caseRows().filter(function (x) { return x.id === X.detail.id; })[0]; if (!c) return '';
+      var tl = caseTimeline(c);
+      return '<button type="button" class="ex-back" onclick="echoBack()">← All cases</button>' +
+        '<div class="ex-head"><div><div style="font-size:17px;font-weight:700;color:#1a1815">' + esc(c.id) + ': ' + esc(c.title) + '</div><div class="ex-sub">' + esc(c.model || '') + ' · Owner ' + esc(c.owner) + ' · Opened ' + fd(c.opened) + (c.closed ? ' · Closed ' + fd(c.closed) : ' · Still open') + '</div></div>' +
+        '<div class="ex-chips"><div class="ex-chip"><b>' + tl.length + '</b><span>Records</span></div><div class="ex-chip"><b>' + Math.max(1, Math.round(((c.closed || NOW) - c.opened) / 864e5)) + '</b><span>Days</span></div></div></div>' +
+        '<div class="ex-wrap"><table class="ex-tbl"><thead><tr><th>When</th><th>Stage</th><th>Core</th><th>What happened</th><th>Sealed</th></tr></thead><tbody>' +
+        tl.map(function (e) { return '<tr><td style="white-space:nowrap;color:#475569">' + fd(e.t) + '</td><td>' + pill(e.stage, ['#1e3a8a', '#eff6ff']) + '</td><td>' + coreTag(e.core) + '</td><td>' + esc(e.what) + '</td><td style="font-family:monospace;font-size:11px;color:#64748b">' + esc(e.seal) + '</td></tr>'; }).join('') + '</tbody></table></div>';
+    }
+    var all = caseRows(), f = X.f, per = 25;
+    var rows = all.filter(function (c) { return q(c) && (!f.year || String(c.opened.getFullYear()) === f.year) && (!f.status || c.status === f.status) && (!f.owner || c.owner === f.owner); });
+    var page = rows.slice(X.page * per, X.page * per + per);
+    return '<div class="ex-note">Every case ' + esc(companyName()) + ' has opened, back to 2019. Click one for its full timeline, from detection to outcome.</div>' +
+      '<div class="ex-bar">' + search('Search by case number, model, or what happened') + sel('year', 'Opened', years(all, function (c) { return c.opened; })) + sel('status', 'Status', ['Open', 'Closed']) + sel('owner', 'Owner', people().map(function (p) { return p.name; })) + '</div>' +
+      '<div class="ex-wrap"><table class="ex-tbl"><thead><tr><th>Case</th><th>What happened</th><th>Model</th><th>Opened</th><th>Closed</th><th>Owner</th><th>Status</th></tr></thead><tbody>' +
+      page.map(function (c) { return '<tr class="ex-click" onclick="echoCaseGo(' + esc(JSON.stringify(c.id)) + ')"><td class="ex-name" style="white-space:nowrap">' + esc(c.id) + '</td><td>' + esc(c.title) + '</td><td>' + esc(c.model || '') + '</td><td style="white-space:nowrap">' + fd(c.opened) + '</td><td style="white-space:nowrap">' + (c.closed ? fd(c.closed) : '—') + '</td><td>' + esc(c.owner) + '</td><td>' + pill(c.status, c.status === 'Open' ? ['#B45309', '#fffbeb'] : ['#15803D', '#f0fdf4']) + '</td></tr>'; }).join('') +
+      '</tbody></table></div>' + pager(rows.length, per);
+  }
+  function pModels() {
+    if (X.detail && X.detail.kind === 'model') {
+      var m = models().filter(function (x) { return x.name === X.detail.id; })[0]; if (!m) return '';
+      var ev = modelEvents(m), vs = {}; ev.forEach(function (e) { if (e.ver) vs[e.ver] = 1; });
+      return '<button type="button" class="ex-back" onclick="echoBack()">← Models and AI systems</button>' +
+        '<div class="ex-head"><div><div style="font-size:17px;font-weight:700;color:#1a1815">' + esc(m.name) + '</div><div class="ex-sub">' + esc(m.kind) + (m.owner ? ' · Owner ' + esc(m.owner) : '') + (m.status ? ' · ' + esc(m.status) : '') + (m.parts ? ' · Parts: ' + esc(m.parts.join(', ')) : '') + (m.what ? ' · ' + esc(m.what) : '') + '</div></div>' +
+        '<div class="ex-chips"><div class="ex-chip"><b>' + Object.keys(vs).length + '</b><span>Versions</span></div><div class="ex-chip"><b>' + ev.length + '</b><span>Records</span></div>' + (m.score ? '<div class="ex-chip"><b>' + m.score + '</b><span>Trust score</span></div>' : '') + '</div></div>' +
+        '<div class="ex-bar">' + search('Search this model’s record') + sel('year', 'Year', years(ev, function (e) { return e.t; })) + sel('core', 'Core', CORES) + sel('ver', 'Version', Object.keys(vs).sort().reverse()) + '</div>' +
+        timelineTable(ev, [['When', function (e) { return '<span style="white-space:nowrap;color:#475569">' + fd(e.t) + '</span>'; }], ['Version', function (e) { return esc(e.ver || ''); }], ['Core', function (e) { return coreTag(e.core); }], ['What happened', function (e) { return esc(e.what); }], ['By', function (e) { return esc(e.who || ''); }], ['Sealed', function (e) { return '<span style="font-family:monospace;font-size:11px;color:#64748b">' + esc(e.seal) + '</span>'; }]]);
+    }
+    var all = models(), f = X.f;
+    var rows = all.filter(function (m) { return q(m) && (!f.kind || m.kind === f.kind); });
+    return '<div class="ex-note">Every model, AI agent, AI system, and vendor AI ' + esc(companyName()) + ' runs. Click one for every version and every check Eden, Obsidian, Genesis, Atonement, and Trust Ledger ran on it.</div>' +
+      '<div class="ex-bar">' + search('Search models, agents, systems, vendors') + sel('kind', 'Type', ['Model', 'AI agent', 'AI system', 'Vendor AI']) + '</div>' +
+      '<div class="ex-wrap"><table class="ex-tbl"><thead><tr><th>Name</th><th>Type</th><th>Owner</th><th>Status</th><th>Trust score</th><th>Records</th></tr></thead><tbody>' +
+      rows.map(function (m) { return '<tr class="ex-click" onclick="echoOpen(\'model\',' + esc(JSON.stringify(m.name)) + ')"><td class="ex-name">' + esc(m.name) + '</td><td>' + esc(m.kind) + '</td><td>' + esc(m.owner || '—') + '</td><td>' + esc(m.status || '') + '</td><td>' + (m.score || '—') + '</td><td>' + modelEvents(m).length + '</td></tr>'; }).join('') + '</tbody></table></div>';
+  }
+  function pCaseHist() { return '<div id="echo-x-casehist-slot"></div>'; }
+  function pPins() {
+    var o = org(), me = (window.getActivePersona && getActivePersona() || {}).name || 'You';
+    window.__xPins = window.__xPins || {};
+    var k = o + '|' + me;
+    if (!window.__xPins[k]) window.__xPins[k] = memories().filter(function (m) { return /high|critical/i.test(m.severity || '') || /approved|deployed|case-opened/.test(m.eventType); }).slice(0, 8).map(function (m, i) { return { id: m.id, pinned: new Date(NOW.getTime() - (i + 1) * 2.3 * 864e5) }; });
+    var pins = window.__xPins[k], byId = {}; memories().forEach(function (m) { byId[m.id] = m; });
+    var TYPE = function (m) { return /detected/.test(m.eventType) ? 'Finding' : /decision|approved/.test(m.eventType) ? 'Decision' : /remediation|deployed|updated/.test(m.eventType) ? 'Fix' : /score/.test(m.eventType) ? 'Score' : 'Case'; };
+    var rows = pins.map(function (p) { var m = byId[p.id]; return m ? { p: p, m: m, type: TYPE(m) } : null; }).filter(Boolean).filter(function (x) { return q(x.m) && (!X.f.type || x.type === X.f.type) && (!X.f.core || coreOf(x.m) === X.f.core); });
+    return '<div class="ex-note">Memories you pinned to come back to. Pin any memory from Logged events; unpin here.</div>' +
+      '<div class="ex-bar">' + search('Search your pinned memories') + sel('type', 'Type', ['Finding', 'Decision', 'Fix', 'Score', 'Case']) + sel('core', 'Core', CORES) + '</div>' +
+      '<div class="ex-wrap"><table class="ex-tbl"><thead><tr><th>Pinned</th><th>Memory</th><th>Type</th><th>Core</th><th>Case</th><th>Happened</th><th></th></tr></thead><tbody>' +
+      (rows.map(function (x) { var cs = String(x.m.caseId || '').replace(/^#/, ''); return '<tr><td style="white-space:nowrap;color:#475569">' + fd(x.p.pinned) + '</td><td><div class="ex-name" style="font-weight:600">' + esc(x.m.summary) + '</div><div class="ex-sub">' + esc(x.m.author) + '</div></td><td>' + pill(x.type, ['#6d28d9', '#f5f3ff']) + '</td><td>' + coreTag(coreOf(x.m)) + '</td><td>' + (cs ? '<a href="javascript:void(0)" onclick="echoCaseGo(' + esc(JSON.stringify(cs)) + ')" style="color:#1e3a8a;font-weight:700">' + esc(cs) + '</a>' : '—') + '</td><td style="white-space:nowrap">' + fd(x.m.timestamp) + '</td><td><button type="button" class="btn-ghost" style="font-size:11px" onclick="echoUnpin(' + esc(JSON.stringify(x.p.id)) + ')">Unpin</button></td></tr>'; }).join('') || '<tr><td colspan="7" style="color:#64748b">No pinned memories match.</td></tr>') +
+      '</tbody></table></div>';
+  }
+  window.echoUnpin = function (id) { var me = (window.getActivePersona && getActivePersona() || {}).name || 'You', k = org() + '|' + me; window.__xPins[k] = (window.__xPins[k] || []).filter(function (p) { return p.id !== id; }); render(true); };
+  var SCORE = { fin: [76, 76, 77, 77, 78, 77, 78, 75, 76, 78, 80, 81], ad: [78, 78, 77, 77, 76, 76, 75, 73, 73, 74, 74, 74], health: [80, 80, 81, 81, 82, 81, 82, 83, 82, 83, 83, 83], fed: [74, 74, 73, 73, 72, 72, 72, 71, 71, 71, 71, 71] };
+  var SCORE_WHY = { fin: [[4, 'ZIP code proxy found in Credit Scoring v3.4', -3], [2, 'Credit Scoring v3.5 enters shadow; fairness ratio 0.83', 2], [0, 'Exam evidence packet assembled', 1]], ad: [[5, 'Fleet Health v2.4 climate proxy found', -2], [3, 'Shadow fix for Fleet Health at 5%', 1]], health: [[4, 'Age proxy found in Claims Adjudication', -2], [1, 'CMO approved the shadow fix', 2]], fed: [[4, 'Proxy variable found before launch', -1], [1, 'Appeals path design started', 0]] };
+  function pScore() {
+    return '<div class="ex-note">Your Trust Score month by month, with what moved it. Every change is sealed in Echo.</div>' +
+      '<section class="tsv2-section" style="margin:0 0 14px"><div class="tsv2-section-title">Trust Score History</div><div class="tsv2-section-sub">Hover any month for full context · Dashed line = 80 certification line · Pins show what moved the score</div>' +
+      '<div class="tsv2-history-canvas-wrap" id="ex-score-wrap" style="position:relative;min-height:260px;height:260px;margin-top:10px"><div id="ex-score-svg" style="position:absolute;inset:0"></div><div id="ex-score-pins"></div></div></section>' +
+      '<div class="ex-wrap"><table class="ex-tbl"><thead><tr><th>When</th><th>What moved the score</th><th>Change</th></tr></thead><tbody>' +
+      (SCORE_WHY[org()] || []).map(function (w) { var d = new Date(NOW.getFullYear(), NOW.getMonth() - w[0], 1); return '<tr><td style="white-space:nowrap">' + MON[d.getMonth()] + ' ' + d.getFullYear() + '</td><td>' + esc(w[1]) + '</td><td style="font-weight:700;color:' + (w[2] > 0 ? '#15803D' : w[2] < 0 ? '#B91C1C' : '#475569') + '">' + (w[2] > 0 ? '+' : '') + w[2] + '</td></tr>'; }).join('') + '</tbody></table></div>';
+  }
+  function drawScore() {
+    var wrap = document.getElementById('ex-score-wrap'); if (!wrap || typeof cardinalHistoryChartRender !== 'function' || typeof d3 === 'undefined') return;
+    var vals = SCORE[org()] || SCORE.fin, why = SCORE_WHY[org()] || [];
+    var pts = vals.map(function (v, i) { var d = new Date(NOW.getFullYear(), NOW.getMonth() - (11 - i), 1), p = { month: MON[d.getMonth()] + ' ' + d.getFullYear(), v: v }; why.forEach(function (w) { if (11 - w[0] === i) p.annotation = { summary: w[1] }; }); return p; });
+    var last = vals[vals.length - 1];
+    cardinalHistoryChartRender({ wrap: wrap, svgWrap: document.getElementById('ex-score-svg'), pinsWrap: document.getElementById('ex-score-pins'), hist: pts, getValue: function (p) { return p.v; }, lineColor: last >= 80 ? '#22c55e' : last >= 70 ? '#FACC15' : '#ef4444', yDomain: [60, 100], yTickValues: [60, 70, 80, 90, 100], gridStep: 10, gradientIdBase: 'ex-score-grad', gradientSuffix: org(), thresholds: [{ y: 80, stroke: 'rgba(34,197,94,0.55)', label: 'Certification (80)', labelAnchor: 'end', labelFill: 'rgba(34,197,94,0.85)' }], thresholdGroupId: null, thresholdTooltip: { title: 'Certification line', body: '80 and above, with no part under 70, meets the Cardinal Standard.' }, pointClass: 'tsv2-pt', pointTooltipTitle: 'Trust Score', pointTooltipLabel: 'Trust Score', pinSourceContext: 'Echo score history', formatPointAnnotation: function (p) { return p.annotation ? p.annotation.summary : ''; }, formatPointTooltipBody: function (p) { return 'Trust Score: <span class="tt-accent">' + p.v + '</span>' + (p.annotation ? '<br>' + esc(p.annotation.summary) : ''); } });
+  }
+
+  // ── Render and keep in place ─────────────────────────────────────
+  function render(keepFocus) {
+    var feed = document.getElementById('echo-memory-feed-section'); if (!feed) return;
+    var bar = document.getElementById('echo-rooms-bar');
+    var sub = document.getElementById('echo-x-subbar');
+    if (!sub) { sub = document.createElement('div'); sub.id = 'echo-x-subbar'; }
+    if (bar && bar.nextElementSibling !== sub) bar.parentNode.insertBefore(sub, bar.nextSibling);
+    sub.innerHTML = (ROOMS[X.room] || ROOMS.hall).map(function (b) { return '<button type="button" class="' + (X.bucket === b[0] ? 'on' : '') + '" onclick="echoGo(\'' + b[0] + '\')">' + b[1] + '</button>'; }).join('');
+    var panel = document.getElementById('echo-x-panel');
+    if (!panel) { panel = document.createElement('div'); panel.id = 'echo-x-panel'; feed.appendChild(panel); }
+    var mine = X.bucket.indexOf('x-') === 0;
+    panel.style.display = mine ? '' : 'none';
+    if (mine) {
+      var ae = document.activeElement, focusPh = keepFocus && ae && ae.tagName === 'INPUT' && panel.contains(ae) ? ae.placeholder : null, caret = focusPh ? ae.selectionStart : 0;
+      var slot = document.getElementById('echo-case-history'), slotKeep = X.bucket === 'x-casehist' && slot && slot.parentNode && slot.parentNode.id === 'echo-x-casehist-slot';
+      if (!slotKeep) panel.innerHTML = X.bucket === 'x-people' ? pPeople() : X.bucket === 'x-cases' ? pCases() : X.bucket === 'x-models' ? pModels() : X.bucket === 'x-pins' ? pPins() : X.bucket === 'x-score' ? pScore() : X.bucket === 'x-casehist' ? pCaseHist() : '';
+      if (X.bucket === 'x-score') setTimeout(drawScore, 30);
+      if (X.bucket === 'x-casehist') { var b = document.getElementById('echo-case-history'); if (b) b.removeAttribute('data-k'); }
+      if (focusPh) { var ni = [].filter.call(panel.querySelectorAll('input'), function (i) { return i.placeholder === focusPh; })[0]; if (ni) { ni.focus(); try { ni.setSelectionRange(caret, caret); } catch (e) {} } }
+    }
+    enforce();
+  }
+  function enforce() {
+    var feed = document.getElementById('echo-memory-feed-section'); if (!feed) return;
+    var mine = X.bucket.indexOf('x-') === 0;
+    var tabs = document.getElementById('echo-feed-tabs'); if (tabs && tabs.style.display !== 'none') tabs.style.display = 'none';
+    [].forEach.call(feed.children, function (c) {
+      if (c.id === 'echo-rooms-bar' || c.id === 'echo-x-subbar' || c.id === 'echo-x-panel' || c.id === 'echo-feed-tabs') return;
+      if (mine) { if (c.style.display !== 'none') { c.__exHid = 1; c.style.display = 'none'; } }
+      else if (c.__exHid) { c.__exHid = 0; c.style.display = ''; }
+    });
+    // Echo shows the record, not the live stream; people panels live under People.
+    ['echo-cardinal-hero', 'echo-your-view-panel', 'echo-recent-access-panel'].forEach(function (id) { var e = document.getElementById(id); if (e && e.style.display !== 'none') e.style.display = 'none'; });
+    var ch = document.getElementById('echo-case-history');
+    if (ch) { var inSlot = ch.parentNode && ch.parentNode.id === 'echo-x-casehist-slot'; if (!inSlot && ch.style.display !== 'none') ch.style.display = 'none'; if (inSlot && ch.style.display === 'none') ch.style.display = ''; }
+    // The "Case history" tile goes to Cases > Case history.
+    var bar = document.getElementById('echo-rooms-bar');
+    if (bar) [].forEach.call(bar.children, function (t) { if (!t.__ex && /^Case history/.test((t.textContent || '').trim())) { t.__ex = 1; t.onclick = function (e) { e.preventDefault(); e.stopPropagation(); X.room = 'cases'; echoGo('x-casehist'); }; } });
+  }
+  var lastOrg = null;
+  setInterval(function () {
+    var scr = document.getElementById('screen-echo'); if (!scr || scr.offsetParent === null) return;
+    if (lastOrg !== org()) { lastOrg = org(); CACHE = {}; X.detail = null; render(); return; }
+    if (!document.getElementById('echo-x-subbar') || !document.getElementById('echo-x-panel')) { render(); return; }
+    enforce();
+  }, 700);
 })();
 
 </script>
