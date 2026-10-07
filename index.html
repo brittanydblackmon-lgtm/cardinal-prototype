@@ -49933,7 +49933,7 @@ window.CARDINAL_PLACES = {
 // pop-up; 'Adam' and 'Team' filters").
 (function () {
   var TABS = {
-    genesis: [['Tests', ['gnws', 'gen-discovery-alert', 'gen-scenarios']], ['Counterfactual', ['gen-tab-counterfactual']], ['Intersectionality', ['gen-tab-intersectionality']], ['Coverage gaps', ['gen-tab-coverage']], ['A/B and shadow', ['gen-tab-ab']], ['Cohorts', ['gen-tab-cohort']], ['Adam', ['gen-tab-adam']], ['Profiles', ['gen-tab-pmprofiles']], ['Compare models', ['gen-tab-compare']], ['Activity log', ['genesis-log-panel']]],
+    genesis: [['Tests', ['gnws', 'gen-tab-ab', 'gen-discovery-alert', 'gen-scenarios']], ['Fairness checks', ['gen-tab-counterfactual', 'gen-tab-intersectionality', 'gen-tab-coverage']], ['People and cohorts', ['gen-tab-cohort', 'gen-tab-pmprofiles']], ['Adam', ['gen-tab-adam']], ['Compare models', ['gen-tab-compare']], ['Activity log', ['genesis-log-panel']]],
     atonement: [['Fixes', ['atws']], ['Pipeline', ['atonement-deep-view']], ['Recommended fix', ['at-tab-fix']], ['Shadow deployment', ['at-tab-shadow']], ['Remediation cohorts', ['at-tab-cohorts']], ['Regulatory simulation', ['at-tab-simulation']], ['Legal defense', ['at-tab-defense']]]
   };
   var HIDE = { genesis: ['gen-overview-grid', 'gen-isolate-bar'], atonement: ['at-tabs', 'echo-tab-forensics', 'echo-tab-guardrails'] };
@@ -51538,6 +51538,14 @@ window.CARDINAL_PLACES = {
   css.textContent = '.lucid-agent-card.is-eve{background:linear-gradient(rgba(21,128,61,.08) 0%,#fff 110px)!important}.lucid-agent-card.is-adam{background:linear-gradient(rgba(21,128,61,.05) 0%,#fff 110px)!important}';
   document.head.appendChild(css);
 })();
+(function () {
+  // Genesis tabs explain themselves on hover.
+  var TIP = { 'Tests': 'Every test in one list: A/B and shadow tests, LLM evaluations, and security tests.', 'Fairness checks': 'Counterfactual (would the decision change if only one thing, like ZIP code, changed?), intersectionality (groups combined, like Black women over 60), and coverage gaps (groups the model has too little data on).', 'People and cohorts': 'The groups and synthetic test people Genesis uses to check models.', 'Adam': 'Tests Adam, Cardinal’s testing agent, designed and ran.', 'Compare models': 'Two model versions side by side.', 'Activity log': 'Everything done in Genesis, by whom, and when.' };
+  setInterval(function () {
+    var bar = document.querySelector('#screen-genesis .core-tabbar'); if (!bar) return;
+    [].forEach.call(bar.children, function (b) { var t = b.textContent.trim(); if (TIP[t] && b.title !== TIP[t]) b.title = TIP[t]; });
+  }, 1000);
+})();
 
 </script>
 
@@ -51767,6 +51775,119 @@ window.CARDINAL_PLACES = {
     }
   }
   setInterval(tick, 800);
+})();
+
+</script>
+
+<script data-p="p7_scale">
+// 10/7 (Brittany: "make it look like a real system"). Blackmoor has about 4.5M customers and about 20 models plus
+// agents and vendor AI; people lists page through millions of profiles; Genesis's activity log has real entries;
+// cohort lists use the table style (headers, search, filters, dates, white and beige rows).
+(function () {
+  function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;'); }
+  function ago(n) { var d = new Date(); d.setDate(d.getDate() - n); return d; }
+  function iso(d) { return d.toISOString().slice(0, 10); }
+  function fmtD(d) { return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }); }
+  window.CARDINAL_ORG_FACTS = { fin: { customers: 4512880, states: 38, statesList: 'NY, CA, TX, FL, IL, GA, NJ, PA, OH, NC and 28 more', product: 'Personal loans, credit lines, auto loans' } };
+
+  // About 20 models for Blackmoor (adds to the existing 9).
+  var ADD = [['Income Verification v2.0', 0.88, 'Grace Liu', 6], ['Credit Line Increase v1.6', 0.83, 'Nina Roberts', 12], ['Personal Loan Pricing v3.1', 0.86, 'Hannah Brooks', 9], ['Small Business Lending v1.2', 0.81, 'Nina Roberts', 15], ['Mortgage Pre-qualification v2.4', 0.85, 'Hannah Brooks', 21], ['Account Opening KYC v4.0', 0.92, 'Daniel Okafor', 4], ['Transaction Fraud v5.2', 0.95, 'Daniel Okafor', 2], ['Synthetic Identity Detector v1.8', 0.91, 'Daniel Okafor', 8], ['Device Risk Scoring v2.3', 0.89, 'Grace Liu', 11], ['Hardship Program Eligibility v1.1', 0.82, 'Marco Ruiz', 18], ['Marketing Propensity v4.5', 0.84, 'Hannah Brooks', 14], ['Customer Churn v2.0', 0.9, 'Hannah Brooks', 25], ['Payment Default Early Warning v1.4', 0.8, 'Marco Ruiz', 7]];
+  if (window.CARDINAL_MODELS && !window.__finModelsAdded) {
+    window.__finModelsAdded = true;
+    ADD.forEach(function (m) { CARDINAL_MODELS.push({ name: m[0], industry: 'fin', status: 'live', trustScore: Math.round(70 + m[1] * 22), di: m[1], lastReview: iso(ago(m[3])), owner: m[2], cases: [], deployedDate: iso(ago(120 + m[3] * 9)), id: 'FIN_' + m[0].toUpperCase().replace(/[^A-Z0-9]+/g, '_') }); });
+  }
+
+  if (window.CARDINAL_COHORTS && !window.__finCohortsAdded) {
+    window.__finCohortsAdded = true;
+    [['COHORT-0891', 'Auto Loan v2.1 re-review', 'remediation', 456, 'in-progress', 312, 'Nina Roberts', 44, 'FIN-0891'], ['COHORT-0842', 'Collections pause: 30-60 days past due', 'remediation', 56, 'in-progress', 41, 'Marco Ruiz', 38, 'FIN-0842'], ['TEST-492', 'Pacific Islander applicants', 'test', 500, 'complete', null, 'Adam (AI)', 33, null], ['TEST-493', 'Native American applicants', 'test', 400, 'running', null, 'Adam (AI)', 12, null], ['TEST-640', 'Thin-file first-time borrowers', 'test', 1200, 'complete', null, 'Nina Roberts', 21, 'FIN-1203'], ['TEST-641', 'Applicants 75+ on fixed income', 'test', 800, 'running', null, 'Adam (AI)', 6, null], ['SYN-189', 'Synthetic identity ring: 47 applications, 1 device', 'synthetic', 200, 'complete', null, 'Adam (AI)', 40, null], ['SYN-204', 'Geography-heavy fraud flags (legitimate applicants)', 'synthetic', 120, 'running', null, 'Adam (AI)', 3, 'FIN-1203'], ['COHORT-2340', 'Underwriting v4.1 drift watch', 'remediation', 134, 'monitoring', 0, 'Grace Liu', 26, 'FIN-2340'], ['TEST-650', 'Small-business owners with variable income', 'test', 600, 'complete', null, 'Hannah Brooks', 52, null]].forEach(function (c) {
+      if (CARDINAL_COHORTS.some(function (x) { return x.id === c[0]; })) return;
+      CARDINAL_COHORTS.push({ id: c[0], name: c[1], type: c[2], industry: 'fin', size: c[3], status: c[4], restored: c[5], owner: c[6], linkedCase: c[8], created: iso(ago(c[7])) });
+    });
+  }
+  // Shared table helpers.
+  var TH = 'text-align:left;padding:9px 10px;font-size:11.5px;font-weight:700;color:#475569;background:#f3f0e9';
+  var TD = 'padding:9px 10px;font-size:12px;color:#1a1815';
+  var INP = 'font:inherit;font-size:12px;padding:7px 9px;border:1px solid rgba(26,24,21,.15);border-radius:8px;background:#fff';
+  function filterBar(id, opts) {
+    return '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:0 0 10px"><input id="' + id + '-q" placeholder="' + esc(opts.ph || 'Search') + '" style="' + INP + ';flex:1;min-width:180px">' + (opts.selects || []).map(function (s) { return '<select id="' + id + '-' + s[0] + '" style="' + INP + '">' + s[1].map(function (o) { return '<option value="' + esc(o[0]) + '">' + esc(o[1]) + '</option>'; }).join('') + '</select>'; }).join('') +
+      '<label style="font-size:11.5px;color:#475569;display:flex;align-items:center;gap:5px">From<input type="date" id="' + id + '-from" style="' + INP + '"></label><label style="font-size:11.5px;color:#475569;display:flex;align-items:center;gap:5px">To<input type="date" id="' + id + '-to" style="' + INP + '"></label></div>';
+  }
+  function wire(id, rerender) { ['q', 'from', 'to', 'who', 'st', 'type'].forEach(function (k) { var e = document.getElementById(id + '-' + k); if (e && !e.__w) { e.__w = 1; e.addEventListener(k === 'q' ? 'input' : 'change', rerender); } }); }
+  function val(id, k) { var e = document.getElementById(id + '-' + k); return e ? e.value : ''; }
+  function passes(id, text, dateIso, extra) {
+    var q = val(id, 'q').toLowerCase(), fr = val(id, 'from'), to = val(id, 'to');
+    if (q && text.toLowerCase().indexOf(q) < 0) return false;
+    if (fr && dateIso < fr) return false; if (to && dateIso > to) return false;
+    return extra ? extra() : true;
+  }
+
+  // Genesis activity log as a filterable table, seeded with real activity.
+  var LOG = { fin: [[0, '09:12', 'Adam (AI)', 'adam', 'Started a 7-day test of four income-feature combinations', 'Credit Scoring v3.5'], [0, '08:55', 'Adam (AI)', 'adam', 'Shadow check: fairness ratio 0.83 on 3,241 real decisions', 'Credit Scoring v3.5'], [1, '16:20', 'Nina Roberts', 'team', 'Reviewed the counterfactual results and signed the findings', 'Credit Scoring v3.4'], [1, '11:05', 'Lisa Torres', 'team', 'Added a note: re-review group needs plain-language adverse action reasons', 'FIN-1203'], [2, '14:40', 'Adam (AI)', 'adam', 'Prompt-injection red team: 2 of 240 attack prompts got through', 'Collections AI v1.3'], [3, '10:15', 'Grace Liu', 'team', 'Built the shadow pipeline for 5% of live decisions', 'Credit Scoring v3.5'], [4, '15:30', 'Riley Whitmore', 'team', 'Asked Adam to test whether geography in fraud flags affects approvals', 'Fraud Screening v2.7'], [5, '09:45', 'Adam (AI)', 'adam', 'Generated 500 synthetic Pacific Islander applicants to close a coverage gap', 'TEST-492'], [7, '13:00', 'Hannah Brooks', 'team', 'Evaluated the Pre-qual Chatbot at two temperatures: accuracy and cost', 'Pre-qual Chatbot (vendor)'], [9, '10:30', 'Adam (AI)', 'adam', 'Counterfactual: swapping ZIP code alone flips 38% of past denials', 'Credit Scoring v3.4'], [12, '17:10', 'Nina Roberts', 'team', 'Compared v3.4 and v3.5 on accuracy and default rate', 'Credit Scoring v3.5'], [16, '08:40', 'Adam (AI)', 'adam', 'Stress test on 5,000 synthetic applicants', 'Underwriting v4.1'], [21, '12:20', 'Daniel Okafor', 'team', 'Retested the fraud model on thin-file applicants', 'Fraud Screening v2.7'], [28, '15:05', 'Adam (AI)', 'adam', 'Coverage scan: 3 groups under-represented in training data', 'Credit Scoring v3.4']] };
+  function logRender() {
+    var el = document.getElementById('genesis-log-entries'); if (!el) return;
+    var o = window.currentOrg || 'ad', rows = (LOG[o] || LOG.fin).map(function (r) { return { d: ago(r[0]), t: r[1], who: r[2], kind: r[3], what: r[4], ref: r[5] }; });
+    ((window.genesisLog || {})[o] || []).forEach(function (e) { rows.unshift({ d: new Date(), t: e.time || '', who: e.author || 'You', kind: e.type === 'auto' ? 'adam' : 'team', what: String(e.entry || '').replace(/<[^>]+>/g, ''), ref: '' }); });
+    if (!document.getElementById('glog-q')) el.insertAdjacentHTML('beforebegin', filterBar('glog', { ph: 'Search activity, people, models', selects: [['who', [['', 'Everyone'], ['adam', 'Adam'], ['team', 'Team']]]] }));
+    wire('glog', logRender);
+    var who = val('glog', 'who'), list = rows.filter(function (r) { return passes('glog', r.who + ' ' + r.what + ' ' + r.ref, iso(r.d), function () { return !who || r.kind === who; }); });
+    el.innerHTML = '<table style="width:100%;border-collapse:separate;border-spacing:0;border:1px solid rgba(26,24,21,.1);border-radius:10px;overflow:hidden"><thead><tr><th style="' + TH + '">When</th><th style="' + TH + '">Who</th><th style="' + TH + '">What happened</th><th style="' + TH + '">Related to</th></tr></thead><tbody>' +
+      list.map(function (r, i) { return '<tr style="background:' + (i % 2 ? '#f7f3ea' : '#fff') + '"><td style="' + TD + ';white-space:nowrap;color:#475569">' + fmtD(r.d) + (r.t ? ' · ' + esc(r.t) : '') + '</td><td style="' + TD + ';font-weight:700;white-space:nowrap">' + esc(r.who) + '</td><td style="' + TD + '">' + esc(r.what) + '</td><td style="' + TD + ';color:#475569">' + esc(r.ref) + '</td></tr>'; }).join('') +
+      '</tbody></table><div style="font-size:11.5px;color:#64748b;margin-top:6px">' + list.length + ' of ' + rows.length + ' entries</div>';
+  }
+  window.renderGenesisLog = renderGenesisLog = function () { logRender(); };
+
+  // Cohorts as a table (Genesis: test cohorts; Atonement: remediation cohorts).
+  function cohortTable(hostId, types, title) {
+    var host = document.getElementById(hostId); if (!host || host.offsetParent === null) return;
+    var o = window.currentOrg || 'ad', id = hostId + '-ct';
+    var all = (window.CARDINAL_COHORTS || []).filter(function (c) { return c.industry === o && (!types || types.indexOf(c.type) > -1); });
+    var box = document.getElementById(id);
+    if (!box) { box = document.createElement('div'); box.id = id; box.className = 'card'; box.style.cssText = 'padding:16px 18px;margin:0 0 14px'; host.insertBefore(box, host.firstChild);
+      box.innerHTML = '<div style="font-size:15px;font-weight:700;color:#1a1815">' + esc(title) + '</div><div style="font-size:12px;color:#64748b;margin:2px 0 10px">' + all.length + ' cohorts. Click a row to open it.</div>' + filterBar(id, { ph: 'Search cohorts, people, cases', selects: [['st', [['', 'All statuses']].concat(all.map(function (c) { return c.status; }).filter(function (v, i, a) { return v && a.indexOf(v) === i; }).map(function (v) { return [v, v.charAt(0).toUpperCase() + v.slice(1).replace(/-/g, ' ')]; }))], ['type', [['', 'All types'], ['remediation', 'Remediation'], ['test', 'Test'], ['synthetic', 'Synthetic']]]] }) + '<div class="ct-body"></div>';
+    }
+    wire(id, function () { box.removeAttribute('data-k'); });
+    var st = val(id, 'st'), ty = val(id, 'type'), key = o + val(id, 'q') + st + ty + val(id, 'from') + val(id, 'to');
+    if (box.getAttribute('data-k') === key) return; box.setAttribute('data-k', key);
+    var list = all.filter(function (c) { return passes(id, c.id + ' ' + c.name + ' ' + (c.owner || '') + ' ' + (c.linkedCase || ''), c.created || '', function () { return (!st || c.status === st) && (!ty || c.type === ty); }); });
+    box.querySelector('.ct-body').innerHTML = '<table style="width:100%;border-collapse:separate;border-spacing:0;border:1px solid rgba(26,24,21,.1);border-radius:10px;overflow:hidden"><thead><tr>' + ['Cohort', 'Name', 'Type', 'People', 'Progress', 'Status', 'Owner', 'Created', 'Case'].map(function (h) { return '<th style="' + TH + '">' + h + '</th>'; }).join('') + '</tr></thead><tbody>' +
+      list.map(function (c, i) { var prog = c.restored != null && c.size ? Math.round(c.restored / c.size * 100) + '%' : '—'; return '<tr style="background:' + (i % 2 ? '#f7f3ea' : '#fff') + ';cursor:pointer" onclick="try{cardinalShowToast(\'' + esc(c.id) + ': ' + esc(c.name).replace(/'/g, '') + '\')}catch(e){}"><td style="' + TD + ';font-weight:700;font-family:monospace">' + esc(c.id) + '</td><td style="' + TD + '">' + esc(c.name) + '</td><td style="' + TD + ';text-transform:capitalize">' + esc(c.type) + '</td><td style="' + TD + '">' + (c.size || 0).toLocaleString() + '</td><td style="' + TD + '">' + prog + '</td><td style="' + TD + ';text-transform:capitalize">' + esc(c.status) + '</td><td style="' + TD + '">' + esc(c.owner || '') + '</td><td style="' + TD + ';white-space:nowrap">' + (c.created ? fmtD(c.created) : '') + '</td><td style="' + TD + '">' + esc(c.linkedCase || '—') + '</td></tr>'; }).join('') +
+      '</tbody></table><div style="font-size:11.5px;color:#64748b;margin-top:6px">' + list.length + ' of ' + all.length + ' cohorts</div>';
+  }
+
+  // Profiles: real scale, with paging.
+  var FIRST = ['Maria', 'Jamal', 'James', 'Sarah', 'Ana', 'David', 'Keisha', 'Luis', 'Priya', 'Tom', 'Grace', 'Omar', 'Linh', 'Rosa', 'Andre', 'Emily', 'Carlos', 'Aisha', 'Ben', 'Mei'];
+  window.__pmPage = 1;
+  window.pmPageGo = function (d) { window.__pmPage = Math.max(1, window.__pmPage + d); var t = document.getElementById('pm-pager'); if (t) t.removeAttribute('data-k'); };
+  function profiles() {
+    var p = document.getElementById('gen-tab-pmprofiles'); if (!p || p.offsetParent === null || (window.currentOrg || 'ad') !== 'fin') return;
+    var F = window.CARDINAL_ORG_FACTS.fin;
+    var SET = { 'Total Profiles': [F.customers.toLocaleString(), 'Customers with decisions on file'], 'Synthetic Personas': ['12,400', 'Adam-generated test people'], 'Flagged Profiles': ['1,203', 'In the FIN-1203 re-review'], 'Repeat Impact Cases': ['38', 'Same person, more than one flag'] };
+    [].forEach.call(p.querySelectorAll('.stat-card'), function (c) { var l = c.querySelector('.stat-label'), v = c.querySelector('.stat-value'), s = c.querySelector('.stat-change'); var k = l && l.textContent.trim(); if (SET[k] && v && v.textContent !== SET[k][0]) { v.textContent = SET[k][0]; if (s) s.textContent = SET[k][1]; } });
+    var t = p.querySelector('table'); if (!t) return;
+    var tb = t.querySelector('tbody'); if (!tb) return;
+    if (!tb.__orig) tb.__orig = tb.innerHTML;
+    var pager = document.getElementById('pm-pager');
+    if (!pager) { pager = document.createElement('div'); pager.id = 'pm-pager'; pager.style.cssText = 'display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:8px;font-size:12px;color:#475569'; t.parentNode.insertBefore(pager, t.nextSibling); }
+    var page = window.__pmPage, per = 25, total = F.customers, key = 'p' + page;
+    if (pager.getAttribute('data-k') === key) return; pager.setAttribute('data-k', key);
+    if (page === 1) tb.innerHTML = tb.__orig;
+    else {
+      var rows = '', seed = page * 7919;
+      for (var i = 0; i < per; i++) {
+        var n = (seed + i * 104729) % 4096, deny = (n % 9) === 0, flags = deny ? 1 + (n % 3) : (n % 23 === 0 ? 1 : 0);
+        rows += '<tr style="background:' + (i % 2 ? '#f7f3ea' : '#fff') + '"><td style="color:var(--accent);font-size:10px">EID:blackmoor:0x' + (n * 37 + page).toString(16).slice(-4) + '</td><td><span class="badge" style="font-size:9px">Live</span></td><td style="font-size:10px">' + (n % 3 === 0 ? 'Credit Scoring v3.4, Fraud Screening v2.7' : n % 3 === 1 ? 'Auto Loan v2.2' : 'Personal Loan Pricing v3.1, Income Verification v2.0') + '</td><td style="font-size:10px">' + fmtD(ago(n % 60)) + '</td><td style="font-weight:600;color:' + (deny ? 'var(--red)' : 'var(--green)') + '">' + (deny ? 'DENIED' : 'APPROVED') + '</td><td>' + (flags ? '<span style="color:var(--red)">' + flags + '</span>' : '0') + '</td></tr>';
+      }
+      tb.innerHTML = rows;
+    }
+    var start = page === 1 ? 1 : (page - 1) * per + 1, end = page === 1 ? tb.children.length : start + per - 1;
+    pager.innerHTML = '<span>Showing ' + start.toLocaleString() + '–' + end.toLocaleString() + ' of ' + total.toLocaleString() + ' people · page ' + page.toLocaleString() + ' of ' + Math.ceil(total / per).toLocaleString() + '</span><span style="display:flex;gap:6px"><button type="button" onclick="pmPageGo(-1)" ' + (page === 1 ? 'disabled ' : '') + 'style="' + INP + ';cursor:pointer">Previous</button><button type="button" onclick="pmPageGo(1)" style="' + INP + ';cursor:pointer">Next</button></span>';
+  }
+  setInterval(function () {
+    try { if (document.getElementById('genesis-log-entries') && document.getElementById('genesis-log-entries').offsetParent !== null && !document.getElementById('glog-q')) logRender(); } catch (e) {}
+    try { cohortTable('gen-tab-cohort', null, 'All cohorts'); } catch (e) {}
+    try { cohortTable('at-tab-cohorts', ['remediation'], 'Remediation cohorts'); } catch (e) {}
+    try { profiles(); } catch (e) {}
+  }, 800);
 })();
 
 </script>
