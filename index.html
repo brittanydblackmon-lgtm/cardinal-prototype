@@ -36200,9 +36200,12 @@ var PIPELINE_SOURCE_STATUS = {
     { connector: 'Azure OpenAI', status: 'not_connected', lastSync: null, records: 0, format: '—' }
   ],
   fin: [
-    { connector: 'BigQuery', status: 'connected', lastSync: '2026-09-26T04:02:00Z', records: 96540, format: 'JSON' },
-    { connector: 'Snowflake', status: 'connected', lastSync: '2026-09-24T18:15:00Z', records: 41220, format: 'CSV' },
-    { connector: 'AWS S3', status: 'not_connected', lastSync: null, records: 0, format: '—' }
+    { connector: 'Snowflake (loan applications warehouse)', status: 'connected', lastSync: '2026-09-26T06:10:00Z', records: 4512880, format: 'Parquet' },
+    { connector: 'Databricks (feature store and model training)', status: 'connected', lastSync: '2026-09-26T05:40:00Z', records: 1203440, format: 'Delta' },
+    { connector: 'Google BigQuery (digital funnel and marketing)', status: 'connected', lastSync: '2026-09-26T04:02:00Z', records: 2840115, format: 'JSON' },
+    { connector: 'AWS S3 (model files and decision logs)', status: 'connected', lastSync: '2026-09-25T23:55:00Z', records: 18420, format: 'CSV, ONNX' },
+    { connector: 'Azure OpenAI (Pre-qual Chatbot transcripts)', status: 'connected', lastSync: '2026-09-25T22:30:00Z', records: 96540, format: 'JSONL' },
+    { connector: 'Salesforce (servicing and complaints)', status: 'not_connected', lastSync: null, records: 0, format: '—' }
   ],
   health: [
     { connector: 'AWS S3 & Bedrock', status: 'connected', lastSync: '2026-09-25T14:30:00Z', records: 68910, format: 'Parquet' },
@@ -36229,6 +36232,7 @@ function pipelineFmtSync(iso) {
 function pipelineRenderSourcesTable(org) {
   var tbody = document.getElementById('pipeline-sources-tbody');
   if (!tbody) return;
+  org = org || window.currentOrg || 'ad';
   var rows = PIPELINE_SOURCE_STATUS[org] || PIPELINE_SOURCE_STATUS.ad;
   var modelsForOrg = (window.CARDINAL_MODELS || []).filter(function (m) { return m.industry === org; });
   tbody.innerHTML = rows.map(function (r) {
@@ -51497,6 +51501,38 @@ window.CARDINAL_PLACES = {
     after.forEach(function (x) { if (a.nextElementSibling !== x) a.parentNode.insertBefore(x, a.nextSibling); a = x; });
     tip(model, WEIGHT); tip(weak, WEAK);
   }, 800);
+})();
+
+</script>
+
+<script data-p="p7_misc">
+// 10/7: small fixes from Brittany's walkthrough.
+(function () {
+  // Data Pipeline: the connected-sources table follows the company you are viewing.
+  setInterval(function () {
+    var tb = document.getElementById('pipeline-sources-tbody'); if (!tb || tb.offsetParent === null || typeof pipelineRenderSourcesTable !== 'function') return;
+    var o = window.currentOrg || 'ad'; if (tb.getAttribute('data-o') === o) return;
+    tb.setAttribute('data-o', o); try { pipelineRenderSourcesTable(o); } catch (e) {}
+  }, 800);
+})();
+(function () {
+  // Lucid: green instead of purple (Brittany: don't want it to look like Credo AI).
+  var MAP = [[/rgba\(\s*168,\s*85,\s*247/g, 'rgba(21, 128, 61'], [/rgba\(\s*139,\s*92,\s*246/g, 'rgba(21, 128, 61'], [/rgba\(\s*109,\s*40,\s*217/g, 'rgba(21, 128, 61'], [/rgba\(\s*124,\s*58,\s*237/g, 'rgba(21, 128, 61'],
+    [/#a855f7/gi, '#16a34a'], [/#8b5cf6/gi, '#16a34a'], [/#7c3aed/gi, '#15803d'], [/#6d28d9/gi, '#15803d'], [/#f5f3ff/gi, '#f0fdf4'], [/#ede9fe/gi, '#dcfce7'], [/#c4b5fd/gi, '#86efac'], [/#a78bfa/gi, '#4ade80']];
+  function fix(el) {
+    var st = el.getAttribute('style'); if (!st || !/rgba\(\s*(168|139|109|124),|#(a855f7|8b5cf6|7c3aed|6d28d9|f5f3ff|ede9fe|c4b5fd|a78bfa)/i.test(st)) return;
+    MAP.forEach(function (m) { st = st.replace(m[0], m[1]); }); el.setAttribute('style', st);
+  }
+  setInterval(function () {
+    var s = document.getElementById('screen-lucid'); if (!s || s.offsetParent === null) return;
+    fix(s); [].forEach.call(s.querySelectorAll('[style]'), fix);
+    var m = document.getElementById('lucid-agent-modal'); if (m) [].forEach.call(m.querySelectorAll('[style]'), fix);
+  }, 700);
+})();
+(function () {
+  var css = document.createElement('style');
+  css.textContent = '.lucid-agent-card.is-eve{background:linear-gradient(rgba(21,128,61,.08) 0%,#fff 110px)!important}.lucid-agent-card.is-adam{background:linear-gradient(rgba(21,128,61,.05) 0%,#fff 110px)!important}';
+  document.head.appendChild(css);
 })();
 
 </script>
