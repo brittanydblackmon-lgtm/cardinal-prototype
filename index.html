@@ -24752,7 +24752,7 @@ var HALO_CFG = {
    penalties:[40,52,73],
    exposureQ4:'$73M',
    roiText:'Fix cost: about $45K in engineering time · Exposure avoided: up to $73M',
-   forecast:{ start:81, none:[81,80,78,76], partial:[81,81,82,82], full:[81,84,86,88] }
+   forecast:{ start:81, none:[81,77,74,72], partial:[81,82,83,83], full:[81,85,88,90] }
  },
  health: {
    subtitle:'Clinical Compliance Forecasting: Sterling Health',
@@ -24789,10 +24789,10 @@ window.CARDINAL_HALO_INACTION = {
   },
   fin: {
     wk2: {amount:'$500K', text:'CFPB fair lending exam missed. Proxy discrimination escalates to CFPB formal investigation. Credit model forced offline.'},
-    q3: {amount:'$15M', text:'CFPB formal enforcement. Required to notify all 1,203 applicants individually. Credit operations under review.'},
+    q3: {amount:'$33M', text:'CFPB enforcement action and restitution. Required to notify all 1,203 applicants individually. Credit operations under review.'},
     q4: {amount:'$40M+', text:'Class action lawsuit filed. Fair lending penalty assessed. Stock impact if public. Brand damage estimated at $40M+.'},
-    resolution: '$0 penalty exposure · Trust Score 88+ · Cardinal Certified',
-    roi: 'Up to $40M avoided'
+    resolution: '$0 penalty exposure · Trust Score 90 · Cardinal Certified',
+    roi: 'Up to $73M avoided'
   },
   health: {
     wk2: {amount:'$6.5M', text:'Remediation deadline missed. Patient complaints to the HHS Office for Civil Rights (Section 1557) become likely; CMS audit findings expected.'},
@@ -25672,7 +25672,7 @@ window.CARDINAL_HALO_PREDICTIONS = {
       id: 'PRED-FIN-001',
       severity: 'critical',
       severityLabel: 'IMMINENT',
-      timeHorizon: '8 days',
+      timeHorizon: '13 days',
       certaintyPct: 92,
       modelName: 'Credit Scoring v3.4',
       modelId: 'FIN_CREDIT_SCORE_v3.4',
@@ -25854,7 +25854,7 @@ window.haloRenderPredictiveSection = function(org) {
 
   // Stats strip
   statsContainer.innerHTML =
-    '<div class="cardinal-stat-card" style="border-color:rgba(239,68,68,0.30);"><div class="cardinal-stat-label">TOTAL EXPOSURE</div><div class="cardinal-stat-value" style="color:#ef4444;">$' + totalExposure.toFixed(0) + 'M</div><div class="cardinal-stat-sub">If no action across active predictions</div></div>' +
+    '<div class="cardinal-stat-card" style="border-color:rgba(239,68,68,0.30);"><div class="cardinal-stat-label">' + (org === 'fin' ? 'FAIR LENDING EXPOSURE' : 'TOTAL EXPOSURE') + '</div><div class="cardinal-stat-value" style="color:#ef4444;">$' + (org === 'fin' ? '73' : totalExposure.toFixed(0)) + 'M</div><div class="cardinal-stat-sub">' + (org === 'fin' ? 'Plus about $10M across 2 smaller risks' : 'If no action across active predictions') + '</div></div>' +
     '<div class="cardinal-stat-card" style="border-color:rgba(250,204,21,0.30);"><div class="cardinal-stat-label">NEAREST DEADLINE</div><div class="cardinal-stat-value" style="color:#FACC15;">' + (nearestPred ? nearestPred.timeHorizon : '—') + '</div><div class="cardinal-stat-sub">' + (nearestPred ? nearestPred.title.substring(0, 48) + '...' : '') + '</div></div>' +
     '<div class="cardinal-stat-card" style="border-color:rgba(239,68,68,0.30);"><div class="cardinal-stat-label">CRITICAL PREDICTIONS</div><div class="cardinal-stat-value" style="color:#ef4444;">' + criticalCount + '</div><div class="cardinal-stat-sub">High: ' + highCount + ' · Total: ' + preds.length + '</div></div>' +
     '<div class="cardinal-stat-card" style="border-color:rgba(168,85,247,0.30);"><div class="cardinal-stat-label">CONFIDENCE AVG</div><div class="cardinal-stat-value" style="color:#a855f7;">' + avgCertainty + '%</div><div class="cardinal-stat-sub">Multi-model probability</div></div>';
@@ -26036,8 +26036,8 @@ window.CARDINAL_ATONEMENT_QUEUE = window.CARDINAL_ATONEMENT_QUEUE || {
     { id:'AT-Q-AD-002', caseId:'AD-1203', urgency:'high',     title:'Mission Readiness v1.2: Ramp metrics review', detail:'Ramp at 25% for 5 days. DI 0.83 stable. Decision: hold or promote to 50%.', requiredRoles:['Lead Data Scientist'], dueIn:'4 days' }
   ],
   fin: [
-    { id:'AT-Q-FIN-001', caseId:'FIN-1203', urgency:'critical', title:'Promote Credit Scoring v3.5 to Ramp', detail:'Shadow DI 0.71 (above 0.70 threshold). CA ADMT rules deadline in 5 days. Awaiting GC + Compliance sign-off.', requiredRoles:['General Counsel','Compliance Lead'], dueIn:'1 day' },
-    { id:'AT-Q-FIN-002', caseId:'FIN-0891', urgency:'high',     title:'Auto Loan v2.2: Ramp expansion to 50%', detail:'Ramp at 25% holding. ECOA review pending.', requiredRoles:['Compliance Lead'], dueIn:'3 days' }
+    { id:'AT-Q-FIN-001', caseId:'FIN-1203', urgency:'critical', title:'Promote Credit Scoring v3.5 to Ramp', detail:'Shadow fairness ratio 0.83, above the 0.80 line. CFPB fair lending exam in 13 days. Waiting on General Counsel and Compliance sign-off.', requiredRoles:['General Counsel','Compliance Lead'], dueIn:'1 day' },
+    { id:'AT-Q-FIN-002', caseId:'FIN-0891', urgency:'high',     title:'Auto Loan v2.2: Ramp expansion to 50%', detail:'Ramp at 25% holding. Fair lending review pending.', requiredRoles:['Compliance Lead'], dueIn:'3 days' }
   ],
   health: [
     { id:'AT-Q-HS-001', caseId:'HS-2847', urgency:'critical', title:'Promote Coverage Decision v2.8 to Ramp', detail:'Shadow DI 0.70 (at threshold). 2,847 patients affected. Clinical review pending. ACA §1557 exposure.', requiredRoles:['General Counsel','Compliance Lead','Lead Data Scientist'], dueIn:'2 days' }
@@ -48056,7 +48056,14 @@ window.genRenderScenarios = function () {
       ['agent', 'Collections agent: pause reminders for the re-review cohort', 'Collections AI v1.3 (agent)', 'Applied', 'Suppression keeps 1,203 people out of collections outreach during re-review', [], [], 0, 'Marco Ruiz'],
       ['agent', 'Pre-qual Chatbot vendor patch: correct rate-disclosure answers', 'Pre-qual Chatbot (vendor)', 'Waiting on vendor', '3 answers misstated APR ranges; vendor patch under test', [], [], 0, 'Hannah Brooks'],
       ['team', 'Rewrite adverse-action reason codes', 'Credit Scoring v3.4', 'In review', 'Every denial notice gives a specific, accurate reason', [], [], 0, 'Riley Whitmore'],
-      ['team', 'Re-review 1,203 denied applicants', 'Cohort FIN-1203', 'In progress', '687 of 1,203 re-decided so far', [], [], 0, 'Lisa Torres']
+      ['team', 'Re-review 1,203 denied applicants', 'Cohort FIN-1203', 'In progress', '687 of 1,203 re-decided so far', [], [], 0, 'Lisa Torres'],
+      ['adam', 'Drop branch_distance from limit increases', 'Credit Line Increase v1.6', 'In review', 'Fairness ratio 0.79 to 0.86 in testing; approvals steady', ['branch_distance'], ['payment_history_24mo'], 0, 'Riley Whitmore'],
+      ['adam', 'Cap the rural pricing add-on', 'Personal Loan Pricing v3.1', 'Drafted', 'Narrows the APR gap for rural borrowers by about 40 basis points', ['county_density'], ['debt_to_income'], 0, 'Daniel Okafor'],
+      ['team', 'Add a human review step for thin-file small businesses', 'Small Business Lending v1.2', 'In progress', '214 applications routed to an underwriter so far', [], [], 0, 'Lisa Torres'],
+      ['adam', 'Retrain synthetic ID detector on recent fraud rings', 'Synthetic Identity Detector v1.8', 'Approved', 'Catches 12% more synthetic IDs with no rise in false flags', [], ['address_velocity'], 0, 'Daniel Okafor'],
+      ['team', 'Plain-language hardship eligibility notices', 'Hardship Program Eligibility v1.1', 'Applied', 'Every decision letter explains the reason and how to appeal', [], [], 0, 'Hannah Brooks'],
+      ['adam', 'Remove ZIP-level income estimate from early warning', 'Payment Default Early Warning v1.4', 'Drafted', 'Stops flagging on-time payers in lower-income ZIP codes', ['zip_income_estimate'], ['account_cash_flow'], 0, 'Riley Whitmore'],
+      ['agent', 'Marketing agent: exclude the re-review cohort from offers', 'Marketing Propensity v4.5 (agent)', 'Applied', 'No new credit offers to the 1,203 people until re-review ends', [], [], 0, 'Marco Ruiz']
     ],
     ad: [
       ['adam', 'Remove demographic_classification and retrain on qualifications', 'Personnel Assignment v2.5', 'In shadow', 'DI 0.67 → 0.84 expected', ['demographic_classification'], ['verified_performance', 'qualification_scores'], 5, 'James Martinez'],
@@ -48119,13 +48126,46 @@ window.genRenderScenarios = function () {
   }
   window.atwsRender = function () {
     var host = document.getElementById('atws'); if (!host) return;
-    var org = window.currentOrg || 'ad', all = fixes(org), list = all.filter(function (f) { return f.who === AT.tab; });
-    var tabs = [['adam', 'By Adam'], ['agent', 'By other AI agents'], ['team', 'By your team']];
-    host.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><div><div style="font-size:15px;font-weight:700;color:var(--chrome2)">Remediation workspace</div><div style="font-size:11px;color:var(--muted2)">Cardinal proposes and tests fixes. Your team, your AI agents, or your vendors make them, and a named person approves.</div></div>' +
-      '<div style="display:flex;gap:4px;background:#f3f0e9;padding:3px;border-radius:9px">' + tabs.map(function (t) { var n = all.filter(function (f) { return f.who === t[0]; }).length; return '<button type="button" onclick="atwsTab(\'' + t[0] + '\')" style="font-size:11.5px;padding:6px 12px;border-radius:7px;border:0;cursor:pointer;font-weight:700;background:' + (AT.tab === t[0] ? '#fff' : 'transparent') + ';color:' + (AT.tab === t[0] ? '#1a1815' : '#64748b') + ';box-shadow:' + (AT.tab === t[0] ? '0 1px 2px rgba(0,0,0,.08)' : 'none') + '">' + t[1] + ' (' + n + ')</button>'; }).join('') + '</div></div>' +
-      '<div style="margin-top:12px;display:flex;flex-direction:column;gap:8px">' + list.map(function (f) {
-        return '<div style="' + CARD + ';padding:12px 14px"><div style="display:flex;justify-content:space-between;gap:10px;align-items:center;cursor:pointer" onclick="atwsOpen(\'' + f.id + '\')"><div><div style="font-size:12.5px;font-weight:700;color:#1a1815">' + esc(f.title) + '</div><div style="font-size:11px;color:#64748b;margin-top:2px">' + esc(f.model) + ' · ' + esc(f.impact) + '</div></div><div style="display:flex;gap:8px;align-items:center">' + pill(f.status) + '<span style="font-size:11px;color:#1e3a8a;font-weight:700">' + (AT.open === f.id ? 'Close' : 'Open') + '</span></div></div>' + (AT.open === f.id ? fixPanel(f) : '') + '</div>';
-      }).join('') + (list.length ? '' : '<div style="font-size:11.5px;color:#64748b;padding:10px">Nothing here right now.</div>') + '</div>';
+    var org = window.currentOrg || 'ad', all = fixes(org);
+    if (!AT.who) AT.who = 'all'; if (!AT.st) AT.st = 'all'; if (AT.q == null) AT.q = '';
+    var WHO = { adam: 'Adam', agent: 'AI agent', team: 'Your team' };
+    var D = ['Oct 6', 'Oct 5', 'Oct 3', 'Oct 2', 'Sep 30', 'Sep 28', 'Sep 26', 'Sep 24', 'Sep 22', 'Sep 19', 'Sep 17', 'Sep 15', 'Sep 12', 'Sep 10', 'Sep 8'];
+    var q = AT.q.toLowerCase();
+    var list = all.filter(function (f) {
+      if (AT.who !== 'all' && f.who !== AT.who) return false;
+      if (AT.st !== 'all' && f.status !== AT.st) return false;
+      return !q || (f.title + ' ' + f.model + ' ' + f.approver + ' ' + f.impact).toLowerCase().indexOf(q) > -1;
+    });
+    var stats = []; all.forEach(function (f) { if (stats.indexOf(f.status) < 0) stats.push(f.status); });
+    var SEL = 'font-size:12px;padding:7px 10px;border:1px solid rgba(26,24,21,.15);border-radius:8px;background:#fff;color:#1a1815;font-family:inherit';
+    var TH = 'text-align:left;font-size:10.5px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.4px;padding:9px 12px;border-bottom:1px solid rgba(26,24,21,.1);white-space:nowrap';
+    var TD = 'padding:10px 12px;font-size:12px;color:#1a1815;vertical-align:top;border-bottom:1px solid rgba(26,24,21,.06)';
+    var rows = list.map(function (f, i) {
+      var d = D[all.indexOf(f) % D.length], bg = i % 2 ? '#f7f3ea' : '#fff';
+      var r = '<tr style="background:' + bg + ';cursor:pointer" onclick="atwsOpen(\'' + f.id + '\')">' +
+        '<td style="' + TD + '"><div style="font-weight:700">' + esc(f.title) + '</div><div style="font-size:11px;color:#64748b;margin-top:2px">' + esc(f.impact) + '</div></td>' +
+        '<td style="' + TD + '">' + esc(f.model) + '</td>' +
+        '<td style="' + TD + ';white-space:nowrap">' + WHO[f.who] + '</td>' +
+        '<td style="' + TD + '">' + pill(f.status) + '</td>' +
+        '<td style="' + TD + ';white-space:nowrap;color:#475569">' + d + '</td>' +
+        '<td style="' + TD + ';white-space:nowrap">' + esc(f.approver) + '</td>' +
+        '<td style="' + TD + ';white-space:nowrap;color:#1e3a8a;font-weight:700">' + (AT.open === f.id ? 'Close' : 'Open') + '</td></tr>';
+      if (AT.open === f.id) r += '<tr><td colspan="7" style="padding:0 12px 12px;background:' + bg + '"><div><span onclick="atwsOpen(\'' + f.id + '\')" style="display:none">' + esc(f.title) + ' ' + esc(f.model) + '</span>' + fixPanel(f) + '</div></td></tr>';
+      return r;
+    }).join('');
+    host.innerHTML = '<div><div style="font-size:15px;font-weight:700;color:var(--chrome2)">Remediation workspace</div><div style="font-size:11px;color:var(--muted2)">Cardinal proposes and tests fixes. Your team, your AI agents, or your vendors make them, and a named person approves.</div></div>' +
+      '<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:12px">' +
+      '<input id="atws-q" placeholder="Search fixes, models, or approvers" value="' + esc(AT.q) + '" oninput="atwsFilter(\'q\',this.value)" style="' + SEL + ';flex:1;min-width:200px">' +
+      '<select onchange="atwsFilter(\'who\',this.value)" style="' + SEL + '"><option value="all">Made by: anyone</option>' + ['adam', 'agent', 'team'].map(function (w) { return '<option value="' + w + '"' + (AT.who === w ? ' selected' : '') + '>' + WHO[w] + ' (' + all.filter(function (f) { return f.who === w; }).length + ')</option>'; }).join('') + '</select>' +
+      '<select onchange="atwsFilter(\'st\',this.value)" style="' + SEL + '"><option value="all">Status: any</option>' + stats.map(function (t) { return '<option' + (AT.st === t ? ' selected' : '') + '>' + esc(t) + '</option>'; }).join('') + '</select>' +
+      '<span style="font-size:11.5px;color:#64748b">Showing ' + list.length + ' of ' + all.length + '</span></div>' +
+      '<div style="overflow-x:auto;margin-top:10px;border:1px solid rgba(26,24,21,.08);border-radius:12px"><table style="width:100%;border-collapse:collapse;min-width:760px"><thead><tr style="background:#f4efe6">' +
+      ['Fix', 'Model', 'Made by', 'Status', 'Started', 'Approver', ''].map(function (h) { return '<th style="' + TH + '">' + h + '</th>'; }).join('') + '</tr></thead><tbody>' +
+      (rows || '<tr><td colspan="7" style="' + TD + ';color:#64748b">No fixes match.</td></tr>') + '</tbody></table></div>';
+  };
+  window.atwsFilter = function (k, v) {
+    AT[k] = v; AT.open = null; atwsRender();
+    if (k === 'q') { var i = document.getElementById('atws-q'); if (i) { i.focus(); i.setSelectionRange(v.length, v.length); } }
   };
 
   // ── Genesis tests ─────────────────────────────────────────────────
@@ -51934,6 +51974,51 @@ window.CARDINAL_PLACES = {
     try { cohortTable('at-tab-cohorts', ['remediation'], 'Remediation cohorts'); } catch (e) {}
     try { profiles(); } catch (e) {}
   }, 800);
+})();
+
+</script>
+
+<script data-p="p8_halo">
+// 10/7 (Brittany's walkthrough, Halo): the Trust Score trajectory tells the Blackmoor story in plain English.
+// Three scenarios: nothing fixed (score falls under the 80 line around the exam), only Credit v3.5 launched,
+// or Credit v3.5 plus the fraud geography fix (the two systems are fixed together).
+(function () {
+  var NAMES = ['If nothing is fixed', 'Credit v3.5 only', 'Credit v3.5 plus fraud fix'];
+  var LINES = [
+    ['#ef4444', 'If nothing is fixed', 'The score slips under 80 around the CFPB exam in 13 days and keeps falling. $73M in projected exposure stays on the table.'],
+    ['#FACC15', 'Credit v3.5 only', 'Underwriting gets fairer, but Fraud Screening v2.7 still leans on geography, so the approval gap only partly closes.'],
+    ['#22c55e', 'Credit v3.5 plus fraud fix', 'Both systems are fixed together. The approval gap closes, the score reaches 90, and the exam goes in with a clean record.']
+  ];
+  function tick() {
+    var cv = document.getElementById('halo-forecast-chart'); if (!cv) return;
+    var panel = cv.closest('.halo-panel-c'); if (!panel) return;
+    var fin = (window.currentOrg || '') === 'fin';
+    var head = panel.querySelector('.halo-dl-heading'), sub = panel.querySelector('.halo-dl-sub');
+    var legend = panel.querySelector('div[style*="justify-content:center"]');
+    var box = panel.querySelector('#halo-scen-notes');
+    if (!panel.__p8orig) panel.__p8orig = { sub: sub && sub.textContent, legend: legend && legend.innerHTML };
+    if (!fin) {
+      if (box) box.remove();
+      if (panel.__p8on) { if (sub) sub.textContent = panel.__p8orig.sub; if (legend) legend.innerHTML = panel.__p8orig.legend; panel.__p8on = 0; }
+      return;
+    }
+    if (!panel.__p8on) {
+      if (sub) sub.textContent = 'Where Blackmoor’s Trust Score goes over the next 90 days, depending on what gets fixed. 80 is the certification line.';
+      if (legend) legend.innerHTML = LINES.map(function (l) { return '<span style="display:inline-flex;align-items:center;gap:5px;"><span style="width:26px;height:3px;background:' + l[0] + ';border-radius:2px;display:inline-block"></span> ' + l[1] + '</span>'; }).join('');
+      panel.__p8on = 1;
+    }
+    if (!box) {
+      box = document.createElement('div'); box.id = 'halo-scen-notes';
+      box.style.cssText = 'display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-top:12px';
+      box.innerHTML = LINES.map(function (l) { return '<div style="background:#f4efe6;border-radius:10px;padding:10px 12px;border-left:3px solid ' + l[0] + '"><div style="font-size:12px;font-weight:700;color:var(--text,#1a1815);margin-bottom:3px">' + l[1] + '</div><div style="font-size:11.5px;line-height:1.45;color:var(--muted,#5b5650)">' + l[2] + '</div></div>'; }).join('');
+      panel.appendChild(box);
+    }
+    try {
+      var ch = window.Chart && Chart.getChart(cv);
+      if (ch && ch.data.datasets[0] && ch.data.datasets[0].label !== NAMES[0]) { ch.data.datasets.forEach(function (d, i) { if (NAMES[i]) d.label = NAMES[i]; }); ch.update('none'); }
+    } catch (e) {}
+  }
+  setInterval(tick, 800);
 })();
 
 </script>
