@@ -51227,11 +51227,11 @@ window.CARDINAL_PLACES = {
   window.echoCaseSet = function (cs) { window.__echoCase[org()] = cs; var b = document.getElementById('echo-case-history'); if (b) b.removeAttribute('data-k'); echoCase(); };
   function echoCase() {
     var scr = document.getElementById('screen-echo'); if (!scr || scr.offsetParent === null) return;
-    var anchor = document.getElementById('echo-eve-sum') || document.getElementById('echo-cardinal-hero'); if (!anchor) return;
+    var feed = document.getElementById('echo-memory-feed-section'); var anchor = document.getElementById('echo-eve-sum') || document.getElementById('echo-cardinal-hero'); if (!anchor && !feed) return;
     var o = org(), cs = window.__echoCase[o] || PRIMARY[o], list = mems(o, cs);
     var box = document.getElementById('echo-case-history');
     if (!box) { box = document.createElement('div'); box.id = 'echo-case-history'; box.className = 'card'; box.style.cssText = 'padding:16px 18px;margin:0 0 16px'; }
-    if (anchor.nextElementSibling !== box) anchor.parentNode.insertBefore(box, anchor.nextSibling);
+    if (feed) { if (feed.previousElementSibling !== box) feed.parentNode.insertBefore(box, feed); } else if (anchor.nextElementSibling !== box) anchor.parentNode.insertBefore(box, anchor.nextSibling);
     var key = o + cs + list.length; if (box.getAttribute('data-k') === key) return; box.setAttribute('data-k', key);
     var cases = caseList(o); if (cases.indexOf(cs) < 0) cases.unshift(cs);
     var span = list.length ? fmt(list[0].timestamp).replace(/,\s*\d+:\d+.*$/, '') + ' to ' + fmt(list[list.length - 1].timestamp).replace(/,\s*\d+:\d+.*$/, '') : '';
@@ -51716,6 +51716,57 @@ window.CARDINAL_PLACES = {
       chartBox('halo-hist', eve.parentNode, eve.nextSibling, 'halo', { title: 'Predicted vs actual losses', sub: 'What Halo predicted each month, what was actually lost, and what fixes kept from happening', series: [{ name: 'Predicted exposure', color: '#cbd5e1', data: x[0] }, { name: 'Avoided by fixes', color: GRN, data: x[2] }, { name: 'Actually lost', color: RED, data: x[1], line: true }], fmt: M, note: 'Actual losses stayed small because problems were caught and fixed before penalties or large fraud losses landed.' }); }
   }
   setInterval(function () { try { genesis(); } catch (e) {} try { atonement(); } catch (e) {} try { ledger(); } catch (e) {} try { library(); } catch (e) {} try { sentinel(); } catch (e) {} try { halo(); } catch (e) {} }, 800);
+})();
+
+</script>
+
+<script data-p="p7_echo">
+// 10/7 (Brittany: "Echo looks confusing"). Order: who can open it, search, circles, the live stream, Eve's summary,
+// your own view, then the sections (Hallway, Cases, Models, People, Decisions, Whistleblower, Case history).
+(function () {
+  function tick() {
+    var scr = document.getElementById('screen-echo'); if (!scr || scr.offsetParent === null) return;
+    var hdr = scr.querySelector(':scope > .section-hdr'), hero = document.getElementById('echo-cardinal-hero'); if (!hdr || !hero) return;
+    // Search at the top (it drives Echo's own search).
+    var ts = document.getElementById('echo-topsearch');
+    if (!ts) {
+      ts = document.createElement('div'); ts.id = 'echo-topsearch'; ts.style.cssText = 'display:flex;gap:8px;margin:0 0 14px';
+      ts.innerHTML = '<input id="echo-topsearch-input" placeholder="Search Echo: a case ID, model, person, or anything in the record" style="flex:1;font:inherit;font-size:13px;padding:11px 14px;border:1px solid rgba(26,24,21,.15);border-radius:12px;background:#fff;box-shadow:0 2px 8px rgba(26,24,21,.05)"><button type="button" class="p4-black" style="padding:0 18px;border-radius:12px">Search</button>';
+      var go = function () { var v = ts.querySelector('input').value, inp = document.getElementById('echo-search-input'); if (inp) { inp.value = v; ['input', 'keyup', 'change'].forEach(function (t) { inp.dispatchEvent(new Event(t, { bubbles: true })); }); var f = document.getElementById('echo-memory-feed-section'); if (f) { window.__deepLinkUntil = Date.now() + 2000; f.scrollIntoView({ behavior: 'smooth', block: 'start' }); } } };
+      ts.querySelector('button').onclick = go; ts.querySelector('input').addEventListener('keydown', function (e) { if (e.key === 'Enter') go(); });
+    }
+    if (hdr.nextElementSibling !== ts) hdr.parentNode.insertBefore(ts, hdr.nextSibling);
+    // Circles from the KPI cards.
+    var cards = [].slice.call(document.querySelectorAll('#echo-kpi-row-alerts .echo-kpi-card, #echo-kpi-row-activity .echo-kpi-card')).map(function (c) { var p = [].map.call(c.children, function (x) { return (x.textContent || '').trim(); }); return { label: p[0], value: p[1], sub: p[2] }; }).filter(function (x) { return x.label && !/Last Activity/i.test(x.label); });
+    ['echo-kpi-row-alerts', 'echo-kpi-row-activity'].forEach(function (id) { var e = document.getElementById(id); if (e) e.style.display = 'none'; });
+    var rings = document.getElementById('echo-rings');
+    if (!rings) { rings = document.createElement('div'); rings.id = 'echo-rings'; rings.className = 'card'; rings.style.cssText = 'padding:20px 22px;margin:0 0 16px'; }
+    if (ts.nextElementSibling !== rings) ts.parentNode.insertBefore(rings, ts.nextSibling);
+    var key = JSON.stringify(cards);
+    if (cards.length && rings.getAttribute('data-k') !== key && window.cardinalRings) {
+      rings.setAttribute('data-k', key);
+      var col = function (l, v) { var n = parseFloat(String(v).replace(/[^0-9.]/g, '')) || 0; return /critical issues/i.test(l) ? (n ? '#DC2626' : '#16a34a') : /ignored/i.test(l) ? (n ? '#FACC15' : '#16a34a') : /pending/i.test(l) ? (n ? '#FACC15' : '#16a34a') : /whistle/i.test(l) ? '#1a1815' : /days since/i.test(l) ? '#16a34a' : '#1d4ed8'; };
+      rings.innerHTML = '<div style="font-size:11px;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px;text-align:center">Echo at a glance</div>' + cardinalRings(cards.map(function (c) { var n = parseFloat(String(c.value).replace(/[^0-9.]/g, '')) || 0; return { value: c.value, label: c.label, sub: c.sub, color: col(c.label, c.value), pct: /days since/i.test(c.label) ? Math.min(1, n / 90) : n ? Math.min(1, 0.25 + n / 10) : 1 }; }));
+    }
+    // The live stream sits under the circles; the headline it carried is now in the circles.
+    if (rings.nextElementSibling !== hero) rings.parentNode.insertBefore(hero, rings.nextSibling);
+    var grid = hero.children[1], left = grid && grid.children[0];
+    if (left) [].forEach.call(left.children, function (c) { if (!/live event stream/i.test(c.textContent)) c.style.display = 'none'; });
+    // Your view and recent activity follow Eve's summary.
+    var eve = document.getElementById('echo-eve-sum'), you = document.getElementById('echo-your-view-panel'), rec = document.getElementById('echo-recent-access-panel');
+    if (eve && you && eve.nextElementSibling !== you) eve.parentNode.insertBefore(you, eve.nextSibling);
+    if (you && rec && you.nextElementSibling !== rec) you.parentNode.insertBefore(rec, you.nextSibling);
+    // Case history becomes one of the sections.
+    var rooms = [].filter.call(document.querySelectorAll('#echo-memory-feed-section button'), function (b) { return /echoEnterRoom\('wb'\)/.test(b.getAttribute('onclick') || ''); })[0];
+    if (rooms && !document.getElementById('echo-room-history')) {
+      var b = rooms.cloneNode(true); b.id = 'echo-room-history'; b.removeAttribute('onclick');
+      var t = b.querySelectorAll('*'); var leaf = [].filter.call(t, function (x) { return x.children.length === 0 && x.textContent.trim(); });
+      if (leaf[0]) leaf[0].textContent = 'Case history'; if (leaf[1]) leaf[1].textContent = 'One case, start to finish';
+      b.onclick = function () { var h = document.getElementById('echo-case-history'); if (h) { window.__deepLinkUntil = Date.now() + 2000; h.scrollIntoView({ behavior: 'smooth', block: 'start' }); } };
+      rooms.parentNode.insertBefore(b, rooms.nextSibling);
+    }
+  }
+  setInterval(tick, 800);
 })();
 
 </script>
