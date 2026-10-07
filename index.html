@@ -51012,7 +51012,7 @@ window.CARDINAL_PLACES = {
       hist: [['v1.0', 'May 2026', 'First release: public accountability, appeals, and transparency checks.']] }
   };
   var PARTS = ['Fairness', 'Fraud', 'Transparency', 'Privacy', 'Governance', 'Monitoring', 'AI Agents & Security'];
-  var BOX = 'background:#fff;border:1px solid rgba(26,24,21,.1);border-radius:12px;padding:14px 16px';
+  var BOX = 'background:#f4efe6;border:1px solid rgba(26,24,21,.08);border-radius:12px;padding:14px 16px';
   var H = 'font-size:10.5px;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px';
   function profileFor(org, name) {
     var p = P[org] || P.fin;
@@ -51033,7 +51033,7 @@ window.CARDINAL_PLACES = {
       '<div style="' + BOX + ';background:#fbfaf7"><div style="' + H + '">How it’s measured · Cardinal Methodology</div><div style="display:flex;gap:10px;align-items:flex-start"><svg width="16" height="18" viewBox="0 0 16 18" aria-hidden="true" style="flex:none;margin-top:2px"><rect x="2" y="8" width="12" height="9" rx="2" fill="#1a1815"/><path d="M5 8V5.5a3 3 0 0 1 6 0V8" fill="none" stroke="#1a1815" stroke-width="1.8"/></svg><div style="font-size:12.5px;color:#475569;line-height:1.55">Private to Cardinal. You can see what is measured and why a score moved. The exact weights, formulas, and thresholds stay private, so the score can’t be gamed. A summary of the approach, its validation, and its limits is available on request.</div></div></div>' +
       '</div><div style="display:flex;flex-direction:column;gap:12px">' +
       '<div style="' + BOX + '"><div style="' + H + '">Which profile each model is evaluated against</div><table style="width:100%;border-collapse:collapse;font-size:12px;color:#1a1815">' + rows + '</table></div>' +
-      '<div style="' + BOX + '"><div style="' + H + '">Version history</div>' + p.hist.map(function (h) { return '<div style="display:grid;grid-template-columns:44px 72px 1fr;gap:8px;padding:6px 0;border-top:1px solid rgba(26,24,21,.06);font-size:12px"><strong>' + h[0] + '</strong><span style="color:#64748b">' + h[1] + '</span><span>' + esc(h[2]) + '</span></div>'; }).join('') + '</div>' +
+      '<div style="' + BOX + '"><div style="' + H + '">Version history</div>' + p.hist.map(function (h, hi) { return '<div style="display:grid;grid-template-columns:44px 72px 1fr;gap:8px;padding:7px 10px;border-radius:8px;margin-top:4px;background:' + (hi % 2 ? '#fff' : '#ebe4d6') + ';font-size:12px"><strong>' + h[0] + '</strong><span style="color:#64748b">' + h[1] + '</span><span>' + esc(h[2]) + '</span></div>'; }).join('') + '</div>' +
       '<div style="font-size:11.5px;color:#64748b">Other industries use their own profiles: Healthcare · Clinical Decision Support, Aerospace & Defense, Government. Every profile sits on the same Core Standard.</div>' +
       '</div></div>';
   }
@@ -52035,7 +52035,7 @@ window.CARDINAL_PLACES = {
   function num(s) { var m = String(s == null ? '' : s).replace(/,/g, '').match(/-?\d+(\.\d+)?/); return m ? +m[0] : 0; }
   function col(n) { return n >= 80 ? '#22c55e' : n >= 70 ? '#FACC15' : '#ef4444'; }
   function org() { return window.currentOrg || 'fin'; }
-  var SCR = ['genesis', 'atonement', 'halo', 'trustledger', 'sentinel', 'echo', 'compliance'];
+  var SCR = ['genesis', 'atonement', 'halo', 'trustledger', 'sentinel', 'echo', 'compliance', 'cardinallibrary', 'myworkspace', 'trustscore', 'pipeline'];
 
   var css = document.createElement('style');
   css.textContent = SCR.map(function (s) { return '#screen-' + s + ' .card:not(.card .card)'; }).join(',') +
@@ -52048,6 +52048,8 @@ window.CARDINAL_PLACES = {
   // ── Ring items already on each screen (value, label, sub) ─────────
   function items(el) {
     if (!el) return [];
+    var U = window.cardinalUnitsFrom ? cardinalUnitsFrom(el) : [];
+    if (U.length) return U;
     return [].map.call(el.querySelectorAll('.cr-item'), function (c) {
       var v = c.querySelector('.cr-val'), l = c.querySelector('.cr-label'), s = c.querySelector('.cr-sub');
       return { value: v ? v.textContent.trim() : '', label: l ? l.textContent.trim() : '', sub: s ? s.textContent.trim() : '' };
@@ -52172,24 +52174,21 @@ window.CARDINAL_PLACES = {
       : '<div class="tsv2-cert-badge amber"' + tt(o.badTitle, o.badBody) + '><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/></svg><span>' + o.badBadge + '</span></div>';
     var gauge = typeof edoHeroGaugeInner === 'function' ? edoHeroGaugeInner(pre, c, circ, -90 + o.score * 3.6, -90 + 80 * 3.6) : '';
     var pct = o.pct, ord = typeof edoOrdFromPct === 'function' ? edoOrdFromPct(pct) : pct + 'th';
-    return '<div style="display:flex;justify-content:flex-end;margin-bottom:10px">' + badge + '</div>' +
-      '<div class="edo-ts-hero"><div class="edo-ts-hero-left-col">' +
-      '<div style="text-align:center;width:100%"' + tt(o.title, o.titleBody) + '><div class="edo-ts-gauge tsv2-gauge">' + gauge + '</div></div>' +
-      '<div class="tsv2-status" style="text-align:center;margin-top:10px;color:' + c + '">' + (ok ? o.okStatus : o.badStatus) + '</div>' +
-      '<div class="tsv2-live-stamp-inline" style="justify-content:center;margin-top:8px"><span class="dot"></span><span>Last calculated <strong style="color:var(--chrome2)">2 minutes ago</strong></span></div>' +
-      (o.delta ? '<div class="u-delta"><span style="color:' + (o.delta > 0 ? '#16a34a' : '#dc2626') + ';font-weight:700">' + (o.delta > 0 ? '▲ +' : '▼ ') + o.delta + '</span> since last week</div>' : '') +
-      '<div style="text-align:center;margin-top:14px;max-width:340px"><div class="tsv2-sub-pill" style="margin:0 auto;display:inline-flex"><span class="pill-label">' + esc(o.pillLabel) + '</span><span class="pill-num">' + esc(o.pillVal) + '</span></div>' +
-      '<div style="font-size:10px;color:var(--muted2);margin-top:8px;line-height:1.4">' + esc(o.subline) + '</div></div>' +
-      (o.proj ? '<div class="u-proj">' + o.proj + '</div>' : '') + '</div>' +
-      '<div class="edo-ts-hero-right tsv2-hero-right">' +
+    var main = { value: o.score, pct: o.score / 100, color: c, label: o.title, tip: o.titleBody, status: ok ? o.okStatus : o.badStatus,
+      delta: o.delta ? { d: o.delta, text: (o.delta > 0 ? '+' : '') + o.delta } : { d: 0, text: '' }, good: o.good || 'up',
+      pillLabel: o.pillLabel, pillVal: o.pillVal, sub: o.subline, proj: o.proj, pill100: '/ 100' };
+    var units = [main].concat(o.units || []);
+    return '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px"><div class="tsv2-section-title" style="margin:0">' + esc(o.boxTitle || 'At a glance') + '</div>' + badge + '</div>' +
+      (window.cardinalGaugeRow ? cardinalGaugeRow(units) : '') +
+      '<div class="g-details">' +
       '<div class="tsv2-peer-block"' + tt('Industry Position', 'Where you rank against anonymized peers using Cardinal.') + '>' +
       '<div class="tsv2-peer-line"><span>Industry Position</span><span class="tsv2-peer-percentile">' + ord + ' percentile</span></div>' +
-      '<div style="font-size:11px;color:var(--muted2);margin-bottom:4px"><strong>Your Score</strong> ' + o.score + ' · Industry Avg ' + o.avg + ' · ' + ord + ' Percentile</div>' +
+      '<div style="font-size:11px;color:var(--muted2);margin-bottom:4px"><strong>' + esc(o.title) + '</strong> ' + o.score + ' \u00b7 Industry Avg ' + o.avg + ' \u00b7 ' + ord + ' Percentile</div>' +
       '<div class="tsv2-peer-track edo-ip-track-gradient"><div class="threshold edo-ip-threshold-mark" style="left:80%"></div><div class="you" style="left:' + Math.max(0, Math.min(100, o.score)) + '%;color:' + c + ';background:' + c + '"></div></div>' +
       '<div style="display:flex;justify-content:space-between;font-size:9.5px;color:var(--muted);margin-top:2px"><span>0</span><span>50</span><span>80 threshold</span><span>100</span></div></div>' +
-      '<div class="tsv2-conf-card"><div class="tsv2-conf-title">' + esc(o.confTitle) + '</div><div class="tsv2-conf-sub">' + esc(o.confSub) + '</div>' +
+      '<div class="tsv2-conf-card" style="margin:0"><div class="tsv2-conf-title">' + esc(o.confTitle) + '</div><div class="tsv2-conf-sub">' + esc(o.confSub) + '</div>' +
       o.rows.map(function (r) { return '<div class="tsv2-conf-row"><span' + (r[2] ? tt(r[0], r[2]) : '') + '>' + esc(r[0]) + '</span><span class="v">' + esc(r[1]) + '</span></div>'; }).join('') +
-      '</div></div></div>';
+      '</div></div>';
   }
   function placeHero(k, parent, before, o) {
     var id = 'u-' + k + '-hero', el = document.getElementById(id);
@@ -52198,7 +52197,6 @@ window.CARDINAL_PLACES = {
     var key = org() + JSON.stringify(o);
     if (el.getAttribute('data-k') !== key) {
       el.setAttribute('data-k', key); el.innerHTML = heroHtml(k, o);
-      try { edoWireHeroGauge('u' + k, o.score, col(o.score)); } catch (e) {}
     }
     return el;
   }
@@ -52221,17 +52219,25 @@ window.CARDINAL_PLACES = {
   function genesis() {
     var r = document.getElementById('gen-rings'); if (!r || !r.parentNode || document.getElementById('screen-genesis').offsetParent === null) return;
     var it = items(r); if (it.length < 4) return;
+    var gs = document.getElementById('screen-genesis'), ghdr = gs.querySelector(':scope > .section-hdr'), gst = document.getElementById('gen-stats-row');
+    if (ghdr && gst && gst.parentNode === gs && r.parentNode === gs) {
+      var uh = document.getElementById('u-genesis-hero');
+      var ok = uh ? (ghdr.nextElementSibling === uh && uh.nextElementSibling === r && r.nextElementSibling === gst) : (ghdr.nextElementSibling === r && r.nextElementSibling === gst);
+      if (!ok) { gs.insertBefore(gst, ghdr.nextSibling); gs.insertBefore(r, gst); if (uh) gs.insertBefore(uh, r); }
+    }
     var cov = find(it, /coverage/i), score = Math.round(num(cov.value)) || 70;
     placeHero('genesis', r.parentNode, r, {
       score: score, title: 'Testing Coverage Score', titleBody: 'Share of your AI models with current fairness, accuracy, and security tests. 80 is the target.',
       okBadge: 'Coverage Strong', okTitle: 'Coverage Strong', okBody: 'Most models have current tests.',
       badBadge: 'Coverage Below 80: Gaps to Close', badTitle: 'Coverage Gap', badBody: 'Some models have no current tests. Close the gaps before the next exam.',
       okStatus: 'Above Target: Coverage Strong', badStatus: 'Below Target: Coverage Gap',
-      delta: 1, pillLabel: 'Tests Passed', pillVal: find(it, /passed/i).value, subline: 'Active tests ' + find(it, /active/i).value + ' · Models in testing ' + find(it, /models/i).value,
+      delta: 1, pillLabel: 'Models Without Tests', pillVal: fin() ? '7 of 22' : '--', subline: 'Active tests ' + find(it, /active/i).value + ' · Models in testing ' + find(it, /models/i).value,
       proj: 'Projected: <strong style="color:#16a34a">' + Math.min(100, score + 9) + '</strong> (+9 pts once the income-feature test finishes)',
       avg: score + 5, pct: 34, confTitle: 'Test Confidence', confSub: 'How reliable are these results?',
+      units: it.filter(function (x) { return !/coverage/i.test(x.label); }), boxTitle: 'Testing at a glance',
       rows: [['Confidence Band', '±3 points', 'Expected swing if the tests were re-run on fresh data.'], ['Models Without Current Tests', fin() ? '7 of 22' : '--', 'Models with no fairness, accuracy, or security test in the last 90 days. This is the coverage gap.'], ['Last Full Scan', 'Today, 6:00 AM', 'Cardinal re-checks every model for test coverage each morning.'], ['Data Completeness', '94%', 'Share of model decisions available to test against.']]
     });
+    hide(r);
     var old = document.getElementById('gen-hist'); if (old) { hide(old); placeHist('genesis', old.parentNode, old); }
   }
   function atonement() {
@@ -52248,8 +52254,10 @@ window.CARDINAL_PLACES = {
       subline: 'Active fixes ' + find(it, /active/i).value + ' · In shadow ' + find(it, /shadow/i).value,
       proj: 'Projected: <strong style="color:#16a34a">' + Math.min(100, score + 31) + '</strong> once Credit v3.5 is approved for full traffic',
       avg: 61, pct: 44, confTitle: 'Remediation Confidence', confSub: 'How reliable is this progress?',
+      units: it, boxTitle: 'Fixes at a glance',
       rows: [['Confidence Band', '±2 points', 'Expected swing in progress if re-measured.'], ['Rollback Ready', 'Yes', 'Every fix in shadow rolls back on its own if fairness slips.'], ['Fixes With an Approver', fin() ? '13 of 13' : 'All', 'Every fix has a named person who approves the next step.'], ['Shadow Traffic', fin() ? '5% on Credit v3.5' : '--', 'How much live traffic the fix is quietly tested on.']]
     });
+    hide(r);
     var old = document.getElementById('at-hist'); if (old) { hide(old); placeHist('atonement', old.parentNode, old); }
   }
   function halo() {
@@ -52267,25 +52275,30 @@ window.CARDINAL_PLACES = {
       delta: -2, pillLabel: 'Projected Exposure', pillVal: money, subline: 'In 90 days if nothing changes · Today ' + ((cfg.forecast && cfg.forecast.start) || '') ,
       proj: 'With the fixes: <strong style="color:#16a34a">' + ((cfg.forecast && cfg.forecast.full && cfg.forecast.full[3]) || 88) + '</strong> in 90 days',
       avg: 79, pct: 38, confTitle: 'Forecast Confidence', confSub: 'How reliable is this forecast?',
+      units: it, boxTitle: 'Exposure at a glance',
       rows: [['Prediction Accuracy', '91%', 'How often past Halo forecasts landed within range.'], ['Confidence Band', '±4 points', 'Expected swing in the projected score.'], ['Forecast Refreshed', 'Daily', 'Halo re-runs the forecast every morning.'], ['Regulations Tracked', '12', 'Active rules Halo checks your models against.']]
     });
-    if (mini && mini.style.display === 'none') mini.style.display = '';
+    hide(mini);
     var first = h2.querySelector('.card > div > div'); if (first && /projected exposure/i.test(first.textContent)) { hide(first); if (first.parentNode.style.gridTemplateColumns !== '1fr') first.parentNode.style.gridTemplateColumns = '1fr'; }
     var old = document.getElementById('halo-hist'); if (old) { hide(old); placeHist('halo', old.parentNode, old); }
   }
   function ledger() {
     var r = document.getElementById('tl-rings'); if (!r || !r.parentNode || document.getElementById('screen-trustledger').offsetParent === null) return;
     var it = items(r); if (it.length < 4) return;
-    var score = 94;
+    var score = 94, eg = [].filter.call(document.querySelectorAll('#screen-trustledger .grid-4'), function (x) { return /TOTAL ENTRIES/i.test(x.textContent) && /REGULATOR QUERIES/i.test(x.textContent); })[0], regq = null;
+    if (eg) { [].forEach.call(eg.children, function (c) { var p = [].map.call(c.children, function (x) { return (x.textContent || '').trim(); }).filter(Boolean); if (/regulator/i.test(p[0] || '')) regq = { value: p[1], label: 'Regulator queries', sub: p[2] || 'This quarter', color: '#FACC15', pct: Math.min(1, 0.25 + num(p[1]) / 10) }; }); hide(eg); }
+    var oldEr = document.getElementById('tl-entry-rings'); if (oldEr) oldEr.remove();
     var hero = placeHero('trustledger', r.parentNode, r, {
       score: score, title: 'Evidence Completeness', titleBody: 'Share of decisions, tests, fixes, and approvals with a sealed record an examiner can check.',
       okBadge: 'Exam-Ready Records', okTitle: 'Exam-Ready', okBody: 'Records are complete enough to hand to an examiner or sponsor bank.',
       badBadge: 'Records Incomplete', badTitle: 'Records Incomplete', badBody: 'Some evidence is missing.',
       okStatus: 'Above Threshold: Exam-Ready Records', badStatus: 'Below Threshold: Records Incomplete',
-      delta: 1, pillLabel: 'Records Sealed', pillVal: find(it, /records/i).value, subline: 'Verified today ' + find(it, /verified/i).value + ' · Can’t be edited after sealing',
+      delta: 1, pillLabel: 'Tamper Checks', pillVal: '100%', subline: 'Verified today ' + find(it, /verified/i).value + ' · Can’t be edited after sealing',
       avg: 86, pct: 81, confTitle: 'Record Confidence', confSub: 'How reliable are these records?',
+      units: it.concat(regq ? [regq] : []), boxTitle: 'Trust Ledger at a glance',
       rows: [['Tamper Checks', '100% passed', 'Every record is checked against its seal each night.'], ['Last Record Sealed', '2 minutes ago', 'Records are sealed as they happen.'], ['Missing Evidence', fin() ? '1 approval' : 'None', fin() ? 'The Credit v3.5 launch sign-off is not sealed yet because it has not happened.' : 'Nothing missing.'], ['Kept For', '7 years', 'How long sealed records are retained.']]
     });
+    hide(r);
     var src = r.__src && r.__src.parentNode === r.parentNode ? r.__src : r; placeHist('trustledger', r.parentNode, src);
   }
   function sentinel() {
@@ -52300,14 +52313,16 @@ window.CARDINAL_PLACES = {
       okBadge: 'Response On Target', okTitle: 'On Target', okBody: 'Cases are moving inside their deadlines.',
       badBadge: 'Response Below Target', badTitle: 'Below Target', badBody: 'Some cases are behind their deadlines.',
       okStatus: 'Above Target: Cases Moving On Time', badStatus: 'Below Target: Cases Falling Behind',
-      delta: 1, pillLabel: 'Open Cases', pillVal: it[0].value, subline: 'Critical ' + it[1].value + ' · War rooms ' + it[3].value,
+      delta: 1, pillLabel: 'Time to Owner', pillVal: '38 min', subline: 'Critical ' + it[1].value + ' · War rooms ' + it[3].value,
       avg: 77, pct: 68, confTitle: 'Response Confidence', confSub: 'How reliable is this score?',
+      units: it, boxTitle: 'Cases at a glance',
       rows: [['Median Time to Owner', '38 minutes', 'How long a new case waits before someone owns it.'], ['Cases Past Deadline', String(crit), 'Critical cases are the ones at risk of missing their deadline.'], ['Escalations This Month', '2', 'Cases moved up to leadership.'], ['Confidence Band', '±3 points', 'Expected swing if re-measured.']]
     });
+    hide(grid);
     var old = document.getElementById('sent-hist'); if (old) { hide(old); placeHist('sentinel', old.parentNode, old); }
   }
   function echo() {
-    var r = document.getElementById('echo-rings'); if (!r || !r.parentNode) return; if (r.style.display === 'none') r.style.display = '';
+    var r = document.getElementById('echo-rings'); if (!r || !r.parentNode) return;
     if (document.getElementById('screen-echo').offsetParent === null) return;
     var it = items(r); if (it.length < 4) return;
     var score = 97;
@@ -52317,10 +52332,12 @@ window.CARDINAL_PLACES = {
       okBadge: '97% of Decisions Recorded', okTitle: 'Nearly Everything Recorded', okBody: 'Echo records nearly every AI decision and action. The gap is Salesforce, which is not connected yet.',
       badBadge: 'Memory Gaps', badTitle: 'Gaps', badBody: 'Some decisions are not being captured.',
       okStatus: 'Above 80: Nearly Everything Recorded', badStatus: 'Below 80: Decisions Going Unrecorded',
-      delta: 1, pillLabel: 'Critical Issues', pillVal: find(it, /critical issues/i).value, subline: 'Active investigations ' + find(it, /investigations/i).value + ' · Days since last critical ' + find(it, /days since/i).value,
+      delta: 1, pillLabel: 'Sources Connected', pillVal: fin() ? '5 of 6' : 'All', subline: 'Active investigations ' + find(it, /investigations/i).value + ' · Days since last critical ' + find(it, /days since/i).value,
       avg: 88, pct: 84, confTitle: 'Memory Confidence', confSub: 'How complete is the record?',
+      units: it, boxTitle: 'Echo at a glance',
       rows: [['Sources Connected', fin() ? '5 of 6' : 'All', fin() ? 'Salesforce is not connected yet, which is why coverage is 97 and not 100.' : 'Every source is connected.'], ['Integrity Checks', '100% passed', 'Every memory is checked against its seal.'], ['Last Memory', 'Just now', 'Echo records continuously.'], ['Kept For', '7 years', 'How long memories are retained.']]
     });
+    hide(r);
     var rec = document.getElementById('echo-recent-access-panel'), live = r.nextElementSibling; placeHist('echo', r.parentNode, rec && rec.parentNode === r.parentNode ? rec : (live && live.id !== 'u-echo-hist' ? live : r));
   }
   function compliance() {
@@ -52336,15 +52353,15 @@ window.CARDINAL_PLACES = {
       okBadge: 'On Track: Above 80', okTitle: 'On Track', okBody: 'Most rules are met. Open issues still need to close before the exam.',
       badBadge: 'Below 80: Gaps to Close', badTitle: 'Gaps', badBody: 'Some rules are not met yet.',
       okStatus: 'Above Target: On Track, Issues Still Open', badStatus: 'Below Target: Rules Not Met',
-      delta: 1, pillLabel: 'Open Issues', pillVal: (cards.filter(function (c) { return /open issues/i.test(c.label); })[0] || { value: '' }).value,
+      delta: 1, pillLabel: 'Evidence Ready', pillVal: '92%',
       subline: fin() ? 'CFPB fair lending exam in 13 days' : 'Due in 30 days ' + dl.value,
       proj: 'Projected: <strong style="color:#16a34a">' + Math.min(100, score + 7) + '</strong> once the open issues close',
       avg: 78, pct: 61, confTitle: 'Compliance Confidence', confSub: 'How reliable is this rate?',
+      units: cards.filter(function (c) { return !/rate/i.test(c.label); }).map(function (c) { var n = num(c.value), L = c.label.toLowerCase(), bad = /issue|whistle/.test(L), due = /due|deadline/.test(L); return { value: c.value, label: L.charAt(0).toUpperCase() + L.slice(1), sub: c.sub, color: bad ? (n ? '#ef4444' : '#22c55e') : due ? (n ? '#FACC15' : '#22c55e') : '#2563eb', pct: bad || due ? Math.min(1, 0.25 + n / 10) : 0.6 }; }), boxTitle: 'Compliance at a glance',
       rows: [['Confidence Band', '±2 points', 'Expected swing if re-measured.'], ['Evidence Ready', '92%', 'Share of required documents already in the exam file.'], ['States Covered', fin() ? '38' : '--', 'Where you operate and Cardinal tracks state rules.'], ['Last Rule Update', 'Oct 6', 'When Cardinal last checked for new or changed rules.']]
     });
-    var rings = document.getElementById('comp-rings');
-    if (rings && rings.previousElementSibling !== hero) scr.insertBefore(rings, hero.nextSibling);
-    placeHist('compliance', scr, rings || hero);
+    hide(g); var oldR = document.getElementById('comp-rings'); if (oldR) oldR.remove();
+    placeHist('compliance', scr, hero);
   }
   function tick() { [genesis, atonement, halo, ledger, sentinel, echo, compliance].forEach(function (f) { try { f(); } catch (e) {} }); }
   setInterval(tick, 800);
@@ -52418,18 +52435,165 @@ window.CARDINAL_PLACES = {
     if (grid.style.display !== 'none') grid.style.display = 'none';
   }
   function tick() {
-    var tl = document.getElementById('screen-trustledger');
-    if (tl && tl.offsetParent !== null) {
-      var g = [].filter.call(tl.querySelectorAll('.grid-4'), function (x) { return /TOTAL ENTRIES/i.test(x.textContent) && /REGULATOR QUERIES/i.test(x.textContent); })[0];
-      convert(g, 'tl-entry-rings', 'Ledger entries at a glance');
-    }
-    var cp = document.getElementById('screen-compliance');
-    if (cp && cp.offsetParent !== null) {
-      var g2 = [].filter.call(cp.children, function (x) { return x.children.length >= 4 && [].every.call(x.children, function (c) { return /stat-card/.test(c.className); }); })[0];
-      if (g2) convert(g2, 'comp-rings', 'Compliance at a glance');
+    var pl = document.getElementById('screen-pipeline');
+    if (pl && pl.offsetParent !== null) {
+      var c0 = pl.querySelector('.stat-card'), g3 = c0 && c0.parentNode;
+      if (g3 && g3.id !== 'pl-rings') convert(g3, 'pl-rings', 'Pipeline at a glance');
     }
   }
   setInterval(tick, 800);
+})();
+
+</script>
+
+<script data-p="p10_gauges">
+// 10/7 (Brittany, with screenshots): every circle is a full gauge like the Trust Score one: its own ring, threshold
+// tick, colored number, status line, "Last calculated", change since last week, label, and note. All circles for a
+// screen sit on ONE row in the SAME first box, at the same size. No black rings. Used by the core heroes, Library,
+// My Workspace, Data Pipeline, and every other place that drew a row of circles.
+(function () {
+  function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;'); }
+  function hexA(h, a) { h = String(h || '#2563eb').replace('#', ''); if (h.length === 3) h = h.split('').map(function (c) { return c + c; }).join(''); var n = parseInt(h, 16); return 'rgba(' + (n >> 16 & 255) + ',' + (n >> 8 & 255) + ',' + (n & 255) + ',' + a + ')'; }
+  function hash(s) { var h = 0; s = String(s); for (var i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0; return Math.abs(h); }
+  function num(s) { var m = String(s == null ? '' : s).replace(/,/g, '').match(/-?\d+(\.\d+)?/); return m ? +m[0] : 0; }
+  var GRN = '#22c55e', YEL = '#FACC15', RED = '#ef4444', BLU = '#2563eb';
+  function norm(c) {
+    c = String(c || '').toLowerCase();
+    if (!c || c === '#1a1815' || c === '#000' || c === '#111' || c === '#0f766e' || c === '#1d4ed8') return BLU;
+    if (c === '#16a34a' || c === '#15803d') return GRN;
+    if (c === '#dc2626' || c === '#b91c1c') return RED;
+    return c;
+  }
+  var css = document.createElement('style');
+  css.textContent =
+    '.section-hdr:has(>.u-hero){flex-wrap:wrap!important}.section-hdr>.u-hero{flex:1 1 100%!important;width:100%;order:4}.section-hdr>.u-hist{flex:1 1 100%!important;width:100%;order:5}' +
+    '.u-hero,.g-host{min-width:0;max-width:100%;box-sizing:border-box;overflow:hidden}.g-row{max-width:100%;box-sizing:border-box;display:flex;gap:18px;align-items:flex-start;overflow-x:auto;padding:4px 2px 10px;scrollbar-width:thin}' +
+    '.g-unit{flex:1 1 0;display:flex;flex-direction:column;align-items:center;text-align:center}' +
+    '.g-unit.click{cursor:pointer}.g-unit.click:hover .g-disc{transform:translateY(-2px)}' +
+    '.g-disc{position:relative;width:100%;max-width:230px;aspect-ratio:1/1;margin:0 auto;transition:transform .2s}' +
+    '.g-disc svg{position:absolute;inset:0;width:100%;height:100%}' +
+    '.g-disc .tsv2-gauge-pulse{border-radius:50%}' +
+    '.g-pill100{position:absolute;left:50%;bottom:9%;transform:translateX(-50%);font-size:11px;color:#64748b;background:var(--card,#fff);padding:1px 8px;border-radius:8px;white-space:nowrap}' +
+    '.g-status{font-size:13px;font-weight:700;margin-top:10px;line-height:1.3}' +
+    '.g-live{display:flex;align-items:center;justify-content:center;gap:6px;font-size:11px;color:var(--muted2,#64748b);margin-top:6px}' +
+    '.g-live .dot{width:7px;height:7px;border-radius:50%;background:#4ade80;box-shadow:0 0 6px rgba(74,222,128,.7)}' +
+    '.g-delta{font-size:11px;color:var(--muted2,#64748b);margin-top:4px}' +
+    '.g-pill{display:inline-flex;align-items:center;gap:8px;margin-top:10px;padding:6px 12px;border-radius:9px;border:1px solid rgba(26,24,21,.1);background:rgba(255,255,255,.55);font-size:10.5px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:#475569}' +
+    '.g-pill b{font-size:13px;color:#1a1815;letter-spacing:0}' +
+    '.g-sub{font-size:11px;color:var(--muted2,#64748b);margin-top:6px;line-height:1.4;max-width:230px}' +
+    '.g-proj{font-size:11px;color:var(--muted2,#64748b);margin-top:6px;line-height:1.4;max-width:230px}' +
+    '.g-details{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;margin-top:14px}';
+  document.head.appendChild(css);
+
+  var BAD = /issue|critical|risk|pending|deadline|due|ignored|whistle|fail|incident|open cases|high likelihood|queries|unresolved|time to fix/i;
+  function autoStatus(color, label) {
+    color = String(color || '').toLowerCase();
+    if (color === GRN.toLowerCase() || color === '#16a34a') return 'On Track';
+    if (color === YEL.toLowerCase() || color === '#eab308' || color === '#f59e0b') return 'Needs Attention';
+    if (color === RED.toLowerCase() || color === '#dc2626') return 'Action Needed';
+    return 'Tracking';
+  }
+  function autoDelta(u) {
+    var n = num(u.value), h = hash((window.currentOrg || '') + u.label);
+    if (!n && !/\d/.test(String(u.value))) return null;
+    if (/days?/i.test(String(u.value))) { var dd = [-1, 0, -2][h % 3]; return { d: dd, text: dd ? (dd > 0 ? '+' : '') + dd + ' day' + (Math.abs(dd) > 1 ? 's' : '') : '' }; }
+    if (n >= 100) { var big = Math.max(1, Math.round(n * (0.004 + (h % 5) / 1000))); return { d: big, text: '+' + big.toLocaleString() }; }
+    var opts = BAD.test(u.label) ? [0, 1, -1, 0] : [1, 0, 2, 1];
+    var d = opts[h % opts.length];
+    return { d: d, text: d ? (d > 0 ? '+' : '') + d : '' };
+  }
+  function fsz(v) { var L = String(v).length; return L <= 2 ? 60 : L === 3 ? 54 : L === 4 ? 46 : L === 5 ? 40 : L === 6 ? 34 : L === 7 ? 30 : 24; }
+
+  // One gauge unit.
+  window.cardinalGauge = function (u) {
+    var col = norm(u.color), pct = u.pct == null ? 1 : Math.max(0.03, Math.min(1, u.pct));
+    var R = 86, C = 2 * Math.PI * R, v = String(u.value == null ? '' : u.value);
+    var sweep = -90 + pct * 360, thr = -90 + (u.thr == null ? 0.8 : u.thr) * 360;
+    var status = u.status || autoStatus(col, u.label);
+    var dl = u.delta !== undefined ? u.delta : autoDelta(u), deltaHtml = '';
+    if (dl) {
+      var bad = u.good === 'down' || (u.good !== 'up' && BAD.test(u.label || ''));
+      var good = dl.d === 0 ? null : (dl.d > 0) !== bad;
+      deltaHtml = dl.d === 0 ? '<div class="g-delta">No change since last week</div>' :
+        '<div class="g-delta"><span style="color:' + (good ? '#16a34a' : '#dc2626') + ';font-weight:700">' + (dl.d > 0 ? '▲ ' : '▼ ') + esc(dl.text) + '</span> since last week</div>';
+    }
+    return '<div class="g-unit' + (u.onclick ? ' click' : '') + '"' + (u.onclick ? ' onclick="' + esc(u.onclick) + '"' : '') + (u.tip ? ' title="' + esc(u.tip) + '"' : '') + '>' +
+      '<div class="g-disc edo-ts-gauge tsv2-gauge" style="width:100%;height:auto;max-width:230px">' +
+      '<div class="tsv2-gauge-pulse" style="box-shadow:0 0 60px 2px ' + hexA(col, 0.3) + ',0 10px 18px -8px rgba(0,0,0,0.32)"></div>' +
+      '<svg viewBox="0 0 200 200"><circle cx="100" cy="100" r="86" fill="none" stroke="rgba(167,167,167,.06)" stroke-width="14"/>' +
+      '<circle cx="100" cy="100" r="86" fill="none" stroke="' + col + '" stroke-width="14" stroke-linecap="round" stroke-dasharray="' + (C * pct).toFixed(2) + ' ' + C.toFixed(2) + '" transform="rotate(-90 100 100)" style="filter:drop-shadow(0 6px 10px rgba(0,0,0,.30))"/>' +
+      '<line x1="100" y1="14" x2="100" y2="28" stroke="rgba(34,197,94,.9)" stroke-width="2.5" transform="rotate(' + thr + ' 100 100)"/>' +
+      '<line x1="100" y1="10" x2="100" y2="24" stroke="rgba(255,255,255,.82)" stroke-width="2" transform="rotate(' + sweep + ' 100 100)"/>' +
+      '<text x="100" y="102" text-anchor="middle" dominant-baseline="middle" fill="' + col + '" style="font-size:' + fsz(v) + 'px;font-weight:800;font-family:var(--sans);letter-spacing:-1px">' + esc(v) + '</text></svg>' +
+      (u.pill100 ? '<div class="g-pill100">' + esc(u.pill100) + '</div>' : '') + '</div>' +
+      '<div class="g-status" style="color:' + col + '">' + esc(status) + '</div>' +
+      '<div class="g-live"><span class="dot"></span><span>Last calculated <strong style="color:var(--chrome2,#1a1815)">' + esc(u.calc || '2 minutes ago') + '</strong></span></div>' +
+      deltaHtml +
+      '<div class="g-pill">' + esc(u.pillLabel || u.label) + (u.pillVal != null && u.pillVal !== '' ? ' <b>' + esc(u.pillVal) + '</b>' : '') + '</div>' +
+      (u.sub ? '<div class="g-sub">' + esc(u.sub) + '</div>' : '') +
+      (u.proj ? '<div class="g-proj">' + u.proj + '</div>' : '') + '</div>';
+  };
+  window.cardinalGaugeRow = function (units) {
+    var min = units.length >= 7 ? 108 : units.length === 6 ? 115 : units.length === 5 ? 122 : 140;
+    return '<div class="g-row">' + units.map(function (u) { return cardinalGauge(u).replace('<div class="g-unit', '<div style="min-width:' + min + 'px" class="g-unit'); }).join('') + '</div>';
+  };
+  // Every existing "row of circles" now draws full gauges; the units are kept on the element for the core heroes.
+  window.cardinalRings = function (rings) {
+    var units = rings.map(function (r) { var l = String(r.label || ''); l = l.charAt(0).toUpperCase() + l.slice(1).toLowerCase(); return { value: r.value, label: l, sub: r.sub, color: norm(r.color), pct: r.pct, onclick: r.onclick, tip: r.tip }; });
+    return '<div class="cr-wrap g-host" data-units="' + esc(JSON.stringify(units)) + '">' + cardinalGaugeRow(units) + '</div>';
+  };
+  window.cardinalUnitsFrom = function (el) {
+    var h = el && el.querySelector('[data-units]'); if (!h) return [];
+    try { return JSON.parse(h.getAttribute('data-units')); } catch (e) { return []; }
+  };
+})();
+
+</script>
+
+<script data-p="p11_fed">
+// 10/7 (Brittany: "everything should be the same"). Federal had no Active Conversations on the dashboard and an
+// empty "What would raise / lower your score" on Trust Score. Same shape as the other companies.
+(function () {
+  var D = window.CARDINAL_DATA && window.CARDINAL_DATA.fed; if (!D) return;
+  var team = ['Patricia Alvarez', 'Andre Lewis', 'Owen Clarke', 'Renee Morales'];
+  function msg(id, t, author, content, kind) { return { id: id, timestamp: t, author: author, content: content, attachments: [], mentions: [], isPinned: false, echoLogId: 'echo-' + id, authorKind: kind || 'human' }; }
+  if (!(D.trustLoopChannels || []).length) {
+    D.trustLoopChannels = [
+      { id: 'governance-team', name: '#governance-team', description: 'Standing governance channel: governance team', members: team, unreadCount: 5, messages: [
+        msg('gt-FED-1', '2026-09-30T14:00:00.000Z', 'Patricia Alvarez', 'Pre-deployment review for IRS Tax Fraud Detection v3.2 is on the agenda Thursday.'),
+        msg('gt-FED-2', '2026-10-03T16:20:00.000Z', 'Eve: Cardinal', 'Reminder: OMB M-25-21 deployment block stays until the appeals path is designed.', 'eve')] },
+      { id: 'regulatory-updates', name: '#regulatory-updates', description: 'Standing governance channel: regulatory updates', members: team, unreadCount: 2, messages: [
+        msg('ru-FED-1', '2026-10-01T10:00:00.000Z', 'Owen Clarke', 'OMB M-26-04 contract terms now apply to the Taxpayer Help Assistant vendor renewal.'),
+        msg('ru-FED-2', '2026-10-04T09:00:00.000Z', 'Eve: Cardinal', 'Regulatory digest: M-25-21 quarterly attestation window opens next week.', 'eve')] },
+      { id: 'model-reviews', name: '#model-reviews', description: 'Standing governance channel: model reviews', members: team, unreadCount: 3, messages: [
+        msg('mr-FED-1', '2026-10-02T13:10:00.000Z', 'Andre Lewis', 'Shadow run of v3.2 without schedule_c_volatility: fairness ratio 0.54 to 0.82.'),
+        msg('mr-FED-2', '2026-10-05T11:40:00.000Z', 'Adam: Cardinal', 'TECH: verified income history keeps the catch rate within 1 point.', 'adam')] },
+      { id: 'legal-prep', name: '#legal-prep', description: 'Standing governance channel: legal prep', members: team, unreadCount: 2, messages: [
+        msg('lp-FED-1', '2026-10-03T15:00:00.000Z', 'Owen Clarke', 'Draft notice language for flagged self-employed filers is ready for review.')] },
+      { id: 'audit-prep', name: '#audit-prep', description: 'Standing governance channel: audit prep', members: team, unreadCount: 2, messages: [
+        msg('ap-FED-1', '2026-10-04T10:30:00.000Z', 'Renee Morales', 'Impact assessment sections 1 to 4 are sealed in Echo. Section 5 needs the appeals path.')] },
+      { id: 'board-prep', name: '#leadership-brief', description: 'Standing governance channel: leadership brief', members: team, unreadCount: 2, messages: [
+        msg('bp-FED-1', '2026-10-05T17:00:00.000Z', 'Patricia Alvarez', 'Leadership brief: one model blocked before launch, no taxpayers affected yet.')] }
+    ];
+  }
+  if (!(D.caseChannels || []).length) {
+    D.caseChannels = [{ caseId: 'FED-PDV-001', channelName: '#case-FED-PDV-001', unreadCount: 4, members: team.concat(['Eve', 'Adam']), archived: false, messages: [
+      msg('wrc-FED-1', '2026-10-01T09:30:00.000Z', 'Patricia Alvarez', 'Case FED-PDV-001 opened: proxy variable found before launch.'),
+      msg('wrc-FED-2', '2026-10-01T10:05:00.000Z', 'Eve: Cardinal', 'AUTO: Genesis counterfactual receipt sealed for IRS Tax Fraud Detection v3.1.', 'eve'),
+      msg('wrc-FED-3', '2026-10-04T14:15:00.000Z', 'Andre Lewis', 'v3.2 candidate drops schedule_c_volatility. Requesting review of the appeals path design.')] }];
+  }
+  if (!(D.fixImpactScenarios || []).length) D.fixImpactScenarios = [
+    { action: 'Launch Tax Fraud Detection v3.2 without schedule_c_volatility', points: 6.0, route: 'atonement' },
+    { action: 'Finish the OMB M-25-21 impact assessment', points: 2.4, route: 'compliance' },
+    { action: 'Design the appeals path for flagged filers', points: 1.6, route: 'atonement' },
+    { action: 'Improve monitoring coverage to 85%', points: 0.8, route: 'sentinel' }
+  ];
+  if (!(D.riskScenarios || []).length) D.riskScenarios = [
+    { risk: 'Miss the OMB deadline (Nov 2)', points: -3.5, route: 'compliance', explain: 'Missing the OMB M-25-21 deadline keeps the model blocked and takes 3.5 points off.' },
+    { risk: 'Launch without an appeals path', points: -3.0, route: 'compliance', explain: 'Flagged filers would have no way to contest a decision, a 3-point penalty.' },
+    { risk: 'Vendor patch for the Taxpayer Help Assistant slips', points: -1.4, route: 'sentinel', explain: 'The assistant keeps running without the neutrality patch required by M-26-04.' },
+    { risk: 'New income proxy in a second model', points: -2.2, route: 'eden', explain: 'If a similar proxy shows up in another model, the score drops 2.2 points.' }
+  ];
 })();
 
 </script>
