@@ -33170,6 +33170,8 @@ window.renderBigWorkspacePage = function() {
 
   var myMems = allMems.filter(function(m){ return m.author === persona.name; });
 
+  // 10/8: same numbers as the employee profile (all of this person's activity, notes, and open cases).
+  var __es = (window.cardinalEmpStats && cardinalEmpStats(persona.name)) || { events: myMems.length, cases: Array.from(new Set(myMems.map(function(m){ return m.caseId; }).filter(Boolean))).length, notes: 0 };
   var escJs = function(s){ return String(s == null ? '' : s).replace(/\\/g, '\\\\').replace(/'/g, "\\'"); };
 
   var html = '<div style="display:grid;grid-template-columns:300px 1fr;gap:18px;align-items:start;">';
@@ -33185,9 +33187,9 @@ window.renderBigWorkspacePage = function() {
 
   html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">' +
     '<div style="padding:12px;background:rgba(250,204,21,0.06);border:1px solid rgba(250,204,21,0.2);border-radius:10px;text-align:center;"><div style="font-size:22px;color:#FACC15;font-weight:800;line-height:1;">' + myPinnedMems.length + '</div><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.6px;font-weight:700;margin-top:6px;">Pins</div></div>' +
-    '<div style="padding:12px;background:rgba(168,85,247,0.06);border:1px solid rgba(168,85,247,0.2);border-radius:10px;text-align:center;"><div style="font-size:22px;color:#a855f7;font-weight:800;line-height:1;">' + myNotesShown + '</div><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.6px;font-weight:700;margin-top:6px;">Notes</div></div>' +
-    '<div style="padding:12px;background:rgba(167, 167, 167,0.06);border:1px solid rgba(167, 167, 167,0.15);border-radius:10px;text-align:center;"><div style="font-size:22px;color:var(--accent);font-weight:800;line-height:1;">' + myMems.length + '</div><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.6px;font-weight:700;margin-top:6px;">Events</div></div>' +
-    '<div style="padding:12px;background:rgba(34,197,94,0.06);border:1px solid rgba(34,197,94,0.2);border-radius:10px;text-align:center;"><div style="font-size:22px;color:#22c55e;font-weight:800;line-height:1;">' + Array.from(new Set(myMems.map(function(m){ return m.caseId; }).filter(Boolean))).length + '</div><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.6px;font-weight:700;margin-top:6px;">Cases</div></div>' +
+    '<div style="padding:12px;background:rgba(168,85,247,0.06);border:1px solid rgba(168,85,247,0.2);border-radius:10px;text-align:center;"><div style="font-size:22px;color:#a855f7;font-weight:800;line-height:1;">' + (window.cardinalEmpStats ? __es.notes : myNotesShown) + '</div><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.6px;font-weight:700;margin-top:6px;">Notes</div></div>' +
+    '<div style="padding:12px;background:rgba(167, 167, 167,0.06);border:1px solid rgba(167, 167, 167,0.15);border-radius:10px;text-align:center;"><div style="font-size:22px;color:var(--accent);font-weight:800;line-height:1;">' + __es.events + '</div><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.6px;font-weight:700;margin-top:6px;">Events</div></div>' +
+    '<div style="padding:12px;background:rgba(34,197,94,0.06);border:1px solid rgba(34,197,94,0.2);border-radius:10px;text-align:center;"><div style="font-size:22px;color:#22c55e;font-weight:800;line-height:1;">' + __es.cases + '</div><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.6px;font-weight:700;margin-top:6px;">Cases</div></div>' +
   '</div>';
 
   html += '<div style="background:rgba(26,24,21,0.045);border:1px solid rgba(167, 167, 167,0.1);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:6px;">' +
@@ -55113,6 +55115,7 @@ window.CARDINAL_PLACES = {
     (d.caseChannels || []).forEach(function (c) { msgs(c.messages, c.channelName || ('Case ' + c.caseId)); });
     var rt = window.__tlRuntimeMsgs || {}; Object.keys(rt).forEach(function (k) { msgs(rt[k], 'Trust Loop ' + (k.indexOf('dm:') === 0 ? 'message to ' + k.slice(3) : '#' + k)); });
     (d.trustLoopAnnouncements || []).forEach(function (a) { if (a.author === name) notes.push({ t: new Date(a.timestamp), where: 'Announcement', text: a.title + (a.body ? ': ' + a.body : ''), edits: [] }); });
+    try { var PS = window.CARDINAL_PERSONAS ? (Array.isArray(CARDINAL_PERSONAS) ? CARDINAL_PERSONAS : Object.values(CARDINAL_PERSONAS)) : [], per = PS.filter(function (z) { return z.name === name; })[0]; ((per && (window.__userNotes || {})['notes:' + per.id]) || []).forEach(function (n) { if (!n.deleted) notes.push({ t: new Date(n.timestamp || n.at || n.created || Date.now()), where: 'Personal note', text: n.text || n.body || n.content || '', edits: [] }); }); } catch (e) {}
     (NOTES[o + '|' + name] || []).forEach(function (n) { notes.push({ t: at(n[0], n[1], 12), where: n[2], text: n[3], edits: n[4].map(function (e) { return { t: at(e[0], e[1], 40), what: e[2] }; }) }); });
     ev.filter(function (e) { return e.act === 'Commented'; }).forEach(function (e) { notes.push({ t: e.t, where: e.core, text: e.what, edits: [] }); });
     notes.sort(function (a, b) { return b.t - a.t; });
@@ -55125,6 +55128,9 @@ window.CARDINAL_PLACES = {
   function noteRow(x) { return [when(x.t), esc(x.where), esc(x.text) + (x.edits.length ? '<div style="font-size:11px;color:#A16207;margin-top:4px">Edited ' + x.edits.length + (x.edits.length === 1 ? ' time' : ' times') + ': ' + x.edits.map(function (e) { return esc(fdt(e.t)) + ', ' + esc(e.what); }).join('; ') + '</div>' : '<div style="font-size:11px;color:#64748b;margin-top:4px">Not edited</div>')]; }
   function evRow(e) { return [when(e.t), act(e.act), esc(e.core), esc(e.what), seal(e.seal)]; }
 
+  window.cardinalEmpStats = function (name) {
+    try { var x = data(name); if (!x) return null; var open = {}; (window.__echoAPI.caseRows() || []).forEach(function (c) { if (c.status === 'Open') open[c.id] = 1; }); var mine = {}; x.ev.forEach(function (e) { if (e.ref && open[e.ref]) mine[e.ref] = 1; }); return { events: x.ev.length, notes: x.notes.length, cases: Object.keys(mine).length }; } catch (e) { return null; }
+  };
   window.empDrill = function (name, kind, id) {
     var x = data(name), box = document.querySelector('#emp-prof [data-et="drill"]'); if (!x || !box) return;
     var ev = x.ev.filter(function (e) { return kind === 'case' ? (e.ref === id || e.what.indexOf(id) > -1) : e.what.indexOf(id) > -1; });
