@@ -52941,6 +52941,9 @@ window.CARDINAL_PLACES = {
   function D() { return (window.CARDINAL_DATA || {})[org()] || {}; }
   var MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   function fd(d) { d = new Date(d); return MON[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear(); }
+  function tm(d) { d = new Date(d); var h = d.getHours(), m = d.getMinutes(); return (h % 12 || 12) + ':' + (m < 10 ? '0' : '') + m + ' ' + (h < 12 ? 'AM' : 'PM'); }
+  function fdt(d) { return fd(d) + ' · ' + tm(d); }
+  window.cardinalFdt = fdt;
   function sealOf(s) { var x = ''; for (var i = 0; i < 3; i++) x += ('00000000' + hash(s + '|' + i).toString(16)).slice(-8); return x.slice(2, 14); }
   var NOW = new Date();
   var css = document.createElement('style');
@@ -53005,7 +53008,7 @@ window.CARDINAL_PLACES = {
     ];
     for (var i = 0; i < n; i++) {
       var TT = /scien|engineer|platform|head of fraud|data|model|\bml\b|\bcto\b/i.test(p.role || '') ? T : T.filter(function (x) { return /Approved|Viewed restricted|Exported|Commented|Logged|Opened/.test(x[0]); });
-      var hh = hash(key + '#' + i), tp = TT[hh % TT.length], t = new Date(p.joined.getTime() + span * ((hash('t' + key + i) % 10000) / 10000));
+      var hh = hash(key + '#' + i), tp = TT[hh % TT.length], t = new Date(p.joined.getTime() + span * ((hash('t' + key + i) % 10000) / 10000)); t.setHours(8 + hh % 10, (hh >> 4) % 60, 0, 0); if (t.getDay() === 0) t.setDate(t.getDate() + 1); if (t.getDay() === 6) t.setDate(t.getDate() - 1); if (t > NOW) t = new Date(NOW.getTime() - (1 + hh % 20) * 3600000);
       var m = mn[(hh >> 5) % Math.max(1, mn.length)] || 'a model', c = cs[(hh >> 7) % Math.max(1, cs.length)] || 'a case';
       out.push({ t: t, core: tp[1], act: tp[0], what: tp[2].replace('%m', m).replace('%c', c), ref: /%c/.test(tp[2]) ? c : m, seal: sealOf(key + i) });
     }
@@ -53081,7 +53084,7 @@ window.CARDINAL_PLACES = {
     cores: [['x-core-all', 'All cores']].concat(['Eden', 'Obsidian', 'Genesis', 'Atonement', 'Halo', 'Watchman', 'Codex', 'Compliance', 'Trust Ledger', 'Echo'].map(function (c) { return ['x-core-' + c, c]; })),
     cases: [['x-cases', 'All cases'], ['x-casehist', 'Case history'], ['conversations', 'Conversations'], ['ignored', 'Ignored flags']],
     models: [['x-models', 'Models and AI systems'], ['lineage', 'Version lineage']],
-    people: [['x-people', 'Employees'], ['x-board', 'Team board'], ['x-customers', 'Customers'], ['peoplelog', 'Employee activity log'], ['pmprofiles', 'Passport profiles']],
+    people: [['x-people', 'Employees'], ['x-board', 'Team board'], ['x-customers', 'Customers'], ['x-plog', 'Employee activity log'], ['pmprofiles', 'Passport profiles']],
     decisions: [['receipts', 'Decision receipts']],
     wb: [['whistleblower', 'Sealed reports']],
     desk: [['x-pins', 'Pinned memories'], ['myworkspace', 'My notes and activity']]
@@ -53142,13 +53145,13 @@ window.CARDINAL_PLACES = {
         '<div class="ex-chips"><div class="ex-chip"><b>' + ev.length + '</b><span>Records</span></div><div class="ex-chip"><b>' + cnt('Changed') + '</b><span>Changes</span></div><div class="ex-chip"><b>' + cnt('Tried to change (blocked)') + '</b><span>Blocked</span></div><div class="ex-chip"><b>' + cnt('Approved') + '</b><span>Approvals</span></div><div class="ex-chip"><b>' + cnt('Viewed restricted record') + '</b><span>Restricted views</span></div></div></div>' +
         '<div class="ex-note"><strong>Whistleblower reports:</strong> never linked to a person. Reports are anonymous by design, so they do not appear on anyone’s record, including this one. They live, sealed, under Whistleblower.</div>' +
         '<div class="ex-bar">' + search('Search what ' + p.name.split(' ')[0] + ' did') + sel('year', 'Year', years(ev, function (e) { return e.t; })) + sel('core', 'Core', CORES) + sel('act', 'Action', Object.keys(ACT_COL)) + dates() + '</div>' +
-        timelineTable(ev, [['When', function (e) { return '<span style="white-space:nowrap;color:#475569">' + fd(e.t) + '</span>'; }], ['Action', function (e) { return pill(e.act, ACT_COL[e.act] || ACT_COL.Logged); }], ['Core', function (e) { return coreTag(e.core); }], ['What happened', function (e) { return esc(e.what); }], ['Sealed', function (e) { return '<span style="font-family:monospace;font-size:11px;color:#64748b">' + esc(e.seal) + '</span>'; }]]);
+        timelineTable(ev, [['When', function (e) { return '<span style="white-space:nowrap;color:#475569">' + fdt(e.t) + '</span>'; }], ['Action', function (e) { return pill(e.act, ACT_COL[e.act] || ACT_COL.Logged); }], ['Core', function (e) { return coreTag(e.core); }], ['What happened', function (e) { return esc(e.what); }], ['Sealed', function (e) { return '<span style="font-family:monospace;font-size:11px;color:#64748b">' + esc(e.seal) + '</span>'; }]]);
     }
     var ps = people().map(function (p) { var ev = personEvents(p); return { p: p, n: ev.length, last: ev[0] }; }).filter(function (x) { return q(x.p); });
     return '<div class="ex-note">Employees: everyone at ' + esc(companyName()) + ' who has touched an AI system. Click a name for their profile (notes, sign-offs, cases, models). Click anywhere else on the row for their full activity log, back to the day they joined.</div>' +
       '<div class="ex-bar">' + search('Search people by name or role') + '</div>' +
       '<div class="ex-wrap"><table class="ex-tbl"><thead><tr><th>Person</th><th>Role</th><th>Joined</th><th>Records</th><th>Last activity</th><th>Access</th></tr></thead><tbody>' +
-      ps.map(function (x) { return '<tr class="ex-click" onclick="echoOpen(\'person\',' + esc(JSON.stringify(x.p.name)) + ')"><td><a href="javascript:void(0)" class="ex-name" title="Open ' + esc(x.p.name) + '’s profile" onclick="event.stopPropagation();empOpen(' + esc(JSON.stringify(x.p.name)) + ')" style="color:#1a1815;text-decoration:underline;text-decoration-color:rgba(26,24,21,.25);text-underline-offset:3px">' + esc(x.p.name) + '</a></td><td>' + esc(x.p.role) + '</td><td style="white-space:nowrap">' + fd(x.p.joined) + '</td><td>' + x.n + '</td><td><div>' + esc(x.last ? x.last.what : '') + '</div><div class="ex-sub">' + (x.last ? fd(x.last.t) : '') + '</div></td><td>' + esc(x.p.access) + '</td></tr>'; }).join('') + '</tbody></table></div>';
+      ps.map(function (x) { return '<tr class="ex-click" onclick="echoOpen(\'person\',' + esc(JSON.stringify(x.p.name)) + ')"><td><a href="javascript:void(0)" class="ex-name" title="Open ' + esc(x.p.name) + '’s profile" onclick="event.stopPropagation();empOpen(' + esc(JSON.stringify(x.p.name)) + ')" style="color:#1a1815;text-decoration:underline;text-decoration-color:rgba(26,24,21,.25);text-underline-offset:3px">' + esc(x.p.name) + '</a></td><td>' + esc(x.p.role) + '</td><td style="white-space:nowrap">' + fd(x.p.joined) + '</td><td>' + x.n + '</td><td><div>' + esc(x.last ? x.last.what : '') + '</div><div class="ex-sub">' + (x.last ? fdt(x.last.t) : '') + '</div></td><td>' + esc(x.p.access) + '</td></tr>'; }).join('') + '</tbody></table></div>';
   }
   function pCases() {
     if (X.detail && X.detail.kind === 'case') {
@@ -53158,7 +53161,7 @@ window.CARDINAL_PLACES = {
         '<div class="ex-head"><div><div style="font-size:17px;font-weight:700;color:#1a1815">' + esc(c.id) + ': ' + esc(c.title) + '</div><div class="ex-sub">' + esc(c.model || '') + ' · Owner ' + esc(c.owner) + ' · Opened ' + fd(c.opened) + (c.closed ? ' · Closed ' + fd(c.closed) : ' · Still open') + '</div></div>' +
         '<div class="ex-chips"><div class="ex-chip"><b>' + tl.length + '</b><span>Records</span></div><div class="ex-chip"><b>' + Math.max(1, Math.round(((c.closed || NOW) - c.opened) / 864e5)) + '</b><span>Days</span></div></div></div>' +
         '<div class="ex-wrap"><table class="ex-tbl"><thead><tr><th>When</th><th>Stage</th><th>Core</th><th>What happened</th><th>Sealed</th></tr></thead><tbody>' +
-        (window.__exPage = tl.map(function (e) { return { t: e.t, core: e.core, act: e.stage, who: c.owner, what: e.what, seal: e.seal, ref: c.id }; }), '') + tl.map(function (e, i) { return '<tr class="ex-click" title="Open the full record" onclick="echoRecord(' + i + ')"><td style="white-space:nowrap;color:#475569">' + fd(e.t) + '</td><td>' + pill(e.stage, ['#1e3a8a', '#eff6ff']) + '</td><td>' + coreTag(e.core) + '</td><td>' + esc(e.what) + '</td><td style="font-family:monospace;font-size:11px;color:#64748b">' + esc(e.seal) + '</td></tr>'; }).join('') + '</tbody></table></div>';
+        (window.__exPage = tl.map(function (e) { return { t: e.t, core: e.core, act: e.stage, who: c.owner, what: e.what, seal: e.seal, ref: c.id }; }), '') + tl.map(function (e, i) { return '<tr class="ex-click" title="Open the full record" onclick="echoRecord(' + i + ')"><td style="white-space:nowrap;color:#475569">' + fdt(e.t) + '</td><td>' + pill(e.stage, ['#1e3a8a', '#eff6ff']) + '</td><td>' + coreTag(e.core) + '</td><td>' + esc(e.what) + '</td><td style="font-family:monospace;font-size:11px;color:#64748b">' + esc(e.seal) + '</td></tr>'; }).join('') + '</tbody></table></div>';
     }
     var all = caseRows(), f = X.f, per = 25;
     var rows = all.filter(function (c) { return q(c) && (!f.year || String(c.opened.getFullYear()) === f.year) && (!f.status || c.status === f.status) && (!f.owner || c.owner === f.owner); });
@@ -53177,7 +53180,7 @@ window.CARDINAL_PLACES = {
         '<div class="ex-head"><div><div style="font-size:17px;font-weight:700;color:#1a1815">' + esc(m.name) + '</div><div class="ex-sub">' + esc(m.kind) + (m.owner ? ' · Owner ' + esc(m.owner) : '') + (m.status ? ' · ' + esc(m.status) : '') + (m.parts ? ' · Parts: ' + esc(m.parts.join(', ')) : '') + (m.what ? ' · ' + esc(m.what) : '') + '</div></div>' +
         '<div class="ex-chips"><div class="ex-chip"><b>' + Object.keys(vs).length + '</b><span>Versions</span></div><div class="ex-chip"><b>' + ev.length + '</b><span>Records</span></div>' + (m.score ? '<div class="ex-chip"><b>' + m.score + '</b><span>Trust score</span></div>' : '') + '</div></div>' +
         '<div class="ex-bar">' + search('Search this model’s record') + sel('year', 'Year', years(ev, function (e) { return e.t; })) + sel('core', 'Core', CORES) + sel('ver', 'Version', Object.keys(vs).sort().reverse()) + dates() + '</div>' +
-        timelineTable(ev, [['When', function (e) { return '<span style="white-space:nowrap;color:#475569">' + fd(e.t) + '</span>'; }], ['Version', function (e) { return esc(e.ver || ''); }], ['Core', function (e) { return coreTag(e.core); }], ['What happened', function (e) { return esc(e.what); }], ['By', function (e) { return esc(e.who || ''); }], ['Sealed', function (e) { return '<span style="font-family:monospace;font-size:11px;color:#64748b">' + esc(e.seal) + '</span>'; }]]);
+        timelineTable(ev, [['When', function (e) { return '<span style="white-space:nowrap;color:#475569">' + fdt(e.t) + '</span>'; }], ['Version', function (e) { return esc(e.ver || ''); }], ['Core', function (e) { return coreTag(e.core); }], ['What happened', function (e) { return esc(e.what); }], ['By', function (e) { return esc(e.who || ''); }], ['Sealed', function (e) { return '<span style="font-family:monospace;font-size:11px;color:#64748b">' + esc(e.seal) + '</span>'; }]]);
     }
     var all = models(), f = X.f;
     var rows = all.filter(function (m) { return q(m) && (!f.kind || m.kind === f.kind); });
@@ -53203,7 +53206,24 @@ window.CARDINAL_PLACES = {
     var whos = {}; list.forEach(function (e) { whos[e.who] = 1; });
     return '<div class="ex-note">' + (core ? 'Everything that happened in <strong>' + esc(core) + '</strong>' : 'Everything that happened in every core') + ', by every person and AI agent, back to 2019. Search, or filter by person, action, and dates.</div>' +
       '<div class="ex-bar">' + search('Search what happened') + sel('who', 'Who', Object.keys(whos).sort()) + sel('act', 'Action', Object.keys(ACT_COL)) + (core ? '' : sel('core', 'Core', CORES)) + dates() + '</div>' +
-      timelineTable(list, [['When', function (e) { return '<span style="white-space:nowrap;color:#475569">' + fd(e.t) + '</span>'; }], ['Core', function (e) { return coreTag(e.core); }], ['Who', function (e) { return '<a href="javascript:void(0)" onclick="echoEnterRoom(\'people\');echoOpen(\'person\',' + esc(JSON.stringify(e.who)).replace(/&quot;/g, '&quot;') + ')" style="color:#1a1815;font-weight:600">' + esc(e.who) + '</a>'; }], ['Action', function (e) { return pill(e.act, ACT_COL[e.act] || ACT_COL.Logged); }], ['What happened', function (e) { return esc(e.what); }], ['Sealed', function (e) { return '<span style="font-family:monospace;font-size:11px;color:#64748b">' + esc(e.seal) + '</span>'; }]]);
+      timelineTable(list, [['When', function (e) { return '<span style="white-space:nowrap;color:#475569">' + fdt(e.t) + '</span>'; }], ['Core', function (e) { return coreTag(e.core); }], ['Who', function (e) { return '<a href="javascript:void(0)" onclick="echoEnterRoom(\'people\');echoOpen(\'person\',' + esc(JSON.stringify(e.who)).replace(/&quot;/g, '&quot;') + ')" style="color:#1a1815;font-weight:600">' + esc(e.who) + '</a>'; }], ['Action', function (e) { return pill(e.act, ACT_COL[e.act] || ACT_COL.Logged); }], ['What happened', function (e) { return esc(e.what); }], ['Sealed', function (e) { return '<span style="font-family:monospace;font-size:11px;color:#64748b">' + esc(e.seal) + '</span>'; }]]);
+  }
+  function pPlog() {
+    var f = X.f, from = f.from ? new Date(f.from) : null, to = f.to ? new Date(f.to + 'T23:59:59') : null;
+    var all = []; people().forEach(function (p) { personEvents(p).forEach(function (e) { all.push({ t: e.t, who: p.name, role: p.role, act: e.act, core: e.core, what: e.what, ref: e.ref, seal: e.seal }); }); });
+    all.sort(function (a, b) { return b.t - a.t; });
+    var counts = {}; all.forEach(function (e) { counts[e.who] = (counts[e.who] || 0) + 1; });
+    var rows = all.filter(function (e) { return q(e) && (!f.who || e.who === f.who) && (!f.act || e.act === f.act) && (!f.core || e.core === f.core) && (!from || e.t >= from) && (!to || e.t <= to); });
+    var per = 60, page = rows.slice(X.page * per, X.page * per + per), lastDay = '', body = '';
+    page.forEach(function (e) {
+      var day = fd(e.t); if (day !== lastDay) { lastDay = day; body += '<tr><td colspan="6" style="background:#ebe4d6;font-size:11px;font-weight:800;color:#1a1815;text-transform:uppercase;letter-spacing:.5px;padding:7px 12px">' + esc(day) + '</td></tr>'; }
+      body += '<tr><td style="white-space:nowrap;color:#475569">' + tm(e.t) + '</td><td><a href="javascript:void(0)" onclick="empOpen(' + esc(JSON.stringify(e.who)) + ')" style="color:#1a1815;font-weight:700">' + esc(e.who) + '</a><div class="ex-sub">' + esc(e.role || '') + '</div></td><td>' + pill(e.act, ACT_COL[e.act] || ACT_COL.Logged) + '</td><td>' + coreTag(e.core) + '</td><td>' + esc(e.what) + '</td><td style="font-family:monospace;font-size:11px;color:#64748b">' + esc(e.seal) + '</td></tr>';
+    });
+    var chips = Object.keys(counts).sort(function (a, b) { return counts[b] - counts[a]; }).map(function (n) { var on = f.who === n; return '<button type="button" onclick="echoF(\'who\',' + esc(JSON.stringify(on ? '' : n)) + ')" style="font:inherit;font-size:11.5px;font-weight:700;padding:5px 10px;border-radius:999px;cursor:pointer;border:1px solid ' + (on ? '#1a1815' : 'rgba(26,24,21,.15)') + ';background:' + (on ? '#1a1815' : '#fff') + ';color:' + (on ? '#fff' : '#1a1815') + '">' + esc(n) + ' <span style="opacity:.6">' + counts[n] + '</span></button>'; }).join('');
+    return '<div class="ex-note">Everything every employee did, newest first, grouped by day with the exact time. Pick a person to narrow it, or click a name for their full profile.</div>' +
+      '<div style="display:flex;gap:6px;flex-wrap:wrap;margin:0 0 10px">' + chips + '</div>' +
+      '<div class="ex-bar">' + search('Search what people did') + sel('act', 'Action', Object.keys(ACT_COL)) + sel('core', 'Core', CORES) + dates() + '</div>' +
+      '<div class="ex-wrap"><table class="ex-tbl"><thead><tr><th>Time</th><th>Person</th><th>Action</th><th>Core</th><th>What happened</th><th>Sealed</th></tr></thead><tbody>' + (body || '<tr><td colspan="6" style="color:#64748b">Nothing matches.</td></tr>') + '</tbody></table></div>' + pager(rows.length, per);
   }
   function pCaseHist() { return '<div id="echo-x-casehist-slot"></div>'; }
   function pPins() {
@@ -53242,7 +53262,7 @@ window.CARDINAL_PLACES = {
     if (mine) {
       var ae = document.activeElement, focusPh = keepFocus && ae && ae.tagName === 'INPUT' && panel.contains(ae) ? ae.placeholder : null, caret = focusPh ? ae.selectionStart : 0;
       var slot = document.getElementById('echo-case-history'), slotKeep = X.bucket === 'x-casehist' && slot && slot.parentNode && slot.parentNode.id === 'echo-x-casehist-slot';
-      if (!slotKeep) panel.innerHTML = X.bucket === 'x-customers' ? (window.cardinalCustomerDirectory ? cardinalCustomerDirectory('echo') : '') : X.bucket.indexOf('x-core-') === 0 ? pCores() : X.bucket === 'x-people' ? pPeople() : X.bucket === 'x-cases' ? pCases() : X.bucket === 'x-models' ? pModels() : X.bucket === 'x-pins' ? pPins() : X.bucket === 'x-score' ? pScore() : X.bucket === 'x-casehist' ? pCaseHist() : X.bucket === 'x-board' ? '<div class="ex-note">Everyone\'s work in one place: every fix, filing, and review, by team. The same board is pinned in Trust Loop.</div>' + (window.cardinalTeamBoard ? cardinalTeamBoard('All', 'echo') : '') : '';
+      if (!slotKeep) panel.innerHTML = X.bucket === 'x-customers' ? (window.cardinalCustomerDirectory ? cardinalCustomerDirectory('echo') : '') : X.bucket.indexOf('x-core-') === 0 ? pCores() : X.bucket === 'x-people' ? pPeople() : X.bucket === 'x-cases' ? pCases() : X.bucket === 'x-models' ? pModels() : X.bucket === 'x-pins' ? pPins() : X.bucket === 'x-score' ? pScore() : X.bucket === 'x-casehist' ? pCaseHist() : X.bucket === 'x-plog' ? pPlog() : X.bucket === 'x-board' ? '<div class="ex-note">Everyone\'s work in one place: every fix, filing, and review, by team. The same board is pinned in Trust Loop.</div>' + (window.cardinalTeamBoard ? cardinalTeamBoard('All', 'echo') : '') : '';
       if (X.bucket === 'x-score') setTimeout(drawScore, 30);
       if (X.bucket === 'x-casehist') { var b = document.getElementById('echo-case-history'); if (b) b.removeAttribute('data-k'); }
       if (focusPh) { var ni = [].filter.call(panel.querySelectorAll('input'), function (i) { return i.placeholder === focusPh; })[0]; if (ni) { ni.focus(); try { ni.setSelectionRange(caret, caret); } catch (e) {} } }
@@ -54550,14 +54570,17 @@ window.CARDINAL_PLACES = {
     var cur = window.__calRem[org() + '|' + name];
     p.innerHTML = '<div style="font-weight:800;margin-bottom:2px">Remind me</div><div style="font-size:11.5px;color:#64748b;margin-bottom:6px">' + esc(name) + '</div>' +
       ['1 day before', '3 days before', '1 week before', 'Every morning until it is done'].map(function (o) { return '<button type="button" class="o" data-o="' + esc(o) + '">' + (cur === o ? '&#10003; ' : '') + esc(o) + '</button>'; }).join('') +
+      '<div style="display:flex;gap:6px;align-items:center;padding:6px 10px"><span style="font-size:12.5px;flex:1">On a date I pick</span><input type="date" id="cal-rem-date" style="font:inherit;font-size:12px;padding:4px 6px;border-radius:8px;border:1px solid rgba(26,24,21,.15)"></div>' +
       (cur ? '<button type="button" class="o" data-o="" style="color:#B91C1C">Turn off reminder</button>' : '');
     document.body.appendChild(p);
-    [].forEach.call(p.querySelectorAll('button.o'), function (b) { b.onclick = function () {
+    var dIn = p.querySelector('#cal-rem-date'); dIn.onchange = function () { if (!dIn.value) return; var dd = new Date(dIn.value + 'T09:00:00'); var b = document.createElement('button'); b.className = 'o'; b.setAttribute('data-o', 'On ' + MON[dd.getMonth()] + ' ' + dd.getDate() + ' at 9:00 AM'); p.appendChild(b); b.onclick = null; pick(b); };
+    function pick(b) {
       var v = b.getAttribute('data-o'); if (v) window.__calRem[org() + '|' + name] = v; else delete window.__calRem[org() + '|' + name];
       p.remove(); paintBells();
       toast(v ? 'Reminder set: ' + v + '. Eve will remind you and the owner. Logged in Echo.' : 'Reminder turned off.');
       try { cardinalLogActivity('edit', (v ? 'Set a reminder (' + v + ') for ' : 'Turned off the reminder for ') + name, null); } catch (e) {}
-    }; });
+    }
+    [].forEach.call(p.querySelectorAll('button.o'), function (b) { b.onclick = function () { pick(b); }; });
     setTimeout(function () { document.addEventListener('mousedown', function off(ev) { if (!p.contains(ev.target)) { p.remove(); document.removeEventListener('mousedown', off); } }); }, 0);
   };
   function paintBells() {
@@ -55026,6 +55049,207 @@ window.CARDINAL_PLACES = {
   }
 
   setInterval(function () { try { atonement(); } catch (e) {} try { halo(); } catch (e) {} try { codex(); } catch (e) {} try { compliance(); } catch (e) {} try { trustloop(); } catch (e) {} try { voicePicker(); } catch (e) {} try { words(); } catch (e) {} try { tableChecks(); } catch (e) {} }, 500);
+})();
+
+</script>
+
+<script data-p="p35_people">
+// 10/8 (Brittany: "I want to know everything"). The employee profile shows date and time on everything:
+// activity, notes (with edit history), sign-offs, the flags they dismissed, channels they are in, when they
+// logged on and off, time away, and their start date. Cases and models open into everything that person did
+// on that case or model. Also: Query Ledger opens the ledger search, Codex buttons sized to their text, and
+// Trust Loop messages can carry images and documents.
+(function () {
+  function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;'); }
+  function org() { return window.currentOrg || 'fin'; }
+  function D() { return (window.CARDINAL_DATA || {})[org()] || {}; }
+  function toast(t) { try { (window.cardinalShowToast || window.showToast)(t); } catch (e) {} }
+  var MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'], DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  function fd(d) { d = new Date(d); return MON[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear(); }
+  function tm(d) { d = new Date(d); var h = d.getHours(), m = d.getMinutes(); return (h % 12 || 12) + ':' + (m < 10 ? '0' : '') + m + ' ' + (h < 12 ? 'AM' : 'PM'); }
+  function fdt(d) { return fd(d) + ' · ' + tm(d); }
+  function hash(s) { var h = 0x811c9dc5; s = String(s); for (var i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return Math.abs(h); }
+  function plural(n, w) { return n + ' ' + w + (n === 1 ? '' : 's'); }
+  var CARD = 'background:#fff;border-radius:14px;box-shadow:0 1px 3px rgba(26,24,21,.06),0 8px 20px rgba(26,24,21,.06);overflow:hidden';
+  var HEAD = 'background:#ebe4d6;padding:10px 14px;font-size:12px;font-weight:800;color:#1a1815;text-transform:uppercase;letter-spacing:.5px';
+  var ACTC = { Approved: '#15803D', Changed: '#1d4ed8', 'Tried to change (blocked)': '#B91C1C', Updated: '#0f766e', 'Viewed restricted record': '#B45309', Exported: '#6d28d9', Commented: '#334155', Opened: '#1e3a8a', Closed: '#15803D', Logged: '#475569', 'Dismissed a flag': '#B91C1C' };
+  function kv(rows) { return '<table style="width:100%;border-collapse:collapse;font-size:12.5px">' + rows.map(function (r) { return '<tr><td style="padding:8px 14px;color:#475569;border-bottom:1px solid rgba(26,24,21,.05)">' + r[0] + '</td><td style="padding:8px 14px;text-align:right;font-weight:600;border-bottom:1px solid rgba(26,24,21,.05)">' + r[1] + '</td></tr>'; }).join('') + '</table>'; }
+  function tbl(head, rows, empty) { if (!rows.length) return '<div style="padding:14px;font-size:12.5px;color:#64748b">' + esc(empty || 'Nothing yet.') + '</div>'; return '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:12.5px"><thead><tr>' + head.map(function (x) { return '<th style="text-align:left;font-size:10.5px;color:#64748b;text-transform:uppercase;padding:8px 14px;border-bottom:1px solid rgba(26,24,21,.08);white-space:nowrap">' + x + '</th>'; }).join('') + '</tr></thead><tbody>' + rows.map(function (r, n) { return '<tr style="background:' + (n % 2 ? '#f7f3ea' : '#fff') + '">' + r.map(function (x) { return '<td style="padding:8px 14px;vertical-align:top">' + x + '</td>'; }).join('') + '</tr>'; }).join('') + '</tbody></table></div>'; }
+  function when(d) { return '<span style="white-space:nowrap;color:#475569">' + fd(d) + '<br><span style="font-size:11px">' + tm(d) + '</span></span>'; }
+  function act(a) { return '<span style="font-weight:700;color:' + (ACTC[a] || '#475569') + '">' + esc(a) + '</span>'; }
+  function seal(s) { return '<span style="font-family:monospace;font-size:11px;color:#64748b">' + esc(s) + '</span>'; }
+
+  // Story notes, now with edit history (days ago, hour, where, note, edits).
+  var NOTES = {
+    'fin|Nina Roberts': [[1, 16, 'Atonement · Credit Scoring v3.5 launch', 'Shadow results hold at fairness ratio 0.83 with the default rate unchanged. Ready for the three launch sign-offs.', [[0, 9, 'Changed "two sign-offs" to "three launch sign-offs" after Legal joined']]], [3, 11, 'Echo record · FIN-1203', 'Checked a sample of re-review files: ZIP code was the deciding feature in each denial. Added them to the FIN-1203 re-review.', []], [9, 14, 'Trust Loop #legal-prep', 'Asked Legal to confirm we can use income stability and employment history in place of ZIP code.', [[8, 10, 'Added "employment history"']]], [20, 10, 'Genesis · income-features test', 'Four combinations tested. verified_income_12mo plus employment_stability gives the best fairness with no accuracy loss.', []]],
+    'fin|Riley Whitmore': [[2, 15, 'Compliance · CFPB exam', 'Evidence packet is 55% done. Still need the v3.5 shadow metrics and the re-review counts.', [[1, 9, 'Updated from 40% to 55%']]]],
+    'fin|Jordan Ellis': [[1, 13, 'Atonement · Credit Scoring v3.5 launch', 'Will sign once Legal confirms the adverse action notice wording.', []]]
+  };
+  function at(daysAgo, hour, min) { var d = new Date(); d.setDate(d.getDate() - daysAgo); d.setHours(hour, min || 0, 0, 0); return d; }
+  function sessions(name, me) {
+    var out = [], h = hash(org() + name), d = new Date(), n = 0;
+    for (var i = 0; n < 14 && i < 30; i++) {
+      var day = new Date(d.getFullYear(), d.getMonth(), d.getDate() - i); if (day.getDay() === 0 || day.getDay() === 6) continue;
+      var k = hash(name + i), on = new Date(day); on.setHours(8, 5 + k % 70); var off = new Date(day); off.setHours(17 + (k >> 3) % 2, (k >> 5) % 60);
+      var away = (h + i) % 11 === 0 && i > 0;
+      out.push({ day: day, on: away ? null : on, off: away ? null : (i === 0 ? null : off), where: away ? 'Out of office' : (k % 3 ? 'Office' : 'Remote'), device: k % 2 ? 'Work laptop' : 'Work laptop and phone', live: i === 0 && !away });
+      n++;
+    }
+    return out;
+  }
+  function data(name) {
+    var api = window.__echoAPI, o = org(), d = D();
+    var p = api.people().filter(function (x) { return x.name === name; })[0]; if (!p) return null;
+    var ev = api.personEvents(p).filter(function (e) { return !/^Eve flag dismissed: /.test(e.what); });
+    // Flags this person dismissed.
+    var flags = (d.echoMemories || []).filter(function (m) { return m.author === name && (m.eventType === 'decision-reversed' || /dismissed/i.test(m.summary || '')); });
+    flags.forEach(function (m) { ev.push({ t: new Date(m.timestamp), core: 'Echo', act: 'Dismissed a flag', what: m.summary.replace(/^Eve flag dismissed: /, ''), ref: String(m.caseId || ''), seal: String(m.hash || '').slice(2, 14) }); });
+    ev.sort(function (a, b) { return b.t - a.t; });
+    var notes = [];
+    function msgs(list, where) { (list || []).forEach(function (m) { if (m.author === name) notes.push({ t: new Date(m.timestamp), where: where, text: m.content || m.title || '', edits: [] }); (m.comments || []).forEach(function (c) { if (c.author === name) notes.push({ t: new Date(c.timestamp), where: where + ' (comment)', text: c.content || c.text || '', edits: [] }); }); }); }
+    (d.trustLoopChannels || []).forEach(function (c) { msgs(c.messages, 'Trust Loop ' + (c.name || c.channelName || '')); });
+    (d.caseChannels || []).forEach(function (c) { msgs(c.messages, c.channelName || ('Case ' + c.caseId)); });
+    var rt = window.__tlRuntimeMsgs || {}; Object.keys(rt).forEach(function (k) { msgs(rt[k], 'Trust Loop ' + (k.indexOf('dm:') === 0 ? 'message to ' + k.slice(3) : '#' + k)); });
+    (d.trustLoopAnnouncements || []).forEach(function (a) { if (a.author === name) notes.push({ t: new Date(a.timestamp), where: 'Announcement', text: a.title + (a.body ? ': ' + a.body : ''), edits: [] }); });
+    (NOTES[o + '|' + name] || []).forEach(function (n) { notes.push({ t: at(n[0], n[1], 12), where: n[2], text: n[3], edits: n[4].map(function (e) { return { t: at(e[0], e[1], 40), what: e[2] }; }) }); });
+    ev.filter(function (e) { return e.act === 'Commented'; }).forEach(function (e) { notes.push({ t: e.t, where: e.core, text: e.what, edits: [] }); });
+    notes.sort(function (a, b) { return b.t - a.t; });
+    var channels = (d.trustLoopChannels || []).filter(function (c) { return (c.members || []).indexOf(name) > -1; }).map(function (c) { return c.name || c.channelName; })
+      .concat((d.caseChannels || []).filter(function (c) { return (c.members || []).indexOf(name) > -1; }).map(function (c) { return c.channelName; }));
+    var wb = (typeof WB_SEED !== 'undefined' && WB_SEED[o]) || [], named = wb.filter(function (r) { return JSON.stringify(r).indexOf(name) > -1; });
+    var pend = (d.echoMemories || []).filter(function (m) { return m.eventType === 'awaiting-signature' && (m.author === name || (m.summary || '').indexOf(name) > -1); });
+    return { p: p, ev: ev, notes: notes, flags: flags, channels: channels, named: named, pend: pend, signs: ev.filter(function (e) { return e.act === 'Approved'; }) };
+  }
+  function noteRow(x) { return [when(x.t), esc(x.where), esc(x.text) + (x.edits.length ? '<div style="font-size:11px;color:#A16207;margin-top:4px">Edited ' + x.edits.length + (x.edits.length === 1 ? ' time' : ' times') + ': ' + x.edits.map(function (e) { return esc(fdt(e.t)) + ', ' + esc(e.what); }).join('; ') + '</div>' : '<div style="font-size:11px;color:#64748b;margin-top:4px">Not edited</div>')]; }
+  function evRow(e) { return [when(e.t), act(e.act), esc(e.core), esc(e.what), seal(e.seal)]; }
+
+  window.empDrill = function (name, kind, id) {
+    var x = data(name), box = document.querySelector('#emp-prof [data-et="drill"]'); if (!x || !box) return;
+    var ev = x.ev.filter(function (e) { return kind === 'case' ? (e.ref === id || e.what.indexOf(id) > -1) : e.what.indexOf(id) > -1; });
+    var notes = x.notes.filter(function (n) { return (n.where + ' ' + n.text).indexOf(id) > -1; });
+    var first = name.split(' ')[0];
+    var open = kind === 'case' ? 'document.getElementById(\'emp-prof\').remove();showScreen(\'echo\');setTimeout(function(){echoEnterRoom(\'cases\');echoCaseGo(' + esc(JSON.stringify(id)) + ')},400)' : 'custModel(' + esc(JSON.stringify(id)) + ')';
+    box.innerHTML = '<div style="' + CARD + '"><div style="' + HEAD + ';display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><span>Everything ' + esc(first) + ' did on ' + esc(id) + '</span><span style="display:flex;gap:8px"><button type="button" onclick="empTab(\'work\')" style="font:inherit;font-size:11.5px;font-weight:700;border:1px solid rgba(26,24,21,.15);background:#fff;border-radius:8px;padding:5px 10px;cursor:pointer;text-transform:none;letter-spacing:0">← Back</button><button type="button" onclick="' + open + '" style="font:inherit;font-size:11.5px;font-weight:700;border:0;background:#1a1815;color:#fff;border-radius:8px;padding:5px 10px;cursor:pointer;text-transform:none;letter-spacing:0">Open ' + (kind === 'case' ? 'the case' : 'the model') + ' →</button></span></div>' +
+      '<div style="padding:10px 14px;font-size:12.5px;color:#334155">' + plural(ev.length, 'record') + ' · ' + plural(ev.filter(function (e) { return e.act === 'Approved'; }).length, 'sign-off') + ' · ' + plural(notes.length, 'note') + (ev.length ? ' · first ' + fdt(ev[ev.length - 1].t) + ' · latest ' + fdt(ev[0].t) : '') + '</div>' +
+      tbl(['When', 'Action', 'Core', 'What happened', 'Sealed'], ev.map(evRow), 'No records yet.') +
+      (notes.length ? '<div style="' + HEAD + '">Notes on ' + esc(id) + '</div>' + tbl(['When', 'Where', 'Note'], notes.map(noteRow)) : '') + '</div>';
+    empTab('drill');
+  };
+
+  window.empTab = function (t) {
+    [].forEach.call(document.querySelectorAll('#emp-prof [data-et]'), function (e) { e.style.display = e.getAttribute('data-et') === t ? (e.getAttribute('data-disp') || '') : 'none'; });
+    [].forEach.call(document.querySelectorAll('#emp-prof .etab'), function (b) { var on = b.getAttribute('data-t') === t || (t === 'drill' && b.getAttribute('data-t') === 'work'); b.style.background = on ? '#fff' : 'transparent'; b.style.boxShadow = on ? '0 1px 3px rgba(26,24,21,.12)' : 'none'; });
+  };
+  window.empOpen = function (name) {
+    if (!window.__echoAPI) return; var x = data(name); if (!x) { toast('No record for ' + name); return; }
+    var p = x.p, ev = x.ev, d = D(), first = name.split(' ')[0], api = window.__echoAPI;
+    var cnt = function (a) { return ev.filter(function (e) { return e.act === a; }).length; };
+    var cases = {}, mods = {}, ms = api.models().filter(function (m) { return m.kind === 'Model'; });
+    ev.forEach(function (e) { if (e.ref && /^[A-Z]{2,4}-/.test(e.ref)) (cases[e.ref] = cases[e.ref] || []).push(e); ms.forEach(function (m) { if (e.what.indexOf(m.name) > -1) (mods[m.name] = mods[m.name] || []).push(e); }); });
+    var owned = api.models().filter(function (m) { return m.owner === name; }).map(function (m) { return m.name; });
+    var J = JSON.stringify, nm = esc(J(name));
+    var caseRows = Object.keys(cases).sort(function (a, b) { return cases[b][0].t - cases[a][0].t; }).map(function (c) { var l = cases[c]; return ['<a href="javascript:void(0)" onclick="empDrill(' + nm + ',\'case\',' + esc(J(c)) + ')" style="color:#1e3a8a;font-weight:700">' + esc(c) + '</a>', plural(l.length, 'record'), plural(l.filter(function (e) { return e.act === 'Approved'; }).length, 'sign-off'), '<span style="white-space:nowrap">' + fdt(l[0].t) + '</span>']; });
+    var modRows = Object.keys(mods).sort(function (a, b) { return mods[b].length - mods[a].length; }).map(function (m) { var l = mods[m]; return ['<a href="javascript:void(0)" onclick="empDrill(' + nm + ',\'model\',' + esc(J(m)) + ')" style="color:#1e3a8a;font-weight:700">' + esc(m) + '</a>' + (owned.indexOf(m) > -1 ? ' <span style="font-size:10.5px;color:#15803D;font-weight:700">Owner</span>' : ''), plural(l.length, 'record'), plural(l.filter(function (e) { return e.act === 'Approved'; }).length, 'sign-off'), '<span style="white-space:nowrap">' + fdt(l[0].t) + '</span>']; });
+    var S = sessions(name), today = S[0];
+    var ini = name.replace(/^Dr\.?\s+/, '').split(' ').map(function (w) { return w[0]; }).join('').slice(0, 2).toUpperCase();
+    var pill = function (t, c, b, br) { return '<span style="font-size:11px;font-weight:700;color:' + c + ';background:' + b + ';border:1px solid ' + br + ';border-radius:999px;padding:2px 9px">' + t + '</span>'; };
+    var tabs = [['ov', 'Overview'], ['act', 'Activity'], ['notes', 'Notes and comments'], ['sign', 'Sign-offs'], ['work', 'Cases and models'], ['rec', 'Work record']];
+    var m = document.createElement('div'); m.id = 'emp-prof';
+    m.style.cssText = 'position:fixed;inset:0;z-index:10000;background:rgba(26,24,21,.45);display:flex;align-items:center;justify-content:center;padding:16px';
+    m.innerHTML = '<div style="background:#f4efe6;border-radius:18px;box-shadow:0 30px 80px rgba(0,0,0,.35);width:min(1080px,100%);max-height:92vh;overflow:auto;padding:22px 24px">' +
+      '<div style="display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap;' + CARD + ';padding:18px 20px">' +
+      '<div style="width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,#e9d5ff,#a78bfa);display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:800;color:#3b0764;box-shadow:0 6px 16px rgba(109,40,217,.25)">' + esc(ini) + '</div>' +
+      '<div style="flex:1;min-width:220px"><div style="font-size:20px;font-weight:800;color:#1a1815">' + esc(name) + '</div><div style="font-size:12.5px;color:#475569;margin-top:2px">' + esc(p.role || 'Team member') + ' · ' + esc(d.org || '') + '</div>' +
+      '<div style="font-size:12.5px;color:#475569;margin-top:4px">Started ' + fd(p.joined) + ' · Passport <span style="font-family:monospace">' + esc(p.passport) + '</span> · Access: ' + esc(p.access) + '</div>' +
+      '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px">' + (today && today.live ? pill('Online since ' + tm(today.on), '#15803D', 'rgba(21,128,61,.1)', 'rgba(21,128,61,.35)') : pill(today && today.where === 'Out of office' ? 'Out of office today' : 'Offline', '#475569', '#f1f5f9', 'rgba(71,85,105,.3)')) +
+      (x.pend.length ? pill(plural(x.pend.length, 'sign-off') + ' waiting', '#A16207', 'rgba(250,204,21,.16)', 'rgba(202,138,4,.4)') : '') + (x.flags.length ? pill(plural(x.flags.length, 'dismissed flag'), '#B91C1C', 'rgba(220,38,38,.09)', 'rgba(220,38,38,.3)') : '') + (cnt('Tried to change (blocked)') ? pill(plural(cnt('Tried to change (blocked)'), 'blocked change'), '#B91C1C', 'rgba(220,38,38,.09)', 'rgba(220,38,38,.3)') : '') + '</div></div>' +
+      '<div style="display:flex;flex-direction:column;gap:8px;align-items:flex-end"><button type="button" onclick="document.getElementById(\'emp-prof\').remove();showScreen(\'echo\');setTimeout(function(){echoEnterRoom(\'people\');echoGo(\'x-plog\');echoF(\'who\',' + esc(J(name)) + ')},400)" style="background:#1a1815;color:#fff;border:0;border-radius:10px;padding:9px 14px;font:inherit;font-size:12.5px;font-weight:700;cursor:pointer">Full activity log</button><button type="button" onclick="document.getElementById(\'emp-prof\').remove()" style="border:0;background:transparent;font-size:13px;color:#64748b;cursor:pointer">Close ×</button></div></div>' +
+      '<div style="display:flex;gap:4px;flex-wrap:wrap;background:#ebe4d6;padding:4px;border-radius:12px;margin:14px 0">' + tabs.map(function (t, n) { return '<button type="button" class="etab" data-t="' + t[0] + '" onclick="empTab(\'' + t[0] + '\')" style="font:inherit;font-size:12.5px;font-weight:700;padding:8px 14px;border:0;border-radius:9px;cursor:pointer;background:' + (n ? 'transparent' : '#fff') + ';box-shadow:' + (n ? 'none' : '0 1px 3px rgba(26,24,21,.12)') + '">' + t[1] + '</button>'; }).join('') + '</div>' +
+      '<div data-et="ov" data-disp="grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px">' +
+      '<div style="' + CARD + '"><div style="' + HEAD + '">At a glance</div>' + kv([['Started at ' + esc(d.org || 'the company'), fd(p.joined)], ['Records in Echo', ev.length.toLocaleString()], ['Sign-offs given', x.signs.length], ['Flags dismissed', x.flags.length ? '<span style="color:#B91C1C">' + x.flags.length + '</span>' : '0'], ['Blocked changes', cnt('Tried to change (blocked)')], ['Restricted records viewed', cnt('Viewed restricted record')], ['Notes and comments', x.notes.length], ['Channels', x.channels.length]]) + '</div>' +
+      '<div style="' + CARD + '"><div style="' + HEAD + '">Today</div>' + kv([['Status', today && today.live ? 'Online' : today && today.where === 'Out of office' ? 'Out of office' : 'Offline'], ['Logged on', today && today.on ? tm(today.on) : '—'], ['Working from', today ? today.where : '—'], ['Device', today && today.on ? today.device : '—'], ['Last activity', ev[0] ? fdt(ev[0].t) : '—']]) + '</div>' +
+      '<div style="' + CARD + '"><div style="' + HEAD + '">Waiting on ' + esc(first) + '</div>' + tbl(['Item', 'Since'], x.pend.map(function (y) { return [esc(y.summary.replace(/^Awaiting sign-off: /, '')), '<span style="white-space:nowrap">' + fdt(y.timestamp) + '</span>']; }), 'Nothing waiting on ' + first + '.') + '</div>' +
+      '<div style="' + CARD + '"><div style="' + HEAD + '">Recent activity</div>' + tbl(['When', 'What'], ev.slice(0, 5).map(function (e) { return [when(e.t), act(e.act) + ' · ' + esc(e.what)]; })) + '</div></div>' +
+      '<div data-et="act" style="display:none;' + CARD + '"><div style="' + HEAD + '">Everything ' + esc(first) + ' did, newest first</div>' + tbl(['When', 'Action', 'Core', 'What happened', 'Sealed'], ev.slice(0, 80).map(evRow)) + (ev.length > 80 ? '<div style="padding:10px 14px;font-size:12px;color:#64748b">Showing the latest 80 of ' + ev.length + '. Use <strong>Full activity log</strong> to search and filter all of them.</div>' : '') + '</div>' +
+      '<div data-et="notes" style="display:none;' + CARD + '"><div style="' + HEAD + '">Every note and comment, with edits</div>' + tbl(['When', 'Where', 'Note'], x.notes.map(noteRow), 'No notes yet.') + '</div>' +
+      '<div data-et="sign" data-disp="block" style="display:none"><div style="' + CARD + ';margin-bottom:14px"><div style="' + HEAD + '">Waiting for ' + esc(first) + '’s signature</div>' + tbl(['Item', 'Since'], x.pend.map(function (y) { return [esc(y.summary.replace(/^Awaiting sign-off: /, '')), '<span style="white-space:nowrap">' + fdt(y.timestamp) + '</span>']; }), 'Nothing waiting.') + '</div><div style="' + CARD + '"><div style="' + HEAD + '">Sign-offs given</div>' + tbl(['When', 'Core', 'What was approved', 'Sealed'], x.signs.map(function (e) { return [when(e.t), esc(e.core), esc(e.what), seal(e.seal)]; }), 'No sign-offs yet.') + '</div></div>' +
+      '<div data-et="work" data-disp="grid" style="display:none;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:14px"><div style="' + CARD + '"><div style="' + HEAD + '">Cases ' + esc(first) + ' worked on · click to open</div>' + tbl(['Case', 'Records', 'Sign-offs', 'Latest'], caseRows, 'No cases.') + '</div><div style="' + CARD + '"><div style="' + HEAD + '">Models ' + esc(first) + ' worked on · click to open</div>' + tbl(['Model', 'Records', 'Sign-offs', 'Latest'], modRows, 'No models.') + '</div></div>' +
+      '<div data-et="drill" style="display:none"></div>' +
+      '<div data-et="rec" data-disp="grid" style="display:none;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:14px">' +
+      '<div style="' + CARD + ';grid-column:1/-1"><div style="' + HEAD + '">Log on and log off, last 14 workdays</div>' + tbl(['Day', 'Logged on', 'Logged off', 'Hours', 'Where', 'Device'], S.map(function (s) { var hrs = s.on && s.off ? ((s.off - s.on) / 36e5).toFixed(1) : ''; return ['<span style="white-space:nowrap">' + DAYS[s.day.getDay()] + ', ' + fd(s.day) + '</span>', s.on ? tm(s.on) : '—', s.live ? '<span style="color:#15803D;font-weight:700">Online now</span>' : s.off ? tm(s.off) : '—', hrs || (s.live ? 'In progress' : '—'), s.where === 'Out of office' ? '<span style="color:#A16207;font-weight:700">Out of office</span>' : s.where, s.on ? s.device : '—']; })) + '</div>' +
+      '<div style="' + CARD + '"><div style="' + HEAD + '">Flags ' + esc(first) + ' dismissed</div>' + tbl(['When', 'Flag', 'Status'], x.flags.map(function (f) { return [when(f.timestamp), esc(f.summary.replace(/^Eve flag dismissed: /, '')), '<span style="color:#B91C1C;font-weight:700">Needs a written reason</span>']; }), 'No dismissed flags.') + '</div>' +
+      '<div style="' + CARD + '"><div style="' + HEAD + '">Trust Loop channels</div>' + tbl(['Channel'], x.channels.map(function (c) { return ['<a href="javascript:void(0)" onclick="document.getElementById(\'emp-prof\').remove();showScreen(\'trustloop\');setTimeout(function(){try{selectTrustLoopChannel(' + esc(J(String(c).replace(/^#/, ''))) + ')}catch(e){}},500)" style="color:#1e3a8a;font-weight:700">' + esc(c) + '</a>']; }), 'Not in any channel.') + '</div>' +
+      '<div style="' + CARD + '"><div style="' + HEAD + '">Whistleblower</div>' + kv([['Reports filed by ' + esc(first), '<span style="color:#64748b;font-weight:500">Never linked to a person, by design</span>'], ['Named in a report', x.named.length ? '<span style="color:#B91C1C">' + plural(x.named.length, 'open report') + '</span>' : 'None'], ['Who can see this', 'Review committee only']]) + (x.named.length ? '<div style="padding:8px 14px 12px;font-size:11.5px;color:#64748b">' + esc(first) + ' is recused from ' + (x.named.length === 1 ? 'that report' : 'those reports') + '. Details stay sealed under Whistleblower.</div>' : '') + '</div>' +
+      '<div style="' + CARD + '"><div style="' + HEAD + '">Employment</div>' + kv([['Start date', fd(p.joined)], ['Time at the company', Math.max(0, Math.floor((Date.now() - p.joined) / 31557600000)) + ' years'], ['Role', esc(p.role || 'Team member')], ['Access level', esc(p.access)], ['Access last reviewed', fd(new Date(Date.now() - (12 + hash(name) % 40) * 864e5))]]) + '</div></div>' +
+      '<div style="font-size:11.5px;color:#64748b;margin-top:12px">Every time on this page is the time it happened, sealed in Echo. Opening this profile was logged with your name and the time.</div></div>';
+    m.addEventListener('click', function (e) { if (e.target === m) m.remove(); });
+    var old = document.getElementById('emp-prof'); if (old) old.remove(); document.body.appendChild(m);
+    try { cardinalLogActivity('view', 'Opened the employee profile for ' + name, null); } catch (e) {}
+  };
+
+  // ── Query Ledger: the header button opens the ledger search ─────────
+  var oQ = window.queryLedger;
+  window.queryLedger = function () {
+    var r = document.getElementById('tl-query-result');
+    if (r && r.offsetParent !== null && typeof oQ === 'function') return oQ.apply(this, arguments);
+    try { switchTLTopTab('query', 4); } catch (e) {}
+    setTimeout(function () { var i = document.getElementById('tl-q-input'); if (i) { window.__keepUntil = 0; i.scrollIntoView({ behavior: 'smooth', block: 'center' }); i.focus(); } }, 350);
+  };
+
+  // ── Codex: buttons sized to their text ──────────────────────────────
+  setInterval(function () {
+    var s = document.getElementById('screen-marketing'); if (!s || s.offsetParent === null) return;
+    var fig = s.querySelector('button[onclick="docFigma()"]'); if (!fig || fig.__sz) return; fig.__sz = 1;
+    var up = fig.parentNode.querySelector('label.btn-primary'), host = fig.parentNode;
+    host.style.display = 'flex'; host.style.flexWrap = 'wrap'; host.style.gap = '8px'; host.style.justifyContent = 'center'; host.style.alignItems = 'center';
+    [up, fig].forEach(function (b) { if (!b) return; b.style.setProperty('width', 'auto', 'important'); b.style.setProperty('flex', '0 0 auto', 'important'); b.style.setProperty('padding', '9px 18px', 'important'); b.style.setProperty('display', 'inline-block', 'important'); });
+    var cnt = document.getElementById('r2-codex-count'); if (cnt) { cnt.style.flexBasis = '100%'; cnt.style.textAlign = 'center'; }
+  }, 600);
+
+  // ── Trust Loop: attach images and documents ─────────────────────────
+  window.__tlFiles = window.__tlFiles || [];
+  window.__tlThumbs = window.__tlThumbs || {};
+  window.tlAttach = function (files) {
+    [].forEach.call(files || [], function (f) {
+      var item = { name: f.name, size: f.size, img: /^image\//.test(f.type) };
+      window.__tlFiles.push(item);
+      if (item.img) { var r = new FileReader(); r.onload = function () { item.url = r.result; }; r.readAsDataURL(f); }
+    });
+    chips();
+  };
+  window.tlUnattach = function (i) { window.__tlFiles.splice(i, 1); chips(); };
+  function kb(n) { return n > 1048576 ? (n / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(n / 1024)) + ' KB'; }
+  function chips() {
+    var inp = document.getElementById('tlw-compose-input'); if (!inp) return;
+    var bar = document.getElementById('tl-att-chips');
+    if (!window.__tlFiles.length) { if (bar) bar.remove(); return; }
+    if (!bar) { bar = document.createElement('div'); bar.id = 'tl-att-chips'; bar.style.cssText = 'display:flex;gap:6px;flex-wrap:wrap;padding:6px 10px 0'; inp.parentNode.parentNode.insertBefore(bar, inp.parentNode); }
+    bar.innerHTML = window.__tlFiles.map(function (f, i) { return '<span style="font-size:11px;font-weight:700;background:#fff;border:1px solid rgba(26,24,21,.15);border-radius:999px;padding:3px 9px">' + esc(f.name) + ' · ' + kb(f.size) + ' <b onclick="tlUnattach(' + i + ')" style="cursor:pointer;color:#64748b">×</b></span>'; }).join('');
+  }
+  var oSend = window.tlwSendCompose;
+  if (typeof oSend === 'function') window.tlwSendCompose = function () {
+    var inp = document.getElementById('tlw-compose-input'), F = window.__tlFiles.slice();
+    if (inp && F.length) { if (!inp.value.trim()) inp.value = 'Shared ' + plural(F.length, 'file'); inp.value += ' · Attached: ' + F.map(function (f) { return f.name; }).join(', '); F.forEach(function (f) { if (f.url) window.__tlThumbs[f.name] = f.url; }); }
+    window.__tlFiles = []; chips();
+    return oSend.apply(this, arguments);
+  };
+  setInterval(function () {
+    var s = document.getElementById('screen-trustloop'); if (!s || s.offsetParent === null) return;
+    var inp = document.getElementById('tlw-compose-input');
+    if (inp && !document.getElementById('tl-att-btn')) {
+      var lab = document.createElement('label'); lab.id = 'tl-att-btn'; lab.title = 'Attach images or documents';
+      lab.style.cssText = 'display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:50%;background:#1a1815;color:#fff;cursor:pointer;flex:none';
+      lab.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg><input type="file" multiple accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.csv,.ppt,.pptx,.txt" style="display:none" onchange="tlAttach(this.files);this.value=\'\'">';
+      inp.parentNode.insertBefore(lab, inp); chips();
+    }
+    [].forEach.call(s.querySelectorAll('#tlw-thread div'), function (b) {
+      if (b.__th || b.children.length || !/ · Attached: /.test(b.textContent)) return; b.__th = 1;
+      var names = b.textContent.split(' · Attached: ')[1].split(', ');
+      var row = document.createElement('div'); row.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;margin-top:8px';
+      names.forEach(function (n) { var u = window.__tlThumbs[n]; row.insertAdjacentHTML('beforeend', u ? '<img src="' + u + '" alt="' + esc(n) + '" style="max-width:180px;max-height:140px;border-radius:8px;border:1px solid rgba(26,24,21,.1)">' : '<span style="font-size:11px;font-weight:700;background:#fff;border:1px solid rgba(26,24,21,.15);border-radius:8px;padding:6px 10px">' + esc(n) + '</span>'); });
+      b.textContent = b.textContent.split(' · Attached: ')[0]; b.appendChild(row);
+    });
+  }, 500);
 })();
 
 </script>
