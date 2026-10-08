@@ -53518,7 +53518,7 @@ window.CARDINAL_PLACES = {
   function sweep() {
     var scr = document.querySelector('.screen.active'); if (!scr) return;
     [].forEach.call(scr.querySelectorAll('td span, td div, td, li span, .lib-card span, [class*=badge], [class*=pill], [class*=status], span'), function (el) {
-      if (el.children.length || el.closest('.g-unit, .u-hero, button, select, h1, h2, h3, .tsv2-cert-badge, .sidebar, #wm-rooms, #wm-sub, #echo-x-subbar, .core-tabbar, .ex-chips')) return;
+      if (el.children.length || el.closest('.g-unit, .u-hero, button, select, h1, h2, h3, .tsv2-cert-badge, .sidebar, #wm-rooms, #wm-sub, #echo-x-subbar, .core-tabbar, .ex-chips, .dash-activity-ticker-live')) return;
       var t = (el.textContent || '').trim(); if (!t || t.length > 22) return;
       if (el.__st === t) return;
       var c = null; MAP.forEach(function (m) { if (!c && m[0].test(t)) c = m[1]; }); if (!c) return;
@@ -53656,6 +53656,10 @@ window.CARDINAL_PLACES = {
     '#ts-pop .tp-part .l{font-size:10.5px;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:.5px}#ts-pop .tp-part .d{font-size:11px;color:#64748b;margin-top:6px;line-height:1.4}' +
     '#dash-cmd{margin:0 0 16px}#dash-cmd .dc-ask{margin-bottom:12px}#dash-cmd #cardinal-ask-wrap,#dash-cmd .cardinal-ask-wrap{margin:0!important}' +
     '#dash-cmd .dc-hide{display:none!important}' +
+    '#dash-cmd .cardinal-trustloop-btn{display:none!important}' +
+    '#dash-cmd .dash-activity-ticker-live span:not(.dash-activity-ticker-dot){all:unset;font-size:10.5px;font-weight:800;letter-spacing:1px;color:#DC2626}' +
+    '#dash-cmd .dash-activity-ticker-live{display:flex;align-items:center;gap:7px}#dash-cmd .dash-activity-ticker-dot{box-shadow:0 0 0 3px rgba(239,68,68,.18),0 0 10px rgba(239,68,68,.6)}' +
+    '#dash-conv .cv-btns{display:flex;gap:8px;flex-wrap:wrap;margin-left:auto}#dash-conv .cv-btns button{background:#1a1815;color:#fff;border:0;border-radius:10px;padding:7px 13px;font:inherit;font-size:12px;font-weight:700;cursor:pointer;box-shadow:0 2px 6px rgba(26,24,21,.18)}#dash-conv .cv-btns button:hover{background:#2a2620}' +
     '#dash-conv{background:linear-gradient(180deg,rgba(26,24,21,.045),rgba(30,28,24,.035));border:1px solid rgba(167,167,167,.15);border-radius:16px;padding:14px 16px;box-shadow:0 1px 3px rgba(26,24,21,.05),0 6px 18px rgba(26,24,21,.04)}' +
     '#dash-conv .cv-head{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:10px}' +
     '#dash-conv .cv-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}@media (max-width:1000px){#dash-conv .cv-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}' +
@@ -53724,7 +53728,10 @@ window.CARDINAL_PLACES = {
     var box = cmd.querySelector('.dc-conv');
     if (box.getAttribute('data-k') !== key) {
       box.setAttribute('data-k', key);
-      box.innerHTML = '<div id="dash-conv"><div class="cv-head"><div><span class="tsv2-section-title" style="margin:0">Active conversations</span> <span style="font-size:12px;color:#64748b;margin-left:6px">' + esc(sub) + '</span></div><a href="javascript:void(0)" onclick="openTrustLoopTo(\'channels\')" style="font-size:12px;font-weight:700;color:#6d28d9">Open Trust Loop \u2192</a></div>' +
+      var mU = sub.match(/(\d+) unread/), mC = sub.match(/(\d+) channels/);
+      box.innerHTML = '<div id="dash-conv"><div class="cv-head"><div class="tsv2-section-title" style="margin:0">Conversations</div><div class="cv-btns">' +
+        (mU ? '<button type="button" onclick="openTrustLoopTo(\'channels\')">' + mU[1] + ' unread</button>' : '') +
+        '<button type="button" onclick="openTrustLoopTo(\'channels\')">' + (mC ? mC[1] + ' channels' : 'All channels') + ' \u2192</button></div></div>' +
         '<div class="cv-grid">' + top.map(function (c) { return '<div class="cv" onclick="' + esc(c.oc) + '"><div class="t"><span class="dot" style="color:' + (c.isCase ? '#ef4444' : '#8b5cf6') + ';background:' + (c.isCase ? '#ef4444' : '#8b5cf6') + '"></span><span class="nm">' + esc(c.name) + '</span>' + (c.unread ? '<span class="b">' + c.unread + ' new</span>' : '') + '</div><div class="s">' + esc(c.snip || '') + '</div><div class="m">' + esc(c.meta || '') + '</div></div>'; }).join('') + '</div></div>';
     }
   }
