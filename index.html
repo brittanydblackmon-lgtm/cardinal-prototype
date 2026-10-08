@@ -33217,29 +33217,28 @@ window.renderBigWorkspacePage = function() {
 
   html += '<div>' +
     '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">' +
-      '<div style="font-size:12px;color:#FACC15;text-transform:uppercase;letter-spacing:0.8px;font-weight:700;">My Pinned Items (' + myPinnedMems.length + ')</div>' +
+      '<div style="font-size:12px;color:#1a1815;text-transform:uppercase;letter-spacing:0.6px;font-weight:800;">My Pinned Items (' + myPinnedMems.length + ')</div>' +
     '</div>';
   if (myPinnedMems.length === 0) {
     html += '<div style="padding:24px;background:rgba(26,24,21,0.045);border:1px dashed rgba(250,204,21,0.2);border-radius:10px;text-align:center;color:var(--muted);font-size:11px;">No pins yet. Right-click any case ID, model, or memory anywhere in Cardinal to pin it. Or click on memory cards in Echo.</div>';
   } else {
-    html += '<div style="display:flex;flex-direction:column;gap:6px;">' +
-      myPinnedMems.map(function(m){
-        var sevColor = { critical: '#ef4444', high: '#FACC15', medium: '#3b82f6', low: '#22c55e', informational: '#94a3b8' }[m.severity] || '#94a3b8';
-        var mid = escJs(m.id);
-        return '<div onclick="echoOpenMemoryDetail && echoOpenMemoryDetail(\'' + mid + '\')" style="cursor:pointer;display:grid;grid-template-columns:auto 1fr auto auto auto;gap:10px;padding:10px 14px;background:rgba(250,204,21,0.04);border:1px solid rgba(250,204,21,0.2);border-radius:8px;align-items:center;">' +
-          '<span style="width:7px;height:7px;border-radius:50%;background:' + sevColor + ';"></span>' +
-          '<span style="font-size:11px;color:var(--chrome2);">' + (m.summary || '').substring(0, 110) + ((m.summary || '').length > 110 ? '...' : '') + '</span>' +
-          (m.caseId ? '<span style="font-size:9px;color:var(--accent);font-family:monospace;">#' + m.caseId + '</span>' : '<span></span>') +
-          '<span style="font-size:9px;color:var(--muted);font-family:monospace;">' + new Date(m.timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + '</span>' +
-          '<button type="button" onclick="event.stopPropagation();echoTogglePersonalPin(\'' + mid + '\');renderBigWorkspacePage();" style="background:none;border:none;color:#FACC15;cursor:pointer;font-size:13px;line-height:1;" title="Unpin">×</button>' +
-        '</div>';
+    html += '<div style="background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 1px 3px rgba(26,24,21,.06),0 8px 20px rgba(26,24,21,.06)"><table style="width:100%;border-collapse:collapse;font-size:12.5px"><thead><tr style="background:#ebe4d6">' + ['Pinned item', 'Case', 'Severity', 'When', ''].map(function (h) { return '<th style="text-align:left;font-size:10.5px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.4px;padding:9px 12px">' + h + '</th>'; }).join('') + '</tr></thead><tbody>' +
+      myPinnedMems.map(function(m, i){
+        var sev = String(m.severity || 'informational'), sc = { critical: ['#B91C1C', '#fef2f2'], high: ['#B45309', '#fffbeb'], medium: ['#A16207', '#fefce8'], low: ['#15803D', '#f0fdf4'] }[sev] || ['#475569', '#f1f5f9'];
+        var mid = escJs(m.id), t = new Date(m.timestamp);
+        return '<tr onclick="echoOpenMemoryDetail && echoOpenMemoryDetail(\'' + mid + '\')" style="cursor:pointer;background:' + (i % 2 ? '#f7f3ea' : '#fff') + '">' +
+          '<td style="padding:10px 12px;font-weight:600;color:#1a1815">' + String(m.summary || '').replace(/</g, '&lt;') + '</td>' +
+          '<td style="padding:10px 12px;font-family:monospace;font-size:11px;color:#1e3a8a;white-space:nowrap">' + (m.caseId ? String(m.caseId).replace(/^#?/, '') : '—') + '</td>' +
+          '<td style="padding:10px 12px"><span style="font-size:10.5px;font-weight:700;color:' + sc[0] + ';background:' + sc[1] + ';border-radius:999px;padding:2px 9px;text-transform:capitalize">' + sev + '</span></td>' +
+          '<td style="padding:10px 12px;white-space:nowrap;color:#475569">' + t.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) + '<div style="font-size:11px">' + t.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) + '</div></td>' +
+          '<td style="padding:10px 12px;text-align:right"><button type="button" onclick="event.stopPropagation();echoTogglePersonalPin(\'' + mid + '\');renderBigWorkspacePage();" style="font:inherit;font-size:11px;font-weight:700;background:#fff;border:1px solid rgba(26,24,21,.15);border-radius:8px;padding:4px 10px;cursor:pointer" title="Unpin">Unpin</button></td></tr>';
       }).join('') +
-    '</div>';
+    '</tbody></table></div>';
   }
   html += '</div>';
 
   html += '<div>' +
-    '<div style="font-size:12px;color:#a855f7;text-transform:uppercase;letter-spacing:0.8px;font-weight:700;margin-bottom:10px;">My Notes (' + myNotesShown + ')</div>';
+    '<div style="font-size:12px;color:#1a1815;text-transform:uppercase;letter-spacing:0.6px;font-weight:800;margin-bottom:10px;">My Notes (' + myNotesShown + ')</div>';
   if (myNotesShown === 0) {
     html += '<div style="padding:24px;background:rgba(26,24,21,0.045);border:1px dashed rgba(168,85,247,0.2);border-radius:10px;text-align:center;color:var(--muted);font-size:11px;">No notes yet. Use the composer above, or right-click anywhere in Cardinal to add a contextual note.</div>';
   } else {
@@ -33260,11 +33259,11 @@ window.renderBigWorkspacePage = function() {
           ? '<button type="button" onclick="editBigNote(' + realIdx + ')" style="background:none;border:1px solid rgba(168,85,247,.3);border-radius:6px;color:#7E22CE;cursor:pointer;font-size:10px;padding:2px 8px" title="Editable for ' + hrsLeft + ' more hour' + (hrsLeft === 1 ? '' : 's') + '">Edit</button>'
           : '<span style="font-size:9.5px;color:var(--muted)" title="Notes lock 24 hours after saving so the record can\'t be quietly changed">Locked</span>';
         var escTitle = (n.title || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-        var escText = (n.text || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        var escText = (n.text || '').replace(/^\s*:\s*/, '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
         var linkMem = n.linkedMemoryId ? escJs(n.linkedMemoryId) : '';
         var ctxLine = (n.contextType ? '<div style="margin-top:8px;font-size:9px;color:var(--muted);background:rgba(167, 167, 167,0.04);padding:4px 8px;border-radius:6px;display:inline-block;">context: ' + String(n.contextType) + ' · ' + String(n.contextValue || '') + '</div>' : '');
         var linkBlock = n.linkedMemoryId ? '<div onclick="echoOpenMemoryDetail && echoOpenMemoryDetail(\'' + linkMem + '\')" style="cursor:pointer;margin-top:8px;font-size:9px;color:var(--accent);background:rgba(167, 167, 167,0.05);padding:4px 8px;border-radius:6px;display:inline-block;">→ linked memory</div>' : '';
-        return '<div style="padding:14px 16px;background:rgba(168,85,247,0.04);border:1px solid rgba(168,85,247,0.25);border-radius:10px;">' +
+        return '<div style="padding:14px 16px;background:#fff;border:0;border-radius:14px;box-shadow:0 1px 3px rgba(26,24,21,.06),0 8px 20px rgba(26,24,21,.06);">' +
           '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;gap:8px;">' +
             '<div>' +
               (n.title ? '<div style="font-size:13px;color:var(--chrome2);font-weight:700;line-height:1.3;">' + escTitle + '</div>' : '') +
@@ -33440,23 +33439,28 @@ function myWorkspaceActivityHtml(persona, myMems) {
   all.forEach(function (a) { var m = String(a.label).match(/#([A-Z]{2,6}-[A-Z0-9-]*\d)/); if (m) casesTouched[m[1]] = 1; if (a.kind === 'model') modelsTouched[a.label] = 1; });
   var html = '<div>' +
     '<div style="display:flex;justify-content:space-between;align-items:flex-end;gap:10px;flex-wrap:wrap;margin-bottom:10px">' +
-    '<div><div style="font-size:12px;color:var(--accent);text-transform:uppercase;letter-spacing:0.8px;font-weight:700">My Activity Log</div>' +
+    '<div><div style="font-size:12px;color:#1a1815;text-transform:uppercase;letter-spacing:0.6px;font-weight:800">My Activity Log</div>' +
     '<div style="font-size:10px;color:var(--muted);margin-top:3px">Last login: <strong style="color:var(--chrome2)">' + (lastLogin ? new Date(lastLogin.ts).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : 'this session') + '</strong> · ' + (function (n) { return n + (n === 1 ? ' case' : ' cases'); })(Object.keys(casesTouched).length) + ' · ' + (function (n) { return n + (n === 1 ? ' model' : ' models'); })(Object.keys(modelsTouched).length) + ' · Admins see the same record in Echo Core, People Log</div></div>' +
     '<div style="display:flex;gap:4px;flex-wrap:wrap">' + KINDS.map(function (k) {
       var on = f === k[0];
-      return '<button type="button" onclick="myActSetFilter(\'' + k[0] + '\')" style="padding:4px 9px;border-radius:6px;font-size:10px;font-weight:600;cursor:pointer;border:1px solid ' + (on ? 'rgba(167,167,167,.4)' : 'rgba(167,167,167,.15)') + ';background:' + (on ? 'rgba(167,167,167,.12)' : 'transparent') + ';color:' + (on ? 'var(--accent)' : 'var(--muted)') + '">' + k[1] + '</button>';
+      return '<button type="button" onclick="myActSetFilter(\'' + k[0] + '\')" style="padding:5px 11px;border-radius:999px;font-size:11px;font-weight:700;cursor:pointer;color:' + (on ? '#fff' : '#1a1815') + ';border:1px solid ' + (on ? '#1a1815' : 'rgba(26,24,21,.15)') + ';background:' + (on ? '#1a1815' : '#fff') + '">' + k[1] + '</button>';
     }).join('') + '</div></div>' +
     '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:0 0 10px;font-size:10.5px;color:var(--muted)">From <input type="date" value="' + dFrom + '" onchange="window.__myActFrom=this.value;renderBigWorkspacePage()" style="font-size:10.5px;padding:4px 6px;border:1px solid rgba(26,24,21,.15);border-radius:6px;background:#fff"> to <input type="date" value="' + dTo + '" onchange="window.__myActTo=this.value;renderBigWorkspacePage()" style="font-size:10.5px;padding:4px 6px;border:1px solid rgba(26,24,21,.15);border-radius:6px;background:#fff">' + ((dFrom || dTo) ? ' <button type="button" onclick="window.__myActFrom=window.__myActTo=\'\';renderBigWorkspacePage()" style="border:0;background:none;color:#1d4ed8;font-weight:700;cursor:pointer;font-size:10.5px">Clear dates</button>' : '') + '<span style="margin-left:auto">' + shown.length + ' item' + (shown.length === 1 ? '' : 's') + '</span></div>';
   if (!shown.length) {
     html += '<div style="padding:20px;background:rgba(26,24,21,0.045);border:1px dashed rgba(167,167,167,0.2);border-radius:10px;text-align:center;color:var(--muted);font-size:11px">Nothing here yet. Everything you open, pin, or write in Cardinal shows up here.</div>';
   } else {
-    html += '<div style="border:1px solid rgba(167,167,167,0.12);border-radius:10px;overflow-y:auto;max-height:380px">' + shown.map(function (a, i) {
-      var d = new Date(a.ts);
-      return '<div' + (a.memId ? ' onclick="echoOpenMemoryDetail && echoOpenMemoryDetail(\'' + String(a.memId).replace(/'/g, "\\'") + '\')"' : '') + ' style="display:grid;grid-template-columns:22px 1fr auto;gap:10px;align-items:center;padding:8px 12px;' + (i ? 'border-top:1px solid rgba(167,167,167,0.08);' : '') + (a.memId ? 'cursor:pointer;' : '') + '">' +
-        '<span style="width:20px;height:20px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:9.5px;font-weight:800;color:#fff;background:' + (ICOL[a.kind] || '#94a3b8') + '">' + (ICON[a.kind] || '·') + '</span>' +
-        '<span style="font-size:11px;color:var(--chrome2);line-height:1.4">' + esc(String(a.label).slice(0, 140)) + (a.src === 'echo' ? ' <span style="font-size:8.5px;color:var(--muted);border:1px solid rgba(167,167,167,.25);border-radius:4px;padding:0 4px;margin-left:4px">ECHO</span>' : '') + '</span>' +
-        '<span style="font-size:9.5px;color:var(--muted);font-family:monospace;white-space:nowrap">' + d.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) + '</span></div>';
-    }).join('') + '</div>';
+    var KLBL = { login: 'Login', case: 'Case', model: 'Model', conversation: 'Conversation', edit: 'Note or edit', screen: 'Opened' };
+    var lastDay = '', rowsH = '', n = 0;
+    shown.forEach(function (a) {
+      var d = new Date(a.ts), day = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+      if (day !== lastDay) { lastDay = day; n = 0; rowsH += '<tr><td colspan="4" style="background:#ebe4d6;font-size:11px;font-weight:800;color:#1a1815;text-transform:uppercase;letter-spacing:.5px;padding:7px 12px;position:sticky;top:0">' + esc(day) + '</td></tr>'; }
+      rowsH += '<tr' + (a.memId ? ' onclick="echoOpenMemoryDetail && echoOpenMemoryDetail(\'' + String(a.memId).replace(/'/g, "\\'") + '\')" style="cursor:pointer;' : ' style="') + 'background:' + (n++ % 2 ? '#f7f3ea' : '#fff') + '">' +
+        '<td style="padding:8px 12px;white-space:nowrap;color:#475569;font-size:12px">' + d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) + '</td>' +
+        '<td style="padding:8px 12px"><span style="font-size:10.5px;font-weight:700;color:' + (ICOL[a.kind] || '#475569') + ';background:#f4efe6;border-radius:999px;padding:2px 9px;white-space:nowrap">' + (KLBL[a.kind] || 'Activity') + '</span></td>' +
+        '<td style="padding:8px 12px;font-size:12.5px;color:#1a1815">' + esc(String(a.label).replace(/^Opened (warroom|sentinel|marketing|cardinallibrary|trustledger|trustloop|myworkspace|pipeline)$/, function (m0, k) { return 'Opened ' + ({ warroom: 'War Room', sentinel: 'Watchman', marketing: 'Codex', cardinallibrary: 'Cardinal Library', trustledger: 'Trust Ledger', trustloop: 'Trust Loop', myworkspace: 'My Workspace', pipeline: 'Data Pipeline' })[k]; }).slice(0, 160)) + '</td>' +
+        '<td style="padding:8px 12px;font-size:11px;color:#64748b;white-space:nowrap">' + (a.src === 'echo' ? 'Sealed in Echo' : 'This session') + '</td></tr>';
+    });
+    html += '<div style="background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 1px 3px rgba(26,24,21,.06),0 8px 20px rgba(26,24,21,.06)"><div style="overflow-y:auto;max-height:420px"><table style="width:100%;border-collapse:collapse"><thead><tr style="background:#f4efe6">' + ['Time', 'Type', 'What happened', 'Where it lives'].map(function (h) { return '<th style="text-align:left;font-size:10.5px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.4px;padding:9px 12px">' + h + '</th>'; }).join('') + '</tr></thead><tbody>' + rowsH + '</tbody></table></div><div style="padding:8px 12px;font-size:11px;color:#64748b;border-top:1px solid rgba(26,24,21,.06)">' + shown.length + ' items</div></div>';
   }
   return html + '</div>';
 }
@@ -47888,11 +47892,11 @@ window.genRenderScenarios = function () {
         var c = STC[r.status] || STC.Live;
         return '<tr style="background:' + (i % 2 ? '#faf8f3' : '#fff') + ';border-top:1px solid rgba(26,24,21,.06)">' +
           '<td style="padding:9px 10px"><input type="checkbox"' + (F.sel[r.id] ? ' checked' : '') + ' onclick="plSel(\'' + r.id + '\',this.checked)"></td>' +
-          '<td style="padding:9px 8px;font-weight:700;color:#1a1815;cursor:pointer" onclick="plView(\'' + r.id + '\')">' + esc(r.name) + '</td>' +
+          '<td style="padding:9px 8px;font-weight:700;color:#1a1815;cursor:pointer" onclick="plView(\'' + r.id + '\')"><span class="pl-name">' + esc(r.name) + '</span></td>' +
           '<td style="padding:9px 8px;color:#475569">' + esc(r.type) + '</td><td style="padding:9px 8px;color:#475569">' + esc(r.feeds) + '</td>' +
           '<td style="padding:9px 8px;color:#475569">' + esc(r.by) + '</td><td style="padding:9px 8px;color:#475569">' + fmt(r.at) + '</td><td style="padding:9px 8px;color:#475569">' + esc(r.size) + '</td>' +
           '<td style="padding:9px 8px"><span style="font-size:10px;font-weight:800;padding:2px 8px;border-radius:999px;color:' + c[0] + ';background:' + c[1] + '">' + esc(r.status) + '</span></td>' +
-          '<td style="padding:9px 8px;white-space:nowrap"><select style="' + SEL + ';padding:4px 6px;font-size:10.5px" onchange="plAct(\'' + r.id + '\',this.value);this.value=\'\'"><option value="">Actions</option><option value="view">View details</option><option value="suppress">Create suppression</option><option value="archive">Archive</option><option value="delete">Delete</option></select></td></tr>';
+          '<td style="padding:9px 8px;white-space:nowrap"><div class="pl-acts">' + [['view', 'View'], ['tag', 'Tags'], ['suppress', 'Suppress'], ['archive', r.status === 'Archived' ? 'Restore' : 'Archive'], ['delete', 'Delete']].map(function (b) { return '<button type="button" class="pl-act' + (b[0] === 'delete' ? ' del' : '') + '" onclick="event.stopPropagation();plAct(\'' + r.id + '\',\'' + b[0] + '\',this)">' + b[1] + '</button>'; }).join('') + '</div></td></tr>';
       }).join('') + (list.length ? '' : '<tr><td colspan="9" style="padding:18px;text-align:center;color:#64748b">No files match these filters.</td></tr>') + '</tbody></table></div><div id="pl-detail"></div>';
     var bind = function (id, key, ev) { var e = document.getElementById(id); if (e) e.addEventListener(ev || 'change', function () { F[key] = e.value; plRender(); if (id === 'pl-q') { var n = document.getElementById('pl-q'); n.focus(); n.setSelectionRange(n.value.length, n.value.length); } }); };
     bind('pl-q', 'q', 'input'); bind('pl-type', 'type'); bind('pl-status', 'status'); bind('pl-by', 'by'); bind('pl-from', 'from'); bind('pl-to', 'to');
@@ -47909,12 +47913,14 @@ window.genRenderScenarios = function () {
     try { cardinalLogActivity('edit', 'Created suppression from ' + list.map(function (r) { return r.name; }).join(', '), null); } catch (e) {}
     toast('Suppression created. See Cardinal Library > Suppressions.');
   }
-  window.plAct = function (id, a) {
+  window.plAct = function (id, a, btn) {
     var r = find(id); if (!r || !a) return;
     if (a === 'view') return plView(id);
+    if (a === 'tag') { if (typeof tgAdd === 'function') tgAdd(btn || document.body, 'pl:' + r.name); return; }
+    if (a === 'archive' && r.status === 'Archived') { r.status = 'Live'; toast(r.name + ' restored.'); try { cardinalLogActivity('edit', 'Restored ' + r.name, null); } catch (e) {} plRender(); return; }
     if (a === 'suppress') return suppress([r]);
     if (a === 'archive') { r.status = 'Archived'; toast(r.name + ' archived. It stays in the audit log.'); }
-    if (a === 'delete') { if (!confirm('Delete ' + r.name + ' from the pipeline? The record of its upload stays in Echo.')) return; ROWS[window.currentOrg || 'ad'] = rows(window.currentOrg || 'ad').filter(function (x) { return x !== r; }); }
+    if (a === 'delete') { ROWS[window.currentOrg || 'ad'] = rows(window.currentOrg || 'ad').filter(function (x) { return x !== r; }); toast(r.name + ' deleted. The record of its upload stays in Echo.'); var dd = document.getElementById('pl-detail'); if (dd) dd.innerHTML = ''; }
     try { cardinalLogActivity('edit', a + ': ' + r.name, null); } catch (e) {}
     plRender();
   };
@@ -47934,7 +47940,8 @@ window.genRenderScenarios = function () {
       '<div style="font-size:10.5px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.04em">Columns</div><div style="display:flex;flex-wrap:wrap;gap:5px;margin:6px 0 10px">' + cols.map(function (c) { return '<span style="font-size:10.5px;padding:3px 8px;border-radius:6px;background:' + (pii.indexOf(c) > -1 ? 'rgba(220,38,38,.08);color:#B91C1C' : '#f3f0e9;color:#334155') + '">' + esc(c) + '</span>'; }).join('') + '</div>' +
       '<div style="font-size:10.5px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.04em">What Cardinal checked</div><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:6px;margin-top:6px">' +
       [['Sensitive fields', pii.length ? pii.length + ' flagged (shown in red)' : 'None found'], ['Proxy check', /zip|base|age_band|filer_type/i.test(r.cols) ? 'Possible proxy for a protected trait' : 'No proxy found'], ['Fraud patterns', 'Scanned'], ['Training rights', r.type === 'Vendor AI output' ? 'Vendor terms on file' : 'Owned'], ['Agent and security', 'No prompt-injection content'], ['Schema', 'Validated']].map(function (x) { return '<div style="padding:7px 9px;border-radius:8px;background:#fff;border:1px solid rgba(26,24,21,.08)"><div style="font-size:10px;color:#64748b">' + x[0] + '</div><div style="font-size:11.5px;font-weight:700;color:#1a1815">' + x[1] + '</div></div>'; }).join('') + '</div>' +
-      '<div style="margin-top:10px;display:flex;gap:6px"><button type="button" class="btn-ghost" style="font-size:11px" onclick="plAct(\'' + r.id + '\',\'suppress\')">Create suppression</button><button type="button" class="btn-ghost" style="font-size:11px" onclick="plAct(\'' + r.id + '\',\'archive\')">Archive</button></div></div>';
+      '<div style="font-size:10.5px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.04em;margin-top:12px">Tags</div><div class="pl-dtags" data-key="' + esc('pl:' + r.name) + '" style="display:flex;flex-wrap:wrap;gap:5px;margin-top:6px"></div>' +
+      '<div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="pl-bk" onclick="plAct(\'' + r.id + '\',\'suppress\')">Create suppression</button><button type="button" class="pl-bk" onclick="plAct(\'' + r.id + '\',\'tag\',this)">Add or edit tags</button><button type="button" class="pl-bk" onclick="plAct(\'' + r.id + '\',\'archive\')">' + (r.status === 'Archived' ? 'Restore' : 'Archive') + '</button><button type="button" class="pl-bk del" onclick="plAct(\'' + r.id + '\',\'delete\')">Delete</button></div></div>';
     d.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
   };
   window.plUpload = function (files) {
@@ -54311,6 +54318,8 @@ window.CARDINAL_PLACES = {
   css.textContent = '.tg-chip{display:inline-flex;align-items:center;gap:4px;font-size:10.5px;font-weight:700;color:#15803D;background:rgba(34,197,94,.10);border:1px solid rgba(34,197,94,.35);border-radius:999px;padding:1px 8px;margin:1px 3px 1px 0;white-space:nowrap}' +
     '.tg-chip b{cursor:pointer;color:#64748b;font-weight:800}.tg-add{font:inherit;font-size:10.5px;font-weight:700;border:1px dashed rgba(26,24,21,.3);background:#fff;border-radius:999px;padding:1px 8px;cursor:pointer;color:#475569}' +
     '.tg-bar{display:flex;align-items:center;gap:8px;justify-content:flex-end;margin:0 0 8px}.tg-bar select{font:inherit;font-size:12px;padding:7px 10px;border:1px solid rgba(26,24,21,.15);border-radius:8px;background:#fff}' +
+    '#pl-files > div[style*="overflow:hidden"]{overflow-x:auto!important}.pl-acts{display:flex;gap:4px;flex-wrap:nowrap}.pl-act{font:inherit;font-size:10.5px;font-weight:700;background:#1a1815;color:#fff;border:0;border-radius:7px;padding:4px 8px;cursor:pointer;white-space:nowrap}.pl-act:hover{background:#3a352d}.pl-act.del{background:#fff;color:#B91C1C;border:1px solid rgba(220,38,38,.35)}' +
+    '.pl-bk{font:inherit;font-size:12px;font-weight:700;background:#1a1815;color:#fff;border:0;border-radius:9px;padding:8px 14px;cursor:pointer}.pl-bk:hover{background:#3a352d}.pl-bk.del{background:#fff;color:#B91C1C;border:1px solid rgba(220,38,38,.35)}' +
     '#tg-pop{position:fixed;z-index:10001;background:#fff;border-radius:12px;box-shadow:0 12px 32px rgba(26,24,21,.25);padding:10px;width:220px}#tg-pop input{width:100%;box-sizing:border-box;font:inherit;font-size:12.5px;padding:7px 9px;border:1px solid rgba(26,24,21,.15);border-radius:8px}#tg-pop .sg{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px}';
   document.head.appendChild(css);
   var FILTER = {};
@@ -54329,9 +54338,25 @@ window.CARDINAL_PLACES = {
   };
   window.tgRemove = function (key, t) { var s = store(); s[key] = (s[key] || []).filter(function (x) { return x !== t; }); refresh(true); };
   window.tgFilter = function (scope, v) { FILTER[scope] = v; refresh(true); };
-  function nameOf(tr) { var tds = [].filter.call(tr.children, function (td) { return !td.querySelector('input[type=checkbox]') && (td.textContent || '').trim(); }); return tds.length ? tds[0].textContent.trim().split('\n')[0].slice(0, 80) : ''; }
-  function wire(scope, table, barHost) {
+  function nameOf(tr) { var pn = tr.querySelector('.pl-name'); if (pn) return pn.textContent.trim().slice(0, 80); var tds = [].filter.call(tr.children, function (td) { return !td.querySelector('input[type=checkbox]') && (td.textContent || '').trim(); }); return tds.length ? tds[0].textContent.trim().split('\n')[0].slice(0, 80) : ''; }
+  function wire(scope, table, barHost, ro) {
     if (!table || table.offsetParent === null) return;
+    if (ro) {
+      var used0 = {};
+      [].forEach.call(table.querySelectorAll('tbody tr'), function (tr) {
+        var pn = tr.querySelector('.pl-name'); if (!pn) return;
+        var key = scope + ':' + nameOf(tr), tags = tagsFor(key, tr.textContent || ''); tags.forEach(function (t) { used0[t] = 1; });
+        var box = pn.parentNode.querySelector('.tg-ro'); if (!box) { box = document.createElement('div'); box.className = 'tg-ro'; box.style.marginTop = '3px'; pn.parentNode.appendChild(box); }
+        var h = tags.map(function (t) { return '<span class="tg-chip" style="font-size:10px">' + esc(t) + '</span>'; }).join(''); if (box.__h !== h) { box.__h = h; box.innerHTML = h; }
+        var f0 = FILTER[scope]; tr.style.display = !f0 || tags.indexOf(f0) > -1 ? '' : 'none';
+      });
+      var bar0 = barHost.querySelector(':scope > .tg-bar[data-s="' + scope + '"]'), all0 = Object.keys(used0).sort();
+      var o0 = '<option value="">Tag: any</option>' + all0.map(function (t) { return '<option' + (FILTER[scope] === t ? ' selected' : '') + '>' + esc(t) + '</option>'; }).join('');
+      if (!bar0) { bar0 = document.createElement('div'); bar0.className = 'tg-bar'; bar0.setAttribute('data-s', scope); bar0.innerHTML = '<span style="font-size:11.5px;color:#64748b">Filter by tag</span><select onchange="tgFilter(\'' + scope + '\',this.value)"></select>'; barHost.insertBefore(bar0, barHost.firstChild); }
+      var se0 = bar0.querySelector('select'); if (se0.__o !== o0) { se0.__o = o0; se0.innerHTML = o0; }
+      [].forEach.call(document.querySelectorAll('.pl-dtags'), function (d) { var k = d.getAttribute('data-key'), tg = store()[k] || []; var h = tg.length ? tg.map(function (t) { return '<span class="tg-chip">' + esc(t) + ' <b onclick="tgRemove(' + esc(JSON.stringify(k)) + ',' + esc(JSON.stringify(t)) + ')" title="Remove tag">×</b></span>'; }).join('') : '<span style="font-size:11.5px;color:#64748b">No tags yet</span>'; if (d.__h !== h) { d.__h = h; d.innerHTML = h; } });
+      return;
+    }
     var hr = table.querySelector('thead tr') || [].filter.call(table.querySelectorAll('tr'), function (r) { return r.querySelector('th'); })[0];
     if (hr && !hr.__tg) { hr.__tg = 1; var th = document.createElement('th'); th.textContent = 'Tags'; th.style.whiteSpace = 'nowrap'; var last = hr.lastElementChild; hr.insertBefore(th, last && !(last.textContent || '').trim() ? last : null); }
     var used = {};
@@ -54356,7 +54381,7 @@ window.CARDINAL_PLACES = {
     var pl = document.getElementById('screen-pipeline');
     if (pl && pl.offsetParent !== null) {
       var t = [].filter.call(pl.querySelectorAll('table'), function (x) { return x.offsetParent !== null && /Uploaded by/.test((x.querySelector('thead') || x).textContent); })[0];
-      if (t) wire('pl', t, t.parentElement.parentElement || t.parentElement);
+      if (t) wire('pl', t, t.parentElement.parentElement || t.parentElement, true);
     }
     var lib = document.getElementById('screen-cardinallibrary');
     if (lib && lib.offsetParent !== null) {
@@ -54367,6 +54392,22 @@ window.CARDINAL_PLACES = {
       });
     }
   }
+  var oUp = window.plUpload;
+  if (typeof oUp === 'function') window.plUpload = function (files) {
+    var list = [].slice.call(files || []); if (!list.length) return;
+    var m = document.createElement('div'); m.style.cssText = 'position:fixed;inset:0;z-index:10001;background:rgba(26,24,21,.45);display:flex;align-items:center;justify-content:center;padding:16px';
+    var pool = (SEED[org()] || SEED.fin), pick = {};
+    m.innerHTML = '<div style="background:#f4efe6;border-radius:16px;box-shadow:0 24px 60px rgba(0,0,0,.3);width:min(520px,100%);padding:20px 22px;color:#1a1815"><div style="font-size:16px;font-weight:800">Tag ' + (list.length === 1 ? esc(list[0].name) : list.length + ' files') + '</div><div style="font-size:12px;color:#64748b;margin-top:2px">Tags make files easy to find later in the Data Pipeline and the Library. You can change them anytime.</div>' +
+      '<div class="tg-pick" style="display:flex;flex-wrap:wrap;gap:6px;margin:14px 0 10px">' + pool.map(function (t) { return '<button type="button" data-t="' + esc(t) + '" style="font:inherit;font-size:12px;font-weight:700;border:1px solid rgba(26,24,21,.15);background:#fff;color:#1a1815;border-radius:999px;padding:5px 11px;cursor:pointer">' + esc(t) + '</button>'; }).join('') + '</div>' +
+      '<input placeholder="Add your own tag, then press Enter" style="width:100%;box-sizing:border-box;font:inherit;font-size:13px;padding:9px 12px;border:1px solid rgba(26,24,21,.15);border-radius:10px">' +
+      '<div style="display:flex;justify-content:flex-end;gap:8px;margin-top:14px"><button type="button" class="pl-bk" data-a="skip" style="background:#fff;color:#1a1815;border:1px solid rgba(26,24,21,.15)">Skip</button><button type="button" class="pl-bk" data-a="go">Upload with tags</button></div></div>';
+    document.body.appendChild(m);
+    var paint = function () { [].forEach.call(m.querySelectorAll('.tg-pick button'), function (b) { var on = pick[b.getAttribute('data-t')]; b.style.background = on ? '#1a1815' : '#fff'; b.style.color = on ? '#fff' : '#1a1815'; }); };
+    m.querySelector('.tg-pick').onclick = function (e) { var b = e.target.closest('button'); if (!b) return; var t = b.getAttribute('data-t'); pick[t] = !pick[t]; paint(); };
+    var inp = m.querySelector('input'); inp.onkeydown = function (e) { if (e.key !== 'Enter') return; var t = inp.value.trim().toLowerCase().replace(/\s+/g, '-'); if (!t) return; pick[t] = true; inp.value = ''; if (!m.querySelector('.tg-pick [data-t="' + t + '"]')) m.querySelector('.tg-pick').insertAdjacentHTML('beforeend', '<button type="button" data-t="' + esc(t) + '" style="font:inherit;font-size:12px;font-weight:700;border:1px solid rgba(26,24,21,.15);border-radius:999px;padding:5px 11px;cursor:pointer">' + esc(t) + '</button>'); paint(); };
+    m.querySelector('[data-a=skip]').onclick = function () { m.remove(); oUp(list); };
+    m.querySelector('[data-a=go]').onclick = function () { var tags = Object.keys(pick).filter(function (k) { return pick[k]; }); list.forEach(function (f) { store()['pl:' + f.name] = tags.slice(); store()['lib:' + f.name] = tags.slice(); }); m.remove(); oUp(list); try { (window.cardinalShowToast || showToast)('Uploaded with tags: ' + (tags.join(', ') || 'none') + '. Logged in Echo.'); } catch (e) {} };
+  };
   setInterval(refresh, 700);
 })();
 
