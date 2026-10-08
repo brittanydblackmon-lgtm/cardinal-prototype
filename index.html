@@ -15141,10 +15141,10 @@ var CARDINAL_DATA_TS_EXT = {
       {month:'Feb 2026', score:78, biasScore:71, fraudScore:87, complianceScore:73, annotation:'Credit v3.4 issue caught, v3.5 in shadow deploy'},
       {month:'Mar 2026', score:80, biasScore:73, fraudScore:88, complianceScore:75, annotation:null},
       {month:'Apr 2026', score:81, biasScore:74, fraudScore:88, complianceScore:76, annotation:null},
-      {month:'May 2026', score:82, biasScore:75, fraudScore:89, complianceScore:77, annotation:'Credit v3.5 reached full traffic rollout'},
+      {month:'May 2026', score:82, biasScore:75, fraudScore:89, complianceScore:77, annotation:'Credit v3.5 shadow results: fairness ratio 0.83'},
       {month:'Jun 2026', score:83, biasScore:76, fraudScore:89, complianceScore:77, annotation:null},
       {month:'Jul 2026', score:82, biasScore:75, fraudScore:88, complianceScore:76, annotation:null},
-      {month:'Aug 2026', score:80, biasScore:73, fraudScore:88, complianceScore:75, annotation:'CFPB fair lending exam packet filed'},
+      {month:'Aug 2026', score:80, biasScore:73, fraudScore:88, complianceScore:75, annotation:'CFPB exam notice received; ZIP proxy still live in v3.4'},
       {month:'Sep 2026', score:81, biasScore:74, fraudScore:88, complianceScore:76, annotation:null}
     ],
     regulationsList: [
@@ -53128,17 +53128,17 @@ window.CARDINAL_PLACES = {
       var ev = personEvents(p), cnt = function (a) { return ev.filter(function (e) { return e.act === a; }).length; };
       var ini = p.name.split(' ').map(function (w) { return w[0]; }).join('').slice(0, 2);
       return '<button type="button" class="ex-back" onclick="echoBack()">← Everyone</button>' +
-        '<div class="ex-head"><div class="ex-av">' + esc(ini) + '</div><div><div style="font-size:17px;font-weight:700;color:#1a1815">' + esc(p.name) + '</div><div class="ex-sub">' + esc(p.role) + ' · ' + esc(companyName()) + ' · Joined ' + fd(p.joined) + ' · Passport ' + esc(p.passport) + ' · Access: ' + esc(p.access) + '</div></div>' +
+        '<div class="ex-head"><div class="ex-av">' + esc(ini) + '</div><div><div style="font-size:17px;font-weight:700;color:#1a1815">' + esc(p.name) + ' <button type="button" onclick="empOpen(' + esc(JSON.stringify(p.name)) + ')" style="margin-left:8px;font:inherit;font-size:11.5px;font-weight:700;background:#1a1815;color:#fff;border:0;border-radius:8px;padding:5px 10px;cursor:pointer;vertical-align:middle">Open profile</button></div><div class="ex-sub">' + esc(p.role) + ' · ' + esc(companyName()) + ' · Joined ' + fd(p.joined) + ' · Passport ' + esc(p.passport) + ' · Access: ' + esc(p.access) + '</div></div>' +
         '<div class="ex-chips"><div class="ex-chip"><b>' + ev.length + '</b><span>Records</span></div><div class="ex-chip"><b>' + cnt('Changed') + '</b><span>Changes</span></div><div class="ex-chip"><b>' + cnt('Tried to change (blocked)') + '</b><span>Blocked</span></div><div class="ex-chip"><b>' + cnt('Approved') + '</b><span>Approvals</span></div><div class="ex-chip"><b>' + cnt('Viewed restricted record') + '</b><span>Restricted views</span></div></div></div>' +
         '<div class="ex-note"><strong>Whistleblower reports:</strong> never linked to a person. Reports are anonymous by design, so they do not appear on anyone’s record, including this one. They live, sealed, under Whistleblower.</div>' +
         '<div class="ex-bar">' + search('Search what ' + p.name.split(' ')[0] + ' did') + sel('year', 'Year', years(ev, function (e) { return e.t; })) + sel('core', 'Core', CORES) + sel('act', 'Action', Object.keys(ACT_COL)) + dates() + '</div>' +
         timelineTable(ev, [['When', function (e) { return '<span style="white-space:nowrap;color:#475569">' + fd(e.t) + '</span>'; }], ['Action', function (e) { return pill(e.act, ACT_COL[e.act] || ACT_COL.Logged); }], ['Core', function (e) { return coreTag(e.core); }], ['What happened', function (e) { return esc(e.what); }], ['Sealed', function (e) { return '<span style="font-family:monospace;font-size:11px;color:#64748b">' + esc(e.seal) + '</span>'; }]]);
     }
     var ps = people().map(function (p) { var ev = personEvents(p); return { p: p, n: ev.length, last: ev[0] }; }).filter(function (x) { return q(x.p); });
-    return '<div class="ex-note">Employees: everyone at ' + esc(companyName()) + ' who has touched an AI system. Click a name for everything they have done, back to the day they joined.</div>' +
+    return '<div class="ex-note">Employees: everyone at ' + esc(companyName()) + ' who has touched an AI system. Click a name for their profile (notes, sign-offs, cases, models). Click anywhere else on the row for their full activity log, back to the day they joined.</div>' +
       '<div class="ex-bar">' + search('Search people by name or role') + '</div>' +
       '<div class="ex-wrap"><table class="ex-tbl"><thead><tr><th>Person</th><th>Role</th><th>Joined</th><th>Records</th><th>Last activity</th><th>Access</th></tr></thead><tbody>' +
-      ps.map(function (x) { return '<tr class="ex-click" onclick="echoOpen(\'person\',' + esc(JSON.stringify(x.p.name)) + ')"><td><div class="ex-name">' + esc(x.p.name) + '</div></td><td>' + esc(x.p.role) + '</td><td style="white-space:nowrap">' + fd(x.p.joined) + '</td><td>' + x.n + '</td><td><div>' + esc(x.last ? x.last.what : '') + '</div><div class="ex-sub">' + (x.last ? fd(x.last.t) : '') + '</div></td><td>' + esc(x.p.access) + '</td></tr>'; }).join('') + '</tbody></table></div>';
+      ps.map(function (x) { return '<tr class="ex-click" onclick="echoOpen(\'person\',' + esc(JSON.stringify(x.p.name)) + ')"><td><a href="javascript:void(0)" class="ex-name" title="Open ' + esc(x.p.name) + '’s profile" onclick="event.stopPropagation();empOpen(' + esc(JSON.stringify(x.p.name)) + ')" style="color:#1a1815;text-decoration:underline;text-decoration-color:rgba(26,24,21,.25);text-underline-offset:3px">' + esc(x.p.name) + '</a></td><td>' + esc(x.p.role) + '</td><td style="white-space:nowrap">' + fd(x.p.joined) + '</td><td>' + x.n + '</td><td><div>' + esc(x.last ? x.last.what : '') + '</div><div class="ex-sub">' + (x.last ? fd(x.last.t) : '') + '</div></td><td>' + esc(x.p.access) + '</td></tr>'; }).join('') + '</tbody></table></div>';
   }
   function pCases() {
     if (X.detail && X.detail.kind === 'case') {
@@ -53186,6 +53186,7 @@ window.CARDINAL_PLACES = {
     return (CACHE[key] = out);
   }
   window.cardinalEchoEvents = function () { return allEvents(); };
+  window.__echoAPI = { people: people, personEvents: personEvents, models: models, caseRows: function () { return caseRows(); }, memories: memories };
   function pCores() {
     var core = X.bucket === 'x-core-all' ? '' : X.bucket.replace('x-core-', '');
     var list = allEvents().filter(function (e) { return !core || e.core === core; });
@@ -53212,20 +53213,9 @@ window.CARDINAL_PLACES = {
   window.echoUnpin = function (id) { var me = (window.getActivePersona && getActivePersona() || {}).name || 'You', k = org() + '|' + me; window.__xPins[k] = (window.__xPins[k] || []).filter(function (p) { return p.id !== id; }); render(true); };
   var SCORE = { fin: [76, 76, 77, 77, 78, 77, 78, 75, 76, 78, 80, 81], ad: [78, 78, 77, 77, 76, 76, 75, 73, 73, 74, 74, 74], health: [80, 80, 81, 81, 82, 81, 82, 83, 82, 83, 83, 83], fed: [74, 74, 73, 73, 72, 72, 72, 71, 71, 71, 71, 71] };
   var SCORE_WHY = { fin: [[4, 'ZIP code proxy found in Credit Scoring v3.4', -3], [2, 'Credit Scoring v3.5 enters shadow; fairness ratio 0.83', 2], [0, 'Exam evidence packet assembled', 1]], ad: [[5, 'Fleet Health v2.4 climate proxy found', -2], [3, 'Shadow fix for Fleet Health at 5%', 1]], health: [[4, 'Age proxy found in Claims Adjudication', -2], [1, 'CMO approved the shadow fix', 2]], fed: [[4, 'Proxy variable found before launch', -1], [1, 'Appeals path design started', 0]] };
-  function pScore() {
-    return '<div class="ex-note">Your Trust Score month by month, with what moved it. Every change is sealed in Echo.</div>' +
-      '<section class="tsv2-section" style="margin:0 0 14px"><div class="tsv2-section-title">Trust Score History</div><div class="tsv2-section-sub">Hover any month for full context · Dashed line = 80 certification line · Pins show what moved the score</div>' +
-      '<div class="tsv2-history-canvas-wrap" id="ex-score-wrap" style="position:relative;min-height:260px;height:260px;margin-top:10px"><div id="ex-score-svg" style="position:absolute;inset:0"></div><div id="ex-score-pins"></div></div></section>' +
-      '<div class="ex-wrap"><table class="ex-tbl"><thead><tr><th>When</th><th>What moved the score</th><th>Change</th></tr></thead><tbody>' +
-      (SCORE_WHY[org()] || []).map(function (w) { var d = new Date(NOW.getFullYear(), NOW.getMonth() - w[0], 1); return '<tr><td style="white-space:nowrap">' + MON[d.getMonth()] + ' ' + d.getFullYear() + '</td><td>' + esc(w[1]) + '</td><td style="font-weight:700;color:' + (w[2] > 0 ? '#15803D' : w[2] < 0 ? '#B91C1C' : '#475569') + '">' + (w[2] > 0 ? '+' : '') + w[2] + '</td></tr>'; }).join('') + '</tbody></table></div>';
-  }
-  function drawScore() {
-    var wrap = document.getElementById('ex-score-wrap'); if (!wrap || typeof cardinalHistoryChartRender !== 'function' || typeof d3 === 'undefined') return;
-    var vals = SCORE[org()] || SCORE.fin, why = SCORE_WHY[org()] || [];
-    var pts = vals.map(function (v, i) { var d = new Date(NOW.getFullYear(), NOW.getMonth() - (11 - i), 1), p = { month: MON[d.getMonth()] + ' ' + d.getFullYear(), v: v }; why.forEach(function (w) { if (11 - w[0] === i) p.annotation = { summary: w[1] }; }); return p; });
-    var last = vals[vals.length - 1];
-    cardinalHistoryChartRender({ wrap: wrap, svgWrap: document.getElementById('ex-score-svg'), pinsWrap: document.getElementById('ex-score-pins'), hist: pts, getValue: function (p) { return p.v; }, lineColor: last >= 80 ? '#22c55e' : last >= 70 ? '#FACC15' : '#ef4444', yDomain: [60, 100], yTickValues: [60, 70, 80, 90, 100], gridStep: 10, gradientIdBase: 'ex-score-grad', gradientSuffix: org(), thresholds: [{ y: 80, stroke: 'rgba(34,197,94,0.55)', label: 'Certification (80)', labelAnchor: 'end', labelFill: 'rgba(34,197,94,0.85)' }], thresholdGroupId: null, thresholdTooltip: { title: 'Certification line', body: '80 and above, with no part under 70, meets the Cardinal Standard.' }, pointClass: 'tsv2-pt', pointTooltipTitle: 'Trust Score', pointTooltipLabel: 'Trust Score', pinSourceContext: 'Echo score history', formatPointAnnotation: function (p) { return p.annotation ? p.annotation.summary : ''; }, formatPointTooltipBody: function (p) { return 'Trust Score: <span class="tt-accent">' + p.v + '</span>' + (p.annotation ? '<br>' + esc(p.annotation.summary) : ''); } });
-  }
+  function pScore() { return '<div class="ex-note">Your Trust Score month by month, with what moved it. Same chart and numbers as the Trust Score page. Every change is sealed in Echo.</div><div data-shost="1">' + (window.cardinalScoreHistoryHTML ? cardinalScoreHistoryHTML('ex-score') : '') + '</div>'; }
+  function drawScore() { if (window.cardinalScoreHistoryDraw) cardinalScoreHistoryDraw('ex-score'); }
+
 
   // ── Render and keep in place ─────────────────────────────────────
   function render(keepFocus) {
@@ -53422,17 +53412,16 @@ window.CARDINAL_PLACES = {
     var aq = (window._dashActionQueueItems || []).map(function (it) { return it.text || ''; }).concat([(document.getElementById('dash-action-queue') || {}).innerText || '']);
     var dl = null; aq.forEach(function (t) { var m = String(t).match(/(\d+)\s*days?/i); if (m && (!dl || +m[1] < dl.d)) dl = { d: +m[1], t: String(t).replace(/\s+/g, ' ').trim() }; });
     var org = window.currentOrg || 'fin';
-    // Same next deadline Halo shows (same dates as Halo's money table).
-    var HALO_DL = { fin: ['Oct 20, 2026', 'CFPB fair lending exam'], ad: ['Nov 1, 2026', 'FAA counterfeit parts reports'], health: ['Oct 11, 2026', 'Section 1557 complaints to HHS'], fed: ['Nov 6, 2026', 'OMB M-25-21 documentation'] };
-    var hd = HALO_DL[org], src = hd ? { d: Date.parse(hd[0]), rule: hd[1] } : null;
-    if (src && src.d > Date.now()) dl = { d: Math.ceil((src.d - Date.now()) / 864e5), t: src.rule };
+    // 10/8: one source for deadlines, the Compliance Calendar (Halo and Eve read the same dates).
+    var nd = window.cardinalNextDeadline ? cardinalNextDeadline(org) : null;
+    if (nd) dl = { d: nd.days, t: nd.name + ' · due ' + nd.due };
     var ORG_DL = {}; ORG_DL[org] = dl ? dl.t : '';
     var units = [
       { value: score, pct: score / 100, color: score >= 80 ? '#22c55e' : score >= 70 ? '#FACC15' : '#ef4444', label: 'Global Trust Score', status: cert ? (cert === 'Certified' ? 'Certified: 80+ and No Part Under 70' : 'Not Certified Yet') : '', pill100: '/ 100', pillLabel: 'Trust Score report', sub: peer, go: "showScreen('trustscore')", delta: { d: 2, text: '+2' }, good: 'up', tip: 'One number for how trustworthy your AI is right now, across 7 parts.' },
       { value: mm[1], pct: mm[2] ? Math.max(0.08, mm[1] / mm[2]) : 0.1, color: +mm[1] ? '#ef4444' : '#22c55e', label: 'Models at risk', pill100: 'of ' + mm[2], pillLabel: 'Models at risk', sub: (mr.split('\n').filter(function (l) { return /v\d/.test(l); })[0] || '').replace(/(CRITICAL|WARNING|HIGH|WATCH)\s*$/i, '').replace(/\bDI\b/, 'fairness ratio').trim(), go: "dashDetails('models at risk')", good: 'down', tip: 'Models below the line on fairness, fraud, or another part of the Standard.' },
       { value: money, pct: Math.min(1, num(money) / 100 || 0.5), color: '#ef4444', label: 'Penalty exposure', pillLabel: 'Penalty exposure', sub: (pe.split('\n').filter(function (l) { return /\+/.test(l); })[0] || 'If nothing is fixed').trim(), go: "dashDetails('penalty')", good: 'down', delta: { d: 0, text: '' }, tip: 'What fines, restitution, and lawsuits could cost if nothing is fixed.' },
       { value: remed + '%', pct: remed / 100, color: remed >= 80 ? '#22c55e' : '#FACC15', label: 'Remediation progress', pillLabel: 'Remediation', sub: rpRe ? rpRe[0].replace(/\s*=.*$/, '').trim() : '', go: "dashDetails('remediation')", good: 'up', tip: 'How far along the fixes are for the people affected.' },
-      { value: dl ? dl.d + 'D' : '--', pct: dl ? Math.max(0.08, 1 - dl.d / 90) : 0.1, color: dl && dl.d <= 14 ? '#ef4444' : '#FACC15', label: 'Next deadline', pillLabel: 'Next deadline', sub: dl ? (ORG_DL[org] || 'Nearest regulatory deadline') : '', go: "showScreen('compliance');setTimeout(function(){try{switchCompTab('calendar')}catch(e){}},400)", good: 'up', delta: { d: -1, text: '-1 day' }, tip: 'Days until the nearest regulatory deadline.' }
+      { value: dl ? dl.d + 'D' : '--', pct: dl ? Math.max(0.08, 1 - dl.d / 90) : 0.1, color: dl && dl.d <= 14 ? '#ef4444' : '#FACC15', label: 'Next deadline', pillLabel: 'Next deadline', sub: dl ? (ORG_DL[org] || 'Nearest regulatory deadline') : '', go: "dashGoDeadline()", good: 'up', delta: { d: -1, text: '-1 day' }, tip: 'Days until the nearest regulatory deadline.' }
     ];
     var box = document.getElementById('dash-u-hero');
     if (!box) { box = document.createElement('section'); box.id = 'dash-u-hero'; box.className = 'tsv2-section u-hero'; }
@@ -54109,6 +54098,17 @@ window.CARDINAL_PLACES = {
     var lastD = f ? f.lastDate : fd(new Date(2026, 6 + (h % 3), 1 + (h >> 5) % 27));
     return { i: i, first: first, last: last, name: first + ' ' + last, id: id, email: (first[0] + last).toLowerCase() + (h % 90 + 10) + '@mail.example', phone: '(' + (200 + h % 700) + ') 555-' + String(1000 + (h >> 7) % 9000), st: st, city: CITY[st] || 'Springfield', since: since, prods: prods, lastDec: dec, lastDate: lastD, eid: f ? f.eid : null, featured: !!f, models: f ? f.models : [c.models[h % c.models.length], c.models[(h >> 3) % c.models.length]].filter(function (x, k, a) { return a.indexOf(x) === k; }), flagged: f ? f.status === 'Flagged' : (h % 23 === 0), cohort: f ? f.cohort : null };
   }
+  function caseOf() { var d = (window.CARDINAL_DATA || {})[org()] || {}; return String(d.primaryCase || ((d.caseChannels || [])[0] || {}).caseId || '').replace(/^#/, ''); }
+  function goCore(code) { var m = document.getElementById('cust-prof'); if (m) m.remove(); try { showScreen(code); } catch (e) {} }
+  window.custGoCore = goCore;
+  window.custCase = function (id) { var m = document.getElementById('cust-prof'); if (m) m.remove(); showScreen('echo'); setTimeout(function () { try { echoEnterRoom('cases'); echoCaseGo(id); } catch (e) {} }, 500); };
+  window.custModel = function (name) {
+    ['cust-prof', 'emp-prof'].forEach(function (id) { var m = document.getElementById(id); if (m) m.remove(); });
+    var key = null; try { key = cardinalResolveModelDetailKey(name); } catch (e) {}
+    if (key && typeof openModelDetail === 'function') { openModelDetail(name, 'Customer profile'); return; }
+    showScreen('echo'); setTimeout(function () { try { echoEnterRoom('models'); var api = window.__echoAPI, has = api && api.models().some(function (m) { return m.name === name; }); if (has) echoOpen('model', name); else echoF('q', name.replace(/ v\d.*$/, '')); } catch (e) {} }, 500);
+  };
+  function mlink(x) { return '<a href="javascript:void(0)" onclick="event.stopPropagation();custModel(' + esc(JSON.stringify(x)) + ')" style="color:#1e3a8a;font-weight:700;text-decoration:none" title="Open ' + esc(x) + '">' + esc(x) + '</a>'; }
   function total() { var c = CFG[org()] || CFG.fin; var f = (window.CARDINAL_ORG_FACTS || {})[org()]; return (f && f.customers) || c.n; }
   window.cardinalCustomerTotal = total;
   var ST = {};
@@ -54138,7 +54138,7 @@ window.CARDINAL_PLACES = {
       '<div class="ex-note" style="font-size:12px;color:#475569;background:#f4efe6;border-radius:10px;padding:10px 12px;margin:0 0 12px">' + esc(c.word) + ' of ' + esc(co) + ': ' + total().toLocaleString() + ' people, each with a Cardinal Passport. Search by name, email, ' + c.pre + ' ID, or decision receipt number (for example CP-767976-01). Every profile you open is logged in Echo.</div>' +
       '<div style="display:flex;gap:8px;align-items:center;margin:0 0 12px"><input id="cust-q-' + ctx + '" value="' + esc(s.q) + '" placeholder="Search ' + esc(c.word.toLowerCase()) + ' by name, email, ID, or receipt number" oninput="clearTimeout(window.__cq);var v=this.value;window.__cq=setTimeout(function(){custSearch(\'' + ctx + '\',v)},300)" style="flex:1;font:inherit;font-size:13px;padding:10px 12px;border:1px solid rgba(26,24,21,.15);border-radius:10px;background:#fff"></div>' +
       '<div style="border:1px solid rgba(26,24,21,.08);border-radius:12px;overflow:auto"><table style="width:100%;border-collapse:collapse;font-size:12.5px"><thead><tr style="background:#f4efe6">' + ['Name', 'ID', 'Email', 'Location', c.word === 'Customers' ? 'Customer since' : 'Since', 'Last AI decision', 'Passport'].map(function (x) { return '<th style="text-align:left;font-size:10.5px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.4px;padding:10px 12px;white-space:nowrap">' + x + '</th>'; }).join('') + '</tr></thead><tbody>' +
-      (rows.map(function (p, n) { var den = /DENIED/.test(p.lastDec); return '<tr style="background:' + (n % 2 ? '#f4efe6' : '#fff') + ';cursor:pointer" onclick="custOpen(' + p.i + ')"><td style="padding:10px 12px;font-weight:700">' + esc(p.name) + (p.featured ? ' <span style="font-size:10px;color:#A16207;font-weight:700">in a case</span>' : '') + '</td><td style="padding:10px 12px;font-family:monospace">' + p.id + '</td><td style="padding:10px 12px;color:#475569">' + esc(p.email) + '</td><td style="padding:10px 12px">' + esc(p.city + ', ' + p.st) + '</td><td style="padding:10px 12px;white-space:nowrap">' + fd(p.since) + '</td><td style="padding:10px 12px;white-space:nowrap"><span style="font-weight:700;color:' + (den ? '#B91C1C' : '#15803D') + '">' + (den ? 'Denied' : 'Approved') + '</span> · ' + esc(p.lastDate) + '</td><td style="padding:10px 12px"><span style="color:#1e3a8a;font-weight:700">Open →</span></td></tr>'; }).join('') || '<tr><td colspan="7" style="padding:12px;color:#64748b">No one matches.</td></tr>') +
+      (rows.map(function (p, n) { var den = /DENIED/.test(p.lastDec); return '<tr style="background:' + (n % 2 ? '#f4efe6' : '#fff') + ';cursor:pointer" onclick="custOpen(' + p.i + ')"><td style="padding:10px 12px;font-weight:700">' + esc(p.name) + (p.flagged ? ' <span title="In case ' + esc(caseOf()) + ': re-review of a denied decision" style="font-size:10px;color:#A16207;font-weight:700;background:rgba(250,204,21,.16);border:1px solid rgba(202,138,4,.35);border-radius:999px;padding:1px 7px;margin-left:4px;white-space:nowrap">Case ' + esc(caseOf()) + '</span>' : '') + '</td><td style="padding:10px 12px;font-family:monospace">' + p.id + '</td><td style="padding:10px 12px;color:#475569">' + esc(p.email) + '</td><td style="padding:10px 12px">' + esc(p.city + ', ' + p.st) + '</td><td style="padding:10px 12px;white-space:nowrap">' + fd(p.since) + '</td><td style="padding:10px 12px;white-space:nowrap"><span style="font-weight:700;color:' + (den ? '#B91C1C' : '#15803D') + '">' + (den ? 'Denied' : 'Approved') + '</span> · ' + esc(p.lastDate) + '</td><td style="padding:10px 12px"><span style="color:#1e3a8a;font-weight:700">Open →</span></td></tr>'; }).join('') || '<tr><td colspan="7" style="padding:12px;color:#64748b">No one matches.</td></tr>') +
       '</tbody></table></div>' +
       '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;font-size:12px;color:#64748b"><span>Showing ' + (R.total ? from + 1 : 0) + '–' + to + ' of ' + R.total.toLocaleString() + (R.approx ? '+' : '') + '</span><span>' + (s.page ? '<button type="button" onclick="custPage(\'' + ctx + '\',-1)" style="font:inherit;font-size:12px;padding:6px 12px;border-radius:8px;border:1px solid rgba(26,24,21,.15);background:#fff;cursor:pointer">Previous</button> ' : '') + (to < R.total ? '<button type="button" onclick="custPage(\'' + ctx + '\',1)" style="font:inherit;font-size:12px;padding:6px 12px;border-radius:8px;border:1px solid rgba(26,24,21,.15);background:#fff;cursor:pointer">Next</button>' : '') + '</span></div></div>';
   };
@@ -54147,15 +54147,30 @@ window.CARDINAL_PLACES = {
   var CARD = 'background:#fff;border-radius:14px;box-shadow:0 1px 3px rgba(26,24,21,.06),0 8px 20px rgba(26,24,21,.06);overflow:hidden';
   var HEAD = 'background:#ebe4d6;padding:10px 14px;font-size:12px;font-weight:800;color:#1a1815;text-transform:uppercase;letter-spacing:.5px';
   function kv(rows) { return '<table style="width:100%;border-collapse:collapse;font-size:12.5px">' + rows.map(function (r) { return '<tr><td style="padding:8px 14px;color:#475569;border-bottom:1px solid rgba(26,24,21,.05)">' + esc(r[0]) + '</td><td style="padding:8px 14px;text-align:right;font-weight:600;border-bottom:1px solid rgba(26,24,21,.05)">' + r[1] + '</td></tr>'; }).join('') + '</table>'; }
+  function kvRaw(rows) { return '<table style="width:100%;border-collapse:collapse;font-size:12.5px">' + rows.map(function (r) { return '<tr><td style="padding:8px 14px;border-bottom:1px solid rgba(26,24,21,.05)">' + r[0] + '</td><td style="padding:8px 14px;text-align:right;border-bottom:1px solid rgba(26,24,21,.05)">' + r[1] + '</td></tr>'; }).join('') + '</table>'; }
+  function journey(p) {
+    var d = (window.CARDINAL_DATA || {})[org()] || {}, cs = caseOf(), base = new Date(Date.parse(p.lastDate) || Date.now()), at = function (n) { return fd(new Date(base.getTime() + n * 864e5)); };
+    var model = p.models[0] || d.primaryModel || 'the model', fix = String(d.primaryModel || model).replace(/v(\d+)\.(\d+)/, function (a, x, y) { return 'v' + x + '.' + (+y + 1); });
+    var J = [['Eden', 'eden', at(0), 'Flagged', model + ' denied this ' + (CFG[org()] || CFG.fin).one + ' using ' + (org() === 'fin' ? 'ZIP code as a stand-in for race' : 'a feature that stands in for a protected trait') + (p.cohort ? ' (segment: ' + p.cohort + ')' : '') + '.'],
+      ['Genesis', 'genesis', at(1), 'Tested', 'Counterfactual test: the same application with the stand-in feature removed was approved.'],
+      ['Watchman', 'sentinel', at(1), 'Case open', 'Added to case ' + cs + ' with ' + (d.affectedCount || 'the affected group') + '.'],
+      ['Atonement', 'atonement', at(2), 'Re-review in progress', 'Queued for a new decision with ' + fix + ' (the fixed model). Kept out of marketing offers until it ends.'],
+      ['Halo', 'halo', at(2), 'Counted', 'Included in the ' + (d.penaltyExposure || '') + ' penalty exposure estimate until the re-review is done.'],
+      ['Codex', 'marketing', at(3), 'Waiting on Legal', 'Updated adverse action notice drafted in plain language.'],
+      ['Echo', 'echo', at(3), 'Sealed', 'Every step above is sealed and can be shown to an examiner.']];
+    var open = function (c) { return '<a href="javascript:void(0)" onclick="custGoCore(' + esc(JSON.stringify(c)) + ')" style="color:#1e3a8a;font-weight:700;text-decoration:none;white-space:nowrap">Open →</a>'; };
+    return '<div style="' + CARD + ';grid-column:1/-1"><div style="' + HEAD + ';display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><span>Case ' + esc(cs) + ': where this ' + esc((CFG[org()] || CFG.fin).one) + ' is in each core</span><a href="javascript:void(0)" onclick="custCase(' + esc(JSON.stringify(cs)) + ')" style="font-size:11.5px;color:#1e3a8a;text-transform:none;letter-spacing:0;text-decoration:none">Open the case →</a></div>' +
+      tbl(['Core', 'When', 'Status', 'What happened', ''], J.map(function (j) { return ['<strong>' + j[0] + '</strong>', '<span style="white-space:nowrap">' + j[2] + '</span>', '<span style="font-weight:700;color:' + (/progress|Waiting|open/i.test(j[3]) ? '#A16207' : j[3] === 'Flagged' ? '#B91C1C' : '#15803D') + ';white-space:nowrap">' + j[3] + '</span>', esc(j[4]), open(j[1])]; })) + '</div>';
+  }
   function tbl(head, rows) { return '<table style="width:100%;border-collapse:collapse;font-size:12.5px"><thead><tr>' + head.map(function (x) { return '<th style="text-align:left;font-size:10.5px;color:#64748b;text-transform:uppercase;padding:8px 14px;border-bottom:1px solid rgba(26,24,21,.08)">' + x + '</th>'; }).join('') + '</tr></thead><tbody>' + rows.map(function (r, n) { return '<tr style="background:' + (n % 2 ? '#f7f3ea' : '#fff') + '">' + r.map(function (x) { return '<td style="padding:8px 14px">' + x + '</td>'; }).join('') + '</tr>'; }).join('') + '</tbody></table>'; }
-  window.custTab = function (t) { [].forEach.call(document.querySelectorAll('#cust-prof [data-ct]'), function (e) { e.style.display = e.getAttribute('data-ct') === t ? '' : 'none'; }); [].forEach.call(document.querySelectorAll('#cust-prof .ctab'), function (b) { var on = b.getAttribute('data-t') === t; b.style.background = on ? '#fff' : 'transparent'; b.style.boxShadow = on ? '0 1px 3px rgba(26,24,21,.12)' : 'none'; }); };
+  window.custTab = function (t) { [].forEach.call(document.querySelectorAll('#cust-prof [data-ct]'), function (e) { e.style.display = e.getAttribute('data-ct') === t ? (t === 'ov' ? 'grid' : '') : 'none'; }); [].forEach.call(document.querySelectorAll('#cust-prof .ctab'), function (b) { var on = b.getAttribute('data-t') === t; b.style.background = on ? '#fff' : 'transparent'; b.style.boxShadow = on ? '0 1px 3px rgba(26,24,21,.12)' : 'none'; }); };
   window.custOpen = function (i) {
     var p = person(i), c = CFG[org()] || CFG.fin, h = hash(org() + 'prof' + i), co = ((window.CARDINAL_DATA || {})[org()] || {}).org || '';
     var decs = [], comms = [];
     var nD = 3 + h % 5;
     for (var k = 0; k < nD; k++) {
       var hh = hash(i + ':' + k), d = new Date(2026 - (k > 2 ? 1 + hh % 3 : 0), (8 - k * 2 + 24) % 12, 1 + hh % 27), m = p.models[k % p.models.length], den = k === 0 ? /DENIED/.test(p.lastDec) : (hh % 6 === 0);
-      decs.push([fd(k === 0 && p.lastDate ? p.lastDate : d), esc(m), '<span style="font-weight:700;color:' + (den ? '#B91C1C' : '#15803D') + '">' + (den ? 'Denied' : 'Approved') + '</span>', den ? (p.flagged ? 'Debt-to-income above limit (flagged for re-review: ZIP code proxy)' : 'Credit history too short') : 'Met the criteria', '<span style="font-family:monospace">CP-' + String(767000 + i % 999).padStart(6, '0') + '-' + String(k + 1).padStart(2, '0') + '</span>', den && p.flagged ? '<span style="color:#A16207;font-weight:700">Re-review in progress</span>' : '—']);
+      decs.push([fd(k === 0 && p.lastDate ? p.lastDate : d), mlink(m), '<span style="font-weight:700;color:' + (den ? '#B91C1C' : '#15803D') + '">' + (den ? 'Denied' : 'Approved') + '</span>', den ? (p.flagged ? 'Debt-to-income above limit (flagged for re-review: ZIP code proxy)' : 'Credit history too short') : 'Met the criteria', '<span style="font-family:monospace">CP-' + String(767000 + i % 999).padStart(6, '0') + '-' + String(k + 1).padStart(2, '0') + '</span>', den && p.flagged ? '<span style="color:#A16207;font-weight:700">Re-review in progress</span>' : '—']);
     }
     var CM = c.word === 'Customers' ? [['Email', 'Monthly statement', 'Statements'], ['Email', 'Fall refinance offer', 'Marketing'], ['Mail', 'Adverse action notice', 'Required notice'], ['SMS', 'Payment reminder', 'Servicing'], ['Email', 'Privacy notice update', 'Required notice'], ['Push', 'Credit line review result', 'Decision']] : [['Email', 'Program update', 'Updates'], ['Mail', 'Decision notice', 'Required notice'], ['SMS', 'Reminder', 'Servicing'], ['Email', 'Privacy notice', 'Required notice']];
     for (var j = 0; j < 7; j++) { var x = CM[(h + j) % CM.length], dd = new Date(2026, 9 - j, 2 + (h >> j) % 25); comms.push([fd(dd), x[0], esc(x[1]), x[2], (h >> j) & 1 ? 'Opened' : 'Delivered', x[1] === 'Fall refinance offer' && p.flagged ? '<span style="color:#B91C1C;font-weight:700">Suppressed during re-review</span>' : '']); }
@@ -54168,14 +54183,15 @@ window.CARDINAL_PLACES = {
       '<div style="width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,#bbf7d0,#22c55e);display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:800;color:#14532d;box-shadow:0 6px 16px rgba(21,128,61,.25)">' + ini + '</div>' +
       '<div style="flex:1;min-width:220px"><div style="font-size:20px;font-weight:800;color:#1a1815">' + esc(p.name) + '</div><div style="font-size:12.5px;color:#475569;margin-top:2px">' + esc(co) + ' ' + esc(c.one) + ' · ID <span style="font-family:monospace">' + p.id + '</span></div>' +
       '<div style="font-size:12.5px;color:#475569;margin-top:4px">' + esc(p.email) + ' · ' + esc(p.phone) + ' · ' + esc(p.city + ', ' + p.st) + ' · since ' + fd(p.since) + '</div>' +
-      '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px">' + (p.flagged ? '<span style="font-size:11px;font-weight:700;color:#B91C1C;background:rgba(220,38,38,.09);border:1px solid rgba(220,38,38,.3);border-radius:999px;padding:2px 9px">In re-review cohort</span>' : '') + (p.cohort ? '<span style="font-size:11px;font-weight:700;color:#A16207;background:rgba(250,204,21,.16);border:1px solid rgba(202,138,4,.4);border-radius:999px;padding:2px 9px">Segment: ' + esc(p.cohort) + '</span>' : '') + '<span style="font-size:11px;font-weight:700;color:#15803D;background:rgba(21,128,61,.1);border:1px solid rgba(21,128,61,.35);border-radius:999px;padding:2px 9px">Passport active</span></div></div>' +
+      '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px">' + (p.flagged ? '<a href="javascript:void(0)" onclick="custCase(' + esc(JSON.stringify(caseOf())) + ')" title="Open case ' + esc(caseOf()) + '" style="text-decoration:none;font-size:11px;font-weight:700;color:#B91C1C;background:rgba(220,38,38,.09);border:1px solid rgba(220,38,38,.3);border-radius:999px;padding:2px 9px">Case ' + esc(caseOf()) + ' · re-review in progress</a>' : '') + (p.cohort ? '<span style="font-size:11px;font-weight:700;color:#A16207;background:rgba(250,204,21,.16);border:1px solid rgba(202,138,4,.4);border-radius:999px;padding:2px 9px">Segment: ' + esc(p.cohort) + '</span>' : '') + '<span style="font-size:11px;font-weight:700;color:#15803D;background:rgba(21,128,61,.1);border:1px solid rgba(21,128,61,.35);border-radius:999px;padding:2px 9px">Passport active</span></div></div>' +
       '<div style="display:flex;flex-direction:column;gap:8px;align-items:flex-end"><button type="button" onclick="custPassport(' + i + ')" style="background:#1a1815;color:#fff;border:0;border-radius:10px;padding:9px 14px;font:inherit;font-size:12.5px;font-weight:700;cursor:pointer">View Cardinal Passport</button><button type="button" onclick="(window.cardinalShowToast||showToast)(\'Added to a suppression rule. Logged in Echo.\')" style="background:#1a1815;color:#fff;border:0;border-radius:10px;padding:9px 14px;font:inherit;font-size:12.5px;font-weight:700;cursor:pointer">Add to a suppression</button><button type="button" onclick="document.getElementById(\'cust-prof\').remove()" style="border:0;background:transparent;font-size:13px;color:#64748b;cursor:pointer">Close ×</button></div></div>' +
       '<div style="display:flex;gap:4px;background:#ebe4d6;padding:4px;border-radius:12px;margin:14px 0">' + [['ov', 'Overview'], ['dec', 'AI decisions'], ['com', 'Communications'], ['rights', 'Data rights']].map(function (t, n) { return '<button type="button" class="ctab" data-t="' + t[0] + '" onclick="custTab(\'' + t[0] + '\')" style="font:inherit;font-size:12.5px;font-weight:700;padding:8px 14px;border:0;border-radius:9px;cursor:pointer;background:' + (n ? 'transparent' : '#fff') + ';box-shadow:' + (n ? 'none' : '0 1px 3px rgba(26,24,21,.12)') + '">' + t[1] + '</button>'; }).join('') + '</div>' +
       '<div data-ct="ov" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px">' +
+      (p.flagged ? journey(p) : '') +
       '<div style="' + CARD + '"><div style="' + HEAD + '">Profile</div>' + kv([['Location', esc(p.city + ', ' + p.st)], [c.word === 'Customers' ? 'Customer since' : 'Since', fd(p.since)], ['Language', 'English'], ['Preferred contact', 'Email'], ['Protected traits', '<span style="color:#64748b;font-weight:500">Used only to test fairness, never shown</span>']]) + '</div>' +
       '<div style="' + CARD + '"><div style="' + HEAD + '">Accounts and products</div>' + kv(p.prods.map(function (x, n) { return [x, 'Opened ' + fd(new Date(p.since.getTime() + n * 400 * 864e5))]; })) + '</div>' +
       '<div style="' + CARD + '"><div style="' + HEAD + '">AI decisions</div>' + kv([['Decisions on record', decs.length], ['Approved', decs.length - denials], ['Denied', denials], ['Last decision', esc(p.lastDate)], ['Re-review', p.flagged ? '<span style="color:#A16207">In progress</span>' : 'None needed']]) + '</div>' +
-      '<div style="' + CARD + '"><div style="' + HEAD + '">Models that decided about them</div>' + kv(p.models.map(function (x) { return [x, '<span style="color:#1e3a8a">View model →</span>']; })) + '</div>' +
+      '<div style="' + CARD + '"><div style="' + HEAD + '">Models that decided about them</div>' + kvRaw(p.models.map(function (x) { return [mlink(x), '<a href="javascript:void(0)" onclick="custModel(' + esc(JSON.stringify(x)) + ')" style="color:#1e3a8a;font-weight:700;text-decoration:none">View model →</a>']; })) + '</div>' +
       '<div style="' + CARD + '"><div style="' + HEAD + '">Segments and suppressions</div>' + kv([['Segments', p.cohort ? esc(p.cohort) : 'Standard'], ['Suppressions', p.flagged ? 'Kept out of marketing offers until re-review ends' : 'None'], ['Marketing consent', (h & 1) ? 'Yes' : 'No']]) + '</div>' +
       '<div style="' + CARD + '"><div style="' + HEAD + '">Recent messages</div>' + tbl(['Date', 'Message', 'Status'], comms.slice(0, 4).map(function (r) { return [r[0], r[2], r[4]]; })) + '</div></div>' +
       '<div data-ct="dec" style="display:none;' + CARD + '"><div style="' + HEAD + '">Every AI decision, with its receipt</div>' + tbl(['Date', 'Model', 'Decision', 'Reason given', 'Receipt', 'Re-review'], decs) + '</div>' +
@@ -54354,6 +54370,358 @@ window.CARDINAL_PLACES = {
     u.onstart = function () { try { animateWaveform(true); } catch (e) {} };
     u.onend = function () { try { animateWaveform(false); } catch (e) {} };
     speechSynthesis.speak(u);
+  };
+})();
+
+</script>
+
+<script data-p="p33_demo">
+// 10/8 (Brittany's pre-recording walkthrough):
+//   - Eve's daily briefing reads as: greeting, what's going on, the issue, next steps (bullets).
+//   - Every Eve message gets a "Listen" button so she can be asked to read anything aloud; Chrome's
+//     long-speech stall is kept alive; a quick double-click no longer sends the same question twice.
+//   - Eve's day counts come from the Compliance Calendar, so "13 days" never drifts from the calendar.
+//   - Trust Loop: conversations move up to the last few days, with fresh announcements every couple of days.
+//   - Compliance Calendar: "Set Reminder" works and has a bell.
+//   - Echo: sample ignored flags, pending sign-offs, and sealed whistleblower receipts so nothing reads 0.
+//   - Echo Trust Score history uses the same chart as Trust Score, Eden, and Obsidian, with the same data.
+//   - Employees get a profile pop-up (everything they did, notes, sign-offs, cases, models).
+(function () {
+  function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;'); }
+  function org() { return window.currentOrg || 'fin'; }
+  var MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  function fd(d) { d = new Date(d); return MON[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear(); }
+  function toast(t) { try { (window.cardinalShowToast || window.showToast)(t); } catch (e) {} }
+  function plural(n, w) { return n + ' ' + w + (n === 1 ? '' : 's'); }
+
+  // ── Deadlines: one source (the Compliance Calendar) ─────────────────
+  var KEY_DL = { fin: /CFPB/i, ad: /DoD/i, health: /1557/i, fed: /owner/i };
+  function deadline(o) {
+    var items = []; try { items = compCalItems(o || org()) || []; } catch (e) {}
+    var re = KEY_DL[o || org()], hit = items.filter(function (i) { return re && re.test(i.name); })[0];
+    if (!hit) hit = items.slice().sort(function (a, b) { return a.days - b.days; })[0];
+    return hit || null;
+  }
+  window.cardinalKeyDeadline = deadline;
+  function inDays(d) { return !d ? '' : d.days < 0 ? 'overdue by ' + plural(-d.days, 'day') : d.days === 0 ? 'today' : 'in ' + plural(d.days, 'day'); }
+  window.cardinalNextDeadline = function (o) {
+    var items = []; try { items = compCalItems(o || org()) || []; } catch (e) {}
+    var up = items.filter(function (i) { return i.days >= 0; }).sort(function (a, b) { return a.days - b.days; });
+    return up[0] || items[0] || null;
+  };
+  // Eve's fixed "13 days" lines follow the calendar.
+  var oPers = window.personalize;
+  if (typeof oPers === 'function') window.personalize = personalize = function (text) {
+    text = oPers.apply(this, arguments);
+    try {
+      if (org() === 'fin' && typeof text === 'string') { var d = deadline('fin'); if (d && d.days >= 0) text = text.replace(/\b13 days\b/g, plural(d.days, 'day')); }
+    } catch (e) {}
+    return text;
+  };
+
+  // ── Eve: organized daily briefing ───────────────────────────────────
+  var css = document.createElement('style');
+  css.textContent = '.eb-brief{line-height:1.5}.eb-brief .eb-hi{font-weight:800;color:#1a1815;margin-bottom:6px}.eb-brief .eb-h{font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:#6d28d9;margin:10px 0 3px}' +
+    '.eb-brief ul,.eb-brief ol{margin:0;padding-left:18px}.eb-brief li{margin:2px 0}.eb-brief .eb-ask{margin-top:10px;font-weight:600}' +
+    '.eve-listen{font:inherit;font-size:10.5px;font-weight:700;color:#6d28d9;background:transparent;border:0;cursor:pointer;padding:0 0 0 8px;display:inline-flex;align-items:center;gap:3px}.eve-listen:hover{text-decoration:underline}' +
+    '.cal-bell{display:inline-flex;align-items:center;justify-content:center;gap:5px}.cal-bell.on{color:#15803D!important;border-color:rgba(21,128,61,.4)!important}' +
+    '#cal-rem-pop{position:fixed;z-index:10002;background:#fff;border-radius:12px;box-shadow:0 12px 32px rgba(26,24,21,.25);padding:12px;width:240px;font-size:12.5px;color:#1a1815}#cal-rem-pop button.o{display:block;width:100%;text-align:left;font:inherit;font-size:12.5px;padding:8px 10px;border:0;border-radius:8px;background:transparent;cursor:pointer}#cal-rem-pop button.o:hover{background:#f4efe6}' +
+    '.cal-flash{box-shadow:0 0 0 3px rgba(239,68,68,.55),0 10px 26px rgba(239,68,68,.18)!important;transition:box-shadow .3s}';
+  document.head.appendChild(css);
+  var BRIEF = {
+    fin: { going: ['Trust Score is 81. You are certified, but that is at risk.', 'Credit Scoring v3.4 uses ZIP code as a stand-in for race.', '1,203 applicants may have been denied loans they qualify for.'],
+      issue: function (d) { return 'The CFPB fair lending exam is ' + inDays(d) + ' (' + d.due + '). If the fix is not live by then, a penalty becomes much more likely. Estimated exposure: $73M.'; },
+      next: ['Deploy Credit Scoring v3.5 to full traffic today.', 'Collect the 3 launch sign-offs in Atonement (Risk, Legal, Compliance).', 'Finish the CFPB exam evidence packet.'], ask: 'Want me to prepare the CFPB exam report?' },
+    ad: { going: ['Trust Score is 74, below the 80 line.', 'Personnel Assignment v2.4 shows a 2.3x gap against Hispanic technicians.', '847 service members are affected.'],
+      issue: function (d) { return 'The ' + d.name + ' is ' + inDays(d) + '. Penalty exposure: $67M.'; },
+      next: ['Expand Personnel Assignment v2.5 from 5% to 100% traffic.', 'File the DoD audit in Compliance Exchange.', 'Approve the fix in Atonement.'], ask: 'Want me to generate the DoD disclosure package?' },
+    health: { going: ['Trust Score is 83, but you are not certified: Fairness is 64, below the 70 floor.', 'Claims Adjudication v1.9 denies patients 65+ at 2.3x the rate of younger patients.', '2,847 patient claims are affected.'],
+      issue: function (d) { return 'The ' + d.name + ' deadline is ' + inDays(d) + ' (' + d.due + '). This is an active ACA Section 1557 issue.'; },
+      next: ['Get the CMO sign-off on the Claims v2.0 shadow deployment.', 'Start re-evaluating the 2,847 affected claims.', 'Prepare the CMS audit packet.'], ask: 'Want me to draft the CMO briefing?' },
+    fed: { going: ['Trust Score is 71, below the 80 line.', 'IRS Tax Fraud Detection v3.1 flags self-employed filers in some metro ZIP codes 1.84x as often.', 'About 1,200 self-employed filers would be affected. Launch is blocked until this is fixed.'],
+      issue: function (d) { return 'The Audit Selection Agent needs a named owner ' + inDays(d) + ' (' + d.due + '). OMB M-25-21 also requires pre-deployment testing and a way for people to appeal before launch.'; },
+      next: ['Name an owner for the Audit Selection Agent.', 'Finish the appeals path in Atonement.', 'Submit the OMB packet after Legal review.'], ask: 'Want me to draft the OMB packet summary?' }
+  };
+  function firstName() { var n = (window.currentUserName && window.currentUserName !== 'You') ? window.currentUserName : ''; var w = n.replace(/^Dr\.?\s+/, '').split(' '); return /^Dr\.?\s/.test(n) ? 'Dr. ' + w[w.length - 1] : w[0]; }
+  function briefing() {
+    var o = org(), b = BRIEF[o] || BRIEF.fin, d = deadline(o) || { name: 'next deadline', days: 0, due: '' };
+    var hi = (typeof getTimeGreeting === 'function' ? getTimeGreeting() : 'Hello') + (firstName() ? ', ' + firstName() : '') + '.';
+    var going = b.going.map(function (t) { try { return eveSwapLiveScoreInText(t); } catch (e) { return t; } });
+    var html = '<div class="eb-brief"><div class="eb-hi">' + esc(hi) + ' Here is your briefing.</div>' +
+      '<div class="eb-h">What is going on</div><ul>' + going.map(function (t) { return '<li>' + esc(t) + '</li>'; }).join('') + '</ul>' +
+      '<div class="eb-h">The issue</div><div>' + esc(b.issue(d)) + '</div>' +
+      '<div class="eb-h">Next steps</div><ol>' + b.next.map(function (t) { return '<li>' + esc(t) + '</li>'; }).join('') + '</ol>' +
+      '<div class="eb-ask">' + esc(b.ask) + '</div></div>';
+    var spoken = hi + ' Here is your briefing. ' + going.join(' ') + ' The issue: ' + b.issue(d) + ' Next steps: ' + b.next.join(' ') + ' ' + b.ask;
+    return { html: html, spoken: spoken };
+  }
+  window.cardinalEveBriefing = briefing;
+  window.showEveMorningBriefing = showEveMorningBriefing = function () {
+    var br = briefing();
+    addEveMsg('eve', br.html, 'morning', typeof getBriefingLabel === 'function' ? getBriefingLabel() : 'Daily Briefing', false);
+    try { speakText(br.spoken, 'eve'); } catch (e) {}
+  };
+
+  // ── Eve: Listen button on every message, Chrome keep-alive, no double sends ──
+  window.eveListen = function (btn) {
+    var row = btn.closest('.msg-row'), bub = row && row.querySelector('.msg-bubble'); if (!bub) return;
+    var t = [].map.call(bub.querySelectorAll('.eb-hi,.eb-h,li,.eb-brief > div:not(.eb-h)'), function (x) { return x.textContent.trim().replace(/([^.?!:])$/, '$1.'); }).join(' ') || bub.innerText;
+    if (window.speechSynthesis && speechSynthesis.speaking && btn.__on) { speechSynthesis.cancel(); btn.__on = 0; btn.lastChild.textContent = 'Listen'; return; }
+    var was = eveTTSEnabled; eveTTSEnabled = true;
+    try { speakText(t, 'eve'); } catch (e) {}
+    eveTTSEnabled = was; btn.__on = 1; btn.lastChild.textContent = 'Stop';
+    var iv = setInterval(function () { if (!speechSynthesis.speaking) { clearInterval(iv); btn.__on = 0; btn.lastChild.textContent = 'Listen'; } }, 400);
+  };
+  var SPK = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>';
+  setInterval(function () {
+    var box = document.getElementById('eve-messages'); if (!box) return;
+    [].forEach.call(box.querySelectorAll('.msg-row:not(.user) .msg-meta'), function (m) {
+      if (m.__ls || !/^Eve/.test(m.textContent)) return; m.__ls = 1;
+      var b = document.createElement('button'); b.type = 'button'; b.className = 'eve-listen'; b.title = 'Have Eve read this out loud'; b.innerHTML = SPK + '<span>Listen</span>';
+      b.onclick = function (e) { e.stopPropagation(); eveListen(b); }; m.appendChild(b);
+    });
+  }, 500);
+  var isChrome = /Chrome\//.test(navigator.userAgent) && !/Edg\//.test(navigator.userAgent);
+  if (isChrome && window.speechSynthesis) setInterval(function () { if (speechSynthesis.speaking && !speechSynthesis.paused) { speechSynthesis.pause(); speechSynthesis.resume(); } }, 9000);
+  ['sendEveQuickAction'].forEach(function (fn) {
+    var o = window[fn]; if (typeof o !== 'function') return;
+    var last = { t: '', at: 0 };
+    window[fn] = function (text) { var now = Date.now(); if (text === last.t && now - last.at < 1500) return; last = { t: text, at: now }; return o.apply(this, arguments); };
+  });
+  (function () {
+    var o = window.sendEveMessage; if (typeof o !== 'function') return; var last = { t: '', at: 0 };
+    window.sendEveMessage = sendEveMessage = function () { var i = document.getElementById('eve-input'), v = i ? i.value.trim() : ''; var now = Date.now(); if (v && v === last.t && now - last.at < 1500) { i.value = ''; return; } last = { t: v, at: now }; return o.apply(this, arguments); };
+  })();
+
+  // ── Trust Loop: conversations within the last few days, fresh announcements ──
+  var NEW_ANN = {
+    fin: function (d) { return [['Riley Whitmore', 'CFPB exam prep: daily check-in at 9:00 until ' + d.due.replace(/, \d{4}$/, ''), 'Bring open items from Atonement and the status of the evidence packet. Ten minutes, cameras optional.', true], ['Jordan Ellis', 'Credit Scoring v3.5 launch: 3 sign-offs due this week', 'Risk, Legal, and Compliance each need to approve in Atonement. Eve will remind owners daily.', false], ['Morgan Hale', 'Reminder: no model threshold changes without a named approver', 'Every threshold change goes through Atonement with a ticket and an approver. This protects the team and the exam record.', false]]; },
+    ad: function (d) { return [['Compliance', d.name + ': daily check-in until it is filed', 'Bring open items from Atonement and Compliance Exchange.', true], ['Leadership', 'Personnel Assignment v2.5: sign-offs due this week', 'Approve the move from 5% to 100% traffic in Atonement.', false], ['Legal', 'Reminder: no model threshold changes without a named approver', 'Every change goes through Atonement with a ticket and an approver.', false]]; },
+    health: function (d) { return [['Compliance', d.name + ': daily check-in until ' + d.due.replace(/, \d{4}$/, ''), 'Bring the status of claim re-evaluations and the CMO sign-off.', true], ['Office of the CMO', 'Claims v2.0 shadow deployment: CMO review this week', 'Clinical review packet is in Atonement.', false], ['Legal', 'Reminder: no model threshold changes without a named approver', 'Every change goes through Atonement with a ticket and an approver.', false]]; },
+    fed: function (d) { return [['Office of the CDAO', d.name + ' by ' + d.due.replace(/, \d{4}$/, ''), 'OMB M-25-21 needs a named owner for every high-impact AI use.', true], ['Program Office', 'Appeals path for IRS Tax Fraud Detection v3.1: review this week', 'The appeals path must be live before launch.', false], ['Legal', 'Reminder: no model threshold changes without a named approver', 'Every change goes through Atonement with a ticket and an approver.', false]]; }
+  };
+  function shiftTL(o) {
+    var d = (window.CARDINAL_DATA || {})[o]; if (!d || d.__tlNow) return; d.__tlNow = 1;
+    // Each conversation's newest message lands within the last day or two; spacing inside it is kept.
+    var now = Date.now(), convs = [];
+    (d.caseChannels || []).forEach(function (c) { convs.push(c.messages || []); });
+    (d.trustLoopChannels || []).forEach(function (c) { convs.push(c.messages || []); });
+    (d.trustLoopDirectMessages || []).forEach(function (c) { convs.push(c.messages || []); });
+    function move(l, target) {
+      var latest = 0; l.forEach(function (m) { var t = Date.parse(m.timestamp); if (t > latest) latest = t; }); if (!latest) return 0;
+      var sh = Math.max(0, target - latest);
+      l.forEach(function (m) { var t = Date.parse(m.timestamp); if (!isNaN(t)) m.timestamp = new Date(t + sh).toISOString(); (m.comments || []).forEach(function (c) { var ct = Date.parse(c.timestamp); if (!isNaN(ct)) c.timestamp = new Date(ct + sh).toISOString(); }); });
+      return sh;
+    }
+    convs.forEach(function (l, i) { move(l, now - (2 + (i * 7) % 40) * 3600000); });
+    move(d.trustLoopMethodologyEvents || [], now - 26 * 3600000);
+    move(d.trustLoopAnnouncements || [], now - 6 * 864e5);
+    var dl = deadline(o) || { name: 'Next deadline', due: '' };
+    var add = (NEW_ANN[o] || NEW_ANN.fin)(dl);
+    var hrs = [6, 50, 98];
+    var A = d.trustLoopAnnouncements = d.trustLoopAnnouncements || [];
+    add.forEach(function (a, i) { A.unshift({ id: 'ann-new-' + o + '-' + i, timestamp: new Date(now - hrs[i] * 3600000).toISOString(), author: a[0], title: a[1], body: a[2], isPinned: a[3], comments: [] }); });
+    A.sort(function (a, b) { return (b.isPinned ? 1 : 0) - (a.isPinned ? 1 : 0) || Date.parse(b.timestamp) - Date.parse(a.timestamp); });
+    (d.caseChannels || []).concat(d.trustLoopChannels || []).forEach(function (c) { (c.messages || []).forEach(function (m) { if (/window (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec) \d{1,2}/.test(m.content || '')) { var f = new Date(Date.parse(m.timestamp) + 6 * 864e5); m.content = m.content.replace(/window (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec) \d{1,2}/, 'window ' + MON[f.getMonth()] + ' ' + f.getDate()); } }); });
+    // The fin channel line that still named the May exam.
+    (d.trustLoopChannels || []).forEach(function (c) { (c.messages || []).forEach(function (m) { if (/May 14 CFPB exam/.test(m.content || '')) m.content = 'Target full v3.5 traffic before the ' + dl.due.replace(/, \d{4}$/, '') + ' CFPB exam.'; }); });
+  }
+  ['fin', 'ad', 'health', 'fed'].forEach(shiftTL);
+
+  // ── Compliance Calendar: Set Reminder with a bell ───────────────────
+  var BELL = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>';
+  window.__calRem = window.__calRem || {};
+  window.calReminder = function (btn) {
+    var card = btn.closest('div[style*="border-radius:12px"]') || btn.parentNode.parentNode;
+    var name = ((card.querySelector('div[style*="font-weight:600"]') || {}).textContent || 'this deadline').trim();
+    var old = document.getElementById('cal-rem-pop'); if (old) old.remove();
+    var r = btn.getBoundingClientRect(), p = document.createElement('div'); p.id = 'cal-rem-pop';
+    p.style.left = Math.min(window.innerWidth - 256, r.left) + 'px'; p.style.top = Math.min(window.innerHeight - 230, r.bottom + 6) + 'px';
+    var cur = window.__calRem[org() + '|' + name];
+    p.innerHTML = '<div style="font-weight:800;margin-bottom:2px">Remind me</div><div style="font-size:11.5px;color:#64748b;margin-bottom:6px">' + esc(name) + '</div>' +
+      ['1 day before', '3 days before', '1 week before', 'Every morning until it is done'].map(function (o) { return '<button type="button" class="o" data-o="' + esc(o) + '">' + (cur === o ? '&#10003; ' : '') + esc(o) + '</button>'; }).join('') +
+      (cur ? '<button type="button" class="o" data-o="" style="color:#B91C1C">Turn off reminder</button>' : '');
+    document.body.appendChild(p);
+    [].forEach.call(p.querySelectorAll('button.o'), function (b) { b.onclick = function () {
+      var v = b.getAttribute('data-o'); if (v) window.__calRem[org() + '|' + name] = v; else delete window.__calRem[org() + '|' + name];
+      p.remove(); paintBells();
+      toast(v ? 'Reminder set: ' + v + '. Eve will remind you and the owner. Logged in Echo.' : 'Reminder turned off.');
+      try { cardinalLogActivity('edit', (v ? 'Set a reminder (' + v + ') for ' : 'Turned off the reminder for ') + name, null); } catch (e) {}
+    }; });
+    setTimeout(function () { document.addEventListener('mousedown', function off(ev) { if (!p.contains(ev.target)) { p.remove(); document.removeEventListener('mousedown', off); } }); }, 0);
+  };
+  function paintBells() {
+    var host = document.getElementById('comp-calendar-items'); if (!host) return;
+    [].forEach.call(host.querySelectorAll('button'), function (b) {
+      var txt = b.textContent.trim(); if (!/^(Set Reminder|Reminder on.*)$/.test(txt)) return;
+      var card = b.closest('div[style*="border-radius:12px"]'), name = card ? ((card.querySelector('div[style*="font-weight:600"]') || {}).textContent || '').trim() : '';
+      var on = !!window.__calRem[org() + '|' + name], want = BELL + '<span>' + (on ? 'Reminder on' : 'Set Reminder') + '</span>';
+      if (b.__h !== want) { b.__h = want; b.innerHTML = want; b.classList.add('cal-bell'); b.classList.toggle('on', on); b.title = on ? 'Reminder: ' + window.__calRem[org() + '|' + name] : 'Get a reminder before this is due'; }
+      if (!b.__rem) { b.__rem = 1; b.onclick = function (e) { e.stopPropagation(); calReminder(b); }; }
+    });
+  }
+  setInterval(paintBells, 500);
+  // Dashboard "Next deadline" lands on that item in the calendar.
+  window.dashGoDeadline = function () {
+    var d = window.cardinalNextDeadline(); showScreen('compliance');
+    setTimeout(function () {
+      try { switchCompTab('calendar'); } catch (e) {}
+      var tries = 0, iv = setInterval(function () {
+        var host = document.getElementById('comp-calendar-items'), card = host && [].filter.call(host.children, function (c) { return d && c.textContent.indexOf(d.name) > -1; })[0];
+        if (card && card.offsetParent !== null) {
+          clearInterval(iv); window.__keepUntil = 0; window.__deepLinkUntil = Date.now() + 2500;
+          card.classList.add('cal-flash'); setTimeout(function () { card.classList.remove('cal-flash'); }, 3200);
+          var ok = 0, n = 0, keep = setInterval(function () {
+            var r = card.getBoundingClientRect(), vis = r.top > 40 && r.top < window.innerHeight * 0.6;
+            if (vis) { if (++ok >= 3) clearInterval(keep); } else { ok = 0; window.__keepUntil = 0; card.scrollIntoView({ block: 'center' }); }
+            if (++n > 25) clearInterval(keep);
+          }, 150);
+        } else if (++tries > 30) clearInterval(iv);
+      }, 120);
+    }, 350);
+  };
+
+  // ── Echo: ignored flags, pending sign-offs, sealed whistleblower receipts ──
+  var ECHO_SEED = {
+    fin: { ignored: [['Eve flag dismissed: Collections AI late-night message batch sent without the FDCPA calling-hours check', 'Riley Whitmore', 'watchman', 'Collections AI v1.3', 5], ['Eve flag dismissed: Fraud Screening v2.7 geography weight marked "expected behavior" with no reason given', 'Lisa Torres', 'obsidian', 'Fraud Screening v2.7', 9]],
+      pending: [['Awaiting sign-off: Credit Scoring v3.5 launch (Risk: Jordan Ellis)', 'Jordan Ellis', 'atonement', 'Credit Scoring v3.5', 1], ['Awaiting sign-off: Credit Scoring v3.5 launch (Legal: Morgan Hale)', 'Morgan Hale', 'atonement', 'Credit Scoring v3.5', 1], ['Awaiting sign-off: Credit Scoring v3.5 launch (Compliance: Riley Whitmore)', 'Riley Whitmore', 'atonement', 'Credit Scoring v3.5', 2]] },
+    ad: { ignored: [['Eve flag dismissed: Maintenance Routing v1.2 geographic proxy marked "low priority" with no reason given', 'Compliance', 'eden', 'Maintenance Routing v1.2', 6], ['Eve flag dismissed: Fleet Health v2.4 climate drift warning closed without review', 'Engineering', 'watchman', 'Fleet Health v2.4', 11]],
+      pending: [['Awaiting sign-off: Personnel Assignment v2.5 to 100% traffic (Leadership)', 'Leadership', 'atonement', 'Personnel Assignment v2.5', 1], ['Awaiting sign-off: DoD Responsible AI assessment filing (Compliance)', 'Compliance', 'compliance', 'Personnel Assignment v2.4', 2]] },
+    health: { ignored: [['Eve flag dismissed: Diagnostic Triage income proxy (341 records) deferred with no reason given', 'Data Science', 'eden', 'Diagnosis Support v2.3', 7], ['Eve flag dismissed: Prior Auth v1.5 turnaround spike for rural patients closed without review', 'Operations', 'watchman', 'Prior Auth v1.5', 12]],
+      pending: [['Awaiting sign-off: Claims Adjudication v2.0 shadow deployment (CMO)', 'Office of the CMO', 'atonement', 'Claims Adjudication v2.0', 1], ['Awaiting sign-off: ACA 1557 remediation plan (Legal)', 'Legal', 'compliance', 'Claims Adjudication v1.9', 2], ['Awaiting sign-off: patient notice letters (Compliance)', 'Compliance', 'codex', 'Claims Adjudication v1.9', 3]] },
+    fed: { ignored: [['Eve flag dismissed: Taxpayer Help Assistant gave a wrong filing deadline; closed as "one-off"', 'Program Office', 'watchman', 'Taxpayer Help Assistant', 8], ['Eve flag dismissed: Audit Selection Agent ran with no named owner; warning snoozed', 'Program Office', 'compliance', 'Audit Selection Agent', 13]],
+      pending: [['Awaiting sign-off: OMB M-25-21 packet (Legal)', 'Legal', 'compliance', 'IRS Tax Fraud Detection v3.1', 1], ['Awaiting sign-off: appeals path design (Program Office)', 'Program Office', 'atonement', 'IRS Tax Fraud Detection v3.1', 3]] }
+  };
+  var ROLE = { 'Jordan Ellis': 'Chief Risk Officer', 'Morgan Hale': 'General Counsel', 'Riley Whitmore': 'Chief Compliance Officer', 'Lisa Torres': 'Head of Fraud Analytics' };
+  function hex(s) { var h = 0x811c9dc5, out = ''; for (var k = 0; k < 8; k++) { for (var i = 0; i < s.length; i++) { h ^= s.charCodeAt(i) + k; h = Math.imul(h, 16777619); } out += ('00000000' + (h >>> 0).toString(16)).slice(-8); } return out; }
+  function seedEcho(o) {
+    var d = (window.CARDINAL_DATA || {})[o], S = ECHO_SEED[o]; if (!d || !S || d.__echoSeed) return; d.__echoSeed = 1;
+    var mem = d.echoMemories = d.echoMemories || [], now = Date.now(), pc = String(d.primaryCase || '').replace(/^#/, '');
+    function add(r, kind, i) {
+      var id = 'echo-' + o.toUpperCase() + '-' + kind + '-' + i;
+      mem.push({ id: id, timestamp: new Date(now - r[4] * 864e5 - (i + 2) * 3600000).toISOString(), author: r[1], authorRole: ROLE[r[1]] || 'system', eventType: kind === 'ign' ? 'decision-reversed' : 'awaiting-signature', core: r[2], severity: kind === 'ign' ? 'high' : 'medium',
+        summary: r[0], content: kind === 'ign' ? r[0].replace(/^Eve flag dismissed: /, '') + '. Cardinal requires a written reason for every dismissed flag; this one is open until a reason is added and reviewed.' : r[0].replace(/^Awaiting sign-off: /, '') + '. Waiting on the named approver. Eve sends a daily reminder until it is signed.',
+        hash: '0x' + hex(id), signature: 'sig-' + hex(id).slice(0, 16), isPinned: false, isSealed: false, addendums: [], linkedMemories: [], comments: [], accessTier: 'org-wide', accessRoles: [], caseId: pc || null, modelId: r[3], userId: null, industryContext: o });
+    }
+    S.ignored.forEach(function (r, i) { add(r, 'ign', i); });
+    S.pending.forEach(function (r, i) { add(r, 'pen', i); });
+    // One sealed receipt per whistleblower report on file.
+    var R = window.DECISION_RECEIPTS; if (!R || typeof WB_SEED === 'undefined') return;
+    var reps = WB_SEED[o] || [], have = R.filter(function (x) { return x.receiptType === 'whistleblower-seal' && x.industryContext === o; });
+    var tpl = R.filter(function (x) { return x.receiptType === 'whistleblower-seal'; })[0];
+    reps.slice(have.length).forEach(function (rep, i) {
+      var first = (rep.messages || [])[0] || {}, when = Date.parse(first.day || '') || (now - (6 + i * 9) * 864e5);
+      var x = tpl ? JSON.parse(JSON.stringify(tpl)) : { signatures: [] };
+      x.receiptId = rep.id; x.receiptType = 'whistleblower-seal'; x.issuedDate = new Date(when).toISOString(); x.issuedBy = 'Trust Ledger'; x.industryContext = o;
+      x.summary = 'Sealed whistleblower report: ' + rep.category; x.hash = '0x' + hex(rep.id);
+      R.push(x);
+    });
+  }
+  ['fin', 'ad', 'health', 'fed'].forEach(seedEcho);
+
+  // ── Trust Score history: one chart for Trust Score, Eden, Obsidian, and Echo ──
+  window.cardinalScoreHistory = function (o) {
+    var d = (window.CARDINAL_DATA || {})[o || org()]; if (!d) return [];
+    try { return tsv2GetRangeSeries(d, 'year'); } catch (e) { return (d.trustScoreHistory || []).slice(-17); }
+  };
+  var PARTS = [['score', 'Trust Score'], ['biasScore', 'Fairness'], ['fraudScore', 'Fraud'], ['complianceScore', 'Compliance'], ['transparencyScore', 'Transparency'], ['privacyScore', 'Privacy'], ['governanceScore', 'Governance'], ['monitoringScore', 'Post-Deployment Monitoring']];
+  var SH = { part: 'score' };
+  window.cardinalScoreHistoryHTML = function (pre) {
+    var o = org(), d = (window.CARDINAL_DATA || {})[o] || {}, h = cardinalScoreHistory(o); if (!h.length) return '';
+    var k = SH.part, lbl = PARTS.filter(function (p) { return p[0] === k; })[0][1], v = function (p) { return p[k] != null ? p[k] : p.score; };
+    var first = v(h[0]), last = v(h[h.length - 1]), trough = h.reduce(function (a, p) { return v(p) < v(a) ? p : a; }, h[0]);
+    var ann = h.filter(function (p) { return p.annotation; });
+    var rows = h.map(function (p, i) { return { p: p, ch: i ? v(p) - v(h[i - 1]) : 0 }; }).filter(function (x) { return x.p.annotation; }).reverse();
+    return '<section class="tsv2-section" style="margin:0 0 14px">' +
+      '<div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:flex-start"><div><div class="tsv2-section-title">Trust Score History</div><div class="tsv2-section-sub">' + esc(d.org || '') + ' · hover any month for what was happening · dashed line = 80 certification line · pins show what moved the score</div></div>' +
+      '<div style="text-align:right"><span style="font-size:30px;font-weight:800;color:#1a1815">' + last + '</span><span style="font-size:13px;color:#64748b"> / 100</span><div style="font-size:12px;font-weight:700;color:' + (last - first >= 0 ? '#15803D' : '#B91C1C') + '">' + (last - first >= 0 ? '+' : '') + (last - first) + ' pts in 12 months</div></div></div>' +
+      '<div style="display:flex;gap:4px;flex-wrap:wrap;background:rgba(26,24,21,.05);padding:4px;border-radius:10px;margin:10px 0 0;width:fit-content;max-width:100%">' + PARTS.map(function (p) { var on = p[0] === k; return '<button type="button" onclick="cardinalScoreHistoryPart(' + esc(JSON.stringify(pre)) + ',\'' + p[0] + '\')" style="font:inherit;font-size:11.5px;font-weight:' + (on ? 700 : 500) + ';padding:6px 11px;border:0;border-radius:8px;cursor:pointer;background:' + (on ? '#fff' : 'transparent') + ';box-shadow:' + (on ? '0 1px 3px rgba(26,24,21,.12)' : 'none') + ';color:#1a1815">' + p[1] + '</button>'; }).join('') + '</div>' +
+      '<div class="tsv2-history-canvas-wrap" id="' + pre + '-wrap" style="position:relative;min-height:300px;height:300px;margin-top:10px"><div id="' + pre + '-svg" style="position:absolute;inset:0"></div><div id="' + pre + '-pins"></div></div>' +
+      '<div style="margin-top:10px;padding:10px 12px;border-radius:10px;background:rgba(26,24,21,.04);font-size:12px;color:#334155">Past 12 months: ' + esc(lbl) + ' moved from <strong>' + first + '</strong> to <strong style="color:' + (last >= 80 ? '#15803D' : '#A16207') + '">' + last + '</strong> (' + (last - first >= 0 ? '+' : '') + (last - first) + ' pts) · ' + plural(ann.length, 'annotation') + ' · Low point ' + esc(trough.month) + ' at ' + v(trough) + '</div></section>' +
+      (rows.length ? '<div class="ex-wrap"><table class="ex-tbl"><thead><tr><th>When</th><th>What moved the score</th><th>Change</th><th>Score</th></tr></thead><tbody>' + rows.map(function (x) { var a = x.p.annotation, s = typeof a === 'object' ? a.summary : a; return '<tr><td style="white-space:nowrap">' + esc(x.p.month) + '</td><td>' + esc(s) + '</td><td style="font-weight:700;color:' + (x.ch > 0 ? '#15803D' : x.ch < 0 ? '#B91C1C' : '#475569') + '">' + (x.ch > 0 ? '+' : '') + x.ch + '</td><td>' + v(x.p) + '</td></tr>'; }).join('') + '</tbody></table></div>' : '');
+  };
+  window.cardinalScoreHistoryDraw = function (pre) {
+    var wrap = document.getElementById(pre + '-wrap'); if (!wrap || typeof cardinalHistoryChartRender !== 'function' || typeof d3 === 'undefined') return;
+    var h = cardinalScoreHistory(org()), k = SH.part, v = function (p) { return p[k] != null ? p[k] : p.score; }, last = v(h[h.length - 1]);
+    var lo = Math.max(0, Math.min(60, Math.floor((Math.min.apply(null, h.map(v)) - 5) / 10) * 10));
+    var lbl = PARTS.filter(function (p) { return p[0] === k; })[0][1];
+    cardinalHistoryChartRender({ wrap: wrap, svgWrap: document.getElementById(pre + '-svg'), pinsWrap: document.getElementById(pre + '-pins'), hist: h, getValue: v, lineColor: last >= 80 ? '#22c55e' : last >= 70 ? '#FACC15' : '#ef4444', yDomain: [lo, 100], yTickValues: d3.range(lo, 101, 10), gridStep: 10, gradientIdBase: pre + '-grad', gradientSuffix: org() + k,
+      thresholds: [{ y: 80, stroke: 'rgba(34,197,94,0.55)', label: 'Certification Threshold (80)', labelAnchor: 'end', labelFill: 'rgba(21,128,61,0.9)' }].concat(k === 'score' ? [] : [{ y: 70, stroke: 'rgba(250,204,21,0.6)', label: 'Part floor (70)', labelAnchor: 'start', labelFill: 'rgba(161,98,7,0.9)' }]),
+      thresholdTooltip: { title: 'Certification line', body: '80 and above, with no part under 70, meets the Cardinal Standard.' }, pointClass: 'tsv2-pt', pointTooltipTitle: lbl, pointTooltipLabel: lbl, pinSourceContext: 'Echo score history',
+      formatPointTooltipBody: function (p) { var a = p.annotation, s = a ? (typeof a === 'object' ? a.summary : a) : ''; return lbl + ': <span class="tt-accent">' + v(p) + '</span>' + (s ? '<br>' + esc(s) : ''); } });
+  };
+  window.cardinalScoreHistoryPart = function (pre, k) {
+    SH.part = k; var w = document.getElementById(pre + '-wrap'); if (!w) return;
+    var host = w.closest('[data-shost]'); if (!host) return;
+    host.innerHTML = cardinalScoreHistoryHTML(pre); setTimeout(function () { cardinalScoreHistoryDraw(pre); }, 20);
+  };
+  window.echoRenderScoreHistoryTab = echoRenderScoreHistoryTab = function () {
+    var c = document.getElementById('echo-tab-content-scorehistory'); if (!c) return;
+    c.innerHTML = '<div data-shost="1">' + cardinalScoreHistoryHTML('echo-sh') + '</div>';
+    setTimeout(function () { cardinalScoreHistoryDraw('echo-sh'); }, 30);
+  };
+
+  // ── Employees: a profile pop-up with everything they did ────────────
+  var CARD = 'background:#fff;border-radius:14px;box-shadow:0 1px 3px rgba(26,24,21,.06),0 8px 20px rgba(26,24,21,.06);overflow:hidden';
+  var HEAD = 'background:#ebe4d6;padding:10px 14px;font-size:12px;font-weight:800;color:#1a1815;text-transform:uppercase;letter-spacing:.5px';
+  function kv(rows) { return '<table style="width:100%;border-collapse:collapse;font-size:12.5px">' + rows.map(function (r) { return '<tr><td style="padding:8px 14px;color:#475569;border-bottom:1px solid rgba(26,24,21,.05)">' + esc(r[0]) + '</td><td style="padding:8px 14px;text-align:right;font-weight:600;border-bottom:1px solid rgba(26,24,21,.05)">' + r[1] + '</td></tr>'; }).join('') + '</table>'; }
+  function kvRaw(rows) { return '<table style="width:100%;border-collapse:collapse;font-size:12.5px">' + rows.map(function (r) { return '<tr><td style="padding:8px 14px;border-bottom:1px solid rgba(26,24,21,.05)">' + r[0] + '</td><td style="padding:8px 14px;text-align:right;font-weight:600;border-bottom:1px solid rgba(26,24,21,.05)">' + r[1] + '</td></tr>'; }).join('') + '</table>'; }
+  // Real notes for the people a demo walks through (days ago, where, note).
+  var NOTES = {
+    'fin|Nina Roberts': [[1, 'Atonement · Credit Scoring v3.5 launch', 'Shadow results hold at fairness ratio 0.83 with the default rate unchanged. Ready for the three launch sign-offs.'], [3, 'Echo record · FIN-1203', 'Checked a sample of re-review files: ZIP code was the deciding feature in each denial. Added them to the FIN-1203 re-review.'], [9, 'Trust Loop #legal-prep', 'Asked Legal to confirm we can use income stability and employment history in place of ZIP code.'], [20, 'Genesis · income-features test', 'Four combinations tested. verified_income_12mo plus employment_stability gives the best fairness with no accuracy loss.']],
+    'fin|Riley Whitmore': [[2, 'Compliance · CFPB exam', 'Evidence packet is 55% done. Still need the v3.5 shadow metrics and the re-review counts.']],
+    'fin|Jordan Ellis': [[1, 'Atonement · Credit Scoring v3.5 launch', 'Will sign once Legal confirms the adverse action notice wording.']]
+  };
+  function tbl(head, rows, empty) { if (!rows.length) return '<div style="padding:14px;font-size:12.5px;color:#64748b">' + esc(empty || 'Nothing yet.') + '</div>'; return '<table style="width:100%;border-collapse:collapse;font-size:12.5px"><thead><tr>' + head.map(function (x) { return '<th style="text-align:left;font-size:10.5px;color:#64748b;text-transform:uppercase;padding:8px 14px;border-bottom:1px solid rgba(26,24,21,.08)">' + x + '</th>'; }).join('') + '</tr></thead><tbody>' + rows.map(function (r, n) { return '<tr style="background:' + (n % 2 ? '#f7f3ea' : '#fff') + '">' + r.map(function (x) { return '<td style="padding:8px 14px;vertical-align:top">' + x + '</td>'; }).join('') + '</tr>'; }).join('') + '</tbody></table>'; }
+  var ACTC = { Approved: '#15803D', Changed: '#1d4ed8', 'Tried to change (blocked)': '#B91C1C', Updated: '#0f766e', 'Viewed restricted record': '#B45309', Exported: '#6d28d9', Commented: '#334155', Opened: '#1e3a8a', Closed: '#15803D', Logged: '#475569' };
+  window.empTab = function (t) { [].forEach.call(document.querySelectorAll('#emp-prof [data-et]'), function (e) { e.style.display = e.getAttribute('data-et') === t ? (e.getAttribute('data-disp') || '') : 'none'; }); [].forEach.call(document.querySelectorAll('#emp-prof .etab'), function (b) { var on = b.getAttribute('data-t') === t; b.style.background = on ? '#fff' : 'transparent'; b.style.boxShadow = on ? '0 1px 3px rgba(26,24,21,.12)' : 'none'; }); };
+  window.empOpen = function (name) {
+    var api = window.__echoAPI; if (!api) return;
+    var p = api.people().filter(function (x) { return x.name === name; })[0]; if (!p) { toast('No record for ' + name); return; }
+    var o = org(), d = (window.CARDINAL_DATA || {})[o] || {}, ev = api.personEvents(p), first = name.split(' ')[0];
+    var cnt = function (a) { return ev.filter(function (e) { return e.act === a; }).length; };
+    var notes = [];
+    function msgs(list, where) { (list || []).forEach(function (m) { if (m.author === name) notes.push({ t: new Date(m.timestamp), where: where, text: m.content || m.title || '' }); (m.comments || []).forEach(function (c) { if (c.author === name) notes.push({ t: new Date(c.timestamp), where: where + ' (comment)', text: c.content || c.text || '' }); }); }); }
+    (d.trustLoopChannels || []).forEach(function (c) { msgs(c.messages, 'Trust Loop ' + (c.channelName || c.name || '')); });
+    (d.caseChannels || []).forEach(function (c) { msgs(c.messages, c.channelName || ('Case ' + c.caseId)); });
+    (d.trustLoopAnnouncements || []).forEach(function (a) { if (a.author === name) notes.push({ t: new Date(a.timestamp), where: 'Announcement', text: a.title + (a.body ? ': ' + a.body : '') }); });
+    (d.echoMemories || []).forEach(function (m) { (m.comments || []).forEach(function (c) { if (c.author === name) notes.push({ t: new Date(c.timestamp), where: 'Note on an Echo record', text: c.content || c.text || '' }); }); });
+    ev.filter(function (e) { return e.act === 'Commented'; }).forEach(function (e) { notes.push({ t: e.t, where: e.core, text: e.what }); });
+    try { (window.CARDINAL_CONTEXT_NOTES || window.__contextNotes || []).forEach(function (n) { if ((n.author || n.by) === name) notes.push({ t: new Date(n.timestamp || n.at || Date.now()), where: 'Note', text: n.text || n.body || '' }); }); } catch (e) {}
+    (NOTES[o + '|' + name] || []).forEach(function (n) { notes.push({ t: new Date(Date.now() - n[0] * 864e5 - 3 * 3600000), where: n[1], text: n[2] }); });
+    notes.sort(function (a, b) { return b.t - a.t; });
+    var signs = ev.filter(function (e) { return e.act === 'Approved'; });
+    var pend = (d.echoMemories || []).filter(function (m) { return m.eventType === 'awaiting-signature' && (m.author === name || m.summary.indexOf(name) > -1); });
+    var cases = {}; ev.forEach(function (e) { if (e.ref && /^[A-Z]{2,4}-/.test(e.ref)) cases[e.ref] = (cases[e.ref] || 0) + 1; });
+    var mods = {}; ev.forEach(function (e) { api.models().forEach(function (m) { if (m.kind === 'Model' && e.what.indexOf(m.name) > -1) mods[m.name] = (mods[m.name] || 0) + 1; }); });
+    var owned = api.models().filter(function (m) { return m.owner === name; }).map(function (m) { return m.name; });
+    var caseRows = Object.keys(cases).sort(function (a, b) { return cases[b] - cases[a]; }).slice(0, 12).map(function (c) { return ['<a href="javascript:void(0)" onclick="document.getElementById(\'emp-prof\').remove();echoEnterRoom(\'cases\');echoCaseGo(' + esc(JSON.stringify(c)) + ')" style="color:#1e3a8a;font-weight:700">' + esc(c) + '</a>', cases[c] + ' records']; });
+    var modRows = Object.keys(mods).sort(function (a, b) { return mods[b] - mods[a]; }).slice(0, 10).map(function (m) { return ['<a href="javascript:void(0)" onclick="custModel(' + esc(JSON.stringify(m)) + ')" style="color:#1e3a8a;font-weight:700">' + esc(m) + '</a>' + (owned.indexOf(m) > -1 ? ' <span style="font-size:10.5px;color:#15803D;font-weight:700">Owner</span>' : ''), mods[m] + ' records']; });
+    var ini = name.replace(/^Dr\.?\s+/, '').split(' ').map(function (w) { return w[0]; }).join('').slice(0, 2).toUpperCase();
+    var row = function (e) { return ['<span style="white-space:nowrap;color:#475569">' + fd(e.t) + '</span>', '<span style="font-weight:700;color:' + (ACTC[e.act] || '#475569') + '">' + esc(e.act) + '</span>', esc(e.core), esc(e.what), '<span style="font-family:monospace;font-size:11px;color:#64748b">' + esc(e.seal) + '</span>']; };
+    var m = document.createElement('div'); m.id = 'emp-prof';
+    m.style.cssText = 'position:fixed;inset:0;z-index:10000;background:rgba(26,24,21,.45);display:flex;align-items:center;justify-content:center;padding:16px';
+    m.innerHTML = '<div style="background:#f4efe6;border-radius:18px;box-shadow:0 30px 80px rgba(0,0,0,.35);width:min(1040px,100%);max-height:92vh;overflow:auto;padding:22px 24px">' +
+      '<div style="display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap;' + CARD + ';padding:18px 20px">' +
+      '<div style="width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,#e9d5ff,#a78bfa);display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:800;color:#3b0764;box-shadow:0 6px 16px rgba(109,40,217,.25)">' + esc(ini) + '</div>' +
+      '<div style="flex:1;min-width:220px"><div style="font-size:20px;font-weight:800;color:#1a1815">' + esc(name) + '</div><div style="font-size:12.5px;color:#475569;margin-top:2px">' + esc(p.role || 'Team member') + ' · ' + esc(d.org || '') + '</div>' +
+      '<div style="font-size:12.5px;color:#475569;margin-top:4px">Joined ' + fd(p.joined) + ' · Passport <span style="font-family:monospace">' + esc(p.passport) + '</span> · Access: ' + esc(p.access) + '</div>' +
+      '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px"><span style="font-size:11px;font-weight:700;color:#15803D;background:rgba(21,128,61,.1);border:1px solid rgba(21,128,61,.35);border-radius:999px;padding:2px 9px">Active</span>' + (pend.length ? '<span style="font-size:11px;font-weight:700;color:#A16207;background:rgba(250,204,21,.16);border:1px solid rgba(202,138,4,.4);border-radius:999px;padding:2px 9px">' + plural(pend.length, 'sign-off') + ' waiting</span>' : '') + (cnt('Tried to change (blocked)') ? '<span style="font-size:11px;font-weight:700;color:#B91C1C;background:rgba(220,38,38,.09);border:1px solid rgba(220,38,38,.3);border-radius:999px;padding:2px 9px">' + plural(cnt('Tried to change (blocked)'), 'blocked change') + '</span>' : '') + '</div></div>' +
+      '<div style="display:flex;flex-direction:column;gap:8px;align-items:flex-end"><button type="button" onclick="document.getElementById(\'emp-prof\').remove();echoEnterRoom(\'people\');echoOpen(\'person\',' + esc(JSON.stringify(name)) + ')" style="background:#1a1815;color:#fff;border:0;border-radius:10px;padding:9px 14px;font:inherit;font-size:12.5px;font-weight:700;cursor:pointer">Full activity log</button><button type="button" onclick="document.getElementById(\'emp-prof\').remove()" style="border:0;background:transparent;font-size:13px;color:#64748b;cursor:pointer">Close ×</button></div></div>' +
+      '<div style="display:flex;gap:4px;flex-wrap:wrap;background:#ebe4d6;padding:4px;border-radius:12px;margin:14px 0">' + [['ov', 'Overview'], ['act', 'Activity'], ['notes', 'Notes and comments'], ['sign', 'Sign-offs'], ['work', 'Cases and models']].map(function (t, n) { return '<button type="button" class="etab" data-t="' + t[0] + '" onclick="empTab(\'' + t[0] + '\')" style="font:inherit;font-size:12.5px;font-weight:700;padding:8px 14px;border:0;border-radius:9px;cursor:pointer;background:' + (n ? 'transparent' : '#fff') + ';box-shadow:' + (n ? 'none' : '0 1px 3px rgba(26,24,21,.12)') + '">' + t[1] + '</button>'; }).join('') + '</div>' +
+      '<div data-et="ov" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px">' +
+      '<div style="' + CARD + '"><div style="' + HEAD + '">At a glance</div>' + kv([['Records in Echo', ev.length.toLocaleString()], ['Approvals', cnt('Approved')], ['Changes', cnt('Changed') + cnt('Updated')], ['Blocked changes', cnt('Tried to change (blocked)')], ['Restricted records viewed', cnt('Viewed restricted record')], ['Notes and comments', notes.length]]) + '</div>' +
+      '<div style="' + CARD + '"><div style="' + HEAD + '">Waiting on ' + esc(first) + '</div>' + tbl(['Item', 'Since'], pend.map(function (x) { return [esc(x.summary.replace(/^Awaiting sign-off: /, '')), fd(x.timestamp)]; }), 'Nothing waiting on ' + first + '.') + '</div>' +
+      '<div style="' + CARD + '"><div style="' + HEAD + '">Latest notes</div>' + tbl(['When', 'Note'], notes.slice(0, 4).map(function (x) { return ['<span style="white-space:nowrap">' + fd(x.t) + '</span>', esc(x.text) + '<div style="font-size:11px;color:#64748b">' + esc(x.where) + '</div>']; }), 'No notes yet.') + '</div>' +
+      '<div style="' + CARD + '"><div style="' + HEAD + '">Recent activity</div>' + tbl(['When', 'What'], ev.slice(0, 5).map(function (e) { return ['<span style="white-space:nowrap">' + fd(e.t) + '</span>', '<span style="font-weight:700;color:' + (ACTC[e.act] || '#475569') + '">' + esc(e.act) + '</span> · ' + esc(e.what)]; })) + '</div></div>' +
+      '<div data-et="act" style="display:none;' + CARD + '"><div style="' + HEAD + '">Everything ' + esc(first) + ' did (newest first)</div>' + tbl(['When', 'Action', 'Core', 'What happened', 'Sealed'], ev.slice(0, 60).map(row)) + (ev.length > 60 ? '<div style="padding:10px 14px;font-size:12px;color:#64748b">Showing the latest 60 of ' + ev.length + '. Use <strong>Full activity log</strong> to search and filter all of them.</div>' : '') + '</div>' +
+      '<div data-et="notes" style="display:none;' + CARD + '"><div style="' + HEAD + '">Every note and comment</div>' + tbl(['When', 'Where', 'Note'], notes.map(function (x) { return ['<span style="white-space:nowrap">' + fd(x.t) + '</span>', esc(x.where), esc(x.text)]; }), 'No notes yet.') + '</div>' +
+      '<div data-et="sign" data-disp="block" style="display:none"><div style="' + CARD + ';margin-bottom:14px"><div style="' + HEAD + '">Waiting for a signature</div>' + tbl(['Item', 'Since'], pend.map(function (x) { return [esc(x.summary.replace(/^Awaiting sign-off: /, '')), fd(x.timestamp)]; }), 'Nothing waiting.') + '</div><div style="' + CARD + '"><div style="' + HEAD + '">Approvals and sign-offs given</div>' + tbl(['When', 'Core', 'What was approved', 'Sealed'], signs.map(function (e) { return ['<span style="white-space:nowrap">' + fd(e.t) + '</span>', esc(e.core), esc(e.what), '<span style="font-family:monospace;font-size:11px;color:#64748b">' + esc(e.seal) + '</span>']; }), 'No approvals yet.') + '</div></div>' +
+      '<div data-et="work" data-disp="grid" style="display:none;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px"><div style="' + CARD + '"><div style="' + HEAD + '">Cases ' + esc(first) + ' worked on</div>' + kvRaw(caseRows.length ? caseRows : [['No cases', '—']]) + '</div><div style="' + CARD + '"><div style="' + HEAD + '">Models ' + esc(first) + ' worked on</div>' + kvRaw(modRows.length ? modRows : [['No models', '—']]) + '</div></div>' +
+      '<div style="font-size:11.5px;color:#64748b;margin-top:12px">Whistleblower reports are never linked to a person, so they do not appear here. Opening this profile was logged in Echo with your name and the time.</div></div>';
+    m.addEventListener('click', function (ev2) { if (ev2.target === m) m.remove(); });
+    var old = document.getElementById('emp-prof'); if (old) old.remove(); document.body.appendChild(m);
+    try { cardinalLogActivity('view', 'Opened the employee profile for ' + name, null); } catch (e) {}
   };
 })();
 
