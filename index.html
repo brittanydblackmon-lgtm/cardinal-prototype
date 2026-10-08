@@ -52607,9 +52607,9 @@ window.CARDINAL_PLACES = {
       '<circle cx="100" cy="100" r="86" fill="none" stroke="' + col + '" stroke-width="14" stroke-linecap="round" stroke-dasharray="' + (C * pct).toFixed(2) + ' ' + C.toFixed(2) + '" transform="rotate(-90 100 100)" style="filter:drop-shadow(0 6px 10px rgba(0,0,0,.30))"/>' +
       '<line x1="100" y1="14" x2="100" y2="28" stroke="rgba(34,197,94,.9)" stroke-width="2.5" transform="rotate(' + thr + ' 100 100)"/>' +
       '<line x1="100" y1="10" x2="100" y2="24" stroke="rgba(255,255,255,.82)" stroke-width="2" transform="rotate(' + sweep + ' 100 100)"/>' +
-      '<text x="100" y="102" text-anchor="middle" dominant-baseline="middle" fill="' + (col === BLU ? '#8b5cf6' : col) + '" style="font-size:' + fsz(v) + 'px;font-weight:800;font-family:var(--sans);letter-spacing:-1px">' + esc(v) + '</text></svg>' +
+      '<text x="100" y="102" text-anchor="middle" dominant-baseline="middle" fill="' + (col === BLU ? '#8b5cf6' : String(col).toUpperCase() === '#FACC15' ? '#CA8A04' : col) + '" style="font-size:' + fsz(v) + 'px;font-weight:800;font-family:var(--sans);letter-spacing:-1px">' + esc(v) + '</text></svg>' +
       (u.pill100 ? '<div class="g-pill100">' + esc(u.pill100) + '</div>' : '') + '</div>' +
-      '<div class="g-status" style="color:' + (col === BLU ? '#8b5cf6' : col) + '">' + esc(status) + '</div>' +
+      '<div class="g-status" style="color:' + (col === BLU ? '#8b5cf6' : String(col).toUpperCase() === '#FACC15' ? '#A16207' : col) + '">' + esc(status) + '</div>' +
       '<div class="g-live"><span class="dot"></span><span>Last calculated <strong style="color:var(--chrome2,#1a1815)">' + esc(u.calc || '2 minutes ago') + '</strong></span></div>' +
       deltaHtml +
       (u.go || u.onclick ? '<button type="button" class="g-pill g-go" title="Go to this section" onclick="event.stopPropagation();' + esc(u.go || u.onclick) + '">' : '<div class="g-pill">') + esc(u.pillLabel || u.label) + (u.pillVal != null && u.pillVal !== '' ? ' <b>' + esc(u.pillVal) + '</b>' : '') + (u.go || u.onclick ? ' <span class="g-arrow">\u2192</span></button>' : '</div>') +
@@ -53576,6 +53576,118 @@ window.CARDINAL_PLACES = {
     var o = window.currentOrg || 'fin', id = PRIMARY[o];
     if (o !== 'ad') [].forEach.call(wr.querySelectorAll('div,span'), function (e) { if (!e.children.length && /^Case #2847 · /.test(e.textContent || '')) e.textContent = e.textContent.replace('Case #2847', 'Case #' + id); });
   }, 700);
+})();
+
+</script>
+
+<script data-p="p24_ts">
+// 10/7 (Brittany, Trust Score): "Monitoring" reads "Post-Deployment Monitoring"; each part in the quarterly check has an
+// (i) with what it means; yellow numbers are dark enough to read.
+(function () {
+  var DEF = {
+    'fairness': 'Are people treated equally? Compares approval and error rates across groups.',
+    'fraud integrity': 'How well fraud and abuse are caught without blocking honest customers.',
+    'fraud': 'How well fraud and abuse are caught without blocking honest customers.',
+    'ai agents & security': 'Whether AI agents stay inside their permissions and hold up against attacks.',
+    'transparency': 'Whether people get clear, accurate reasons for automated decisions.',
+    'privacy': 'Whether personal data is used only as allowed, with consent.',
+    'privacy & data rights': 'Whether personal data is used only as allowed, with consent.',
+    'governance': 'Whether changes are approved, documented, and owned by a named person.',
+    'governance & change control': 'Whether changes are approved, documented, and owned by a named person.',
+    'post-deployment monitoring': 'Whether models are watched for drift and problems after they launch.',
+    'compliance': 'Whether the AI meets the rules that apply to it.'
+  };
+  var css = document.createElement('style');
+  css.textContent = '.ts-i{display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;border-radius:50%;border:1px solid rgba(71,85,105,.5);color:#475569;font-size:9px;font-weight:800;font-style:normal;margin-left:5px;cursor:help;vertical-align:1px;background:#fff}';
+  document.head.appendChild(css);
+  function darken(el) { var c = getComputedStyle(el).color; if (/250,\s*204,\s*21|234,\s*179,\s*8|245,\s*158,\s*11/.test(c)) el.style.setProperty('color', '#A16207', 'important'); }
+  function tick() {
+    var scr = document.getElementById('screen-trustscore'); if (!scr || scr.offsetParent === null) return;
+    // Rename Monitoring everywhere on the page.
+    [].forEach.call(scr.querySelectorAll('button, div, span'), function (e) {
+      if (e.children.length || e.__pm) return;
+      if ((e.textContent || '').trim() === 'Monitoring') { e.__pm = 1; e.textContent = 'Post-Deployment Monitoring'; }
+    });
+    // Quarterly check cells: (i) and readable numbers.
+    [].forEach.call(scr.querySelectorAll('.tsv2-hero-right div'), function (d) {
+      if (d.children.length !== 2 || !/^\d+$/.test((d.children[1].textContent || '').trim())) return;
+      var lab = d.children[0], name = (lab.textContent || '').replace('i', '').trim().toLowerCase();
+      darken(d.children[1]);
+      if (!lab.querySelector('.ts-i')) { var key = (lab.textContent || '').trim().toLowerCase(), t = DEF[key]; if (t) { var i = document.createElement('i'); i.className = 'ts-i'; i.textContent = 'i'; i.title = t; lab.appendChild(i); } }
+    });
+  }
+  setInterval(tick, 600);
+  window.CARDINAL_PART_DEFS = DEF;
+})();
+
+</script>
+
+<script data-p="p25_dashtop">
+// 10/7 (Brittany: "either remove the Trust Score from Today at a glance or the big Global Trust Score box... a quick
+// pop-up with the parts and the definition"; "is there a cooler way for the top?").
+//   - The big Global Trust Score box is gone; "Trust Score report" on the gauge opens a quick pop-up with the definition,
+//     all 7 parts (including Post-Deployment Monitoring), what is blocking certification, and a link to the full report.
+//   - The top is one command bar: Ask Cardinal, then the alert and Active Conversations side by side, then the live line.
+(function () {
+  function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;'); }
+  var css = document.createElement('style');
+  css.textContent =
+    '#dash-global-score-panel{display:none!important}' +
+    '#ts-pop{position:fixed;inset:0;z-index:9999;background:rgba(26,24,21,.45);display:flex;align-items:center;justify-content:center;padding:16px}' +
+    '#ts-pop .tp{background:#f4efe6;border-radius:18px;box-shadow:0 30px 80px rgba(0,0,0,.35);width:min(720px,100%);max-height:90vh;overflow:auto;padding:22px 24px}' +
+    '#ts-pop .tp-parts{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin:14px 0}' +
+    '#ts-pop .tp-part{background:#fff;border-radius:12px;padding:12px 14px;box-shadow:0 1px 3px rgba(26,24,21,.06),0 6px 16px rgba(26,24,21,.05)}' +
+    '#ts-pop .tp-part .n{font-size:24px;font-weight:800;margin:2px 0 6px}#ts-pop .tp-bar{height:6px;border-radius:4px;background:#ece7dc;overflow:hidden}#ts-pop .tp-bar i{display:block;height:100%}' +
+    '#ts-pop .tp-part .l{font-size:10.5px;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:.5px}#ts-pop .tp-part .d{font-size:11px;color:#64748b;margin-top:6px;line-height:1.4}' +
+    '#dash-cmd{background:linear-gradient(180deg,rgba(26,24,21,.045),rgba(30,28,24,.035));border:1px solid rgba(167,167,167,.15);border-radius:16px;padding:14px;margin:0 0 16px;box-shadow:0 1px 3px rgba(26,24,21,.05),0 6px 18px rgba(26,24,21,.04)}' +
+    '#dash-cmd .dc-row{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:12px;align-items:stretch;margin-top:12px}' +
+    '@media (max-width:900px){#dash-cmd .dc-row{grid-template-columns:1fr}}' +
+    '#dash-cmd #cardinal-ask-wrap,#dash-cmd .cardinal-ask-wrap{margin:0!important}' +
+    '#dash-cmd #dash-action-queue,#dash-cmd #dash-active-channels-host{margin:0!important;height:100%;box-sizing:border-box}' +
+    '#dash-cmd #dash-activity-ticker{margin:12px 0 0!important;border-radius:10px!important;background:rgba(255,255,255,.55)!important;border:0!important}';
+  document.head.appendChild(css);
+  var NAMES = [['fairness', 'Fairness'], ['fraud', 'Fraud Integrity'], ['transparency', 'Transparency'], ['privacy', 'Privacy & Data Rights'], ['governance', 'Governance & Change Control'], ['monitoring', 'Post-Deployment Monitoring'], ['agents', 'AI Agents & Security']];
+  window.dashTrustPop = function () {
+    var o = window.currentOrg || 'fin', d = (window.CARDINAL_DATA || {})[o] || {}, dims = d.dimensionScores || {};
+    var gp = document.getElementById('dash-global-score-panel'), defs = window.CARDINAL_PART_DEFS || {};
+    var desc = gp ? ((gp.querySelector('div[style*="font-size"]') || {}).textContent || '') : '';
+    var intro = (gp && (gp.textContent.match(/One number for how trustworthy[^.]*\.[^.]*\.[^.]*\./) || [''])[0]) || 'One number for how trustworthy your AI is right now, across 7 parts.';
+    var score = (document.querySelector('#dash-u-hero .g-unit svg text') || {}).textContent || '';
+    var block = gp && [].filter.call(gp.querySelectorAll('div'), function (x) { return /^(Maintaining certification|What.s blocking)/i.test((x.textContent || '').trim()) && x.textContent.length < 600; }).pop();
+    if (block && block.parentElement && block.parentElement !== gp) block = block.parentElement;
+    var col = function (n) { return n >= 80 ? '#15803D' : n >= 70 ? '#A16207' : '#B91C1C'; }, bar = function (n) { return n >= 80 ? '#22c55e' : n >= 70 ? '#FACC15' : '#ef4444'; };
+    var m = document.createElement('div'); m.id = 'ts-pop';
+    m.innerHTML = '<div class="tp"><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px"><div><div style="font-size:11px;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:.6px">Global Trust Score</div><div style="font-size:34px;font-weight:800;color:' + col(+score) + '">' + esc(score) + '<span style="font-size:14px;color:#64748b;font-weight:600"> / 100</span></div></div><button type="button" onclick="document.getElementById(\'ts-pop\').remove()" style="border:0;background:transparent;font-size:22px;cursor:pointer;color:#64748b" aria-label="Close">×</button></div>' +
+      '<div style="font-size:12.5px;color:#475569;line-height:1.55">' + esc(intro) + '</div>' +
+      '<div class="tp-parts">' + NAMES.map(function (n) { var v = dims[n[0]]; if (v == null) return ''; return '<div class="tp-part"><div class="l">' + n[1] + '</div><div class="n" style="color:' + col(v) + '">' + v + '%</div><div class="tp-bar"><i style="width:' + v + '%;background:' + bar(v) + '"></i></div><div class="d">' + esc(defs[n[1].toLowerCase()] || '') + '</div></div>'; }).join('') + '</div>' +
+      (block ? '<div style="background:#fff;border-radius:12px;padding:12px 14px;font-size:12.5px;color:#1a1815;box-shadow:0 1px 3px rgba(26,24,21,.06)">' + block.innerHTML + '</div>' : '') +
+      '<div style="display:flex;justify-content:flex-end;margin-top:14px"><button type="button" class="btn-primary" onclick="document.getElementById(\'ts-pop\').remove();showScreen(\'trustscore\')">Open full Trust Score report →</button></div></div>';
+    m.addEventListener('click', function (e) { if (e.target === m) m.remove(); });
+    // Fix links close the pop-up and open the exact fix.
+    [].forEach.call(m.querySelectorAll('[onclick]'), function (e) {
+      var oc = e.getAttribute('onclick') || '', sc = (oc.match(/showScreen\('([a-z]+)'/) || [])[1];
+      if (!sc) return;
+      var go = sc === 'atonement' ? "cardinalJump(\"showScreen('atonement',null);coreTabGo('atonement',0)\",\"#atws\")" : sc === 'compliance' ? "cardinalJump(\"showScreen('compliance',null);setTimeout(function(){try{switchCompTab('calendar')}catch(e){}},300)\",\"#comp-content-calendar\")" : "showScreen('" + sc + "',null)";
+      e.setAttribute('onclick', "event.preventDefault();event.stopPropagation();document.getElementById('ts-pop').remove();" + go);
+    });
+    var old = document.getElementById('ts-pop'); if (old) old.remove();
+    document.body.appendChild(m);
+  };
+  function tick() {
+    var scr = document.getElementById('screen-dashboard'); if (!scr || scr.offsetParent === null) return;
+    // Gauge label opens the pop-up.
+    var b = [].filter.call(document.querySelectorAll('#dash-u-hero button.g-go'), function (x) { return /Trust Score report/i.test(x.textContent); })[0];
+    if (b && !b.__tp) { b.__tp = 1; b.setAttribute('onclick', 'event.stopPropagation();dashTrustPop()'); }
+    // One command bar at the top.
+    var ask = document.getElementById('cardinal-ask-wrap') || scr.querySelector('.cardinal-ask-wrap'), al = document.getElementById('dash-action-queue'), ch = document.getElementById('dash-active-channels-host'), tk = document.getElementById('dash-activity-ticker');
+    if (!ask || !al || !ch || ask.parentNode !== scr && !ask.closest('#dash-cmd')) return;
+    var cmd = document.getElementById('dash-cmd');
+    if (!cmd) { cmd = document.createElement('div'); cmd.id = 'dash-cmd'; cmd.innerHTML = '<div class="dc-ask"></div><div class="dc-row"><div class="dc-a"></div><div class="dc-c"></div></div><div class="dc-t"></div>'; scr.insertBefore(cmd, ask); }
+    var put = function (sel, el) { var slot = cmd.querySelector(sel); if (el && el.parentNode !== slot) slot.appendChild(el); };
+    put('.dc-ask', ask); put('.dc-a', al); put('.dc-c', ch); if (tk) put('.dc-t', tk);
+    if (cmd.parentNode === scr && scr.firstElementChild !== cmd) scr.insertBefore(cmd, scr.firstElementChild);
+  }
+  setInterval(tick, 400);
 })();
 
 </script>
