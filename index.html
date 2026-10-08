@@ -54283,6 +54283,58 @@ window.CARDINAL_PLACES = {
 
 </script>
 
+<script data-p="p32_eve">
+// 10/7 (Brittany): Eve's decision cards were pale text on pink (left over from the dark theme); now dark text on a
+// white card with a red edge. Eve's voice now picks the best natural voice on the device, at a natural pace.
+(function () {
+  var css = document.createElement('style');
+  css.textContent = '#eve-messages .ev-card{background:#fff!important;border:1px solid rgba(26,24,21,.06)!important;border-left:4px solid #ef4444!important;border-radius:14px!important;box-shadow:0 2px 6px rgba(26,24,21,.08),0 16px 34px rgba(26,24,21,.14)!important;color:#1a1815!important}' +
+    '#eve-messages .ev-card .ev-t{color:#1a1815!important;font-weight:800!important}#eve-messages .ev-card .ev-b{color:#475569!important}' +
+    '#eve-messages .ev-card button{background:#fff!important;color:#1a1815!important;border:1px solid rgba(26,24,21,.1)!important;border-radius:10px!important;font-weight:600!important;box-shadow:0 2px 4px rgba(26,24,21,.06),0 8px 18px rgba(26,24,21,.10)!important}' +
+    '#eve-messages .ev-card button:hover{background:#f4efe6!important}';
+  document.head.appendChild(css);
+  function light(c) { var m = String(c).match(/(\d+), (\d+), (\d+)/); return m && +m[1] > 185 && +m[2] > 180 && +m[3] > 165; }
+  setInterval(function () {
+    var box = document.getElementById('eve-messages'); if (!box || box.offsetParent === null) return;
+    [].forEach.call(box.querySelectorAll('div'), function (d) {
+      if (d.__evc || d.classList.contains('msg-bubble') || d.closest('.msg-bubble')) return;
+      var bg = getComputedStyle(d).backgroundImage;
+      if (!/239, 68, 68|250, 204, 21|34, 197, 94/.test(bg) && !/rgba\(239, ?68, ?68/.test(d.getAttribute('style') || '')) return;
+      if (!d.querySelector('button')) return;
+      d.__evc = 1; d.classList.add('ev-card');
+      [].forEach.call(d.querySelectorAll('button'), function (b) { b.style.setProperty('color', '#1a1815', 'important'); b.style.setProperty('background', '#fff', 'important'); });
+      [].forEach.call(d.querySelectorAll('span,div'), function (x) { if (x.children.length || !light(getComputedStyle(x).color)) return; x.classList.add(/decision|needs|action/i.test(x.textContent) && x.textContent.length < 60 ? 'ev-t' : 'ev-b'); });
+    });
+  }, 400);
+
+  // Voice: best natural voice available, Siri-like pace.
+  var RANK = [/siri/i, /premium/i, /enhanced/i, /natural/i, /^(ava|zoe|allison|samantha|serena|karen|moira|tessa)\b/i, /google us english/i, /google uk english female/i];
+  function bestVoice(lang) {
+    var vs = (window.speechSynthesis && speechSynthesis.getVoices()) || [], pre = (lang || 'en-US').split('-')[0];
+    var pool = vs.filter(function (v) { return String(v.lang).indexOf(pre) === 0; });
+    for (var i = 0; i < RANK.length; i++) { var hit = pool.filter(function (v) { return RANK[i].test(v.name) && !/eloquence|novelty|bells|bad news|whisper|zarvox|trinoids|albert|jester|organ|cellos|bubbles|boing|superstar|wobble/i.test(v.name); }); var us = hit.filter(function (v) { return /en-US/.test(v.lang); }); if (us.length || hit.length) return (us[0] || hit[0]); }
+    return pool.filter(function (v) { return /en-US/.test(v.lang); })[0] || pool[0] || null;
+  }
+  if (window.speechSynthesis) { try { speechSynthesis.getVoices(); speechSynthesis.onvoiceschanged = function () { window.__eveVoice = bestVoice('en-US'); }; } catch (e) {} }
+  var oSpeak = window.speakText;
+  if (typeof oSpeak === 'function') window.speakText = speakText = function (text, who) {
+    if (!window.speechSynthesis || !window.__cardinalUnlocked) return;
+    if (who === 'eve' && typeof eveTTSEnabled !== 'undefined' && !eveTTSEnabled) return;
+    if (who === 'adam') return oSpeak.apply(this, arguments);
+    speechSynthesis.cancel();
+    var clean = String(text || '').replace(/<[^>]+>/g, ' ').replace(/[→←]/g, ' ').replace(/\s+/g, ' ').trim();
+    var u = new SpeechSynthesisUtterance(clean);
+    var v = window.__eveVoice || bestVoice((typeof eveVoiceLang !== 'undefined' && eveVoiceLang) || 'en-US');
+    if (v) { u.voice = v; u.lang = v.lang; }
+    u.rate = 1.0; u.pitch = 1.0; u.volume = 1;
+    u.onstart = function () { try { animateWaveform(true); } catch (e) {} };
+    u.onend = function () { try { animateWaveform(false); } catch (e) {} };
+    speechSynthesis.speak(u);
+  };
+})();
+
+</script>
+
 </body>
 
 </html>
