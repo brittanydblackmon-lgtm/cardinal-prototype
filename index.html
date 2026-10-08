@@ -7628,7 +7628,7 @@ Template Overview
 <div class="section-hdr" style="margin-bottom:14px">
 <div>
 <div style="font-size:15px;font-weight:600;color:var(--chrome2);display:flex;align-items:center;gap:8px">Trust Score
-<span class="ts-info-trigger" data-tip="A 0–100 standardized score measuring AI system trustworthiness across bias, fraud, and compliance. Cardinal's 6-dimension methodology with industry-tailored weights. 80+ qualifies for certification. Goal: become the NIST of AI ethics · Year 1 build with Research Scientists; Year 2–3 publish & seek regulatory adoption.">i</span>
+<span class="ts-info-trigger" data-tip="A 0–100 score for how trustworthy your AI is right now, across 7 parts: fairness, fraud integrity, transparency, privacy and data rights, governance, post-deployment monitoring, and AI agents and security. Weights are set per industry and published. 80 or higher, with no part under 70, meets the Cardinal Standard.">i</span>
 </div>
 <div style="font-size:11px;color:var(--muted);margin-top:2px">0–100 standardized score · 80+ certified</div>
 </div>
@@ -53716,6 +53716,65 @@ window.CARDINAL_PLACES = {
     }
   }
   setInterval(tick, 400);
+})();
+
+</script>
+
+<script data-p="p26_headers">
+// 10/7 (Brittany): every core's top buttons are black and sit on the right, like Trust Score; Watchman's header mirrors
+// Trust Score (title with (i), buttons right, no extra copy); the (i) hover opens below so it is never cut off.
+(function () {
+  var css = document.createElement('style');
+  css.textContent =
+    '.ts-info-trigger::after{bottom:auto!important;top:calc(100% + 10px)!important;left:-8px!important;transform:none!important;color:#e2e8f0!important}' +
+    '.ts-info-trigger::before{bottom:auto!important;top:calc(100% - 2px)!important;border-top-color:transparent!important;border-bottom-color:rgba(167,167,167,.25)!important}' +
+    '.hdr-right{display:flex!important;flex-wrap:wrap;gap:8px;justify-content:flex-end!important;margin-left:auto!important}' +
+    '.hdr-btn{background:#1a1815!important;color:#fff!important;border:0!important;border-radius:10px!important;padding:8px 14px!important;font-size:12px!important;font-weight:700!important;box-shadow:0 2px 6px rgba(26,24,21,.18)!important}' +
+    '.hdr-btn:hover{background:#2a2620!important}' +
+    '#sent-top.hdr-plain{background:transparent!important;border:0!important;box-shadow:none!important;padding:0!important;margin:0 0 14px!important}';
+  document.head.appendChild(css);
+  var MAP = {
+    atonement: [/^View Cohorts$/, /^Deploy to Shadow Lane/],
+    compliance: [/^Push to Trust Ledger$/, /^Annual Certification File/, /^Generate Report$/],
+    echo: [/^Export Full Audit Log$/, /^Annual Certification File/],
+    trustledger: [/^Query Ledger$/, /^Annual Certification File/, /^Push Update/, /^Share a view$/],
+    sentinel: [/^\+ Open a new case$/, /^Open a war room$/, /^Playbooks$/],
+    genesis: [/^Coverage Scan$/]
+  };
+  function lca(a, b) { var s = []; for (var x = a; x; x = x.parentElement) s.push(x); for (var y = b; y; y = y.parentElement) if (s.indexOf(y) > -1) return y; return null; }
+  function tick() {
+    var scr = document.querySelector('.screen.active'); if (!scr) return;
+    var name = scr.id.replace('screen-', ''), rx = MAP[name]; if (!rx) return;
+    var btns = [].filter.call(scr.querySelectorAll('button'), function (b) { var t = (b.textContent || '').trim(); return b.offsetParent !== null && !b.closest('.u-hero, table, .modal') && rx.some(function (r) { return r.test(t); }) && (b.getBoundingClientRect().top - scr.getBoundingClientRect().top) < 260; });
+    if (!btns.length) return;
+    btns.forEach(function (b) { b.classList.add('hdr-btn'); });
+    var box = btns.reduce(function (acc, b) { return acc ? lca(acc, b) : b.parentElement; }, null);
+    if (box && box !== scr && !box.classList.contains('hdr-right')) {
+      var others = [].filter.call(box.children, function (c) { return btns.indexOf(c) < 0 && c.offsetParent !== null; });
+      if (!others.length) box.classList.add('hdr-right');
+      else if (btns.every(function (b) { return b.parentElement === box; })) {
+        // Buttons share a row with other things: give them their own right-aligned row.
+        var w = document.createElement('div'); w.className = 'hdr-right'; w.style.width = '100%';
+        box.insertBefore(w, btns[0]); btns.forEach(function (b) { w.appendChild(b); });
+      }
+    }
+    // If the button group sits in a narrow block, push that block to the right too.
+    var hr = scr.querySelector('.hdr-right'), host = hr && hr.parentElement;
+    if (host && host !== scr && host.getBoundingClientRect().width < scr.getBoundingClientRect().width * 0.8 && host.parentElement && /flex/.test(getComputedStyle(host.parentElement).display)) host.style.marginLeft = 'auto';
+    // Watchman: a plain header like Trust Score.
+    if (name === 'sentinel') {
+      var top = document.getElementById('sent-top'); if (top && !top.__hp) {
+        var title = [].filter.call(top.querySelectorAll('div'), function (d) { return !d.children.length && /^Watchman: cases, incidents, and war rooms$/.test((d.textContent || '').trim()); })[0];
+        if (title) {
+          top.__hp = 1; top.classList.add('hdr-plain');
+          title.innerHTML = 'Watchman <span class="ts-info-trigger" style="margin-left:6px;vertical-align:3px" data-tip="Every case, incident, and war room: what went wrong, who owns it, and the clock it is on.">i</span>';
+          title.style.fontSize = '17px'; title.style.fontWeight = '700';
+          var sub = title.nextElementSibling; if (sub) { sub.textContent = 'Cases, incidents, and war rooms'; sub.style.fontSize = '11.5px'; }
+        }
+      }
+    }
+  }
+  setInterval(tick, 500);
 })();
 
 </script>
