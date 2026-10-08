@@ -51429,7 +51429,9 @@ window.CARDINAL_PLACES = {
     var act = document.querySelector('.screen.active'), same = typeof name === 'string' && act && act.id === 'screen-' + name;
     var keep = same ? scrollers().map(function (e) { return [e, e.scrollTop]; }) : null;
     if (same) { act.style.minHeight = act.scrollHeight + 'px'; window.__keepUntil = Date.now() + 1300; }
+    if (name === 'trustloop' && !same) window.__tlRouteTab = 'channels';
     var r = oShow.apply(this, arguments);
+    if (!same) [0, 40, 120].forEach(function (t) { setTimeout(function () { try { window.__uTick && __uTick(); } catch (e) {} }, t); });
     if (same) {
       var put = function () { if (Date.now() > window.__keepUntil) return; keep.forEach(function (k) { if (Math.abs(k[0].scrollTop - k[1]) > 2) k[0].scrollTop = k[1]; }); };
       put(); requestAnimationFrame(put);
@@ -51815,7 +51817,7 @@ window.CARDINAL_PLACES = {
     var eve = document.getElementById('halo-eve-sum'); if (eve && eve.parentNode) { var x = d('halo', window.currentOrg || 'fin');
       chartBox('halo-hist', eve.parentNode, eve.nextSibling, 'halo', { title: 'Predicted vs actual losses', sub: 'What Halo predicted each month, what was actually lost, and what fixes kept from happening', series: [{ name: 'Predicted exposure', color: '#cbd5e1', data: x[0] }, { name: 'Avoided by fixes', color: GRN, data: x[2] }, { name: 'Actually lost', color: RED, data: x[1], line: true }], fmt: M, note: 'Actual losses stayed small because problems were caught and fixed before penalties or large fraud losses landed.' }); }
   }
-  setInterval(function () { try { genesis(); } catch (e) {} try { atonement(); } catch (e) {} try { ledger(); } catch (e) {} try { library(); } catch (e) {} try { sentinel(); } catch (e) {} try { halo(); } catch (e) {} }, 800);
+  setInterval(function () { try { genesis(); } catch (e) {} try { atonement(); } catch (e) {} try { ledger(); } catch (e) {} try { library(); } catch (e) {} try { sentinel(); } catch (e) {} try { halo(); } catch (e) {} }, 300);
 })();
 
 </script>
@@ -52216,13 +52218,13 @@ window.CARDINAL_PLACES = {
   function J(code, sel) { return 'cardinalJump(' + JSON.stringify(code) + ',' + JSON.stringify(sel || '') + ')'; }
   function T(scr, i) { return J("coreTabGo('" + scr + "'," + i + ")", '#screen-' + scr + ' .core-tabbar'); }
   var GO = {
-    genesis: [[/without tests|coverage/i, T('genesis', 1)], [/active tests/i, T('genesis', 0)], [/models in testing/i, T('genesis', 4)], [/tests passed/i, T('genesis', 0)]],
+    genesis: [[/without tests|coverage/i, J("coreTabGo('genesis',1)", '#gen-tab-coverage')], [/active tests/i, J("coreTabGo('genesis',0)", '#gnws')], [/models in testing/i, J("coreTabGo('genesis',0)", '#gen-tab-ab')], [/tests passed/i, J("coreTabGo('genesis',0)", '#gnws')]],
     atonement: [[/re-reviewed|people/i, T('atonement', 4)], [/active fixes|models fixed/i, T('atonement', 0)], [/shadow/i, T('atonement', 3)], [/time to fix/i, T('atonement', 1)]],
     halo: [[/exposure|rules at risk|likelihood/i, J('', '#halo-money')], [/deadline/i, J('', '#halo-hero2')], [/open cases/i, J("cardinalSentinelUiSetMainTab('cases')", '#sentinel-engine-root')]],
-    trustledger: [[/tamper/i, J("switchTLTopTab('privacy',3)", '#screen-trustledger .gen-tab.active, #screen-trustledger [onclick*=switchTLTopTab]')], [/records|certif/i, J("switchTLTopTab('entries',0)", '#screen-trustledger [onclick*=switchTLTopTab]')], [/verified/i, J("switchTLTopTab('query',4)", '#screen-trustledger [onclick*=switchTLTopTab]')], [/whistle/i, J("switchTLTopTab('whistleblower',2)", '#screen-trustledger [onclick*=switchTLTopTab]')], [/regulator/i, J("switchTLTopTab('access',1)", '#screen-trustledger [onclick*=switchTLTopTab]')]],
+    trustledger: [[/tamper/i, J("switchTLTopTab('privacy',3)", '#tl-tab-privacy')], [/certif/i, J("switchTLTopTab('access',1);var b=[].filter.call(document.querySelectorAll('#tl-tabs-access .gen-tab'),function(x){return x.textContent.trim()==='Certifications';})[0];if(b)b.click();", '#tl-tab-certs')], [/records/i, J("switchTLTopTab('entries',0)", '#tl-tab-entries')], [/verified/i, J("switchTLTopTab('query',4)", '#tl-tab-query')], [/whistle/i, J("switchTLTopTab('whistleblower',2)", '#tl-tab-whistleblower')], [/regulator/i, J("switchTLTopTab('access',1)", '#tl-tab-access')]],
     sentinel: [[/incident|clock/i, J("cardinalSentinelUiSetMainTab('incidents')", '#sentinel-engine-root')], [/war room/i, J("cardinalSentinelUiSetMainTab('warrooms')", '#sentinel-engine-root')], [/./, J("cardinalSentinelUiSetMainTab('cases')", '#sentinel-engine-root')]],
     echo: [[/sources/i, "showScreen('pipeline')"], [/ignored/i, J("echoEnterRoom('cases');echoGo('ignored')", '#echo-rooms-bar')], [/sign-off|pending/i, J("echoEnterRoom('decisions')", '#echo-rooms-bar')], [/whistle/i, J("echoEnterRoom('wb')", '#echo-rooms-bar')], [/days since/i, J("echoEnterRoom('hall')", '#echo-rooms-bar')], [/./, J("echoEnterRoom('cases')", '#echo-rooms-bar')]],
-    compliance: [[/evidence/i, J("switchCompTab('packets')", '#screen-compliance .comp-tab, #screen-compliance [onclick*=switchCompTab]')], [/regulation/i, J("switchCompTab('regulations')", '#screen-compliance [onclick*=switchCompTab]')], [/deadline|due/i, J("switchCompTab('calendar')", '#screen-compliance [onclick*=switchCompTab]')], [/whistle/i, J("switchCompTab('whistleblower')", '#screen-compliance [onclick*=switchCompTab]')], [/issue/i, J("switchCompTab('audit')", '#screen-compliance [onclick*=switchCompTab]')]],
+    compliance: [[/evidence/i, J("switchCompTab('packets')", '#comp-content-packets')], [/regulation/i, J("switchCompTab('regulations')", '#comp-content-regulations')], [/deadline|due/i, J("switchCompTab('calendar')", '#comp-content-calendar')], [/whistle/i, J("switchCompTab('whistleblower')", '#comp-content-whistleblower')], [/issue/i, J("switchCompTab('audit')", '#comp-content-audit')]],
     marketing: [[/in review/i, J("cardinalDocStatus('In review')", '#docs-core table')], [/changes/i, J("cardinalDocStatus('Changes needed')", '#docs-core table')], [/./, J("cardinalDocStatus('')", '#docs-core table')]]
   };
   window.cardinalDocStatus = function (v) { var s = [].filter.call(document.querySelectorAll('#docs-core select'), function (x) { return [].some.call(x.options, function (o) { return o.value === 'Changes needed'; }); })[0]; if (s) { s.value = v; s.dispatchEvent(new Event('change', { bubbles: true })); s.dispatchEvent(new Event('input', { bubbles: true })); } };
@@ -52425,7 +52427,8 @@ window.CARDINAL_PLACES = {
     var oh = document.getElementById('u-marketing-hist'); if (oh) oh.remove();
   }
   function tick() { [genesis, atonement, halo, ledger, sentinel, echo, compliance, codex].forEach(function (f) { try { f(); } catch (e) {} }); }
-  setInterval(tick, 800);
+  window.__uTick = tick;
+  setInterval(tick, 300);
 })();
 
 </script>
@@ -52546,6 +52549,7 @@ window.CARDINAL_PLACES = {
     '.g-sub{font-size:11px;color:var(--muted2,#64748b);margin-top:6px;line-height:1.4;max-width:230px}' +
     '.g-proj{font-size:11px;color:var(--muted2,#64748b);margin-top:6px;line-height:1.4;max-width:230px}' +
     '.g-details{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;margin-top:14px}';
+  css.textContent += '#gen-stats-row,#gen-rings,#at-rings,#tl-rings,#halo-mini-rings,#echo-rings,#echo-cardinal-hero,#echo-your-view-panel,#echo-recent-access-panel,#gen-hist,#at-hist,#halo-hist,#sent-hist,#echo-kpi-row-alerts,#echo-kpi-row-activity,#halo-cardinal-hero,#halo-forecast,#screen-atonement>.section-hdr>.grid-4{display:none!important}';
   document.head.appendChild(css);
 
   var BAD = /issue|critical|risk|pending|deadline|due|ignored|whistle|fail|incident|open cases|high likelihood|queries|unresolved|time to fix/i;
@@ -52570,7 +52574,7 @@ window.CARDINAL_PLACES = {
   // One gauge unit.
   window.cardinalGauge = function (u) {
     var col = norm(u.color), pct = u.pct == null ? 1 : Math.max(0.03, Math.min(1, u.pct));
-    var R = 86, C = 2 * Math.PI * R, v = String(u.value == null ? '' : u.value); v = v.replace(/^(\d[\d,]*)d$/, '$1D');
+    var R = 86, C = 2 * Math.PI * R, v = String(u.value == null ? '' : u.value); v = v.replace(/^(\d[\d,]*)\s*(d|days?)$/i, '$1D');
     var sweep = -90 + pct * 360, thr = -90 + (u.thr == null ? 0.8 : u.thr) * 360;
     var status = u.status || autoStatus(col, u.label);
     var dl = u.delta !== undefined ? u.delta : autoDelta(u), deltaHtml = '';
@@ -52599,7 +52603,17 @@ window.CARDINAL_PLACES = {
   window.cardinalJump = function (code, sel) {
     try { (new Function(code))(); } catch (e) {}
     window.__deepLinkUntil = Date.now() + 3000;
-    setTimeout(function () { var el = sel && [].filter.call(document.querySelectorAll(sel), function (x) { return x.offsetParent !== null; })[0]; if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 450);
+    var scr = document.querySelector('.screen.active'); if (scr) scr.style.paddingBottom = '60vh';
+    var flashed = false;
+    var go = function (smooth) {
+      var el = sel && [].filter.call(document.querySelectorAll(sel), function (x) { return x.offsetParent !== null && !x.closest('.u-hero'); })[0];
+      window.__keepUntil = 0; if (!el) return;
+      var top = el.getBoundingClientRect().top;
+      if (top < 40 || top > 160) el.scrollIntoView({ behavior: smooth ? 'smooth' : 'auto', block: 'start' });
+      if (!flashed) { flashed = true; el.style.transition = 'box-shadow .4s'; el.style.boxShadow = '0 0 0 3px rgba(139,92,246,.35)'; setTimeout(function () { el.style.boxShadow = ''; }, 1800); }
+    };
+    setTimeout(function () { go(true); }, 350);
+    [1000, 1500, 2100].forEach(function (t) { setTimeout(function () { go(false); }, t); });
   };
   window.cardinalGaugeRow = function (units) {
     var min = units.length >= 7 ? 108 : units.length === 6 ? 115 : units.length === 5 ? 122 : 140;
@@ -52607,7 +52621,8 @@ window.CARDINAL_PLACES = {
   };
   // Every existing "row of circles" now draws full gauges; the units are kept on the element for the core heroes.
   window.cardinalRings = function (rings) {
-    var units = rings.map(function (r) { var l = String(r.label || ''); l = l.charAt(0).toUpperCase() + l.slice(1).toLowerCase(); return { value: r.value, label: l, sub: r.sub, color: norm(r.color), pct: r.pct, onclick: r.onclick, tip: r.tip }; });
+    var WSGO = { 'action items': ["mywsTab('tasks')", '#myws-work'], 'active cases': ["mywsTab('cases')", '#myws-work'], 'discussions': ["mywsTab('convos')", '#myws-work'], 'key notes': ["mywsTab('notes')", '#myws-work'], 'pinned': ['', '#myws-pins'] };
+    var units = rings.map(function (r) { var l = String(r.label || ''); l = l.charAt(0).toUpperCase() + l.slice(1).toLowerCase(); l = l.replace(/\bai\b/gi, 'AI').replace(/\bkyc\b/gi, 'KYC'); var w = !r.onclick && WSGO[l.toLowerCase()]; return { value: r.value, label: l, sub: r.sub, color: norm(r.color), pct: r.pct, onclick: r.onclick || (w ? 'cardinalJump(' + JSON.stringify(w[0]) + ',' + JSON.stringify(w[1]) + ')' : ''), tip: r.tip }; });
     return '<div class="cr-wrap g-host" data-units="' + esc(JSON.stringify(units)) + '">' + cardinalGaugeRow(units) + '</div>';
   };
   window.cardinalUnitsFrom = function (el) {
@@ -52835,6 +52850,7 @@ window.CARDINAL_PLACES = {
         if (lab && !lab.__mw) { lab.__mw = 1; lab.className = 'mw-pri'; lab.style.cssText = 'color:' + COL[k][0] + ';background:' + COL[k][1]; }
       }
     });
+    if (!document.getElementById('myws-pins')) { var ph = [].filter.call(document.querySelectorAll('#screen-myworkspace *'), function (e) { return e.children.length === 0 && /^My Pinned Items/i.test((e.textContent || '').trim()); })[0]; if (ph && ph.parentElement) ph.parentElement.id = 'myws-pins'; }
     var o = document.getElementById('ooo-card');
     var f = document.getElementById('ooo-from'), t2 = document.getElementById('ooo-to'), cv = document.getElementById('ooo-cover');
     if (o && f && t2 && cv && !o.querySelector('.ooo-grid')) {
@@ -53228,6 +53244,57 @@ window.CARDINAL_PLACES = {
       cont.appendChild(l);
     }
   }, 800);
+})();
+
+</script>
+
+<script data-p="p17_watchman">
+// 10/7 (Brittany: "Watchman's bottom part should be broken down into sections like Echo"). Four section tiles,
+// each with its own sub-tabs, on top of Watchman's existing tabs (which keep working underneath).
+(function () {
+  var css = document.createElement('style');
+  css.textContent =
+    '#wm-rooms{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px;padding:6px;border-radius:14px;background:#f3f0e9;margin:0 0 10px}' +
+    '#wm-rooms button{font:inherit;text-align:left;border:1px solid transparent;border-radius:11px;padding:11px 14px;background:transparent;cursor:pointer;transition:background .15s}' +
+    '#wm-rooms button:hover{background:rgba(255,255,255,.6)}#wm-rooms button.on{background:#fff;border-color:rgba(26,24,21,.1);box-shadow:0 1px 4px rgba(26,24,21,.1)}' +
+    '#wm-rooms b{display:block;font-size:13.5px;color:#1a1815}#wm-rooms span{display:block;font-size:11px;color:#64748b;margin-top:2px;line-height:1.35}' +
+    '#wm-sub{display:flex;flex-wrap:wrap;gap:4px;background:#f3f0e9;padding:4px;border-radius:12px;margin:0 0 14px}' +
+    '#wm-sub button{font:inherit;font-size:12px;font-weight:600;padding:8px 14px;border:0;border-radius:9px;cursor:pointer;background:transparent;color:#475569}' +
+    '#wm-sub button.on{background:#fff;color:#1a1815;box-shadow:0 1px 3px rgba(26,24,21,.12)}';
+  document.head.appendChild(css);
+  var ROOMS = [
+    ['cases', 'Cases and war rooms', 'Every case, war room, and incident clock', [['cases', 'Cases'], ['warrooms', 'War rooms'], ['incidents', 'Incident reporting']]],
+    ['testing', 'Testing', 'Stress tests and response playbooks', [['lab', 'Stress tests'], ['playbooks', 'Playbooks']]],
+    ['security', 'Security', 'What is blocked and watched live', [['runtime', 'Runtime enforcement'], ['security', 'Security Watch']]],
+    ['inventory', 'AI inventory', 'Shadow AI and vendor AI', [['shadow', 'Shadow AI'], ['vendors', 'Vendor AI']]]
+  ];
+  var LABEL = { cases: /^Cases$/, warrooms: /^War rooms$/, lab: /^Stress tests$/, runtime: /Runtime Enforcement/, security: /^Security Watch$/, incidents: /^Incident Reporting$/, playbooks: /^Playbooks$/, shadow: /^Shadow AI$/, vendors: /^Vendor AI$/ };
+  function nativeRow() { var b = [].filter.call(document.querySelectorAll('#screen-sentinel button'), function (x) { return x.textContent.trim() === 'Stress tests' && !x.closest('#wm-sub'); })[0]; return b && b.parentElement; }
+  function current() { if (window.__sentWR) return 'warrooms'; return window.__sentinelTab || 'cases'; }
+  window.wmGo = function (t) {
+    var row = nativeRow(); if (!row) return;
+    var b = [].filter.call(row.children, function (x) { return LABEL[t] && LABEL[t].test(x.textContent.trim()); })[0];
+    if (b) b.click(); else try { cardinalSentinelUiSetMainTab(t); } catch (e) {}
+    setTimeout(render, 30);
+  };
+  window.wmRoom = function (id) { var r = ROOMS.filter(function (x) { return x[0] === id; })[0]; if (r) wmGo(r[3][0][0]); };
+  function render() {
+    var row = nativeRow(); if (!row || row.offsetParent === null && row.style.display !== 'none') return;
+    var cur = current(), room = ROOMS.filter(function (r) { return r[3].some(function (t) { return t[0] === cur; }); })[0] || ROOMS[0];
+    var tiles = document.getElementById('wm-rooms'), sub = document.getElementById('wm-sub');
+    if (!tiles) { tiles = document.createElement('div'); tiles.id = 'wm-rooms'; }
+    if (!sub) { sub = document.createElement('div'); sub.id = 'wm-sub'; }
+    if (row.previousElementSibling !== sub) row.parentNode.insertBefore(sub, row);
+    if (sub.previousElementSibling !== tiles) row.parentNode.insertBefore(tiles, sub);
+    var key = cur + '|' + room[0];
+    if (tiles.getAttribute('data-k') !== key) {
+      tiles.setAttribute('data-k', key);
+      tiles.innerHTML = ROOMS.map(function (r) { return '<button type="button" class="' + (r === room ? 'on' : '') + '" onclick="wmRoom(\'' + r[0] + '\')"><b>' + r[1] + '</b><span>' + r[2] + '</span></button>'; }).join('');
+      sub.innerHTML = room[3].map(function (t) { return '<button type="button" class="' + (t[0] === cur ? 'on' : '') + '" onclick="wmGo(\'' + t[0] + '\')">' + t[1] + '</button>'; }).join('');
+    }
+    if (row.style.display !== 'none') row.style.display = 'none';
+  }
+  setInterval(function () { var s = document.getElementById('screen-sentinel'); if (s && s.offsetParent !== null) render(); }, 400);
 })();
 
 </script>
