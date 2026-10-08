@@ -53353,7 +53353,12 @@ window.CARDINAL_PLACES = {
     var remed = rpPct ? +rpPct[1] : 0;
     var aq = (window._dashActionQueueItems || []).map(function (it) { return it.text || ''; }).concat([(document.getElementById('dash-action-queue') || {}).innerText || '']);
     var dl = null; aq.forEach(function (t) { var m = String(t).match(/(\d+)\s*days?/i); if (m && (!dl || +m[1] < dl.d)) dl = { d: +m[1], t: String(t).replace(/\s+/g, ' ').trim() }; });
-    var org = window.currentOrg || 'fin', ORG_DL = { fin: 'CFPB fair lending exam', ad: 'DoD readiness review', health: 'CMS audit', fed: 'OMB M-25-21 deadline' };
+    var org = window.currentOrg || 'fin';
+    // Same next deadline Halo shows (same dates as Halo's money table).
+    var HALO_DL = { fin: ['Oct 20, 2026', 'CFPB fair lending exam'], ad: ['Nov 1, 2026', 'FAA counterfeit parts reports'], health: ['Oct 11, 2026', 'Section 1557 complaints to HHS'], fed: ['Nov 6, 2026', 'OMB M-25-21 documentation'] };
+    var hd = HALO_DL[org], src = hd ? { d: Date.parse(hd[0]), rule: hd[1] } : null;
+    if (src && src.d > Date.now()) dl = { d: Math.ceil((src.d - Date.now()) / 864e5), t: src.rule };
+    var ORG_DL = {}; ORG_DL[org] = dl ? dl.t : '';
     var units = [
       { value: score, pct: score / 100, color: score >= 80 ? '#22c55e' : score >= 70 ? '#FACC15' : '#ef4444', label: 'Global Trust Score', status: cert ? (cert === 'Certified' ? 'Certified: 80+ and No Part Under 70' : 'Not Certified Yet') : '', pill100: '/ 100', pillLabel: 'Trust Score report', sub: peer, go: "showScreen('trustscore')", delta: { d: 2, text: '+2' }, good: 'up', tip: 'One number for how trustworthy your AI is right now, across 7 parts.' },
       { value: mm[1], pct: mm[2] ? Math.max(0.08, mm[1] / mm[2]) : 0.1, color: +mm[1] ? '#ef4444' : '#22c55e', label: 'Models at risk', pill100: 'of ' + mm[2], pillLabel: 'Models at risk', sub: (mr.split('\n').filter(function (l) { return /v\d/.test(l); })[0] || '').replace(/(CRITICAL|WARNING|HIGH|WATCH)\s*$/i, '').replace(/\bDI\b/, 'fairness ratio').trim(), go: "dashDetails('models at risk')", good: 'down', tip: 'Models below the line on fairness, fraud, or another part of the Standard.' },
