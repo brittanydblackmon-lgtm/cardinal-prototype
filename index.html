@@ -52349,10 +52349,10 @@ window.CARDINAL_PLACES = {
       okBadge: 'Holds Above 80 Without Fixes', okTitle: 'Low Risk', okBody: 'The score stays above 80 even with no action.',
       badBadge: 'Falls Below 80 Without Fixes', badTitle: 'Action Needed', badBody: 'If nothing is fixed, the score drops under the 80 certification line and exposure stays on the table.',
       okStatus: 'Above Threshold: Holds Without Fixes', badStatus: 'Below Threshold: Falls Under 80 Without Fixes',
-      delta: -2, pillLabel: 'Projected Exposure', pillVal: money, subline: 'In 90 days if nothing changes · Today ' + ((cfg.forecast && cfg.forecast.start) || '') ,
+      delta: -2, pillLabel: 'Forecast details', pillVal: '', subline: 'In 90 days if nothing changes · Today ' + ((cfg.forecast && cfg.forecast.start) || '') ,
       proj: 'With the fixes: <strong style="color:#16a34a">' + ((cfg.forecast && cfg.forecast.full && cfg.forecast.full[3]) || 88) + '</strong> in 90 days',
       avg: 79, pct: 38, confTitle: 'Forecast Confidence', confSub: 'How reliable is this forecast?',
-      units: [{ value: money, pct: Math.min(1, (parseFloat(String(money).replace(/[^\d.]/g, '')) || 50) / 100), color: '#ef4444', label: 'Projected exposure', status: 'If Nothing Is Fixed', pillLabel: 'Projected exposure', sub: 'Fines, restitution, and lawsuits in 90 days', good: 'down', delta: { d: 0, text: '' }, tip: 'What fines, restitution, and lawsuits could cost in 90 days if nothing is fixed.', go: "cardinalJump('', '#halo-cost, #halo-forecast')" }].concat(it.filter(function (u) { return !/exposure/i.test(u.label || ''); })), boxTitle: 'Exposure at a glance',
+      units: [{ value: money, pct: Math.min(1, (parseFloat(String(money).replace(/[^\d.]/g, '')) || 50) / 100), color: '#ef4444', label: 'Projected exposure', status: 'If Nothing Is Fixed', pillLabel: 'Where the money is', sub: 'Fines, restitution, and lawsuits in 90 days', good: 'down', delta: { d: 0, text: '' }, tip: 'What fines, restitution, and lawsuits could cost in 90 days if nothing is fixed.', go: "cardinalJump('', '#halo-cost, #halo-forecast')" }].concat(it.filter(function (u) { return !/exposure/i.test(u.label || ''); })), boxTitle: 'Exposure at a glance',
       rows: [['Prediction Accuracy', '91%', 'How often past Halo forecasts landed within range.'], ['Confidence Band', '±4 points', 'Expected swing in the projected score.'], ['Forecast Refreshed', 'Daily', 'Halo re-runs the forecast every morning.'], ['Regulations Tracked', '12', 'Active rules Halo checks your models against.']]
     });
     hide(mini);
@@ -54570,7 +54570,7 @@ window.CARDINAL_PLACES = {
     var cur = window.__calRem[org() + '|' + name];
     p.innerHTML = '<div style="font-weight:800;margin-bottom:2px">Remind me</div><div style="font-size:11.5px;color:#64748b;margin-bottom:6px">' + esc(name) + '</div>' +
       ['1 day before', '3 days before', '1 week before', 'Every morning until it is done'].map(function (o) { return '<button type="button" class="o" data-o="' + esc(o) + '">' + (cur === o ? '&#10003; ' : '') + esc(o) + '</button>'; }).join('') +
-      '<div style="display:flex;gap:6px;align-items:center;padding:6px 10px"><span style="font-size:12.5px;flex:1">On a date I pick</span><input type="date" id="cal-rem-date" style="font:inherit;font-size:12px;padding:4px 6px;border-radius:8px;border:1px solid rgba(26,24,21,.15)"></div>' +
+      '<div style="display:flex;gap:6px;align-items:center;padding:6px 10px"><span style="font-size:12.5px;flex:1">Custom date</span><input type="date" id="cal-rem-date" style="font:inherit;font-size:12px;padding:4px 6px;border-radius:8px;border:1px solid rgba(26,24,21,.15)"></div>' +
       (cur ? '<button type="button" class="o" data-o="" style="color:#B91C1C">Turn off reminder</button>' : '');
     document.body.appendChild(p);
     var dIn = p.querySelector('#cal-rem-date'); dIn.onchange = function () { if (!dIn.value) return; var dd = new Date(dIn.value + 'T09:00:00'); var b = document.createElement('button'); b.className = 'o'; b.setAttribute('data-o', 'On ' + MON[dd.getMonth()] + ' ' + dd.getDate() + ' at 9:00 AM'); p.appendChild(b); b.onclick = null; pick(b); };
@@ -54860,12 +54860,12 @@ window.CARDINAL_PLACES = {
     var me = (window.currentUserName || 'You'), saved = window.__dlAlerts[org()] || {};
     var m = document.createElement('div'); m.className = 'r2-pop'; m.onclick = function (e) { if (e.target === m) m.remove(); };
     m.innerHTML = '<div class="r2-card"><h3>Deadline alerts</h3><div class="sub">Pick the deadlines you want Eve to remind you about, and when. Nothing else will alert you.</div>' +
-      items.map(function (it, i) { var on = saved[it.name]; return '<div class="r2-row"><input type="checkbox" id="dla-' + i + '"' + (on ? ' checked' : '') + ' style="width:16px;height:16px"><label for="dla-' + i + '" style="flex:1;cursor:pointer"><strong>' + esc(it.name) + '</strong><div class="sub">' + esc(it.type || '') + ' · due ' + esc(it.due) + ' · ' + (it.days < 0 ? 'overdue' : it.days + ' days left') + '</div></label><select id="dlw-' + i + '" style="font:inherit;font-size:12px;padding:6px 8px;border-radius:8px;border:1px solid rgba(26,24,21,.15)">' + ['1 day before', '3 days before', '1 week before', '2 weeks before', 'On a date I pick'].map(function (w) { var cur = on && /^\d{4}-/.test(on) ? 'On a date I pick' : (on || '2 weeks before'); return '<option' + (cur === w ? ' selected' : '') + '>' + w + '</option>'; }).join('') + '</select><input type="date" id="dld-' + i + '" value="' + (on && /^\d{4}-/.test(on) ? on : '') + '" style="display:' + (on && /^\d{4}-/.test(on) ? 'inline-block' : 'none') + ';font:inherit;font-size:12px;padding:5px 8px;border-radius:8px;border:1px solid rgba(26,24,21,.15)"></div>'; }).join('') +
+      items.map(function (it, i) { var on = saved[it.name]; return '<div class="r2-row"><input type="checkbox" id="dla-' + i + '"' + (on ? ' checked' : '') + ' style="width:16px;height:16px"><label for="dla-' + i + '" style="flex:1;cursor:pointer"><strong>' + esc(it.name) + '</strong><div class="sub">' + esc(it.type || '') + ' · due ' + esc(it.due) + ' · ' + (it.days < 0 ? 'overdue' : it.days + ' days left') + '</div></label><select id="dlw-' + i + '" style="font:inherit;font-size:12px;padding:6px 8px;border-radius:8px;border:1px solid rgba(26,24,21,.15)">' + ['1 day before', '3 days before', '1 week before', '2 weeks before', 'Custom date'].map(function (w) { var cur = on && /^\d{4}-/.test(on) ? 'Custom date' : (on || '2 weeks before'); return '<option' + (cur === w ? ' selected' : '') + '>' + w + '</option>'; }).join('') + '</select><input type="date" id="dld-' + i + '" value="' + (on && /^\d{4}-/.test(on) ? on : '') + '" style="display:' + (on && /^\d{4}-/.test(on) ? 'inline-block' : 'none') + ';font:inherit;font-size:12px;padding:5px 8px;border-radius:8px;border:1px solid rgba(26,24,21,.15)"></div>'; }).join('') +
       '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px"><button type="button" class="r2-btn ghost" onclick="this.closest(\'.r2-pop\').remove()">Cancel</button><button type="button" class="r2-btn" id="dla-save">Save alerts</button></div></div>';
     document.body.appendChild(m);
-    items.forEach(function (it, i) { var sel = document.getElementById('dlw-' + i), dt = document.getElementById('dld-' + i); sel.onchange = function () { dt.style.display = sel.value === 'On a date I pick' ? 'inline-block' : 'none'; if (sel.value === 'On a date I pick') { document.getElementById('dla-' + i).checked = true; try { dt.showPicker(); } catch (e) {} } }; dt.onchange = function () { document.getElementById('dla-' + i).checked = true; }; });
+    items.forEach(function (it, i) { var sel = document.getElementById('dlw-' + i), dt = document.getElementById('dld-' + i); sel.onchange = function () { dt.style.display = sel.value === 'Custom date' ? 'inline-block' : 'none'; if (sel.value === 'Custom date') { document.getElementById('dla-' + i).checked = true; try { dt.showPicker(); } catch (e) {} } }; dt.onchange = function () { document.getElementById('dla-' + i).checked = true; }; });
     document.getElementById('dla-save').onclick = function () {
-      var out = {}, n = 0; items.forEach(function (it, i) { if (document.getElementById('dla-' + i).checked) { var w = document.getElementById('dlw-' + i).value, dt = document.getElementById('dld-' + i).value; out[it.name] = w === 'On a date I pick' ? (dt || '2 weeks before') : w; n++; } });
+      var out = {}, n = 0; items.forEach(function (it, i) { if (document.getElementById('dla-' + i).checked) { var w = document.getElementById('dlw-' + i).value, dt = document.getElementById('dld-' + i).value; out[it.name] = w === 'Custom date' ? (dt || '2 weeks before') : w; n++; } });
       window.__dlAlerts[org()] = out; m.remove();
       toast(n ? 'Alerts on for ' + n + ' deadline' + (n === 1 ? '' : 's') + '. Eve will remind ' + me.split(' ')[0] + '. Logged in Echo.' : 'Deadline alerts turned off.');
       try { cardinalLogActivity('edit', 'Set deadline alerts for ' + n + ' deadlines', null); } catch (e) {}
@@ -55190,8 +55190,8 @@ window.CARDINAL_PLACES = {
   // ── Query Ledger: the header button opens the ledger search ─────────
   var oQ = window.queryLedger;
   window.queryLedger = function () {
-    var r = document.getElementById('tl-query-result');
-    if (r && r.offsetParent !== null && typeof oQ === 'function') return oQ.apply(this, arguments);
+    var qi = document.getElementById('tl-query-input');
+    if (qi && qi.offsetParent !== null && typeof oQ === 'function') { oQ.apply(this, arguments); var r = document.getElementById('tl-query-result'); if (r) { r.style.display = 'block'; r.scrollIntoView({ behavior: 'smooth', block: 'center' }); } return; }
     try { switchTLTopTab('query', 4); } catch (e) {}
     setTimeout(function () { var i = document.getElementById('tl-q-input'); if (i) { window.__keepUntil = 0; i.scrollIntoView({ behavior: 'smooth', block: 'center' }); i.focus(); } }, 350);
   };
@@ -55315,7 +55315,7 @@ window.CARDINAL_PLACES = {
   };
   function html() {
     var L = list(), open = function (k) { return L.filter(function (x) { return x.topic === k && x.status !== 'Resolved'; }).length; };
-    return '<div style="font-size:16px;font-weight:800;color:#1a1815">Ask a person</div><div style="font-size:12.5px;color:#64748b;margin-top:2px">Real people at Cardinal answer your questions. Pick who you need, ask, and the answer comes back here. Every question and answer is logged in Echo.</div>' +
+    return '<div style="font-size:16px;font-weight:800;color:#1a1815">Get Help: real answers from real people</div><div style="font-size:12.5px;color:#64748b;margin-top:2px">Real people at Cardinal answer your questions. Pick who you need, ask, and the answer comes back here. Every question and answer is logged in Echo.</div>' +
       '<div class="ak-cards">' + Object.keys(TOPICS).map(function (k) { var T = TOPICS[k]; return '<div class="ak-card' + (ST.topic === k ? ' on' : '') + '" onclick="askPick(\'' + k + '\')"><div style="font-size:14px;font-weight:800;color:' + T.color + '">' + T.name + '</div><div style="font-size:12px;color:#334155;margin:4px 0 8px;line-height:1.45">' + esc(T.what) + '</div><div style="font-size:11.5px;color:#1a1815"><strong>' + esc(T.who) + '</strong> · ' + esc(T.role) + '</div><div style="font-size:11px;color:#64748b;margin-top:2px">' + esc(T.reply) + ' · ' + open(k) + ' open</div></div>'; }).join('') + '</div>' +
       '<div class="ak-form"><div style="font-size:12px;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Ask ' + esc(TOPICS[ST.topic].name.toLowerCase()) + ' · goes to ' + esc(TOPICS[ST.topic].who) + '</div>' +
       '<textarea id="ak-q" rows="3" placeholder="What do you need help with?"></textarea>' +
@@ -55338,7 +55338,7 @@ window.CARDINAL_PLACES = {
     var s = document.getElementById('screen-trustloop'); if (!s || s.offsetParent === null) return;
     var ann = [].filter.call(s.querySelectorAll('button'), function (x) { return x.textContent.trim() === 'Announcements' && /townhall/.test(x.getAttribute('onclick') || ''); })[0]; if (!ann) return;
     var row = ann.parentElement, tab = document.getElementById('tl-ask-tab');
-    if (!tab) { tab = document.createElement('button'); tab.type = 'button'; tab.id = 'tl-ask-tab'; tab.className = 'gen-tab'; tab.style.fontSize = '11px'; tab.textContent = 'Ask a person'; tab.onclick = askTab; }
+    if (!tab) { tab = document.createElement('button'); tab.type = 'button'; tab.id = 'tl-ask-tab'; tab.className = 'gen-tab'; tab.style.fontSize = '11px'; tab.textContent = 'Get Help'; tab.onclick = askTab; }
     if (tab.parentNode !== row) row.appendChild(tab);
     var on = !!window.__tlAsk; tab.classList.toggle('active', on);
     [].forEach.call(row.querySelectorAll('button'), function (x) { if (x !== tab && on) x.classList.remove('active'); });
