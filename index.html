@@ -55493,12 +55493,15 @@ window.CARDINAL_PLACES = {
 // Compliance Calendar (days left per deadline), Watchman open cases (days left on each case clock),
 // Genesis tests (pass rate per model), and Trust Ledger certifications (status and time to the next check).
 (function () {
+  var css = document.createElement('style');
+  css.textContent = '.c37 .g-row{gap:10px!important;justify-content:center}.c37 .g-unit{min-width:0!important;flex:1 1 0;max-width:190px}.c37 .g-disc{max-width:130px!important}.c37 .g-live,.c37 .g-delta{display:none!important}.c37 .g-status{font-size:11.5px!important;margin-top:4px!important}.c37 .g-pill{font-size:10px!important;padding:4px 9px!important;margin-top:6px!important}.c37 .g-sub{font-size:11px!important;line-height:1.3}.c37 .g-unit{cursor:pointer}';
+  document.head.appendChild(css);
   function org() { return window.currentOrg || 'fin'; }
   var MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   function place(before, id, units) {
     if (!before || !before.parentNode || !units.length || !window.cardinalGaugeRow) return;
     var g = document.getElementById(id);
-    if (!g) { g = document.createElement('div'); g.id = id; g.style.margin = '0 0 14px'; }
+    if (!g) { g = document.createElement('div'); g.id = id; g.className = 'c37'; g.style.margin = '0 0 14px'; }
     if (g.nextElementSibling !== before) before.parentNode.insertBefore(g, before);
     var key = org() + JSON.stringify(units);
     if (g.getAttribute('data-k') !== key) { g.setAttribute('data-k', key); g.innerHTML = cardinalGaugeRow(units.slice(0, 6)); }
@@ -55520,7 +55523,7 @@ window.CARDINAL_PLACES = {
   window.c37Case = function (id) {
     var t = [].filter.call(document.querySelectorAll('#screen-sentinel table'), function (x) { return x.offsetParent !== null && /SLA/.test(x.innerText); })[0]; if (!t) return;
     var tr = [].filter.call(t.querySelectorAll('tbody tr'), function (r) { return r.children[0] && r.children[0].textContent.trim() === id; })[0];
-    if (tr) { flash(tr); setTimeout(function () { tr.click(); }, 500); }
+    if (tr) { flash(tr); var b = [].filter.call(tr.querySelectorAll('button,a'), function (x) { return /^Open$/i.test(x.textContent.trim()); })[0]; setTimeout(function () { (b || tr).click(); }, 450); }
   };
   function watchman() {
     var s = document.getElementById('screen-sentinel'); if (!s || s.offsetParent === null) return;
@@ -55549,7 +55552,8 @@ window.CARDINAL_PLACES = {
       var b = by[m], done = b.p + b.f, pct = done ? b.p / done : 0;
       return { value: done ? Math.round(pct * 100) + '%' : '—', pct: done ? Math.max(0.06, pct) : 0.06, color: !done ? '#a78bfa' : b.f ? '#ef4444' : '#22c55e', label: m, status: b.f ? b.f + ' Failed' : b.r ? b.r + ' Running' : 'All Passed', pillLabel: 'Tests', pillVal: b.p + ' of ' + (b.p + b.f + b.r) + ' passed', sub: m, go: 'c37Gen(' + JSON.stringify(m) + ')', onclick: 'c37Gen(' + JSON.stringify(m) + ')', delta: { d: 0, text: '' }, good: 'up', tip: 'Share of finished tests that passed for ' + m + '.' };
     });
-    place(list.parentNode === w ? list : list, 'c37-gen', units);
+    var blk = list; while (blk.parentNode && blk.parentNode !== w) blk = blk.parentNode;
+    place(blk, 'c37-gen', units);
   }
 
   // Trust Ledger certifications
