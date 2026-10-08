@@ -52969,7 +52969,8 @@ window.CARDINAL_PLACES = {
       ['Updated', 'Trust Ledger', 'Updated sharing for the sponsor bank view'], ['Opened', 'Watchman', 'Opened a case on %m'], ['Approved', 'Codex', 'Approved a customer-facing document tied to %m'], ['Changed', 'Genesis', 'Changed the synthetic cohort for %m to include thin-file applicants']
     ];
     for (var i = 0; i < n; i++) {
-      var hh = hash(key + '#' + i), tp = T[hh % T.length], t = new Date(p.joined.getTime() + span * ((hash('t' + key + i) % 10000) / 10000));
+      var TT = /scien|engineer|platform|head of fraud|data|model|\bml\b|\bcto\b/i.test(p.role || '') ? T : T.filter(function (x) { return /Approved|Viewed restricted|Exported|Commented|Logged|Opened/.test(x[0]); });
+      var hh = hash(key + '#' + i), tp = TT[hh % TT.length], t = new Date(p.joined.getTime() + span * ((hash('t' + key + i) % 10000) / 10000));
       var m = mn[(hh >> 5) % Math.max(1, mn.length)] || 'a model', c = cs[(hh >> 7) % Math.max(1, cs.length)] || 'a case';
       out.push({ t: t, core: tp[1], act: tp[0], what: tp[2].replace('%m', m).replace('%c', c), ref: /%c/.test(tp[2]) ? c : m, seal: sealOf(key + i) });
     }
@@ -53157,6 +53158,7 @@ window.CARDINAL_PLACES = {
     out.sort(function (a, b) { return b.t - a.t; });
     return (CACHE[key] = out);
   }
+  window.cardinalEchoEvents = function () { return allEvents(); };
   function pCores() {
     var core = X.bucket === 'x-core-all' ? '' : X.bucket.replace('x-core-', '');
     var list = allEvents().filter(function (e) { return !core || e.core === core; });
@@ -53867,6 +53869,56 @@ window.CARDINAL_PLACES = {
       c.__pg = 1; c.style.setProperty('background', '#fff', 'important'); c.style.setProperty('border', '1px solid rgba(26,24,21,.06)', 'important'); c.style.setProperty('border-radius', '14px', 'important'); c.style.setProperty('box-shadow', '0 1px 3px rgba(26,24,21,.06),0 8px 20px rgba(26,24,21,.06)', 'important'); c.style.setProperty('padding', '16px', 'important'); c.style.marginBottom = '12px';
     });
   }, 1200);
+})();
+
+</script>
+
+<script data-p="p28_evereport">
+// 10/7 (Brittany: "not everybody has access to Echo, so Eve gives a report on what happened in a time period").
+// Ask Eve "What happened in Atonement last month?" (or this week, last quarter, this year, since a date) and she answers
+// from the sealed Echo record: counts, the most important events, who did them, and where to see the full list.
+(function () {
+  var CORES = ['Eden', 'Obsidian', 'Genesis', 'Atonement', 'Halo', 'Watchman', 'Codex', 'Compliance', 'Trust Ledger', 'Echo'];
+  var MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  function fd(d) { return MON[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear(); }
+  function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;'); }
+  function period(q) {
+    var now = new Date(), from, label;
+    if (/today/.test(q)) { from = new Date(now.getFullYear(), now.getMonth(), now.getDate()); label = 'today'; }
+    else if (/(this|past|last) week|7 days/.test(q)) { from = new Date(now - 7 * 864e5); label = 'in the last 7 days'; }
+    else if (/(last|past) quarter|90 days/.test(q)) { from = new Date(now - 90 * 864e5); label = 'in the last 90 days'; }
+    else if (/this year|year to date|ytd/.test(q)) { from = new Date(now.getFullYear(), 0, 1); label = 'this year'; }
+    else if (/(last|past) year/.test(q)) { from = new Date(now - 365 * 864e5); label = 'in the last 12 months'; }
+    else { var m = q.match(/since (\w+ \d{1,2}(, \d{4})?|\d{4}-\d{2}-\d{2})/); if (m && !isNaN(Date.parse(m[1]))) { from = new Date(m[1]); label = 'since ' + fd(from); } else { from = new Date(now - 30 * 864e5); label = 'in the last 30 days'; } }
+    return { from: from, to: now, label: label };
+  }
+  function answer(text) {
+    var q = text.toLowerCase();
+    if (!/what happened|what changed|report|recap|summar|activity|who did/.test(q) || !window.cardinalEchoEvents) return null;
+    var core = CORES.filter(function (c) { return q.indexOf(c.toLowerCase()) > -1 || (c === 'Watchman' && /sentinel/.test(q)); })[0] || null;
+    var p = period(q), all = cardinalEchoEvents().filter(function (e) { return e.t >= p.from && e.t <= p.to && (!core || e.core === core); });
+    var where = core ? 'in ' + core : 'across all cores';
+    if (!all.length) return 'Nothing was recorded ' + where + ' ' + p.label + ' (' + fd(p.from) + ' to ' + fd(p.to) + ').';
+    var count = function (a) { return all.filter(function (e) { return e.act === a; }).length; };
+    var people = {}; all.forEach(function (e) { people[e.who] = (people[e.who] || 0) + 1; });
+    var topPeople = Object.keys(people).sort(function (a, b) { return people[b] - people[a]; }).slice(0, 3);
+    var highlights = all.slice().sort(function (a, b) { var w = function (e) { return (/blocked/i.test(e.act) ? 3 : /Approved/.test(e.act) ? 2 : /Changed|Updated/.test(e.act) ? 1 : 0); }; return w(b) - w(a) || b.t - a.t; }).slice(0, 4);
+    return '<strong>' + all.length + ' sealed records ' + where + ' ' + p.label + '</strong> (' + fd(p.from) + ' to ' + fd(p.to) + ').' +
+      '<ul style="margin:6px 0 0 16px;padding:0">' +
+      '<li>' + [[count('Changed'), 'change'], [count('Approved'), 'approval'], [count('Tried to change (blocked)'), 'blocked attempt'], [count('Viewed restricted record'), 'restricted-record view']].map(function (x) { return x[0] + ' ' + x[1] + (x[0] === 1 ? '' : 's'); }).join(', ') + '.</li>' +
+      highlights.map(function (e) { return '<li>' + fd(e.t) + ': ' + esc(e.what) + ' (' + esc(e.who) + ')</li>'; }).join('') +
+      '<li>Most active: ' + topPeople.map(function (n) { return esc(n) + ' (' + people[n] + ')'; }).join(', ') + '.</li></ul>' +
+      '<div style="margin-top:6px">The full list, with filters by person and date, is in Echo under Cores' + (core ? ' > ' + core : '') + '.</div>';
+  }
+  var oSend = window.sendEveMessage;
+  if (typeof oSend === 'function') window.sendEveMessage = sendEveMessage = function () {
+    var inp = document.getElementById('eve-input'), text = inp ? (inp.value || '').trim() : '';
+    var a = text ? answer(text) : null;
+    if (!a) return oSend.apply(this, arguments);
+    try { addEveMsg('user', text); } catch (e) {}
+    inp.value = '';
+    setTimeout(function () { try { addEveMsg('eve', a); } catch (e) {} var box = document.getElementById('eve-messages'); if (box) box.scrollTop = box.scrollHeight; }, 600);
+  };
 })();
 
 </script>
