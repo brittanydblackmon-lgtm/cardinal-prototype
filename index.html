@@ -54702,26 +54702,100 @@ window.CARDINAL_PLACES = {
     var best = null; PARTS.slice(1).forEach(function (q) { var dv = (p[q[0]] || 0) - (h[i - 1][q[0]] || 0); if (q[0] !== k && (!best || Math.abs(dv) > Math.abs(best[1]))) best = [q[1], dv]; });
     return best && best[1] ? best[0] + ' ' + (best[1] > 0 ? 'rose' : 'fell') + ' ' + Math.abs(best[1]) + ' point' + (Math.abs(best[1]) === 1 ? '' : 's') + ' in the monthly recalculation' : 'No change: monthly recalculation confirmed the score';
   }
+  // 10/8 (Brittany: "the score can change more than once a day; the pop-up needs the whole story").
+  // Each month's move is split into the individual changes that caused it, each with a time, who did it
+  // (Adam, Eve, or a person), the model and case, notes, and the sign-off.
+  var CAUSE = {
+    fin: {
+      up: [
+        ['biasScore', 'Adam', 'agent', 'Shadow check on Credit Scoring v3.5 held the fairness ratio at 0.83 on 3,241 real decisions', 'Credit Scoring v3.5', 'FIN-1203', 'Nina Roberts: results hold with the default rate unchanged. Ready for the launch sign-offs.', 'Nina Roberts'],
+        ['biasScore', 'Lisa Torres', 'person', 'Another batch of the FIN-1203 cohort re-reviewed and approved', 'Credit Scoring v3.4', 'FIN-1203', 'Lisa Torres: re-review letters go out with plain-language reasons.', 'Riley Whitmore'],
+        ['complianceScore', 'Riley Whitmore', 'person', 'Approved the updated adverse action notice wording', 'Credit Scoring v3.4', 'FIN-1203', 'Riley Whitmore: every denial now names its specific reasons.', 'Morgan Hale'],
+        ['monitoringScore', 'Eve', 'agent', 'Turned on a drift monitor for Underwriting v4.1', 'Underwriting v4.1', 'FIN-2340', 'Eve: alerts go to Grace Liu if approvals shift more than 2% in a week.', 'Grace Liu'],
+        ['governanceScore', 'Jordan Ellis', 'person', 'Named as the approver for model launches', 'Credit Scoring v3.5', 'FIN-1203', 'Jordan Ellis: I will sign once Legal confirms the notice wording.', 'Riley Whitmore'],
+        ['transparencyScore', 'Nina Roberts', 'person', 'Updated the model card for Fraud Screening v2.7', 'Fraud Screening v2.7', 'FIN-2207', 'Nina Roberts: added the geography features and their limits.', 'Lisa Torres'],
+        ['privacyScore', 'Morgan Hale', 'person', 'Signed data retention terms for the meeting notes AI', 'Meeting notes AI', '', 'Morgan Hale: recordings delete after 30 days.', 'Riley Whitmore'],
+        ['fraudScore', 'Adam', 'agent', 'Obsidian blocked a synthetic identity ring: 47 applications from one device', 'Fraud Screening v2.7', 'FIN-2207', 'Adam: $1.2M protected. Pattern added to the fraud model.', 'Lisa Torres']
+      ],
+      down: [
+        ['biasScore', 'Eve', 'agent', 'Eden flagged ZIP code as a stand-in for race in Credit Scoring v3.4 (correlation 0.82)', 'Credit Scoring v3.4', 'FIN-1203', 'Eve: 1,203 applicants may have been denied loans they qualify for. Case opened.', 'Riley Whitmore'],
+        ['complianceScore', 'Riley Whitmore', 'person', 'An Eve flag on the Collections AI was dismissed without a written reason', 'Collections AI v1.3', 'FIN-0842', 'Eve: a reason is required for every dismissed flag. This one is still open.', 'Morgan Hale'],
+        ['monitoringScore', 'Adam', 'agent', 'Found drift in the applicant data feed: 2 missing fields', 'Underwriting v4.1', 'FIN-2340', 'Adam: filled from the source; owner reminded.', 'Grace Liu'],
+        ['governanceScore', 'Eve', 'agent', 'A Collections AI message batch went out without its sign-off', 'Collections AI v1.3', 'FIN-0842', 'Eve: batch rolled back; sign-off step made required.', 'Riley Whitmore'],
+        ['fraudScore', 'Eve', 'agent', 'Fraud Screening v2.7 flagged more applicants in the same ZIP codes', 'Fraud Screening v2.7', 'FIN-2207', 'Eve: same geography signal as the credit model; review opened.', 'Lisa Torres'],
+        ['transparencyScore', 'Adam', 'agent', 'Pre-qual Chatbot gave 3 wrong APR answers', 'Pre-qual Chatbot (vendor)', '', 'Adam: vendor patch requested; wrong answers blocked meanwhile.', 'Hannah Brooks']
+      ]
+    }
+  };
+  function causes(o) {
+    if (CAUSE[o]) return CAUSE[o];
+    var d = (window.CARDINAL_DATA || {})[o] || {}, m = d.primaryModel || 'the model', c = String(d.primaryCase || '').replace(/^#/, '');
+    return { up: [['biasScore', 'Adam', 'agent', 'Shadow check on the fix for ' + m + ' held fairness above the line', m, c, 'Adam: ready for sign-off.', 'Compliance lead'], ['complianceScore', 'Compliance lead', 'person', 'Approved updated notices for ' + m, m, c, 'Notices name specific reasons.', 'Legal'], ['monitoringScore', 'Eve', 'agent', 'Turned on a drift monitor for ' + m, m, c, 'Eve: alerts go to the model owner.', 'Model owner']],
+      down: [['biasScore', 'Eve', 'agent', 'Eden flagged a stand-in for a protected trait in ' + m, m, c, 'Eve: case opened.', 'Compliance lead'], ['monitoringScore', 'Adam', 'agent', 'Found drift in a data feed for ' + m, m, c, 'Adam: owner reminded.', 'Model owner']] };
+  }
+  var PNAME = {}; PARTS.forEach(function (q) { PNAME[q[0]] = q[1]; });
+  function seedOf(s) { var x = 7; for (var i = 0; i < s.length; i++) x = (x * 31 + s.charCodeAt(i)) % 100003; return x; }
+  function shEvents(h, k) {
+    var v = function (p) { return p[k] != null ? p[k] : p.score; }, C = causes(org()), out = [], now = new Date(), rot = {};
+    h.forEach(function (p, i) {
+      if (!i) return;
+      var D = v(p) - v(h[i - 1]), sd = seedOf(org() + k + p.month), extra = sd % 3 === 0 ? 1 : 0, steps = [];
+      for (var a = 0; a < Math.abs(D); a++) steps.push(D > 0 ? 1 : -1);
+      if (!D || extra) { steps.push(1); steps.push(-1); }
+      for (var z = steps.length - 1; z > 0; z--) { var j = (sd + z * 7) % (z + 1), t = steps[z]; steps[z] = steps[j]; steps[j] = t; }
+      var mi = MON.indexOf(String(p.month).slice(0, 3)), yr = +String(p.month).slice(-4), last = new Date(yr, mi + 1, 0).getDate();
+      var cur = v(h[i - 1]), dayCap = (yr === now.getFullYear() && mi === now.getMonth()) ? now.getDate() : last;
+      steps.forEach(function (st, n) {
+        var day = Math.min(dayCap, 2 + Math.floor((n + 1) * (dayCap - 2) / (steps.length + 1)) + (n % 2 && sd % 2 ? 0 : 0));
+        if (n > 0 && (sd + n) % 3 === 0) day = out[out.length - 1].t.getDate();
+        var hr = 8 + (sd + n * 5) % 10, mn = (sd * (n + 3)) % 60, t = new Date(yr, mi, day, hr, mn);
+        if (out.length && out[out.length - 1].t >= t && out[out.length - 1].t.getMonth() === mi) t = new Date(out[out.length - 1].t.getTime() + (90 + sd % 120) * 60000);
+        if (t.getHours() >= 19) t.setHours(17, 20 + n * 9 % 40); if (t.getHours() < 8) t.setHours(8, 10); if (c && c[2] === 'person' || true) { if (t.getDay() === 0) t.setDate(t.getDate() + 1); if (t.getDay() === 6) t.setDate(t.getDate() - 1); }
+        if (t > now) t = new Date(now.getTime() - (steps.length - n) * 47 * 60000);
+        var pool = (st > 0 ? C.up : C.down).filter(function (c) { return !/stand-in for race|stand-in for a protected trait/.test(c[3]); }), pk = pool.filter(function (c) { return k === 'score' || c[0] === k; }); if (!pk.length) pk = pool;
+        var ck = (st > 0 ? 'u' : 'd') + k; rot[ck] = (rot[ck] == null ? sd % pk.length : rot[ck] + 1); var c = pk[rot[ck] % pk.length];
+        var ann = p.annotation ? (typeof p.annotation === 'object' ? p.annotation.summary : p.annotation) : null;
+        var text = ann && n === 0 ? ann : c[3];
+        var oldEra = yr * 12 + mi < 2026 * 12 + 1, fix = function (x) { return !oldEra || !x ? x : String(x).replace(/v3\.5/g, 'v3.3').replace(/v3\.4/g, 'v3.2').replace(/FIN-1203/g, 'FIN-PRE1203').replace(/1,203 applicants/g, '412 applicants').replace(/ZIP code as a stand-in for race/g, 'a co-applicant income feature as a stand-in for protected traits').replace(/\(correlation 0\.82\)/g, '(correlation 0.79)').replace(/the fairness ratio at 0\.83 on 3,241/g, 'the fairness ratio above 0.80 on 2,900'); };
+        c = c.map(fix); text = fix(text);
+        if (ann && n === 0) { var A = String(ann); c = [k !== 'score' ? k : /exam|cfpb|packet|filed|cert/i.test(A) ? 'complianceScore' : /fair|zip|proxy|di |disparate|caught|flag/i.test(A) ? 'biasScore' : /shadow|rollout|traffic|deploy/i.test(A) ? 'monitoringScore' : 'governanceScore', /exam|cfpb|cert/i.test(A) ? 'Riley Whitmore' : 'Eve', /exam|cfpb|cert/i.test(A) ? 'person' : 'agent', A, (A.match(/Credit(?: Scoring)? v\d\.\d/) || ['Credit Scoring v3.4'])[0].replace(/^Credit v/, 'Credit Scoring v'), oldEra ? 'FIN-PRE1203' : 'FIN-1203', 'Eve: pinned as a key moment in the score history and sealed for the exam file.', 'Riley Whitmore']; if (org() !== 'fin') { c[1] = 'Eve'; c[2] = 'agent'; c[5] = String(((window.CARDINAL_DATA || {})[org()] || {}).primaryCase || '').replace(/^#/, ''); c[4] = ((window.CARDINAL_DATA || {})[org()] || {}).primaryModel || c[4]; c[7] = 'Compliance lead'; } }
+        out.push({ t: t, from: cur, to: cur + st, ch: st, part: k === 'score' ? c[0] : k, who: c[1], kind: c[2], what: text, model: c[4], cs: c[5], note: c[6], signer: c[7], month: i, pinned: !!(ann && n === 0) });
+        cur += st;
+      });
+    });
+    return out.sort(function (a, b) { return b.t - a.t; });
+  }
+  function shTime(d) { var h = d.getHours(), mi = d.getMinutes(); return (h % 12 || 12) + ':' + (mi < 10 ? '0' : '') + mi + ' ' + (h < 12 ? 'AM' : 'PM'); }
   window.cardinalScoreLogHTML = function (h, k) {
-    var v = function (p) { return p[k] != null ? p[k] : p.score; }, signers = SH_SIGN[org()] || SH_SIGN.fin;
-    var rows = h.map(function (p, i) { return { p: p, i: i, ch: i ? v(p) - v(h[i - 1]) : 0, d: shWhen(p, i) }; }).reverse();
-    window.__shLog = { h: h, k: k };
-    return '<div style="font-size:12px;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:.5px;margin:4px 0 8px">Score change log · click any row for the full picture</div>' +
-      '<div class="ex-wrap"><table class="ex-tbl"><thead><tr><th>When</th><th>Score</th><th>Change</th><th>Why it moved</th><th>Reviewed by</th></tr></thead><tbody>' +
-      rows.map(function (x) { var c = x.ch > 0 ? '#15803D' : x.ch < 0 ? '#B91C1C' : '#475569'; return '<tr class="ex-click" style="cursor:pointer" onclick="cardinalScorePoint(' + x.i + ')"><td style="white-space:nowrap;color:#475569">' + fd(x.d) + '<div style="font-size:11px">' + shTm(x.d) + '</div></td><td style="white-space:nowrap;font-weight:800">' + (x.i ? v(h[x.i - 1]) + ' → ' : '') + v(x.p) + '</td><td style="font-weight:700;color:' + c + '">' + (x.ch > 0 ? '+' : '') + x.ch + '</td><td>' + esc(shWhy(h, x.i, k)) + (x.p.annotation ? ' <span style="font-size:10.5px;font-weight:700;color:#A16207">Pinned event</span>' : '') + '</td><td style="white-space:nowrap">' + esc(signers[x.i % signers.length]) + '</td></tr>'; }).join('') + '</tbody></table></div>';
+    var ev = shEvents(h, k); window.__shLog = { h: h, k: k, ev: ev };
+    var body = '', lastDay = '';
+    ev.forEach(function (e, i) {
+      var day = fd(e.t); if (day !== lastDay) { lastDay = day; var n = ev.filter(function (x) { return fd(x.t) === day; }).length; body += '<tr><td colspan="7" style="background:#ebe4d6;font-size:11px;font-weight:800;color:#1a1815;text-transform:uppercase;letter-spacing:.5px;padding:7px 12px">' + esc(day) + (n > 1 ? ' · ' + n + ' changes' : '') + '</td></tr>'; }
+      var c = e.ch > 0 ? '#15803D' : '#B91C1C', wc = e.kind === 'agent' ? '#6d28d9' : '#1a1815';
+      body += '<tr class="ex-click" style="cursor:pointer" title="Open the full story" onclick="cardinalScorePoint(' + i + ')"><td style="white-space:nowrap;color:#475569">' + shTime(e.t) + '</td><td style="white-space:nowrap;font-weight:800">' + e.from + ' → ' + e.to + '</td><td style="font-weight:700;color:' + c + '">' + (e.ch > 0 ? '+' : '') + e.ch + '</td><td style="white-space:nowrap">' + esc(PNAME[e.part] || '') + '</td><td><div style="font-weight:600;color:#1a1815">' + esc(e.what) + (e.pinned ? ' <span style="font-size:10.5px;font-weight:700;color:#A16207">Pinned event</span>' : '') + '</div></td><td style="white-space:nowrap;font-weight:700;color:' + wc + '">' + esc(e.who) + (e.kind === 'agent' ? ' <span style="font-size:10px;font-weight:600">(AI)</span>' : '') + '</td><td style="white-space:nowrap">' + esc(e.cs || e.model || '') + '</td></tr>';
+    });
+    return '<div style="font-size:12px;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:.5px;margin:4px 0 8px">Score change log · every change, as it happened · click any row for the full story</div>' +
+      '<div class="ex-wrap"><table class="ex-tbl"><thead><tr><th>Time</th><th>Score</th><th>Change</th><th>Part</th><th>What happened</th><th>Who</th><th>Case or model</th></tr></thead><tbody>' + body + '</tbody></table></div>';
   };
   window.cardinalScorePoint = function (i) {
-    var L = window.__shLog; if (!L) return; var h = L.h, k = L.k, p = h[i], prev = i ? h[i - 1] : null, d = shWhen(p, i), signers = SH_SIGN[org()] || SH_SIGN.fin;
-    var lbl = PARTS.filter(function (q) { return q[0] === k; })[0][1], val = function (q, x) { return x ? (x[q] != null ? x[q] : x.score) : null; };
-    var seal = '0x' + hex(org() + p.month + k).slice(0, 24);
+    var L = window.__shLog; if (!L || !L.ev) return; var e = L.ev[i], h = L.h, k = L.k, p = h[e.month], prev = h[e.month - 1];
+    var lbl = PNAME[k] || 'Trust Score', val = function (q, x) { return x ? (x[q] != null ? x[q] : x.score) : null; };
+    var seal = '0x' + hex(org() + e.t.getTime() + e.what).slice(0, 24), rec = 'echo-' + org().toUpperCase() + '-TS-' + String(e.t.getTime()).slice(-6);
+    var J = function (x) { return esc(JSON.stringify(x)); };
+    var box = function (title, inner, col) { return '<div style="background:#fff;border-radius:12px;padding:12px 14px;margin-top:10px"><div style="font-size:11px;font-weight:800;color:' + (col || '#6d28d9') + ';text-transform:uppercase;letter-spacing:.5px">' + title + '</div><div style="font-size:13px;margin-top:4px;line-height:1.5">' + inner + '</div></div>'; };
     var m = document.createElement('div'); m.id = 'sh-pop'; m.style.cssText = 'position:fixed;inset:0;z-index:10000;background:rgba(26,24,21,.45);display:flex;align-items:center;justify-content:center;padding:16px';
-    m.onclick = function (e) { if (e.target === m) m.remove(); };
-    m.innerHTML = '<div style="background:#f4efe6;border-radius:16px;box-shadow:0 24px 60px rgba(0,0,0,.3);width:min(680px,100%);max-height:90vh;overflow:auto;padding:20px 22px;color:#1a1815">' +
-      '<div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start"><div><div style="font-size:12px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.5px">' + esc(lbl) + ' · ' + esc(p.month) + '</div><div style="font-size:30px;font-weight:800;margin-top:2px">' + val(k, p) + '<span style="font-size:14px;color:#64748b"> / 100</span>' + (prev ? ' <span style="font-size:14px;font-weight:700;color:' + (val(k, p) - val(k, prev) >= 0 ? '#15803D' : '#B91C1C') + '">' + (val(k, p) - val(k, prev) >= 0 ? '+' : '') + (val(k, p) - val(k, prev)) + ' from ' + val(k, prev) + '</span>' : '') + '</div><div style="font-size:12.5px;color:#475569">Recalculated ' + fd(d) + ' at ' + shTm(d) + ' · reviewed by ' + esc(signers[i % signers.length]) + '</div></div><button type="button" onclick="document.getElementById(\'sh-pop\').remove()" style="font:inherit;font-size:12px;font-weight:700;background:#fff;border:1px solid rgba(26,24,21,.15);border-radius:9px;padding:6px 12px;cursor:pointer">Close</button></div>' +
-      '<div style="background:#fff;border-radius:12px;padding:12px 14px;margin-top:12px"><div style="font-size:11px;font-weight:800;color:#6d28d9;text-transform:uppercase;letter-spacing:.5px">Why it moved</div><div style="font-size:13px;margin-top:4px;line-height:1.5">' + esc(shWhy(h, i, k)) + '</div></div>' +
-      '<div style="background:#fff;border-radius:12px;overflow:hidden;margin-top:10px"><table style="width:100%;border-collapse:collapse;font-size:12.5px"><thead><tr><th style="text-align:left;font-size:10.5px;color:#64748b;text-transform:uppercase;padding:8px 14px;background:#ebe4d6">Part</th><th style="text-align:right;font-size:10.5px;color:#64748b;text-transform:uppercase;padding:8px 14px;background:#ebe4d6">That month</th><th style="text-align:right;font-size:10.5px;color:#64748b;text-transform:uppercase;padding:8px 14px;background:#ebe4d6">Change</th></tr></thead><tbody>' +
-      PARTS.map(function (q, n) { var a = val(q[0], p), b = prev ? val(q[0], prev) : null, dv = b == null ? 0 : a - b; return '<tr style="background:' + (n % 2 ? '#f7f3ea' : '#fff') + (q[0] === k ? ';font-weight:800' : '') + '"><td style="padding:8px 14px">' + q[1] + '</td><td style="padding:8px 14px;text-align:right;font-weight:700;color:' + (a >= 80 ? '#15803D' : a >= 70 ? '#A16207' : '#B91C1C') + '">' + a + '</td><td style="padding:8px 14px;text-align:right;font-weight:700;color:' + (dv > 0 ? '#15803D' : dv < 0 ? '#B91C1C' : '#64748b') + '">' + (b == null ? '—' : (dv > 0 ? '+' : '') + dv) + '</td></tr>'; }).join('') + '</tbody></table></div>' +
-      '<div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-top:12px;font-size:11.5px;color:#64748b"><span>Certified that month: <strong style="color:' + (val('score', p) >= 80 ? '#15803D' : '#B91C1C') + '">' + (val('score', p) >= 80 && PARTS.slice(1).every(function (q) { return val(q[0], p) >= 70; }) ? 'Yes' : 'No') + '</strong> (80+ overall, no part under 70)</span><span style="font-family:monospace">Sealed ' + seal + '</span></div></div>';
+    m.onclick = function (ev) { if (ev.target === m) m.remove(); };
+    m.innerHTML = '<div style="background:#f4efe6;border-radius:16px;box-shadow:0 24px 60px rgba(0,0,0,.3);width:min(720px,100%);max-height:90vh;overflow:auto;padding:20px 22px;color:#1a1815">' +
+      '<div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start"><div><div style="font-size:12px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.5px">' + esc(lbl) + ' changed · ' + fd(e.t) + ' · ' + shTime(e.t) + '</div><div style="font-size:30px;font-weight:800;margin-top:2px">' + e.from + ' → ' + e.to + ' <span style="font-size:15px;font-weight:700;color:' + (e.ch > 0 ? '#15803D' : '#B91C1C') + '">' + (e.ch > 0 ? '+' : '') + e.ch + '</span></div><div style="font-size:12.5px;color:#475569">Part that moved: <strong>' + esc(PNAME[e.part] || lbl) + '</strong></div></div><button type="button" onclick="document.getElementById(\'sh-pop\').remove()" style="font:inherit;font-size:12px;font-weight:700;background:#fff;border:1px solid rgba(26,24,21,.15);border-radius:9px;padding:6px 12px;cursor:pointer">Close</button></div>' +
+      box('What happened', esc(e.what)) +
+      '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px">' +
+      box('Who did it', '<strong>' + esc(e.who) + '</strong>' + (e.kind === 'agent' ? ' · AI agent. A named person reviewed it before it counted.' : ' · team member'), '#1a1815') +
+      box('Related', (e.model ? '<a href="javascript:void(0)" onclick="document.getElementById(\'sh-pop\').remove();custModel(' + J(e.model) + ')" style="color:#1e3a8a;font-weight:700">' + esc(e.model) + '</a>' : '') + (e.cs ? (e.model ? '<br>' : '') + '<a href="javascript:void(0)" onclick="document.getElementById(\'sh-pop\').remove();try{echoEnterRoom(\'cases\');echoCaseGo(' + J(e.cs) + ')}catch(x){}" style="color:#1e3a8a;font-weight:700">Case ' + esc(e.cs) + '</a>' : '') || '—', '#1a1815') +
+      box('Reviewed and signed', '<strong>' + esc(e.signer) + '</strong><br><span style="color:#475569">' + fd(new Date(e.t.getTime() + 52 * 60000)) + ' · ' + shTime(new Date(e.t.getTime() + 52 * 60000)) + '</span>', '#15803D') + '</div>' +
+      box('Notes', esc(e.note) + '<div style="font-size:11.5px;color:#64748b;margin-top:6px">Eve: the ' + esc(lbl) + ' moved from ' + e.from + ' to ' + e.to + ' because ' + esc(PNAME[e.part] || lbl) + ' ' + (e.ch > 0 ? 'improved' : 'slipped') + '. ' + (e.to >= 80 ? 'Still above the 80 line.' : 'Below the 80 line.') + '</div>', '#A16207') +
+      '<div style="background:#fff;border-radius:12px;overflow:hidden;margin-top:10px"><table style="width:100%;border-collapse:collapse;font-size:12.5px"><thead><tr><th style="text-align:left;font-size:10.5px;color:#64748b;text-transform:uppercase;padding:8px 14px;background:#ebe4d6">All 7 parts, ' + esc(p.month) + '</th><th style="text-align:right;font-size:10.5px;color:#64748b;text-transform:uppercase;padding:8px 14px;background:#ebe4d6">Score</th><th style="text-align:right;font-size:10.5px;color:#64748b;text-transform:uppercase;padding:8px 14px;background:#ebe4d6">Month change</th></tr></thead><tbody>' +
+      PARTS.map(function (q, n) { var a = val(q[0], p), b = prev ? val(q[0], prev) : null, dv = b == null ? 0 : a - b; return '<tr style="background:' + (n % 2 ? '#f7f3ea' : '#fff') + (q[0] === e.part ? ';font-weight:800' : '') + '"><td style="padding:8px 14px">' + q[1] + (q[0] === e.part ? ' <span style="font-size:10.5px;color:#A16207">moved here</span>' : '') + '</td><td style="padding:8px 14px;text-align:right;font-weight:700;color:' + (a >= 80 ? '#15803D' : a >= 70 ? '#A16207' : '#B91C1C') + '">' + a + '</td><td style="padding:8px 14px;text-align:right;font-weight:700;color:' + (dv > 0 ? '#15803D' : dv < 0 ? '#B91C1C' : '#64748b') + '">' + (b == null ? '—' : (dv > 0 ? '+' : '') + dv) + '</td></tr>'; }).join('') + '</tbody></table></div>' +
+      '<div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-top:12px;font-size:11.5px;color:#64748b"><span>Echo record <span style="font-family:monospace">' + esc(rec) + '</span></span><span style="font-family:monospace">Sealed ' + seal + '</span></div></div>';
     document.body.appendChild(m);
   };
   window.__shDummy = function () {  };
