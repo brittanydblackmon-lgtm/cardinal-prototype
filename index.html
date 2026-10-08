@@ -51777,6 +51777,7 @@ window.CARDINAL_PLACES = {
     if (!tiles.length) return;
     var data = tiles.map(function (t) { return { value: t.children[0].textContent.trim(), label: t.children[1].textContent.trim(), click: t.getAttribute('onclick') }; }).filter(function (x, i, a) { return a.findIndex(function (y) { return y.label === x.label; }) === i; }).slice(0, 5);
     data.forEach(function (x) { var tb = [].filter.call(document.querySelectorAll('#screen-cardinallibrary .lib-tab'), function (b) { return b.textContent.trim().toLowerCase().indexOf(String(x.label).toLowerCase()) === 0; })[0]; var m = tb && tb.textContent.match(/\u00b7\s*(\d+)/); if (m) x.value = m[1]; });
+    if (window.cardinalCustomerTotal && window.CARDINAL_PEOPLE_CFG) { var cc = CARDINAL_PEOPLE_CFG[window.currentOrg || 'fin'] || CARDINAL_PEOPLE_CFG.fin, ct = cardinalCustomerTotal(); data.unshift({ value: ct >= 1e6 ? (ct / 1e6).toFixed(1) + 'M' : ct.toLocaleString(), label: cc.word, click: 'libShowCustomers()' }); }
     var key = JSON.stringify(data) + (window.currentOrg || ''); if (top.getAttribute('data-rk') === key && top.querySelector('.cr-wrap')) return; top.setAttribute('data-rk', key); top.style.display = 'block';
     var cols = [INK, '#1d4ed8', '#0f766e', YEL, GRN];
     top.innerHTML = '<div class="card" style="padding:20px 22px;margin:0 0 4px">' + cardinalRings(data.map(function (x, i) { return { value: x.value, label: x.label, color: cols[i % cols.length], pct: Math.min(1, 0.25 + num(x.value) / 16), onclick: x.click || '' }; })) + '</div>';
@@ -53046,7 +53047,7 @@ window.CARDINAL_PLACES = {
     cores: [['x-core-all', 'All cores']].concat(['Eden', 'Obsidian', 'Genesis', 'Atonement', 'Halo', 'Watchman', 'Codex', 'Compliance', 'Trust Ledger', 'Echo'].map(function (c) { return ['x-core-' + c, c]; })),
     cases: [['x-cases', 'All cases'], ['x-casehist', 'Case history'], ['conversations', 'Conversations'], ['ignored', 'Ignored flags']],
     models: [['x-models', 'Models and AI systems'], ['lineage', 'Version lineage']],
-    people: [['x-people', 'Everyone'], ['peoplelog', 'People log'], ['pmprofiles', 'Passport profiles']],
+    people: [['x-people', 'Employees'], ['x-customers', 'Customers'], ['peoplelog', 'Employee activity log'], ['pmprofiles', 'Passport profiles']],
     decisions: [['receipts', 'Decision receipts']],
     wb: [['whistleblower', 'Sealed reports']],
     desk: [['x-pins', 'Pinned memories'], ['myworkspace', 'My notes and activity']]
@@ -53054,6 +53055,7 @@ window.CARDINAL_PLACES = {
   var NATIVE_FIRST = { cores: 'memories', hall: 'memories', cases: 'conversations', models: 'lineage', people: 'peoplelog', decisions: 'receipts', wb: 'whistleblower', desk: 'myworkspace' };
   var X = { room: 'hall', bucket: 'memories', detail: null, f: {}, page: 0 };
   window.__echoX = 1;
+  window.__echoXState = X;
   var oEnter = window.echoEnterRoom;
   window.echoEnterRoom = echoEnterRoom = function (id) { X.room = ROOMS[id] ? id : 'hall'; echoGo(ROOMS[X.room][0][0]); };
   window.echoGo = function (b) {
@@ -53089,8 +53091,9 @@ window.CARDINAL_PLACES = {
     var from = f.from ? new Date(f.from) : null, to = f.to ? new Date(f.to + 'T23:59:59') : null;
     var rows = list.filter(function (e) { return q(e) && (!f.year || String(e.t.getFullYear()) === f.year) && (!f.core || e.core === f.core) && (!f.act || e.act === f.act) && (!f.ver || e.ver === f.ver) && (!f.who || e.who === f.who) && (!from || e.t >= from) && (!to || e.t <= to); });
     var page = rows.slice(X.page * per, X.page * per + per);
+    window.__exPage = page; window.__exCtx = X.detail ? X.detail : { kind: X.bucket };
     return '<div class="ex-wrap"><table class="ex-tbl"><thead><tr>' + cols.map(function (c) { return '<th>' + c[0] + '</th>'; }).join('') + '</tr></thead><tbody>' +
-      (page.map(function (e) { return '<tr>' + cols.map(function (c) { return '<td>' + c[1](e) + '</td>'; }).join('') + '</tr>'; }).join('') || '<tr><td colspan="' + cols.length + '" style="color:#64748b">Nothing matches.</td></tr>') +
+      (page.map(function (e, i) { return '<tr class="ex-click" title="Open the full record" onclick="if(!event.target.closest(\'a\'))echoRecord(' + i + ')">' + cols.map(function (c) { return '<td>' + c[1](e) + '</td>'; }).join('') + '</tr>'; }).join('') || '<tr><td colspan="' + cols.length + '" style="color:#64748b">Nothing matches.</td></tr>') +
       '</tbody></table></div>' + pager(rows.length, per);
   }
 
@@ -53108,7 +53111,7 @@ window.CARDINAL_PLACES = {
         timelineTable(ev, [['When', function (e) { return '<span style="white-space:nowrap;color:#475569">' + fd(e.t) + '</span>'; }], ['Action', function (e) { return pill(e.act, ACT_COL[e.act] || ACT_COL.Logged); }], ['Core', function (e) { return coreTag(e.core); }], ['What happened', function (e) { return esc(e.what); }], ['Sealed', function (e) { return '<span style="font-family:monospace;font-size:11px;color:#64748b">' + esc(e.seal) + '</span>'; }]]);
     }
     var ps = people().map(function (p) { var ev = personEvents(p); return { p: p, n: ev.length, last: ev[0] }; }).filter(function (x) { return q(x.p); });
-    return '<div class="ex-note">Everyone at ' + esc(companyName()) + ' who has touched an AI system. Click a name for everything they have done, back to the day they joined.</div>' +
+    return '<div class="ex-note">Employees: everyone at ' + esc(companyName()) + ' who has touched an AI system. Click a name for everything they have done, back to the day they joined.</div>' +
       '<div class="ex-bar">' + search('Search people by name or role') + '</div>' +
       '<div class="ex-wrap"><table class="ex-tbl"><thead><tr><th>Person</th><th>Role</th><th>Joined</th><th>Records</th><th>Last activity</th><th>Access</th></tr></thead><tbody>' +
       ps.map(function (x) { return '<tr class="ex-click" onclick="echoOpen(\'person\',' + esc(JSON.stringify(x.p.name)) + ')"><td><div class="ex-name">' + esc(x.p.name) + '</div></td><td>' + esc(x.p.role) + '</td><td style="white-space:nowrap">' + fd(x.p.joined) + '</td><td>' + x.n + '</td><td><div>' + esc(x.last ? x.last.what : '') + '</div><div class="ex-sub">' + (x.last ? fd(x.last.t) : '') + '</div></td><td>' + esc(x.p.access) + '</td></tr>'; }).join('') + '</tbody></table></div>';
@@ -53121,7 +53124,7 @@ window.CARDINAL_PLACES = {
         '<div class="ex-head"><div><div style="font-size:17px;font-weight:700;color:#1a1815">' + esc(c.id) + ': ' + esc(c.title) + '</div><div class="ex-sub">' + esc(c.model || '') + ' · Owner ' + esc(c.owner) + ' · Opened ' + fd(c.opened) + (c.closed ? ' · Closed ' + fd(c.closed) : ' · Still open') + '</div></div>' +
         '<div class="ex-chips"><div class="ex-chip"><b>' + tl.length + '</b><span>Records</span></div><div class="ex-chip"><b>' + Math.max(1, Math.round(((c.closed || NOW) - c.opened) / 864e5)) + '</b><span>Days</span></div></div></div>' +
         '<div class="ex-wrap"><table class="ex-tbl"><thead><tr><th>When</th><th>Stage</th><th>Core</th><th>What happened</th><th>Sealed</th></tr></thead><tbody>' +
-        tl.map(function (e) { return '<tr><td style="white-space:nowrap;color:#475569">' + fd(e.t) + '</td><td>' + pill(e.stage, ['#1e3a8a', '#eff6ff']) + '</td><td>' + coreTag(e.core) + '</td><td>' + esc(e.what) + '</td><td style="font-family:monospace;font-size:11px;color:#64748b">' + esc(e.seal) + '</td></tr>'; }).join('') + '</tbody></table></div>';
+        (window.__exPage = tl.map(function (e) { return { t: e.t, core: e.core, act: e.stage, who: c.owner, what: e.what, seal: e.seal, ref: c.id }; }), '') + tl.map(function (e, i) { return '<tr class="ex-click" title="Open the full record" onclick="echoRecord(' + i + ')"><td style="white-space:nowrap;color:#475569">' + fd(e.t) + '</td><td>' + pill(e.stage, ['#1e3a8a', '#eff6ff']) + '</td><td>' + coreTag(e.core) + '</td><td>' + esc(e.what) + '</td><td style="font-family:monospace;font-size:11px;color:#64748b">' + esc(e.seal) + '</td></tr>'; }).join('') + '</tbody></table></div>';
     }
     var all = caseRows(), f = X.f, per = 25;
     var rows = all.filter(function (c) { return q(c) && (!f.year || String(c.opened.getFullYear()) === f.year) && (!f.status || c.status === f.status) && (!f.owner || c.owner === f.owner); });
@@ -53215,7 +53218,7 @@ window.CARDINAL_PLACES = {
     if (mine) {
       var ae = document.activeElement, focusPh = keepFocus && ae && ae.tagName === 'INPUT' && panel.contains(ae) ? ae.placeholder : null, caret = focusPh ? ae.selectionStart : 0;
       var slot = document.getElementById('echo-case-history'), slotKeep = X.bucket === 'x-casehist' && slot && slot.parentNode && slot.parentNode.id === 'echo-x-casehist-slot';
-      if (!slotKeep) panel.innerHTML = X.bucket.indexOf('x-core-') === 0 ? pCores() : X.bucket === 'x-people' ? pPeople() : X.bucket === 'x-cases' ? pCases() : X.bucket === 'x-models' ? pModels() : X.bucket === 'x-pins' ? pPins() : X.bucket === 'x-score' ? pScore() : X.bucket === 'x-casehist' ? pCaseHist() : '';
+      if (!slotKeep) panel.innerHTML = X.bucket === 'x-customers' ? (window.cardinalCustomerDirectory ? cardinalCustomerDirectory('echo') : '') : X.bucket.indexOf('x-core-') === 0 ? pCores() : X.bucket === 'x-people' ? pPeople() : X.bucket === 'x-cases' ? pCases() : X.bucket === 'x-models' ? pModels() : X.bucket === 'x-pins' ? pPins() : X.bucket === 'x-score' ? pScore() : X.bucket === 'x-casehist' ? pCaseHist() : '';
       if (X.bucket === 'x-score') setTimeout(drawScore, 30);
       if (X.bucket === 'x-casehist') { var b = document.getElementById('echo-case-history'); if (b) b.removeAttribute('data-k'); }
       if (focusPh) { var ni = [].filter.call(panel.querySelectorAll('input'), function (i) { return i.placeholder === focusPh; })[0]; if (ni) { ni.focus(); try { ni.setSelectionRange(caret, caret); } catch (e) {} } }
@@ -53924,6 +53927,349 @@ window.CARDINAL_PLACES = {
     inp.value = '';
     setTimeout(function () { try { addEveMsg('eve', a); } catch (e) {} var box = document.getElementById('eve-messages'); if (box) box.scrollTop = box.scrollHeight; }, 600);
   };
+})();
+
+</script>
+
+<script data-p="p29_echo2">
+// 10/7 (Brittany, Echo):
+//   - The sections bar is one beige line that slides sideways; only the section you are in turns white.
+//   - Every logged row opens a pop-up with everything: date and time, what changed (before and after), who asked,
+//     who double-checked, who signed off, the edit history, and the seal.
+//   - "Who can open Echo" sits under the Echo at a glance box.
+//   - Whistleblower: sealed routing receipts are listed (they said 0 while 2 reports were open), explained, clickable.
+(function () {
+  function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;'); }
+  function hash(s) { var h = 0x811c9dc5; s = String(s); for (var i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } h ^= h >>> 15; h = Math.imul(h, 0x2c1b3c6d); h ^= h >>> 12; return Math.abs(h); }
+  var MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  function fdt(d) { d = new Date(d); var h = d.getHours(), m = d.getMinutes(); return MON[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear() + ' at ' + ((h % 12) || 12) + ':' + (m < 10 ? '0' : '') + m + (h < 12 ? ' AM' : ' PM'); }
+  function org() { return window.currentOrg || 'fin'; }
+  var css = document.createElement('style');
+  css.textContent =
+    '#echo-rooms-bar{display:flex!important;flex-wrap:nowrap!important;overflow-x:auto!important;gap:6px!important;background:#ebe4d6!important;border-radius:14px!important;padding:6px!important;scrollbar-width:thin;scroll-snap-type:x proximity}' +
+    '#echo-rooms-bar>*{flex:0 0 auto!important;min-width:168px;scroll-snap-align:start;border-radius:10px!important;transition:background .15s,box-shadow .15s}' +
+    '#echo-rooms-bar>*.ex-on{background:#fff!important;box-shadow:0 1px 4px rgba(26,24,21,.12)!important;border-color:rgba(26,24,21,.12)!important}' +
+    '#echo-rooms-bar>*:not(.ex-on){background:transparent!important;box-shadow:none!important;border-color:transparent!important}' +
+    '#ex-rec{position:fixed;inset:0;z-index:10000;background:rgba(26,24,21,.45);display:flex;align-items:center;justify-content:center;padding:16px}' +
+    '#ex-rec .rb{background:#f4efe6;border-radius:18px;box-shadow:0 30px 80px rgba(0,0,0,.35);width:min(760px,100%);max-height:90vh;overflow:auto;padding:22px 24px}' +
+    '#ex-rec .rc{background:#fff;border-radius:12px;padding:14px 16px;margin-top:12px;box-shadow:0 1px 3px rgba(26,24,21,.06),0 8px 20px rgba(26,24,21,.05)}' +
+    '#ex-rec .rh{font-size:10.5px;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px}' +
+    '#ex-rec table{width:100%;border-collapse:collapse;font-size:12.5px}#ex-rec td,#ex-rec th{padding:7px 8px;border-bottom:1px solid rgba(26,24,21,.06);text-align:left;vertical-align:top}#ex-rec th{font-size:10.5px;color:#64748b;text-transform:uppercase}' +
+    '#ex-rec .step{display:grid;grid-template-columns:18px 1fr auto;gap:10px;padding:8px 0;border-bottom:1px solid rgba(26,24,21,.06);font-size:12.5px}#ex-rec .dot{width:10px;height:10px;border-radius:50%;margin-top:4px}' +
+    '#echo-access-card.ex-under{margin:-6px 0 16px!important;font-size:12px!important}' +
+    '.wb-rr{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:8px}.wb-rr th{font-size:10.5px;color:#64748b;text-transform:uppercase;text-align:left;padding:8px 10px;background:#f4efe6}.wb-rr td{padding:9px 10px;border-bottom:1px solid rgba(26,24,21,.06)}.wb-rr tbody tr{cursor:pointer}.wb-rr tbody tr:hover{background:#f7f3ea}';
+  document.head.appendChild(css);
+
+  function roster() { var cn = ((window.CARDINAL_DATA || {})[org()] || {}).org || ''; var ps = window.CARDINAL_PERSONAS ? (Array.isArray(CARDINAL_PERSONAS) ? CARDINAL_PERSONAS : Object.values(CARDINAL_PERSONAS)) : []; return ps.filter(function (p) { return p.org === cn; }); }
+  function roleOf(name) { var p = roster().filter(function (x) { return x.name === name; })[0]; return p ? p.role : /Core$|Eve|Adam|Ledger|Watchman|Exchange/.test(name) ? 'Cardinal system' : 'Team member'; }
+  function pick(list, h, not) { var l = list.filter(function (x) { return x.name !== not; }); return l.length ? l[h % l.length] : { name: 'Compliance reviewer', role: 'Compliance' }; }
+
+  // ── Full record pop-up ─────────────────────────────────────────────
+  window.echoRecord = function (i) {
+    var e = (window.__exPage || [])[i]; if (!e) return;
+    var h = hash(String(e.what) + e.t), t = new Date(e.t); if (!t.getHours() && !t.getMinutes()) t.setHours(8 + h % 10, (h >> 3) % 60);
+    var R = roster(), act = e.act || 'Logged', who = e.who || 'Cardinal';
+    var checker = pick(R, h >> 2, who), approver = pick(R.filter(function (p) { return /compliance|counsel|chief|officer|risk/i.test(p.role); }), h >> 5, who);
+    var mm = String(e.what).match(/[A-Z][\w-]*(?: [A-Z][\w-]*)* v\d+(?:\.\d+)?/), cs = String(e.what).match(/[A-Z]{2,4}-\d{3,4}/) || (e.ref && /-\d/.test(e.ref) ? [e.ref] : null);
+    var changes = [];
+    var thr = String(e.what).match(/from ([\d.]+%?) to ([\d.]+%?)/);
+    if (thr) changes.push(['Value', thr[1], thr[2]]);
+    if (/traffic/i.test(e.what)) changes.push(['Live traffic', '5% (shadow)', /blocked/i.test(act) ? '100% requested, not applied' : '25%']);
+    if (/test plan|counterfactual/i.test(e.what)) changes.push(['Test plan', '4 checks', '5 checks (added counterfactual)']);
+    if (/cohort/i.test(e.what)) changes.push(['Synthetic cohort', '1,000 applicants', '1,400 applicants (added thin-file)']);
+    if (/model card/i.test(e.what)) changes.push(['Model card', 'Version ' + (1 + h % 4), 'Version ' + (2 + h % 4)]);
+    if (/dismiss/i.test(e.what)) changes.push(['Flag status', 'Open', 'Dismiss requested, not applied (no reason given)']);
+    if (/sharing|share/i.test(e.what)) changes.push(['Sponsor bank view', 'Off', 'On (read-only, 30 days)']);
+    if (!changes.length && /Changed|Updated|Approved/.test(act)) changes.push(['Status', 'In review', 'Approved for next step']);
+    var blocked = /blocked/i.test(act), readOnly = /Viewed|Exported|Logged|Commented|Opened/.test(act) && !changes.length;
+    var t2 = new Date(t.getTime() + (40 + h % 140) * 60000), t3 = new Date(t.getTime() + (1 + h % 2) * 864e5 + (h % 300) * 60000);
+    var steps = [['#1e3a8a', (readOnly ? 'Recorded by' : 'Requested by') + ' <strong>' + esc(who) + '</strong> (' + esc(roleOf(who)) + ')', fdt(t)]];
+    if (!readOnly) steps.push(['#6d28d9', 'Double-checked by <strong>' + esc(checker.name) + '</strong> (' + esc(checker.role) + '): ' + (blocked ? 'confirmed it needs sign-off first' : 'matches the test results'), fdt(t2)]);
+    if (blocked) steps.push(['#DC2626', 'Blocked: waiting on <strong>General Counsel</strong> and <strong>Compliance</strong> sign-off. Nothing changed.', fdt(t2)]);
+    else if (!readOnly) steps.push(['#15803D', 'Signed off by <strong>' + esc(approver.name) + '</strong> (' + esc(approver.role) + ')', fdt(t3)]);
+    else steps.push(['#475569', 'No sign-off needed: this was a read or record-only action, and it was logged.', fdt(t)]);
+    var edits = [['Created', fdt(t), who]]; if (h % 3) edits.push(['Note added: "' + (blocked ? 'Resubmit after the exam packet is approved' : 'Linked to the exam evidence file') + '"', fdt(new Date(t.getTime() + 3 * 3600000)), checker.name]); if (h % 5 === 0) edits.push(['Correction added as a new record (the original stays sealed)', fdt(new Date(t.getTime() + 2 * 864e5)), who]);
+    var m = document.createElement('div'); m.id = 'ex-rec';
+    m.innerHTML = '<div class="rb"><div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start"><div><div style="font-size:11px;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:.6px">' + esc(e.core || 'Echo') + ' · ' + esc(act) + '</div><div style="font-size:17px;font-weight:700;color:#1a1815;margin-top:4px;line-height:1.35">' + esc(e.what) + '</div><div style="font-size:12px;color:#64748b;margin-top:4px">' + fdt(t) + ' · ' + esc(who) + ' (' + esc(roleOf(who)) + ')</div></div><button type="button" onclick="document.getElementById(\'ex-rec\').remove()" style="border:0;background:transparent;font-size:22px;cursor:pointer;color:#64748b" aria-label="Close">×</button></div>' +
+      '<div class="rc"><div class="rh">What changed</div>' + (changes.length ? '<table><thead><tr><th>Field</th><th>Before</th><th>After</th></tr></thead><tbody>' + changes.map(function (c) { return '<tr><td>' + esc(c[0]) + '</td><td>' + esc(c[1]) + '</td><td><strong>' + esc(c[2]) + '</strong></td></tr>'; }).join('') + '</tbody></table>' : '<div style="font-size:12.5px;color:#475569">Nothing was changed. This record shows what was viewed or logged, and when.</div>') + '</div>' +
+      '<div class="rc"><div class="rh">Review and sign-off</div>' + steps.map(function (s) { return '<div class="step"><span class="dot" style="background:' + s[0] + '"></span><span>' + s[1] + '</span><span style="color:#64748b;white-space:nowrap">' + s[2] + '</span></div>'; }).join('') + '</div>' +
+      '<div class="rc"><div class="rh">Edit history</div><table><tbody>' + edits.map(function (x) { return '<tr><td>' + esc(x[0]) + '</td><td style="white-space:nowrap;color:#64748b">' + x[1] + '</td><td>' + esc(x[2]) + '</td></tr>'; }).join('') + '</tbody></table><div style="font-size:11.5px;color:#64748b;margin-top:6px">Sealed records are never edited. Corrections are added as new records, so every version stays visible.</div></div>' +
+      '<div class="rc"><div class="rh">Seal</div><div style="font-size:12.5px;color:#1a1815">Seal <span style="font-family:monospace">' + esc(e.seal || '') + '</span> · sealed ' + fdt(t) + ' · verified by Trust Ledger</div>' + (mm || cs ? '<div style="font-size:12.5px;margin-top:6px">Related: ' + (mm ? '<strong>' + esc(mm[0]) + '</strong>' : '') + (mm && cs ? ' · ' : '') + (cs ? 'case <strong>' + esc(cs[0]) + '</strong>' : '') + '</div>' : '') + '</div></div>';
+    m.addEventListener('click', function (ev) { if (ev.target === m) m.remove(); });
+    var old = document.getElementById('ex-rec'); if (old) old.remove(); document.body.appendChild(m);
+  };
+
+  // ── Sections bar: one line, only the current section is white ───────
+  function roomOfTile(t) { if (t.id === 'echo-cores-tile') return 'cores'; if (t.id === 'echo-room-history' || /^Case history/.test((t.textContent || '').trim())) return 'casehist'; var m = (t.getAttribute('onclick') || '').match(/echoEnterRoom\('(\w+)'\)/); return m ? m[1] : null; }
+  function bar() {
+    var b = document.getElementById('echo-rooms-bar'); if (!b) return;
+    var X = window.__echoXState || {}, cur = X.bucket === 'x-casehist' ? 'casehist' : X.room;
+    [].forEach.call(b.children, function (t) {
+      var r = roomOfTile(t); t.classList.toggle('ex-on', r === cur);
+      if (r === 'hall' && !t.__ren) { var head = [].filter.call(t.querySelectorAll('*'), function (x) { return !x.children.length && /^Hallway$/.test((x.textContent || '').trim()); })[0]; if (head) { t.__ren = 1; head.textContent = 'All events'; } }
+    });
+  }
+  // ── "Who can open Echo" under the at-a-glance box ───────────────────
+  function access() {
+    var a = document.getElementById('echo-access-card'), h = document.getElementById('u-echo-hero'); if (!a || !h || !h.parentNode) return;
+    if (h.nextElementSibling !== a) h.parentNode.insertBefore(a, h.nextSibling);
+    a.classList.add('ex-under');
+  }
+  // ── Whistleblower routing receipts ──────────────────────────────────
+  window.wbReceipt = function (id, title, date) {
+    var h = hash(id), d = new Date(date || Date.now()), R = roster();
+    var lead = (R.filter(function (p) { return /compliance/i.test(p.role); })[0] || {}).name || 'Compliance lead', legal = (R.filter(function (p) { return /counsel/i.test(p.role); })[0] || {}).name || 'Legal';
+    var steps = [['Received anonymously', 'No name, email, or device is stored. Only the report text.', 0], ['Sealed in Echo', 'Seal ' + (h.toString(16) + 'a3f9c2').slice(0, 12) + '. It cannot be edited or deleted.', 2], ['Routed to the review committee', 'Leader: ' + lead + ' (Compliance). Backup: ' + legal + ' (Legal).', 6], ['Recusal check', 'Anyone named in the report is removed from its review automatically.', 7], ['Acknowledged to the reporter', 'The reporter sees "Review Committee", never individual names.', 30]];
+    var m = document.createElement('div'); m.id = 'ex-rec';
+    m.innerHTML = '<div class="rb"><div style="display:flex;justify-content:space-between;gap:12px"><div><div style="font-size:11px;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:.6px">Sealed routing receipt</div><div style="font-size:17px;font-weight:700;color:#1a1815;margin-top:4px">' + esc(id) + (title ? ' · ' + esc(title) : '') + '</div><div style="font-size:12px;color:#64748b;margin-top:4px">Proof the report was received, sealed, and sent to the right people, without showing who sent it.</div></div><button type="button" onclick="document.getElementById(\'ex-rec\').remove()" style="border:0;background:transparent;font-size:22px;cursor:pointer;color:#64748b">×</button></div>' +
+      '<div class="rc"><div class="rh">What happened to this report</div>' + steps.map(function (s) { return '<div class="step"><span class="dot" style="background:#15803D"></span><span><strong>' + s[0] + '.</strong> ' + esc(s[1]) + '</span><span style="color:#64748b;white-space:nowrap">' + fdt(new Date(d.getTime() + s[2] * 60000)) + '</span></div>'; }).join('') + '</div>' +
+      '<div class="rc"><div class="rh">Who can see this receipt</div><div style="font-size:12.5px;color:#334155;line-height:1.5">Legal, Compliance, and Admin. A regulator can verify the receipt exists and when it was sealed through Trust Ledger, without seeing the report or the reporter.</div></div></div>';
+    m.addEventListener('click', function (ev) { if (ev.target === m) m.remove(); });
+    var old = document.getElementById('ex-rec'); if (old) old.remove(); document.body.appendChild(m);
+  };
+  function wb() {
+    var c = document.getElementById('echo-tab-content-whistleblower'); if (!c || c.offsetParent === null) return;
+    var zero = [].filter.call(c.querySelectorAll('div,p,span'), function (x) { return !x.children.length && /0 whistleblower seals on file/.test(x.textContent || ''); })[0];
+    var reps = []; var seen = {}; (c.innerText.match(/WB-\d{4}-\d{4}-[A-Z0-9]+ · [^\n]+/g) || []).forEach(function (l) { var id = l.split(' · ')[0]; if (!seen[id]) { seen[id] = 1; reps.push([id, l.split(' · ')[1]]); } });
+    if (zero && reps.length && !zero.__wb) {
+      zero.__wb = 1;
+      var dates = (c.innerText.match(/REPORTER · ([A-Z]{3} \d{1,2}, \d{4})/g) || []).map(function (x) { return x.replace('REPORTER · ', ''); });
+      zero.outerHTML = '<div style="font-size:12.5px;color:#334155;margin:4px 0 6px"><strong>What is a sealed routing receipt?</strong> Proof that a report was received, sealed so no one can change it, and sent to the review committee, without revealing who sent it. Click one to see each step.</div>' +
+        '<table class="wb-rr"><thead><tr><th>Receipt</th><th>Report</th><th>Sealed</th><th>Routed to</th><th>Status</th></tr></thead><tbody>' + reps.map(function (r, i) { var d = dates[i] || ''; return '<tr onclick="wbReceipt(' + esc(JSON.stringify(r[0])) + ',' + esc(JSON.stringify(r[1])) + ',' + esc(JSON.stringify(d)) + ')"><td style="font-family:monospace">RR-' + r[0].slice(3) + '</td><td>' + esc(r[1]) + '</td><td style="white-space:nowrap">' + esc(d) + '</td><td>Review committee</td><td><span style="color:#A16207;font-weight:700">Under review</span></td></tr>'; }).join('') + '</tbody></table>';
+    }
+  }
+  setInterval(function () { var s = document.getElementById('screen-echo'); if (!s || s.offsetParent === null) return; bar(); access(); wb(); }, 400);
+})();
+
+</script>
+
+<script data-p="p30_customers">
+// 10/7 (Brittany: "if they have 4.5 million customers, show it... look up a person by name, email, ID, or decision
+// receipt... their whole history, like a Braze profile, and their Cardinal Passport"). A customer directory at real
+// scale, in the Library (Customers tab and circle) and in Echo (People > Customers). Each customer opens a profile:
+// accounts, every AI decision with its receipt, every message they received, data rights, and their Passport.
+(function () {
+  function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;'); }
+  function hash(s) { var h = 0x811c9dc5; s = String(s); for (var i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } h ^= h >>> 15; h = Math.imul(h, 0x2c1b3c6d); h ^= h >>> 12; return Math.abs(h); }
+  var MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  function fd(d) { d = new Date(d); return MON[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear(); }
+  function org() { return window.currentOrg || 'fin'; }
+  var CFG = {
+    fin: { word: 'Customers', one: 'customer', n: 4512880, pre: 'BWG', since: 2011, states: ['NY', 'NJ', 'CA', 'TX', 'FL', 'IL', 'GA', 'PA', 'OH', 'NC', 'AZ', 'CO', 'MA', 'WA'], products: ['Checking', 'Savings', 'Credit card', 'Personal loan', 'Auto loan', 'Credit line'], models: ['Credit Scoring v3.4', 'Fraud Screening v2.7', 'Auto Loan v2.1', 'Credit Line Increase v1.6', 'Marketing Propensity v4.5', 'Collections AI v1.3'] },
+    ad: { word: 'Personnel', one: 'service member', n: 24600, pre: 'ADS', since: 2014, states: ['CA', 'TX', 'FL', 'VA', 'AZ', 'NV', 'HI', 'NC'], products: ['Base assignment', 'Maintenance crew', 'Training track', 'Readiness program'], models: ['Personnel Assignment v2.4', 'Mission Readiness v1.2', 'Fleet Health v2.4'] },
+    health: { word: 'Patients', one: 'patient', n: 2184300, pre: 'STH', since: 2012, states: ['CA', 'NY', 'TX', 'FL', 'IL', 'PA', 'OH', 'MI'], products: ['Medical plan', 'Pharmacy', 'Dental', 'Vision'], models: ['Claims Adjudication v1.9', 'Prior Auth v1.5', 'Diagnosis Support v2.3'] },
+    fed: { word: 'Taxpayers', one: 'taxpayer', n: 12650000, pre: 'TXP', since: 2010, states: ['CA', 'TX', 'NY', 'FL', 'IL', 'PA', 'OH', 'GA', 'NC', 'MI'], products: ['Individual return', 'Self-employed', 'Payment plan', 'Refund'], models: ['IRS Tax Fraud Detection v3.1', 'Taxpayer Help Assistant'] }
+  };
+  window.CARDINAL_PEOPLE_CFG = CFG;
+  var FIRST = ['Maria', 'James', 'Aisha', 'David', 'Sofia', 'Michael', 'Keisha', 'Daniel', 'Priya', 'Luis', 'Emily', 'Andre', 'Hannah', 'Kevin', 'Grace', 'Omar', 'Rachel', 'Tyrone', 'Mei', 'Carlos', 'Olivia', 'Jamal', 'Fatima', 'Ethan', 'Nora', 'Diego', 'Chloe', 'Malik', 'Yuki', 'Brandon', 'Zoe', 'Hector', 'Leah', 'Samuel', 'Ana', 'Marcus', 'Imani', 'Victor', 'Lily', 'Tomas'];
+  var LAST = ['Gonzalez', 'Williams', 'Chen', 'Johnson', 'Patel', 'Rodriguez', 'Brown', 'Nguyen', 'Davis', 'Martinez', 'Thompson', 'Kim', 'Garcia', 'Robinson', 'Lopez', 'Walker', 'Hernandez', 'Lewis', 'Singh', 'Clark', 'Ramirez', 'Young', 'Wright', 'Okafor', 'Scott', 'Torres', 'Green', 'Adams', 'Baker', 'Rivera', 'Nelson', 'Hill', 'Campbell', 'Mitchell', 'Roberts', 'Carter', 'Phillips', 'Evans', 'Turner', 'Diaz'];
+  var CITY = { NY: 'Bronx', NJ: 'Newark', CA: 'Los Angeles', TX: 'Houston', FL: 'Miami', IL: 'Chicago', GA: 'Atlanta', PA: 'Philadelphia', OH: 'Columbus', NC: 'Charlotte', AZ: 'Phoenix', CO: 'Denver', MA: 'Boston', WA: 'Seattle', VA: 'Norfolk', NV: 'Las Vegas', HI: 'Honolulu', MI: 'Detroit' };
+  function featured() { var P = (typeof PM_PROFILES !== 'undefined' && PM_PROFILES[org()]) || {}; return (P.live || []).slice(0, 8); }
+  function person(i) {
+    var c = CFG[org()] || CFG.fin, F = featured();
+    var h = hash(org() + ':' + i), f = F[i];
+    var first = f ? f.name.split(' ')[0] : FIRST[h % FIRST.length], last = f ? f.name.split(' ').slice(1).join(' ') : LAST[(h >> 6) % LAST.length];
+    var st = f && org() === 'fin' ? 'NY' : c.states[(h >> 11) % c.states.length], since = new Date(c.since + (h % (2026 - c.since)), (h >> 4) % 12, 1 + (h >> 8) % 27);
+    var id = c.pre + '-' + String(1000000 + i).slice(1);
+    var prods = c.products.filter(function (p, k) { return k === 0 || ((h >> (k + 3)) & 1); });
+    var dec = f ? f.lastDecision : ((h >> 9) % 7 === 0 ? 'DENIED' : 'APPROVED');
+    var lastD = f ? f.lastDate : fd(new Date(2026, 6 + (h % 3), 1 + (h >> 5) % 27));
+    return { i: i, first: first, last: last, name: first + ' ' + last, id: id, email: (first[0] + last).toLowerCase() + (h % 90 + 10) + '@mail.example', phone: '(' + (200 + h % 700) + ') 555-' + String(1000 + (h >> 7) % 9000), st: st, city: CITY[st] || 'Springfield', since: since, prods: prods, lastDec: dec, lastDate: lastD, eid: f ? f.eid : null, featured: !!f, models: f ? f.models : [c.models[h % c.models.length], c.models[(h >> 3) % c.models.length]].filter(function (x, k, a) { return a.indexOf(x) === k; }), flagged: f ? f.status === 'Flagged' : (h % 23 === 0), cohort: f ? f.cohort : null };
+  }
+  function total() { var c = CFG[org()] || CFG.fin; var f = (window.CARDINAL_ORG_FACTS || {})[org()]; return (f && f.customers) || c.n; }
+  window.cardinalCustomerTotal = total;
+  var ST = {};
+  function state(ctx) { return ST[ctx] = ST[ctx] || { q: '', page: 0 }; }
+  function results(ctx) {
+    var s = state(ctx), q = s.q.trim().toLowerCase(), c = CFG[org()] || CFG.fin;
+    if (!q) return { total: total(), get: function (k) { return person(k); } };
+    var m = q.match(new RegExp('^' + c.pre.toLowerCase() + '-?(\\d{1,6})$'));
+    if (m) { var idx = +m[1]; return { total: idx < total() ? 1 : 0, get: function () { return person(idx); } }; }
+    var r = q.match(/^cp-(\d+)-\d+$/); if (r) { var j = (+r[1]) % 5000; return { total: 1, get: function () { return person(j); } }; }
+    var hits = []; for (var k = 0; k < 40000 && hits.length < 200; k++) { var p = person(k); if ((p.name + ' ' + p.email + ' ' + p.id + ' ' + p.city).toLowerCase().indexOf(q) > -1) hits.push(p); }
+    return { total: hits.length, get: function (k) { return hits[k]; }, approx: hits.length >= 200 };
+  }
+  window.custSearch = function (ctx, v) { state(ctx).q = v; state(ctx).page = 0; redraw(ctx, true); };
+  window.custPage = function (ctx, d) { state(ctx).page = Math.max(0, state(ctx).page + d); redraw(ctx); };
+  function redraw(ctx, keep) {
+    var el = document.getElementById('cust-dir-' + ctx); if (!el) return;
+    var ae = document.activeElement, focus = keep && ae && ae.id === 'cust-q-' + ctx, caret = focus ? ae.selectionStart : 0;
+    el.outerHTML = cardinalCustomerDirectory(ctx);
+    if (focus) { var i = document.getElementById('cust-q-' + ctx); if (i) { i.focus(); i.setSelectionRange(caret, caret); } }
+  }
+  window.cardinalCustomerDirectory = function (ctx) {
+    var c = CFG[org()] || CFG.fin, s = state(ctx), R = results(ctx), per = 25, from = s.page * per, to = Math.min(R.total, from + per), rows = [];
+    for (var k = from; k < to; k++) rows.push(R.get(k));
+    var co = ((window.CARDINAL_DATA || {})[org()] || {}).org || '';
+    return '<div id="cust-dir-' + ctx + '">' +
+      '<div class="ex-note" style="font-size:12px;color:#475569;background:#f4efe6;border-radius:10px;padding:10px 12px;margin:0 0 12px">' + esc(c.word) + ' of ' + esc(co) + ': ' + total().toLocaleString() + ' people, each with a Cardinal Passport. Search by name, email, ' + c.pre + ' ID, or decision receipt number (for example CP-767976-01). Every profile you open is logged in Echo.</div>' +
+      '<div style="display:flex;gap:8px;align-items:center;margin:0 0 12px"><input id="cust-q-' + ctx + '" value="' + esc(s.q) + '" placeholder="Search ' + esc(c.word.toLowerCase()) + ' by name, email, ID, or receipt number" oninput="clearTimeout(window.__cq);var v=this.value;window.__cq=setTimeout(function(){custSearch(\'' + ctx + '\',v)},300)" style="flex:1;font:inherit;font-size:13px;padding:10px 12px;border:1px solid rgba(26,24,21,.15);border-radius:10px;background:#fff"></div>' +
+      '<div style="border:1px solid rgba(26,24,21,.08);border-radius:12px;overflow:auto"><table style="width:100%;border-collapse:collapse;font-size:12.5px"><thead><tr style="background:#f4efe6">' + ['Name', 'ID', 'Email', 'Location', c.word === 'Customers' ? 'Customer since' : 'Since', 'Last AI decision', 'Passport'].map(function (x) { return '<th style="text-align:left;font-size:10.5px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.4px;padding:10px 12px;white-space:nowrap">' + x + '</th>'; }).join('') + '</tr></thead><tbody>' +
+      (rows.map(function (p, n) { var den = /DENIED/.test(p.lastDec); return '<tr style="background:' + (n % 2 ? '#f4efe6' : '#fff') + ';cursor:pointer" onclick="custOpen(' + p.i + ')"><td style="padding:10px 12px;font-weight:700">' + esc(p.name) + (p.featured ? ' <span style="font-size:10px;color:#A16207;font-weight:700">in a case</span>' : '') + '</td><td style="padding:10px 12px;font-family:monospace">' + p.id + '</td><td style="padding:10px 12px;color:#475569">' + esc(p.email) + '</td><td style="padding:10px 12px">' + esc(p.city + ', ' + p.st) + '</td><td style="padding:10px 12px;white-space:nowrap">' + fd(p.since) + '</td><td style="padding:10px 12px;white-space:nowrap"><span style="font-weight:700;color:' + (den ? '#B91C1C' : '#15803D') + '">' + (den ? 'Denied' : 'Approved') + '</span> · ' + esc(p.lastDate) + '</td><td style="padding:10px 12px"><span style="color:#1e3a8a;font-weight:700">Open →</span></td></tr>'; }).join('') || '<tr><td colspan="7" style="padding:12px;color:#64748b">No one matches.</td></tr>') +
+      '</tbody></table></div>' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;font-size:12px;color:#64748b"><span>Showing ' + (R.total ? from + 1 : 0) + '–' + to + ' of ' + R.total.toLocaleString() + (R.approx ? '+' : '') + '</span><span>' + (s.page ? '<button type="button" onclick="custPage(\'' + ctx + '\',-1)" style="font:inherit;font-size:12px;padding:6px 12px;border-radius:8px;border:1px solid rgba(26,24,21,.15);background:#fff;cursor:pointer">Previous</button> ' : '') + (to < R.total ? '<button type="button" onclick="custPage(\'' + ctx + '\',1)" style="font:inherit;font-size:12px;padding:6px 12px;border-radius:8px;border:1px solid rgba(26,24,21,.15);background:#fff;cursor:pointer">Next</button>' : '') + '</span></div></div>';
+  };
+
+  // ── Profile ─────────────────────────────────────────────────────────
+  var CARD = 'background:#fff;border-radius:14px;box-shadow:0 1px 3px rgba(26,24,21,.06),0 8px 20px rgba(26,24,21,.06);overflow:hidden';
+  var HEAD = 'background:#ebe4d6;padding:10px 14px;font-size:12px;font-weight:800;color:#1a1815;text-transform:uppercase;letter-spacing:.5px';
+  function kv(rows) { return '<table style="width:100%;border-collapse:collapse;font-size:12.5px">' + rows.map(function (r) { return '<tr><td style="padding:8px 14px;color:#475569;border-bottom:1px solid rgba(26,24,21,.05)">' + esc(r[0]) + '</td><td style="padding:8px 14px;text-align:right;font-weight:600;border-bottom:1px solid rgba(26,24,21,.05)">' + r[1] + '</td></tr>'; }).join('') + '</table>'; }
+  function tbl(head, rows) { return '<table style="width:100%;border-collapse:collapse;font-size:12.5px"><thead><tr>' + head.map(function (x) { return '<th style="text-align:left;font-size:10.5px;color:#64748b;text-transform:uppercase;padding:8px 14px;border-bottom:1px solid rgba(26,24,21,.08)">' + x + '</th>'; }).join('') + '</tr></thead><tbody>' + rows.map(function (r, n) { return '<tr style="background:' + (n % 2 ? '#f7f3ea' : '#fff') + '">' + r.map(function (x) { return '<td style="padding:8px 14px">' + x + '</td>'; }).join('') + '</tr>'; }).join('') + '</tbody></table>'; }
+  window.custTab = function (t) { [].forEach.call(document.querySelectorAll('#cust-prof [data-ct]'), function (e) { e.style.display = e.getAttribute('data-ct') === t ? '' : 'none'; }); [].forEach.call(document.querySelectorAll('#cust-prof .ctab'), function (b) { var on = b.getAttribute('data-t') === t; b.style.background = on ? '#fff' : 'transparent'; b.style.boxShadow = on ? '0 1px 3px rgba(26,24,21,.12)' : 'none'; }); };
+  window.custOpen = function (i) {
+    var p = person(i), c = CFG[org()] || CFG.fin, h = hash(org() + 'prof' + i), co = ((window.CARDINAL_DATA || {})[org()] || {}).org || '';
+    var decs = [], comms = [];
+    var nD = 3 + h % 5;
+    for (var k = 0; k < nD; k++) {
+      var hh = hash(i + ':' + k), d = new Date(2026 - (k > 2 ? 1 + hh % 3 : 0), (8 - k * 2 + 24) % 12, 1 + hh % 27), m = p.models[k % p.models.length], den = k === 0 ? /DENIED/.test(p.lastDec) : (hh % 6 === 0);
+      decs.push([fd(k === 0 && p.lastDate ? p.lastDate : d), esc(m), '<span style="font-weight:700;color:' + (den ? '#B91C1C' : '#15803D') + '">' + (den ? 'Denied' : 'Approved') + '</span>', den ? (p.flagged ? 'Debt-to-income above limit (flagged for re-review: ZIP code proxy)' : 'Credit history too short') : 'Met the criteria', '<span style="font-family:monospace">CP-' + String(767000 + i % 999).padStart(6, '0') + '-' + String(k + 1).padStart(2, '0') + '</span>', den && p.flagged ? '<span style="color:#A16207;font-weight:700">Re-review in progress</span>' : '—']);
+    }
+    var CM = c.word === 'Customers' ? [['Email', 'Monthly statement', 'Statements'], ['Email', 'Fall refinance offer', 'Marketing'], ['Mail', 'Adverse action notice', 'Required notice'], ['SMS', 'Payment reminder', 'Servicing'], ['Email', 'Privacy notice update', 'Required notice'], ['Push', 'Credit line review result', 'Decision']] : [['Email', 'Program update', 'Updates'], ['Mail', 'Decision notice', 'Required notice'], ['SMS', 'Reminder', 'Servicing'], ['Email', 'Privacy notice', 'Required notice']];
+    for (var j = 0; j < 7; j++) { var x = CM[(h + j) % CM.length], dd = new Date(2026, 9 - j, 2 + (h >> j) % 25); comms.push([fd(dd), x[0], esc(x[1]), x[2], (h >> j) & 1 ? 'Opened' : 'Delivered', x[1] === 'Fall refinance offer' && p.flagged ? '<span style="color:#B91C1C;font-weight:700">Suppressed during re-review</span>' : '']); }
+    var denials = decs.filter(function (d) { return /Denied/.test(d[2]); }).length;
+    var ini = (p.first[0] + p.last[0]).toUpperCase();
+    var m = document.createElement('div'); m.id = 'cust-prof';
+    m.style.cssText = 'position:fixed;inset:0;z-index:10000;background:rgba(26,24,21,.45);display:flex;align-items:center;justify-content:center;padding:16px';
+    m.innerHTML = '<div style="background:#f4efe6;border-radius:18px;box-shadow:0 30px 80px rgba(0,0,0,.35);width:min(1040px,100%);max-height:92vh;overflow:auto;padding:22px 24px">' +
+      '<div style="display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap;' + CARD + ';padding:18px 20px">' +
+      '<div style="width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,#bbf7d0,#22c55e);display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:800;color:#14532d;box-shadow:0 6px 16px rgba(21,128,61,.25)">' + ini + '</div>' +
+      '<div style="flex:1;min-width:220px"><div style="font-size:20px;font-weight:800;color:#1a1815">' + esc(p.name) + '</div><div style="font-size:12.5px;color:#475569;margin-top:2px">' + esc(co) + ' ' + esc(c.one) + ' · ID <span style="font-family:monospace">' + p.id + '</span></div>' +
+      '<div style="font-size:12.5px;color:#475569;margin-top:4px">' + esc(p.email) + ' · ' + esc(p.phone) + ' · ' + esc(p.city + ', ' + p.st) + ' · since ' + fd(p.since) + '</div>' +
+      '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px">' + (p.flagged ? '<span style="font-size:11px;font-weight:700;color:#B91C1C;background:rgba(220,38,38,.09);border:1px solid rgba(220,38,38,.3);border-radius:999px;padding:2px 9px">In re-review cohort</span>' : '') + (p.cohort ? '<span style="font-size:11px;font-weight:700;color:#A16207;background:rgba(250,204,21,.16);border:1px solid rgba(202,138,4,.4);border-radius:999px;padding:2px 9px">Segment: ' + esc(p.cohort) + '</span>' : '') + '<span style="font-size:11px;font-weight:700;color:#15803D;background:rgba(21,128,61,.1);border:1px solid rgba(21,128,61,.35);border-radius:999px;padding:2px 9px">Passport active</span></div></div>' +
+      '<div style="display:flex;flex-direction:column;gap:8px;align-items:flex-end"><button type="button" onclick="custPassport(' + i + ')" style="background:#1a1815;color:#fff;border:0;border-radius:10px;padding:9px 14px;font:inherit;font-size:12.5px;font-weight:700;cursor:pointer">View Cardinal Passport</button><button type="button" onclick="(window.cardinalShowToast||showToast)(\'Added to a suppression rule. Logged in Echo.\')" style="background:#1a1815;color:#fff;border:0;border-radius:10px;padding:9px 14px;font:inherit;font-size:12.5px;font-weight:700;cursor:pointer">Add to a suppression</button><button type="button" onclick="document.getElementById(\'cust-prof\').remove()" style="border:0;background:transparent;font-size:13px;color:#64748b;cursor:pointer">Close ×</button></div></div>' +
+      '<div style="display:flex;gap:4px;background:#ebe4d6;padding:4px;border-radius:12px;margin:14px 0">' + [['ov', 'Overview'], ['dec', 'AI decisions'], ['com', 'Communications'], ['rights', 'Data rights']].map(function (t, n) { return '<button type="button" class="ctab" data-t="' + t[0] + '" onclick="custTab(\'' + t[0] + '\')" style="font:inherit;font-size:12.5px;font-weight:700;padding:8px 14px;border:0;border-radius:9px;cursor:pointer;background:' + (n ? 'transparent' : '#fff') + ';box-shadow:' + (n ? 'none' : '0 1px 3px rgba(26,24,21,.12)') + '">' + t[1] + '</button>'; }).join('') + '</div>' +
+      '<div data-ct="ov" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px">' +
+      '<div style="' + CARD + '"><div style="' + HEAD + '">Profile</div>' + kv([['Location', esc(p.city + ', ' + p.st)], [c.word === 'Customers' ? 'Customer since' : 'Since', fd(p.since)], ['Language', 'English'], ['Preferred contact', 'Email'], ['Protected traits', '<span style="color:#64748b;font-weight:500">Used only to test fairness, never shown</span>']]) + '</div>' +
+      '<div style="' + CARD + '"><div style="' + HEAD + '">Accounts and products</div>' + kv(p.prods.map(function (x, n) { return [x, 'Opened ' + fd(new Date(p.since.getTime() + n * 400 * 864e5))]; })) + '</div>' +
+      '<div style="' + CARD + '"><div style="' + HEAD + '">AI decisions</div>' + kv([['Decisions on record', decs.length], ['Approved', decs.length - denials], ['Denied', denials], ['Last decision', esc(p.lastDate)], ['Re-review', p.flagged ? '<span style="color:#A16207">In progress</span>' : 'None needed']]) + '</div>' +
+      '<div style="' + CARD + '"><div style="' + HEAD + '">Models that decided about them</div>' + kv(p.models.map(function (x) { return [x, '<span style="color:#1e3a8a">View model →</span>']; })) + '</div>' +
+      '<div style="' + CARD + '"><div style="' + HEAD + '">Segments and suppressions</div>' + kv([['Segments', p.cohort ? esc(p.cohort) : 'Standard'], ['Suppressions', p.flagged ? 'Kept out of marketing offers until re-review ends' : 'None'], ['Marketing consent', (h & 1) ? 'Yes' : 'No']]) + '</div>' +
+      '<div style="' + CARD + '"><div style="' + HEAD + '">Recent messages</div>' + tbl(['Date', 'Message', 'Status'], comms.slice(0, 4).map(function (r) { return [r[0], r[2], r[4]]; })) + '</div></div>' +
+      '<div data-ct="dec" style="display:none;' + CARD + '"><div style="' + HEAD + '">Every AI decision, with its receipt</div>' + tbl(['Date', 'Model', 'Decision', 'Reason given', 'Receipt', 'Re-review'], decs) + '</div>' +
+      '<div data-ct="com" style="display:none;' + CARD + '"><div style="' + HEAD + '">Every message received</div>' + tbl(['Date', 'Channel', 'Message', 'Type', 'Status', 'Note'], comms) + '</div>' +
+      '<div data-ct="rights" style="display:none;' + CARD + '"><div style="' + HEAD + '">Data rights requests</div>' + tbl(['Date', 'Request', 'Status', 'Closed'], h % 3 ? [[fd(new Date(2025, h % 12, 4)), 'Copy of my data', '<span style="color:#15803D;font-weight:700">Completed</span>', fd(new Date(2025, h % 12, 18))]] : [['—', 'No requests', '—', '—']]) + '</div>' +
+      '<div style="font-size:11.5px;color:#64748b;margin-top:12px">Opening this profile was logged in Echo with your name and the time.</div></div>';
+    m.addEventListener('click', function (ev) { if (ev.target === m) m.remove(); });
+    var old = document.getElementById('cust-prof'); if (old) old.remove(); document.body.appendChild(m);
+    try { cardinalLogActivity('view', 'Opened ' + c.one + ' profile ' + p.id, null); } catch (e) {}
+  };
+  window.custPassport = function (i) {
+    var p = person(i);
+    if (p.eid && typeof openPassportSelfView === 'function') { document.getElementById('cust-prof').remove(); openPassportSelfView(p.eid); return; }
+    var L = (typeof PM_PROFILES !== 'undefined' && PM_PROFILES[org()] && PM_PROFILES[org()].live) || [];
+    if (L.length && typeof openPassportSelfView === 'function') { document.getElementById('cust-prof').remove(); openPassportSelfView(L[i % L.length].eid); var n = document.getElementById('psv-name'); if (n) setTimeout(function () { n.textContent = p.name; }, 60); }
+  };
+
+  // ── Library: Customers tab and circle ───────────────────────────────
+  window.libShowCustomers = function () {
+    var tab = document.getElementById('lib-tab-customers'); if (tab) tab.click();
+  };
+  setInterval(function () {
+    var scr = document.getElementById('screen-cardinallibrary'); if (!scr || scr.offsetParent === null) return;
+    var first = scr.querySelector('.lib-tab'); if (!first) return;
+    var c = CFG[org()] || CFG.fin, tab = document.getElementById('lib-tab-customers');
+    if (!tab) {
+      tab = document.createElement('button'); tab.type = 'button'; tab.id = 'lib-tab-customers'; tab.className = first.className.replace(/\bactive\b/, '').trim();
+      first.parentNode.insertBefore(tab, first);
+      tab.onclick = function () {
+        [].forEach.call(scr.querySelectorAll('.lib-tab'), function (b) { b.classList.remove('active'); }); tab.classList.add('active');
+        [].forEach.call(scr.querySelectorAll('[id^=lib-tab-content-]'), function (e) { e.style.display = 'none'; });
+        var box = document.getElementById('lib-tab-content-customers'); box.style.display = ''; box.innerHTML = cardinalCustomerDirectory('lib');
+      };
+      [].forEach.call(scr.querySelectorAll('.lib-tab'), function (b) { if (b !== tab) b.addEventListener('click', function () { var box = document.getElementById('lib-tab-content-customers'); if (box) box.style.display = 'none'; tab.classList.remove('active'); }, true); });
+    }
+    var label = c.word + ' · ' + (total() >= 1e6 ? (total() / 1e6).toFixed(1) + 'M' : total().toLocaleString());
+    if (tab.textContent !== label) tab.textContent = label;
+    var box = document.getElementById('lib-tab-content-customers');
+    if (!box) { box = document.createElement('div'); box.id = 'lib-tab-content-customers'; box.style.display = 'none'; var anyC = scr.querySelector('[id^=lib-tab-content-]'); anyC.parentNode.insertBefore(box, anyC); }
+  }, 600);
+})();
+
+</script>
+
+<script data-p="p31_tags">
+// 10/7 (Brittany: "in the Data Pipeline people can tag files, then search by tags; and search by tags in the
+// Cardinal Library"). A Tags column with chips and "+ Tag" on Data Pipeline files and every Library list, plus a Tag
+// filter above each list. Tags are shared, so "exam-evidence" finds the same things everywhere.
+(function () {
+  function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;'); }
+  function hash(s) { var h = 0x811c9dc5; s = String(s); for (var i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return Math.abs(h); }
+  function org() { return window.currentOrg || 'fin'; }
+  var SEED = { fin: ['fair-lending', 'exam-evidence', 'credit', 'fraud', 'pii', 'q3-2026', 'vendor', 'agent', 'marketing'], ad: ['readiness', 'maintenance', 'dod-audit', 'pii', 'vendor', 'agent'], health: ['claims', 'cms-audit', 'phi', 'vendor', 'agent'], fed: ['omb', 'pre-deployment', 'pii', 'vendor', 'agent'] };
+  window.__tags = window.__tags || {};
+  function store() { return window.__tags[org()] = window.__tags[org()] || {}; }
+  function tagsFor(key, text) {
+    var s = store(); if (s[key]) return s[key];
+    var pool = SEED[org()] || SEED.fin, h = hash(org() + key), t = [];
+    if (/fair|credit|underwrit|lending|zip/i.test(text)) t.push(pool[0]);
+    if (/fraud|identity|synthetic/i.test(text) && pool.indexOf('fraud') > -1) t.push('fraud');
+    if (/vendor|chatbot|liveness/i.test(text)) t.push('vendor');
+    if (/agent/i.test(text)) t.push('agent');
+    if (/applicant|customer|patient|taxpayer|personnel|\.csv/i.test(text) && pool.indexOf('pii') > -1) t.push(pool.indexOf('pii') > -1 ? 'pii' : pool[3]);
+    if (h % 3 === 0) t.push(pool[1]);
+    return s[key] = t.filter(function (x, i, a) { return x && a.indexOf(x) === i; });
+  }
+  var css = document.createElement('style');
+  css.textContent = '.tg-chip{display:inline-flex;align-items:center;gap:4px;font-size:10.5px;font-weight:700;color:#15803D;background:rgba(34,197,94,.10);border:1px solid rgba(34,197,94,.35);border-radius:999px;padding:1px 8px;margin:1px 3px 1px 0;white-space:nowrap}' +
+    '.tg-chip b{cursor:pointer;color:#64748b;font-weight:800}.tg-add{font:inherit;font-size:10.5px;font-weight:700;border:1px dashed rgba(26,24,21,.3);background:#fff;border-radius:999px;padding:1px 8px;cursor:pointer;color:#475569}' +
+    '.tg-bar{display:flex;align-items:center;gap:8px;justify-content:flex-end;margin:0 0 8px}.tg-bar select{font:inherit;font-size:12px;padding:7px 10px;border:1px solid rgba(26,24,21,.15);border-radius:8px;background:#fff}' +
+    '#tg-pop{position:fixed;z-index:10001;background:#fff;border-radius:12px;box-shadow:0 12px 32px rgba(26,24,21,.25);padding:10px;width:220px}#tg-pop input{width:100%;box-sizing:border-box;font:inherit;font-size:12.5px;padding:7px 9px;border:1px solid rgba(26,24,21,.15);border-radius:8px}#tg-pop .sg{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px}';
+  document.head.appendChild(css);
+  var FILTER = {};
+  window.tgAdd = function (btn, key) {
+    var old = document.getElementById('tg-pop'); if (old) old.remove();
+    var r = btn.getBoundingClientRect(), p = document.createElement('div'); p.id = 'tg-pop';
+    p.style.left = Math.min(window.innerWidth - 240, r.left) + 'px'; p.style.top = (r.bottom + 6) + 'px';
+    var all = {}; Object.keys(store()).forEach(function (k) { store()[k].forEach(function (t) { all[t] = 1; }); }); (SEED[org()] || []).forEach(function (t) { all[t] = 1; });
+    p.innerHTML = '<input placeholder="Type a tag, press Enter"><div class="sg">' + Object.keys(all).sort().map(function (t) { return '<span class="tg-chip" style="cursor:pointer" data-t="' + esc(t) + '">' + esc(t) + '</span>'; }).join('') + '</div>';
+    document.body.appendChild(p);
+    var inp = p.querySelector('input'); inp.focus();
+    var add = function (t) { t = String(t || '').trim().toLowerCase().replace(/\s+/g, '-'); if (!t) return; var s = store(); s[key] = (s[key] || []); if (s[key].indexOf(t) < 0) s[key].push(t); p.remove(); refresh(true); try { cardinalLogActivity('edit', 'Tagged ' + key.split(':').slice(1).join(':') + ' as ' + t, null); } catch (e) {} };
+    inp.addEventListener('keydown', function (e) { if (e.key === 'Enter') add(inp.value); if (e.key === 'Escape') p.remove(); });
+    [].forEach.call(p.querySelectorAll('[data-t]'), function (c) { c.onclick = function () { add(c.getAttribute('data-t')); }; });
+    setTimeout(function () { document.addEventListener('mousedown', function off(ev) { if (!p.contains(ev.target)) { p.remove(); document.removeEventListener('mousedown', off); } }); }, 0);
+  };
+  window.tgRemove = function (key, t) { var s = store(); s[key] = (s[key] || []).filter(function (x) { return x !== t; }); refresh(true); };
+  window.tgFilter = function (scope, v) { FILTER[scope] = v; refresh(true); };
+  function nameOf(tr) { var tds = [].filter.call(tr.children, function (td) { return !td.querySelector('input[type=checkbox]') && (td.textContent || '').trim(); }); return tds.length ? tds[0].textContent.trim().split('\n')[0].slice(0, 80) : ''; }
+  function wire(scope, table, barHost) {
+    if (!table || table.offsetParent === null) return;
+    var hr = table.querySelector('thead tr') || [].filter.call(table.querySelectorAll('tr'), function (r) { return r.querySelector('th'); })[0];
+    if (hr && !hr.__tg) { hr.__tg = 1; var th = document.createElement('th'); th.textContent = 'Tags'; th.style.whiteSpace = 'nowrap'; var last = hr.lastElementChild; hr.insertBefore(th, last && !(last.textContent || '').trim() ? last : null); }
+    var used = {};
+    [].forEach.call(table.querySelectorAll('tbody tr'), function (tr) {
+      if (tr.querySelector('th') || tr.children.length < 2) return;
+      var nm = nameOf(tr), key = scope + ':' + nm, tags = tagsFor(key, tr.textContent || '');
+      tags.forEach(function (t) { used[t] = 1; });
+      var td = tr.querySelector('td.tg-cell');
+      var html = tags.map(function (t) { return '<span class="tg-chip">' + esc(t) + ' <b onclick="event.stopPropagation();tgRemove(' + esc(JSON.stringify(key)) + ',' + esc(JSON.stringify(t)) + ')" title="Remove tag">×</b></span>'; }).join('') + '<button type="button" class="tg-add" onclick="event.stopPropagation();tgAdd(this,' + esc(JSON.stringify(key)) + ')">+ Tag</button>';
+      if (!td) { td = document.createElement('td'); td.className = 'tg-cell'; td.style.padding = '8px 10px'; var last = tr.lastElementChild, lastIsAction = last && (last.querySelector('select') || !(last.textContent || '').trim() || /Open|Actions/.test(last.textContent)); tr.insertBefore(td, lastIsAction ? last : null); }
+      if (td.__h !== html) { td.__h = html; td.innerHTML = html; }
+      var f = FILTER[scope];
+      tr.style.display = !f || tags.indexOf(f) > -1 ? '' : 'none';
+    });
+    var bar = barHost.querySelector(':scope > .tg-bar[data-s="' + scope + '"]');
+    var all = Object.keys(used).concat(Object.keys(store()).reduce(function (a, k) { return k.indexOf(scope + ':') === 0 ? a.concat(store()[k]) : a; }, [])).filter(function (x, i, a) { return a.indexOf(x) === i; }).sort();
+    var opts = '<option value="">Tag: any</option>' + all.map(function (t) { return '<option' + (FILTER[scope] === t ? ' selected' : '') + '>' + esc(t) + '</option>'; }).join('');
+    if (!bar) { bar = document.createElement('div'); bar.className = 'tg-bar'; bar.setAttribute('data-s', scope); bar.innerHTML = '<span style="font-size:11.5px;color:#64748b">Filter by tag</span><select onchange="tgFilter(\'' + scope + '\',this.value)"></select>'; barHost.insertBefore(bar, barHost.firstChild); }
+    var sel = bar.querySelector('select'); if (sel.__o !== opts) { sel.__o = opts; sel.innerHTML = opts; }
+  }
+  function refresh() {
+    var pl = document.getElementById('screen-pipeline');
+    if (pl && pl.offsetParent !== null) {
+      var t = [].filter.call(pl.querySelectorAll('table'), function (x) { return x.offsetParent !== null && /Uploaded by/.test((x.querySelector('thead') || x).textContent); })[0];
+      if (t) wire('pl', t, t.parentElement.parentElement || t.parentElement);
+    }
+    var lib = document.getElementById('screen-cardinallibrary');
+    if (lib && lib.offsetParent !== null) {
+      [].forEach.call(lib.querySelectorAll('[id^=lib-tab-content-]'), function (box) {
+        if (box.offsetParent === null || box.id === 'lib-tab-content-customers' || box.id === 'lib-tab-content-suppressions') return;
+        var t = [].filter.call(box.querySelectorAll('table'), function (x) { return x.offsetParent !== null; })[0];
+        if (t) wire('lib', t, box);
+      });
+    }
+  }
+  setInterval(refresh, 700);
 })();
 
 </script>
