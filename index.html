@@ -53601,7 +53601,19 @@ window.CARDINAL_PLACES = {
   };
   var css = document.createElement('style');
   css.textContent = '.ts-i{display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;border-radius:50%;border:1px solid rgba(71,85,105,.5);color:#475569;font-size:9px;font-weight:800;font-style:normal;margin-left:5px;cursor:help;vertical-align:1px;background:#fff}';
+  // The Cardinal Standard stands out: purple accent, white cards, part pills.
+  css.textContent += '#ts-standard{position:relative;overflow:hidden;background:linear-gradient(135deg,rgba(139,92,246,.08),rgba(244,239,230,.92))!important;border:1px solid rgba(139,92,246,.25)!important;box-shadow:0 1px 3px rgba(26,24,21,.06),0 14px 34px rgba(109,40,217,.10)!important;padding-top:22px!important}' +
+    '#ts-standard::before{content:"";position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,#8b5cf6,#60a5fa,#22c55e)}' +
+    '#ts-standard div[style*="border-radius:12px;padding:14px 16px"]{background:#fff!important;border:1px solid rgba(26,24,21,.06)!important;border-radius:14px!important;box-shadow:0 1px 3px rgba(26,24,21,.06),0 8px 20px rgba(26,24,21,.06)!important}' +
+    '#ts-standard .std-pill{display:inline-block;font-size:11px!important;font-weight:700!important;color:#6d28d9!important;background:rgba(139,92,246,.10)!important;border:1px solid rgba(139,92,246,.28)!important;border-radius:999px!important;padding:3px 10px!important;margin:3px 4px 0 0}' +
+    '#ts-standard .std-shield{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:10px;background:linear-gradient(135deg,#8b5cf6,#6d28d9);box-shadow:0 6px 14px rgba(109,40,217,.35);margin-right:10px;vertical-align:middle}';
   document.head.appendChild(css);
+  setInterval(function () {
+    var b = document.getElementById('ts-standard'); if (!b || b.offsetParent === null) return;
+    var t = [].filter.call(b.querySelectorAll('div'), function (d) { return !d.children.length && (d.textContent || '').trim() === 'The Cardinal Standard'; })[0];
+    if (t && !t.__sh) { t.__sh = 1; t.style.fontSize = '18px'; t.innerHTML = '<span class="std-shield"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 4v6c0 5-3.5 9-8 10-4.5-1-8-5-8-10V6l8-4z"/><path d="M9 12l2 2 4-4"/></svg></span>The Cardinal Standard'; }
+    [].forEach.call(b.querySelectorAll('span'), function (sp) { if (!sp.__sp && !sp.children.length && /^(Fairness|Fraud|Transparency|Privacy|Governance|Post-Deployment Monitoring|Monitoring|AI Agents & Security)$/.test((sp.textContent || '').trim())) { sp.__sp = 1; sp.classList.add('std-pill'); } });
+  }, 600);
   function darken(el) { var c = getComputedStyle(el).color; if (/250,\s*204,\s*21|234,\s*179,\s*8|245,\s*158,\s*11/.test(c)) el.style.setProperty('color', '#A16207', 'important'); }
   function tick() {
     var scr = document.getElementById('screen-trustscore'); if (!scr || scr.offsetParent === null) return;
@@ -53614,7 +53626,8 @@ window.CARDINAL_PLACES = {
     [].forEach.call(scr.querySelectorAll('.tsv2-hero-right div'), function (d) {
       if (d.children.length !== 2 || !/^\d+$/.test((d.children[1].textContent || '').trim())) return;
       var lab = d.children[0], name = (lab.textContent || '').replace('i', '').trim().toLowerCase();
-      if (!lab.querySelector('.ts-i')) { var key = (lab.textContent || '').trim().toLowerCase(), t = DEF[key]; if (t) { var i = document.createElement('i'); i.className = 'ts-i'; i.textContent = 'i'; i.title = t; lab.appendChild(i); } }
+      var ex = lab.querySelector('.ts-i'); if (ex) ex.remove();
+      if (!d.title) { var t = DEF[(lab.textContent || '').trim().toLowerCase()]; if (t) { d.title = t; d.style.cursor = 'help'; } }
     });
   }
   setInterval(tick, 600);
