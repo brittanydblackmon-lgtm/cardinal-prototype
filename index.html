@@ -26706,7 +26706,7 @@ const EVE_ALERTS = {
 // Real version needs a Settings UI to let an owner assign their own backup per model/case — not built yet.
 const EVE_BACKUP_CONTACTS = {
  ad: 'Marcus Webb, Deputy Compliance Officer',
- fin: 'Priya Nair, Deputy Risk Officer',
+ fin: 'Jordan Ellis, Chief Risk Officer',
  health: 'Dr. Alan Reyes, Deputy Compliance Officer',
  fed: 'Denise Carter, Deputy AI Ethics Officer'
 };
@@ -51421,6 +51421,26 @@ window.CARDINAL_PLACES = {
     if (a) { els.push(a); els = els.concat([].slice.call(a.querySelectorAll('.edo-scroll'))); }
     els.forEach(function (el) { try { el.scrollTop = 0; } catch (e) {} });
   }
+  var stl = document.createElement('style');
+  stl.textContent = '.screen.scr-settling{opacity:0!important}.screen.scr-in{animation:scrIn .22s ease-out}@keyframes scrIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}';
+  document.head.appendChild(stl);
+  var settleTok = 0;
+  function settle(name) {
+    var tok = ++settleTok, el = document.getElementById('screen-' + name) || document.querySelector('.screen.active'); if (!el) return;
+    el.classList.remove('scr-in'); el.classList.add('scr-settling');
+    var last = -1, still = 0, t0 = Date.now();
+    var iv = setInterval(function () {
+      if (tok !== settleTok) { clearInterval(iv); el.classList.remove('scr-settling'); return; }
+      var h = el.scrollHeight, hero = el.querySelector('.u-hero, #dash-u-hero, #ts-why-block, [id$="-sec-hero"]');
+      var WAIT = { halo: ['halo-eve-sum'], atonement: ['at-eve-sum', 'atws'] }, extra = (WAIT[name] || []).every(function (id) { return ((document.getElementById(id) || {}).offsetHeight || 0) > 20; });
+      still = (h === last && extra && (!hero || hero.offsetHeight > 0)) ? still + 1 : 0; last = h;
+      if (still >= 4 || Date.now() - t0 > (WAIT[name] ? 1300 : 950)) {
+        clearInterval(iv); top(name);
+        el.classList.remove('scr-settling'); el.classList.add('scr-in');
+        setTimeout(function () { el.classList.remove('scr-in'); }, 300);
+      }
+    }, 90);
+  }
   var oShow = window.showScreen;
   ['wheel', 'touchmove', 'keydown'].forEach(function (ev) { window.addEventListener(ev, function () { window.__keepUntil = 0; }, { passive: true }); });
   function scrollers() { var a = document.querySelector('.screen.active'); var els = [document.scrollingElement].concat([].slice.call(document.querySelectorAll('.main, .main-content, #main-content, .content'))); if (a) els.push(a); return els.filter(Boolean); }
@@ -51433,6 +51453,9 @@ window.CARDINAL_PLACES = {
     if (name === 'sentinel' && !same && arguments[1]) { window.__sentinelTab = 'cases'; window.__sentWR = false; window.__sentinelFocusCaseId = null; }
     var r = oShow.apply(this, arguments);
     if (!same) [0, 40, 120].forEach(function (t) { setTimeout(function () { try { window.__uTick && __uTick(); } catch (e) {} }, t); });
+    // 10/8: never show a page while it is still being built. Hold it invisible until nothing moves for a moment
+    // (at most about a second), then fade it in at the top.
+    if (!same && typeof name === 'string') settle(name);
     if (same) {
       var put = function () { if (Date.now() > window.__keepUntil) return; keep.forEach(function (k) { if (Math.abs(k[0].scrollTop - k[1]) > 2) k[0].scrollTop = k[1]; }); };
       put(); requestAnimationFrame(put);
@@ -54308,7 +54331,7 @@ window.CARDINAL_PLACES = {
   }, 400);
 
   // Voice: best natural voice available, Siri-like pace.
-  var RANK = [/siri/i, /premium/i, /enhanced/i, /natural/i, /^(ava|zoe|allison|samantha|serena|karen|moira|tessa)\b/i, /google us english/i, /google uk english female/i];
+  var RANK = [/^zoe.*premium/i, /^zoe.*enhanced/i, /siri/i, /premium/i, /enhanced/i, /natural/i, /^(ava|zoe|allison|samantha|serena|karen|moira|tessa)\b/i, /google us english/i, /google uk english female/i];
   function bestVoice(lang) {
     var vs = (window.speechSynthesis && speechSynthesis.getVoices()) || [], pre = (lang || 'en-US').split('-')[0];
     var pool = vs.filter(function (v) { return String(v.lang).indexOf(pre) === 0; });
