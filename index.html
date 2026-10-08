@@ -50196,7 +50196,7 @@ window.CARDINAL_PLACES = {
       '<div class="tsv2-eve-head"><div class="tsv2-eve-avatar">✦</div><div class="tsv2-eve-title-wrap"><div class="tsv2-eve-title">' + esc(opts.title || 'Eve: Executive Summary') + '</div>' +
       '<div class="tsv2-eve-subtitle">' + esc(opts.subtitle || 'Auto-generated from Echo Core audit data · Refreshes weekly · Board-ready') + '</div></div></div>' +
       '<div class="tsv2-eve-tabs">' + tabs + '</div>' +
-      '<div class="tsv2-eve-body">' + lines.map(function (l) { return '<p>' + l + '</p>'; }).join('') + '</div>' +
+      '<div class="tsv2-eve-body">' + (lines.length ? '<p>' + lines[0] + '</p>' + (lines.length > 1 ? '<ul class="eve-bul">' + lines.slice(1).map(function (l) { return '<li>' + l + '</li>'; }).join('') + '</ul>' : '') : '') + '</div>' +
       (btns ? '<div class="tsv2-eve-actions">' + btns + '</div>' : '') + '</section>';
     window.__eveSumRedraw = window.__eveSumRedraw || {};
     window.__eveSumRedraw[key] = function () { window.cardinalEveSummary(el, key, opts); };
@@ -50766,10 +50766,9 @@ window.CARDINAL_PLACES = {
   function atonement() {
     var scr = document.getElementById('screen-atonement'); if (!scr || scr.offsetParent === null) return;
     tabRow('atonement');
-    var stats = [].map.call(scr.querySelectorAll('.stat-card'), function (c) { return c.innerText.split('\n').map(function (x) { return x.trim(); }).filter(Boolean); }).filter(function (a) { return a.length >= 2; });
+    var stats = [].map.call(scr.querySelectorAll('.stat-card'), function (c) { return [].map.call(c.children, function (x) { return (x.textContent || '').trim(); }).filter(Boolean); }).filter(function (a) { return a.length >= 2; });
     var S = {}; stats.forEach(function (a) { S[a[0].toLowerCase()] = { v: a[1], sub: a[2] || '' }; });
-    var pills = [].filter.call(scr.querySelectorAll('*'), function (e) { return e.children.length === 0 && !e.closest('#at-eve-sum') && /^(In shadow|Drafted|Approved|Live|Rolled back)$/.test(e.textContent.trim()); });
-    var items = pills.map(function (e) { var r = e; for (var i = 0; i < 4; i++) { r = r.parentElement; if (r.innerText.split('\n').length >= 3) break; } var p = r.innerText.split('\n').map(function (x) { return x.trim(); }).filter(Boolean); return { name: p[0], detail: p[1] || '', status: e.textContent.trim() }; }).filter(function (x, i, a) { return a.findIndex(function (y) { return y.name === x.name; }) === i; });
+    var items = [].map.call(document.querySelectorAll('#atws table tbody tr'), function (tr) { var td = tr.children; if (td.length < 4) return null; var t = td[0].querySelectorAll('div'); return { name: (t[0] || td[0]).textContent.trim(), detail: t[1] ? t[1].textContent.trim() : '', status: td[3].textContent.trim() }; }).filter(Boolean);
     var org = window.currentOrg || 'ad';
     window.__atItems = window.__atItems || {};
     items = items.filter(function (x) { return !/Eve: Executive Summary/.test(x.name); });
@@ -51430,6 +51429,7 @@ window.CARDINAL_PLACES = {
     var keep = same ? scrollers().map(function (e) { return [e, e.scrollTop]; }) : null;
     if (same) { act.style.minHeight = act.scrollHeight + 'px'; window.__keepUntil = Date.now() + 1300; }
     if (name === 'trustloop' && !same) window.__tlRouteTab = 'channels';
+    if (name === 'sentinel' && !same && arguments[1]) { window.__sentinelTab = 'cases'; window.__sentWR = false; window.__sentinelFocusCaseId = null; }
     var r = oShow.apply(this, arguments);
     if (!same) [0, 40, 120].forEach(function (t) { setTimeout(function () { try { window.__uTick && __uTick(); } catch (e) {} }, t); });
     if (same) {
@@ -52549,6 +52549,8 @@ window.CARDINAL_PLACES = {
     '.g-sub{font-size:11px;color:var(--muted2,#64748b);margin-top:6px;line-height:1.4;max-width:230px}' +
     '.g-proj{font-size:11px;color:var(--muted2,#64748b);margin-top:6px;line-height:1.4;max-width:230px}' +
     '.g-details{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;margin-top:14px}';
+  // No scroll anchoring: switching a tab must never slide the page down on its own.
+  css.textContent += '.content,.main,.main-content,#main-content,.screen{overflow-anchor:none!important}.eve-bul{margin:6px 0 4px 18px;padding:0}.eve-bul li{margin:4px 0;line-height:1.55}';
   css.textContent += '#gen-stats-row,#gen-rings,#at-rings,#tl-rings,#halo-mini-rings,#echo-rings,#echo-cardinal-hero,#echo-your-view-panel,#echo-recent-access-panel,#gen-hist,#at-hist,#halo-hist,#sent-hist,#echo-kpi-row-alerts,#echo-kpi-row-activity,#halo-cardinal-hero,#halo-forecast,#screen-atonement>.section-hdr>.grid-4{display:none!important}';
   document.head.appendChild(css);
 
@@ -53298,8 +53300,11 @@ window.CARDINAL_PLACES = {
     var tiles = document.getElementById('wm-rooms'), sub = document.getElementById('wm-sub');
     if (!tiles) { tiles = document.createElement('div'); tiles.id = 'wm-rooms'; }
     if (!sub) { sub = document.createElement('div'); sub.id = 'wm-sub'; }
-    if (row.previousElementSibling !== sub) row.parentNode.insertBefore(sub, row);
-    if (sub.previousElementSibling !== tiles) row.parentNode.insertBefore(tiles, sub);
+    // Watchman hides everything right above its tab row, so the tiles sit one level up, just before that block.
+    var host = row.parentNode, outer = host.parentNode;
+    if (host.previousElementSibling !== sub) outer.insertBefore(sub, host);
+    if (sub.previousElementSibling !== tiles) outer.insertBefore(tiles, sub);
+    if (tiles.style.display === 'none') tiles.style.display = ''; if (sub.style.display === 'none') sub.style.display = '';
     var key = cur + '|' + room[0];
     if (tiles.getAttribute('data-k') !== key) {
       tiles.setAttribute('data-k', key);
@@ -53544,6 +53549,33 @@ window.CARDINAL_PLACES = {
       RULES.forEach(function (r) { if (!e.__dl && r[0].test(oc)) { e.__dl = 1; e.setAttribute('onclick', 'event.stopPropagation();' + r[1]); } });
     });
   }, 900);
+})();
+
+</script>
+
+<script data-p="p23_wmfix">
+// 10/7 (Brittany: "I clicked to open a case and it took me to the bottom of the page"; "in the War Room I click an
+// incident and it takes me to remediation"). Opening a case lands on the case; an incident opens its case in Watchman.
+(function () {
+  function toCase() {
+    var go = function () { window.__keepUntil = 0; var d = document.getElementById('sentinel-unified-case-detail'); if (d && d.offsetParent !== null) { var t = d.getBoundingClientRect().top; if (t < 40 || t > 200) d.scrollIntoView({ block: 'start' }); } };
+    [80, 300, 700, 1200, 1700].forEach(function (t) { setTimeout(go, t); });
+  }
+  var oOpen = window.cardinalSentinelUiOpenCase;
+  if (typeof oOpen === 'function') window.cardinalSentinelUiOpenCase = cardinalSentinelUiOpenCase = function () { var r = oOpen.apply(this, arguments); window.__deepLinkUntil = Date.now() + 2500; toCase(); return r; };
+  // Section tiles: leave an open case first so the chosen tab shows.
+  var oGo = window.wmGo;
+  if (typeof oGo === 'function') window.wmGo = function (t) { if (window.__sentinelFocusCaseId && typeof cardinalSentinelUiGoBack === 'function') { try { cardinalSentinelUiGoBack(); } catch (e) {} } return oGo.apply(this, arguments); };
+  var PRIMARY = { fin: 'FIN-1203', ad: 'AD-2847', health: 'HS-2847', fed: 'FED-PDV-001' };
+  setInterval(function () {
+    var wr = document.getElementById('screen-warroom'); if (!wr || wr.offsetParent === null) return;
+    [].forEach.call(wr.querySelectorAll('[onclick*="cardinalRouteCase("]'), function (e) {
+      if (e.__wmf) return; var m = (e.getAttribute('onclick') || '').match(/cardinalRouteCase\('([^']+)'/); if (!m) return;
+      e.__wmf = 1; e.setAttribute('onclick', "cardinalSentinelUiOpenCase('" + m[1] + "')"); e.title = 'Open this case in Watchman';
+    });
+    var o = window.currentOrg || 'fin', id = PRIMARY[o];
+    if (o !== 'ad') [].forEach.call(wr.querySelectorAll('div,span'), function (e) { if (!e.children.length && /^Case #2847 · /.test(e.textContent || '')) e.textContent = e.textContent.replace('Case #2847', 'Case #' + id); });
+  }, 700);
 })();
 
 </script>
