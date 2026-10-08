@@ -50062,7 +50062,7 @@ window.CARDINAL_PLACES = {
     var crit = uniq.filter(function (c) { return /critical/i.test(c.severity); }).length, rooms = d.caseChannels || [];
     var inc = (window.SENTINEL_INCIDENTS || {})[org] || [], key = org + uniq.length + rooms.length + inc.length;
     var top = document.getElementById('sent-top');
-    if (top && top.getAttribute('data-k') === key) { var uh = document.getElementById('u-sentinel-hero'), want = uh && uh.parentNode === scr ? uh.nextElementSibling : scr.firstElementChild; if (want !== top) scr.insertBefore(top, uh && uh.parentNode === scr ? uh.nextSibling : scr.firstChild); return; }
+    if (top && top.getAttribute('data-k') === key) { if (scr.firstElementChild !== top) scr.insertBefore(top, scr.firstChild); return; }
     if (!top) { top = document.createElement('div'); top.id = 'sent-top'; top.className = 'card'; top.style.cssText = 'padding:16px 18px;margin:0 0 14px'; }
     top.setAttribute('data-k', key);
     var stat = function (n, l, c) { return '<div style="padding:10px 12px;border-radius:10px;border:1px solid rgba(26,24,21,.08);background:#fff"><div style="font-size:22px;font-weight:800;color:' + (c || '#1a1815') + '">' + n + '</div><div style="font-size:11px;color:#64748b">' + l + '</div></div>'; };
@@ -50278,7 +50278,8 @@ window.CARDINAL_PLACES = {
     var prev = row.previousElementSibling; while (prev) { prev.style.display = 'none'; prev = prev.previousElementSibling; }
     // Eve's summary sits right under the top box, like Eden.
     var dg = document.getElementById('sentinel-weekly-digest'), tp = document.getElementById('sent-top');
-    if (dg && tp && tp.nextElementSibling !== dg) tp.parentNode.insertBefore(dg, tp.nextSibling);
+    var tpA = tp && tp.nextElementSibling && tp.nextElementSibling.id === 'u-sentinel-hero' ? tp.nextElementSibling : tp;
+    if (dg && tp && tpA.nextElementSibling !== dg) tp.parentNode.insertBefore(dg, tpA.nextSibling);
     var content = row.nextElementSibling, panel = document.getElementById('sent-wr-panel');
     if (window.__sentWR && !window.__sentinelFocusCaseId) {
       [].forEach.call(row.children, function (b) { var on = b === wrBtn; b.classList.toggle('active', on); b.style.background = on ? '#fff' : 'transparent'; b.style.color = on ? '#1a1815' : '#475569'; b.style.boxShadow = on ? '0 1px 3px rgba(26,24,21,.12)' : 'none'; });
@@ -52350,7 +52351,8 @@ window.CARDINAL_PLACES = {
     var grid = top.querySelector('.cr-wrap'); grid = grid && grid.parentNode; if (!grid) return;
     var it = items(grid); if (it.length < 4) return;
     var open = num(it[0].value), crit = num(it[1].value), score = open ? Math.round(100 * (open - crit) / open) : 100;
-    placeHero('sentinel', top.parentNode, top, {
+    var afterTop = top.nextElementSibling; if (afterTop && afterTop.id === 'u-sentinel-hero') afterTop = afterTop.nextElementSibling;
+    placeHero('sentinel', top.parentNode, afterTop, {
       score: score, title: 'Response Score', titleBody: 'Share of open cases moving inside their deadline. 80 is the target.',
       okBadge: 'Response On Target', okTitle: 'On Target', okBody: 'Cases are moving inside their deadlines.',
       badBadge: 'Response Below Target', badTitle: 'Below Target', badBody: 'Some cases are behind their deadlines.',
@@ -53644,6 +53646,10 @@ window.CARDINAL_PLACES = {
     '@media (max-width:900px){#dash-cmd .dc-row{grid-template-columns:1fr}}' +
     '#dash-cmd #cardinal-ask-wrap,#dash-cmd .cardinal-ask-wrap{margin:0!important}' +
     '#dash-cmd #dash-action-queue,#dash-cmd #dash-active-channels-host{margin:0!important;height:100%;box-sizing:border-box}' +
+    '#dash-cmd .dc-a,#dash-cmd .dc-c{display:flex}#dash-cmd .dc-a>#dash-action-queue,#dash-cmd .dc-c>#dash-active-channels-host{flex:1;display:flex}' +
+    '#dash-cmd #dash-action-alert-banner{flex:1;margin:0!important;box-sizing:border-box;background:#fff!important;border:1px solid rgba(26,24,21,.08)!important;border-left:5px solid #ef4444!important;border-radius:14px!important;padding:18px 20px!important;display:flex!important;flex-direction:column!important;justify-content:center!important;gap:12px;box-shadow:0 1px 3px rgba(26,24,21,.06),0 8px 20px rgba(26,24,21,.06)!important}' +
+    '#dash-cmd #dash-action-alert-banner>*{width:100%}' +
+    '#dash-cmd #dash-active-channels-host>*{flex:1;margin:0!important;border-radius:14px!important;box-shadow:0 1px 3px rgba(26,24,21,.06),0 8px 20px rgba(26,24,21,.06)!important;border:1px solid rgba(26,24,21,.08)!important}' +
     '#dash-cmd #dash-activity-ticker{margin:12px 0 0!important;border-radius:10px!important;background:rgba(255,255,255,.55)!important;border:0!important}';
   document.head.appendChild(css);
   var NAMES = [['fairness', 'Fairness'], ['fraud', 'Fraud Integrity'], ['transparency', 'Transparency'], ['privacy', 'Privacy & Data Rights'], ['governance', 'Governance & Change Control'], ['monitoring', 'Post-Deployment Monitoring'], ['agents', 'AI Agents & Security']];
