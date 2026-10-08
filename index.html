@@ -23704,7 +23704,7 @@ window.CARDINAL_PACKETS = {
       ['Proxy variables for protected traits are prohibited', 'Proxy scan on every feature', 'Sarah Chen', 'Eden proxy detection + Training Data Provenance', 'ZIP code flagged at 0.82 correlation; removed in v3.5', 'Gap', 'Map', '6.1'],
       ['Fixes are tested on live traffic before full rollout', 'Shadow deployment with automatic rollback', 'Grace Liu', 'Atonement', 'v3.5 at 5% traffic, DI 0.83', 'Operating', 'Manage', '8.2'],
       ['Affected applicants are re-reviewed and told the outcome', 'Remediation cohort tracking + Passport notice', 'Riley Whitmore', 'Atonement + Cardinal Passport', '687 of 1,203 re-reviewed', 'Operating', 'Manage', '10.2']
-    ], gaps: [['Credit Scoring v3.4 below the 0.80 line', 'Ship v3.5', 21], ['ZIP proxy still in production model', 'Same release', 21]] },
+    ], gaps: [['Credit Scoring v3.4 below the 0.80 line', 'Ship v3.5 after the 3 launch sign-offs', 7], ['ZIP proxy still in production model', 'Same release', 7]] },
     { name: 'Sponsor Bank Third-Party Risk Review', audience: 'Harbor Point Bank', signer: 'Jordan Ellis, Chief Risk Officer', controls: [
       ['A complete inventory of AI in use is maintained', 'Live model and system registry', 'Jordan Ellis', 'Cardinal Library (models + AI Systems)', '15 model versions, 3 systems, 3 newly discovered and registered', 'Operating', 'Govern', '4.1'],
       ['Every AI agent has a named human owner', 'Agent ownership check', 'Daniel Okafor', 'Security Watch > AI Agents', 'Collections Agent had no owner; now assigned', 'Operating', 'Govern', '5.3'],
@@ -25035,7 +25035,7 @@ function initHaloMap() {
           return {
             regs: regs.map(dl),
             deadline: dl(regs.slice().sort(function (a, b) { return cardinalDaysUntil(a[1]) - cardinalDaysUntil(b[1]); })[0]),
-            stats: open.length + ' open incident' + (open.length === 1 ? '' : 's') + (people ? ' · ' + people.toLocaleString() + ' people affected' : '') + (inact.amount ? ' · ' + inact.amount + ' exposure if the next deadline is missed' : ''),
+            stats: (function () { var cd = (window.CARDINAL_DATA || {})[org] || {}; var pn = cd.affectedNumber || people, pe = cd.penaltyExposure || inact.amount; return open.length + ' open incident' + (open.length === 1 ? '' : 's') + (pn ? ' · ' + pn.toLocaleString() + ' people affected' : '') + (pe ? ' · ' + pe + ' penalty exposure if nothing is fixed' : ''); })(),
             risk: soonest <= 14 ? 'CRITICAL' : 'WATCH'
           };
         }
@@ -26016,7 +26016,7 @@ window.CARDINAL_ATONEMENT_PIPELINE = window.CARDINAL_ATONEMENT_PIPELINE || {
     { model:'Logistics Forecast v3.1',    caseId:'AD-0991', stage:'promote',shadowDi:0.79, shadowPct:5,  rampDi:0.85, rampPct:50, promoteDi:0.88, status:'complete',  sinceDays:14 }
   ],
   fin: [
-    { model:'Credit Scoring v3.5',        caseId:'FIN-1203', stage:'shadow',  shadowDi:0.71, shadowPct:5,  rampDi:null, rampPct:0,  promoteDi:null, status:'in-flight', sinceDays:2 },
+    { model:'Credit Scoring v3.5',        caseId:'FIN-1203', stage:'shadow',  shadowDi:0.83, shadowPct:5,  rampDi:null, rampPct:0,  promoteDi:null, status:'in-flight', sinceDays:2 },
     { model:'Auto Loan v2.2',              caseId:'FIN-0891', stage:'ramp',    shadowDi:0.79, shadowPct:5,  rampDi:0.82, rampPct:25, promoteDi:null, status:'in-flight', sinceDays:6 },
     { model:'Underwriting Risk v4.0',     caseId:'FIN-0712', stage:'promote', shadowDi:0.76, shadowPct:5,  rampDi:0.83, rampPct:50, promoteDi:0.87, status:'complete',  sinceDays:11 }
   ],
@@ -36879,14 +36879,14 @@ const COMPLIANCE_DATA = {
 };
 
 const WB_TIMELINE_DATA = [
- {time:'Monday 9:00 AM',event:'Anonymous report submitted, credit model denying Hispanic applicants at 2.1x rate',c:'red'},
- {time:'9:02 AM',event:'Echo Core logs report: 15-24 hour compliance clock starts',c:'blue'},
- {time:'9:05 AM',event:'Chief Compliance Officer auto-notified',c:'blue'},
- {time:'2:00 PM',event:'Eden Core confirms DI ratio 0.68, bias verified',c:'amber'},
- {time:'Tuesday 8:00 AM',event:'Fix implementation begins, model retrain',c:'blue'},
- {time:'Wednesday 11:00 AM',event:'Retrained model deployed (within 48 hours)',c:'green'},
- {time:'Wednesday 12:00 PM',event:'847 affected added to Remediation Cohort',c:'green'},
- {time:'Thursday 9:00 AM',event:'Fair lending evidence packet auto-generated for the CFPB',c:'green'},
+ {time:'' + __cdr('Sep 15','fin') + ', 9:00 AM',event:'Anonymous report: sales leadership asked the credit team to tune down ZIP-based denials before the exam instead of fixing the model',c:'red'},
+ {time:'9:01 AM',event:'Echo seals the report; the reporter gets a receipt, never a name on file',c:'blue'},
+ {time:'9:05 AM',event:'Review committee notified: Compliance, Legal, HR, and Data Science',c:'blue'},
+ {time:'' + __cdr('Sep 16','fin') + ', 10:00 AM',event:'Legal places a hold on any threshold changes to Credit Scoring v3.4',c:'amber'},
+ {time:'' + __cdr('Sep 17','fin') + ', 2:00 PM',event:'Eden confirms the ZIP code proxy: fairness ratio 0.74, 1,203 applicants affected',c:'amber'},
+ {time:'' + __cdr('Sep 19','fin') + ', 11:00 AM',event:'The fix, Credit Scoring v3.5, runs in shadow at 5% traffic: fairness ratio 0.83',c:'green'},
+ {time:'' + __cdr('Sep 23','fin') + ', 8:40 AM',event:'Second report: a required sign-off was skipped on a Collections AI message batch. The committee leader is named, so Legal leads this one',c:'red'},
+ {time:'Today',event:'Both reports under review. Reporters protected, no retaliation documented',c:'green'}
 ];
 
 const MARKETING_SCAN = {
@@ -48132,7 +48132,13 @@ window.genRenderScenarios = function () {
     var WHO = { adam: 'Adam', agent: 'AI agent', team: 'Your team' };
     var D = ['Oct 6', 'Oct 5', 'Oct 3', 'Oct 2', 'Sep 30', 'Sep 28', 'Sep 26', 'Sep 24', 'Sep 22', 'Sep 19', 'Sep 17', 'Sep 15', 'Sep 12', 'Sep 10', 'Sep 8'];
     var q = AT.q.toLowerCase();
+    // 10/8 (Brittany): custom dates and a flag filter. A fix's flag is the kind of problem it fixes.
+    var FLAG = function (f) { var t = (f.title + ' ' + f.impact + ' ' + f.model).toLowerCase(); return /fraud/.test(t) ? 'Fraud' : /chatbot|disclos|apr|notice|reason code|collections|reminder|fdcpa/.test(t) ? 'Consumer protection' : /privacy|consent|pii|retention/.test(t) ? 'Privacy' : /di |fair|zip|proxy|re-review|denied|distance|bias|age|race/.test(t) ? 'Fairness' : 'Accuracy'; };
+    var dOf = function (f) { var x = new Date(D[all.indexOf(f) % D.length] + ', 2026'); return x; };
     var list = all.filter(function (f) {
+      if (AT.flag && AT.flag !== 'all' && FLAG(f) !== AT.flag) return false;
+      if (AT.from && dOf(f) < new Date(AT.from + 'T00:00:00')) return false;
+      if (AT.to && dOf(f) > new Date(AT.to + 'T23:59:59')) return false;
       if (AT.who !== 'all' && f.who !== AT.who) return false;
       if (AT.st !== 'all' && f.status !== AT.st) return false;
       return !q || (f.title + ' ' + f.model + ' ' + f.approver + ' ' + f.impact).toLowerCase().indexOf(q) > -1;
@@ -48145,7 +48151,7 @@ window.genRenderScenarios = function () {
       var d = D[all.indexOf(f) % D.length], bg = i % 2 ? '#f7f3ea' : '#fff';
       var r = '<tr style="background:' + bg + ';cursor:pointer" onclick="atwsOpen(\'' + f.id + '\')">' +
         '<td style="' + TD + '"><div style="font-weight:700">' + esc(f.title) + '</div><div style="font-size:11px;color:#64748b;margin-top:2px">' + esc(f.impact) + '</div></td>' +
-        '<td style="' + TD + '">' + esc(f.model) + '</td>' +
+        '<td style="' + TD + '">' + esc(f.model) + '<div style="font-size:10.5px;font-weight:700;color:#A16207;margin-top:2px">' + FLAG(f) + '</div></td>' +
         '<td style="' + TD + ';white-space:nowrap">' + WHO[f.who] + '</td>' +
         '<td style="' + TD + '">' + pill(f.status) + '</td>' +
         '<td style="' + TD + ';white-space:nowrap;color:#475569">' + d + '</td>' +
@@ -48159,6 +48165,9 @@ window.genRenderScenarios = function () {
       '<input id="atws-q" placeholder="Search fixes, models, or approvers" value="' + esc(AT.q) + '" oninput="atwsFilter(\'q\',this.value)" style="' + SEL + ';flex:1;min-width:200px">' +
       '<select onchange="atwsFilter(\'who\',this.value)" style="' + SEL + '"><option value="all">Made by: anyone</option>' + ['adam', 'agent', 'team'].map(function (w) { return '<option value="' + w + '"' + (AT.who === w ? ' selected' : '') + '>' + WHO[w] + ' (' + all.filter(function (f) { return f.who === w; }).length + ')</option>'; }).join('') + '</select>' +
       '<select onchange="atwsFilter(\'st\',this.value)" style="' + SEL + '"><option value="all">Status: any</option>' + stats.map(function (t) { return '<option' + (AT.st === t ? ' selected' : '') + '>' + esc(t) + '</option>'; }).join('') + '</select>' +
+      '<select onchange="atwsFilter(\'flag\',this.value)" style="' + SEL + '"><option value="all">Flag: any</option>' + ['Fairness', 'Fraud', 'Consumer protection', 'Privacy', 'Accuracy'].filter(function (k) { return all.some(function (f) { return FLAG(f) === k; }); }).map(function (k) { return '<option' + (AT.flag === k ? ' selected' : '') + '>' + k + '</option>'; }).join('') + '</select>' +
+      '<label style="font-size:11.5px;color:#64748b">From <input type="date" value="' + esc(AT.from || '') + '" onchange="atwsFilter(\'from\',this.value)" style="' + SEL + '"></label>' +
+      '<label style="font-size:11.5px;color:#64748b">To <input type="date" value="' + esc(AT.to || '') + '" onchange="atwsFilter(\'to\',this.value)" style="' + SEL + '"></label>' +
       '<span style="font-size:11.5px;color:#64748b">Showing ' + list.length + ' of ' + all.length + '</span></div>' +
       '<div style="overflow-x:auto;margin-top:10px;border:1px solid rgba(26,24,21,.08);border-radius:12px"><table style="width:100%;border-collapse:collapse;min-width:760px"><thead><tr style="background:#f4efe6">' +
       ['Fix', 'Model', 'Made by', 'Status', 'Started', 'Approver', ''].map(function (h) { return '<th style="' + TH + '">' + h + '</th>'; }).join('') + '</tr></thead><tbody>' +
@@ -50479,7 +50488,8 @@ window.CARDINAL_PLACES = {
     [3, '14:10', 'war', 'Opened {room} and invited {p0}, {p1}, and Adam'], [4, '15:25', 'talk', 'Shared the sealed evidence {vendor} asked for'], [6, '17:00', 'report', 'Sent the weekly digest to leadership'],
     [9, '10:00', 'model', 'Asked Adam to test a fix for {model}'], [12, '08:45', 'data', 'Confirmed the {data} matched last month’s format'], [15, '09:00', 'report', 'Monthly report: the score stayed certified'],
     [20, '13:30', 'talk', 'Walked {p1} through this quarter’s badges'], [27, '16:15', 'war', 'Closed a resolved war room and sealed its record in Echo']];
-  var ADAM = [[0, '06:40', 'data', 'Checked the overnight {data}: 2 missing fields, filled from the source'], [0, '07:30', 'model', 'Ran 240 attack prompts against the {agent} (2 got through)'], [0, '08:55', 'model', 'Shadow check on {fix}: fairness held on 3,241 decisions'],
+  var ADAM = [[0, '07:10', 'report', 'Daily technical report: {fix} shadow results, attack tests, and data checks'], [1, '17:30', 'report', 'Technical root-cause report for case #{cs}, sealed in Echo'], [6, '16:00', 'report', 'Weekly model health report: drift, fairness, and fraud checks on every model'], [15, '09:30', 'report', 'Monthly technical report for the {exam} evidence file'],
+    [0, '06:40', 'data', 'Checked the overnight {data}: 2 missing fields, filled from the source'], [0, '07:30', 'model', 'Ran 240 attack prompts against the {agent} (2 got through)'], [0, '08:55', 'model', 'Shadow check on {fix}: fairness held on 3,241 decisions'],
     [1, '10:20', 'war', 'Posted the technical root cause in {room}'], [1, '15:00', 'talk', 'Told {p1} which features to drop from {model}'], [2, '11:45', 'model', 'Built the {fix} candidate'],
     [3, '13:10', 'talk', 'Traded test results with {vendor}'], [5, '09:00', 'model', 'Started a 7-day test of four feature combinations'], [7, '08:15', 'data', 'Re-ran the training data footprint check'],
     [10, '14:40', 'war', 'Answered the team’s questions in {room}'], [13, '10:30', 'model', 'Stress-tested {model} with 5,000 synthetic people'], [18, '07:50', 'data', 'Flagged drift in the {data}'], [24, '16:05', 'model', 'Retested the vendor patch: passed']];
@@ -53071,7 +53081,7 @@ window.CARDINAL_PLACES = {
     cores: [['x-core-all', 'All cores']].concat(['Eden', 'Obsidian', 'Genesis', 'Atonement', 'Halo', 'Watchman', 'Codex', 'Compliance', 'Trust Ledger', 'Echo'].map(function (c) { return ['x-core-' + c, c]; })),
     cases: [['x-cases', 'All cases'], ['x-casehist', 'Case history'], ['conversations', 'Conversations'], ['ignored', 'Ignored flags']],
     models: [['x-models', 'Models and AI systems'], ['lineage', 'Version lineage']],
-    people: [['x-people', 'Employees'], ['x-customers', 'Customers'], ['peoplelog', 'Employee activity log'], ['pmprofiles', 'Passport profiles']],
+    people: [['x-people', 'Employees'], ['x-board', 'Team board'], ['x-customers', 'Customers'], ['peoplelog', 'Employee activity log'], ['pmprofiles', 'Passport profiles']],
     decisions: [['receipts', 'Decision receipts']],
     wb: [['whistleblower', 'Sealed reports']],
     desk: [['x-pins', 'Pinned memories'], ['myworkspace', 'My notes and activity']]
@@ -53232,7 +53242,7 @@ window.CARDINAL_PLACES = {
     if (mine) {
       var ae = document.activeElement, focusPh = keepFocus && ae && ae.tagName === 'INPUT' && panel.contains(ae) ? ae.placeholder : null, caret = focusPh ? ae.selectionStart : 0;
       var slot = document.getElementById('echo-case-history'), slotKeep = X.bucket === 'x-casehist' && slot && slot.parentNode && slot.parentNode.id === 'echo-x-casehist-slot';
-      if (!slotKeep) panel.innerHTML = X.bucket === 'x-customers' ? (window.cardinalCustomerDirectory ? cardinalCustomerDirectory('echo') : '') : X.bucket.indexOf('x-core-') === 0 ? pCores() : X.bucket === 'x-people' ? pPeople() : X.bucket === 'x-cases' ? pCases() : X.bucket === 'x-models' ? pModels() : X.bucket === 'x-pins' ? pPins() : X.bucket === 'x-score' ? pScore() : X.bucket === 'x-casehist' ? pCaseHist() : '';
+      if (!slotKeep) panel.innerHTML = X.bucket === 'x-customers' ? (window.cardinalCustomerDirectory ? cardinalCustomerDirectory('echo') : '') : X.bucket.indexOf('x-core-') === 0 ? pCores() : X.bucket === 'x-people' ? pPeople() : X.bucket === 'x-cases' ? pCases() : X.bucket === 'x-models' ? pModels() : X.bucket === 'x-pins' ? pPins() : X.bucket === 'x-score' ? pScore() : X.bucket === 'x-casehist' ? pCaseHist() : X.bucket === 'x-board' ? '<div class="ex-note">Everyone\'s work in one place: every fix, filing, and review, by team. The same board is pinned in Trust Loop.</div>' + (window.cardinalTeamBoard ? cardinalTeamBoard('All', 'echo') : '') : '';
       if (X.bucket === 'x-score') setTimeout(drawScore, 30);
       if (X.bucket === 'x-casehist') { var b = document.getElementById('echo-case-history'); if (b) b.removeAttribute('data-k'); }
       if (focusPh) { var ni = [].filter.call(panel.querySelectorAll('input'), function (i) { return i.placeholder === focusPh; })[0]; if (ni) { ni.focus(); try { ni.setSelectionRange(caret, caret); } catch (e) {} } }
@@ -54723,6 +54733,268 @@ window.CARDINAL_PLACES = {
     var old = document.getElementById('emp-prof'); if (old) old.remove(); document.body.appendChild(m);
     try { cardinalLogActivity('view', 'Opened the employee profile for ' + name, null); } catch (e) {}
   };
+})();
+
+</script>
+
+<script data-p="p34_round2">
+// 10/8 (Brittany's second pre-recording walkthrough):
+//   Eden "Show details" opens under the link; browser alert boxes become toasts; Atonement cohort circles,
+//   cohort pop-ups, and a cleaner active-remediation card; Halo deadline-alert picker and state hover;
+//   Codex upload count and black Figma button; Compliance: no Ask bar, policy packets clickable with the
+//   button up top, black buttons on Reporting and Whistleblower; Library Vendor AI circle scrolls to the
+//   list and outside AI tools are listed; Trust Loop replies, #everyone / #legal / #data-science with the
+//   team board pinned; the team board also lives in Echo; Eve voice picker.
+(function () {
+  function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;'); }
+  function org() { return window.currentOrg || 'fin'; }
+  function toast(t) { try { (window.cardinalShowToast || window.showToast)(t); } catch (e) {} }
+  function D() { return (window.CARDINAL_DATA || {})[org()] || {}; }
+  var MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  function fd(d) { d = new Date(d); return MON[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear(); }
+  var css = document.createElement('style');
+  css.textContent =
+    '#comp-content-reporting .btn-ghost,#comp-content-whistleblower .btn-ghost,#comp-content-packets .btn-ghost,#screen-marketing button[onclick="docFigma()"]{background:#1a1815!important;color:#fff!important;border:1px solid #1a1815!important;border-radius:9px!important;font-weight:700!important}' +
+    '#comp-content-reporting .btn-ghost:hover,#comp-content-whistleblower .btn-ghost:hover,#comp-content-packets .btn-ghost:hover{background:#3a352d!important}' +
+    '#comp-content-whistleblower [style*="border-left"]{box-shadow:0 2px 6px rgba(26,24,21,.06),0 10px 24px rgba(26,24,21,.08)!important;background:#fff!important}' +
+    '.pp-sel{background:#1a1815!important;color:#fff!important;border-color:#1a1815!important}' +
+    '#comp-content-packets tbody tr{cursor:pointer}#comp-content-packets tbody tr:hover td{background:#f4efe6}' +
+    '.r2-pop{position:fixed;inset:0;z-index:10000;background:rgba(26,24,21,.45);display:flex;align-items:center;justify-content:center;padding:16px}.r2-card{background:#f4efe6;border-radius:16px;box-shadow:0 24px 60px rgba(0,0,0,.3);width:min(620px,100%);max-height:90vh;overflow:auto;padding:20px 22px;color:#1a1815}' +
+    '.r2-card h3{margin:0;font-size:17px}.r2-card .sub{font-size:12px;color:#64748b;margin-top:2px}.r2-row{display:flex;align-items:center;gap:10px;padding:10px 12px;background:#fff;border-radius:10px;margin-top:8px;font-size:12.5px}' +
+    '.r2-btn{font:inherit;font-size:12.5px;font-weight:700;background:#1a1815;color:#fff;border:0;border-radius:10px;padding:9px 14px;cursor:pointer}.r2-btn.ghost{background:#fff;color:#1a1815;border:1px solid rgba(26,24,21,.15)}' +
+    '#r2-remed{display:grid;grid-template-columns:minmax(200px,260px) 1fr;gap:18px;align-items:center}@media(max-width:800px){#r2-remed{grid-template-columns:1fr}}' +
+    '.r2-tile{background:#fff;border-radius:12px;padding:12px 14px;box-shadow:0 1px 3px rgba(26,24,21,.06),0 8px 18px rgba(26,24,21,.06)}.r2-tile b{display:block;font-size:20px;font-weight:800}.r2-tile span{font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:.4px;font-weight:700}' +
+    '#tl-board{margin:0;padding:10px 12px;background:#fffdf7;border-bottom:1px solid rgba(26,24,21,.08)}.tb-cols{display:grid;grid-template-columns:repeat(4,minmax(170px,1fr));gap:8px;overflow-x:auto}.tb-col{background:#f4efe6;border-radius:10px;padding:8px}.tb-col h5{margin:0 0 6px;font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:#64748b}' +
+    '.tb-card{background:#fff;border-radius:8px;padding:7px 9px;margin-bottom:6px;font-size:11.5px;cursor:pointer;box-shadow:0 1px 2px rgba(26,24,21,.06);border-left:3px solid #94a3b8}.tb-card .m{font-size:10px;color:#64748b;margin-top:3px}';
+  document.head.appendChild(css);
+
+  // Browser alert boxes look broken on camera; show them as toasts.
+  window.alert = function (m) { toast(String(m)); };
+
+  // ── Eden / Obsidian "Show details": the details open right under the link ──
+  document.addEventListener('click', function (e) {
+    var a = e.target.closest && e.target.closest('a[onclick*="edo-stampops-"]'); if (!a) return;
+    var id = (a.getAttribute('onclick').match(/edo-stampops-\w+/) || [])[0], t = id && document.getElementById(id); if (!t) return;
+    var host = a.parentElement; if (host && t.previousElementSibling !== host && !host.contains(t)) host.parentNode.insertBefore(t, host.nextSibling);
+    setTimeout(function () { a.textContent = t.style.display === 'none' ? 'Show details' : 'Hide details'; }, 0);
+  }, true);
+
+  // ── Atonement: cohort circles, cohort pop-up, cleaner active-remediation card ──
+  function cohortRows() {
+    var t = document.querySelector('#at-tab-cohorts-ct table'); if (!t) return [];
+    return [].map.call(t.querySelectorAll('tbody tr'), function (tr) { var c = [].map.call(tr.children, function (td) { return td.textContent.trim(); }); return { id: c[0], name: c[1], type: c[2], people: c[3], pct: parseInt(c[4], 10) || 0, status: c[5], owner: c[6], created: c[7], cs: c[8], tr: tr }; });
+  }
+  window.r2Cohort = function (id) {
+    var c = cohortRows().filter(function (x) { return x.id === id; })[0]; if (!c) return;
+    var n = parseInt(String(c.people).replace(/,/g, ''), 10) || 0, done = Math.round(n * c.pct / 100);
+    var cd = document.getElementById('cohort-done'), cc = document.getElementById('cohort-count'); if (cd && cc && cc.textContent.trim() === c.people) done = parseInt(cd.textContent.replace(/,/g, ''), 10) || done;
+    var m = document.createElement('div'); m.className = 'r2-pop'; m.onclick = function (e) { if (e.target === m) m.remove(); };
+    m.innerHTML = '<div class="r2-card"><div style="display:flex;justify-content:space-between;gap:10px"><div><h3>' + esc(c.name) + '</h3><div class="sub">' + esc(c.id) + ' · ' + esc(c.type) + ' · Owner ' + esc(c.owner) + ' · Created ' + esc(c.created) + '</div></div><button type="button" class="r2-btn ghost" onclick="this.closest(\'.r2-pop\').remove()">Close</button></div>' +
+      '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px"><div class="r2-tile"><b>' + esc(c.people) + '</b><span>People</span></div><div class="r2-tile"><b style="color:#15803D">' + done.toLocaleString() + '</b><span>Re-reviewed</span></div><div class="r2-tile"><b style="color:#A16207">' + (n - done).toLocaleString() + '</b><span>Remaining</span></div></div>' +
+      '<div style="margin-top:12px;height:8px;background:#e7e1d4;border-radius:999px;overflow:hidden"><div style="height:100%;width:' + c.pct + '%;background:#22c55e"></div></div><div class="sub" style="margin-top:4px">' + c.pct + '% complete · ' + esc(c.status.replace('-', ' ')) + '</div>' +
+      '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px"><button type="button" class="r2-btn" onclick="try{downloadCohortCSV()}catch(e){}">Download CSV</button><button type="button" class="r2-btn" onclick="try{pushToSalesforce()}catch(e){}">Send to CRM</button>' + (c.cs ? '<button type="button" class="r2-btn ghost" onclick="this.closest(\'.r2-pop\').remove();try{cardinalNavigateToCase(' + esc(JSON.stringify(c.cs)) + ')}catch(e){}">Open case ' + esc(c.cs) + '</button>' : '') + '</div>' +
+      '<div class="sub" style="margin-top:12px">Every re-review in this cohort is sealed in Echo for the exam file.</div></div>';
+    document.body.appendChild(m);
+  };
+  function atonement() {
+    var tab = document.getElementById('at-tab-cohorts'); if (!tab || tab.offsetParent === null) return;
+    var rows = cohortRows();
+    rows.forEach(function (r) { if (!r.tr.__r2) { r.tr.__r2 = 1; r.tr.setAttribute('onclick', ''); r.tr.onclick = function () { r2Cohort(r.id); }; r.tr.style.cursor = 'pointer'; } });
+    var ct = document.getElementById('at-tab-cohorts-ct');
+    if (ct && rows.length && window.cardinalGaugeRow) {
+      var g = document.getElementById('r2-cohort-gauges');
+      var units = rows.map(function (r) { return { value: r.pct + '%', pct: r.pct / 100, color: r.pct >= 80 ? '#22c55e' : r.pct > 0 ? '#FACC15' : '#a78bfa', label: r.name, status: /Monitor/.test(r.status) ? 'Monitoring' : 'In Progress', pillLabel: r.id, pillVal: r.people + ' people', sub: r.name, go: 'r2Cohort(' + JSON.stringify(r.id) + ')', onclick: 'r2Cohort(' + JSON.stringify(r.id) + ')', delta: { d: 0, text: '' }, tip: 'Click to open this cohort' }; });
+      var key = JSON.stringify(units);
+      if (!g) { g = document.createElement('div'); g.id = 'r2-cohort-gauges'; g.style.margin = '0 0 14px'; ct.parentNode.insertBefore(g, ct); }
+      if (g.getAttribute('data-k') !== key) { g.setAttribute('data-k', key); g.innerHTML = cardinalGaugeRow(units); }
+    }
+    // Credit Scoring cohort card said "Complete" at 57%.
+    [].forEach.call(tab.querySelectorAll('#at-cohort-cards > div'), function (card) {
+      var rate = (card.textContent.match(/Rate\s*([\d.]+)%/) || [])[1], b = card.querySelector('.badge');
+      if (b && rate && +rate < 100 && /Complete/.test(b.textContent) && /1,203|ZIP/.test(card.textContent)) { b.textContent = 'In progress'; b.style.setProperty('color', '#A16207', 'important'); b.style.setProperty('background', 'rgba(250,204,21,.16)', 'important'); b.style.setProperty('border-color', 'rgba(202,138,4,.4)', 'important'); }
+    });
+    // Active remediation card: gauge plus tiles instead of a plain gray list.
+    var done = document.getElementById('cohort-done'); if (!done) return;
+    var card = done.closest('.card'); if (!card) return;
+    var grid = card.querySelector('.grid-2'); if (grid && grid.style.display !== 'none') grid.style.display = 'none';
+    card.style.setProperty('background', '#fff', 'important'); card.style.setProperty('box-shadow', '0 2px 6px rgba(26,24,21,.06),0 14px 30px rgba(26,24,21,.08)', 'important'); card.style.setProperty('border', '0', 'important');
+    var tx = function (id) { return ((document.getElementById(id) || {}).textContent || '').trim(); };
+    var pct = parseFloat(tx('at-progress-pct')) || 0, total = tx('cohort-count');
+    var html = '<div>' + (window.cardinalGauge ? cardinalGauge({ value: Math.round(pct) + '%', pct: pct / 100, color: pct >= 80 ? '#22c55e' : '#FACC15', label: 'Re-reviewed', status: 'In Progress', pillLabel: 'Re-reviewed', pillVal: tx('cohort-done').replace(/\s*\(.*$/, '') + ' of ' + total, delta: { d: 0, text: '' } }) : '') + '</div>' +
+      '<div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px">' +
+      '<div class="r2-tile"><b style="color:#15803D">' + esc(tx('cohort-done')) + '</b><span>Re-evaluated</span></div><div class="r2-tile"><b style="color:#15803D">' + esc(tx('at-approved')) + '</b><span>Approved on re-review</span></div>' +
+      '<div class="r2-tile"><b style="color:#A16207">' + esc(tx('cohort-remaining')) + '</b><span>Remaining</span></div><div class="r2-tile"><b style="color:#15803D">' + esc(tx('at-revenue').replace(/ revenue recovered/, '')) + '</b><span>Revenue recovered</span></div></div>' +
+      '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px"><button type="button" class="r2-btn" onclick="exportCohortCSV()">Export cohort CSV</button><button type="button" class="r2-btn" onclick="pushToSalesforce()">Send to CRM</button></div></div>';
+    var box = document.getElementById('r2-remed');
+    if (!box) { box = document.createElement('div'); box.id = 'r2-remed'; grid.parentNode.insertBefore(box, grid); }
+    if (box.__h !== html) { box.__h = html; box.innerHTML = html; }
+  }
+
+  // ── Halo: pick which deadlines you get alerts for; hover a state for its findings ──
+  window.__dlAlerts = window.__dlAlerts || {};
+  window.r2DeadlineAlerts = function () {
+    var items = []; try { items = compCalItems(org()) || []; } catch (e) {}
+    var me = (window.currentUserName || 'You'), saved = window.__dlAlerts[org()] || {};
+    var m = document.createElement('div'); m.className = 'r2-pop'; m.onclick = function (e) { if (e.target === m) m.remove(); };
+    m.innerHTML = '<div class="r2-card"><h3>Deadline alerts</h3><div class="sub">Pick the deadlines you want Eve to remind you about, and when. Nothing else will alert you.</div>' +
+      items.map(function (it, i) { var on = saved[it.name]; return '<div class="r2-row"><input type="checkbox" id="dla-' + i + '"' + (on ? ' checked' : '') + ' style="width:16px;height:16px"><label for="dla-' + i + '" style="flex:1;cursor:pointer"><strong>' + esc(it.name) + '</strong><div class="sub">' + esc(it.type || '') + ' · due ' + esc(it.due) + ' · ' + (it.days < 0 ? 'overdue' : it.days + ' days left') + '</div></label><select id="dlw-' + i + '" style="font:inherit;font-size:12px;padding:6px 8px;border-radius:8px;border:1px solid rgba(26,24,21,.15)">' + ['1 day before', '3 days before', '1 week before', '2 weeks before'].map(function (w) { return '<option' + ((on || '2 weeks before') === w ? ' selected' : '') + '>' + w + '</option>'; }).join('') + '</select></div>'; }).join('') +
+      '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px"><button type="button" class="r2-btn ghost" onclick="this.closest(\'.r2-pop\').remove()">Cancel</button><button type="button" class="r2-btn" id="dla-save">Save alerts</button></div></div>';
+    document.body.appendChild(m);
+    document.getElementById('dla-save').onclick = function () {
+      var out = {}, n = 0; items.forEach(function (it, i) { if (document.getElementById('dla-' + i).checked) { out[it.name] = document.getElementById('dlw-' + i).value; n++; } });
+      window.__dlAlerts[org()] = out; m.remove();
+      toast(n ? 'Alerts on for ' + n + ' deadline' + (n === 1 ? '' : 's') + '. Eve will remind ' + me.split(' ')[0] + '. Logged in Echo.' : 'Deadline alerts turned off.');
+      try { cardinalLogActivity('edit', 'Set deadline alerts for ' + n + ' deadlines', null); } catch (e) {}
+    };
+  };
+  function halo() {
+    var s = document.getElementById('screen-halo'); if (!s || s.offsetParent === null) return;
+    [].forEach.call(s.querySelectorAll('.halo-act-btn'), function (b) {
+      if (b.__r2) return; var t = b.textContent;
+      if (/Set Deadline Alerts/.test(t)) { b.__r2 = 1; b.setAttribute('onclick', 'r2DeadlineAlerts()'); }
+      else if (/Export Regulatory Report/.test(t)) { b.__r2 = 1; b.setAttribute('onclick', "toast2('Regulatory risk report ready. Saved to Echo and downloading.')"); }
+      else if (/Share/.test(t)) { b.__r2 = 1; b.setAttribute('onclick', "try{navigator.clipboard.writeText(location.href)}catch(e){};toast2('Link copied. Anyone you share it with sees only what their access allows.')"); }
+    });
+    var layer = document.getElementById('halo-states-layer');
+    if (layer && window.d3 && typeof haloPlacePanel === 'function' && layer.__hv !== org()) {
+      layer.__hv = org();
+      d3.select(layer).selectAll('path').on('mouseenter.r2', function (ev, d) {
+        var n = d && d.properties && d.properties.name; if (!n) return;
+        clearTimeout(window.__r2hv); window.__r2hv = setTimeout(function () { try { var ab = (window.CARDINAL_STATE_ABBR || {})[n]; haloPlacePanel(ab || stAbbr(n), n); } catch (e) {} }, 120);
+      });
+    }
+  }
+  window.toast2 = toast;
+  var SA = { Alabama: 'AL', Alaska: 'AK', Arizona: 'AZ', Arkansas: 'AR', California: 'CA', Colorado: 'CO', Connecticut: 'CT', Delaware: 'DE', Florida: 'FL', Georgia: 'GA', Hawaii: 'HI', Idaho: 'ID', Illinois: 'IL', Indiana: 'IN', Iowa: 'IA', Kansas: 'KS', Kentucky: 'KY', Louisiana: 'LA', Maine: 'ME', Maryland: 'MD', Massachusetts: 'MA', Michigan: 'MI', Minnesota: 'MN', Mississippi: 'MS', Missouri: 'MO', Montana: 'MT', Nebraska: 'NE', Nevada: 'NV', 'New Hampshire': 'NH', 'New Jersey': 'NJ', 'New Mexico': 'NM', 'New York': 'NY', 'North Carolina': 'NC', 'North Dakota': 'ND', Ohio: 'OH', Oklahoma: 'OK', Oregon: 'OR', Pennsylvania: 'PA', 'Rhode Island': 'RI', 'South Carolina': 'SC', 'South Dakota': 'SD', Tennessee: 'TN', Texas: 'TX', Utah: 'UT', Vermont: 'VT', Virginia: 'VA', Washington: 'WA', 'West Virginia': 'WV', Wisconsin: 'WI', Wyoming: 'WY', 'District of Columbia': 'DC' };
+  function stAbbr(n) { return SA[n] || ''; }
+
+  // ── Codex: how many uploads ─────────────────────────────────────────
+  function codex() {
+    var s = document.getElementById('screen-marketing'); if (!s || s.offsetParent === null) return;
+    var fig = s.querySelector('button[onclick="docFigma()"]'); if (!fig) return;
+    var shown = (s.innerText.match(/\n(\d+) of (\d+)\n/) || []), total = shown[2];
+    var rows = [].filter.call(s.querySelectorAll('table tbody tr'), function (r) { return r.offsetParent !== null; });
+    var types = {}; rows.forEach(function (r) { var m = r.textContent.match(/\b(PDF|PNG|DOCX|JPG|FIG|MP4)\b/); if (m) types[m[1]] = (types[m[1]] || 0) + 1; });
+    var txt = (total || rows.length) + ' documents uploaded' + (Object.keys(types).length ? ': ' + Object.keys(types).map(function (k) { return types[k] + ' ' + k; }).join(', ') : '') + '. Each new upload adds a version.';
+    var el = document.getElementById('r2-codex-count');
+    if (!el) { el = document.createElement('div'); el.id = 'r2-codex-count'; el.style.cssText = 'font-size:12px;font-weight:700;color:#1a1815;margin-top:8px'; fig.parentNode.appendChild(el); }
+    if (el.textContent !== txt) el.textContent = txt;
+  }
+
+  // ── Compliance ──────────────────────────────────────────────────────
+  window.r2Policy = function (tr) {
+    var c = [].map.call(tr.children, function (td) { return td.textContent.trim(); });
+    var CORE = { Eden: 'eden', Genesis: 'genesis', Atonement: 'atonement', 'Cardinal Passport': 'cardinallibrary', 'Work Queue': 'trustloop', Watchman: 'sentinel', Echo: 'echo', Obsidian: 'obsidian', Codex: 'marketing' };
+    var cores = Object.keys(CORE).filter(function (k) { return (c[3] || '').indexOf(k) > -1; });
+    var m = document.createElement('div'); m.className = 'r2-pop'; m.onclick = function (e) { if (e.target === m) m.remove(); };
+    m.innerHTML = '<div class="r2-card"><div style="display:flex;justify-content:space-between;gap:10px"><h3>' + esc(c[0]) + '</h3><button type="button" class="r2-btn ghost" onclick="this.closest(\'.r2-pop\').remove()">Close</button></div>' +
+      [['Control', c[1]], ['Owner', c[2]], ['Enforced by', c[3]], ['Evidence', c[4]], ['Status', c[5]], ['NIST AI RMF / ISO 42001', c[6]]].map(function (r) { return '<div class="r2-row"><span style="width:150px;color:#64748b;font-weight:700;font-size:11.5px;text-transform:uppercase">' + r[0] + '</span><span style="flex:1;font-weight:600;color:' + (r[0] === 'Status' ? (/Gap/.test(r[1]) ? '#B91C1C' : '#15803D') : '#1a1815') + '">' + esc(r[1]) + '</span></div>'; }).join('') +
+      '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px">' + cores.map(function (k) { return '<button type="button" class="r2-btn" onclick="this.closest(\'.r2-pop\').remove();showScreen(\'' + CORE[k] + '\')">Open ' + k + ' →</button>'; }).join('') + '<button type="button" class="r2-btn ghost" onclick="toast2(\'Evidence attached to the packet. Logged in Echo.\')">Attach evidence</button></div></div>';
+    document.body.appendChild(m);
+  };
+  function compliance() {
+    var s = document.getElementById('screen-compliance'); if (!s || s.offsetParent === null) return;
+    var ask = document.getElementById('comp-ask'); if (ask) { var row = ask.parentElement; if (row && row.style.display !== 'none') row.style.display = 'none'; var up = row && row.parentElement; if (up && up.children.length <= 2 && !up.__h) { up.__h = 1; [].forEach.call(up.children, function (x) { if (x !== row && x.textContent.length < 140) x.style.display = 'none'; }); } }
+    var pk = document.getElementById('comp-content-packets');
+    if (pk && pk.offsetParent !== null) {
+      var tabs = [].filter.call(pk.querySelectorAll('button'), function (b) { return /compPackSelect/.test(b.getAttribute('onclick') || ''); });
+      tabs.forEach(function (b) { var on = /0\.08|rgba\(30, 58, 138/.test(getComputedStyle(b).backgroundColor) || b.classList.contains('pp-sel') && b.__on; b.classList.toggle('pp-sel', !!on); b.__on = on; });
+      var asm = [].filter.call(pk.querySelectorAll('button'), function (b) { return /compPackAssemble/.test(b.getAttribute('onclick') || ''); })[0];
+      if (asm && tabs.length) { var bar = tabs[tabs.length - 1].parentNode; if (asm.parentNode !== bar) { asm.style.marginLeft = 'auto'; bar.style.display = 'flex'; bar.style.alignItems = 'center'; bar.style.gap = '8px'; bar.style.flexWrap = 'wrap'; bar.appendChild(asm); } asm.style.setProperty('background', '#1a1815', 'important'); asm.style.setProperty('color', '#fff', 'important'); }
+      [].forEach.call(pk.querySelectorAll('tbody tr'), function (tr) { if (!tr.__r2) { tr.__r2 = 1; tr.title = 'Open this policy'; tr.onclick = function () { r2Policy(tr); }; } });
+    }
+  }
+
+  // ── Library: Vendor AI circle lands on the list; outside AI tools listed ──
+  var EXTRA_VENDORS = {
+    fin: [['Legal research AI', 'Drafts research memos and contract reviews for Legal', 'Legal team (no customer decisions)', ['SOC 2', 'No training on your data'], ['Use policy sign-off', 'Data retention terms'], 'Watch'], ['Meeting notes AI', 'Records and summarizes internal meetings', 'All teams', ['SOC 2'], ['Recording consent policy', 'Data retention terms'], 'Gap'], ['Coding assistant', 'Suggests code to data science and engineering', 'Model code (Credit Scoring, Fraud Screening)', ['SOC 2', 'No training on your data'], ['Review rule for AI-written code'], 'Watch']],
+    ad: [['Legal research AI', 'Drafts research memos and contract reviews for Legal', 'Legal team (no personnel decisions)', ['SOC 2'], ['Use policy sign-off', 'Data retention terms'], 'Watch'], ['Meeting notes AI', 'Records and summarizes internal meetings', 'All teams', ['SOC 2'], ['Recording consent policy', 'Controlled data rules'], 'Gap']],
+    health: [['Legal research AI', 'Drafts research memos and contract reviews for Legal', 'Legal team (no patient decisions)', ['SOC 2'], ['Use policy sign-off'], 'Watch'], ['Meeting notes AI', 'Records and summarizes internal meetings', 'All teams', ['SOC 2'], ['Business associate agreement', 'Recording consent policy'], 'Gap']],
+    fed: [['Legal research AI', 'Drafts research memos for Chief Counsel', 'Counsel (no taxpayer decisions)', ['FedRAMP authorization'], ['Use policy sign-off'], 'Watch'], ['Meeting notes AI', 'Records and summarizes internal meetings', 'All teams', ['FedRAMP authorization'], ['Records retention schedule'], 'Gap']]
+  };
+  (function () { var V = window.SENTINEL_VENDORS; if (!V) return; Object.keys(EXTRA_VENDORS).forEach(function (o) { V[o] = V[o] || []; EXTRA_VENDORS[o].forEach(function (v) { if (!V[o].some(function (x) { return (Array.isArray(x) ? x[0] : x.name) === v[0]; })) V[o].push(v); }); }); })();
+  document.addEventListener('click', function (e) {
+    var g = e.target.closest && e.target.closest('#screen-cardinallibrary .g-go'); if (!g) return;
+    setTimeout(function () { var box = [].filter.call(document.querySelectorAll('#screen-cardinallibrary [id^=lib-tab-content-]'), function (x) { return x.offsetParent !== null; })[0]; var tabs = document.querySelector('#screen-cardinallibrary .lib-tab'); var tgt = (tabs && tabs.parentElement) || box; if (tgt) { window.__keepUntil = 0; window.__deepLinkUntil = Date.now() + 2000; tgt.scrollIntoView({ behavior: 'smooth', block: 'start' }); } }, 250);
+  }, true);
+
+  // ── Team board (Work Queue by team): Trust Loop channels and Echo ──
+  window.cardinalTeamBoard = function (team, where) {
+    var all = []; try { all = wqTickets(org()) || []; } catch (e) {}
+    var list = all.filter(function (t) { return team === 'All' || t.team === team; });
+    var COLS = (typeof WQ_COLS !== 'undefined' && WQ_COLS) || ['To do', 'In progress', 'Awaiting approval', 'Done'];
+    var PRI = { Critical: '#DC2626', High: '#FACC15', Medium: '#2563EB', Low: '#64748B' };
+    return '<div class="tb-cols">' + COLS.map(function (c) { var it = list.filter(function (t) { return t.status === c; }); return '<div class="tb-col"><h5>' + esc(c) + ' · ' + it.length + '</h5>' + it.slice(0, where === 'tl' ? 3 : 8).map(function (t) { var d = {}; try { d = wqDue(t); } catch (e) {} return '<div class="tb-card" style="border-left-color:' + (PRI[t.priority] || '#94a3b8') + '" onclick="try{wqOpen(' + esc(JSON.stringify(t.id)) + ')}catch(e){}"><div style="font-weight:700">' + esc(t.title) + '</div><div class="m">' + esc(t.team) + (t.assignee ? ' · ' + esc(t.assignee) : '') + (d.label ? ' · ' + esc(d.label) : '') + '</div></div>'; }).join('') + (it.length > (where === 'tl' ? 3 : 8) ? '<div class="m" style="font-size:10.5px;color:#64748b">+' + (it.length - (where === 'tl' ? 3 : 8)) + ' more</div>' : '') + '</div>'; }).join('') + '</div>';
+  };
+  var NEWCH = {
+    everyone: ['#everyone', 'Company-wide: announcements, wins, and the team board', 'All', [['Riley Whitmore', 'Reminder: CFPB exam daily check-in at 9:00. The team board is pinned at the top of this channel.'], ['Eve: Cardinal', 'Morning summary: 687 of 1,203 applicants re-reviewed so far. Three launch sign-offs are still open for Credit Scoring v3.5.']]],
+    legal: ['#legal', 'Legal and outside counsel: notices, holds, and exam questions', 'Legal', [['Morgan Hale', 'Hold stays on threshold changes to Credit Scoring v3.4 until the audit closes.'], ['Outside Counsel', 'Draft adverse action notice language is in Codex for review.']]],
+    'data-science': ['#data-science', 'Models, tests, and fixes', 'Data Science', [['Nina Roberts', 'v3.5 shadow results hold at fairness ratio 0.83, default rate unchanged.'], ['Adam: Cardinal', 'Income-features test is on day 3 of 7. Early leader: verified_income_12mo plus employment_stability.']]]
+  };
+  function addChannels(o) {
+    var d = (window.CARDINAL_DATA || {})[o]; if (!d || o !== 'fin' || d.__r2ch) return; d.__r2ch = 1;
+    var now = Date.now(), ch = d.trustLoopChannels = d.trustLoopChannels || [];
+    Object.keys(NEWCH).forEach(function (id, k) {
+      var c = NEWCH[id]; if (ch.some(function (x) { return x.id === id; })) return;
+      ch.unshift({ id: id, name: c[0], description: c[1], members: ({ legal: ['Morgan Hale', 'Riley Whitmore', 'Nina Roberts', 'Jordan Ellis'], 'data-science': ['Grace Liu', 'Lisa Torres', 'Nina Roberts', 'Hannah Brooks'] })[id] || ['Riley Whitmore', 'Nina Roberts', 'Lisa Torres', 'Morgan Hale', 'Jordan Ellis', 'Grace Liu', 'Hannah Brooks'], unreadCount: 2, __team: c[2],
+        messages: c[3].map(function (m, i) { return { id: id + '-' + i, timestamp: new Date(now - (k * 5 + (2 - i) * 3 + 1) * 3600000).toISOString(), author: m[0], content: m[1], attachments: [], mentions: [], isPinned: false, echoLogId: 'echo-' + id + '-' + i, authorKind: /^Eve/.test(m[0]) ? 'eve' : /^Adam/.test(m[0]) ? 'adam' : 'human' }; }) });
+    });
+  }
+  ['fin'].forEach(addChannels);
+  function trustloop() {
+    var s = document.getElementById('screen-trustloop'); if (!s || s.offsetParent === null) return;
+    var cid = window.__tlSelectedChannelId, c = NEWCH[cid], th = document.getElementById('tlw-thread'), b = document.getElementById('tl-board');
+    if (!c || !th || window.__tlDmPeer) { if (b) b.remove(); return; }
+    var html = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><div style="font-size:10.5px;font-weight:800;color:#A16207;text-transform:uppercase;letter-spacing:.5px">Pinned · Team board' + (c[2] === 'All' ? '' : ': ' + esc(c[2])) + '</div><button type="button" class="r2-btn" style="font-size:11px;padding:5px 10px" onclick="try{showScreen(\'myworkspace\')}catch(e){}">Open full board</button></div>' + cardinalTeamBoard(c[2], 'tl');
+    if (!b || b.nextElementSibling !== th) { if (b) b.remove(); b = document.createElement('div'); b.id = 'tl-board'; th.parentNode.insertBefore(b, th); }
+    if (b.__h !== html) { b.__h = html; b.innerHTML = html; }
+  }
+  // Someone answers back when you post.
+  var oSend = window.tlwSendCompose;
+  if (typeof oSend === 'function') window.tlwSendCompose = function () {
+    var inp = document.getElementById('tlw-compose-input'), txt = inp && inp.value.trim(); if (!txt) return oSend.apply(this, arguments);
+    var dm = window.__tlDmPeer, cid = window.__tlSelectedChannelId, d = D(), me = d.user || 'You';
+    var r = oSend.apply(this, arguments);
+    var who = dm || (function () { var ch = (d.trustLoopChannels || []).concat(d.caseChannels || []).filter(function (x) { return x.id === cid || x.caseId === cid || x.channelName === cid; })[0]; var ms = (ch && ch.members) || []; return ms.filter(function (n) { return n !== me && !/Eve|Adam|Counsel/.test(n); })[0] || 'Riley Whitmore'; })();
+    var low = txt.toLowerCase();
+    var reply = /resched|schedule|move|time|meet/.test(low) ? 'Got it. I updated the calendar and will send the new time to everyone. Will keep you posted.' : /review|look|check/.test(low) ? 'On it. I will review it today and post what I find here.' : /sign|approve/.test(low) ? 'I will sign once Legal confirms the notice wording. Should be today.' : /\?$/.test(txt) ? 'Good question. Let me check and come back to you within the hour.' : 'Thanks, noted. I will keep you updated.';
+    var key = dm ? 'dm:' + dm : cid;
+    setTimeout(function () {
+      window.__tlRuntimeMsgs = window.__tlRuntimeMsgs || {}; (window.__tlRuntimeMsgs[key] = window.__tlRuntimeMsgs[key] || []).push({ id: 'rep-' + Date.now(), timestamp: new Date().toISOString(), author: who, content: reply, attachments: [], mentions: [], isPinned: false, echoLogId: 'echo-tl-rep-' + Date.now(), authorKind: 'human' });
+      try { renderTrustLoopWorkspace(org()); } catch (e) {}
+      toast(who.split(' ')[0] + ' replied in Trust Loop.');
+    }, 2600);
+    return r;
+  };
+
+  // ── Eve: choose her voice ───────────────────────────────────────────
+  var VKEY = 'cardinal-eve-voice', set = null;
+  Object.defineProperty(window, '__eveVoice', { configurable: true, get: function () {
+    var want = null; try { want = localStorage.getItem(VKEY); } catch (e) {}
+    if (want && window.speechSynthesis) { var v = speechSynthesis.getVoices().filter(function (x) { return x.name === want; })[0]; if (v) return v; }
+    if (set) return set;
+    var vs = (window.speechSynthesis && speechSynthesis.getVoices()) || [];
+    return vs.filter(function (x) { return /^zoe/i.test(x.name) && /premium/i.test(x.name); })[0] || vs.filter(function (x) { return /^zoe/i.test(x.name) && /enhanced/i.test(x.name); })[0] || null;
+  }, set: function (v) { set = v; } });
+  window.r2SetVoice = function (n) { try { localStorage.setItem(VKEY, n); } catch (e) {} var was = eveTTSEnabled; eveTTSEnabled = true; try { speakText('Hi, I am Eve. This is the voice I will use.', 'eve'); } catch (e) {} eveTTSEnabled = was; };
+  function voicePicker() {
+    var vs = document.getElementById('voice-settings'); if (!vs || vs.style.display !== 'block' || document.getElementById('r2-voice')) return;
+    var all = (window.speechSynthesis && speechSynthesis.getVoices()) || [], en = all.filter(function (v) { return /^en/i.test(v.lang); });
+    var cur = window.__eveVoice, zoe = en.filter(function (v) { return /zoe/i.test(v.name); });
+    var box = document.createElement('div'); box.id = 'r2-voice'; box.style.cssText = 'margin-top:10px;padding-top:10px;border-top:1px solid rgba(26,24,21,.08);font-size:11.5px;color:#1a1815';
+    box.innerHTML = '<div style="font-weight:800;margin-bottom:4px">Eve\'s voice</div><select onchange="r2SetVoice(this.value)" style="width:100%;font:inherit;font-size:12px;padding:6px 8px;border-radius:8px;border:1px solid rgba(26,24,21,.15)">' + en.map(function (v) { return '<option' + (cur && cur.name === v.name ? ' selected' : '') + '>' + esc(v.name) + '</option>'; }).join('') + '</select>' +
+      '<div style="font-size:10.5px;color:#64748b;margin-top:5px">' + (zoe.length ? 'Now using: ' + esc(cur ? cur.name : 'default') + '.' : 'Zoe is not in this browser\'s list, so it cannot use her. Safari usually lists downloaded Premium voices; try Safari, or restart this browser after downloading.') + '</div>';
+    vs.appendChild(box);
+  }
+
+  // ── Small text fixes ────────────────────────────────────────────────
+  function words() {
+    var at = document.getElementById('screen-atonement');
+    if (at && at.offsetParent !== null && !at.__sf) { var w = document.createTreeWalker(at, NodeFilter.SHOW_TEXT), n, hit = 0; while ((n = w.nextNode())) { if (/Salesforce/.test(n.nodeValue)) { n.nodeValue = n.nodeValue.replace(/Salesforce/g, 'your CRM'); hit = 1; } } }
+    [].forEach.call(document.querySelectorAll('button'), function (b) { if (b.__w || !/Salesforce/.test(b.textContent) || b.children.length) return; b.__w = 1; b.textContent = b.textContent.replace(/Salesforce/g, 'CRM'); });
+  }
+
+  setInterval(function () { try { atonement(); } catch (e) {} try { halo(); } catch (e) {} try { codex(); } catch (e) {} try { compliance(); } catch (e) {} try { trustloop(); } catch (e) {} try { voicePicker(); } catch (e) {} try { words(); } catch (e) {} }, 500);
 })();
 
 </script>
