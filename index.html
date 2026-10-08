@@ -55414,6 +55414,92 @@ window.CARDINAL_PLACES = {
 
 </script>
 
+<script data-p="p37_circles">
+// 10/8 (Brittany: "I love the cohort circles... add more where it helps"). Circle rows on four lists:
+// Compliance Calendar (days left per deadline), Watchman open cases (days left on each case clock),
+// Genesis tests (pass rate per model), and Trust Ledger certifications (status and time to the next check).
+(function () {
+  function org() { return window.currentOrg || 'fin'; }
+  var MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  function place(before, id, units) {
+    if (!before || !before.parentNode || !units.length || !window.cardinalGaugeRow) return;
+    var g = document.getElementById(id);
+    if (!g) { g = document.createElement('div'); g.id = id; g.style.margin = '0 0 14px'; }
+    if (g.nextElementSibling !== before) before.parentNode.insertBefore(g, before);
+    var key = org() + JSON.stringify(units);
+    if (g.getAttribute('data-k') !== key) { g.setAttribute('data-k', key); g.innerHTML = cardinalGaugeRow(units.slice(0, 6)); }
+  }
+  function flash(el) { if (!el) return; window.__keepUntil = 0; window.__deepLinkUntil = Date.now() + 2000; el.scrollIntoView({ behavior: 'smooth', block: 'center' }); el.style.transition = 'box-shadow .3s'; el.style.boxShadow = '0 0 0 3px rgba(139,92,246,.45)'; setTimeout(function () { el.style.boxShadow = ''; }, 1800); }
+  function dayColor(d) { return d <= 14 ? '#ef4444' : d <= 45 ? '#FACC15' : '#22c55e'; }
+
+  // Compliance Calendar
+  window.c37Cal = function (i) { var host = document.getElementById('comp-calendar-items'); flash(host && host.children[i]); };
+  function calendar() {
+    var host = document.getElementById('comp-calendar-items'); if (!host || host.offsetParent === null) return;
+    var items = []; try { items = compCalItems(org()) || []; } catch (e) {}
+    place(host, 'c37-cal', items.map(function (it, i) {
+      var d = it.days; return { value: d < 0 ? 'Late' : d + 'D', pct: d < 0 ? 1 : Math.max(0.06, Math.min(1, 1 - d / 120)), color: d < 0 ? '#ef4444' : dayColor(d), label: it.name, status: d < 0 ? 'Overdue by ' + (-d) + ' days' : d <= 14 ? 'Due Soon' : 'On Track', pillLabel: 'Due', pillVal: String(it.due).replace(/, \d{4}$/, ''), sub: it.name, go: 'c37Cal(' + i + ')', onclick: 'c37Cal(' + i + ')', delta: { d: 0, text: '' }, good: 'up', tip: it.name + ': ' + (d < 0 ? 'overdue' : d + ' days left') + '. Click to open it.' };
+    }));
+  }
+
+  // Watchman open cases
+  window.c37Case = function (id) {
+    var t = [].filter.call(document.querySelectorAll('#screen-sentinel table'), function (x) { return x.offsetParent !== null && /SLA/.test(x.innerText); })[0]; if (!t) return;
+    var tr = [].filter.call(t.querySelectorAll('tbody tr'), function (r) { return r.children[0] && r.children[0].textContent.trim() === id; })[0];
+    if (tr) { flash(tr); setTimeout(function () { tr.click(); }, 500); }
+  };
+  function watchman() {
+    var s = document.getElementById('screen-sentinel'); if (!s || s.offsetParent === null) return;
+    var t = [].filter.call(s.querySelectorAll('table'), function (x) { return x.offsetParent !== null && /SLA/.test((x.querySelector('tr') || {}).textContent || ''); })[0]; if (!t) return;
+    var STAGE = { 'remediation-in-progress': 'Fix in progress', 'shadow-deploy': 'Fix in shadow', monitoring: 'Monitoring', open: 'Open', 'under-investigation': 'Investigating' };
+    var units = [].map.call(t.querySelectorAll('tbody tr'), function (r) {
+      var c = [].map.call(r.children, function (td) { return td.textContent.trim(); }); if (!/^#/.test(c[0] || '')) return null;
+      var d = parseInt(c[7], 10); if (isNaN(d)) return null;
+      return { value: d + 'D', pct: Math.max(0.06, Math.min(1, 1 - d / 60)), color: dayColor(d), label: c[0], status: STAGE[c[6]] || c[6], pillLabel: c[0].replace(/^#/, ''), pillVal: c[3], sub: c[4] + ' · ' + c[5] + ' affected', go: 'c37Case(' + JSON.stringify(c[0]) + ')', onclick: 'c37Case(' + JSON.stringify(c[0]) + ')', delta: { d: 0, text: '' }, good: 'up', tip: 'Days left on the case clock for ' + c[0] + '. Click to open the case.' };
+    }).filter(Boolean).sort(function (a, b) { return parseInt(a.value, 10) - parseInt(b.value, 10); });
+    place(t.closest('.card, section') || t, 'c37-wm', units);
+  }
+
+  // Genesis tests: pass rate per model
+  window.c37Gen = function (m) { var w = document.getElementById('gnws'); var row = w && [].filter.call(w.querySelectorAll('.gn-list > *'), function (r) { return r.textContent.indexOf(m) > -1 && !r.classList.contains('gn-head'); })[0]; flash(row); };
+  function genesis() {
+    var w = document.getElementById('gnws'); if (!w || w.offsetParent === null) return;
+    var list = w.querySelector('.gn-list'); if (!list) return;
+    var by = {};
+    [].forEach.call(list.children, function (r) {
+      if (r.classList.contains('gn-head')) return; var t = r.innerText.split('\n').map(function (x) { return x.trim(); }).filter(Boolean);
+      var sub = (t[1] || '').split(' · '), m = (sub[1] || '').replace(/\s*\((agent|vendor)\)$/, ''), st = t.filter(function (x) { return /^(Passed|Failed|Running)$/.test(x); })[0] || '';
+      if (!m) return; var b = by[m] = by[m] || { p: 0, f: 0, r: 0 }; if (st === 'Passed') b.p++; else if (st === 'Failed') b.f++; else b.r++;
+    });
+    var units = Object.keys(by).map(function (m) {
+      var b = by[m], done = b.p + b.f, pct = done ? b.p / done : 0;
+      return { value: done ? Math.round(pct * 100) + '%' : '—', pct: done ? Math.max(0.06, pct) : 0.06, color: !done ? '#a78bfa' : b.f ? '#ef4444' : '#22c55e', label: m, status: b.f ? b.f + ' Failed' : b.r ? b.r + ' Running' : 'All Passed', pillLabel: 'Tests', pillVal: b.p + ' of ' + (b.p + b.f + b.r) + ' passed', sub: m, go: 'c37Gen(' + JSON.stringify(m) + ')', onclick: 'c37Gen(' + JSON.stringify(m) + ')', delta: { d: 0, text: '' }, good: 'up', tip: 'Share of finished tests that passed for ' + m + '.' };
+    });
+    place(list.parentNode === w ? list : list, 'c37-gen', units);
+  }
+
+  // Trust Ledger certifications
+  function parseD(s) { var m = /([A-Z][a-z]{2})[a-z]* (\d{1,2}, )?(\d{4})/.exec(s || ''); if (!m) return null; return new Date(+m[3], MON.indexOf(m[1]), m[2] ? parseInt(m[2], 10) : 1); }
+  window.c37Cert = function (i) { var g = document.getElementById('tl-certs-grid'); flash(g && g.children[i]); };
+  function ledger() {
+    var g = document.getElementById('tl-certs-grid'); if (!g || g.offsetParent === null) return;
+    var units = [].map.call(g.children, function (card, i) {
+      var t = card.innerText.split('\n').map(function (x) { return x.trim(); }).filter(Boolean), name = t[0], st = t[1] || '';
+      var when = null, lbl = ''; ['Renewal', 'Next check', 'Effective', 'CFPB exam'].forEach(function (k) { var j = t.indexOf(k); if (!when && j > -1) { var d = parseD(t[j + 1]); if (d) { when = d; lbl = k; } } });
+      if (!when && /CFPB exam/.test(card.innerText)) { try { var dl = cardinalKeyDeadline('fin'); if (dl) { when = new Date(Date.now() + dl.days * 864e5); lbl = 'CFPB exam'; } } catch (e) {} }
+      var days = when ? Math.max(0, Math.ceil((when - Date.now()) / 864e5)) : null;
+      try { var key = (name.match(/^(SOC 2|Colorado|California)/) || [])[1]; var ci = key && (compCalItems(org()) || []).filter(function (x) { return x.name.indexOf(key) === 0; })[0]; if (ci) { days = ci.days; when = new Date(Date.now() + ci.days * 864e5); } } catch (e) {}
+      var col = /Gap/i.test(st) ? '#ef4444' : /Remediation|Watch|Scheduled/i.test(st) ? '#FACC15' : '#22c55e';
+      var score = /Trust Score (\d+)/.exec(card.innerText);
+      return { value: score && /Cardinal/.test(name) ? score[1] : days != null ? days + 'D' : st, pct: score && /Cardinal/.test(name) ? +score[1] / 100 : days != null ? Math.max(0.06, Math.min(1, 1 - days / 365)) : 1, color: col, label: name, status: st, pillLabel: lbl || 'Status', pillVal: when ? MON[when.getMonth()] + ' ' + when.getFullYear() : st, sub: name, go: 'c37Cert(' + i + ')', onclick: 'c37Cert(' + i + ')', delta: { d: 0, text: '' }, good: 'up', tip: name + ': ' + st + (days != null ? ', ' + days + ' days to ' + (lbl || 'the next date').toLowerCase() : '') + '.' };
+    });
+    place(g, 'c37-tl', units);
+  }
+  setInterval(function () { try { calendar(); } catch (e) {} try { watchman(); } catch (e) {} try { genesis(); } catch (e) {} try { ledger(); } catch (e) {} }, 700);
+})();
+
+</script>
+
 </body>
 
 </html>
