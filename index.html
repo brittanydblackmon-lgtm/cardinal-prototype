@@ -53813,7 +53813,12 @@ window.CARDINAL_PLACES = {
     }
     // If the button group sits in a narrow block, push that block to the right too.
     var hr = scr.querySelector('.hdr-right'), host = hr && hr.parentElement;
-    if (host && host !== scr && host.getBoundingClientRect().width < scr.getBoundingClientRect().width * 0.8 && host.parentElement && /flex/.test(getComputedStyle(host.parentElement).display)) host.style.marginLeft = 'auto';
+    if (host && host !== scr && host.getBoundingClientRect().width < scr.getBoundingClientRect().width * 0.8 && host.parentElement && /flex/.test(getComputedStyle(host.parentElement).display)) {
+      // A row holding the title and the buttons grows to full width (title stays left, buttons go right);
+      // a block holding only buttons is pushed right.
+      var onlyBtns = [].every.call(host.children, function (c) { return c === hr || c.tagName === 'BUTTON'; });
+      if (onlyBtns) host.style.marginLeft = 'auto'; else { host.style.marginLeft = ''; host.style.flex = '1 1 100%'; host.style.width = '100%'; }
+    }
     // Watchman: a plain header like Trust Score.
     if (name === 'sentinel') {
       var top = document.getElementById('sent-top'); if (top && !top.__hp) {
