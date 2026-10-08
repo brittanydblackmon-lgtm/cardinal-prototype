@@ -53084,7 +53084,7 @@ window.CARDINAL_PLACES = {
     cores: [['x-core-all', 'All cores']].concat(['Eden', 'Obsidian', 'Genesis', 'Atonement', 'Halo', 'Watchman', 'Codex', 'Compliance', 'Trust Ledger', 'Echo'].map(function (c) { return ['x-core-' + c, c]; })),
     cases: [['x-cases', 'All cases'], ['x-casehist', 'Case history'], ['conversations', 'Conversations'], ['ignored', 'Ignored flags']],
     models: [['x-models', 'Models and AI systems'], ['lineage', 'Version lineage']],
-    people: [['x-people', 'Employees'], ['x-board', 'Team board'], ['x-customers', 'Customers'], ['x-plog', 'Employee activity log'], ['pmprofiles', 'Passport profiles']],
+    people: [['x-people', 'Employees'], ['x-board', 'Team board'], ['x-customers', 'Customers'], ['x-plog', 'Employee activity log']],
     decisions: [['receipts', 'Decision receipts']],
     wb: [['whistleblower', 'Sealed reports']],
     desk: [['x-pins', 'Pinned memories'], ['myworkspace', 'My notes and activity']]
@@ -55250,6 +55250,104 @@ window.CARDINAL_PLACES = {
       b.textContent = b.textContent.split(' · Attached: ')[0]; b.appendChild(row);
     });
   }, 500);
+})();
+
+</script>
+
+<script data-p="p36_ask">
+// 10/8 (Brittany: "a place for questions and customer support, technical and advisory help... ask questions to
+// humans"). Trust Loop gets an "Ask a person" tab: technical help, regulatory advice, and Cardinal support, each
+// answered by a named person. Questions and answers keep their date and time and are logged in Echo.
+(function () {
+  function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;'); }
+  function org() { return window.currentOrg || 'fin'; }
+  function D() { return (window.CARDINAL_DATA || {})[org()] || {}; }
+  function toast(t) { try { (window.cardinalShowToast || window.showToast)(t); } catch (e) {} }
+  var MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  function fdt(d) { d = new Date(d); var h = d.getHours(), m = d.getMinutes(); return MON[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear() + ' · ' + (h % 12 || 12) + ':' + (m < 10 ? '0' : '') + m + ' ' + (h < 12 ? 'AM' : 'PM'); }
+  function ago(h) { return new Date(Date.now() - h * 3600000); }
+  var TOPICS = {
+    tech: { name: 'Technical help', who: 'Sam Rivera', role: 'Solutions Engineer, Cardinal', reply: 'Usually within 2 hours', what: 'Connecting data, setting up models, integrations, tests that will not run.', color: '#1d4ed8' },
+    reg: { name: 'Regulatory advice', who: 'Elena Park', role: 'Regulatory Advisor, Cardinal', reply: 'Usually within 1 business day', what: 'Fair lending, state AI laws, exam prep, what a rule means for you. Guidance, not legal advice.', color: '#6d28d9' },
+    support: { name: 'Cardinal support', who: 'Taylor Brooks', role: 'Customer Support, Cardinal', reply: 'Usually within 1 hour', what: 'Access, approvers, accounts, billing, anything that looks broken.', color: '#15803D' }
+  };
+  var SEED = {
+    fin: [
+      { topic: 'reg', by: 'Riley Whitmore', at: 50, q: 'When we re-approve an applicant from the FIN-1203 re-review, do we need to tell them in writing?', a: 'Guidance, not legal advice: Reg B requires a notice of the action taken on an application. For applicants you now approve, the clear and safe practice is to tell each one the new outcome in writing and keep a copy in the file. Your counsel should confirm the exact wording. I can share how other lenders worded these letters.', aAt: 30, status: 'Answered' },
+      { topic: 'tech', by: 'Nina Roberts', at: 26, q: 'How do we connect the new income verification feed to Credit Scoring v3.5?', a: 'Add it in Data Pipeline as a new source. Cardinal checks it for gaps and for stand-ins for protected traits before the model can use it. I can walk your team through it Thursday at 10:00.', aAt: 24, status: 'Answered' },
+      { topic: 'support', by: 'Riley Whitmore', at: 8, q: 'Please add Jordan Ellis as an approver for model launches.', a: 'Done. Jordan can now sign off in Atonement, and it shows on the team board.', aAt: 7, status: 'Resolved' }
+    ]
+  };
+  function list() { var o = org(); window.__askQ = window.__askQ || {}; if (!window.__askQ[o]) window.__askQ[o] = (SEED[o] || [{ topic: 'support', by: (D().user || 'You'), at: 20, q: 'How do I add a teammate to a channel?', a: 'Open the channel, then Members, then Add. I can do it for you if you send me their name.', aAt: 19, status: 'Resolved' }]).map(function (x, i) { return { id: 'Q-' + (1040 + i), topic: x.topic, by: x.by, t: ago(x.at), q: x.q, status: x.status, msgs: [{ who: x.by, t: ago(x.at), text: x.q }, { who: TOPICS[x.topic].who, role: TOPICS[x.topic].role, t: ago(x.aAt), text: x.a }] }; }); return window.__askQ[o]; }
+  var PILL = { Answered: ['#15803D', 'rgba(21,128,61,.1)'], Resolved: ['#475569', '#f1f5f9'], 'Waiting for a reply': ['#A16207', 'rgba(250,204,21,.16)'] };
+  function pill(s) { var c = PILL[s] || PILL.Resolved; return '<span style="font-size:10.5px;font-weight:700;color:' + c[0] + ';background:' + c[1] + ';border-radius:999px;padding:2px 9px;white-space:nowrap">' + esc(s) + '</span>'; }
+  var css = document.createElement('style');
+  css.textContent = '#tl-ask{padding:16px 2px}#tl-ask .ak-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;margin:12px 0}#tl-ask .ak-card{background:#fff;border-radius:14px;padding:14px 16px;cursor:pointer;box-shadow:0 1px 3px rgba(26,24,21,.06),0 10px 24px rgba(26,24,21,.08);border:2px solid transparent}#tl-ask .ak-card.on{border-color:#1a1815}' +
+    '#tl-ask .ak-form{background:#fff;border-radius:14px;padding:14px 16px;box-shadow:0 1px 3px rgba(26,24,21,.06),0 10px 24px rgba(26,24,21,.08)}#tl-ask textarea,#tl-ask select,#tl-ask input[type=text]{width:100%;box-sizing:border-box;font:inherit;font-size:13px;padding:10px 12px;border:1px solid rgba(26,24,21,.15);border-radius:10px;background:#fff}' +
+    '#tl-ask .ak-btn{font:inherit;font-size:12.5px;font-weight:700;background:#1a1815;color:#fff;border:0;border-radius:10px;padding:10px 16px;cursor:pointer}#tl-ask table{width:100%;border-collapse:collapse;font-size:12.5px}#tl-ask th{text-align:left;font-size:10.5px;color:#64748b;text-transform:uppercase;padding:9px 12px;background:#f4efe6}#tl-ask td{padding:10px 12px;border-top:1px solid rgba(26,24,21,.06);vertical-align:top}#tl-ask tbody tr{cursor:pointer}#tl-ask tbody tr:hover td{background:#faf7f0}';
+  document.head.appendChild(css);
+  var ST = { topic: 'reg' };
+  window.askPick = function (k) { ST.topic = k; draw(true); };
+  window.askSend = function () {
+    var t = document.getElementById('ak-q'), v = t && t.value.trim(); if (!v) { toast('Type your question first.'); return; }
+    var link = (document.getElementById('ak-link') || {}).value || '', urg = (document.getElementById('ak-urg') || {}).value || 'Normal', me = D().user || 'You', T = TOPICS[ST.topic];
+    var L = list(), q = { id: 'Q-' + (1040 + L.length), topic: ST.topic, by: me, t: new Date(), q: v + (link ? ' (about ' + link + ')' : ''), status: 'Waiting for a reply', urg: urg, msgs: [{ who: me, t: new Date(), text: v + (link ? ' (about ' + link + ')' : '') }] };
+    L.unshift(q); draw(true); toast('Sent to ' + T.who + ' (' + T.name + '). ' + T.reply + '. Logged in Echo.');
+    try { cardinalLogActivity('edit', 'Asked ' + T.name + ': ' + v.slice(0, 80), null); } catch (e) {}
+    setTimeout(function () {
+      var A = { tech: 'Thanks. I am looking at it now and will send the exact steps within the hour. If it is easier, I can join a 15-minute call today.', reg: 'Guidance, not legal advice: good question. I will send a short answer with the rule it comes from and what examiners usually look for. Expect it by tomorrow morning.', support: 'Got it. I am on it and will confirm here as soon as it is done.' }[ST.topic];
+      q.msgs.push({ who: T.who, role: T.role, t: new Date(), text: A }); q.status = 'Answered'; draw(true); toast(T.who + ' replied to your question.');
+    }, 3500);
+  };
+  window.askOpen = function (id) {
+    var q = list().filter(function (x) { return x.id === id; })[0]; if (!q) return; var T = TOPICS[q.topic];
+    var m = document.createElement('div'); m.id = 'ak-pop'; m.style.cssText = 'position:fixed;inset:0;z-index:10000;background:rgba(26,24,21,.45);display:flex;align-items:center;justify-content:center;padding:16px';
+    m.onclick = function (e) { if (e.target === m) m.remove(); };
+    m.innerHTML = '<div style="background:#f4efe6;border-radius:16px;box-shadow:0 24px 60px rgba(0,0,0,.3);width:min(640px,100%);max-height:90vh;overflow:auto;padding:20px 22px">' +
+      '<div style="display:flex;justify-content:space-between;gap:10px"><div><div style="font-size:16px;font-weight:800;color:#1a1815">' + esc(T.name) + ' · ' + esc(q.id) + '</div><div style="font-size:12px;color:#64748b;margin-top:2px">Asked by ' + esc(q.by) + ' · ' + fdt(q.t) + ' · ' + pill(q.status) + '</div></div><button type="button" onclick="document.getElementById(\'ak-pop\').remove()" style="font:inherit;font-size:12px;font-weight:700;background:#fff;border:1px solid rgba(26,24,21,.15);border-radius:9px;padding:6px 12px;cursor:pointer;height:fit-content">Close</button></div>' +
+      q.msgs.map(function (x) { var mine = !x.role; return '<div style="margin-top:12px;padding:12px 14px;border-radius:12px;background:' + (mine ? '#fff' : '#1a1815') + ';color:' + (mine ? '#1a1815' : '#fff') + '"><div style="font-size:11px;font-weight:700;opacity:.75;margin-bottom:4px">' + esc(x.who) + (x.role ? ' · ' + esc(x.role) : '') + ' · ' + fdt(x.t) + '</div><div style="font-size:13px;line-height:1.5">' + esc(x.text) + '</div></div>'; }).join('') +
+      '<div style="display:flex;gap:8px;margin-top:14px"><input id="ak-reply" type="text" placeholder="Reply to ' + esc(T.who) + '" style="flex:1;font:inherit;font-size:13px;padding:10px 12px;border:1px solid rgba(26,24,21,.15);border-radius:10px"><button type="button" id="ak-reply-go" style="font:inherit;font-size:12.5px;font-weight:700;background:#1a1815;color:#fff;border:0;border-radius:10px;padding:10px 16px;cursor:pointer">Send</button>' + (q.status !== 'Resolved' ? '<button type="button" id="ak-done" style="font:inherit;font-size:12.5px;font-weight:700;background:#fff;color:#1a1815;border:1px solid rgba(26,24,21,.15);border-radius:10px;padding:10px 14px;cursor:pointer">Mark resolved</button>' : '') + '</div>' +
+      '<div style="font-size:11px;color:#64748b;margin-top:10px">This conversation is logged in Echo with names and times.</div></div>';
+    document.body.appendChild(m);
+    document.getElementById('ak-reply-go').onclick = function () { var v = document.getElementById('ak-reply').value.trim(); if (!v) return; q.msgs.push({ who: D().user || 'You', t: new Date(), text: v }); q.status = 'Waiting for a reply'; m.remove(); askOpen(id); draw(true);
+      setTimeout(function () { q.msgs.push({ who: T.who, role: T.role, t: new Date(), text: 'Thanks, that helps. I will follow up here shortly.' }); q.status = 'Answered'; draw(true); toast(T.who + ' replied.'); var p = document.getElementById('ak-pop'); if (p) { p.remove(); askOpen(id); } }, 3000); };
+    var dn = document.getElementById('ak-done'); if (dn) dn.onclick = function () { q.status = 'Resolved'; m.remove(); draw(true); toast('Marked resolved. Logged in Echo.'); };
+  };
+  function html() {
+    var L = list(), open = function (k) { return L.filter(function (x) { return x.topic === k && x.status !== 'Resolved'; }).length; };
+    return '<div style="font-size:16px;font-weight:800;color:#1a1815">Ask a person</div><div style="font-size:12.5px;color:#64748b;margin-top:2px">Real people at Cardinal answer your questions. Pick who you need, ask, and the answer comes back here. Every question and answer is logged in Echo.</div>' +
+      '<div class="ak-cards">' + Object.keys(TOPICS).map(function (k) { var T = TOPICS[k]; return '<div class="ak-card' + (ST.topic === k ? ' on' : '') + '" onclick="askPick(\'' + k + '\')"><div style="font-size:14px;font-weight:800;color:' + T.color + '">' + T.name + '</div><div style="font-size:12px;color:#334155;margin:4px 0 8px;line-height:1.45">' + esc(T.what) + '</div><div style="font-size:11.5px;color:#1a1815"><strong>' + esc(T.who) + '</strong> · ' + esc(T.role) + '</div><div style="font-size:11px;color:#64748b;margin-top:2px">' + esc(T.reply) + ' · ' + open(k) + ' open</div></div>'; }).join('') + '</div>' +
+      '<div class="ak-form"><div style="font-size:12px;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Ask ' + esc(TOPICS[ST.topic].name.toLowerCase()) + ' · goes to ' + esc(TOPICS[ST.topic].who) + '</div>' +
+      '<textarea id="ak-q" rows="3" placeholder="What do you need help with?"></textarea>' +
+      '<div style="display:grid;grid-template-columns:2fr 1fr auto;gap:8px;margin-top:8px;align-items:center"><input id="ak-link" type="text" placeholder="Link a case or model (optional), for example FIN-1203"><select id="ak-urg"><option>Normal</option><option>Today</option><option>Urgent</option></select><button type="button" class="ak-btn" onclick="askSend()">Send to a person</button></div>' +
+      (ST.topic === 'reg' ? '<div style="font-size:11px;color:#64748b;margin-top:8px">Regulatory answers are guidance, not legal advice. Your counsel makes the final call.</div>' : '') + '</div>' +
+      '<div style="font-size:12px;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:.5px;margin:16px 0 8px">Questions and answers</div>' +
+      '<div style="background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 1px 3px rgba(26,24,21,.06),0 10px 24px rgba(26,24,21,.08)"><table><thead><tr><th>Asked</th><th>Topic</th><th>Question</th><th>Asked by</th><th>Answered by</th><th>Status</th></tr></thead><tbody>' +
+      L.map(function (q) { var T = TOPICS[q.topic], ans = q.msgs.filter(function (m) { return m.role; }).slice(-1)[0]; return '<tr onclick="askOpen(\'' + q.id + '\')"><td style="white-space:nowrap;color:#475569">' + fdt(q.t) + '</td><td style="white-space:nowrap;font-weight:700;color:' + T.color + '">' + T.name + '</td><td>' + esc(q.q) + '</td><td style="white-space:nowrap">' + esc(q.by) + '</td><td style="white-space:nowrap">' + (ans ? esc(ans.who) + '<div style="font-size:11px;color:#64748b">' + fdt(ans.t) + '</div>' : '—') + '</td><td>' + pill(q.status) + '</td></tr>'; }).join('') + '</tbody></table></div>';
+  }
+  function draw(force) {
+    var box = document.getElementById('tl-ask'); if (!box) return;
+    var h = html(); if (force || box.__h !== h) { var ta = document.getElementById('ak-q'), keep = ta ? ta.value : ''; box.__h = h; box.innerHTML = h; var t2 = document.getElementById('ak-q'); if (t2 && keep && !force) t2.value = keep; }
+  }
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest && e.target.closest('#screen-trustloop button'); if (!b || b.id === 'tl-ask-tab') return;
+    if (/switchTrustLoopWorkspaceTab/.test(b.getAttribute('onclick') || '')) window.__tlAsk = false;
+  }, true);
+  window.askTab = function () { window.__tlAsk = true; tick(); draw(true); };
+  function tick() {
+    var s = document.getElementById('screen-trustloop'); if (!s || s.offsetParent === null) return;
+    var ann = [].filter.call(s.querySelectorAll('button'), function (x) { return x.textContent.trim() === 'Announcements' && /townhall/.test(x.getAttribute('onclick') || ''); })[0]; if (!ann) return;
+    var row = ann.parentElement, tab = document.getElementById('tl-ask-tab');
+    if (!tab) { tab = document.createElement('button'); tab.type = 'button'; tab.id = 'tl-ask-tab'; tab.className = 'gen-tab'; tab.style.fontSize = '11px'; tab.textContent = 'Ask a person'; tab.onclick = askTab; }
+    if (tab.parentNode !== row) row.appendChild(tab);
+    var on = !!window.__tlAsk; tab.classList.toggle('active', on);
+    [].forEach.call(row.querySelectorAll('button'), function (x) { if (x !== tab && on) x.classList.remove('active'); });
+    var header = row.parentElement, root = header.parentElement, box = document.getElementById('tl-ask');
+    [].forEach.call(root.children, function (c) { if (c === header || c.id === 'tl-ask') return; if (on) { if (c.style.display !== 'none') { c.__akHid = 1; c.style.display = 'none'; } } else if (c.__akHid) { c.__akHid = 0; c.style.display = ''; } });
+    if (on) { if (!box || box.parentNode !== root) { if (box) box.remove(); box = document.createElement('div'); box.id = 'tl-ask'; root.insertBefore(box, header.nextSibling); draw(true); } box.style.display = ''; }
+    else if (box) box.style.display = 'none';
+  }
+  setInterval(tick, 400);
 })();
 
 </script>
