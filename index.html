@@ -52352,7 +52352,7 @@ window.CARDINAL_PLACES = {
       delta: -2, pillLabel: 'Projected Exposure', pillVal: money, subline: 'In 90 days if nothing changes · Today ' + ((cfg.forecast && cfg.forecast.start) || '') ,
       proj: 'With the fixes: <strong style="color:#16a34a">' + ((cfg.forecast && cfg.forecast.full && cfg.forecast.full[3]) || 88) + '</strong> in 90 days',
       avg: 79, pct: 38, confTitle: 'Forecast Confidence', confSub: 'How reliable is this forecast?',
-      units: it, boxTitle: 'Exposure at a glance',
+      units: [{ value: money, pct: Math.min(1, (parseFloat(String(money).replace(/[^\d.]/g, '')) || 50) / 100), color: '#ef4444', label: 'Projected exposure', status: 'If Nothing Is Fixed', pillLabel: 'Projected exposure', sub: 'Fines, restitution, and lawsuits in 90 days', good: 'down', delta: { d: 0, text: '' }, tip: 'What fines, restitution, and lawsuits could cost in 90 days if nothing is fixed.', go: "cardinalJump('', '#halo-cost, #halo-forecast')" }].concat(it.filter(function (u) { return !/exposure/i.test(u.label || ''); })), boxTitle: 'Exposure at a glance',
       rows: [['Prediction Accuracy', '91%', 'How often past Halo forecasts landed within range.'], ['Confidence Band', '±4 points', 'Expected swing in the projected score.'], ['Forecast Refreshed', 'Daily', 'Halo re-runs the forecast every morning.'], ['Regulations Tracked', '12', 'Active rules Halo checks your models against.']]
     });
     hide(mini);
@@ -53561,7 +53561,7 @@ window.CARDINAL_PLACES = {
     [/^(active|live|approved|passed|passing|pass|applied|resolved|on track|certified|compliant|connected|complete|completed|sealed|verified|clean|healthy)$/i, G],
     [/^(in review|review|pending|watch|waiting on vendor|needs owner|running|medium|warning|partly met|in progress|exam due|due soon|approaching|changes requested|at risk)$/i, Y],
     [/^(failed|fail|critical|blocked|denied|declined|gap|overdue|violation|changes needed|not connected|imminent|urgent|breach)$/i, R],
-    [/^(in shadow|shadow|testing|test|pilot)$/i, P],
+    [/^(in shadow|shadow|testing|pilot)$/i, P],
     [/^(archive|archived|drafted|draft|paused|inactive|retired|closed|not started)$/i, N]
   ];
   var TIP = {
@@ -53578,7 +53578,7 @@ window.CARDINAL_PLACES = {
   function sweep() {
     var scr = document.querySelector('.screen.active'); if (!scr) return;
     [].forEach.call(scr.querySelectorAll('td span, td div, td, li span, .lib-card span, [class*=badge], [class*=pill], [class*=status], span'), function (el) {
-      if (el.children.length || el.closest('.g-unit, .u-hero, button, select, h1, h2, h3, .tsv2-cert-badge, .sidebar, #wm-rooms, #wm-sub, #echo-x-subbar, .core-tabbar, .ex-chips, .dash-activity-ticker-live')) return;
+      if (el.children.length || el.closest('th, thead, .gn-head, .g-unit, .u-hero, button, select, h1, h2, h3, .tsv2-cert-badge, .sidebar, #wm-rooms, #wm-sub, #echo-x-subbar, .core-tabbar, .ex-chips, .dash-activity-ticker-live')) return;
       var t = (el.textContent || '').trim(); if (!t || t.length > 22) return;
       if (el.__st === t) return;
       var c = null; MAP.forEach(function (m) { if (!c && m[0].test(t)) c = m[1]; }); if (!c) return;
@@ -54782,7 +54782,7 @@ window.CARDINAL_PLACES = {
   // ── Atonement: cohort circles, cohort pop-up, cleaner active-remediation card ──
   function cohortRows() {
     var t = document.querySelector('#at-tab-cohorts-ct table'); if (!t) return [];
-    return [].map.call(t.querySelectorAll('tbody tr'), function (tr) { var c = [].map.call(tr.children, function (td) { return td.textContent.trim(); }); return { id: c[0], name: c[1], type: c[2], people: c[3], pct: parseInt(c[4], 10) || 0, status: c[5], owner: c[6], created: c[7], cs: c[8], tr: tr }; });
+    return [].map.call(t.querySelectorAll('tbody tr'), function (tr) { var c = [].filter.call(tr.children, function (td) { return !td.querySelector('.r2-cb'); }).map(function (td) { return td.textContent.trim(); }); return { id: c[0], name: c[1], type: c[2], people: c[3], pct: parseInt(c[4], 10) || 0, status: c[5], owner: c[6], created: c[7], cs: c[8], tr: tr }; });
   }
   window.r2Cohort = function (id) {
     var c = cohortRows().filter(function (x) { return x.id === id; })[0]; if (!c) return;
@@ -54837,11 +54837,12 @@ window.CARDINAL_PLACES = {
     var me = (window.currentUserName || 'You'), saved = window.__dlAlerts[org()] || {};
     var m = document.createElement('div'); m.className = 'r2-pop'; m.onclick = function (e) { if (e.target === m) m.remove(); };
     m.innerHTML = '<div class="r2-card"><h3>Deadline alerts</h3><div class="sub">Pick the deadlines you want Eve to remind you about, and when. Nothing else will alert you.</div>' +
-      items.map(function (it, i) { var on = saved[it.name]; return '<div class="r2-row"><input type="checkbox" id="dla-' + i + '"' + (on ? ' checked' : '') + ' style="width:16px;height:16px"><label for="dla-' + i + '" style="flex:1;cursor:pointer"><strong>' + esc(it.name) + '</strong><div class="sub">' + esc(it.type || '') + ' · due ' + esc(it.due) + ' · ' + (it.days < 0 ? 'overdue' : it.days + ' days left') + '</div></label><select id="dlw-' + i + '" style="font:inherit;font-size:12px;padding:6px 8px;border-radius:8px;border:1px solid rgba(26,24,21,.15)">' + ['1 day before', '3 days before', '1 week before', '2 weeks before'].map(function (w) { return '<option' + ((on || '2 weeks before') === w ? ' selected' : '') + '>' + w + '</option>'; }).join('') + '</select></div>'; }).join('') +
+      items.map(function (it, i) { var on = saved[it.name]; return '<div class="r2-row"><input type="checkbox" id="dla-' + i + '"' + (on ? ' checked' : '') + ' style="width:16px;height:16px"><label for="dla-' + i + '" style="flex:1;cursor:pointer"><strong>' + esc(it.name) + '</strong><div class="sub">' + esc(it.type || '') + ' · due ' + esc(it.due) + ' · ' + (it.days < 0 ? 'overdue' : it.days + ' days left') + '</div></label><select id="dlw-' + i + '" style="font:inherit;font-size:12px;padding:6px 8px;border-radius:8px;border:1px solid rgba(26,24,21,.15)">' + ['1 day before', '3 days before', '1 week before', '2 weeks before', 'On a date I pick'].map(function (w) { var cur = on && /^\d{4}-/.test(on) ? 'On a date I pick' : (on || '2 weeks before'); return '<option' + (cur === w ? ' selected' : '') + '>' + w + '</option>'; }).join('') + '</select><input type="date" id="dld-' + i + '" value="' + (on && /^\d{4}-/.test(on) ? on : '') + '" style="display:' + (on && /^\d{4}-/.test(on) ? 'inline-block' : 'none') + ';font:inherit;font-size:12px;padding:5px 8px;border-radius:8px;border:1px solid rgba(26,24,21,.15)"></div>'; }).join('') +
       '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px"><button type="button" class="r2-btn ghost" onclick="this.closest(\'.r2-pop\').remove()">Cancel</button><button type="button" class="r2-btn" id="dla-save">Save alerts</button></div></div>';
     document.body.appendChild(m);
+    items.forEach(function (it, i) { var sel = document.getElementById('dlw-' + i), dt = document.getElementById('dld-' + i); sel.onchange = function () { dt.style.display = sel.value === 'On a date I pick' ? 'inline-block' : 'none'; if (sel.value === 'On a date I pick') { document.getElementById('dla-' + i).checked = true; try { dt.showPicker(); } catch (e) {} } }; dt.onchange = function () { document.getElementById('dla-' + i).checked = true; }; });
     document.getElementById('dla-save').onclick = function () {
-      var out = {}, n = 0; items.forEach(function (it, i) { if (document.getElementById('dla-' + i).checked) { out[it.name] = document.getElementById('dlw-' + i).value; n++; } });
+      var out = {}, n = 0; items.forEach(function (it, i) { if (document.getElementById('dla-' + i).checked) { var w = document.getElementById('dlw-' + i).value, dt = document.getElementById('dld-' + i).value; out[it.name] = w === 'On a date I pick' ? (dt || '2 weeks before') : w; n++; } });
       window.__dlAlerts[org()] = out; m.remove();
       toast(n ? 'Alerts on for ' + n + ' deadline' + (n === 1 ? '' : 's') + '. Eve will remind ' + me.split(' ')[0] + '. Logged in Echo.' : 'Deadline alerts turned off.');
       try { cardinalLogActivity('edit', 'Set deadline alerts for ' + n + ' deadlines', null); } catch (e) {}
@@ -54987,6 +54988,36 @@ window.CARDINAL_PLACES = {
     vs.appendChild(box);
   }
 
+  // ── Checkboxes on the Genesis activity log and the cohort tables ────
+  window.__r2sel = window.__r2sel || {};
+  function selBar(host, key, n) {
+    var bar = host.querySelector(':scope > .r2-selbar');
+    if (!n) { if (bar) bar.remove(); return; }
+    if (!bar) { bar = document.createElement('div'); bar.className = 'r2-selbar'; bar.style.cssText = 'display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0 0 8px;padding:8px 12px;background:#1a1815;color:#fff;border-radius:10px;font-size:12px'; host.insertBefore(bar, host.firstChild); }
+    var html = '<strong>' + n + ' selected</strong><button type="button" class="r2-btn ghost" style="font-size:11.5px;padding:5px 10px" onclick="toast2(\'Exported ' + n + ' to CSV. Logged in Echo.\')">Export CSV</button><button type="button" class="r2-btn ghost" style="font-size:11.5px;padding:5px 10px" onclick="toast2(\'Shared ' + n + ' to Trust Loop. Logged in Echo.\')">Share to Trust Loop</button><button type="button" class="r2-btn ghost" style="font-size:11.5px;padding:5px 10px" onclick="toast2(\'Added ' + n + ' to the exam evidence file.\')">Add to evidence</button><button type="button" style="margin-left:auto;font:inherit;font-size:11.5px;background:transparent;border:0;color:#fff;cursor:pointer;text-decoration:underline" onclick="window.__r2sel[\'' + key + '\']={};[].forEach.call(this.closest(\'.r2-selbar\').parentNode.querySelectorAll(\'input.r2-cb\'),function(c){c.checked=false});this.closest(\'.r2-selbar\').remove()">Clear</button>';
+    if (bar.__h !== html) { bar.__h = html; bar.innerHTML = html; }
+  }
+  function checks(table, key, host) {
+    if (!table || table.offsetParent === null) return;
+    var S = window.__r2sel[key] = window.__r2sel[key] || {};
+    var hr = table.querySelector('thead tr'); if (!hr) return;
+    var rows = [].slice.call(table.querySelectorAll('tbody tr'));
+    var idOf = function (tr) { return (tr.children[1] || tr.children[0]).textContent.trim() + '|' + (tr.children[2] || {}).textContent; };
+    if (!hr.querySelector('.r2-cb')) { var th = document.createElement('th'); th.style.cssText = 'width:34px;padding:8px 10px;border-bottom:1px solid rgba(26,24,21,.1);background:inherit'; th.innerHTML = '<input type="checkbox" class="r2-cb" title="Select all" style="width:15px;height:15px;cursor:pointer">'; hr.insertBefore(th, hr.firstChild);
+      th.firstChild.onclick = function (e) { e.stopPropagation(); var on = e.target.checked; rows = [].slice.call(table.querySelectorAll('tbody tr')); rows.forEach(function (tr) { var c = tr.querySelector('input.r2-cb'); if (c) { c.checked = on; if (on) S[idOf(tr)] = 1; else delete S[idOf(tr)]; } }); selBar(host, key, Object.keys(S).length); }; }
+    rows.forEach(function (tr) {
+      if (tr.querySelector('.r2-cb') || tr.children.length < 2) return;
+      var td = document.createElement('td'); td.style.cssText = 'width:34px;padding:8px 10px;border-bottom:1px solid rgba(26,24,21,.06)'; td.innerHTML = '<input type="checkbox" class="r2-cb" style="width:15px;height:15px;cursor:pointer">'; tr.insertBefore(td, tr.firstChild);
+      var cb = td.firstChild; cb.checked = !!S[idOf(tr)];
+      td.onclick = function (e) { e.stopPropagation(); }; cb.onclick = function (e) { e.stopPropagation(); if (cb.checked) S[idOf(tr)] = 1; else delete S[idOf(tr)]; selBar(host, key, Object.keys(S).length); };
+    });
+    selBar(host, key, Object.keys(S).length);
+  }
+  function tableChecks() {
+    var log = document.getElementById('genesis-log-entries'); if (log) checks(log.querySelector('table'), 'glog-' + org(), log);
+    [].forEach.call(document.querySelectorAll('[id$="-ct"] .ct-body'), function (b) { checks(b.querySelector('table'), b.parentNode.id + '-' + org(), b); });
+  }
+
   // ── Small text fixes ────────────────────────────────────────────────
   function words() {
     var at = document.getElementById('screen-atonement');
@@ -54994,7 +55025,7 @@ window.CARDINAL_PLACES = {
     [].forEach.call(document.querySelectorAll('button'), function (b) { if (b.__w || !/Salesforce/.test(b.textContent) || b.children.length) return; b.__w = 1; b.textContent = b.textContent.replace(/Salesforce/g, 'CRM'); });
   }
 
-  setInterval(function () { try { atonement(); } catch (e) {} try { halo(); } catch (e) {} try { codex(); } catch (e) {} try { compliance(); } catch (e) {} try { trustloop(); } catch (e) {} try { voicePicker(); } catch (e) {} try { words(); } catch (e) {} }, 500);
+  setInterval(function () { try { atonement(); } catch (e) {} try { halo(); } catch (e) {} try { codex(); } catch (e) {} try { compliance(); } catch (e) {} try { trustloop(); } catch (e) {} try { voicePicker(); } catch (e) {} try { words(); } catch (e) {} try { tableChecks(); } catch (e) {} }, 500);
 })();
 
 </script>
