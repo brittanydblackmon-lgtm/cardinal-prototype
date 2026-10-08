@@ -52553,6 +52553,7 @@ window.CARDINAL_PLACES = {
     '.g-details{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;margin-top:14px}';
   // No scroll anchoring: switching a tab must never slide the page down on its own.
   css.textContent += '.content,.main,.main-content,#main-content,.screen{overflow-anchor:none!important}.eve-bul{margin:6px 0 4px 18px;padding:0}.eve-bul li{margin:4px 0;line-height:1.55}';
+  css.textContent += '#gen-eve-sum,#sentinel-weekly-digest,#echo-eve-sum{display:none!important}';
   css.textContent += '#gen-stats-row,#gen-rings,#at-rings,#tl-rings,#halo-mini-rings,#echo-rings,#echo-cardinal-hero,#echo-your-view-panel,#echo-recent-access-panel,#gen-hist,#at-hist,#halo-hist,#sent-hist,#echo-kpi-row-alerts,#echo-kpi-row-activity,#halo-cardinal-hero,#halo-forecast,#screen-atonement>.section-hdr>.grid-4{display:none!important}';
   document.head.appendChild(css);
 
@@ -53039,6 +53040,7 @@ window.CARDINAL_PLACES = {
   // ── State and navigation ─────────────────────────────────────────
   var ROOMS = {
     hall: [['memories', 'Logged events'], ['x-score', 'Score history']],
+    cores: [['x-core-all', 'All cores']].concat(['Eden', 'Obsidian', 'Genesis', 'Atonement', 'Halo', 'Watchman', 'Codex', 'Compliance', 'Trust Ledger', 'Echo'].map(function (c) { return ['x-core-' + c, c]; })),
     cases: [['x-cases', 'All cases'], ['x-casehist', 'Case history'], ['conversations', 'Conversations'], ['ignored', 'Ignored flags']],
     models: [['x-models', 'Models and AI systems'], ['lineage', 'Version lineage']],
     people: [['x-people', 'Everyone'], ['peoplelog', 'People log'], ['pmprofiles', 'Passport profiles']],
@@ -53046,7 +53048,7 @@ window.CARDINAL_PLACES = {
     wb: [['whistleblower', 'Sealed reports']],
     desk: [['x-pins', 'Pinned memories'], ['myworkspace', 'My notes and activity']]
   };
-  var NATIVE_FIRST = { hall: 'memories', cases: 'conversations', models: 'lineage', people: 'peoplelog', decisions: 'receipts', wb: 'whistleblower', desk: 'myworkspace' };
+  var NATIVE_FIRST = { cores: 'memories', hall: 'memories', cases: 'conversations', models: 'lineage', people: 'peoplelog', decisions: 'receipts', wb: 'whistleblower', desk: 'myworkspace' };
   var X = { room: 'hall', bucket: 'memories', detail: null, f: {}, page: 0 };
   window.__echoX = 1;
   var oEnter = window.echoEnterRoom;
@@ -53069,6 +53071,7 @@ window.CARDINAL_PLACES = {
 
   function sel(k, label, opts) { return '<label style="font-size:11.5px;color:#64748b">' + label + ' <select onchange="echoF(\'' + k + '\',this.value)"><option value="">All</option>' + opts.map(function (o) { return '<option' + (X.f[k] === o ? ' selected' : '') + '>' + esc(o) + '</option>'; }).join('') + '</select></label>'; }
   function search(ph) { return '<input placeholder="' + esc(ph) + '" value="' + esc(X.f.q || '') + '" oninput="clearTimeout(window.__exQ);var v=this.value;window.__exQ=setTimeout(function(){echoF(\'q\',v)},250)" style="flex:1;min-width:200px">'; }
+  function dates() { return '<label style="font-size:11.5px;color:#64748b">From <input type="date" value="' + esc(X.f.from || '') + '" onchange="echoF(\'from\',this.value)"></label><label style="font-size:11.5px;color:#64748b">to <input type="date" value="' + esc(X.f.to || '') + '" onchange="echoF(\'to\',this.value)"></label>'; }
   function years(list, get) { var y = {}; list.forEach(function (x) { y[get(x).getFullYear()] = 1; }); return Object.keys(y).sort().reverse(); }
   function pager(total, per) {
     var from = X.page * per, to = Math.min(total, from + per);
@@ -53080,7 +53083,8 @@ window.CARDINAL_PLACES = {
 
   function timelineTable(list, cols) {
     var per = 25, f = X.f;
-    var rows = list.filter(function (e) { return q(e) && (!f.year || String(e.t.getFullYear()) === f.year) && (!f.core || e.core === f.core) && (!f.act || e.act === f.act) && (!f.ver || e.ver === f.ver); });
+    var from = f.from ? new Date(f.from) : null, to = f.to ? new Date(f.to + 'T23:59:59') : null;
+    var rows = list.filter(function (e) { return q(e) && (!f.year || String(e.t.getFullYear()) === f.year) && (!f.core || e.core === f.core) && (!f.act || e.act === f.act) && (!f.ver || e.ver === f.ver) && (!f.who || e.who === f.who) && (!from || e.t >= from) && (!to || e.t <= to); });
     var page = rows.slice(X.page * per, X.page * per + per);
     return '<div class="ex-wrap"><table class="ex-tbl"><thead><tr>' + cols.map(function (c) { return '<th>' + c[0] + '</th>'; }).join('') + '</tr></thead><tbody>' +
       (page.map(function (e) { return '<tr>' + cols.map(function (c) { return '<td>' + c[1](e) + '</td>'; }).join('') + '</tr>'; }).join('') || '<tr><td colspan="' + cols.length + '" style="color:#64748b">Nothing matches.</td></tr>') +
@@ -53097,7 +53101,7 @@ window.CARDINAL_PLACES = {
         '<div class="ex-head"><div class="ex-av">' + esc(ini) + '</div><div><div style="font-size:17px;font-weight:700;color:#1a1815">' + esc(p.name) + '</div><div class="ex-sub">' + esc(p.role) + ' · ' + esc(companyName()) + ' · Joined ' + fd(p.joined) + ' · Passport ' + esc(p.passport) + ' · Access: ' + esc(p.access) + '</div></div>' +
         '<div class="ex-chips"><div class="ex-chip"><b>' + ev.length + '</b><span>Records</span></div><div class="ex-chip"><b>' + cnt('Changed') + '</b><span>Changes</span></div><div class="ex-chip"><b>' + cnt('Tried to change (blocked)') + '</b><span>Blocked</span></div><div class="ex-chip"><b>' + cnt('Approved') + '</b><span>Approvals</span></div><div class="ex-chip"><b>' + cnt('Viewed restricted record') + '</b><span>Restricted views</span></div></div></div>' +
         '<div class="ex-note"><strong>Whistleblower reports:</strong> never linked to a person. Reports are anonymous by design, so they do not appear on anyone’s record, including this one. They live, sealed, under Whistleblower.</div>' +
-        '<div class="ex-bar">' + search('Search what ' + p.name.split(' ')[0] + ' did') + sel('year', 'Year', years(ev, function (e) { return e.t; })) + sel('core', 'Core', CORES) + sel('act', 'Action', Object.keys(ACT_COL)) + '</div>' +
+        '<div class="ex-bar">' + search('Search what ' + p.name.split(' ')[0] + ' did') + sel('year', 'Year', years(ev, function (e) { return e.t; })) + sel('core', 'Core', CORES) + sel('act', 'Action', Object.keys(ACT_COL)) + dates() + '</div>' +
         timelineTable(ev, [['When', function (e) { return '<span style="white-space:nowrap;color:#475569">' + fd(e.t) + '</span>'; }], ['Action', function (e) { return pill(e.act, ACT_COL[e.act] || ACT_COL.Logged); }], ['Core', function (e) { return coreTag(e.core); }], ['What happened', function (e) { return esc(e.what); }], ['Sealed', function (e) { return '<span style="font-family:monospace;font-size:11px;color:#64748b">' + esc(e.seal) + '</span>'; }]]);
     }
     var ps = people().map(function (p) { var ev = personEvents(p); return { p: p, n: ev.length, last: ev[0] }; }).filter(function (x) { return q(x.p); });
@@ -53132,7 +53136,7 @@ window.CARDINAL_PLACES = {
       return '<button type="button" class="ex-back" onclick="echoBack()">← Models and AI systems</button>' +
         '<div class="ex-head"><div><div style="font-size:17px;font-weight:700;color:#1a1815">' + esc(m.name) + '</div><div class="ex-sub">' + esc(m.kind) + (m.owner ? ' · Owner ' + esc(m.owner) : '') + (m.status ? ' · ' + esc(m.status) : '') + (m.parts ? ' · Parts: ' + esc(m.parts.join(', ')) : '') + (m.what ? ' · ' + esc(m.what) : '') + '</div></div>' +
         '<div class="ex-chips"><div class="ex-chip"><b>' + Object.keys(vs).length + '</b><span>Versions</span></div><div class="ex-chip"><b>' + ev.length + '</b><span>Records</span></div>' + (m.score ? '<div class="ex-chip"><b>' + m.score + '</b><span>Trust score</span></div>' : '') + '</div></div>' +
-        '<div class="ex-bar">' + search('Search this model’s record') + sel('year', 'Year', years(ev, function (e) { return e.t; })) + sel('core', 'Core', CORES) + sel('ver', 'Version', Object.keys(vs).sort().reverse()) + '</div>' +
+        '<div class="ex-bar">' + search('Search this model’s record') + sel('year', 'Year', years(ev, function (e) { return e.t; })) + sel('core', 'Core', CORES) + sel('ver', 'Version', Object.keys(vs).sort().reverse()) + dates() + '</div>' +
         timelineTable(ev, [['When', function (e) { return '<span style="white-space:nowrap;color:#475569">' + fd(e.t) + '</span>'; }], ['Version', function (e) { return esc(e.ver || ''); }], ['Core', function (e) { return coreTag(e.core); }], ['What happened', function (e) { return esc(e.what); }], ['By', function (e) { return esc(e.who || ''); }], ['Sealed', function (e) { return '<span style="font-family:monospace;font-size:11px;color:#64748b">' + esc(e.seal) + '</span>'; }]]);
     }
     var all = models(), f = X.f;
@@ -53141,6 +53145,23 @@ window.CARDINAL_PLACES = {
       '<div class="ex-bar">' + search('Search models, agents, systems, vendors') + sel('kind', 'Type', ['Model', 'AI agent', 'AI system', 'Vendor AI']) + '</div>' +
       '<div class="ex-wrap"><table class="ex-tbl"><thead><tr><th>Name</th><th>Type</th><th>Owner</th><th>Status</th><th>Trust score</th><th>Records</th></tr></thead><tbody>' +
       rows.map(function (m) { return '<tr class="ex-click" onclick="echoOpen(\'model\',' + esc(JSON.stringify(m.name)) + ')"><td class="ex-name">' + esc(m.name) + '</td><td>' + esc(m.kind) + '</td><td>' + esc(m.owner || '—') + '</td><td>' + esc(m.status || '') + '</td><td>' + (m.score || '—') + '</td><td>' + modelEvents(m).length + '</td></tr>'; }).join('') + '</tbody></table></div>';
+  }
+  function allEvents() {
+    var key = org() + '|all'; if (CACHE[key]) return CACHE[key];
+    var out = [];
+    people().forEach(function (p) { personEvents(p).forEach(function (e) { out.push({ t: e.t, core: e.core, act: e.act, who: p.name, what: e.what, seal: e.seal }); }); });
+    memories().forEach(function (m) { if (!people().some(function (p) { return p.name === m.author; })) out.push({ t: new Date(m.timestamp), core: coreOf(m), act: /approved/.test(m.eventType) ? 'Approved' : /deployed|updated/.test(m.eventType) ? 'Updated' : 'Logged', who: m.author, what: m.summary, seal: String(m.hash || sealOf(m.id)).slice(0, 12) }); });
+    models().slice(0, 14).forEach(function (m) { modelEvents(m).forEach(function (e) { if (!e.real) out.push({ t: e.t, core: e.core, act: /approved/.test(e.what) ? 'Approved' : /sealed/.test(e.what) ? 'Logged' : 'Logged', who: e.who || e.core + ' Core', what: e.what.indexOf(m.name) > -1 ? e.what : m.name + ' ' + e.what, seal: e.seal }); }); });
+    out.sort(function (a, b) { return b.t - a.t; });
+    return (CACHE[key] = out);
+  }
+  function pCores() {
+    var core = X.bucket === 'x-core-all' ? '' : X.bucket.replace('x-core-', '');
+    var list = allEvents().filter(function (e) { return !core || e.core === core; });
+    var whos = {}; list.forEach(function (e) { whos[e.who] = 1; });
+    return '<div class="ex-note">' + (core ? 'Everything that happened in <strong>' + esc(core) + '</strong>' : 'Everything that happened in every core') + ', by every person and AI agent, back to 2019. Search, or filter by person, action, and dates.</div>' +
+      '<div class="ex-bar">' + search('Search what happened') + sel('who', 'Who', Object.keys(whos).sort()) + sel('act', 'Action', Object.keys(ACT_COL)) + (core ? '' : sel('core', 'Core', CORES)) + dates() + '</div>' +
+      timelineTable(list, [['When', function (e) { return '<span style="white-space:nowrap;color:#475569">' + fd(e.t) + '</span>'; }], ['Core', function (e) { return coreTag(e.core); }], ['Who', function (e) { return '<a href="javascript:void(0)" onclick="echoEnterRoom(\'people\');echoOpen(\'person\',' + esc(JSON.stringify(e.who)).replace(/&quot;/g, '&quot;') + ')" style="color:#1a1815;font-weight:600">' + esc(e.who) + '</a>'; }], ['Action', function (e) { return pill(e.act, ACT_COL[e.act] || ACT_COL.Logged); }], ['What happened', function (e) { return esc(e.what); }], ['Sealed', function (e) { return '<span style="font-family:monospace;font-size:11px;color:#64748b">' + esc(e.seal) + '</span>'; }]]);
   }
   function pCaseHist() { return '<div id="echo-x-casehist-slot"></div>'; }
   function pPins() {
@@ -53190,7 +53211,7 @@ window.CARDINAL_PLACES = {
     if (mine) {
       var ae = document.activeElement, focusPh = keepFocus && ae && ae.tagName === 'INPUT' && panel.contains(ae) ? ae.placeholder : null, caret = focusPh ? ae.selectionStart : 0;
       var slot = document.getElementById('echo-case-history'), slotKeep = X.bucket === 'x-casehist' && slot && slot.parentNode && slot.parentNode.id === 'echo-x-casehist-slot';
-      if (!slotKeep) panel.innerHTML = X.bucket === 'x-people' ? pPeople() : X.bucket === 'x-cases' ? pCases() : X.bucket === 'x-models' ? pModels() : X.bucket === 'x-pins' ? pPins() : X.bucket === 'x-score' ? pScore() : X.bucket === 'x-casehist' ? pCaseHist() : '';
+      if (!slotKeep) panel.innerHTML = X.bucket.indexOf('x-core-') === 0 ? pCores() : X.bucket === 'x-people' ? pPeople() : X.bucket === 'x-cases' ? pCases() : X.bucket === 'x-models' ? pModels() : X.bucket === 'x-pins' ? pPins() : X.bucket === 'x-score' ? pScore() : X.bucket === 'x-casehist' ? pCaseHist() : '';
       if (X.bucket === 'x-score') setTimeout(drawScore, 30);
       if (X.bucket === 'x-casehist') { var b = document.getElementById('echo-case-history'); if (b) b.removeAttribute('data-k'); }
       if (focusPh) { var ni = [].filter.call(panel.querySelectorAll('input'), function (i) { return i.placeholder === focusPh; })[0]; if (ni) { ni.focus(); try { ni.setSelectionRange(caret, caret); } catch (e) {} } }
@@ -53210,6 +53231,15 @@ window.CARDINAL_PLACES = {
     ['echo-cardinal-hero', 'echo-your-view-panel', 'echo-recent-access-panel'].forEach(function (id) { var e = document.getElementById(id); if (e && e.style.display !== 'none') e.style.display = 'none'; });
     var ch = document.getElementById('echo-case-history');
     if (ch) { var inSlot = ch.parentNode && ch.parentNode.id === 'echo-x-casehist-slot'; if (!inSlot && ch.style.display !== 'none') ch.style.display = 'none'; if (inSlot && ch.style.display === 'none') ch.style.display = ''; }
+    // A "Cores" tile: every core's history in one place.
+    var cbar = document.getElementById('echo-rooms-bar');
+    if (cbar && !document.getElementById('echo-cores-tile')) { var bar = cbar;
+      var first = bar.firstElementChild;
+      if (first) { var tile = first.cloneNode(true); tile.id = 'echo-cores-tile'; tile.removeAttribute('onclick'); tile.classList.remove('active');
+        var tt = tile.querySelectorAll('div,span,strong'); if (tt.length >= 2) { tt[0].textContent = 'Cores'; tt[tt.length - 1].textContent = 'Every core, every change'; } else tile.textContent = 'Cores';
+        tile.onclick = function (e) { e.preventDefault(); e.stopPropagation(); echoEnterRoom('cores'); };
+        bar.insertBefore(tile, first.nextSibling); }
+    }
     // The "Case history" tile goes to Cases > Case history.
     var bar = document.getElementById('echo-rooms-bar');
     if (bar) [].forEach.call(bar.children, function (t) { if (!t.__ex && /^Case history/.test((t.textContent || '').trim())) { t.__ex = 1; t.onclick = function (e) { e.preventDefault(); e.stopPropagation(); X.room = 'cases'; echoGo('x-casehist'); }; } });
