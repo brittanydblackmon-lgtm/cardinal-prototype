@@ -36329,7 +36329,7 @@ function pipelineRenderProvenance(org) {
     stat('Rights or Consent Gaps', rows.filter(function (r) { return r.flag === 'license' || r.flag === 'consent'; }).length, 'var(--red)') +
     stat('Bias or Vendor Flags', rows.filter(function (r) { return r.flag === 'proxy' || r.flag === 'vendor'; }).length, 'var(--amber)') + '</div>' +
     '<div style="border:1px solid var(--border2);border-radius:10px;overflow-x:auto;margin-bottom:26px"><table class="data-table" style="width:100%"><thead style="background:var(--bg3)"><tr>' +
-    '<th style="padding:9px 12px">Model</th><th style="padding:9px 8px">Trained on</th><th style="padding:9px 8px">Rights</th><th style="padding:9px 8px">Consent basis</th><th style="padding:9px 8px">Sensitive fields</th><th style="padding:9px 8px">Status</th></tr></thead><tbody>' +
+    '<th style="padding:9px 12px">Model</th><th style="padding:9px 8px">Trained on</th><th style="padding:9px 8px">Rights</th><th style="padding:9px 8px">Consent basis</th><th style="padding:9px 8px">Sensitive fields</th></tr></thead><tbody>' +
     rows.slice().sort(function (a, b) { return (b.flag ? 1 : 0) - (a.flag ? 1 : 0); }).map(function (r) {
       var i = rows.indexOf(r), f = r.flag ? FL[r.flag] : null, done = window.__provDone[org + ':' + i];
       return '<tr style="vertical-align:top"><td style="padding:9px 12px;font-size:11px;font-weight:700;color:var(--chrome2)">' + esc(r.model) + '<div style="font-size:9.5px;font-weight:500;color:var(--muted)">' + esc(r.origin) + '</div></td>' +
@@ -47891,8 +47891,8 @@ window.genRenderScenarios = function () {
       '<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end;margin-bottom:10px">' +
       '<input id="pl-q" placeholder="Search files, models, people" value="' + esc(F.q) + '" style="' + SEL + ';flex:1;min-width:200px">' +
       '<select id="pl-type" style="' + SEL + '">' + opts(uniq(all.map(function (r) { return r.type; })), F.type, 'All file types') + '</select>' +
-      '<select id="pl-status" style="' + SEL + '">' + opts(['Live', 'Shadow', 'Review', 'Processing', 'Archived'], F.status, 'All statuses') + '</select>' +
-      '<div class="pl-bulk"><span>' + (nSel ? nSel + ' selected' : 'Select files, then:') + '</span>' + [['tag', 'Tags'], ['suppress', 'Suppress'], ['archive', 'Archive'], ['restore', 'Restore'], ['delete', 'Delete']].map(function (b) { return '<button type="button" class="pl-act' + (b[0] === 'delete' ? ' del' : '') + (nSel ? '' : ' off') + '" onclick="plBulk(\'' + b[0] + '\',this)">' + b[1] + '</button>'; }).join('') + '</div>' +
+      '<select id="pl-status" style="' + SEL + '">' + opts(['Live', 'Shadow', 'Review', 'Processing', 'Archived'], F.status, 'All statuses') + '<optgroup label="' + (nSel ? 'Actions for ' + nSel + ' selected' : 'Actions (tick files first)') + '">' + [['tag', 'Add tags'], ['suppress', 'Create suppression'], ['archive', 'Archive'], ['restore', 'Restore'], ['delete', 'Delete']].map(function (b) { return '<option value="act:' + b[0] + '">' + b[1] + '</option>'; }).join('') + '</optgroup></select>' +
+
       '<select id="pl-by" style="' + SEL + '">' + opts(uniq(all.map(function (r) { return r.by; })), F.by, 'Uploaded by anyone') + '</select>' +
       '<label style="font-size:10.5px;color:#64748b">From<br><input id="pl-from" type="date" value="' + F.from + '" style="' + SEL + '"></label>' +
       '<label style="font-size:10.5px;color:#64748b">To<br><input id="pl-to" type="date" value="' + F.to + '" style="' + SEL + '"></label></div>' +
@@ -47900,19 +47900,20 @@ window.genRenderScenarios = function () {
       '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><div style="font-size:12px;font-weight:700;color:#1a1815">' + list.length + ' file' + (list.length === 1 ? '' : 's') + '</div>' +
       '' + '</div>' +
       '<div style="border:1px solid rgba(26,24,21,.10);border-radius:10px;overflow:hidden"><table style="width:100%;border-collapse:collapse;font-size:11.5px"><thead><tr style="background:#f3f0e9;text-align:left;color:#475569">' +
-      '<th style="padding:9px 10px;width:28px"><input type="checkbox" onclick="plAll(this.checked)"' + (nSel && nSel === list.length ? ' checked' : '') + '></th><th style="padding:9px 8px">Name</th><th style="padding:9px 8px">Type</th><th style="padding:9px 8px">Feeds</th><th style="padding:9px 8px">Uploaded by</th><th style="padding:9px 8px">Uploaded</th><th style="padding:9px 8px">Size</th><th style="padding:9px 8px">Status</th></tr></thead><tbody>' +
+      '<th style="padding:9px 10px;width:28px"><input type="checkbox" onclick="plAll(this.checked)"' + (nSel && nSel === list.length ? ' checked' : '') + '></th><th style="padding:9px 8px">Name</th><th style="padding:9px 8px">Status</th><th style="padding:9px 8px">Type</th><th style="padding:9px 8px">Feeds</th><th style="padding:9px 8px">Uploaded by</th><th style="padding:9px 8px">Uploaded</th><th style="padding:9px 8px">Size</th></tr></thead><tbody>' +
       list.map(function (r, i) {
         var c = STC[r.status] || STC.Live;
         return '<tr style="background:' + (i % 2 ? '#faf8f3' : '#fff') + ';border-top:1px solid rgba(26,24,21,.06)">' +
           '<td style="padding:9px 10px"><input type="checkbox"' + (F.sel[r.id] ? ' checked' : '') + ' onclick="plSel(\'' + r.id + '\',this.checked)"></td>' +
           '<td style="padding:9px 8px;font-weight:700;color:#1a1815;cursor:pointer" onclick="plView(\'' + r.id + '\')"><span class="pl-name">' + esc(r.name) + '</span></td>' +
+          '<td style="padding:9px 8px"><span style="font-size:10px;font-weight:800;padding:2px 8px;border-radius:999px;color:' + c[0] + ';background:' + c[1] + '">' + esc(r.status) + '</span></td>' +
           '<td style="padding:9px 8px;color:#475569">' + esc(r.type) + '</td><td style="padding:9px 8px;color:#475569">' + esc(r.feeds) + '</td>' +
           '<td style="padding:9px 8px;color:#475569">' + esc(r.by) + '</td><td style="padding:9px 8px;color:#475569">' + fmt(r.at) + '</td><td style="padding:9px 8px;color:#475569">' + esc(r.size) + '</td>' +
-          '<td style="padding:9px 8px"><span style="font-size:10px;font-weight:800;padding:2px 8px;border-radius:999px;color:' + c[0] + ';background:' + c[1] + '">' + esc(r.status) + '</span></td>' +
+          
           '</tr>';
       }).join('') + (list.length ? '' : '<tr><td colspan="9" style="padding:18px;text-align:center;color:#64748b">No files match these filters.</td></tr>') + '</tbody></table></div><div id="pl-detail"></div>';
     var bind = function (id, key, ev) { var e = document.getElementById(id); if (e) e.addEventListener(ev || 'change', function () { F[key] = e.value; plRender(); if (id === 'pl-q') { var n = document.getElementById('pl-q'); n.focus(); n.setSelectionRange(n.value.length, n.value.length); } }); };
-    bind('pl-q', 'q', 'input'); bind('pl-type', 'type'); bind('pl-status', 'status'); bind('pl-by', 'by'); bind('pl-from', 'from'); bind('pl-to', 'to');
+    bind('pl-q', 'q', 'input'); bind('pl-type', 'type'); (function () { var e = document.getElementById('pl-status'); if (e && !e.__w) { e.__w = 1; e.addEventListener('change', function () { var v = e.value; if (v.indexOf('act:') === 0) { e.value = F.status || ''; plBulk(v.slice(4), e); return; } F.status = v; plRender(); }); } })(); bind('pl-by', 'by'); bind('pl-from', 'from'); bind('pl-to', 'to');
   };
   window.plClear = function (k) { if (k === 'from') { F.from = ''; F.to = ''; } else F[k] = ''; plRender(); };
   window.plSel = function (id, on) { F.sel[id] = on; plRender(); };
@@ -53115,7 +53116,7 @@ window.CARDINAL_PLACES = {
     desk: [['x-pins', 'Pinned memories'], ['myworkspace', 'My notes and activity']]
   };
   var NATIVE_FIRST = { cores: 'memories', hall: 'memories', cases: 'conversations', models: 'lineage', people: 'peoplelog', decisions: 'receipts', wb: 'whistleblower', desk: 'myworkspace' };
-  var X = { room: 'hall', bucket: 'memories', detail: null, f: {}, page: 0 };
+  var X = { room: 'hall', bucket: 'x-logged', detail: null, f: {}, page: 0 };
   window.__echoX = 1;
   window.__echoXState = X;
   var oEnter = window.echoEnterRoom;
@@ -54803,7 +54804,7 @@ window.CARDINAL_PLACES = {
       '<div style="display:flex;gap:4px;flex-wrap:wrap;background:rgba(26,24,21,.05);padding:4px;border-radius:10px;margin:10px 0 0;width:fit-content;max-width:100%">' + PARTS.map(function (p) { var on = p[0] === k; return '<button type="button" onclick="cardinalScoreHistoryPart(' + esc(JSON.stringify(pre)) + ',\'' + p[0] + '\')" style="font:inherit;font-size:11.5px;font-weight:' + (on ? 700 : 500) + ';padding:6px 11px;border:0;border-radius:8px;cursor:pointer;background:' + (on ? '#fff' : 'transparent') + ';box-shadow:' + (on ? '0 1px 3px rgba(26,24,21,.12)' : 'none') + ';color:#1a1815">' + p[1] + '</button>'; }).join('') + '</div>' +
       '<div class="tsv2-history-canvas-wrap" id="' + pre + '-wrap" style="position:relative;min-height:300px;height:300px;margin-top:10px"><div id="' + pre + '-svg" style="position:absolute;inset:0"></div><div id="' + pre + '-pins"></div></div>' +
       '<div style="margin-top:10px;padding:10px 12px;border-radius:10px;background:rgba(26,24,21,.04);font-size:12px;color:#334155">Past 12 months: ' + esc(lbl) + ' moved from <strong>' + first + '</strong> to <strong style="color:' + (last >= 80 ? '#15803D' : '#A16207') + '">' + last + '</strong> (' + (last - first >= 0 ? '+' : '') + (last - first) + ' pts) · ' + plural(ann.length, 'annotation') + ' · Low point ' + esc(trough.month) + ' at ' + v(trough) + '</div></section>' +
-      cardinalScoreLogHTML(h, k);
+      cardinalScoreLogHTML(h, k, pre);
   };
   // 10/8 (Brittany: "log data of when the score changes, by date, time, and why; click for more detail").
   function shWhen(p, i) { var m = MON.indexOf(String(p.month).slice(0, 3)), y = +String(p.month).slice(-4), hh = 0; for (var c = 0; c < p.month.length; c++) hh = (hh * 31 + p.month.charCodeAt(c)) % 9973; var d = new Date(y, m, 3 + hh % 22, 6 + hh % 3, (hh * 7) % 60); if (d > new Date()) { var t = new Date(); d = new Date(t.getFullYear(), t.getMonth(), t.getDate(), 6, 15); if (d > t) d.setDate(d.getDate() - 1); } return d; }
@@ -54858,6 +54859,7 @@ window.CARDINAL_PLACES = {
       for (var z = steps.length - 1; z > 0; z--) { var j = (sd + z * 7) % (z + 1), t = steps[z]; steps[z] = steps[j]; steps[j] = t; }
       var mi = MON.indexOf(String(p.month).slice(0, 3)), yr = +String(p.month).slice(-4), last = new Date(yr, mi + 1, 0).getDate();
       var cur = v(h[i - 1]), dayCap = (yr === now.getFullYear() && mi === now.getMonth()) ? now.getDate() : last;
+      var m0 = out.length;
       steps.forEach(function (st, n) {
         var day = Math.min(dayCap, 2 + Math.floor((n + 1) * (dayCap - 2) / (steps.length + 1)) + (n % 2 && sd % 2 ? 0 : 0));
         if (n > 0 && (sd + n) % 3 === 0) day = out[out.length - 1].t.getDate();
@@ -54875,20 +54877,45 @@ window.CARDINAL_PLACES = {
         out.push({ t: t, from: cur, to: cur + st, ch: st, part: k === 'score' ? c[0] : k, who: c[1], kind: c[2], what: text, model: c[4], cs: c[5], note: c[6], signer: c[7], month: i, pinned: !!(ann && n === 0) });
         cur += st;
       });
+      var mine = out.slice(m0), ts = mine.map(function (e) { return e.t; }).sort(function (a, b) { return a - b; }); mine.forEach(function (e, z) { e.t = ts[z]; });
     });
     return out.sort(function (a, b) { return b.t - a.t; });
   }
   function shTime(d) { var h = d.getHours(), mi = d.getMinutes(); return (h % 12 || 12) + ':' + (mi < 10 ? '0' : '') + mi + ' ' + (h < 12 ? 'AM' : 'PM'); }
-  window.cardinalScoreLogHTML = function (h, k) {
-    var ev = shEvents(h, k); window.__shLog = { h: h, k: k, ev: ev };
+  // One row every day, even when nothing moved, so the log keeps growing day by day.
+  function withDaily(h, k, ev) {
+    var asc = ev.slice().sort(function (a, b) { return a.t - b.t; }), out = ev.slice(), now = new Date(), DAYS = 120;
+    var v = function (p) { return p[k] != null ? p[k] : p.score; };
+    var days = {}; ev.forEach(function (e) { days[e.t.toDateString()] = 1; });
+    var start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - DAYS);
+    var score = (function () { var b = asc.filter(function (e) { return e.t < start; }).pop(); return b ? b.to : (asc[0] ? asc[0].from : v(h[0])); })();
+    var j = 0; while (j < asc.length && asc[j].t < start) j++;
+    for (var d = new Date(start); d <= now; d.setDate(d.getDate() + 1)) {
+      var end = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59);
+      while (j < asc.length && asc[j].t <= end) { score = asc[j].to; j++; }
+      if (days[d.toDateString()]) continue;
+      var t = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 6, 15); if (t > now) continue;
+      var lbl = MON[d.getMonth()] + ' ' + d.getFullYear(), mi = -1; h.forEach(function (p, x) { if (p.month === lbl) mi = x; }); if (mi < 1) mi = h.length - 1;
+      out.push({ t: t, from: score, to: score, ch: 0, part: k === 'score' ? '' : k, who: 'Cardinal', kind: 'agent', what: 'Daily recalculation: no change. All 7 parts checked against the Cardinal Standard.', model: '', cs: '', note: 'Cardinal recalculates every morning. Nothing moved today.', signer: 'Automatic check', month: mi, hold: 1 });
+    }
+    return out.sort(function (a, b) { return b.t - a.t; });
+  }
+  window.__shPage = window.__shPage || 0;
+  window.cardinalScoreLogPage = function (pre, d) { window.__shPage = Math.max(0, (window.__shPage || 0) + d); var L = window.__shLog; if (L) cardinalScoreHistoryPart(pre, L.k); };
+  window.cardinalScoreLogHTML = function (h, k, pre) {
+    var ev = withDaily(h, k, shEvents(h, k)); window.__shLog = { h: h, k: k, ev: ev };
+    var dayList = []; ev.forEach(function (e) { var d = fd(e.t); if (dayList.indexOf(d) < 0) dayList.push(d); });
+    var PER = 14, pages = Math.max(1, Math.ceil(dayList.length / PER)), pg = Math.min(window.__shPage || 0, pages - 1), show = dayList.slice(pg * PER, pg * PER + PER);
     var body = '', lastDay = '';
     ev.forEach(function (e, i) {
+      if (show.indexOf(fd(e.t)) < 0) return;
       var day = fd(e.t); if (day !== lastDay) { lastDay = day; var n = ev.filter(function (x) { return fd(x.t) === day; }).length; body += '<tr><td colspan="7" style="background:#ebe4d6;font-size:11px;font-weight:800;color:#1a1815;text-transform:uppercase;letter-spacing:.5px;padding:7px 12px">' + esc(day) + (n > 1 ? ' · ' + n + ' changes' : '') + '</td></tr>'; }
-      var c = e.ch > 0 ? '#15803D' : '#B91C1C', wc = e.kind === 'agent' ? '#6d28d9' : '#1a1815';
-      body += '<tr class="ex-click" style="cursor:pointer" title="Open the full story" onclick="cardinalScorePoint(' + i + ')"><td style="white-space:nowrap;color:#475569">' + shTime(e.t) + '</td><td style="white-space:nowrap;font-weight:800">' + e.from + ' → ' + e.to + '</td><td style="font-weight:700;color:' + c + '">' + (e.ch > 0 ? '+' : '') + e.ch + '</td><td style="white-space:nowrap">' + esc(PNAME[e.part] || '') + '</td><td><div style="font-weight:600;color:#1a1815">' + esc(e.what) + (e.pinned ? ' <span style="font-size:10.5px;font-weight:700;color:#A16207">Pinned event</span>' : '') + '</div></td><td style="white-space:nowrap;font-weight:700;color:' + wc + '">' + esc(e.who) + (e.kind === 'agent' ? ' <span style="font-size:10px;font-weight:600">(AI)</span>' : '') + '</td><td style="white-space:nowrap">' + esc(e.cs || e.model || '') + '</td></tr>';
+      var c = e.ch > 0 ? '#15803D' : e.ch < 0 ? '#B91C1C' : '#64748b', wc = e.kind === 'agent' ? '#6d28d9' : '#1a1815';
+      body += '<tr class="ex-click" style="cursor:pointer" title="Open the full story" onclick="cardinalScorePoint(' + i + ')"><td style="white-space:nowrap;color:#475569">' + shTime(e.t) + '</td><td style="white-space:nowrap;font-weight:800">' + (e.hold ? e.to : e.from + ' → ' + e.to) + '</td><td style="font-weight:700;color:' + c + '">' + (e.ch > 0 ? '+' : '') + (e.ch || '0') + '</td><td style="white-space:nowrap">' + esc(PNAME[e.part] || (e.hold ? 'All parts' : '')) + '</td><td><div style="font-weight:600;color:#1a1815">' + esc(e.what) + (e.pinned ? ' <span style="font-size:10.5px;font-weight:700;color:#A16207">Pinned event</span>' : '') + '</div></td><td style="white-space:nowrap;font-weight:700;color:' + wc + '">' + esc(e.who) + (e.kind === 'agent' && !e.hold ? ' <span style="font-size:10px;font-weight:600">(AI)</span>' : '') + '</td><td style="white-space:nowrap">' + esc(e.cs || e.model || '') + '</td></tr>';
     });
     return '<div style="font-size:12px;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:.5px;margin:4px 0 8px">Score change log · every change, as it happened · click any row for the full story</div>' +
-      '<div class="ex-wrap"><table class="ex-tbl"><thead><tr><th>Time</th><th>Score</th><th>Change</th><th>Part</th><th>What happened</th><th>Who</th><th>Case or model</th></tr></thead><tbody>' + body + '</tbody></table></div>';
+      '<div class="ex-wrap"><table class="ex-tbl"><thead><tr><th>Time</th><th>Score</th><th>Change</th><th>Part</th><th>What happened</th><th>Who</th><th>Case or model</th></tr></thead><tbody>' + body + '</tbody></table></div>' +
+      '<div class="ex-pager"><span>Days ' + (pg * PER + 1) + '–' + Math.min(dayList.length, pg * PER + PER) + ' of ' + dayList.length + ' · page ' + (pg + 1) + ' of ' + pages + '</span><span>' + (pg > 0 ? '<button type="button" onclick="cardinalScoreLogPage(' + esc(JSON.stringify(pre || 'echo-sh')) + ',-1)">Newer</button> ' : '') + (pg < pages - 1 ? '<button type="button" onclick="cardinalScoreLogPage(' + esc(JSON.stringify(pre || 'echo-sh')) + ',1)">Older</button>' : '') + '</span></div>';
   };
   window.cardinalScorePoint = function (i) {
     var L = window.__shLog; if (!L || !L.ev) return; var e = L.ev[i], h = L.h, k = L.k, p = h[e.month], prev = h[e.month - 1];
@@ -54899,10 +54926,10 @@ window.CARDINAL_PLACES = {
     var m = document.createElement('div'); m.id = 'sh-pop'; m.style.cssText = 'position:fixed;inset:0;z-index:10000;background:rgba(26,24,21,.45);display:flex;align-items:center;justify-content:center;padding:16px';
     m.onclick = function (ev) { if (ev.target === m) m.remove(); };
     m.innerHTML = '<div style="background:#f4efe6;border-radius:16px;box-shadow:0 24px 60px rgba(0,0,0,.3);width:min(720px,100%);max-height:90vh;overflow:auto;padding:20px 22px;color:#1a1815">' +
-      '<div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start"><div><div style="font-size:12px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.5px">' + esc(lbl) + ' changed · ' + fd(e.t) + ' · ' + shTime(e.t) + '</div><div style="font-size:30px;font-weight:800;margin-top:2px">' + e.from + ' → ' + e.to + ' <span style="font-size:15px;font-weight:700;color:' + (e.ch > 0 ? '#15803D' : '#B91C1C') + '">' + (e.ch > 0 ? '+' : '') + e.ch + '</span></div><div style="font-size:12.5px;color:#475569">Part that moved: <strong>' + esc(PNAME[e.part] || lbl) + '</strong></div></div><button type="button" onclick="document.getElementById(\'sh-pop\').remove()" style="font:inherit;font-size:12px;font-weight:700;background:#fff;border:1px solid rgba(26,24,21,.15);border-radius:9px;padding:6px 12px;cursor:pointer">Close</button></div>' +
+      '<div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start"><div><div style="font-size:12px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.5px">' + esc(lbl) + (e.hold ? ' checked · ' : ' changed · ') + fd(e.t) + ' · ' + shTime(e.t) + '</div><div style="font-size:30px;font-weight:800;margin-top:2px">' + e.from + ' → ' + e.to + ' <span style="font-size:15px;font-weight:700;color:' + (e.ch > 0 ? '#15803D' : '#B91C1C') + '">' + (e.ch > 0 ? '+' : '') + e.ch + '</span></div><div style="font-size:12.5px;color:#475569">Part that moved: <strong>' + esc(PNAME[e.part] || lbl) + '</strong></div></div><button type="button" onclick="document.getElementById(\'sh-pop\').remove()" style="font:inherit;font-size:12px;font-weight:700;background:#fff;border:1px solid rgba(26,24,21,.15);border-radius:9px;padding:6px 12px;cursor:pointer">Close</button></div>' +
       box('What happened', esc(e.what)) +
       '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px">' +
-      box('Who did it', '<strong>' + esc(e.who) + '</strong>' + (e.kind === 'agent' ? ' · AI agent. A named person reviewed it before it counted.' : ' · team member'), '#1a1815') +
+      box('Who did it', '<strong>' + esc(e.who) + '</strong>' + (e.hold ? ' · automatic daily check' : e.kind === 'agent' ? ' · AI agent. A named person reviewed it before it counted.' : ' · team member'), '#1a1815') +
       box('Related', (e.model ? '<a href="javascript:void(0)" onclick="document.getElementById(\'sh-pop\').remove();custModel(' + J(e.model) + ')" style="color:#1e3a8a;font-weight:700">' + esc(e.model) + '</a>' : '') + (e.cs ? (e.model ? '<br>' : '') + '<a href="javascript:void(0)" onclick="document.getElementById(\'sh-pop\').remove();try{echoEnterRoom(\'cases\');echoCaseGo(' + J(e.cs) + ')}catch(x){}" style="color:#1e3a8a;font-weight:700">Case ' + esc(e.cs) + '</a>' : '') || '—', '#1a1815') +
       box('Reviewed and signed', '<strong>' + esc(e.signer) + '</strong><br><span style="color:#475569">' + fd(new Date(e.t.getTime() + 52 * 60000)) + ' · ' + shTime(new Date(e.t.getTime() + 52 * 60000)) + '</span>', '#15803D') + '</div>' +
       box('Notes', esc(e.note) + '<div style="font-size:11.5px;color:#64748b;margin-top:6px">Eve: the ' + esc(lbl) + ' moved from ' + e.from + ' to ' + e.to + ' because ' + esc(PNAME[e.part] || lbl) + ' ' + (e.ch > 0 ? 'improved' : 'slipped') + '. ' + (e.to >= 80 ? 'Still above the 80 line.' : 'Below the 80 line.') + '</div>', '#A16207') +
