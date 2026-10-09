@@ -56067,8 +56067,31 @@ window.CARDINAL_PLACES = {
     try { drawDashGenderCompare(); } catch (e) {} try { drawDashAgeChart(); } catch (e) {} try { dashRenderRaceBars(c); } catch (e) {}
     captions(o);
   }
-  setInterval(function () { tickModel(org()); redraw(); var p = document.getElementById('echo-impact'); if (p && p.offsetParent !== null && !p.contains(document.activeElement)) p.outerHTML = window.cardinalEchoImpact(); }, 6000);
+  // 10/8: the charts stay still; a row of shadow circles above them carries the live numbers.
   setTimeout(function () { captions(org()); }, 2500);
+  var LV = {};
+  function liveVals(o) {
+    var c = DASH_INDUSTRY[o]; if (!c) return [];
+    var g = c.demoGenderBars || {}, a = c.dashAgeChart || { labels: [], values: [] }, r = ((c.demoRaceBars || {}).rows) || [];
+    var base = (r.filter(function (x) { return x.isBaseline; })[0] || {}).pct;
+    var lowAge = a.labels.map(function (l, i) { return i; }).filter(function (i) { return !/unk/i.test(a.labels[i]); }).reduce(function (m, i) { return a.values[i] < a.values[m] ? i : m; }, 0);
+    var items = [];
+    if (g.female != null) items.push(['Women', g.female, null, 'Gender']);
+    if (g.male != null) items.push(['Men', g.male, g.female, 'Gender']);
+    if (a.values.length) items.push(['Ages ' + a.labels[lowAge], a.values[lowAge], a.values[0], 'Age']);
+    r.filter(function (x) { return !x.isBaseline; }).sort(function (x, y) { return x.pct - y.pct; }).slice(0, 3).forEach(function (x) { items.push([x.label, x.pct, base, 'Race and ethnicity']); });
+    var S = LV[o] = LV[o] || {};
+    return items.map(function (it) { var k = it[0], d = S[k] == null ? 0 : S[k]; d = Math.max(-0.4, Math.min(0.4, d + (Math.random() - 0.5) * 0.3)); S[k] = Math.round(d * 10) / 10; return { label: it[0], v: Math.round((it[1] + S[k]) * 10) / 10, ref: it[2], dim: it[3] }; });
+  }
+  function circles() {
+    var s = document.getElementById('screen-dashboard'); if (!s || s.offsetParent === null || !window.cardinalGaugeRow) return;
+    var grid = document.querySelector('#dash-demographic-panel .dash-demo-3col'); if (!grid) return;
+    var host = document.getElementById('demo-circles'); if (!host) { host = document.createElement('div'); host.id = 'demo-circles'; host.className = 'c37'; host.style.margin = '6px 0 14px'; }
+    if (host.nextElementSibling !== grid) grid.parentNode.insertBefore(host, grid);
+    var units = liveVals(window.currentOrg || 'fin').map(function (x) { var ratio = x.ref ? x.v / x.ref : 1, col = !x.ref ? '#22c55e' : ratio < 0.8 ? '#ef4444' : ratio < 0.9 ? '#FACC15' : '#22c55e'; return { value: x.v.toFixed(1) + '%', pct: x.v / 100, color: col, label: x.label, status: x.ref ? (ratio < 0.8 ? 'Below the 0.80 Line' : ratio < 0.9 ? 'Watch' : 'OK') : 'Baseline', pillLabel: x.ref ? 'Ratio' : 'Baseline', pillVal: x.ref ? ratio.toFixed(2) : '', sub: x.label + ' · ' + x.dim, calc: 'just now', delta: { d: 0, text: '' }, go: "showScreen('echo');setTimeout(function(){try{echoEnterRoom('people');echoGo('x-impact')}catch(e){}},500)", tip: 'Approval rate for ' + x.label + (x.ref ? ', and its ratio to the baseline group' : '') + '. Updates as new decisions come in.' }; });
+    host.innerHTML = cardinalGaugeRow(units);
+  }
+  setInterval(circles, 5000); setTimeout(circles, 1500);
 
   // Eden's Protected Group section shows the same numbers as the Dashboard.
   function edenSync() {
@@ -56185,15 +56208,25 @@ window.CARDINAL_PLACES = {
     var list = '<table style="width:100%;border-collapse:collapse"><thead><tr><th style="' + TH + '">Shared with</th><th style="' + TH + '">They see</th><th style="' + TH + '">Shared by</th><th style="' + TH + '">Since</th><th style="' + TH + '">Until</th><th style="' + TH + '">Opened</th><th style="' + TH + '"></th></tr></thead><tbody>' +
       S.map(function (s, i) { var tn = (TIERS.filter(function (x) { return x[0] === s.tier; })[0] || ['', s.tier])[1]; return '<tr style="background:' + (i % 2 ? '#f7f3ea' : '#fff') + ';' + (s.on ? '' : 'opacity:.6') + '"><td style="' + TD + ';font-weight:700">' + esc(s.name) + '</td><td style="' + TD + '">The ' + esc(tn.toLowerCase()) + ' view</td><td style="' + TD + '">' + esc(s.by) + '</td><td style="' + TD + ';white-space:nowrap">' + fd(s.made) + '</td><td style="' + TD + ';white-space:nowrap">' + (s.until ? fd(s.until) : 'Always on') + '</td><td style="' + TD + '">' + s.views.toLocaleString() + ' times</td><td style="' + TD + ';text-align:right">' + (s.on ? '<button type="button" onclick="tlStopShare(' + i + ')" style="font:inherit;font-size:11.5px;font-weight:700;background:#fff;color:#B91C1C;border:1px solid rgba(220,38,38,.35);border-radius:8px;padding:4px 10px;cursor:pointer">Stop sharing</button>' : '<span style="font-size:11.5px;color:#64748b">Ended</span>') + '</td></tr>'; }).join('') + '</tbody></table>';
     var card = function (title, sub, inner) { return '<div style="background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 1px 3px rgba(26,24,21,.06),0 10px 24px rgba(26,24,21,.08);margin:12px 0 0"><div style="padding:10px 14px;background:#ebe4d6"><div style="font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.5px">' + title + '</div><div style="font-size:11.5px;color:#64748b;margin-top:2px">' + sub + '</div></div><div style="overflow-x:auto">' + inner + '</div></div>'; };
-    return card('What each audience can see', 'Pick an audience above to highlight its column. Personal data never goes on the ledger, only proof that a check happened.', matrix) +
+    return '<div style="font-size:12px;font-weight:600;color:var(--chrome2);margin-bottom:4px">Shared links</div><div style="font-size:10.5px;color:var(--muted);margin-bottom:6px">Each shared link shows one audience\u2019s view of the ledger (a regulator, an auditor, or the public) and nothing else. Every opening is logged. Use Share a view at the top to make a new one.</div>' +
       card('Shared right now', S.filter(function (s) { return s.on; }).length + ' active views. Each link shows only its audience’s column, and every opening is logged.', list);
   }
   function draw(force) {
-    var pills = document.getElementById('tl-preview-tier-pills'); if (!pills || pills.offsetParent === null) return;
-    var host = document.getElementById('tl-share-clear'); if (!host) { host = document.createElement('div'); host.id = 'tl-share-clear'; }
-    var anchor = pills.parentNode; if (host.previousElementSibling !== anchor) anchor.parentNode.insertBefore(host, anchor.nextSibling);
-    var h = html(); if (force || host.__h !== h) { host.__h = h; host.innerHTML = h; }
+    var tabs = document.getElementById('tl-tabs-top'); if (!tabs || tabs.offsetParent === null) return;
+    var old = document.getElementById('tl-share-clear'); if (old) old.remove();
+    var btn = document.getElementById('tl-tab-btn-shared');
+    if (!btn) { btn = document.createElement('button'); btn.type = 'button'; btn.id = 'tl-tab-btn-shared'; btn.className = 'gen-tab'; btn.textContent = 'Shared links'; btn.onclick = function () { tlShowShared(); }; tabs.appendChild(btn); }
+    var host = document.getElementById('tl-tab-shared'), qt = document.getElementById('tl-tab-query') || document.getElementById('tl-tab-entries');
+    if (!host && qt) { host = document.createElement('div'); host.id = 'tl-tab-shared'; host.style.display = 'none'; qt.parentNode.insertBefore(host, qt.nextSibling); }
+    if (host && host.style.display !== 'none') { var h = html(); if (force || host.__h !== h) { host.__h = h; host.innerHTML = h; } }
   }
+  window.tlShowShared = function () {
+    ['entries', 'access', 'whistleblower', 'privacy', 'query'].forEach(function (t) { var el = document.getElementById('tl-tab-' + t); if (el) el.style.display = 'none'; });
+    [].forEach.call(document.querySelectorAll('#tl-tabs-top .gen-tab'), function (t) { t.classList.toggle('active', t.id === 'tl-tab-btn-shared'); });
+    var host = document.getElementById('tl-tab-shared'); if (host) { host.style.display = 'block'; draw(true); }
+  };
+  var oSw = window.switchTLTopTab;
+  if (typeof oSw === 'function') window.switchTLTopTab = switchTLTopTab = function () { var h = document.getElementById('tl-tab-shared'); if (h) h.style.display = 'none'; var b = document.getElementById('tl-tab-btn-shared'); if (b) b.classList.remove('active'); return oSw.apply(this, arguments); };
   setInterval(draw, 600);
 })();
 // 10/8 (Brittany: "Watchman still jumps"). Switching sections redrew Watchman's panel, showed it, then hid parts of
