@@ -53109,7 +53109,7 @@ window.CARDINAL_PLACES = {
   // ── State and navigation ─────────────────────────────────────────
   var ROOMS = {
     hall: [['x-logged', 'Logged events'], ['x-score', 'Score history']],
-    cores: [['x-core-all', 'All cores']].concat(['Eden', 'Obsidian', 'Genesis', 'Atonement', 'Halo', 'Watchman', 'Codex', 'Compliance', 'Trust Ledger', 'Echo'].map(function (c) { return ['x-core-' + c, c]; })),
+    cores: [['x-core-all', 'All cores']].concat(['Eden', 'Obsidian', 'Genesis', 'Atonement', 'Halo', 'Watchman', 'Codex', 'Compliance', 'Trust Ledger', 'Echo'].map(function (c) { return ['x-core-' + c, c === 'Echo' ? 'Record access' : c]; })),
     cases: [['x-cases', 'All cases'], ['x-casehist', 'Case history'], ['conversations', 'Conversations'], ['ignored', 'Ignored flags']],
     models: [['x-models', 'Models and AI systems'], ['lineage', 'Version lineage']],
     people: [['x-people', 'Employees'], ['x-board', 'Team board'], ['x-customers', 'Customers'], ['x-impact', 'Demographics and geography'], ['x-plog', 'Employee activity log']],
@@ -53233,7 +53233,7 @@ window.CARDINAL_PLACES = {
     var core = X.bucket === 'x-core-all' ? '' : X.bucket.replace('x-core-', '');
     var list = allEvents().filter(function (e) { return !core || e.core === core; });
     var whos = {}; list.forEach(function (e) { whos[e.who] = 1; });
-    return '<div class="ex-note">' + (core ? 'Everything that happened in <strong>' + esc(core) + '</strong>' : 'Everything that happened in every core') + ', by every person and AI agent, back to 2019. Search, or filter by person, action, and dates.</div>' +
+    return '<div class="ex-note">' + (core === 'Echo' ? 'Echo keeps a record of itself too: every time someone opens a sealed record, adds to it, or Eve files a digest, it is logged here, so you can always see who looked at what' : core ? 'Everything that happened in <strong>' + esc(core) + '</strong>' : 'Everything that happened in every core') + ', by every person and AI agent, back to 2019. Search, or filter by person, action, and dates.</div>' +
       '<div class="ex-bar">' + search('Search what happened') + sel('who', 'Who', Object.keys(whos).sort()) + sel('act', 'Action', Object.keys(ACT_COL)) + (core ? '' : sel('core', 'Core', CORES)) + dates() + '</div>' +
       timelineTable(list, [['When', function (e) { return '<span style="white-space:nowrap;color:#475569">' + fdt(e.t) + '</span>'; }], ['Core', function (e) { return coreTag(e.core); }], ['Who', function (e) { return '<a href="javascript:void(0)" onclick="echoEnterRoom(\'people\');echoOpen(\'person\',' + esc(JSON.stringify(e.who)).replace(/&quot;/g, '&quot;') + ')" style="color:#1a1815;font-weight:600">' + esc(e.who) + '</a>'; }], ['Action', function (e) { return pill(e.act, ACT_COL[e.act] || ACT_COL.Logged); }], ['What happened', function (e) { return esc(e.what); }], ['Sealed', function (e) { return '<span style="font-family:monospace;font-size:11px;color:#64748b">' + esc(e.seal) + '</span>'; }]]);
   }
@@ -55653,7 +55653,7 @@ window.CARDINAL_PLACES = {
     m.onclick = function (e) { if (e.target === m) m.remove(); };
     m.innerHTML = '<div style="background:#f4efe6;border-radius:16px;box-shadow:0 24px 60px rgba(0,0,0,.3);width:min(640px,100%);max-height:90vh;overflow:auto;padding:20px 22px">' +
       '<div style="display:flex;justify-content:space-between;gap:10px"><div><div style="font-size:16px;font-weight:800;color:#1a1815">' + esc(T.name) + ' · ' + esc(q.id) + '</div><div style="font-size:12px;color:#64748b;margin-top:2px">Asked by ' + esc(q.by) + ' · ' + fdt(q.t) + ' · ' + pill(q.status) + '</div></div><button type="button" onclick="document.getElementById(\'ak-pop\').remove()" style="font:inherit;font-size:12px;font-weight:700;background:#fff;border:1px solid rgba(26,24,21,.15);border-radius:9px;padding:6px 12px;cursor:pointer;height:fit-content">Close</button></div>' +
-      q.msgs.map(function (x) { var mine = !x.role; return '<div style="margin-top:12px;padding:12px 14px;border-radius:12px;background:' + (mine ? '#fff' : '#1a1815') + ';color:' + (mine ? '#1a1815' : '#fff') + '"><div style="font-size:11px;font-weight:700;opacity:.75;margin-bottom:4px">' + esc(x.who) + (x.role ? ' · ' + esc(x.role) : '') + ' · ' + fdt(x.t) + '</div><div style="font-size:13px;line-height:1.5">' + esc(x.text) + '</div></div>'; }).join('') +
+      q.msgs.map(function (x) { var mine = !x.role; return '<div style="margin-top:12px;padding:12px 14px;border-radius:12px;background:' + (mine ? '#fff' : '#ebe4d6') + ';color:#1a1815;box-shadow:0 1px 3px rgba(26,24,21,.06)' + (mine ? '' : ';border-left:3px solid #a78bfa') + '"><div style="font-size:11px;font-weight:700;opacity:.75;margin-bottom:4px">' + esc(x.who) + (x.role ? ' · ' + esc(x.role) : '') + ' · ' + fdt(x.t) + '</div><div style="font-size:13px;line-height:1.5">' + esc(x.text) + '</div></div>'; }).join('') +
       '<div style="display:flex;gap:8px;margin-top:14px"><input id="ak-reply" type="text" placeholder="Reply to ' + esc(T.who) + '" style="flex:1;font:inherit;font-size:13px;padding:10px 12px;border:1px solid rgba(26,24,21,.15);border-radius:10px"><button type="button" id="ak-reply-go" style="font:inherit;font-size:12.5px;font-weight:700;background:#1a1815;color:#fff;border:0;border-radius:10px;padding:10px 16px;cursor:pointer">Send</button>' + (q.status !== 'Resolved' ? '<button type="button" id="ak-done" style="font:inherit;font-size:12.5px;font-weight:700;background:#fff;color:#1a1815;border:1px solid rgba(26,24,21,.15);border-radius:10px;padding:10px 14px;cursor:pointer">Mark resolved</button>' : '') + '</div>' +
       '<div style="font-size:11px;color:#64748b;margin-top:10px">This conversation is logged in Echo with names and times.</div></div>';
     document.body.appendChild(m);
@@ -57129,6 +57129,21 @@ setInterval(function () {
     if (b && b.style.display !== 'none') { b.style.display = 'none'; i.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); b.click(); } }); }
   }, 900);
 })();
+// 10/9 (Brittany: "add a note from Nina", seen as only "From Eve"). Nina's own reminder is always in My notes, even
+// when the browser already has saved notes.
+(function () {
+  setInterval(function () {
+    var s = document.getElementById('screen-myworkspace'); if (!s || s.offsetParent === null || !window.getActivePersona) return;
+    var p = getActivePersona(); if (!p) return;
+    var o = window.currentOrg || 'fin', k = 'notes:' + p.id; window.__userNotes = window.__userNotes || {};
+    var L = window.__userNotes[k] = window.__userNotes[k] || [];
+    if (L.some(function (n) { return n.mine; })) return;
+    var first = String(p.name || 'Nina').split(' ')[0];
+    L.unshift({ title: 'Note to self', text: o === 'fin' ? 'Before Friday’s exam check-in, re-run the Brownsville (11212) numbers on the newest v3.5 shadow batch. If Hispanic approval there is still under the 0.80 line, ask Lisa about the income feature before I sign off. – ' + first : 'Before the next check-in, re-run the worst-gap group on the newest shadow batch and confirm it is above the 0.80 line before I sign off. – ' + first, timestamp: new Date(Date.now() - 2 * 3600000).toISOString(), mine: true });
+    try { localStorage.setItem('cardinal-notes-' + p.id, JSON.stringify(L)); } catch (e) {}
+    try { if (typeof renderBigWorkspacePage === 'function') renderBigWorkspacePage(); } catch (e) {}
+  }, 1200);
+})();
 </script>
 <script data-p="p48_watchman">
 // 10/9 (Brittany: Watchman "looks small", "drop downs to choose instead of clicking", "date and then by time like the
@@ -57221,7 +57236,7 @@ setInterval(function () {
     var L = events(o, F.view).filter(function (e) { var c = byId[e.cs]; return (!F.cs || e.cs === F.cs) && (!F.sev || (c && c.sev === F.sev)) && (!from || e.t >= from) && (!to || e.t <= to) && (!q || (e.what + ' ' + e.who + ' ' + e.cs).toLowerCase().indexOf(q) >= 0); });
     var sel = 'font:inherit;font-size:12.5px;border:1px solid rgba(26,24,21,.14);border-radius:9px;padding:6px 9px;background:#fff';
     var VIEWS = [['cases', 'Cases: every step, every case'], ['warrooms', 'War rooms: live team rooms for serious cases'], ['reports', 'Incident reports: formal write-ups sent out']];
-    var ctl = '<div class="wm2-ctl"><select style="' + sel + ';font-weight:700" onchange="wm2Set(\'view\',this.value)">' + VIEWS.map(function (v) { return '<option value="' + v[0] + '" ' + (F.view === v[0] ? 'selected' : '') + '>' + v[1] + '</option>'; }).join('') + '</select>' +
+    var ctl = '<div class="wm2-ctl">' +
       '<select style="' + sel + '" onchange="wm2Set(\'cs\',this.value)"><option value="">All cases</option>' + C.map(function (c) { return '<option value="' + c.id + '" ' + (F.cs === c.id ? 'selected' : '') + '>' + c.id + ' · ' + esc(c.model) + '</option>'; }).join('') + '</select>' +
       '<select style="' + sel + '" onchange="wm2Set(\'sev\',this.value)"><option value="">Any severity</option>' + ['Critical', 'High', 'Medium'].map(function (s) { return '<option ' + (F.sev === s ? 'selected' : '') + '>' + s + '</option>'; }).join('') + '</select>' +
       '<label>From <input type="date" value="' + F.from + '" style="' + sel + '" onchange="wm2Set(\'from\',this.value)"></label><label>To <input type="date" value="' + F.to + '" style="' + sel + '" onchange="wm2Set(\'to\',this.value)"></label>' +
@@ -57241,10 +57256,10 @@ setInterval(function () {
       : '<div class="wm2-box"><div class="wm2-bt">Pick a case</div><div style="font-size:12.5px;color:#334155;line-height:1.5">Click any row or a case below to see who is affected, the owner, and the days left to fix it.</div></div>') +
       '<div class="wm2-box"><div class="wm2-bt">Open cases · ' + open + '</div>' + C.map(function (c) { return '<div class="wm2-case' + (F.cs === c.id ? ' on' : '') + '" onclick="wm2Pick(\'' + c.id + '\')"><span class="dot" style="background:' + SEV[c.sev] + '"></span><div style="flex:1;min-width:0"><b>' + c.id + '</b> <span style="color:#64748b">' + esc(c.model) + '</span><div style="font-size:11px;color:#64748b">' + c.affected.toLocaleString() + ' affected' + (c.sla != null ? ' · ' + c.sla + ' days left' : '') + '</div></div>' + (c.room ? '<span title="War room open" style="font-size:10px;font-weight:800;color:#B91C1C">ROOM</span>' : '') + '</div>'; }).join('') + '</div>' +
       '<div class="wm2-box"><div class="wm2-bt">What each view is</div><div style="font-size:12px;color:#334155;line-height:1.55"><b>Case:</b> one problem, tracked from the moment it is found until it is fixed.<br><b>War room:</b> the live team room and clock for a serious case.<br><b>Incident report:</b> the formal write-up sent to a regulator, the board, or a team when a rule says you must report.</div></div>';
-    return '<div class="wm2-head"><div><div style="font-size:16px;font-weight:800;color:#1a1815">Cases and war rooms</div><div style="font-size:12px;color:#64748b">Every step of every case, by day and time. Pick what to see with the menus.</div></div></div>' + ctl + '<div class="wm2-grid"><div>' + log + pager + '</div><div class="wm2-side">' + side + '</div></div>';
+    return '<div class="wm2-head"><div style="font-size:12.5px;color:#64748b">' + ({ cases: 'Every step of every case, by day and time.', warrooms: 'Live team rooms for serious cases: every message, by day and time.', reports: 'Formal write-ups sent to regulators, the board, or a team.' })[F.view] + ' Narrow it with the menus.</div></div>' + ctl + '<div class="wm2-grid"><div>' + log + pager + '</div><div class="wm2-side">' + side + '</div></div>';
   }
   var css = document.createElement('style');
-  css.textContent = '#wm2{margin:6px 0 18px}#wm2 .wm2-head{display:flex;justify-content:space-between;align-items:flex-end;margin:0 0 10px}#wm2 .wm2-ctl{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:0 0 14px;font-size:12px;color:#64748b}' +
+  css.textContent = '#wm-rooms{display:none!important}#wm-bar{display:flex;gap:6px;flex-wrap:wrap;background:#ebe4d6;border-radius:14px;padding:6px;margin:6px 0 10px}#wm-bar button{flex:1;min-width:110px;font:inherit;font-size:13px;font-weight:700;border:none;background:transparent;border-radius:10px;padding:10px 12px;cursor:pointer;color:#475569}#wm-bar button.on{background:#fff;color:#1a1815;box-shadow:0 1px 3px rgba(26,24,21,.08),0 6px 14px rgba(26,24,21,.08)}#wm2{margin:6px 0 18px}#wm2 .wm2-head{display:flex;justify-content:space-between;align-items:flex-end;margin:0 0 10px}#wm2 .wm2-ctl{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:0 0 14px;font-size:12px;color:#64748b}' +
     '#wm2 .wm2-grid{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:18px;align-items:start}#wm2 .wm2-day{background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 1px 3px rgba(26,24,21,.06),0 10px 24px rgba(26,24,21,.08);margin:0 0 14px}#wm2 .wm2-dh{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:#ebe4d6}#wm2 .wm2-dh b{font-size:13px}#wm2 .wm2-dh span{font-size:11.5px;color:#64748b}' +
     '#wm2 .wm2-side{position:sticky;top:12px;display:flex;flex-direction:column;gap:12px}#wm2 .wm2-box{background:#fff;border-radius:14px;padding:14px 16px;box-shadow:0 1px 3px rgba(26,24,21,.06),0 12px 28px rgba(26,24,21,.09)}#wm2 .wm2-bt{font-size:11px;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:.6px}' +
     '#wm2 .wm2-r{display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-top:1px dashed rgba(26,24,21,.12);font-size:12.5px;color:#334155}#wm2 .wm2-r b{color:#1a1815;text-align:right}' +
@@ -57253,14 +57268,32 @@ setInterval(function () {
     '#wm2 .wm2-pg{display:flex;justify-content:space-between;align-items:center;font-size:12px;color:#64748b}#wm2 .wm2-pg button{font:inherit;font-weight:700;border:1px solid rgba(26,24,21,.14);background:#fff;border-radius:8px;padding:4px 10px;cursor:pointer}' +
     '@media (max-width:1000px){#wm2 .wm2-grid{grid-template-columns:1fr}#wm2 .wm2-side{position:static}}';
   document.head.appendChild(css);
+  // One bar for all of Watchman (Brittany: "just make the bar case, war room, incidents, testing, security, AI vendor").
+  var TABS = [['cases', 'Cases', 'v'], ['warrooms', 'War rooms', 'v'], ['reports', 'Incidents', 'v'], ['lab', 'Testing', 'n'], ['security', 'Security', 'n'], ['vendors', 'AI vendors', 'n']];
+  window.__wmTab = window.__wmTab || 'cases';
+  window.wmTab = function (t) {
+    window.__wmTab = t; var tab = TABS.filter(function (x) { return x[0] === t; })[0];
+    if (tab && tab[2] === 'v') { F.view = t; F.page = 0; try { if (window.__sentWR || (window.__sentinelTab && window.__sentinelTab !== 'cases')) { window.__sentWR = false; wmGo('cases'); } } catch (e) {} }
+    else { try { wmGo(t); } catch (e) {} }
+    drawBar(); draw(true);
+  };
+  function drawBar() {
+    var sub = document.getElementById('wm-sub'); if (!sub) return;
+    var bar = document.getElementById('wm-bar'); if (!bar) { bar = document.createElement('div'); bar.id = 'wm-bar'; }
+    if (bar.nextElementSibling !== sub) sub.parentNode.insertBefore(bar, sub);
+    var h = TABS.map(function (t) { return '<button type="button" class="' + (window.__wmTab === t[0] ? 'on' : '') + '" onclick="wmTab(\'' + t[0] + '\')">' + t[1] + '</button>'; }).join('');
+    if (bar.__h !== h) { bar.__h = h; bar.innerHTML = h; }
+  }
   function host() { var b = [].filter.call(document.querySelectorAll('#screen-sentinel button'), function (x) { return x.textContent.trim() === 'Stress tests' && !x.closest('#wm-sub'); })[0]; return b && b.parentElement && b.parentElement.parentNode; }
-  function inCases() { var on = document.querySelector('#wm-rooms button.on b'); return on && /^Cases and war rooms$/.test(on.textContent.trim()); }
+  function inCases() { return ['cases', 'warrooms', 'reports'].indexOf(window.__wmTab) >= 0; }
   function draw(force) {
     var s = document.getElementById('screen-sentinel'); if (!s || s.offsetParent === null) return;
     var hst = host(), sub = document.getElementById('wm-sub'), box = document.getElementById('wm2'); if (!hst || !sub) return;
+    drawBar();
     if (!inCases()) { if (box) box.style.display = 'none'; if (hst.__wm2) { hst.__wm2 = 0; hst.style.display = ''; } if (sub.__wm2) { sub.__wm2 = 0; sub.style.display = ''; } return; }
     if (!box) { box = document.createElement('div'); box.id = 'wm2'; }
     if (box.previousElementSibling !== sub) sub.parentNode.insertBefore(box, sub.nextSibling);
+    if (window.__sentWR) { window.__sentWR = false; try { wmGo('cases'); } catch (e) {} }
     box.style.display = ''; if (hst.style.display !== 'none') { hst.__wm2 = 1; hst.style.display = 'none'; } if (sub.style.display !== 'none') { sub.__wm2 = 1; sub.style.display = 'none'; }
     var h = html(); if (force || box.__h !== h) { var ae = document.activeElement, keep = ae && box.contains(ae) && ae.tagName === 'INPUT' && ae.type === 'search'; if (keep && !force) return; box.__h = h; box.innerHTML = h; }
   }
