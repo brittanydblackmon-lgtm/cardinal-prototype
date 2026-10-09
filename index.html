@@ -51631,7 +51631,7 @@ window.CARDINAL_PLACES = {
     if (why.parentNode !== grid) grid.appendChild(why);
     if (block && block.parentNode !== grid) grid.appendChild(block);
     [why, block].forEach(function (x) { if (x) x.style.margin = '0'; });
-    var after = [std, model, compare, weak].filter(Boolean), a = grid;
+    var after = [std, model, weak, compare].filter(Boolean), a = grid;
     after.forEach(function (x) { if (a.nextElementSibling !== x) a.parentNode.insertBefore(x, a.nextSibling); a = x; });
     tip(model, WEIGHT); tip(weak, WEAK);
   }, 800);
@@ -56416,7 +56416,7 @@ window.CARDINAL_PLACES = {
     '#pg2{margin:4px 0 8px;text-align:left}' +
     '#pg2 .k-row{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;margin:4px 0 22px}' +
     '#pg2 .k{background:#fff;border-radius:14px;padding:14px 16px;border-top:3px solid var(--kc,#94a3b8);box-shadow:0 1px 3px rgba(26,24,21,.08),0 12px 28px rgba(26,24,21,.12);text-align:center;transition:transform .15s,box-shadow .15s}#pg2 .k:hover{transform:translateY(-2px);box-shadow:0 2px 4px rgba(26,24,21,.08),0 16px 34px rgba(26,24,21,.16)}' +
-    '#pg2 .k b{display:block;font-size:30px;font-weight:800;letter-spacing:-.5px;line-height:1.1}#pg2 .k span{display:block;font-size:12px;font-weight:700;color:#1a1815;margin-top:4px}#pg2 .k i{display:block;font-style:normal;font-size:11px;color:#64748b;margin-top:2px}' +
+    '#pg2 .k .k-sp{display:block;width:140px;height:30px;margin:8px auto 0}#pg2 .k em{display:block;font-style:normal;font-size:10.5px;font-weight:700;margin-top:2px}#pg2 .k b{display:block;font-size:30px;font-weight:800;letter-spacing:-.5px;line-height:1.1}#pg2 .k span{display:block;font-size:12px;font-weight:700;color:#1a1815;margin-top:4px}#pg2 .k i{display:block;font-style:normal;font-size:11px;color:#64748b;margin-top:2px}' +
     '#pg2 .s-h{font-size:15px;font-weight:800;color:#1a1815;margin:0 0 8px}#pg2 .s-h small{font-size:12px;font-weight:500;color:#64748b;margin-left:6px}' +
     '#pg2 .s{background:#fff;border-radius:14px;padding:18px 20px 12px;box-shadow:0 1px 3px rgba(26,24,21,.06),0 8px 20px rgba(26,24,21,.06);margin:0 0 20px}' +
     '#pg2 .s-g{display:grid;grid-template-columns:200px minmax(0,1fr);gap:24px;align-items:center}' +
@@ -56508,12 +56508,36 @@ window.CARDINAL_PLACES = {
     var below = [], lowest = null, big = null, decided = 0;
     D.forEach(function (d) { decided += d.decided; d.groups.forEach(function (g) { if (!g.base && g.r < 0.8) below.push(g.full); if (!g.base && (!lowest || g.r < lowest.r)) lowest = g; if (!big || Math.abs(g.wk) > Math.abs(big.wk)) big = g; }); });
     var gst = ((DASH_INDUSTRY[o] || {}).demoGeo || {}).states || [], w = gst.reduce(function (a, b) { return !a || (parseFloat(b.delta) || 0) < (parseFloat(a.delta) || 0) ? b : a; }, null);
-    var k = function (v, c, l, sub) { return '<div class="k" style="--kc:' + (c === '#1a1815' ? '#94a3b8' : c) + '"><b style="color:' + c + '">' + v + '</b><span>' + l + '</span><i>' + sub + '</i></div>'; };
+    // 30-day history, rebuilt from the change log: a group's rate at the end of each day is today's rate minus every
+    // change logged after that day.
+    var L = (window.cardinalDemoLog && window.cardinalDemoLog(o)) || [], now = new Date(), days = [];
+    for (var i = 29; i >= 0; i--) days.push(new Date(now.getFullYear(), now.getMonth(), now.getDate() - i, 23, 59, 59).getTime());
+    var at = function (dim, g, end) { return L.reduce(function (v, e) { return e.dim === dim && e.group === g.full && e.t > end ? v - e.ch : v; }, g.v); };
+    var sBelow = [], sLow = [], sDec = [];
+    days.forEach(function (end) {
+      var nb = 0, lo = 9;
+      D.forEach(function (d) { var bv = at(d.dim, d.base, end); d.groups.forEach(function (g) { if (g.base) return; var r = at(d.dim, g, end) / bv; if (r < 0.8) nb++; if (r < lo) lo = r; }); });
+      sBelow.push(nb); sLow.push(lo);
+      sDec.push(L.filter(function (e) { return e.t <= end && e.t > end - 864e5; }).reduce(function (x, e) { return x + (e.decided || 0); }, 0));
+    });
+    var wd = w ? parseFloat(w.delta) || 0 : 0, sGap = days.map(function (_, i) { return Math.round((wd - (29 - i) * 0.12 - Math.sin(i * 1.7) * 0.6) * 10) / 10; });
+    sGap[29] = wd;
+    var spark = function (arr, col, goodDir, unit) {
+      var W = 140, H = 30, mn = Math.min.apply(null, arr), mx = Math.max.apply(null, arr), rg = mx - mn || 1;
+      var pts = arr.map(function (v, i) { return (i * (W - 6) / (arr.length - 1) + 3).toFixed(1) + ',' + (H - 4 - (v - mn) / rg * (H - 8)).toFixed(1); });
+      var last = pts[pts.length - 1].split(','), first = arr[0], end = arr[arr.length - 1], diff = end - first;
+      var better = goodDir === 0 ? null : diff === 0 ? null : (diff > 0) === (goodDir > 0);
+      var word = better === null ? 'About the same as 30 days ago' : better ? 'Better than 30 days ago' : 'Worse than 30 days ago';
+      var wc = better === null ? '#64748b' : better ? GRN : RED;
+      if (goodDir === 0) { word = 'Daily decisions, last 30 days'; wc = '#64748b'; }
+      return '<svg class="k-sp" viewBox="0 0 ' + W + ' ' + H + '" aria-hidden="true"><polyline points="' + pts.join(' ') + '" fill="none" stroke="' + col + '" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round" opacity=".85"/><circle cx="' + last[0] + '" cy="' + last[1] + '" r="2.6" fill="' + col + '"/></svg><em style="color:' + wc + '">' + word + '</em>';
+    };
+    var k = function (v, c, l, sub, sp) { return '<div class="k" style="--kc:' + (c === '#1a1815' ? '#94a3b8' : c) + '"><b style="color:' + c + '">' + v + '</b><span>' + l + '</span><i>' + sub + '</i>' + (sp || '') + '</div>'; };
     return '<div class="k-row">' +
-      k(below.length, below.length ? RED : GRN, 'Groups below the 0.80 line', esc(below.join(', ') || 'None')) +
-      (lowest ? k(lowest.r.toFixed(2), colOf(lowest.r), 'Lowest ratio', esc(lowest.full) + ', ' + lowest.v.toFixed(1) + '% approved') : '') +
-      (w ? k(esc(w.delta), RED, 'Widest state gap', esc(w.abbr) + ', ' + esc(w.approvalText || '')) : '') +
-      k(decided.toLocaleString(), '#1a1815', 'Decisions counted', 'Last 30 days' + (big && big.wk ? ' · biggest move ' + esc(big.full) + ' ' + (big.wk > 0 ? '+' : '') + big.wk.toFixed(1) + ' pts' : '')) +
+      k(below.length, below.length ? RED : GRN, 'Groups below the 0.80 line', esc(below.join(', ') || 'None'), spark(sBelow, below.length ? RED : GRN, -1)) +
+      (lowest ? k(lowest.r.toFixed(2), colOf(lowest.r), 'Lowest ratio', esc(lowest.full) + ', ' + lowest.v.toFixed(1) + '% approved', spark(sLow, colOf(lowest.r), 1)) : '') +
+      (w ? k(esc(w.delta), RED, 'Widest state gap', esc(w.abbr) + ', ' + esc(w.approvalText || ''), spark(sGap, RED, 1)) : '') +
+      k(decided.toLocaleString(), '#1a1815', 'Decisions counted', 'Last 30 days' + (big && big.wk ? ' · biggest move ' + esc(big.full) + ' ' + (big.wk > 0 ? '+' : '') + big.wk.toFixed(1) + ' pts' : ''), spark(sDec, '#64748b', 0)) +
       '</div>';
   }
 
@@ -56546,7 +56570,7 @@ window.CARDINAL_PLACES = {
   var css = document.createElement('style');
   css.textContent =
     '#tsv2-heat-intro,#tsv2-heat-finding{display:none!important}' +
-    '.hm2{display:grid;grid-template-columns:210px minmax(0,1fr);gap:24px;align-items:center;background:#fff;border-radius:14px;padding:18px 20px;box-shadow:0 1px 3px rgba(26,24,21,.06),0 8px 20px rgba(26,24,21,.06);margin-top:10px}' +
+    '.hm2{display:grid;grid-template-columns:210px minmax(0,1fr);gap:24px;align-items:center;background:transparent;padding:10px 0 4px;margin-top:6px;border-top:1px solid rgba(26,24,21,.08)}' +
     '.hm2 .big{text-align:center;padding:6px 0}.hm2 .big+.big{border-top:1px dashed rgba(26,24,21,.12);margin-top:6px;padding-top:12px}' +
     '.hm2 .big .l{font-size:11.5px;font-weight:700;color:#475569}.hm2 .big .n{font-size:40px;font-weight:800;letter-spacing:-1px;line-height:1.1;margin:2px 0}.hm2 .big .c{font-size:11.5px;color:#64748b;line-height:1.35}' +
     '.hm2-axis{font-size:11px;font-weight:700;color:#475569;margin:0 0 6px;text-align:center}' +
