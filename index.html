@@ -56393,111 +56393,143 @@ window.CARDINAL_PLACES = {
   }
   tick(); setInterval(tick, 800);
 })();
-// 10/9 (Brittany: "how I wanted the dead space to look ... where it has info and context"). Each protected-group
-// row gets an Eden-style side card next to its circles: the comparison group, the widest gap, groups under the line,
-// the biggest move this week, decisions counted, and the linked case.
+
+</script>
+
+<script data-p="p43_pg">
+// 10/9 (Brittany: "this whole section looks strange now", with pay-equity dashboards as inspiration). The Dashboard's
+// Protected Group section is rebuilt in that style: a strip of headline numbers, then one card per question (gender,
+// age, race and ethnicity, geography). Each card has the lowest and highest numbers large on the left and a clean
+// chart on the right with the four-fifths line drawn in, then one line of story and the counts underneath.
 (function () {
   function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;'); }
+  var MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  function when(t) { var d = new Date(t), n = new Date(), h = d.getHours(), m = d.getMinutes(), tm = ((h % 12) || 12) + ':' + (m < 10 ? '0' : '') + m + (h < 12 ? ' AM' : ' PM'); var dd = Math.round((new Date(n.getFullYear(), n.getMonth(), n.getDate()) - new Date(d.getFullYear(), d.getMonth(), d.getDate())) / 864e5); return (dd === 0 ? 'Today' : dd === 1 ? 'Yesterday' : MON[d.getMonth()] + ' ' + d.getDate()) + ', ' + tm; }
+  var DOING = { fin: { Gender: 'Eden is watching this row. A case opens automatically if the ratio drops under 0.80.', Age: 'v3.5 is in shadow testing and holds a fairness ratio of 0.83. Denied applicants 65 and older are re-reviewed first.', 'Race and ethnicity': 'v3.5 drops the ZIP code feature (FIN-1203). Genesis is adding training data for Other (TEST-628).' } };
+  var TITLE = { Gender: 'Approval rate by gender', Age: 'Approval rate by age', 'Race and ethnicity': 'Approval rate by race and ethnicity' };
+  var RED = '#DC2626', YEL = '#EAB308', GRN = '#16A34A';
+  function colOf(r) { return r < 0.8 ? RED : r < 0.9 ? YEL : GRN; }
+
   var css = document.createElement('style');
-  css.textContent = '#demo-circles .demo-body{display:flex;gap:18px;align-items:center}#demo-circles .demo-body>.g-row{flex:1 1 auto;min-width:0;flex-wrap:nowrap!important;gap:12px!important;overflow:visible!important}#demo-circles .demo-body .g-unit.ds-fit .g-disc{width:100%!important;max-width:118px;height:auto!important}#demo-circles .demo-body .g-unit.ds-fit .g-delta,#demo-circles .demo-body .g-unit.ds-fit .g-sub{font-size:10.5px;line-height:1.3}' +
-    '#demo-circles .demo-ctx{display:none!important}#demo-circles .demo-side{order:-1;flex:0 0 290px;background:#f4efe6;border:1px solid rgba(26,24,21,.08);border-radius:16px;padding:14px 16px 12px;margin:0 0 8px}' +
-    '#demo-circles .ds-big{font-size:20px;font-weight:800;margin:8px 0 0;font-family:Georgia,serif}#demo-circles .ds-p{font-size:12.5px;color:#334155;line-height:1.5;padding:7px 0;border-top:1px dashed rgba(26,24,21,.12)}#demo-circles .ds-p b{color:#1a1815}#demo-circles .ds-t{font-size:12px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#1a1815}#demo-circles .ds-s{font-size:11.5px;color:#64748b;margin:2px 0 8px}' +
-    '#demo-circles .ds-r{display:flex;justify-content:space-between;gap:10px;font-size:12.5px;color:#334155;padding:7px 0;border-top:1px dashed rgba(26,24,21,.12)}#demo-circles .ds-r b{font-weight:800;color:#1a1815;text-align:right;white-space:nowrap}' +
-    '#demo-circles .ds-btn{display:block;width:100%;margin-top:8px;font:inherit;font-size:11.5px;background:#fff;border:1px solid rgba(26,24,21,.12);border-radius:8px;padding:6px;cursor:pointer;color:#1a1815}' +
-    '@media (max-width:900px){#demo-circles .demo-body{flex-direction:column;align-items:stretch}#demo-circles .demo-side{flex:none}#demo-circles .demo-body>.g-row{flex-wrap:wrap!important}}';
+  css.textContent =
+    '#dash-demographic-panel #pg-summary,#dash-demographic-panel #demo-circles,#dash-short,#dash-demo-group-detail,#pg2-geo-old{display:none!important}' +
+    '#pg2{margin:4px 0 8px;text-align:left}' +
+    '#pg2 .k-row{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:0 0 18px}' +
+    '#pg2 .k{background:#fff;border-radius:14px;padding:14px 16px;box-shadow:0 1px 3px rgba(26,24,21,.06),0 8px 20px rgba(26,24,21,.06);text-align:center}' +
+    '#pg2 .k b{display:block;font-size:30px;font-weight:800;letter-spacing:-.5px;line-height:1.1}#pg2 .k span{display:block;font-size:12px;font-weight:700;color:#1a1815;margin-top:4px}#pg2 .k i{display:block;font-style:normal;font-size:11px;color:#64748b;margin-top:2px}' +
+    '#pg2 .s-h{font-size:15px;font-weight:800;color:#1a1815;margin:0 0 8px}#pg2 .s-h small{font-size:12px;font-weight:500;color:#64748b;margin-left:6px}' +
+    '#pg2 .s{background:#fff;border-radius:14px;padding:18px 20px 12px;box-shadow:0 1px 3px rgba(26,24,21,.06),0 8px 20px rgba(26,24,21,.06);margin:0 0 20px}' +
+    '#pg2 .s-g{display:grid;grid-template-columns:200px minmax(0,1fr);gap:24px;align-items:center}' +
+    '#pg2 .big{text-align:center;padding:6px 0}#pg2 .big+.big{border-top:1px dashed rgba(26,24,21,.12);margin-top:6px;padding-top:12px}' +
+    '#pg2 .big .l{font-size:11.5px;font-weight:700;color:#475569}#pg2 .big .n{font-size:40px;font-weight:800;letter-spacing:-1px;line-height:1.1;margin:2px 0}#pg2 .big .c{font-size:11.5px;color:#64748b;line-height:1.35}' +
+    '#pg2 svg{display:block;width:100%;height:auto;max-height:290px}#pg2 svg .bar{cursor:default;transition:opacity .15s}#pg2 svg .bar:hover{opacity:.8}' +
+    '#pg2 .story{margin-top:10px;padding-top:10px;border-top:1px solid rgba(26,24,21,.08);font-size:12.5px;color:#334155;line-height:1.55}#pg2 .story b{color:#1a1815}' +
+    '#pg2 .foot{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-top:8px;font-size:11px;color:#64748b}' +
+    '#pg2 .foot button{font:inherit;font-size:11.5px;font-weight:700;background:#fff;border:1px solid rgba(26,24,21,.14);border-radius:8px;padding:4px 10px;cursor:pointer;color:#1a1815}' +
+    '#pg2 .st-row{cursor:pointer}#pg2 .st-row:hover rect.hit{fill:rgba(26,24,21,.04)}' +
+    '#pg2 .det{margin-top:10px;background:#f4efe6;border-radius:12px;padding:12px 14px;font-size:12.5px;color:#334155;line-height:1.5;border-left:4px solid ' + RED + '}#pg2 .det b{color:#1a1815}' +
+    '@media (max-width:900px){#pg2 .k-row{grid-template-columns:repeat(2,minmax(0,1fr))}#pg2 .s-g{grid-template-columns:1fr}}';
   document.head.appendChild(css);
-  var CASES = { fin: { Gender: 'Eden review, no case', Age: 'FIN-1203', 'Race and ethnicity': 'FIN-1203, TEST-628' } };
-  function when(t) { var d = new Date(t), n = new Date(), h = d.getHours(), m = d.getMinutes(), tm = ((h % 12) || 12) + ':' + (m < 10 ? '0' : '') + m + (h < 12 ? ' AM' : ' PM'); var dd = Math.round((new Date(n.getFullYear(), n.getMonth(), n.getDate()) - new Date(d.getFullYear(), d.getMonth(), d.getDate())) / 864e5); return (dd === 0 ? 'Today' : dd === 1 ? 'Yesterday' : ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()] + ' ' + d.getDate()) + ', ' + tm; }
-  var DOING = { fin: { Gender: 'Eden is watching this row. A case opens automatically if the ratio drops under 0.80.', Age: 'Older applicants are part of the FIN-1203 re-review, and v3.5 is in shadow testing.', 'Race and ethnicity': 'v3.5 drops the ZIP code feature (FIN-1203). Genesis is adding training data for Other (TEST-628).' } };
-  function side(o, dim) {
-    var G = window.cardinalDemoGroups && window.cardinalDemoGroups(o), L = (window.cardinalDemoLog && window.cardinalDemoLog(o)) || [];
-    if (!G || !G[dim]) return '';
-    var list = G[dim], base = list.filter(function (x) { return x[2]; })[0] || list[0], others = list.filter(function (x) { return x !== base; });
-    var worst = others.reduce(function (a, b) { return !a || b[1] < a[1] ? b : a; }, null), wr = worst ? worst[1] / base[1] : 1;
-    var cut = Date.now() - 7 * 864e5, cut30 = Date.now() - 30 * 864e5, D = L.filter(function (e) { return e.dim === dim; });
-    var big = null; list.forEach(function (x) { var w = D.filter(function (e) { return e.group === x[0] && e.t >= cut; }); if (!w.length) return; var ch = Math.round((w[0].to - w[w.length - 1].from) * 10) / 10; if (!big || Math.abs(ch) > Math.abs(big[1])) big = [x[0], ch]; });
-    var decided = D.filter(function (e) { return e.t >= cut30; }).reduce(function (s, e) { return s + (e.decided || 0); }, 0);
-    var col = wr < 0.8 ? '#B91C1C' : wr < 0.9 ? '#A16207' : '#15803D';
-    var verdict = wr < 0.8 ? 'That fails the four-fifths rule.' : wr < 0.9 ? 'Above the line, but worth watching.' : 'Within a healthy range.';
-    var why = ((window.cardinalDemoWhy || {})[o] || {})[dim] || 'Eden is tracking this row against ' + base[0] + '.';
-    var doing = (DOING[o] || {})[dim] || ('Tracked in Eden' + (((window.CARDINAL_DATA || {})[o] || {}).primaryCase ? ', case ' + ((window.CARDINAL_DATA || {})[o] || {}).primaryCase : '') + '.');
-    var p = function (k, v) { return '<div class="ds-p"><b>' + k + '</b> ' + v + '</div>'; };
-    return '<div class="ds-t">' + esc(dim) + ': the story</div>' +
-      '<div class="ds-big" style="color:' + col + '">' + (worst ? esc(worst[0]) + ' \u00b7 ' + wr.toFixed(2) : 'No gap') + '</div><div class="ds-s">' + verdict + '</div>' +
-      p('What we see:', esc(base[0]) + ' are approved most, at ' + (+base[1]).toFixed(1) + '%.' + (worst ? ' ' + esc(worst[0]) + ' trail at ' + (+worst[1]).toFixed(1) + '%.' : '')) +
-      p('Why:', esc(why)) +
-      p('This week:', big && Math.abs(big[1]) >= 0.05 ? esc(big[0]) + ' moved most, <span style="color:' + (big[1] > 0 ? '#15803D' : '#B91C1C') + ';font-weight:700">' + (big[1] > 0 ? '\u25B2 +' : '\u25BC ') + big[1].toFixed(1) + ' pts</span>, out of ' + decided.toLocaleString() + ' decisions in the last 30 days.' : 'No group moved. ' + decided.toLocaleString() + ' decisions in the last 30 days.') +
-      p('What is being done:', esc(doing)) +
-      '<button type="button" class="ds-btn" onclick="showScreen(\'eden\')">Open Eden Core \u2192</button>';
-  }
-  function tick() {
-    var host = document.getElementById('demo-circles'); if (!host || host.offsetParent === null) return;
-    var o = window.currentOrg || 'fin';
-    [].forEach.call(host.querySelectorAll('.demo-row'), function (re) {
-      var dim = (re.querySelector('.demo-row-h') || {}).textContent, gr = re.querySelector('.g-row'); if (!dim || !gr) return;
-      var body = re.querySelector('.demo-body');
-      if (!body) { body = document.createElement('div'); body.className = 'demo-body'; gr.parentNode.insertBefore(body, gr); body.appendChild(gr); var sd = document.createElement('div'); sd.className = 'demo-side'; body.appendChild(sd); }
-      var us = gr.querySelectorAll('.g-unit'), n = us.length, gw = gr.clientWidth;
-      if (n && gw > 300) { var w = Math.max(90, Math.min(140, Math.floor((gw - 12 * (n - 1)) / n))) + 'px'; [].forEach.call(us, function (u) { if (u.style.minWidth !== w) { u.classList.add('ds-fit'); u.style.setProperty('min-width', w, 'important'); u.style.setProperty('max-width', w, 'important'); u.style.setProperty('width', w, 'important'); } }); }
-      var sd2 = body.querySelector('.demo-side'), h = side(o, dim); if (sd2.__h !== h) { sd2.__h = h; sd2.innerHTML = h; }
+
+  function data(o) {
+    var G = window.cardinalDemoGroups && window.cardinalDemoGroups(o); if (!G) return null;
+    var L = (window.cardinalDemoLog && window.cardinalDemoLog(o)) || [], cut = Date.now() - 7 * 864e5, cut30 = Date.now() - 30 * 864e5;
+    return Object.keys(G).map(function (dim) {
+      var list = G[dim], base = list.filter(function (x) { return x[2]; })[0] || list[0], D = L.filter(function (e) { return e.dim === dim; });
+      var groups = list.map(function (x) {
+        var w = D.filter(function (e) { return e.group === x[0] && e.t >= cut; }), ch = w.length ? Math.round((w[0].to - w[w.length - 1].from) * 10) / 10 : 0;
+        var r = x === base ? 1 : x[1] / base[1];
+        return { name: x[0].replace(/^Ages /, ''), full: x[0], v: +x[1], r: r, base: x === base, wk: ch, col: x === base ? GRN : colOf(r) };
+      });
+      var others = groups.filter(function (g) { return !g.base; });
+      var low = others.reduce(function (a, b) { return !a || b.v < a.v ? b : a; }, null), hi = groups.filter(function (g) { return g.base; })[0] || groups[0];
+      return { dim: dim, groups: groups, base: hi, low: low, decided: D.filter(function (e) { return e.t >= cut30; }).reduce(function (s, e) { return s + (e.decided || 0); }, 0), last: D[0] ? D[0].t : null };
     });
   }
-  setInterval(tick, 700);
-})();
-// 10/9 (Brittany: "these two go together so combine and clean up so it looks like the style"). The weakest-group box
-// and the geography chart become one card in the same style as the circle rows: a heading, one line of context, the
-// state chart with the selected state's details in a beige side card, then the weakest group's details below.
-(function () {
-  var css = document.createElement('style');
-  css.textContent = '#demo-where{text-align:left!important;padding:12px 14px 10px!important;border-radius:14px!important;box-shadow:0 1px 3px rgba(26,24,21,.06),0 10px 24px rgba(26,24,21,.07)!important;border:none!important;margin-top:0!important}' +
-    '#demo-where>div:not(.dw-keep){display:none!important}#demo-where .dw-h{font-size:11.5px;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:.6px;margin:0 0 4px}#demo-where .dw-ctx{font-size:12.5px;color:#334155;line-height:1.5;margin:0 0 8px}' +
-    '#demo-where .dw-body{display:flex;gap:18px;align-items:center}#demo-where .dw-body>#dash-demo-geo-map{flex:1 1 auto;min-width:0;margin:0!important}#demo-where .dw-body>#dash-demo-geo-detail{flex:0 0 290px;margin:0!important;order:-1}' +
-    '#dash-demo-geo-map>div:nth-child(-n+2){display:none!important}' +
-    '#dash-demo-geo-detail>div,#demo-where #dash-demo-group-detail>div{max-width:none!important;margin:0!important;border-top:1px solid rgba(26,24,21,.08)!important;border-right:1px solid rgba(26,24,21,.08)!important;border-bottom:1px solid rgba(26,24,21,.08)!important;border-left-width:4px!important;background:#f4efe6!important;border-radius:16px!important;padding:14px 16px!important}' +
-    '#dash-demo-geo-detail>div>div:first-child{font-size:12px!important;letter-spacing:.3px}#dash-demo-geo-detail>div>div,#demo-where #dash-demo-group-detail>div>div{white-space:normal!important}' +
-    '#demo-where #dash-demo-group-detail{background:none!important;border:none!important;box-shadow:none!important;padding:0!important;margin:12px 0 4px!important}#demo-where .dw-sub{font-size:11px;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:.6px;margin:14px 0 6px}' +
-    '@media (max-width:900px){#demo-where .dw-body{flex-direction:column;align-items:stretch}#demo-where .dw-body>#dash-demo-geo-detail{flex:none}}';
-  document.head.appendChild(css);
-  function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;'); }
-  function tick() {
-    var map = document.getElementById('dash-demo-geo-map'); if (!map || map.offsetParent === null && !document.getElementById('demo-where')) return;
-    var card = document.getElementById('demo-where') || map.closest('div[onclick]') || map.parentNode;
-    if (!card || card.id === 'dash-demographic-panel') return;
-    card.id = 'demo-where';
-    var det = document.getElementById('dash-demo-geo-detail'), grp = document.getElementById('dash-demo-group-detail');
-    var h = card.querySelector('.dw-h');
-    if (!h) { h = document.createElement('div'); h.className = 'dw-h dw-keep'; h.textContent = 'Where the gaps are, and why'; card.insertBefore(h, card.firstChild); var c = document.createElement('div'); c.className = 'dw-ctx dw-keep'; h.after(c); }
-    var body = card.querySelector('.dw-body');
-    if (!body) { body = document.createElement('div'); body.className = 'dw-body dw-keep'; card.querySelector('.dw-ctx').after(body); }
-    if (map.parentNode !== body) body.appendChild(map);
-    if (det && det.parentNode !== body) body.appendChild(det);
-    var sub = card.querySelector('.dw-sub');
-    if (!sub) { sub = document.createElement('div'); sub.className = 'dw-sub dw-keep'; sub.textContent = 'Group with the lowest approval'; body.after(sub); }
-    if (grp && grp.parentNode !== card) { grp.classList.add('dw-keep'); sub.after(grp); }
-    if (grp) grp.classList.add('dw-keep');
-    var head = (map.children[0] && map.children[0].tagName === 'DIV') ? map.children[0].textContent.trim() : '';
-    var gt = grp && grp.querySelector('div>div') ? grp.querySelector('div>div').textContent.trim().split(/\s{2,}| (?=\d+\.\d+ pts)/)[0] : '';
-    var ctx = (head ? '<strong style="color:#B91C1C">' + esc(head.replace(/\.$/, '')) + '.</strong> ' : '') + (gt ? 'The lowest group overall is ' + esc(gt.replace(':', ' at')) + '. ' : '') + 'Pick a state in the chart to see its details on the left.';
-    var cx = card.querySelector('.dw-ctx'); if (cx.innerHTML !== ctx) cx.innerHTML = ctx;
+
+  function bars(d) {
+    var W = 900, H = 250, L = 34, R = 96, T = 22, B = 52, ih = H - T - B, n = d.groups.length, slot = (W - L - R) / n, bw = Math.min(64, slot * 0.56);
+    var y = function (v) { return T + ih * (1 - v / 100); }, ff = d.base.v * 0.8, s = [];
+    [0, 25, 50, 75, 100].forEach(function (g) { s.push('<line x1="' + L + '" x2="' + (W - R) + '" y1="' + y(g) + '" y2="' + y(g) + '" stroke="rgba(26,24,21,.07)"/><text x="' + (L - 6) + '" y="' + (y(g) + 4) + '" font-size="10" fill="#94a3b8" text-anchor="end">' + g + '</text>'); });
+    d.groups.forEach(function (g, i) {
+      var cx = L + slot * i + slot / 2, top = y(g.v);
+      var tip = g.full + ': ' + g.v.toFixed(1) + '% approved' + (g.base ? ' (comparison group)' : ', ratio ' + g.r.toFixed(2) + (g.r < 0.8 ? ', fails the four-fifths rule' : g.r < 0.9 ? ', worth watching' : '')) + (g.wk ? '. ' + (g.wk > 0 ? '+' : '') + g.wk.toFixed(1) + ' pts since last week' : '. No change since last week');
+      s.push('<g class="bar"><title>' + esc(tip) + '</title><rect x="' + (cx - bw / 2) + '" y="' + top + '" width="' + bw + '" height="' + (T + ih - top) + '" rx="5" fill="' + g.col + '" fill-opacity="' + (g.base ? '.55' : '.85') + '"/>' +
+        '<text x="' + cx + '" y="' + (top - 6) + '" font-size="12" font-weight="800" fill="#1a1815" text-anchor="middle">' + g.v.toFixed(1) + '%</text>' +
+        '<text x="' + cx + '" y="' + (T + ih + 16) + '" font-size="11" font-weight="700" fill="#334155" text-anchor="middle">' + esc(g.name.length > 14 ? g.name.slice(0, 13) + '…' : g.name) + '</text>' +
+        '<text x="' + cx + '" y="' + (T + ih + 31) + '" font-size="10" fill="#64748b" text-anchor="middle">' + (g.base ? 'Comparison' : 'Ratio ' + g.r.toFixed(2)) + '</text>' +
+        '<text x="' + cx + '" y="' + (T + ih + 45) + '" font-size="10" font-weight="700" fill="' + (g.wk > 0 ? GRN : g.wk < 0 ? RED : '#94a3b8') + '" text-anchor="middle">' + (g.wk ? (g.wk > 0 ? '▲ +' : '▼ ') + g.wk.toFixed(1) + ' wk' : 'No change') + '</text></g>');
+    });
+    s.push('<line x1="' + L + '" x2="' + (W - R) + '" y1="' + y(ff) + '" y2="' + y(ff) + '" stroke="' + RED + '" stroke-width="1.5" stroke-dasharray="5 4"/><text x="' + (W - R + 8) + '" y="' + (y(ff) - 2) + '" font-size="10.5" font-weight="800" fill="' + RED + '">Four-fifths line</text><text x="' + (W - R + 8) + '" y="' + (y(ff) + 11) + '" font-size="10.5" font-weight="700" fill="' + RED + '">' + ff.toFixed(1) + '%</text>');
+    return '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="' + esc(TITLE[d.dim] || d.dim) + '">' + s.join('') + '</svg>';
   }
-  setInterval(tick, 700);
-})();
-// 10/9 (Brittany: "what to do with the two boxes"). "What this tells you" repeated the lowest-group box and the
-// race card, so it is hidden. The disparities list becomes one clean "The short version" card at the top.
-(function () {
-  var css = document.createElement('style');
-  css.textContent = '#dash-demographic-panel #pg-summary{display:none!important}' +
-    '#dash-short{padding:12px 14px 8px!important;box-shadow:0 1px 3px rgba(26,24,21,.06),0 10px 24px rgba(26,24,21,.07)!important;border:none!important}' +
-    '#dash-demo-disparity-callout-head{font-size:11.5px!important;font-weight:800!important;color:#475569!important;text-transform:uppercase;letter-spacing:.6px!important;margin:0 0 2px!important}' +
-    '#dash-short .ds-intro{font-size:12.5px;color:#334155;margin:0 0 6px}#dash-impacted-groups{gap:0!important}#dash-impacted-groups>div{font-size:12.5px!important;padding:8px 0;border-top:1px dashed rgba(26,24,21,.12)}#dash-impacted-groups>div>span:nth-child(2){color:#1a1815!important;font-size:12.5px!important}';
-  document.head.appendChild(css);
-  setInterval(function () {
-    var h = document.getElementById('dash-demo-disparity-callout-head'); if (!h) return;
-    var c = h.parentNode; if (c.id !== 'dash-short') c.id = 'dash-short';
-    if (h.textContent !== 'The short version') h.textContent = 'The short version';
-    if (!c.querySelector('.ds-intro')) { var i = document.createElement('div'); i.className = 'ds-intro'; i.textContent = 'The groups that need attention right now. Each row below tells the full story for gender, age, and race.'; h.after(i); }
-    [].forEach.call(document.querySelectorAll('#dash-impacted-groups>div>span:nth-child(2)'), function (sp) { var t = sp.textContent, n = t.replace(/(-?\d+)% approval rate vs white baseline/, function (m, x) { return 'approved ' + Math.abs(+x) + ' pts below White'; }).replace(/(-?\d+)% approval rate$/, function (m, x) { return 'approved ' + Math.abs(+x) + ' pts below the baseline'; }); if (n !== t) sp.textContent = n; });
-  }, 700);
+
+  function section(o, d) {
+    var why = ((window.cardinalDemoWhy || {})[o] || {})[d.dim] || '';
+    var doing = (DOING[o] || {})[d.dim] || '';
+    var lowCap = d.low ? esc(d.low.full) + '<br>Ratio ' + d.low.r.toFixed(2) + ', ' + (d.low.r < 0.8 ? 'fails the four-fifths rule' : d.low.r < 0.9 ? 'worth watching' : 'within range') : '';
+    return '<div class="s-h">' + esc(TITLE[d.dim] || d.dim) + '<small>compared with the group approved most</small></div><div class="s"><div class="s-g"><div>' +
+      (d.low ? '<div class="big"><div class="l">Lowest approval</div><div class="n" style="color:' + d.low.col + '">' + d.low.v.toFixed(1) + '%</div><div class="c">' + lowCap + '</div></div>' : '') +
+      '<div class="big"><div class="l">Highest approval</div><div class="n" style="color:' + GRN + '">' + d.base.v.toFixed(1) + '%</div><div class="c">' + esc(d.base.full) + '<br>Comparison group</div></div>' +
+      '</div><div>' + bars(d) + '</div></div>' +
+      ((why || doing) ? '<div class="story">' + (why ? '<b>Why:</b> ' + esc(why) + ' ' : '') + (doing ? '<b>What is being done:</b> ' + esc(doing) : '') + '</div>' : '') +
+      '<div class="foot"><span>N = ' + d.decided.toLocaleString() + ' decisions, last 30 days' + (d.last ? ' · Last change ' + when(d.last) : '') + '</span><button type="button" onclick="showScreen(\'eden\')">Open Eden Core →</button></div></div>';
+  }
+
+  function geoDetail(st) {
+    if (!st) return '';
+    return '<div class="det" style="border-left-color:' + (/critical|high/i.test(st.level) ? RED : YEL) + '"><b>' + esc(st.abbr) + ': ' + esc(st.city || '') + '</b> · ' + esc(st.countText || '') + ' · ' + esc(st.approvalText || '') + (st.note ? ' · ' + esc(st.note.replace('#', '')) : '') +
+      (st.since ? '<br><b>When:</b> ' + esc(st.since) : '') + (st.who ? '<br><b>Who:</b> ' + esc(st.who) : '') + (st.why ? '<br><b>Why:</b> ' + esc(st.why) : '') + '</div>';
+  }
+  window.pg2PickState = function (i) { var o = window.currentOrg || 'fin', g = (DASH_INDUSTRY[o] || {}).demoGeo, el = document.getElementById('pg2-geo-det'); if (!g || !el) return; window.__pg2State = i; el.innerHTML = geoDetail(g.states[i]); [].forEach.call(document.querySelectorAll('#pg2 .st-row'), function (r, k) { r.querySelector('rect.hit').setAttribute('fill', k === i ? 'rgba(26,24,21,.05)' : 'transparent'); }); };
+  function geo(o) {
+    var g = (DASH_INDUSTRY[o] || {}).demoGeo; if (!g || !g.states || !g.states.length) return '';
+    var S = g.states.map(function (st) { var m = /([\d.]+)\s*%/.exec(st.approvalText || ''); return { st: st, v: m ? +m[1] : null, dl: parseFloat(st.delta) || 0 }; }).filter(function (x) { return x.v != null; });
+    if (!S.length) return '';
+    var worst = S.reduce(function (a, b) { return b.dl < a.dl ? b : a; }), best = S.reduce(function (a, b) { return b.dl > a.dl ? b : a; });
+    var W = 640, rowH = 34, T = 8, H = T + S.length * rowH + 8, L = 50, R = 120, x = function (v) { return L + (W - L - R) * v / 100; }, s = [];
+    S.forEach(function (r, i) {
+      var cy = T + i * rowH + rowH / 2, c = /critical|high/i.test(r.st.level) ? RED : /medium/i.test(r.st.level) ? YEL : GRN;
+      s.push('<g class="st-row" onclick="pg2PickState(' + g.states.indexOf(r.st) + ')"><title>' + esc(r.st.abbr + ': ' + r.v + '% approval, ' + r.st.delta + ' vs. baseline. Click for details.') + '</title><rect class="hit" x="0" y="' + (cy - rowH / 2) + '" width="' + W + '" height="' + rowH + '" rx="6" fill="' + (i === 0 ? 'rgba(26,24,21,.05)' : 'transparent') + '"/>' +
+        '<text x="8" y="' + (cy + 4) + '" font-size="12" font-weight="800" fill="#1a1815">' + esc(r.st.abbr) + '</text>' +
+        '<rect x="' + L + '" y="' + (cy - 7) + '" width="' + (x(100) - L) + '" height="14" rx="7" fill="rgba(26,24,21,.05)"/><rect x="' + L + '" y="' + (cy - 7) + '" width="' + (x(r.v) - L) + '" height="14" rx="7" fill="' + c + '" fill-opacity=".85"/>' +
+        '<text x="' + (x(100) + 12) + '" y="' + (cy + 4) + '" font-size="12" font-weight="800" fill="#1a1815">' + r.v + '%</text><text x="' + (W - 6) + '" y="' + (cy + 4) + '" font-size="12" font-weight="800" fill="' + c + '" text-anchor="end">' + esc(r.st.delta) + '</text></g>');
+    });
+    var svg = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Approval rate by state">' + s.join('') + '</svg>';
+    var tot = S.reduce(function (a, r) { var m = /([\d,]+)/.exec(r.st.countText || ''); return a + (m ? +m[1].replace(/,/g, '') : 0); }, 0);
+    return '<div class="s-h">Approval rate by state<small>where the gaps are concentrated</small></div><div class="s"><div class="s-g"><div>' +
+      '<div class="big"><div class="l">Widest gap</div><div class="n" style="color:' + RED + '">' + esc(worst.st.delta) + '</div><div class="c">' + esc(worst.st.abbr) + ', ' + worst.v + '% approval<br>' + esc(worst.st.countText || '') + '</div></div>' +
+      '<div class="big"><div class="l">Smallest gap</div><div class="n" style="color:' + (best.dl > -10 ? YEL : RED) + '">' + esc(best.st.delta) + '</div><div class="c">' + esc(best.st.abbr) + ', ' + best.v + '% approval<br>' + esc(best.st.countText || '') + '</div></div>' +
+      '</div><div>' + svg + '<div style="font-size:11px;color:#64748b;margin-top:2px">Click a state to see where and why.</div></div></div><div id="pg2-geo-det">' + geoDetail(worst.st) + '</div>' +
+      '<div class="foot"><span>N = ' + tot.toLocaleString() + ' applicants in these states</span><button type="button" onclick="showScreen(\'eden\')">Open Eden Core →</button></div></div>';
+  }
+
+  function kpis(o, D) {
+    var below = [], lowest = null, big = null, decided = 0;
+    D.forEach(function (d) { decided += d.decided; d.groups.forEach(function (g) { if (!g.base && g.r < 0.8) below.push(g.full); if (!g.base && (!lowest || g.r < lowest.r)) lowest = g; if (!big || Math.abs(g.wk) > Math.abs(big.wk)) big = g; }); });
+    var gst = ((DASH_INDUSTRY[o] || {}).demoGeo || {}).states || [], w = gst.reduce(function (a, b) { return !a || (parseFloat(b.delta) || 0) < (parseFloat(a.delta) || 0) ? b : a; }, null);
+    var k = function (v, c, l, sub) { return '<div class="k"><b style="color:' + c + '">' + v + '</b><span>' + l + '</span><i>' + sub + '</i></div>'; };
+    return '<div class="k-row">' +
+      k(below.length, below.length ? RED : GRN, 'Groups below the 0.80 line', esc(below.join(', ') || 'None')) +
+      (lowest ? k(lowest.r.toFixed(2), colOf(lowest.r), 'Lowest ratio', esc(lowest.full) + ', ' + lowest.v.toFixed(1) + '% approved') : '') +
+      (w ? k(esc(w.delta), RED, 'Widest state gap', esc(w.abbr) + ', ' + esc(w.approvalText || '')) : '') +
+      k(decided.toLocaleString(), '#1a1815', 'Decisions counted', 'Last 30 days' + (big && big.wk ? ' · biggest move ' + esc(big.full) + ' ' + (big.wk > 0 ? '+' : '') + big.wk.toFixed(1) + ' pts' : '')) +
+      '</div>';
+  }
+
+  function tick() {
+    var panel = document.getElementById('dash-demographic-panel'); if (!panel || panel.offsetParent === null) return;
+    var inner = panel.querySelector('.dash-demographic-inner') || panel, o = window.currentOrg || 'fin', D = data(o); if (!D) return;
+    var oldGeo = document.getElementById('dash-demo-geo-map'); oldGeo = oldGeo && (oldGeo.closest('#demo-where') || oldGeo.closest('div[onclick]')); if (oldGeo && oldGeo !== panel && oldGeo.id !== 'pg2-geo-old') oldGeo.id = 'pg2-geo-old';
+    var ch = document.getElementById('dash-demo-disparity-callout-head'); if (ch && ch.parentNode !== inner && ch.parentNode.id !== 'dash-short') ch.parentNode.id = 'dash-short';
+    var host = document.getElementById('pg2');
+    if (!host) { host = document.createElement('div'); host.id = 'pg2'; inner.insertBefore(host, inner.firstChild); }
+    var key = o + '|' + D.map(function (d) { return d.groups.map(function (g) { return g.v + ':' + g.wk; }).join(','); }).join(';');
+    if (host.getAttribute('data-k') === key) return;
+    host.setAttribute('data-k', key);
+    host.innerHTML = kpis(o, D) + D.map(function (d) { return section(o, d); }).join('') + geo(o);
+  }
+  setInterval(tick, 800); setTimeout(tick, 1600);
 })();
 
 </script>
