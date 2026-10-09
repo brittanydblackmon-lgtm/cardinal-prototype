@@ -55276,7 +55276,7 @@ window.CARDINAL_PLACES = {
     Object.keys(NEWCH).forEach(function (id, k) {
       var c = NEWCH[id]; if (ch.some(function (x) { return x.id === id; })) return;
       ch.unshift({ id: id, name: c[0], description: c[1], members: ({ legal: ['Morgan Hale', 'Riley Whitmore', 'Nina Roberts', 'Jordan Ellis'], 'data-science': ['Grace Liu', 'Lisa Torres', 'Nina Roberts', 'Hannah Brooks'] })[id] || ['Riley Whitmore', 'Nina Roberts', 'Lisa Torres', 'Morgan Hale', 'Jordan Ellis', 'Grace Liu', 'Hannah Brooks'], unreadCount: 2, __team: c[2],
-        messages: c[3].map(function (m, i) { return { id: id + '-' + i, timestamp: new Date(now - (k * 5 + (2 - i) * 3 + 1) * 3600000).toISOString(), author: m[0], content: m[1], attachments: [], mentions: [], isPinned: false, echoLogId: 'echo-' + id + '-' + i, authorKind: /^Eve/.test(m[0]) ? 'eve' : /^Adam/.test(m[0]) ? 'adam' : 'human' }; }) });
+        messages: c[3].map(function (m, i) { return { id: id + '-' + i, timestamp: new Date(now - (({ legal: 0, 'data-science': 6, everyone: 30 })[id] + (2 - i) * 3 + 1) * 3600000).toISOString(), author: m[0], content: m[1], attachments: [], mentions: [], isPinned: false, echoLogId: 'echo-' + id + '-' + i, authorKind: /^Eve/.test(m[0]) ? 'eve' : /^Adam/.test(m[0]) ? 'adam' : 'human' }; }) });
     });
   }
   ['fin'].forEach(addChannels);
@@ -56128,6 +56128,16 @@ window.CARDINAL_PLACES = {
     var why = (WHY[o] || {})[dim] || ('Compared with ' + baseName + ', the group with the highest approval rate.');
     return lead + ' ' + esc(why);
   }
+  // Weekly change per group, from the change log: today's rate vs the rate 7 days ago.
+  function weekDelta(o, dim, name) {
+    var cut = Date.now() - 7 * 864e5, L = demoLog(o).filter(function (e) { return e.dim === dim && e.group === name && e.t >= cut; });
+    if (!L.length) return { d: 0, text: '' };
+    var ch = Math.round((L[0].to - L[L.length - 1].from) * 10) / 10;
+    return Math.abs(ch) < 0.05 ? { d: 0, text: '' } : { d: ch > 0 ? 1 : -1, text: (ch > 0 ? '+' : '') + ch.toFixed(1) + ' pts' };
+  }
+  function deltaHTML(dl) {
+    return dl.d === 0 ? 'No change since last week' : '<span style="color:' + (dl.d > 0 ? '#16a34a' : '#dc2626') + ';font-weight:700">' + (dl.d > 0 ? '\u25B2 ' : '\u25BC ') + esc(dl.text) + '</span> since last week';
+  }
   function circles() {
     var s = document.getElementById('screen-dashboard'); if (!s || s.offsetParent === null || !window.cardinalGaugeRow) return;
     var grid = document.querySelector('#dash-demographic-panel .dash-demo-3col'); if (!grid) return;
@@ -56143,7 +56153,7 @@ window.CARDINAL_PLACES = {
       var list = G[dim], basev = (list.filter(function (x) { return x[2]; })[0] || list[0])[1], baseName = (list.filter(function (x) { return x[2]; })[0] || list[0])[0];
       var units = list.map(function (x) {
         var v = live(o, dim, x[0], x[1]), ratio = x[2] ? 1 : v / basev, col = x[2] ? '#22c55e' : ratio < 0.8 ? '#ef4444' : ratio < 0.9 ? '#FACC15' : '#22c55e';
-        return { value: v.toFixed(1) + '%', pct: v / 100, color: col, label: x[0], status: x[2] ? 'Baseline' : ratio < 0.8 ? 'Below 0.80' : ratio < 0.9 ? 'Watch' : 'OK', pillLabel: x[2] ? 'Baseline' : 'Ratio', pillVal: x[2] ? '' : ratio.toFixed(2), sub: x[2] ? 'Comparison group' : 'vs ' + baseName + ' ' + (+basev).toFixed(1) + '%', calc: 'just now', delta: { d: 0, text: '' }, tip: 'Approval rate for ' + x[0] + (x[2] ? '. This is the comparison group.' : ', and its ratio to ' + baseName + '. Below 0.80 fails the four-fifths rule.') };
+        return { value: v.toFixed(1) + '%', pct: v / 100, color: col, label: x[0], status: x[2] ? 'Baseline' : ratio < 0.8 ? 'Below 0.80' : ratio < 0.9 ? 'Watch' : 'OK', pillLabel: x[2] ? 'Baseline' : 'Ratio', pillVal: x[2] ? '' : ratio.toFixed(2), sub: x[2] ? 'Comparison group' : 'vs ' + baseName + ' ' + (+basev).toFixed(1) + '%', calc: 'just now', delta: weekDelta(o, dim, x[0]), good: 'up', tip: 'Approval rate for ' + x[0] + (x[2] ? '. This is the comparison group.' : ', and its ratio to ' + baseName + '. Below 0.80 fails the four-fifths rule.') };
       });
       return { dim: dim, units: units, ctx: rowContext(o, dim, list, basev, baseName) };
     });
@@ -56166,10 +56176,11 @@ window.CARDINAL_PLACES = {
         var arcs = el.querySelectorAll('svg circle'); if (arcs[1]) { var C = 2 * Math.PI * 86; arcs[1].setAttribute('stroke-dasharray', (C * Math.max(0.03, u.pct)).toFixed(2) + ' ' + C.toFixed(2)); arcs[1].setAttribute('stroke', u.color); }
         var st = el.querySelector('.g-status'); if (st) { st.textContent = u.status; st.style.color = u.color; }
         var pb = el.querySelector('.g-pill b'); if (pb && u.pillVal) pb.textContent = u.pillVal;
+        var gd = el.querySelector('.g-delta'), dh = deltaHTML(u.delta); if (gd && gd.innerHTML !== dh) gd.innerHTML = dh;
       });
     });
   }
-  var dcss = document.createElement('style'); dcss.textContent = '#demo-circles{margin:6px 0 14px}#demo-circles .demo-row{background:#fff;border-radius:14px;padding:12px 14px 6px;margin:0 0 12px;box-shadow:0 1px 3px rgba(26,24,21,.06),0 10px 24px rgba(26,24,21,.07)}#demo-circles .demo-row-h{font-size:11.5px;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:.6px;margin:0 0 4px}#demo-circles .demo-ctx{font-size:12.5px;color:#334155;line-height:1.5;margin:0 0 8px}#demo-circles .demo-intro{font-size:12px;color:#64748b;margin:0 0 10px}#demo-circles .g-row{justify-content:center!important;gap:22px!important;flex-wrap:wrap!important}#demo-circles .g-unit{flex:0 0 140px!important;max-width:140px!important;min-width:140px!important;cursor:default}#demo-circles .g-disc{max-width:118px!important}#demo-circles .g-delta{display:none!important}#demo-circles .g-pill{font-size:10px!important;padding:4px 9px!important}#demo-circles .g-sub{font-size:10.5px!important;line-height:1.3}'; document.head.appendChild(dcss);
+  var dcss = document.createElement('style'); dcss.textContent = '#demo-circles{margin:6px 0 14px}#demo-circles .demo-row{background:#fff;border-radius:14px;padding:12px 14px 6px;margin:0 0 12px;box-shadow:0 1px 3px rgba(26,24,21,.06),0 10px 24px rgba(26,24,21,.07)}#demo-circles .demo-row-h{font-size:11.5px;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:.6px;margin:0 0 4px}#demo-circles .demo-ctx{font-size:12.5px;color:#334155;line-height:1.5;margin:0 0 8px}#demo-circles .demo-intro{font-size:12px;color:#64748b;margin:0 0 10px}#demo-circles .g-row{justify-content:center!important;gap:22px!important;flex-wrap:wrap!important}#demo-circles .g-unit{flex:0 0 140px!important;max-width:140px!important;min-width:140px!important;cursor:default}#demo-circles .g-disc{max-width:118px!important}#demo-circles .g-delta{display:block}#demo-circles .g-pill{font-size:10px!important;padding:4px 9px!important}#demo-circles .g-sub{font-size:10.5px!important;line-height:1.3}'; document.head.appendChild(dcss);
   setInterval(circles, 5000); setTimeout(circles, 1500);
 
 
@@ -56363,6 +56374,23 @@ window.CARDINAL_PLACES = {
     var w = function () { settle(); return o.apply(this, arguments); }; w.__settle = 1; window.wmGo = w; return true;
   }
   var tries = 0, iv = setInterval(function () { if (wrap() || ++tries > 40) clearInterval(iv); }, 250);
+})();
+
+</script>
+
+<script data-p="p42_dash">
+// 10/9 (Brittany: "for the second screenshot what should we do?"). The "Approval Rate vs. Affected Population" dot
+// chart repeated the race circles above it and carried a seeded defense-company row, so it is hidden. The geography
+// chart stays, with its text kept inside the box.
+(function () {
+  var css = document.createElement('style');
+  css.textContent = '#dash-demographic-panel .dash-demo-geo-sub,#dash-demo-geo-map div,#dash-demo-geo-detail{white-space:normal!important;overflow-wrap:anywhere;max-width:100%;min-width:0}#dash-demo-geo-map{overflow:hidden}#dash-demo-intersection-card{display:none!important}';
+  document.head.appendChild(css);
+  function tick() {
+    var sc = document.getElementById('dash-demo-intersection-scatter');
+    if (sc && sc.parentNode && sc.parentNode.style.display !== 'none') sc.parentNode.style.display = 'none';
+  }
+  tick(); setInterval(tick, 800);
 })();
 
 </script>
