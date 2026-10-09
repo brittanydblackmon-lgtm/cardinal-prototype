@@ -52681,7 +52681,7 @@ window.CARDINAL_PLACES = {
       '<div class="g-live"><span class="dot"></span><span>Last calculated <strong style="color:var(--chrome2,#1a1815)">' + esc(u.calc || '2 minutes ago') + '</strong></span></div>' +
       deltaHtml +
       (u.go || u.onclick ? '<button type="button" class="g-pill g-go" title="Go to this section" onclick="event.stopPropagation();' + esc(u.go || u.onclick) + '">' : '<div class="g-pill">') + esc(u.pillLabel || u.label) + (u.pillVal != null && u.pillVal !== '' ? ' <b>' + esc(u.pillVal) + '</b>' : '') + (u.go || u.onclick ? ' <span class="g-arrow">\u2192</span></button>' : '</div>') +
-      (u.sub ? '<div class="g-sub">' + esc(u.sub) + '</div>' : '') +
+      (u.sub ? '<div class="g-sub">' + esc(u.sub).replace(/(\d+(?:st|nd|rd|th) percentile)/g, '<span style="white-space:nowrap">$1</span>') + '</div>' : '') +
       (u.proj ? '<div class="g-proj">' + u.proj + '</div>' : '') + '</div>';
   };
   window.cardinalJump = function (code, sel) {
@@ -52722,7 +52722,6 @@ window.CARDINAL_PLACES = {
     };
   } catch (e) {}
 })();
-
 </script>
 
 <script data-p="p11_fed">
@@ -53485,7 +53484,7 @@ window.CARDINAL_PLACES = {
     var host = row.parentNode, outer = host.parentNode;
     if (host.previousElementSibling !== sub) outer.insertBefore(sub, host);
     if (sub.previousElementSibling !== tiles) outer.insertBefore(tiles, sub);
-    if (tiles.style.display === 'none') tiles.style.display = ''; if (sub.style.display === 'none') sub.style.display = '';
+    if (tiles.style.display === 'none') tiles.style.display = ''; if (sub.style.display === 'none' && !sub.__wm2) sub.style.display = ''; // p48 hides it on Cases/War rooms/Incidents; don't fight it (flicker)
     var key = cur + '|' + room[0];
     if (tiles.getAttribute('data-k') !== key) {
       tiles.setAttribute('data-k', key);
@@ -53496,7 +53495,6 @@ window.CARDINAL_PLACES = {
   }
   setInterval(function () { var s = document.getElementById('screen-sentinel'); if (s && s.offsetParent !== null) render(); }, 400);
 })();
-
 </script>
 
 <script data-p="p18_dash">
@@ -57304,9 +57302,9 @@ setInterval(function () {
       '<input type="search" placeholder="Search a case ID, what happened, or who" value="' + esc(F.q) + '" style="' + sel + ';flex:1;min-width:180px" oninput="wm2Q(this.value)"></div>';
     var G = []; L.forEach(function (e) { var k = iso(e.t); if (!G.length || G[G.length - 1].k !== k) G.push({ k: k, d: e.t, items: [] }); G[G.length - 1].items.push(e); });
     var per = 6, pages = Math.max(1, Math.ceil(G.length / per)); if (F.page >= pages) F.page = pages - 1;
-    var TH = 'text-align:left;font-size:10.5px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.4px;padding:8px 12px;background:#f4efe6', TD = 'padding:9px 12px;border-top:1px solid rgba(26,24,21,.06);font-size:12.5px;vertical-align:top';
+    var TH = 'text-align:left;font-size:10.5px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.4px;padding:8px 12px;background:#f4efe6', TD = 'padding:9px 12px;border-top:1px solid rgba(26,24,21,.06);font-size:12.5px;vertical-align:top;overflow-wrap:anywhere';
     var log = G.slice(F.page * per, F.page * per + per).map(function (g) {
-      return '<div class="wm2-day"><div class="wm2-dh"><b>' + dayName(g.d) + '</b><span>' + g.items.length + (g.items.length === 1 ? ' entry' : ' entries') + ' · sealed in Echo</span></div><table style="width:100%;border-collapse:collapse"><thead><tr><th style="' + TH + ';width:80px">Time</th><th style="' + TH + ';width:96px">Case</th><th style="' + TH + ';width:92px">Severity</th><th style="' + TH + ';width:104px">Status</th><th style="' + TH + '">' + (F.view === 'reports' ? 'Report' : 'What happened') + '</th><th style="' + TH + ';width:170px">Model</th><th style="' + TH + ';width:150px">' + (F.view === 'reports' ? 'Sent to' : 'Where') + '</th><th style="' + TH + ';width:140px">Who</th></tr></thead><tbody>' +
+      return '<div class="wm2-day"><div class="wm2-dh"><b>' + dayName(g.d) + '</b><span>' + g.items.length + (g.items.length === 1 ? ' entry' : ' entries') + ' · sealed in Echo</span></div><table style="width:100%;border-collapse:collapse;table-layout:fixed"><colgroup><col style="width:7%"><col style="width:8%"><col style="width:8%"><col style="width:9%"><col style="width:34%"><col style="width:13%"><col style="width:11%"><col style="width:10%"></colgroup><thead><tr><th style="' + TH + '">Time</th><th style="' + TH + '">Case</th><th style="' + TH + '">Severity</th><th style="' + TH + '">Status</th><th style="' + TH + '">' + (F.view === 'reports' ? 'Report' : 'What happened') + '</th><th style="' + TH + '">Model</th><th style="' + TH + '">' + (F.view === 'reports' ? 'Sent to' : 'Where') + '</th><th style="' + TH + '">Who</th></tr></thead><tbody>' +
         g.items.map(function (e, i) { var c = byId[e.cs]; return '<tr style="background:' + (i % 2 ? '#f7f3ea' : '#fff') + ';cursor:pointer" onclick="wm2Open(\'' + esc(e.cs) + '\',' + (e.ri == null ? -1 : e.ri) + ')"><td style="' + TD + ';white-space:nowrap;color:#475569">' + tm(e.t) + '</td><td style="' + TD + '"><span style="font-weight:800;color:' + (c ? SEV[c.sev] : '#1a1815') + '">' + esc(e.cs) + '</span></td><td style="' + TD + '">' + (c ? sevPill(c.sev) : '<span style="color:#94a3b8">\u2013</span>') + '</td><td style="' + TD + '">' + stPill(e.st) + '</td><td style="' + TD + ';color:#1a1815;font-weight:600">' + esc(e.what) + '</td><td style="' + TD + ';color:#475569">' + esc(c ? c.model : '') + '</td><td style="' + TD + '">' + esc(e.core) + '</td><td style="' + TD + '">' + esc(e.who) + '</td></tr>'; }).join('') + '</tbody></table></div>';
     }).join('') || '<div style="padding:18px;color:#64748b;background:#fff;border-radius:14px">Nothing matches these filters.</div>';
     var pager = pages > 1 ? '<div class="wm2-pg"><button type="button" ' + (F.page ? '' : 'disabled') + ' onclick="wm2Page(-1)">← Newer</button><span>Page ' + (F.page + 1) + ' of ' + pages + '</span><button type="button" ' + (F.page < pages - 1 ? '' : 'disabled') + ' onclick="wm2Page(1)">Older →</button></div>' : '';
@@ -57321,7 +57319,7 @@ setInterval(function () {
   }
   var css = document.createElement('style');
   css.textContent = '#wm-rooms{display:none!important}#wm-bar{display:flex;gap:6px;flex-wrap:wrap;background:#ebe4d6;border-radius:14px;padding:6px;margin:6px 0 10px}#wm-bar button{flex:1;min-width:110px;font:inherit;font-size:13px;font-weight:700;border:none;background:transparent;border-radius:10px;padding:10px 12px;cursor:pointer;color:#475569}#wm-bar button.on{background:#fff;color:#1a1815;box-shadow:0 1px 3px rgba(26,24,21,.08),0 6px 14px rgba(26,24,21,.08)}#wm2{margin:6px 0 18px}#wm2 .wm2-head{display:flex;justify-content:space-between;align-items:flex-end;margin:0 0 10px}#wm2 .wm2-ctl{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:0 0 14px;font-size:12px;color:#64748b}' +
-    '#wm2 .wm2-grid{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:18px;align-items:start}#wm2 .wm2-day{background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 1px 3px rgba(26,24,21,.06),0 10px 24px rgba(26,24,21,.08);margin:0 0 14px}#wm2 .wm2-dh{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:#ebe4d6}#wm2 .wm2-dh b{font-size:13px}#wm2 .wm2-dh span{font-size:11.5px;color:#64748b}' +
+    '#wm2 .wm2-grid{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:18px;align-items:start}#wm2 .wm2-day{background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 1px 3px rgba(26,24,21,.06),0 10px 24px rgba(26,24,21,.08);margin:0 0 14px}#wm2 .wm2-dh{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:#ebe4d6}#wm2 .wm2-dh b{font-size:13px}#wm2 .wm2-dh{gap:12px}#wm2 .wm2-dh span{font-size:11.5px;color:#64748b;white-space:nowrap}' +
     '#wm2 .wm2-side{position:sticky;top:12px;display:flex;flex-direction:column;gap:12px}#wm2 .wm2-box{background:#fff;border-radius:14px;padding:14px 16px;box-shadow:0 1px 3px rgba(26,24,21,.06),0 12px 28px rgba(26,24,21,.09)}#wm2 .wm2-bt{font-size:11px;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:.6px}' +
     '#wm2 .wm2-r{display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-top:1px dashed rgba(26,24,21,.12);font-size:12.5px;color:#334155}#wm2 .wm2-r b{color:#1a1815;text-align:right}' +
     '#wm2 .wm2-case{display:flex;gap:8px;align-items:center;padding:8px;border-radius:10px;cursor:pointer;font-size:12.5px;margin-top:4px}#wm2 .wm2-case:hover,#wm2 .wm2-case.on{background:#f4efe6}#wm2 .wm2-case .dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}' +
