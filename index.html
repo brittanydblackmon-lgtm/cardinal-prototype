@@ -57360,6 +57360,64 @@ setInterval(function () {
   setInterval(function () { try { draw(false); } catch (e) { if (window.console) console.warn('wm2', e); } }, 800);
 })();
 </script>
+<script data-p="p49_penalty">
+// 10/9 (Brittany: the Halo penalty chart "looks outdated based off of what we do now"). Same data, redrawn in the
+// layout she liked on the Dashboard: big numbers on the left, clean bars on the right, one footer line.
+// "With Cardinal Fixes: $0" is gone: no fix takes exposure to zero (people already affected still need to be made
+// whole, and the exam can still find things), so the fixed case shows a leftover range of about 10-20%.
+(function () {
+  function org() { return window.currentOrg || 'ad'; }
+  function q(l) { try { return window.__cdmText ? __cdmText(l, 'story') : l; } catch (e) { return l; } }
+  function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;'); }
+  var css = document.createElement('style');
+  css.textContent = '.halo-pen-inner.p49>canvas,.halo-pen-inner.p49>.halo-pen-sum,.halo-pen-inner.p49>.halo-roi-strip{display:none!important}' +
+    '#pen49{display:flex;flex-direction:column;gap:12px;margin-top:6px}#pen49 .p49-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px}' +
+    '#pen49 .p49-n{background:#f4efe6;border-radius:12px;padding:14px 16px}' +
+    '#pen49 .p49-k{font-size:11px;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:.5px}' +
+    '#pen49 .p49-v{font-size:30px;font-weight:900;letter-spacing:-.03em;line-height:1.1;margin-top:4px}' +
+    '#pen49 .p49-s{font-size:12px;color:#475569;line-height:1.45;margin-top:4px}' +
+    '#pen49 .p49-ch{background:#f4efe6;border-radius:12px;padding:14px 16px;display:flex;flex-direction:column}' +
+    '#pen49 .p49-bars{display:flex;align-items:flex-end;gap:18px;height:170px;padding-top:8px;border-bottom:1px solid rgba(26,24,21,.15)}' +
+    '#pen49 .p49-b{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%}' +
+    '#pen49 .p49-b i{display:block;width:min(90px,70%);border-radius:8px 8px 0 0;background:#ef4444}' +
+    '#pen49 .p49-b b{font-size:13px;color:#1a1815;margin-bottom:6px}' +
+    '#pen49 .p49-l{display:flex;gap:18px;margin-top:6px}#pen49 .p49-l span{flex:1;text-align:center;font-size:11.5px;color:#64748b;font-weight:600}' +
+    '#pen49-foot{margin-top:12px;font-size:12px;background:#f0fdf4;color:#15803D;border-radius:10px;padding:8px 12px;font-weight:600}' +
+    '';
+  document.head.appendChild(css);
+  var LEFT = {
+    fin: 'What is left: re-reviewing applicants already declined, and any exam findings.',
+    ad: 'What is left: re-inspecting aircraft already cleared, and any safety review findings.',
+    health: 'What is left: re-reviewing claims already denied, and any audit findings.',
+    fed: 'What is left: re-reviewing filers already flagged, and any oversight findings.'
+  };
+  function draw() {
+    var p = document.querySelector('.halo-pen-inner'); if (!p || p.offsetParent === null) return;
+    var o = org(), H = (typeof HALO_CFG !== 'undefined' && HALO_CFG[o]) || null; if (!H || !H.penalties) return;
+    var pen = H.penalties, total = pen[pen.length - 1], lo = Math.round(total * 0.1), hi = Math.round(total * 0.2);
+    var cost = ((H.roiText || '').match(/Fix cost:\s*([^·]+)/) || [])[1]; cost = cost ? cost.trim() : '';
+    var brk = (((window.CARDINAL_DATA || {})[o] || {}).penaltyBreakdown) || '';
+    var labs = [q('Q2 2026'), q('Q3 2026'), q('Q4 2026')], max = Math.max.apply(null, pen) || 1;
+    var key = o + '|' + pen.join(',') + '|' + labs.join(',') + '|' + brk;
+    var box = document.getElementById('pen49');
+    if (box && box.getAttribute('data-k') === key && box.parentNode === p) return;
+    if (!box) { box = document.createElement('div'); box.id = 'pen49'; }
+    var foot = document.getElementById('pen49-foot'); if (!foot) { foot = document.createElement('div'); foot.id = 'pen49-foot'; }
+    p.classList.add('p49');
+    if (box.parentNode !== p) p.appendChild(box);
+    if (foot.previousElementSibling !== box) p.insertBefore(foot, box.nextSibling);
+    box.setAttribute('data-k', key);
+    box.innerHTML =
+      '<div class="p49-row"><div class="p49-n"><div class="p49-k">If nothing is fixed</div><div class="p49-v" style="color:#B91C1C">$' + total + 'M</div><div class="p49-s">Projected by ' + esc(labs[2]) + (brk ? '. ' + esc(brk.charAt(0).toUpperCase() + brk.slice(1)) : '') + '</div></div>' +
+      '<div class="p49-n"><div class="p49-k">If fixed now</div><div class="p49-v" style="color:#15803D">$' + lo + 'M to $' + hi + 'M</div><div class="p49-s">' + esc(LEFT[o] || LEFT.fin) + '</div></div></div>' +
+      '<div class="p49-ch"><div class="p49-k" style="margin-bottom:4px">Exposure by quarter if nothing is fixed</div><div class="p49-bars">' +
+      pen.map(function (v, i) { return '<div class="p49-b"><b>$' + v + 'M</b><i style="height:' + Math.max(6, Math.round(v / max * 100)) + '%;opacity:' + (0.55 + 0.2 * i) + '"></i></div>'; }).join('') +
+      '</div><div class="p49-l">' + labs.map(function (l) { return '<span>' + esc(l) + '</span>'; }).join('') + '</div></div>';
+    foot.textContent = (cost ? 'Fix cost: ' + cost + ' · ' : '') + 'Avoids about $' + (total - hi) + 'M to $' + (total - lo) + 'M · Estimates, not certainties';
+  }
+  setInterval(function () { try { draw(); } catch (e) {} }, 900);
+})();
+</script>
 </body>
 
 </html>
