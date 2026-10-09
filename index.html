@@ -56117,6 +56117,17 @@ window.CARDINAL_PLACES = {
     return (LOGC[o] = out);
   }
   window.cardinalDemoLog = demoLog;
+  var WHY = {
+    fin: { Gender: 'Men are denied more often mostly on debt-to-income; Eden is checking whether income stand-ins drive the gap.', Age: 'Older applicants on fixed incomes are denied more often on debt-to-income. They are part of the FIN-1203 re-review.', 'Race and ethnicity': 'The Hispanic gap comes from ZIP code acting as a stand-in for race in Credit Scoring v3.4 (case FIN-1203). The Other gap is a training-data gap: almost no examples of that group (TEST-628).' }
+  };
+  function rowContext(o, dim, list, basev, baseName) {
+    var below = [], watch = [];
+    list.forEach(function (x) { if (x[2]) return; var r = x[1] / basev; if (r < 0.8) below.push(x[0] + ' (' + r.toFixed(2) + ')'); else if (r < 0.9) watch.push(x[0] + ' (' + r.toFixed(2) + ')'); });
+    var lead = below.length ? '<strong style="color:#B91C1C">Below the 0.80 line:</strong> ' + esc(below.join(', ')) + '.' : '<strong style="color:#15803D">No group is below the 0.80 line.</strong>';
+    if (watch.length) lead += ' <strong style="color:#A16207">Watch:</strong> ' + esc(watch.join(', ')) + '.';
+    var why = (WHY[o] || {})[dim] || ('Compared with ' + baseName + ', the group with the highest approval rate.');
+    return lead + ' ' + esc(why);
+  }
   function circles() {
     var s = document.getElementById('screen-dashboard'); if (!s || s.offsetParent === null || !window.cardinalGaugeRow) return;
     var grid = document.querySelector('#dash-demographic-panel .dash-demo-3col'); if (!grid) return;
@@ -56134,11 +56145,31 @@ window.CARDINAL_PLACES = {
         var v = live(o, dim, x[0], x[1]), ratio = x[2] ? 1 : v / basev, col = x[2] ? '#22c55e' : ratio < 0.8 ? '#ef4444' : ratio < 0.9 ? '#FACC15' : '#22c55e';
         return { value: v.toFixed(1) + '%', pct: v / 100, color: col, label: x[0], status: x[2] ? 'Baseline' : ratio < 0.8 ? 'Below 0.80' : ratio < 0.9 ? 'Watch' : 'OK', pillLabel: x[2] ? 'Baseline' : 'Ratio', pillVal: x[2] ? '' : ratio.toFixed(2), sub: x[2] ? 'Comparison group' : 'vs ' + baseName + ' ' + (+basev).toFixed(1) + '%', calc: 'just now', delta: { d: 0, text: '' }, tip: 'Approval rate for ' + x[0] + (x[2] ? '. This is the comparison group.' : ', and its ratio to ' + baseName + '. Below 0.80 fails the four-fifths rule.') };
       });
-      return '<div class="demo-row"><div class="demo-row-h">' + esc(dim) + '</div>' + cardinalGaugeRow(units) + '</div>';
-    }).join('');
-    host.innerHTML = html;
+      return { dim: dim, units: units, ctx: rowContext(o, dim, list, basev, baseName) };
+    });
+    var key = o + '|' + html.map(function (r) { return r.dim + ':' + r.units.map(function (u) { return u.label; }).join(','); }).join(';');
+    if (host.getAttribute('data-k') !== key) {
+      host.setAttribute('data-k', key);
+      host.innerHTML = '<div class="demo-intro">Each circle is the share of applicants in that group who were approved. The ratio compares it to the group with the highest approval in that row. Under 0.80 fails the four-fifths rule regulators use; under 0.90 is worth watching.</div>' +
+        html.map(function (r) { return '<div class="demo-row"><div class="demo-row-h">' + esc(r.dim) + '</div><div class="demo-ctx">' + r.ctx + '</div>' + cardinalGaugeRow(r.units) + '</div>'; }).join('');
+      return;
+    }
+    // Same groups: update the numbers in place so nothing re-animates.
+    var rowsEl = host.querySelectorAll('.demo-row');
+    html.forEach(function (r, ri) {
+      var re = rowsEl[ri]; if (!re) return;
+      var cx = re.querySelector('.demo-ctx'); if (cx && cx.innerHTML !== r.ctx) cx.innerHTML = r.ctx;
+      var us = re.querySelectorAll('.g-unit');
+      r.units.forEach(function (u, ui) {
+        var el = us[ui]; if (!el) return;
+        var tx = el.querySelector('svg text'); if (tx) { tx.textContent = u.value; tx.setAttribute('fill', u.color); }
+        var arcs = el.querySelectorAll('svg circle'); if (arcs[1]) { var C = 2 * Math.PI * 86; arcs[1].setAttribute('stroke-dasharray', (C * Math.max(0.03, u.pct)).toFixed(2) + ' ' + C.toFixed(2)); arcs[1].setAttribute('stroke', u.color); }
+        var st = el.querySelector('.g-status'); if (st) { st.textContent = u.status; st.style.color = u.color; }
+        var pb = el.querySelector('.g-pill b'); if (pb && u.pillVal) pb.textContent = u.pillVal;
+      });
+    });
   }
-  var dcss = document.createElement('style'); dcss.textContent = '#demo-circles{margin:6px 0 14px}#demo-circles .demo-row{background:#fff;border-radius:14px;padding:12px 14px 6px;margin:0 0 12px;box-shadow:0 1px 3px rgba(26,24,21,.06),0 10px 24px rgba(26,24,21,.07)}#demo-circles .demo-row-h{font-size:11.5px;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:.6px;margin:0 0 6px}#demo-circles .g-row{justify-content:center!important;gap:22px!important;flex-wrap:wrap!important}#demo-circles .g-unit{flex:0 0 140px!important;max-width:140px!important;min-width:140px!important;cursor:default}#demo-circles .g-disc{max-width:118px!important}#demo-circles .g-delta{display:none!important}#demo-circles .g-pill{font-size:10px!important;padding:4px 9px!important}#demo-circles .g-sub{font-size:10.5px!important;line-height:1.3}'; document.head.appendChild(dcss);
+  var dcss = document.createElement('style'); dcss.textContent = '#demo-circles{margin:6px 0 14px}#demo-circles .demo-row{background:#fff;border-radius:14px;padding:12px 14px 6px;margin:0 0 12px;box-shadow:0 1px 3px rgba(26,24,21,.06),0 10px 24px rgba(26,24,21,.07)}#demo-circles .demo-row-h{font-size:11.5px;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:.6px;margin:0 0 4px}#demo-circles .demo-ctx{font-size:12.5px;color:#334155;line-height:1.5;margin:0 0 8px}#demo-circles .demo-intro{font-size:12px;color:#64748b;margin:0 0 10px}#demo-circles .g-row{justify-content:center!important;gap:22px!important;flex-wrap:wrap!important}#demo-circles .g-unit{flex:0 0 140px!important;max-width:140px!important;min-width:140px!important;cursor:default}#demo-circles .g-disc{max-width:118px!important}#demo-circles .g-delta{display:none!important}#demo-circles .g-pill{font-size:10px!important;padding:4px 9px!important}#demo-circles .g-sub{font-size:10.5px!important;line-height:1.3}'; document.head.appendChild(dcss);
   setInterval(circles, 5000); setTimeout(circles, 1500);
 
 
