@@ -51483,7 +51483,8 @@ window.CARDINAL_PLACES = {
     try { window.scrollTo(0, 0); if (document.scrollingElement) document.scrollingElement.scrollTop = 0; } catch (e) {}
     var a = document.getElementById('screen-' + screen) || document.querySelector('.screen.active');
     var els = [].slice.call(document.querySelectorAll('.main, .main-content, #main-content, .content'));
-    if (a) { els.push(a); els = els.concat([].slice.call(a.querySelectorAll('.edo-scroll'))); }
+    // 10/9: any inner scrolling box counts (Halo scrolls inside .halo-shell, Eden/Obsidian inside .edo-scroll).
+    if (a) { els.push(a); [].forEach.call(a.querySelectorAll('div,section,main'), function (e) { if (e.scrollTop > 0 && e.scrollHeight > e.clientHeight + 5) els.push(e); }); }
     els.forEach(function (el) { try { el.scrollTop = 0; } catch (e) {} });
   }
   var stl = document.createElement('style');
@@ -51578,7 +51579,6 @@ window.CARDINAL_PLACES = {
     }, 1400);
   };
 })();
-
 </script>
 
 <script data-p="p7_eden">
@@ -57459,6 +57459,7 @@ setInterval(function () {
     '.p50-t{background:#f4efe6;border-radius:12px;padding:14px 16px;cursor:pointer;border:2px solid transparent;text-align:left;font:inherit}' +
     '.p50-t.on{border-color:#1a1815;background:#fff}.p50-t .k{font-size:11px;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:.5px}' +
     '.p50-t .v{font-size:30px;font-weight:900;letter-spacing:-.03em;line-height:1.1;margin-top:4px}.p50-t .s{font-size:12px;color:#475569;margin-top:2px}' +
+    '.p50-list{max-height:440px;overflow-y:auto;padding:2px 6px 2px 0;margin-bottom:8px;overscroll-behavior:contain}' +
     '#obs-bf-link{background:#f4efe6;border-radius:12px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-top:8px}' +
     '#obs-bf-link p{margin:0;font-size:13px;color:#334155;line-height:1.5;flex:1;min-width:240px}' +
     '#obs-bf-link button{font:inherit;font-size:12.5px;font-weight:700;border:none;background:#1a1815;color:#fff;border-radius:9px;padding:8px 14px;cursor:pointer;white-space:nowrap}';
@@ -57475,18 +57476,31 @@ setInterval(function () {
     if (!row) { row = document.createElement('div'); row.className = 'p50-tiles'; }
     if (row.nextElementSibling !== svgBox) sec.insertBefore(row, svgBox);
     if (row.__h !== h) { row.__h = h; row.innerHTML = h; }
+    // Brittany: "put the cases in a box so they can just scroll within the box".
+    var rows = sec.querySelectorAll(':scope > [onclick*="edoToggleBfCa"]');
+    if (rows.length) {
+      var list = sec.querySelector(':scope > .p50-list'), h3 = sec.querySelector(':scope > h3');
+      if (!list) { list = document.createElement('div'); list.className = 'p50-list'; list.addEventListener('scroll', function () { window.__p50ListY = list.scrollTop; }, { passive: true }); }
+      var anchor = h3 || rows[0]; if (list.parentNode !== sec) sec.insertBefore(list, h3 ? h3.nextSibling : rows[0]);
+      [].forEach.call(rows, function (r) { list.appendChild(r); });
+      // Eden redraws the whole section when a row expands, so put the box back where you left it.
+      var want = window.__p50ListY || 0, k = 0;
+      if (want) (function put() { if (list.scrollTop === 0 && list.scrollHeight > list.clientHeight) list.scrollTop = want; if (++k < 30) requestAnimationFrame(put); })();
+    }
     // The Obsidian mirror is gone, so drop the "see it from the fraud side" pointer.
     var p = sec.querySelector(':scope > p'); if (p && /fraud side in Obsidian/.test(p.textContent)) p.textContent = p.textContent.replace(/\s*(See the same overlap|This is the bias signal)[^.]*fraud side in Obsidian\.?/, '');
   }
   // The filter re-renders all of Eden, which used to throw the page ~1,000px. Keep the section where it was on screen.
   function scroller(el) { var c = el.parentElement; while (c && !(c.scrollHeight > c.clientHeight + 5 && /(auto|scroll)/.test(getComputedStyle(c).overflowY))) c = c.parentElement; return c || document.scrollingElement; }
   window.p50Filter = function (f) {
+    window.__p50ListY = 0;
     var s = document.getElementById('eden-sec-bf'), y = s ? s.getBoundingClientRect().top : null;
     try { edoVennSetFilter(f); } catch (e) {}
     if (y == null) return;
     var n = 0; (function fix() { var s2 = document.getElementById('eden-sec-bf'); if (s2) { var d = s2.getBoundingClientRect().top - y; if (Math.abs(d) > 2) scroller(s2).scrollTop += d; } if (++n < 30) requestAnimationFrame(fix); })();
   };
   window.p50GoEden = function () {
+    window.__deepLinkUntil = Date.now() + 2500; // a deep link: don't let the open-at-top reset undo the jump
     var nav = document.querySelector('.nav-item[onclick*="\'eden\'"]');
     try { showScreen('eden', nav); } catch (e) {}
     // Eden fades in and resets scroll as it settles, so keep placing the section near the top until it holds (up to ~4s).
@@ -57511,7 +57525,7 @@ setInterval(function () {
   // Re-apply right after any re-render. The section is rebuilt on every filter click, so watch both screens and
   // re-add only when our pieces are missing (MutationObserver runs before the browser paints, so no flash).
   function run() { var e = document.getElementById('eden-sec-bf'); if (e) tiles(e); var ob = document.getElementById('obs-sec-bf'); if (ob) link(ob); }
-  function missing() { var e = document.getElementById('eden-sec-bf'), ob = document.getElementById('obs-sec-bf'); return (e && !e.querySelector(':scope > .p50-tiles')) || (ob && !ob.querySelector(':scope > #obs-bf-link')); }
+  function missing() { var e = document.getElementById('eden-sec-bf'), ob = document.getElementById('obs-sec-bf'); return (e && (!e.querySelector(':scope > .p50-tiles') || e.querySelector(':scope > [onclick*="edoToggleBfCa"]'))) || (ob && !ob.querySelector(':scope > #obs-bf-link')); }
   var mo = new MutationObserver(function () { if (missing()) { try { run(); } catch (e) {} } });
   function watch() { ['screen-eden', 'screen-obsidian'].forEach(function (id) { var el = document.getElementById(id); if (el && !el.__p50) { el.__p50 = 1; mo.observe(el, { childList: true, subtree: true }); } }); }
   setInterval(function () { watch(); try { run(); } catch (e) {} }, 1000);
@@ -57559,13 +57573,42 @@ setInterval(function () {
     var c = document.querySelector('.content') || scr, r = c.getBoundingClientRect(), L = Math.round(r.left + 16) + 'px', W = Math.round(r.width - 32 - 64) + 'px'; // leave room for the scroll arrows and Eve on the right
     if (sh.style.left !== L) sh.style.left = L; if (sh.style.width !== W) sh.style.width = W;
     var sc = scroller(scr.firstElementChild || scr), y = sc.scrollTop, max = sc.scrollHeight - sc.clientHeight;
-    if (!S.shown && (y > 500 || (max > 0 && y / max > 0.3))) S.shown = true;
+    // Brittany: pop up once you reach "Predicted vs actual losses" (fallback: most of the way down).
+    var hist = [document.getElementById('u-halo-hist'), document.getElementById('halo-hist')].filter(function (e) { return e && e.offsetParent; })[0], hr = hist ? hist.getBoundingClientRect() : null;
+    if (!S.shown && ((hr && hr.top < innerHeight * 0.8) || (!hr && max > 0 && y / max > 0.6))) S.shown = true;
     if (S.shown) { if (sh.style.display !== 'block') { sh.style.display = 'block'; void sh.offsetWidth; } if (!sh.classList.contains('up')) sh.classList.add('up'); paint(); }
     else if (sh.style.display !== 'none') { sh.style.display = 'none'; sh.classList.remove('up'); }
     // Room at the end of the page so the panel never covers the last section.
     var pad = S.shown ? (sh.offsetHeight + 16) + 'px' : ''; if (scr.style.paddingBottom !== pad) scr.style.paddingBottom = pad;
   }
   setInterval(function () { try { tick(); } catch (e) {} }, 300);
+})();
+</script>
+<script data-p="p52_eve">
+// 10/9 (Brittany: "every time I open up the Eve icon or chat box it always opens at the bottom, never the top where it
+// says Good afternoon"). Opening Eve from her button starts at the top of the chat. Paths that continue a conversation
+// (Ask's "Continue the conversation") still jump to the newest message.
+(function () {
+  function topLoop() {
+    var box = document.getElementById('eve-messages'); if (!box) return;
+    var stop = false, end = Date.now() + 1800;
+    function quit() { stop = true; }
+    box.addEventListener('wheel', quit, { once: true, passive: true }); box.addEventListener('touchmove', quit, { once: true, passive: true });
+    var inp = document.getElementById('eve-input'); if (inp) inp.addEventListener('keydown', quit, { once: true });
+    (function go() { if (stop || Date.now() > end) return; if (box.scrollTop !== 0) box.scrollTop = 0; requestAnimationFrame(go); })();
+  }
+  function wrap(name) {
+    var o = window[name]; if (typeof o !== 'function' || o.__p52) return;
+    var f = function () {
+      var p = document.getElementById('eve-panel'), was = p && p.classList.contains('open');
+      var r = o.apply(this, arguments);
+      p = document.getElementById('eve-panel'); if (!was && p && p.classList.contains('open')) topLoop();
+      return r;
+    };
+    f.__p52 = 1; window[name] = f;
+  }
+  wrap('eveToggleFromOrbital');
+  setTimeout(function () { wrap('eveToggleFromOrbital'); }, 1500);
 })();
 </script>
 </body>
