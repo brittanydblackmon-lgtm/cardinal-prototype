@@ -13322,7 +13322,7 @@ function edoBuildEdenHeroSection(d, org, bfN) {
     '<div class="tsv2-conf-sub">How reliable is this score?</div>' +
     '<div class="tsv2-conf-row"><span' + edoT('Confidence Band', 'Expected swing in the headline bias score if Cardinal re-ran the estimate on a fresh bootstrap sample.') + '>Confidence Band</span><span class="v">\xb1' + cb + ' points</span></div>' +
     '<div class="tsv2-conf-row"><span' + edoT('Sample Coverage', 'Share of recent model decisions included in this bias score calculation.') + '>Sample Coverage</span><span class="v">' + scov + '%</span></div>' +
-    '<div class="tsv2-conf-row"><span' + edoT('Detection Latency', 'Hours since the last material bias signal was confirmed across all monitored models.') + '>Detection Latency</span><span class="v">' + dlat + ' hours</span></div>' +
+    '<div class="tsv2-conf-row"><span' + edoT('Detection Latency', 'Hours since the last material bias signal was confirmed across all monitored models.') + '>Detection Latency</span><span class="v">' + dlat + (dlat == 1 ? ' hour' : ' hours') + '</span></div>' +
     '<div class="tsv2-conf-row"><span' + edoT('Counterfactual Strength', 'Confidence in Genesis counterfactual proofs backing active bias findings.') + '>Counterfactual Strength</span><span class="v">' + cstr + '%</span></div></div></div></div>' +
     '<div style="margin-top:16px;padding:14px;border-radius:12px;border:1px solid rgba(250,204,21,.45);cursor:pointer;background:linear-gradient(100deg,rgba(250,204,21,.14),rgba(251,191,36,.08))" onclick="edoScrollBf()"' + edoT('Bias-Fraud Connection', 'Bias creates blind spots; fraudsters exploit blind spots. Jump to the overlap cases.') + '><strong>Bias\u2011Fraud Connection:</strong> ' + bfN + ' active overlap cases \u2192 jump to detail</div>' +
     '<button type="button" class="btn-primary" style="margin-top:10px;font-size:11px" onclick="document.getElementById(\'eden-sec-cases\').scrollIntoView({behavior:\'smooth\'})"' + edoT('View Live Detections', 'Scroll to active bias cases.') + '>View Live Detections \u2192</button></section>';
@@ -56391,6 +56391,57 @@ window.CARDINAL_PLACES = {
     if (sc && sc.parentNode && sc.parentNode.style.display !== 'none') sc.parentNode.style.display = 'none';
   }
   tick(); setInterval(tick, 800);
+})();
+// 10/9 (Brittany: "how I wanted the dead space to look ... where it has info and context"). Each protected-group
+// row gets an Eden-style side card next to its circles: the comparison group, the widest gap, groups under the line,
+// the biggest move this week, decisions counted, and the linked case.
+(function () {
+  function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;'); }
+  var css = document.createElement('style');
+  css.textContent = '#demo-circles .demo-body{display:flex;gap:18px;align-items:center}#demo-circles .demo-body>.g-row{flex:1 1 auto;min-width:0;flex-wrap:nowrap!important;gap:12px!important}#demo-circles .demo-body .g-unit.ds-fit .g-disc{width:100%!important;max-width:118px;height:auto!important}#demo-circles .demo-body .g-unit.ds-fit .g-delta,#demo-circles .demo-body .g-unit.ds-fit .g-sub{font-size:10.5px;line-height:1.3}' +
+    '#demo-circles .demo-side{flex:0 0 270px;background:#f4efe6;border:1px solid rgba(26,24,21,.08);border-radius:16px;padding:14px 16px 12px;margin:0 0 8px}' +
+    '#demo-circles .ds-t{font-size:12px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#1a1815}#demo-circles .ds-s{font-size:11.5px;color:#64748b;margin:2px 0 8px}' +
+    '#demo-circles .ds-r{display:flex;justify-content:space-between;gap:10px;font-size:12.5px;color:#334155;padding:7px 0;border-top:1px dashed rgba(26,24,21,.12)}#demo-circles .ds-r b{font-weight:800;color:#1a1815;text-align:right;white-space:nowrap}' +
+    '#demo-circles .ds-btn{display:block;width:100%;margin-top:8px;font:inherit;font-size:11.5px;background:#fff;border:1px solid rgba(26,24,21,.12);border-radius:8px;padding:6px;cursor:pointer;color:#1a1815}' +
+    '@media (max-width:900px){#demo-circles .demo-body{flex-direction:column;align-items:stretch}#demo-circles .demo-side{flex:none}#demo-circles .demo-body>.g-row{flex-wrap:wrap!important}}';
+  document.head.appendChild(css);
+  var CASES = { fin: { Gender: 'Eden review, no case', Age: 'FIN-1203', 'Race and ethnicity': 'FIN-1203, TEST-628' } };
+  function when(t) { var d = new Date(t), n = new Date(), h = d.getHours(), m = d.getMinutes(), tm = ((h % 12) || 12) + ':' + (m < 10 ? '0' : '') + m + (h < 12 ? ' AM' : ' PM'); var dd = Math.round((new Date(n.getFullYear(), n.getMonth(), n.getDate()) - new Date(d.getFullYear(), d.getMonth(), d.getDate())) / 864e5); return (dd === 0 ? 'Today' : dd === 1 ? 'Yesterday' : ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()] + ' ' + d.getDate()) + ', ' + tm; }
+  function side(o, dim) {
+    var G = window.cardinalDemoGroups && window.cardinalDemoGroups(o), L = (window.cardinalDemoLog && window.cardinalDemoLog(o)) || [];
+    if (!G || !G[dim]) return '';
+    var list = G[dim], base = list.filter(function (x) { return x[2]; })[0] || list[0], others = list.filter(function (x) { return x !== base; });
+    var worst = others.reduce(function (a, b) { return !a || b[1] < a[1] ? b : a; }, null), wr = worst ? worst[1] / base[1] : 1;
+    var below = others.filter(function (x) { return x[1] / base[1] < 0.8; }).length;
+    var cut = Date.now() - 7 * 864e5, cut30 = Date.now() - 30 * 864e5, D = L.filter(function (e) { return e.dim === dim; });
+    var big = null; list.forEach(function (x) { var w = D.filter(function (e) { return e.group === x[0] && e.t >= cut; }); if (!w.length) return; var ch = Math.round((w[0].to - w[w.length - 1].from) * 10) / 10; if (!big || Math.abs(ch) > Math.abs(big[1])) big = [x[0], ch]; });
+    var decided = D.filter(function (e) { return e.t >= cut30; }).reduce(function (s, e) { return s + (e.decided || 0); }, 0);
+    var cs = (CASES[o] || {})[dim] || String(((window.CARDINAL_DATA || {})[o] || {}).primaryCase || 'None open');
+    var col = function (r) { return r < 0.8 ? '#B91C1C' : r < 0.9 ? '#A16207' : '#15803D'; };
+    var row = function (k, v) { return '<div class="ds-r"><span>' + esc(k) + '</span><b>' + v + '</b></div>'; };
+    return '<div class="ds-t">' + esc(dim) + ' at a glance</div><div class="ds-s">What stands out in this row</div>' +
+      row('Comparison group', esc(base[0]) + ' ' + (+base[1]).toFixed(1) + '%') +
+      (worst ? row('Widest gap', '<span style="color:' + col(wr) + '">' + esc(worst[0]) + ' · ' + wr.toFixed(2) + '</span>') : '') +
+      row('Below the 0.80 line', below ? '<span style="color:#B91C1C">' + below + (below === 1 ? ' group' : ' groups') + '</span>' : '<span style="color:#15803D">None</span>') +
+      row('Biggest move this week', big && Math.abs(big[1]) >= 0.05 ? esc(big[0]) + ' <span style="color:' + (big[1] > 0 ? '#15803D' : '#B91C1C') + '">' + (big[1] > 0 ? '▲ +' : '▼ ') + big[1].toFixed(1) + ' pts</span>' : 'No change') +
+      row('Decisions counted, 30 days', decided.toLocaleString()) +
+      (D.length ? row('Last change', when(D[0].t)) : '') +
+      row('Linked case', esc(cs)) +
+      '<button type="button" class="ds-btn" onclick="showScreen(\'eden\')">Open Eden Core →</button>';
+  }
+  function tick() {
+    var host = document.getElementById('demo-circles'); if (!host || host.offsetParent === null) return;
+    var o = window.currentOrg || 'fin';
+    [].forEach.call(host.querySelectorAll('.demo-row'), function (re) {
+      var dim = (re.querySelector('.demo-row-h') || {}).textContent, gr = re.querySelector('.g-row'); if (!dim || !gr) return;
+      var body = re.querySelector('.demo-body');
+      if (!body) { body = document.createElement('div'); body.className = 'demo-body'; gr.parentNode.insertBefore(body, gr); body.appendChild(gr); var sd = document.createElement('div'); sd.className = 'demo-side'; body.appendChild(sd); }
+      var us = gr.querySelectorAll('.g-unit'), n = us.length, gw = gr.clientWidth;
+      if (n && gw > 300) { var w = Math.max(90, Math.min(140, Math.floor((gw - 12 * (n - 1)) / n))) + 'px'; [].forEach.call(us, function (u) { if (u.style.minWidth !== w) { u.classList.add('ds-fit'); u.style.setProperty('min-width', w, 'important'); u.style.setProperty('max-width', w, 'important'); u.style.setProperty('width', w, 'important'); } }); }
+      var sd2 = body.querySelector('.demo-side'), h = side(o, dim); if (sd2.__h !== h) { sd2.__h = h; sd2.innerHTML = h; }
+    });
+  }
+  setInterval(tick, 700);
 })();
 
 </script>
