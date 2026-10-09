@@ -56619,6 +56619,84 @@ window.CARDINAL_PLACES = {
 
 </script>
 
+<script data-p="p45_clean">
+// 10/9 (Brittany: "make sure each section looks the same", "we don't have to repeat it anymore ... we have the i at
+// the top", "I just love anything shadow", "Open Eden Core ... should take me somewhere"). Four clean-ups:
+// 1. The Dashboard's three big sections share one look: white card, soft shadow, thin red line on top.
+// 2. The title and subtitle repeated inside a core (already shown in the header with its "i" button) are hidden.
+// 3. Every core's top "at a glance" box gets the same, slightly deeper shadow.
+// 4. "Open Eden Core" buttons land on the exact place in Eden (the protected-group section or the case row) and
+//    highlight it, instead of the top of the page.
+(function () {
+  var css = document.createElement('style');
+  css.textContent =
+    '#dash-core-status,#dash-demographic-panel,#dash-regulatory-panel{background:#fff!important;border:1px solid rgba(26,24,21,.06)!important;border-top:3px solid #ef4444!important;border-radius:16px!important;box-shadow:0 1px 3px rgba(26,24,21,.06),0 12px 28px rgba(26,24,21,.09)!important}' +
+    '#dash-demographic-panel>div,#dash-demographic-panel .dash-demographic-inner{background:transparent!important}' +
+    '#dash-demographic-panel .dash-demographic-inner>#pg2,#dash-demographic-panel #pg2{background:transparent!important;border:none!important;box-shadow:none!important;padding:0!important}.c45-hide{display:none!important}' +
+    '#eden-sec-hero,#obs-sec-hero,#tsv2-hero,.tsv2-section.u-hero,#pl-rings,#myws-rings{box-shadow:0 1px 3px rgba(26,24,21,.06),0 12px 28px rgba(26,24,21,.09)!important}' +
+    '.c45-flash{outline:3px solid #ef4444!important;outline-offset:4px;border-radius:12px;transition:outline-color .6s}';
+  document.head.appendChild(css);
+
+  // 2. Repeated titles inside each core.
+  var DUP = {
+    genesis: /^Genesis Core: Diagnose, Test & Prove$/, atonement: /^Atonement Core: Remediation Engine$/, compliance: /^Compliance Exchange$/,
+    echo: /^Echo Core: Audit Memory & Integrity$/, cardinallibrary: /^Cardinal Library: Unified Knowledge Hub$/, trustscore: /^Trust Score\s*i?$/,
+    trustledger: /^Trust Ledger: Tamper-Proof Verification Layer$/, sentinel: /^Watchman\s*i?$/, lucid: /^✦ Lucid Layer: Adam & Eve$/,
+    modellibrary: /^Cohort & Model Library$/, settings: /^Settings$/
+  };
+  function quiet(e) { return e && !e.querySelector('input,select,textarea,canvas,table,.card,.tsv2-section') && (e.innerText || '').trim().length < 240; }
+  function dedupe() {
+    Object.keys(DUP).forEach(function (id) {
+      var s = document.getElementById('screen-' + id); if (!s || s.offsetParent === null || s.__c45) return;
+      var re = DUP[id], t = [].filter.call(s.querySelectorAll('div,h1,h2,h3'), function (e) { return e.offsetParent && re.test((e.innerText || '').trim()) && parseFloat(getComputedStyle(e).fontSize) >= 15; })[0];
+      if (!t) return;
+      var sub = t.nextElementSibling, p = t.parentNode;
+      if (p && p !== s && quiet(p) && !p.querySelector('button:not(.core-info-btn):not([class*="info"])')) p.classList.add('c45-hide');
+      else { t.classList.add('c45-hide'); if (sub && quiet(sub) && !sub.querySelector('button')) sub.classList.add('c45-hide'); }
+      s.__c45 = 1;
+    });
+  }
+  setInterval(dedupe, 900);
+
+  // 4. Send the person to the exact spot in Eden.
+  function caseId(o) { var c = String(((window.CARDINAL_DATA || {})[o] || {}).primaryCase || '').replace(/^#/, ''); return c; }
+  window.cardinalEdenGo = function (what) {
+    var o = window.currentOrg || 'fin', cs = caseId(o);
+    try { showScreen('eden'); } catch (e) {}
+    var tries = -4, iv = setInterval(function () {
+      if (tries < 0) { tries++; return; }
+      var target = null;
+      if (what === 'case') {
+        var sec = document.getElementById('eden-sec-cases');
+        if (sec) target = [].filter.call(sec.querySelectorAll('tr,.card,div'), function (e) { return e.offsetParent && e.children.length > 1 && (e.innerText || '').indexOf(cs) >= 0 && (e.innerText || '').length < 600; }).pop() || sec;
+      } else target = document.getElementById('eden-sec-protected-impact');
+      if ((!target || target.offsetParent === null) && ++tries < 20) return;
+      clearInterval(iv); if (!target) return;
+      var go = function () { target.scrollIntoView({ block: 'center' }); }; go(); setTimeout(go, 400); setTimeout(go, 900); setTimeout(go, 1500);
+      target.classList.add('c45-flash'); setTimeout(function () { target.classList.remove('c45-flash'); }, 3200);
+      try { (window.cardinalShowToast || showToast)(what === 'case' ? 'Showing case ' + cs + ' in Eden: what was found, who is affected, and the fix' : 'Showing protected groups in Eden'); } catch (e) {}
+    }, 150);
+  };
+  window.tsv2OpenTopFindingCase = function () { cardinalEdenGo('case'); };
+  // Relabel and reroute the protected-group buttons on the Dashboard.
+  setInterval(function () {
+    var host = document.getElementById('pg2'); if (!host || host.offsetParent === null) return;
+    if (host.getAttribute('style')) { host.__pg = 1; host.removeAttribute('style'); }
+    var o = window.currentOrg || 'fin', cs = caseId(o);
+    [].forEach.call(host.querySelectorAll('.foot button'), function (b) {
+      var h = b.closest('.s'), title = h && h.previousElementSibling ? h.previousElementSibling.textContent : '';
+      var isGender = /gender/i.test(title), want = isGender ? 'See this in Eden →' : 'See case ' + cs + ' in Eden →';
+      if (b.textContent !== want) { b.textContent = want; b.setAttribute('onclick', "cardinalEdenGo('" + (isGender ? 'groups' : 'case') + "')"); }
+    });
+  }, 900);
+  setInterval(function () {
+    var b = document.querySelector('.hm2-foot button'), cs = caseId(window.currentOrg || 'fin'), want = 'See case ' + cs + ' in Eden →';
+    if (b && b.textContent !== want) b.textContent = want;
+  }, 1200);
+})();
+
+</script>
+
 </body>
 
 </html>
