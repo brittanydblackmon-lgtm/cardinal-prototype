@@ -11951,20 +11951,32 @@ function _edoAttachModelDetailMetrics(dst) {
 }
 
 function _overlapCasesListFromOrg(ok, nOverlap, primaryCase) {
-  var list = [];
-  for (var i = 0; i < nOverlap; i++) {
-    var cid = primaryCase;
-    if (ok === 'ad') cid = i === 0 ? 'AD-2847' : 'AD-' + String(2847 + i);
-    if (ok === 'fin') cid = i === 0 ? 'FIN-1203' : 'FIN-' + String(1203 + i);
-    if (ok === 'health') cid = i === 0 ? 'HS-2847' : 'HS-' + String(2847 + i);
-    var biasAsp = ok === 'fin' ? 'DI 0.74 vs ZIP proxy' : ok === 'health' ? 'DI 0.64: Claims v1.9' : 'DI 0.67 vs 0.80 floor';
-    var fraudAsp = ok === 'fin' ? 'Geography in fraud flags: NYC ZIPs' : ok === 'health' ? 'Specialty upcoding cluster' : 'Credential synthesis ring';
+  // 10/9 (Brittany: the overlap list looked off). Each row is one affected group inside the primary case, in plain
+  // words, and the dollar amounts split the case's combined exposure so the rows add up to the banner total.
+  var G = {
+    fin: { id: 'FIN-1203', total: 73000000, bb: 'DI 0.74 vs ZIP proxy', fb: 'Geography in fraud flags', bias: 'Approved less by Credit Scoring v3.4', fraud: 'Sent to manual review more by Fraud Screening v2.7', rows: [
+      ['ZIP 10453, Morris Heights', 'first-time borrowers'], ['ZIP 11212, Brownsville', 'first-time borrowers'], ['ZIP 10453, Morris Heights', 'thin credit files'], ['ZIP 11212, Brownsville', 'thin credit files'],
+      ['ZIP 10453, Morris Heights', 'renters'], ['ZIP 11212, Brownsville', 'renters'], ['ZIP 10453, Morris Heights', 'self-employed applicants'], ['ZIP 11212, Brownsville', 'self-employed applicants'],
+      ['ZIP 10453, Morris Heights', 'applicants under 30'], ['ZIP 11212, Brownsville', 'applicants under 30'], ['ZIP 10453, Morris Heights', 'small-business owners'], ['ZIP 11212, Brownsville', 'small-business owners']] },
+    ad: { id: 'AD-2847', total: 67000000, bb: 'Late wear warnings', fb: 'Inspection skipped', bias: 'Wear warnings arrive late from Fleet Health v2.4', fraud: 'Parts with clean paperwork skip inspection', rows: [
+      ['Camp Pendleton', 'coastal'], ['Twentynine Palms', 'desert'], ['Yuma', 'desert'], ['Nellis', 'desert'], ['Naval Station Norfolk', 'coastal'], ['San Diego', 'coastal'], ['Fort Bliss', 'desert']] },
+    health: { id: 'HS-2847', total: 150000000, bb: 'DI 0.64: Claims v1.9', fb: 'Billing ring', bias: 'Specialty care cut short by Claims v1.9', fraud: 'A billing ring uses the same review gap', rows: [
+      ['Cardiology', 'members 75 and older'], ['Oncology', 'members 75 and older'], ['Orthopedics', 'members 75 and older'], ['Infusion therapy', 'members 75 and older'], ['Neurology', 'members 75 and older'],
+      ['Pulmonology', 'members 75 and older'], ['Nephrology', 'members 75 and older'], ['Rheumatology', 'members 75 and older'], ['Wound care', 'members 75 and older']] },
+    fed: { id: 'FED-PDV-001', total: 18000000, bb: 'DI 0.54: flag rate', fb: 'Copied profiles', bias: 'Flagged far more often by the fraud model', fraud: 'Real fraud rings copy the same profile', rows: [
+      ['New York metro', 'self-employed filers'], ['Chicago metro', 'self-employed filers'], ['Atlanta metro', 'self-employed filers'], ['Miami metro', 'self-employed filers'], ['Los Angeles metro', 'self-employed filers']] }
+  };
+  var g = G[ok] || G.health, rows = g.rows.slice(0, nOverlap || g.rows.length), n = rows.length, wsum = 0, w = [], list = [], used = 0;
+  for (var k = 0; k < n; k++) { w.push(n + 2 - k); wsum += n + 2 - k; }
+  for (var i = 0; i < n; i++) {
+    var amt = i === n - 1 ? g.total - used : Math.round(g.total * w[i] / wsum / 100000) * 100000; used += amt;
+    var where = rows[i][0], who = rows[i][1];
     list.push({
-      caseId: cid,
-      summary: i === 0 ? (ok === 'ad' ? 'Hispanic technicians at Pendleton denied premium-base placement (bias), credential verification skipped on denial pattern, allowing synthetic credential ring through (fraud blind spot).' : ok === 'fin' ? 'Applicants in NYC ZIP clusters approved less by Credit Scoring v3.4 and flagged more by Fraud Screening v2.7 on geography: 12 overlap cases.' : 'Patients 65+ specialty denials on Claims v1.9, provider collusion ring exploited calibration gap (Diagnosis Support cross-signal).') : ('Linked overlap segment ' + (i + 1) + ', bias corridor reduced fraud signal until Cardinal fused lenses.'),
-      biasAspect: biasAsp,
-      fraudAspect: fraudAsp + (i ? ' · segment ' + (i + 1) : ''),
-      dollarsAtRisk: ok === 'ad' ? 67000000 - i * 900000 : ok === 'fin' ? 73000000 - i * 2100000 : 150000000 - i * 4100000
+      caseId: g.id,
+      summary: (ok === 'ad' ? where + ' (' + who + ' base): ' : ok === 'health' ? where + ', ' + who + ': ' : where + ', ' + who + ': ') + g.bias.charAt(0).toLowerCase() + g.bias.slice(1) + '. ' + g.fraud + '.',
+      biasAspect: g.bb,
+      fraudAspect: g.fb,
+      dollarsAtRisk: amt
     });
   }
   return list;
@@ -12851,6 +12863,20 @@ function _cardinalBuildModelDetailDrillInRegistry(CD) {
   });
   dst.biasFraudOverlapCases = _overlapCases(ok, dst.fraudMetricsByModel, dst.biasMetricsByModel);
   _edoMergeVisualExt(dst, ok);
+  // 10/9: Federal had no overlap data of its own and fell back to Healthcare's (case numbers, $150M, model names).
+  // One fraud model, two effects: honest self-employed filers flagged far more often, while real rings copy their profile.
+  if (ok === 'fed') {
+    dst.biasFraudConnectionData = { biasCount: 0, fraudCount: 0, overlapCount: 5, biasOnlyCases: [], fraudOnlyCases: [], overlapCases: _overlapCasesListFromOrg('fed', 5, 'FED-PDV-001') };
+    dst.biasFraudConnectionFlow = {
+      overlapCases: 5,
+      primaryModel: 'IRS Tax Fraud Detection v3.1',
+      exposureM: 18,
+      eveSummaryLine: '5 metro areas where one fraud model flags honest self-employed filers far more often, combined exposure $18M',
+      biasPattern: { text: 'Self-employed filers in 5 metro areas are flagged for fraud 1.84 times as often as comparable filers. A fairness signal to investigate, not yet a conclusion.', metric: 'DI 0.54 | 1,200 filers' },
+      verificationGap: { text: 'The fraud model leans on income swings and location. Both are normal for gig workers, so the same signals that catch real fraud also catch honest filers.', metric: '1 model · 2 effects' },
+      fraudExploit: { text: 'Real fraud rings copy clean-looking Schedule C profiles to avoid the same flags, so honest filers get stopped while some rings slip through.', metric: 'Copied Schedule C profiles' }
+    };
+  }
 });
 
 CD.modelDetailDrillIn = _cardinalBuildModelDetailDrillInRegistry(CD);
@@ -57416,6 +57442,79 @@ setInterval(function () {
     foot.textContent = (cost ? 'Fix cost: ' + cost + ' · ' : '') + 'Avoids about $' + (total - hi) + 'M to $' + (total - lo) + 'M · Estimates, not certainties';
   }
   setInterval(function () { try { draw(); } catch (e) {} }, 900);
+})();
+</script>
+<script data-p="p50_overlap">
+// 10/9 (Brittany: the bias/fraud overlap "we have it twice... would it be better to just have it in Eden", and it
+// "looks outdated to the other brand standards"). The full overlap lives in Eden only. The glowing Venn becomes three
+// count tiles (click to filter, same as the circles did). Obsidian keeps a short card that links to Eden.
+(function () {
+  function org() { return window.currentOrg || 'ad'; }
+  function data() { var o = org(); return ((window.CARDINAL_DATA || {})[o]) || ((window.__EDO_EXT || {})[o]) || {}; }
+  function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;'); }
+  var css = document.createElement('style');
+  css.textContent = '#eden-sec-bf>div:has(>svg){display:none!important}' +
+    '#obs-sec-bf>*:not(h2):not(#obs-bf-link){display:none!important}' +
+    '.p50-tiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:14px 0 16px}' +
+    '.p50-t{background:#f4efe6;border-radius:12px;padding:14px 16px;cursor:pointer;border:2px solid transparent;text-align:left;font:inherit}' +
+    '.p50-t.on{border-color:#1a1815;background:#fff}.p50-t .k{font-size:11px;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:.5px}' +
+    '.p50-t .v{font-size:30px;font-weight:900;letter-spacing:-.03em;line-height:1.1;margin-top:4px}.p50-t .s{font-size:12px;color:#475569;margin-top:2px}' +
+    '#obs-bf-link{background:#f4efe6;border-radius:12px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-top:8px}' +
+    '#obs-bf-link p{margin:0;font-size:13px;color:#334155;line-height:1.5;flex:1;min-width:240px}' +
+    '#obs-bf-link button{font:inherit;font-size:12.5px;font-weight:700;border:none;background:#1a1815;color:#fff;border-radius:9px;padding:8px 14px;cursor:pointer;white-space:nowrap}';
+  document.head.appendChild(css);
+
+  function tiles(sec) {
+    var svgBox = [].filter.call(sec.children, function (c) { return c.querySelector && c.querySelector(':scope > svg'); })[0]; if (!svgBox) return;
+    var d = data(), bfd = d.biasFraudConnectionData || {}, bs = d.biasFraudStats || {};
+    var b = bfd.biasCount != null ? bfd.biasCount : (bs.biasActiveCount || 0), f = bfd.fraudCount != null ? bfd.fraudCount : (bs.fraudActiveCount || 0), o = bfd.overlapCount != null ? bfd.overlapCount : (bs.overlapCount || 0);
+    var vf = (window.__edo && window.__edo.vennFilter) || 'overlap';
+    var h = [['bias', 'Fairness only', b, 'Cases with a fairness issue and no fraud link', '#1a1815'], ['overlap', 'In both', o, 'Fairness and fraud point at the same people', '#B91C1C'], ['fraud', 'Fraud only', f, 'Fraud cases with no fairness link', '#1a1815']]
+      .map(function (t) { return '<button type="button" class="p50-t' + (vf === t[0] ? ' on' : '') + '" onclick="p50Filter(\'' + t[0] + '\')"><div class="k">' + t[1] + '</div><div class="v" style="color:' + t[4] + '">' + t[2] + '</div><div class="s">' + t[3] + '</div></button>'; }).join('');
+    var row = sec.querySelector('.p50-tiles');
+    if (!row) { row = document.createElement('div'); row.className = 'p50-tiles'; }
+    if (row.nextElementSibling !== svgBox) sec.insertBefore(row, svgBox);
+    if (row.__h !== h) { row.__h = h; row.innerHTML = h; }
+    // The Obsidian mirror is gone, so drop the "see it from the fraud side" pointer.
+    var p = sec.querySelector(':scope > p'); if (p && /fraud side in Obsidian/.test(p.textContent)) p.textContent = p.textContent.replace(/\s*(See the same overlap|This is the bias signal)[^.]*fraud side in Obsidian\.?/, '');
+  }
+  // The filter re-renders all of Eden, which used to throw the page ~1,000px. Keep the section where it was on screen.
+  function scroller(el) { var c = el.parentElement; while (c && !(c.scrollHeight > c.clientHeight + 5 && /(auto|scroll)/.test(getComputedStyle(c).overflowY))) c = c.parentElement; return c || document.scrollingElement; }
+  window.p50Filter = function (f) {
+    var s = document.getElementById('eden-sec-bf'), y = s ? s.getBoundingClientRect().top : null;
+    try { edoVennSetFilter(f); } catch (e) {}
+    if (y == null) return;
+    var n = 0; (function fix() { var s2 = document.getElementById('eden-sec-bf'); if (s2) { var d = s2.getBoundingClientRect().top - y; if (Math.abs(d) > 2) scroller(s2).scrollTop += d; } if (++n < 30) requestAnimationFrame(fix); })();
+  };
+  window.p50GoEden = function () {
+    var nav = document.querySelector('.nav-item[onclick*="\'eden\'"]');
+    try { showScreen('eden', nav); } catch (e) {}
+    // Eden fades in and resets scroll as it settles, so keep placing the section near the top until it holds (up to ~4s).
+    var n = 0, ok = 0, t = setInterval(function () {
+      var s = document.getElementById('eden-sec-bf'); n++;
+      if (s && s.offsetParent) {
+        var c = s.parentElement; while (c && !(c.scrollHeight > c.clientHeight + 5 && /(auto|scroll)/.test(getComputedStyle(c).overflowY))) c = c.parentElement; c = c || document.scrollingElement; var ct = c === document.scrollingElement ? 0 : c.getBoundingClientRect().top, off = s.getBoundingClientRect().top - Math.max(0, ct) - 12;
+        if (Math.abs(off) > 20) { c.scrollTop += off; ok = 0; } else if (++ok >= 3) clearInterval(t);
+      }
+      if (n > 16) clearInterval(t);
+    }, 250);
+  };
+  function link(sec) {
+    var h2 = sec.querySelector(':scope > h2'); if (!h2) return;
+    var flow = data().biasFraudConnectionFlow || {}, line = flow.eveSummaryLine ? flow.eveSummaryLine.charAt(0).toUpperCase() + flow.eveSummaryLine.slice(1) + '.' : 'Some fraud cases trace back to a fairness gap Eden already flagged.';
+    var h = '<p>' + esc(line) + ' The full view, with every affected group, lives in Eden.</p><button type="button" onclick="p50GoEden()">See the overlap in Eden →</button>';
+    var box = document.getElementById('obs-bf-link');
+    if (!box) { box = document.createElement('div'); box.id = 'obs-bf-link'; }
+    if (h2.nextElementSibling !== box) h2.parentNode.insertBefore(box, h2.nextSibling);
+    if (box.__h !== h) { box.__h = h; box.innerHTML = h; }
+  }
+  // Re-apply right after any re-render. The section is rebuilt on every filter click, so watch both screens and
+  // re-add only when our pieces are missing (MutationObserver runs before the browser paints, so no flash).
+  function run() { var e = document.getElementById('eden-sec-bf'); if (e) tiles(e); var ob = document.getElementById('obs-sec-bf'); if (ob) link(ob); }
+  function missing() { var e = document.getElementById('eden-sec-bf'), ob = document.getElementById('obs-sec-bf'); return (e && !e.querySelector(':scope > .p50-tiles')) || (ob && !ob.querySelector(':scope > #obs-bf-link')); }
+  var mo = new MutationObserver(function () { if (missing()) { try { run(); } catch (e) {} } });
+  function watch() { ['screen-eden', 'screen-obsidian'].forEach(function (id) { var el = document.getElementById(id); if (el && !el.__p50) { el.__p50 = 1; mo.observe(el, { childList: true, subtree: true }); } }); }
+  setInterval(function () { watch(); try { run(); } catch (e) {} }, 1000);
 })();
 </script>
 </body>
