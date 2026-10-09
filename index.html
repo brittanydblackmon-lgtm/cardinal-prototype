@@ -15586,7 +15586,7 @@ function _buildCardinalDataMaster() {
     'model-reviews': [_m('fin-m1', '2026-04-14T09:00:00Z', 'Adam: Cardinal', 'Fraud Screening v2.7 stable; no adversarial drift this sprint.', false, 'echo-FIN-m1', 'adam')],
     'legal-prep': [_m('fin-l1', '2026-04-13T14:00:00Z', 'Outside Counsel', 'Fair lending review evidence request, prioritize v3.5 shadow metrics.', false, 'echo-FIN-l1')],
     'board-prep': [_m('fin-b1', '2026-04-17T08:00:00Z', 'CFO: Blackmoor Wealth', 'Penalty exposure walkthrough: keep credit box conservative until v3.5 full.', false, 'echo-FIN-b1')],
-    'audit-prep': [_m('fin-a1', '2026-04-19T12:00:00Z', 'Riley Whitmore', 'CFPB fair lending examor questions, consolidated in shared doc.', false, 'echo-FIN-a1')],
+    'audit-prep': [_m('fin-a1', '2026-04-19T12:00:00Z', 'Riley Whitmore', 'CFPB fair lending exam questions, consolidated in a shared doc.', false, 'echo-FIN-a1')],
     'cardinal-data-commons': [_m('fin-c1', '2026-04-21T09:00:00Z', 'Lisa Torres', 'Published anonymized ZIP cluster stats for peer QA.', false, 'echo-FIN-c1')]
   }, ['Riley Whitmore', 'Lisa Torres', 'James Park', 'Outside Counsel']);
   var healthCh = _stand(['governance-team', 'regulatory-updates', 'model-reviews', 'legal-prep', 'board-prep', 'audit-prep', 'cardinal-data-commons'], 'Standing governance channel', {
@@ -55409,6 +55409,29 @@ window.CARDINAL_PLACES = {
     empTab('drill');
   };
 
+  var COMMITTEE = { fin: ['Riley Whitmore', 'Morgan Hale', 'Priya Desai', 'Nina Roberts'] };
+  var APPROVERS = { fin: ['Riley Whitmore', 'Jordan Ellis', 'Morgan Hale', 'Lisa Torres', 'Daniel Okafor', 'Marco Ruiz', 'Hannah Brooks'] };
+  function yes(b) { return b ? '<span style="color:#15803D">Yes</span>' : '<span style="color:#64748b">No</span>'; }
+  function accessBox(name, p) {
+    var o = org(), role = p.role || '', restricted = /Restricted/.test(p.access), ds = /scien|engineer|platform|data|model/i.test(role);
+    var cores = restricted ? 'All cores' : ds ? 'Eden, Genesis, Atonement, Data Pipeline' : 'Dashboard, Trust Loop, Library';
+    var h = hash(o + name + 'acc'), rev = new Date(Date.now() - (12 + h % 40) * 864e5);
+    return '<div style="' + CARD + '"><div style="' + HEAD + '">Access and permissions</div>' + kv([['Access level', esc(p.access)], ['Cores they can open', esc(cores)], ['Can approve launches and fixes', yes((APPROVERS[o] || []).indexOf(name) > -1 || /chief|officer|counsel|head/i.test(role))], ['Restricted Echo records', yes(restricted)], ['Whistleblower review committee', yes((COMMITTEE[o] || []).indexOf(name) > -1)], ['Two-step sign-in', '<span style="color:#15803D">On</span>'], ['Access last reviewed', fd(rev) + ' by Priya Desai'.replace('Priya Desai', name === 'Priya Desai' ? 'Riley Whitmore' : 'Priya Desai')]]) + '</div>';
+  }
+  function trainingBox(name, p) {
+    var o = org(), role = p.role || '', h = hash(o + name + 'trn'), now = Date.now();
+    var T = [['AI use policy (yearly)', 365], ['Fair lending and ECOA basics', 365], ['Privacy and customer data', 365], ['Speak-up and whistleblower policy', 730]];
+    if (/scien|engineer|platform|data|model/i.test(role)) T.splice(1, 0, ['Model risk and fairness testing', 365]);
+    var rows = T.map(function (t, i) {
+      var done = new Date(now - (20 + (h >> (i * 3)) % 340) * 864e5), due = new Date(done.getTime() + t[1] * 864e5), left = Math.ceil((due - now) / 864e5);
+      if (i === T.length - 1 && h % 3 === 0) { due = new Date(now + 9 * 864e5); left = 9; }
+      var st = left < 0 ? '<span style="color:#B91C1C">Overdue</span>' : left <= 30 ? '<span style="color:#A16207">Due in ' + left + ' days</span>' : '<span style="color:#15803D">Done ' + MON[done.getMonth()] + ' ' + done.getFullYear() + '</span>';
+      return [esc(t[0]), st];
+    });
+    var att = new Date(now - (30 + h % 200) * 864e5);
+    rows.push(['Signed the Cardinal Standard attestation', '<span style="color:#15803D">' + fd(att) + '</span>']);
+    return '<div style="' + CARD + '"><div style="' + HEAD + '">Training and attestations</div>' + kv(rows) + '</div>';
+  }
   window.empTab = function (t) {
     [].forEach.call(document.querySelectorAll('#emp-prof [data-et]'), function (e) { e.style.display = e.getAttribute('data-et') === t ? (e.getAttribute('data-disp') || '') : 'none'; });
     [].forEach.call(document.querySelectorAll('#emp-prof .etab'), function (b) { var on = b.getAttribute('data-t') === t || (t === 'drill' && b.getAttribute('data-t') === 'work'); b.style.background = on ? '#fff' : 'transparent'; b.style.boxShadow = on ? '0 1px 3px rgba(26,24,21,.12)' : 'none'; });
@@ -55424,7 +55447,7 @@ window.CARDINAL_PLACES = {
     var caseRows = Object.keys(cases).sort(function (a, b) { return cases[b][0].t - cases[a][0].t; }).map(function (c) { var l = cases[c]; return ['<a href="javascript:void(0)" onclick="empDrill(' + nm + ',\'case\',' + esc(J(c)) + ')" style="color:#1e3a8a;font-weight:700">' + esc(c) + '</a>', plural(l.length, 'record'), plural(l.filter(function (e) { return e.act === 'Approved'; }).length, 'sign-off'), '<span style="white-space:nowrap">' + fdt(l[0].t) + '</span>']; });
     var modRows = Object.keys(mods).sort(function (a, b) { return mods[b].length - mods[a].length; }).map(function (m) { var l = mods[m]; return ['<a href="javascript:void(0)" onclick="empDrill(' + nm + ',\'model\',' + esc(J(m)) + ')" style="color:#1e3a8a;font-weight:700">' + esc(m) + '</a>' + (owned.indexOf(m) > -1 ? ' <span style="font-size:10.5px;color:#15803D;font-weight:700">Owner</span>' : ''), plural(l.length, 'record'), plural(l.filter(function (e) { return e.act === 'Approved'; }).length, 'sign-off'), '<span style="white-space:nowrap">' + fdt(l[0].t) + '</span>']; });
     var S = sessions(name), today = S[0];
-    var openCases = (api.caseRows() || []).filter(function (c) { return c.status === 'Open' && cases[c.id]; }).sort(function (a, b) { return cases[b.id][0].t - cases[a.id][0].t; });
+    var openCases = (api.caseRows() || []).filter(function (c) { if (c.status !== 'Open' || !cases[c.id]) return false; cases[c.id] = cases[c.id].filter(function (e) { return !c.opened || e.t >= c.opened; }); return cases[c.id].length; }).sort(function (a, b) { return cases[b.id][0].t - cases[a.id][0].t; });
     var ini = name.replace(/^Dr\.?\s+/, '').split(' ').map(function (w) { return w[0]; }).join('').slice(0, 2).toUpperCase();
     var pill = function (t, c, b, br) { return '<span style="font-size:11px;font-weight:700;color:' + c + ';background:' + b + ';border:1px solid ' + br + ';border-radius:999px;padding:2px 9px">' + t + '</span>'; };
     var tabs = [['ov', 'Overview'], ['act', 'Activity'], ['notes', 'Notes and comments'], ['sign', 'Sign-offs'], ['work', 'Cases and models'], ['rec', 'Work record']];
@@ -55444,6 +55467,7 @@ window.CARDINAL_PLACES = {
       '<div style="' + CARD + '"><div style="' + HEAD + '">Today</div>' + kv([['Status', today && today.live ? 'Online' : today && today.where === 'Out of office' ? 'Out of office' : 'Offline'], ['Logged on', today && today.on ? tm(today.on) : '—'], ['Working from', today ? today.where : '—'], ['Device', today && today.on ? today.device : '—'], ['Last activity', ev[0] ? fdt(ev[0].t) : '—']]) + '</div>' +
       '<div style="' + CARD + '"><div style="' + HEAD + '">Waiting on ' + esc(first) + '</div>' + tbl(['Item', 'Since'], x.pend.map(function (y) { return [esc(y.summary.replace(/^Awaiting sign-off: /, '')), '<span style="white-space:nowrap">' + fdt(y.timestamp) + '</span>']; }), 'Nothing waiting on ' + first + '.') + '</div>' +
       '<div style="' + CARD + '"><div style="' + HEAD + '">Recent activity</div>' + tbl(['When', 'What'], ev.slice(0, 5).map(function (e) { return [when(e.t), act(e.act) + ' · ' + esc(e.what)]; })) + '</div>' +
+      accessBox(name, p) + trainingBox(name, p) +
       '<div style="' + CARD + ';grid-column:1/-1"><div style="' + HEAD + '">Open cases right now</div>' + tbl(['Case', 'What it is', 'Last action'], openCases.slice(0, 5).map(function (c) { return ['<a href="javascript:void(0)" onclick="empDrill(' + nm + ',\'case\',' + esc(J(c.id)) + ')" style="color:#1e3a8a;font-weight:700;white-space:nowrap">' + esc(c.id) + '</a>', esc(c.title), '<span style="white-space:nowrap">' + fdt(cases[c.id][0].t) + '</span>']; }), 'No open cases.') + '</div>' +
       '<div style="' + CARD + ';grid-column:1/-1"><div style="' + HEAD + '">Latest notes</div>' + tbl(['When', 'Note'], x.notes.slice(0, 3).map(function (n) { return [when(n.t), esc(n.text) + '<div style="font-size:11px;color:#64748b;margin-top:3px">' + esc(n.where) + (n.edits.length ? ' · edited' : '') + '</div>']; }), 'No notes yet.') + '</div></div>' +
       '<div data-et="act" style="display:none;' + CARD + '"><div style="' + HEAD + '">Everything ' + esc(first) + ' did, newest first</div>' + tbl(['When', 'Action', 'Core', 'What happened', 'Sealed'], ev.slice(0, 80).map(evRow)) + (ev.length > 80 ? '<div style="padding:10px 14px;font-size:12px;color:#64748b">Showing the latest 80 of ' + ev.length + '. Use <strong>Full activity log</strong> to search and filter all of them.</div>' : '') + '</div>' +
