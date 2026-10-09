@@ -57227,12 +57227,42 @@ setInterval(function () {
       (D().caseChannels || []).forEach(function (c) { (c.messages || []).forEach(function (m) { out.push({ t: new Date(m.timestamp), cs: c.caseId, what: m.content, who: String(m.author || '').replace(/: Cardinal$/, ''), core: 'War room' }); }); });
       mems(o).forEach(function (m) { if (m.core === 'warroom') out.push({ t: new Date(m.timestamp), cs: String(m.caseId || '').replace(/^#/, ''), what: m.summary, who: 'Watchman', core: 'War room' }); });
     }
-    if (view === 'reports') reports(o).forEach(function (r) { out.push({ t: r.t, cs: r.cs, what: r.what, who: r.who, core: r.to, status: r.status }); });
+    if (view === 'reports') reports(o).forEach(function (r, i) { out.push({ t: r.t, cs: r.cs, what: r.what, who: r.who, core: r.to, status: r.status, ri: i }); });
     return out.sort(function (a, b) { return b.t - a.t; });
   }
   var F = window.__wm2 = window.__wm2 || { view: 'cases', cs: '', sev: '', from: '', to: '', q: '', page: 0 };
   window.wm2Set = function (k, v) { F[k] = v; F.page = 0; draw(true); };
   window.wm2Page = function (d) { F.page = Math.max(0, F.page + d); draw(true); };
+  // Click a row to open it (Brittany: "you should be able to click into the cases, war rooms, and incidents").
+  window.wm2Open = function (cs, ri) {
+    var o = org();
+    if (F.view === 'warrooms') { try { openWarRoomCase(cs); } catch (e) {} return; }
+    var c = cases(o).filter(function (x) { return x.id === cs; })[0];
+    var row = function (k, v) { return '<div class="wm2-r"><span>' + k + '</span><b>' + esc(v) + '</b></div>'; };
+    var body;
+    if (F.view === 'reports') {
+      var r = reports(o)[ri]; if (!r) return; var st = repStatus(r.status);
+      body = '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px"><div><div class="wm2-bt">Incident report \u00b7 ' + esc(r.cs) + '</div><div style="font-size:17px;font-weight:800;margin-top:4px;line-height:1.35">' + esc(r.what) + '</div></div>' + stPill(st) + '</div>' +
+        '<div style="margin-top:12px">' + row('Sent to', r.to) + row('Written by', r.who) + row('Date', dayName(r.t) + ', ' + tm(r.t)) + row('Status', r.status) + (c ? row('Who is affected', c.affected.toLocaleString() + ' \u00b7 ' + c.who) : '') + '</div>' +
+        '<div class="wm2-bt" style="margin-top:14px">What the report says</div><div style="font-size:12.5px;color:#334155;line-height:1.6;margin-top:4px">' +
+        (c ? '<b>What happened:</b> ' + esc(c.model) + ': ' + esc(c.metric) + '.<br><b>Who was affected:</b> ' + c.affected.toLocaleString() + ' (' + esc(c.who) + ').<br><b>What we did:</b> opened case ' + esc(c.id) + (c.room ? ', set up a war room,' : '') + ' and started the fix.<br><b>Next step:</b> ' + (st === 'Draft' ? 'legal review, then send.' : st === 'Done' ? 'none; this report is closed.' : 'finish the fix, then close the report.') : esc(r.what)) + '</div>';
+    } else {
+      if (!c) return;
+      var L = events(o, 'cases').filter(function (e) { return e.cs === cs; });
+      body = '<div style="display:flex;justify-content:space-between;align-items:center;gap:12px"><div><div class="wm2-bt">Case</div><div style="font-size:20px;font-weight:800">' + esc(c.id) + '</div></div><div style="display:flex;gap:6px">' + sevPill(c.sev) + stPill(c.status) + '</div></div>' +
+        '<div style="font-size:13px;color:#334155;margin:6px 0 10px;line-height:1.5">' + esc(c.model) + ': ' + esc(c.metric) + '</div>' +
+        row('Who is affected', c.affected.toLocaleString() + ' \u00b7 ' + c.who) + row('Opened', c.opened ? md(c.opened) + ', ' + c.opened.getFullYear() : '\u2013') + row('Owner', c.owner) + row('Days left to fix', c.sla == null ? '\u2013' : c.sla + (c.sla === 1 ? ' day' : ' days')) + row('War room', c.room ? 'Open' : 'None yet') +
+        '<div class="wm2-bt" style="margin-top:14px">Every step, newest first</div>' +
+        '<div style="margin-top:6px">' + L.map(function (e) { return '<div style="display:flex;gap:10px;padding:7px 0;border-top:1px dashed rgba(26,24,21,.12);font-size:12.5px"><span style="width:118px;flex-shrink:0;color:#64748b">' + md(e.t) + ', ' + tm(e.t) + '</span><span style="flex:1;color:#1a1815">' + esc(e.what) + '</span><span style="color:#64748b;white-space:nowrap">' + esc(e.core) + '</span></div>'; }).join('') + '</div>' +
+        '<div style="display:flex;gap:6px;margin-top:12px;flex-wrap:wrap">' + (c.room ? '<button type="button" class="wm2-btn dark" onclick="document.getElementById(\'wm2-modal\').remove();openWarRoomCase(\'' + c.id + '\')">Open war room \u2192</button>' : '') + '<button type="button" class="wm2-btn" onclick="document.getElementById(\'wm2-modal\').remove();cardinalEdenGo&&cardinalEdenGo(\'case\',\'Watchman\')">See in Eden</button></div>';
+    }
+    var m = document.getElementById('wm2-modal'); if (m) m.remove();
+    m = document.createElement('div'); m.id = 'wm2-modal';
+    m.style.cssText = 'position:fixed;inset:0;background:rgba(26,24,21,.45);z-index:4000;display:flex;align-items:center;justify-content:center;padding:20px';
+    m.innerHTML = '<div id="wm2" style="margin:0"><div class="wm2-box" style="width:min(680px,94vw);max-height:86vh;overflow:auto;background:#f4efe6;position:relative;padding:20px 22px"><button type="button" aria-label="Close" onclick="document.getElementById(\'wm2-modal\').remove()" style="position:absolute;top:10px;right:12px;border:none;background:none;font-size:20px;cursor:pointer;color:#64748b">\u00d7</button>' + body + '</div></div>';
+    m.addEventListener('click', function (e) { if (e.target === m) m.remove(); });
+    document.body.appendChild(m);
+  };
   window.wm2Pick = function (id) { F.cs = F.cs === id ? '' : id; F.page = 0; draw(true); };
   function sevPill(s) { var c = SEV[s] || '#64748b'; return '<span style="font-size:10.5px;font-weight:800;color:' + c + ';background:' + c + '14;border:1px solid ' + c + '40;border-radius:999px;padding:1px 8px">' + esc(s) + '</span>'; }
   function html() {
@@ -57251,7 +57281,7 @@ setInterval(function () {
     var TH = 'text-align:left;font-size:10.5px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.4px;padding:8px 12px;background:#f4efe6', TD = 'padding:9px 12px;border-top:1px solid rgba(26,24,21,.06);font-size:12.5px;vertical-align:top';
     var log = G.slice(F.page * per, F.page * per + per).map(function (g) {
       return '<div class="wm2-day"><div class="wm2-dh"><b>' + dayName(g.d) + '</b><span>' + g.items.length + (g.items.length === 1 ? ' entry' : ' entries') + ' · sealed in Echo</span></div><table style="width:100%;border-collapse:collapse"><thead><tr><th style="' + TH + ';width:84px">Time</th><th style="' + TH + ';width:110px">Case</th><th style="' + TH + '">' + (F.view === 'reports' ? 'Report' : 'What happened') + '</th><th style="' + TH + ';width:96px">Severity</th><th style="' + TH + ';width:140px">' + (F.view === 'reports' ? 'Sent to' : 'Where') + '</th><th style="' + TH + ';width:130px">Who</th><th style="' + TH + ';width:110px">Status</th></tr></thead><tbody>' +
-        g.items.map(function (e, i) { var c = byId[e.cs]; return '<tr style="background:' + (i % 2 ? '#f7f3ea' : '#fff') + ';cursor:pointer" onclick="wm2Pick(\'' + esc(e.cs) + '\')"><td style="' + TD + ';white-space:nowrap;color:#475569">' + tm(e.t) + '</td><td style="' + TD + '"><span style="font-weight:800;color:' + (c ? SEV[c.sev] : '#1a1815') + '">' + esc(e.cs) + '</span></td><td style="' + TD + ';color:#1a1815;font-weight:600">' + esc(e.what) + '</td><td style="' + TD + '">' + (c ? sevPill(c.sev) : '<span style="color:#94a3b8">\u2013</span>') + '</td><td style="' + TD + '">' + esc(e.core) + '</td><td style="' + TD + '">' + esc(e.who) + '</td><td style="' + TD + '">' + stPill(e.st) + '</td></tr>'; }).join('') + '</tbody></table></div>';
+        g.items.map(function (e, i) { var c = byId[e.cs]; return '<tr style="background:' + (i % 2 ? '#f7f3ea' : '#fff') + ';cursor:pointer" onclick="wm2Open(\'' + esc(e.cs) + '\',' + (e.ri == null ? -1 : e.ri) + ')"><td style="' + TD + ';white-space:nowrap;color:#475569">' + tm(e.t) + '</td><td style="' + TD + '"><span style="font-weight:800;color:' + (c ? SEV[c.sev] : '#1a1815') + '">' + esc(e.cs) + '</span></td><td style="' + TD + ';color:#1a1815;font-weight:600">' + esc(e.what) + '</td><td style="' + TD + '">' + (c ? sevPill(c.sev) : '<span style="color:#94a3b8">\u2013</span>') + '</td><td style="' + TD + '">' + esc(e.core) + '</td><td style="' + TD + '">' + esc(e.who) + '</td><td style="' + TD + '">' + stPill(e.st) + '</td></tr>'; }).join('') + '</tbody></table></div>';
     }).join('') || '<div style="padding:18px;color:#64748b;background:#fff;border-radius:14px">Nothing matches these filters.</div>';
     var pager = pages > 1 ? '<div class="wm2-pg"><button type="button" ' + (F.page ? '' : 'disabled') + ' onclick="wm2Page(-1)">← Newer</button><span>Page ' + (F.page + 1) + ' of ' + pages + '</span><button type="button" ' + (F.page < pages - 1 ? '' : 'disabled') + ' onclick="wm2Page(1)">Older →</button></div>' : '';
     var pick = F.cs && byId[F.cs], open = C.length;
@@ -57261,7 +57291,7 @@ setInterval(function () {
       : '<div class="wm2-box"><div class="wm2-bt">Pick a case</div><div style="font-size:12.5px;color:#334155;line-height:1.5">Click any row or a case below to see who is affected, the owner, and the days left to fix it.</div></div>') +
       '<div class="wm2-box"><div class="wm2-bt">Open cases · ' + open + '</div><div style="font-size:11px;color:#64748b;margin:2px 0 4px">Most urgent first. Use search to find any other case.</div>' + C.slice(0, 8).map(function (c) { return '<div class="wm2-case' + (F.cs === c.id ? ' on' : '') + '" onclick="wm2Pick(\'' + c.id + '\')"><span class="dot" style="background:' + SEV[c.sev] + '"></span><div style="flex:1;min-width:0"><b>' + c.id + '</b> <span style="color:#64748b">' + esc(c.model) + '</span><div style="font-size:11px;color:#64748b">' + c.affected.toLocaleString() + ' affected' + (c.sla != null ? ' · ' + c.sla + ' days left' : '') + '</div></div>' + (c.room ? '<span title="War room open" style="font-size:10px;font-weight:800;color:#B91C1C">ROOM</span>' : '') + '</div>'; }).join('') + '</div>' +
       '<div class="wm2-box"><div class="wm2-bt">What each view is</div><div style="font-size:12px;color:#334155;line-height:1.55"><b>Case:</b> one problem, tracked from the moment it is found until it is fixed.<br><b>War room:</b> the live team room and clock for a serious case.<br><b>Incident report:</b> the formal write-up sent to a regulator, the board, or a team when a rule says you must report.</div></div>';
-    return '<div class="wm2-head"><div style="font-size:12.5px;color:#64748b">' + ({ cases: 'Every step of every case, by day and time.', warrooms: 'Live team rooms for serious cases: every message, by day and time.', reports: 'Formal write-ups sent to regulators, the board, or a team.' })[F.view] + ' Narrow it with the menus.</div></div>' + ctl + '<div class="wm2-grid"><div>' + log + pager + '</div><div class="wm2-side">' + side + '</div></div>';
+    return '<div class="wm2-head"><div style="font-size:12.5px;color:#64748b">' + ({ cases: 'Every step of every case, by day and time.', warrooms: 'Live team rooms for serious cases: every message, by day and time.', reports: 'Formal write-ups sent to regulators, the board, or a team.' })[F.view] + ' Narrow it with the menus.</div></div>' + ctl + '<div>' + log + pager + '</div>';
   }
   var css = document.createElement('style');
   css.textContent = '#wm-rooms{display:none!important}#wm-bar{display:flex;gap:6px;flex-wrap:wrap;background:#ebe4d6;border-radius:14px;padding:6px;margin:6px 0 10px}#wm-bar button{flex:1;min-width:110px;font:inherit;font-size:13px;font-weight:700;border:none;background:transparent;border-radius:10px;padding:10px 12px;cursor:pointer;color:#475569}#wm-bar button.on{background:#fff;color:#1a1815;box-shadow:0 1px 3px rgba(26,24,21,.08),0 6px 14px rgba(26,24,21,.08)}#wm2{margin:6px 0 18px}#wm2 .wm2-head{display:flex;justify-content:space-between;align-items:flex-end;margin:0 0 10px}#wm2 .wm2-ctl{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:0 0 14px;font-size:12px;color:#64748b}' +
