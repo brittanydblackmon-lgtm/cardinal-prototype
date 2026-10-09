@@ -53110,8 +53110,8 @@ window.CARDINAL_PLACES = {
     cases: [['x-cases', 'All cases'], ['x-casehist', 'Case history'], ['conversations', 'Conversations'], ['ignored', 'Ignored flags']],
     models: [['x-models', 'Models and AI systems'], ['lineage', 'Version lineage']],
     people: [['x-people', 'Employees'], ['x-board', 'Team board'], ['x-customers', 'Customers'], ['x-plog', 'Employee activity log']],
-    decisions: [['receipts', 'Decision receipts']],
-    wb: [['whistleblower', 'Sealed reports']],
+    decisions: [['x-receipts', 'Decision receipts']],
+    wb: [['x-wb', 'Sealed reports']],
     desk: [['x-pins', 'Pinned memories'], ['myworkspace', 'My notes and activity']]
   };
   var NATIVE_FIRST = { cores: 'memories', hall: 'memories', cases: 'conversations', models: 'lineage', people: 'peoplelog', decisions: 'receipts', wb: 'whistleblower', desk: 'myworkspace' };
@@ -53233,6 +53233,59 @@ window.CARDINAL_PLACES = {
       '<div class="ex-bar">' + search('Search what happened') + sel('who', 'Who', Object.keys(whos).sort()) + sel('act', 'Action', Object.keys(ACT_COL)) + (core ? '' : sel('core', 'Core', CORES)) + dates() + '</div>' +
       timelineTable(list, [['When', function (e) { return '<span style="white-space:nowrap;color:#475569">' + fdt(e.t) + '</span>'; }], ['Core', function (e) { return coreTag(e.core); }], ['Who', function (e) { return '<a href="javascript:void(0)" onclick="echoEnterRoom(\'people\');echoOpen(\'person\',' + esc(JSON.stringify(e.who)).replace(/&quot;/g, '&quot;') + ')" style="color:#1a1815;font-weight:600">' + esc(e.who) + '</a>'; }], ['Action', function (e) { return pill(e.act, ACT_COL[e.act] || ACT_COL.Logged); }], ['What happened', function (e) { return esc(e.what); }], ['Sealed', function (e) { return '<span style="font-family:monospace;font-size:11px;color:#64748b">' + esc(e.seal) + '</span>'; }]]);
   }
+  var RTYPE = { counterfactual: 'Counterfactual proof', deployment: 'Deployment attestation', attestation: 'Attestation', governance: 'Governance decision', 'whistleblower-seal': 'Whistleblower seal', regulatory: 'Regulatory filing', 'case-closure': 'Case closure' };
+  function receipts() { return (window.DECISION_RECEIPTS || []).filter(function (r) { return r.industryContext === org(); }).slice().sort(function (a, b) { return new Date(b.issuedDate) - new Date(a.issuedDate); }); }
+  function rWhat(r) { var c = r.contents || {}; if (r.receiptType === 'whistleblower-seal') return 'A whistleblower report was received and sealed. Contents are hidden from everyone outside the review committee.'; return c.hypothesis || c.decision || c.summary || c.attestation || c.validationNotes || r.summary || (RTYPE[r.receiptType] || 'Receipt') + ' for ' + (r.linkedModelId || r.linkedCaseId || 'this company'); }
+  window.echoReceipt = function (id) {
+    var r = receipts().filter(function (x) { return x.receiptId === id; })[0]; if (!r) return;
+    var c = r.contents || {}, wb = r.receiptType === 'whistleblower-seal';
+    var m = document.createElement('div'); m.id = 'ex-rcpt'; m.style.cssText = 'position:fixed;inset:0;z-index:10000;background:rgba(26,24,21,.45);display:flex;align-items:center;justify-content:center;padding:16px';
+    m.onclick = function (e) { if (e.target === m) m.remove(); };
+    var kv = function (rows) { return '<table style="width:100%;border-collapse:collapse;font-size:12.5px">' + rows.map(function (x, i) { return '<tr style="background:' + (i % 2 ? '#f7f3ea' : '#fff') + '"><td style="padding:8px 14px;color:#64748b;width:38%">' + esc(x[0]) + '</td><td style="padding:8px 14px;font-weight:600">' + x[1] + '</td></tr>'; }).join('') + '</table>'; };
+    var nice = function (k) { return String(k).replace(/([A-Z])/g, ' $1').replace(/^./, function (x) { return x.toUpperCase(); }).replace(/Pct$/, '(%)'); };
+    m.innerHTML = '<div style="background:#f4efe6;border-radius:16px;box-shadow:0 24px 60px rgba(0,0,0,.3);width:min(680px,100%);max-height:90vh;overflow:auto;padding:20px 22px;color:#1a1815">' +
+      '<div style="display:flex;justify-content:space-between;gap:10px"><div><div style="font-size:11px;font-weight:800;color:#6d28d9;text-transform:uppercase;letter-spacing:.5px">' + esc(RTYPE[r.receiptType] || r.receiptType) + '</div><div style="font-family:monospace;font-size:15px;font-weight:800;margin-top:2px">' + esc(r.receiptId) + '</div><div style="font-size:12px;color:#475569;margin-top:2px">Issued ' + fdt(r.issuedDate) + ' by ' + esc(r.issuedBy || '') + '</div></div><button type="button" onclick="document.getElementById(\'ex-rcpt\').remove()" style="font:inherit;font-size:12px;font-weight:700;background:#fff;border:1px solid rgba(26,24,21,.15);border-radius:9px;padding:6px 12px;cursor:pointer;height:fit-content">Close</button></div>' +
+      '<div style="background:#fff;border-radius:12px;padding:12px 14px;margin-top:12px;font-size:13px;line-height:1.5"><div style="font-size:11px;font-weight:800;color:#6d28d9;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">What it proves</div>' + esc(rWhat(r)) + '</div>' +
+      '<div style="background:#fff;border-radius:12px;overflow:hidden;margin-top:10px">' + kv([['Case', r.linkedCaseId ? '<a href="javascript:void(0)" onclick="document.getElementById(\'ex-rcpt\').remove();echoCaseGo(' + esc(JSON.stringify(String(r.linkedCaseId).replace(/^#/, ''))) + ')" style="color:#1e3a8a">' + esc(r.linkedCaseId) + '</a>' : '—'], ['Model', esc(r.linkedModelId || '—')], ['Who can see it', esc(String(r.publicVisibility || 'internal').replace(/-/g, ' '))], ['Needs more than one signature', r.multisigRequired ? 'Yes' : 'No']].concat(wb ? [] : Object.keys(c).filter(function (k) { return typeof c[k] !== 'object'; }).map(function (k) { return [nice(k), esc(c[k])]; }))) + '</div>' +
+      '<div style="background:#fff;border-radius:12px;overflow:hidden;margin-top:10px"><div style="background:#ebe4d6;padding:8px 14px;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.5px">Signatures</div>' + kv((r.signatures || []).map(function (g) { return [g.signer, '<span style="font-family:monospace;font-size:11px">' + esc(g.sigHash || '') + '</span> · ' + fdt(g.timestamp || r.issuedDate)]; })) + '</div>' +
+      '<div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-top:12px;font-size:11.5px;color:#64748b"><span>Anchored in Echo ' + esc(r.echoMemoryAnchor || '') + '</span><span style="font-family:monospace">Hash ' + esc(String(r.hashAnchor || '').slice(0, 24)) + '</span></div></div>';
+    document.body.appendChild(m);
+  };
+  function pReceipts() {
+    var all = receipts(), f = X.f, from = f.from ? new Date(f.from) : null, to = f.to ? new Date(f.to + 'T23:59:59') : null;
+    var rows = all.filter(function (r) { return q(r) && (!f.type || (RTYPE[r.receiptType] || r.receiptType) === f.type) && (!f.cs || String(r.linkedCaseId || '').replace(/^#/, '') === f.cs) && (!from || new Date(r.issuedDate) >= from) && (!to || new Date(r.issuedDate) <= to); });
+    var types = []; all.forEach(function (r) { var t = RTYPE[r.receiptType] || r.receiptType; if (types.indexOf(t) < 0) types.push(t); });
+    var cases = []; all.forEach(function (r) { var c = String(r.linkedCaseId || '').replace(/^#/, ''); if (c && cases.indexOf(c) < 0) cases.push(c); });
+    return '<div class="ex-note">Every decision Cardinal sealed with a cryptographic receipt: counterfactual proofs, deployment attestations, governance decisions, and whistleblower seals. An examiner can check any of them without seeing private data. Click a row for the full receipt.</div>' +
+      '<div class="ex-bar">' + search('Search receipts by ID, case, model, or signer') + sel('type', 'Type', types) + sel('cs', 'Case', cases.sort()) + dates() + '</div>' +
+      '<div style="font-size:11.5px;color:#64748b;margin:0 0 8px">' + rows.length + ' of ' + all.length + ' receipts</div>' +
+      '<div class="ex-wrap"><table class="ex-tbl"><thead><tr><th>Issued</th><th>Receipt</th><th>Type</th><th>What it proves</th><th>Case</th><th>Signed by</th></tr></thead><tbody>' +
+      (rows.map(function (r) { var wb = r.receiptType === 'whistleblower-seal'; return '<tr class="ex-click" onclick="echoReceipt(' + esc(JSON.stringify(r.receiptId)) + ')"><td style="white-space:nowrap;color:#475569">' + fd(r.issuedDate) + '<div class="ex-sub">' + tm(r.issuedDate) + '</div></td><td style="font-family:monospace;font-size:11.5px;white-space:nowrap">' + esc(r.receiptId) + '</td><td>' + pill(RTYPE[r.receiptType] || r.receiptType, wb ? ['#6d28d9', '#f5f3ff'] : r.receiptType === 'counterfactual' ? ['#1d4ed8', '#eff6ff'] : r.receiptType === 'deployment' ? ['#0f766e', '#f0fdfa'] : ['#15803D', '#f0fdf4']) + '</td><td>' + esc(rWhat(r).slice(0, 140)) + '</td><td style="white-space:nowrap">' + esc(r.linkedCaseId || '—') + '</td><td>' + esc((r.signatures || []).map(function (g) { return g.signer; }).join(', ')) + '</td></tr>'; }).join('') || '<tr><td colspan="6" style="color:#64748b">Nothing matches.</td></tr>') + '</tbody></table></div>';
+  }
+  var WB_COMM = { fin: [['Riley Whitmore', 'Compliance', 'Leader'], ['Morgan Hale', 'Legal', 'Backup'], ['Priya Desai', 'HR', ''], ['Nina Roberts', 'Data Science', '']] };
+  window.echoWbReply = function (id) {
+    var rep = ((typeof WB_SEED !== 'undefined' && WB_SEED[org()]) || []).filter(function (r) { return r.id === id; })[0], i = document.getElementById('wbr-' + id); if (!rep || !i || !i.value.trim()) return;
+    var d = new Date(); rep.messages.push({ from: 'reviewer', day: MON[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear(), text: i.value.trim() }); render(true);
+    try { (window.cardinalShowToast || showToast)('Reply sent as the Review Committee. The reporter never sees names. Logged in Echo.'); } catch (e) {}
+  };
+  function pWb() {
+    var reps = (typeof WB_SEED !== 'undefined' && WB_SEED[org()]) || [], comm = WB_COMM[org()] || [['Compliance lead', 'Compliance', 'Leader'], ['Legal', 'Legal', 'Backup'], ['HR', 'HR', ''], ['Data Science', 'Data Science', '']];
+    var seals = receipts().filter(function (r) { return r.receiptType === 'whistleblower-seal'; });
+    var card = function (r) {
+      var named = comm.filter(function (c) { return JSON.stringify(r.messages).indexOf(c[0]) > -1; }), stc = /Open/i.test(r.status) ? ['#B91C1C', '#fef2f2'] : /review/i.test(r.status) ? ['#A16207', '#fefce8'] : ['#15803D', '#f0fdf4'];
+      var chips = comm.map(function (c, k) { var rec = named.some(function (n) { return n[0] === c[0]; }), lead = !rec && (c[2] === 'Leader' || (c[2] === 'Backup' && named.some(function (n) { return n[2] === 'Leader'; }))); return '<span style="font-size:11px;font-weight:700;border-radius:999px;padding:3px 10px;white-space:nowrap;' + (rec ? 'color:#B91C1C;background:#fef2f2;text-decoration:line-through' : lead ? 'color:#fff;background:#1a1815' : 'color:#1a1815;background:#f4efe6') + '">' + (lead ? 'Leads: ' : '') + esc(c[1]) + ' · ' + esc(c[0]) + (rec ? ' (recused, named in report)' : '') + '</span>'; }).join(' ');
+      return '<div style="background:#fff;border-radius:14px;padding:14px 16px;margin:0 0 12px;box-shadow:0 1px 3px rgba(26,24,21,.06),0 10px 24px rgba(26,24,21,.08)">' +
+        '<div style="display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap"><div><span style="font-family:monospace;font-weight:800">' + esc(r.id) + '</span> <span style="color:#475569">· ' + esc(r.category) + '</span></div>' + pill(r.status, stc) + '</div>' +
+        '<div style="display:flex;gap:6px;flex-wrap:wrap;margin:10px 0">' + chips + '</div>' +
+        r.messages.map(function (msg) { var me = msg.from === 'reviewer'; return '<div style="display:flex;justify-content:' + (me ? 'flex-end' : 'flex-start') + ';margin:6px 0"><div style="max-width:78%;padding:9px 12px;border-radius:12px;font-size:12.5px;line-height:1.5;' + (me ? 'background:#1a1815;color:#fff' : 'background:#f4efe6;color:#1a1815') + '"><div style="font-size:10px;font-weight:800;opacity:.7;text-transform:uppercase;letter-spacing:.4px;margin-bottom:2px">' + (me ? 'Review Committee' : 'Reporter') + ' · ' + esc(msg.day || '') + '</div>' + esc(msg.text) + '</div></div>'; }).join('') +
+        '<div style="display:flex;gap:8px;margin-top:10px"><input id="wbr-' + esc(r.id) + '" placeholder="Reply to the reporter as the Review Committee" style="flex:1;font:inherit;font-size:12.5px;padding:9px 12px;border:1px solid rgba(26,24,21,.15);border-radius:10px"><button type="button" onclick="echoWbReply(' + esc(JSON.stringify(r.id)) + ')" style="font:inherit;font-size:12px;font-weight:700;background:#1a1815;color:#fff;border:0;border-radius:10px;padding:9px 14px;cursor:pointer">Send</button></div></div>';
+    };
+    return '<div class="ex-note"><strong>Anonymous by design.</strong> You see what was reported, never who reported it. A committee from Compliance, Legal, HR, and Data Science reviews every report, and anyone named in a report is recused from it. Reporters see only "Review Committee".</div>' +
+      '<div class="ex-chips" style="margin:0 0 12px"><div class="ex-chip"><b>' + reps.length + '</b><span>Reports</span></div><div class="ex-chip"><b>' + reps.filter(function (r) { return !/closed|resolved/i.test(r.status); }).length + '</b><span>Open</span></div><div class="ex-chip"><b>' + seals.length + '</b><span>Sealed receipts</span></div></div>' +
+      reps.map(card).join('') +
+      '<div style="font-size:12px;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:.5px;margin:16px 0 8px">Sealed routing receipts</div>' +
+      '<div class="ex-wrap"><table class="ex-tbl"><thead><tr><th>Sealed</th><th>Receipt</th><th>Report</th><th>Routed to</th><th>Status</th></tr></thead><tbody>' + seals.map(function (r) { var rep = reps.filter(function (x) { return x.id === r.receiptId; })[0]; return '<tr class="ex-click" onclick="echoReceipt(' + esc(JSON.stringify(r.receiptId)) + ')"><td style="white-space:nowrap;color:#475569">' + fd(r.issuedDate) + '<div class="ex-sub">' + tm(r.issuedDate) + '</div></td><td style="font-family:monospace;font-size:11.5px">' + esc(r.receiptId) + '</td><td>' + esc(rep ? rep.category : 'Sealed report') + '</td><td>Review committee</td><td>' + pill(rep ? rep.status : 'Sealed', ['#A16207', '#fefce8']) + '</td></tr>'; }).join('') + '</tbody></table></div>';
+  }
   function pLogged() {
     var f = X.f, from = f.from ? new Date(f.from) : null, to = f.to ? new Date(f.to + 'T23:59:59') : null;
     var SEV = { critical: ['#B91C1C', '#fef2f2'], high: ['#B45309', '#fffbeb'], medium: ['#A16207', '#fefce8'], low: ['#475569', '#f1f5f9'], informational: ['#475569', '#f1f5f9'] };
@@ -53304,7 +53357,7 @@ window.CARDINAL_PLACES = {
     if (mine) {
       var ae = document.activeElement, focusPh = keepFocus && ae && ae.tagName === 'INPUT' && panel.contains(ae) ? ae.placeholder : null, caret = focusPh ? ae.selectionStart : 0;
       var slot = document.getElementById('echo-case-history'), slotKeep = X.bucket === 'x-casehist' && slot && slot.parentNode && slot.parentNode.id === 'echo-x-casehist-slot';
-      if (!slotKeep) panel.innerHTML = X.bucket === 'x-customers' ? (window.cardinalCustomerDirectory ? cardinalCustomerDirectory('echo') : '') : X.bucket.indexOf('x-core-') === 0 ? pCores() : X.bucket === 'x-people' ? pPeople() : X.bucket === 'x-cases' ? pCases() : X.bucket === 'x-models' ? pModels() : X.bucket === 'x-pins' ? pPins() : X.bucket === 'x-score' ? pScore() : X.bucket === 'x-casehist' ? pCaseHist() : X.bucket === 'x-logged' ? pLogged() : X.bucket === 'x-plog' ? pPlog() : X.bucket === 'x-board' ? '<div class="ex-note">Everyone\'s work in one place: every fix, filing, and review, by team. The same board is pinned in Trust Loop.</div>' + (window.cardinalTeamBoard ? cardinalTeamBoard('All', 'echo') : '') : '';
+      if (!slotKeep) panel.innerHTML = X.bucket === 'x-customers' ? (window.cardinalCustomerDirectory ? cardinalCustomerDirectory('echo') : '') : X.bucket.indexOf('x-core-') === 0 ? pCores() : X.bucket === 'x-people' ? pPeople() : X.bucket === 'x-cases' ? pCases() : X.bucket === 'x-models' ? pModels() : X.bucket === 'x-pins' ? pPins() : X.bucket === 'x-score' ? pScore() : X.bucket === 'x-casehist' ? pCaseHist() : X.bucket === 'x-receipts' ? pReceipts() : X.bucket === 'x-wb' ? pWb() : X.bucket === 'x-logged' ? pLogged() : X.bucket === 'x-plog' ? pPlog() : X.bucket === 'x-board' ? '<div class="ex-note">Everyone\'s work in one place: every fix, filing, and review, by team. The same board is pinned in Trust Loop.</div>' + (window.cardinalTeamBoard ? cardinalTeamBoard('All', 'echo') : '') : '';
       if (X.bucket === 'x-score') setTimeout(drawScore, 30);
       if (X.bucket === 'x-casehist') { var b = document.getElementById('echo-case-history'); if (b) b.removeAttribute('data-k'); }
       if (focusPh) { var ni = [].filter.call(panel.querySelectorAll('input'), function (i) { return i.placeholder === focusPh; })[0]; if (ni) { ni.focus(); try { ni.setSelectionRange(caret, caret); } catch (e) {} } }
@@ -54723,7 +54776,8 @@ window.CARDINAL_PLACES = {
     reps.slice(have.length).forEach(function (rep, i) {
       var first = (rep.messages || [])[0] || {}, when = Date.parse(first.day || '') || (now - (6 + i * 9) * 864e5);
       var x = tpl ? JSON.parse(JSON.stringify(tpl)) : { signatures: [] };
-      x.receiptId = rep.id; x.receiptType = 'whistleblower-seal'; x.issuedDate = new Date(when).toISOString(); x.issuedBy = 'Trust Ledger'; x.industryContext = o;
+      var wd = new Date(when); if (!wd.getHours()) wd.setHours(8 + (i * 3) % 6, 40 - i * 13 > 0 ? 40 - i * 13 : 12);
+      x.receiptId = rep.id; x.receiptType = 'whistleblower-seal'; x.issuedDate = wd.toISOString(); x.issuedBy = 'Trust Ledger'; x.industryContext = o; x.linkedCaseId = pc || null; x.linkedModelId = null; x.echoMemoryAnchor = 'echo-' + o.toUpperCase() + '-WB-' + (i + 1); x.signatures = [{ signer: 'Trust Ledger', sigHash: hex(rep.id).slice(0, 16), timestamp: new Date(wd.getTime() + 60000).toISOString() }, { signer: 'Review Committee', sigHash: hex(rep.id + 'c').slice(0, 16), timestamp: new Date(wd.getTime() + 5 * 60000).toISOString() }];
       x.summary = 'Sealed whistleblower report: ' + rep.category; x.hash = '0x' + hex(rep.id);
       R.push(x);
     });
@@ -55363,8 +55417,8 @@ window.CARDINAL_PLACES = {
       '<div style="' + CARD + '"><div style="' + HEAD + '">Today</div>' + kv([['Status', today && today.live ? 'Online' : today && today.where === 'Out of office' ? 'Out of office' : 'Offline'], ['Logged on', today && today.on ? tm(today.on) : '—'], ['Working from', today ? today.where : '—'], ['Device', today && today.on ? today.device : '—'], ['Last activity', ev[0] ? fdt(ev[0].t) : '—']]) + '</div>' +
       '<div style="' + CARD + '"><div style="' + HEAD + '">Waiting on ' + esc(first) + '</div>' + tbl(['Item', 'Since'], x.pend.map(function (y) { return [esc(y.summary.replace(/^Awaiting sign-off: /, '')), '<span style="white-space:nowrap">' + fdt(y.timestamp) + '</span>']; }), 'Nothing waiting on ' + first + '.') + '</div>' +
       '<div style="' + CARD + '"><div style="' + HEAD + '">Recent activity</div>' + tbl(['When', 'What'], ev.slice(0, 5).map(function (e) { return [when(e.t), act(e.act) + ' · ' + esc(e.what)]; })) + '</div>' +
-      '<div style="' + CARD + '"><div style="' + HEAD + '">Open cases right now</div>' + tbl(['Case', 'What it is', 'Last action'], openCases.slice(0, 5).map(function (c) { return ['<a href="javascript:void(0)" onclick="empDrill(' + nm + ',\'case\',' + esc(J(c.id)) + ')" style="color:#1e3a8a;font-weight:700;white-space:nowrap">' + esc(c.id) + '</a>', esc(c.title), '<span style="white-space:nowrap">' + fdt(cases[c.id][0].t) + '</span>']; }), 'No open cases.') + '</div>' +
-      '<div style="' + CARD + '"><div style="' + HEAD + '">Latest notes</div>' + tbl(['When', 'Note'], x.notes.slice(0, 3).map(function (n) { return [when(n.t), esc(n.text) + '<div style="font-size:11px;color:#64748b;margin-top:3px">' + esc(n.where) + (n.edits.length ? ' · edited' : '') + '</div>']; }), 'No notes yet.') + '</div></div>' +
+      '<div style="' + CARD + ';grid-column:1/-1"><div style="' + HEAD + '">Open cases right now</div>' + tbl(['Case', 'What it is', 'Last action'], openCases.slice(0, 5).map(function (c) { return ['<a href="javascript:void(0)" onclick="empDrill(' + nm + ',\'case\',' + esc(J(c.id)) + ')" style="color:#1e3a8a;font-weight:700;white-space:nowrap">' + esc(c.id) + '</a>', esc(c.title), '<span style="white-space:nowrap">' + fdt(cases[c.id][0].t) + '</span>']; }), 'No open cases.') + '</div>' +
+      '<div style="' + CARD + ';grid-column:1/-1"><div style="' + HEAD + '">Latest notes</div>' + tbl(['When', 'Note'], x.notes.slice(0, 3).map(function (n) { return [when(n.t), esc(n.text) + '<div style="font-size:11px;color:#64748b;margin-top:3px">' + esc(n.where) + (n.edits.length ? ' · edited' : '') + '</div>']; }), 'No notes yet.') + '</div></div>' +
       '<div data-et="act" style="display:none;' + CARD + '"><div style="' + HEAD + '">Everything ' + esc(first) + ' did, newest first</div>' + tbl(['When', 'Action', 'Core', 'What happened', 'Sealed'], ev.slice(0, 80).map(evRow)) + (ev.length > 80 ? '<div style="padding:10px 14px;font-size:12px;color:#64748b">Showing the latest 80 of ' + ev.length + '. Use <strong>Full activity log</strong> to search and filter all of them.</div>' : '') + '</div>' +
       '<div data-et="notes" style="display:none;' + CARD + '"><div style="' + HEAD + '">Every note and comment, with edits</div>' + tbl(['When', 'Where', 'Note'], x.notes.map(noteRow), 'No notes yet.') + '</div>' +
       '<div data-et="sign" data-disp="block" style="display:none"><div style="' + CARD + ';margin-bottom:14px"><div style="' + HEAD + '">Waiting for ' + esc(first) + '’s signature</div>' + tbl(['Item', 'Since'], x.pend.map(function (y) { return [esc(y.summary.replace(/^Awaiting sign-off: /, '')), '<span style="white-space:nowrap">' + fdt(y.timestamp) + '</span>']; }), 'Nothing waiting.') + '</div><div style="' + CARD + '"><div style="' + HEAD + '">Sign-offs given</div>' + tbl(['When', 'Core', 'What was approved', 'Sealed'], x.signs.map(function (e) { return [when(e.t), esc(e.core), esc(e.what), seal(e.seal)]; }), 'No sign-offs yet.') + '</div></div>' +
@@ -55675,7 +55729,36 @@ window.CARDINAL_PLACES = {
     '.eb2-chips{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin:2px 0 14px}.eb2-chip{background:#fff;border-radius:12px;padding:10px 12px;box-shadow:0 1px 3px rgba(26,24,21,.06),0 8px 18px rgba(26,24,21,.06)}.eb2-chip b{display:block;font-size:20px;font-weight:800;line-height:1.1}.eb2-chip span{font-size:10.5px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.4px}' +
     '.eb2-lead{font-size:15px;font-weight:700;color:#1a1815;line-height:1.5;margin:0 0 10px}.eb2-list{margin:0 0 12px;padding:0;list-style:none}.eb2-list li{position:relative;padding:6px 0 6px 20px;font-size:13.5px;color:#334155;line-height:1.5;border-top:1px solid rgba(26,24,21,.05)}.eb2-list li:before{content:"";position:absolute;left:4px;top:13px;width:7px;height:7px;border-radius:50%;background:#8b5cf6;box-shadow:0 0 0 3px rgba(139,92,246,.15)}' +
     '.eb2-next{background:#1a1815;color:#fff;border-radius:12px;padding:10px 14px;font-size:13px;line-height:1.5}.eb2-next strong{color:#c4b5fd;text-transform:uppercase;font-size:10.5px;letter-spacing:.5px;display:block;margin-bottom:2px}';
+  css.textContent +=
+    '.tsv2-eve-section{padding:14px 16px!important;background:linear-gradient(135deg,#faf5ff 0%,#ffffff 55%,#f5f3ff 100%)!important;border:1px solid rgba(124,58,237,.22)!important;box-shadow:0 2px 8px rgba(76,29,149,.10),0 22px 48px rgba(76,29,149,.20)!important;max-width:980px}' +
+    '.tsv2-eve-section .tsv2-eve-avatar{width:30px!important;height:30px!important;font-size:14px!important}.tsv2-eve-section .tsv2-eve-title{font-size:13.5px!important;color:#4c1d95!important}.tsv2-eve-section .tsv2-eve-subtitle{font-size:10.5px!important}' +
+    '.tsv2-eve-section .tsv2-eve-tabs button{font-size:11px!important;padding:4px 10px!important}.tsv2-eve-section .tsv2-eve-tabs button.active{background:linear-gradient(135deg,#8b5cf6,#6d28d9)!important}' +
+    '.tsv2-eve-section .eb2-chips{gap:6px;margin:0 0 10px}.tsv2-eve-section .eb2-chip{padding:7px 10px;border-radius:10px;border:1px solid rgba(124,58,237,.10)}.tsv2-eve-section .eb2-chip b{font-size:15px}.tsv2-eve-section .eb2-chip span{font-size:9.5px}' +
+    '.tsv2-eve-section .eb2-lead{font-size:13px;margin:0 0 6px}.tsv2-eve-section .eb2-list li{font-size:12px;padding:4px 0 4px 18px}.tsv2-eve-section .eb2-list li:before{top:10px;width:6px;height:6px;background:linear-gradient(135deg,#a78bfa,#6d28d9)}' +
+    '.tsv2-eve-section .eb2-next{font-size:12px;padding:8px 12px;background:linear-gradient(135deg,#4c1d95,#1a1815)}.tsv2-eve-section .tsv2-eve-btn{font-size:11.5px!important;padding:7px 12px!important}';
   document.head.appendChild(css);
+
+  // Atonement: keep the summary and the tab row above the tab content.
+  setInterval(function () {
+    var s = document.getElementById('screen-atonement'); if (!s || s.offsetParent === null) return;
+    var eve = document.getElementById('at-eve-sum'), bar = s.querySelector(':scope > .core-tabbar'); if (!eve || !bar || eve.parentNode !== s) return;
+    var kids = [].slice.call(s.children), ie = kids.indexOf(eve), ib = kids.indexOf(bar);
+    var firstContent = kids.filter(function (c) { return c !== eve && c !== bar && !c.classList.contains('section-hdr') && c.offsetParent !== null && kids.indexOf(c) > 0; })[0];
+    if (firstContent && (kids.indexOf(firstContent) < ie || kids.indexOf(firstContent) < ib)) { s.insertBefore(eve, firstContent); s.insertBefore(bar, firstContent); }
+    else if (ib < ie) s.insertBefore(eve, bar);
+  }, 500);
+
+  // Genesis: Ask Adam sits under the search bar, full width.
+  setInterval(function () {
+    var w = document.getElementById('gnws'); if (!w || w.offsetParent === null) return;
+    var list = w.querySelector('.gn-list'); if (!list) return;
+    var blk = list; while (blk.parentNode && blk.parentNode !== w) blk = blk.parentNode;
+    var ask = [].filter.call(w.querySelectorAll('div'), function (d) { return /^Ask Adam/.test((d.innerText || '').trim()) && d.querySelector('textarea') && !d.contains(list) && d.parentNode && !/^Ask Adam/.test((d.parentNode.innerText || '').trim().slice(0, 8) && d.parentNode !== blk ? '' : ''); })[0];
+    if (!ask) return;
+    while (ask.parentNode && ask.parentNode !== blk && ask.parentNode !== w) ask = ask.parentNode;
+    if (ask.parentNode === blk) { w.insertBefore(ask, blk); blk.style.gridTemplateColumns = '1fr'; }
+    if (!ask.__r) { ask.__r = 1; ask.style.margin = '0 0 12px'; var ta = ask.querySelector('textarea'), btn = ask.querySelector('button'); if (ta && btn) { ta.rows = 1; ta.style.minHeight = '38px'; var row = document.createElement('div'); row.style.cssText = 'display:flex;gap:8px;align-items:stretch'; ta.parentNode.insertBefore(row, ta); row.appendChild(ta); row.appendChild(btn); ta.style.flex = '1'; btn.style.width = 'auto'; btn.style.whiteSpace = 'nowrap'; btn.style.padding = '0 16px'; } }
+  }, 600);
 
   function chips() {
     var d = ((window.CARDINAL_DATA || {})[org()]) || {}, out = [];
