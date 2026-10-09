@@ -56120,6 +56120,7 @@ window.CARDINAL_PLACES = {
   var WHY = {
     fin: { Gender: 'Men are denied more often mostly on debt-to-income; Eden is checking whether income stand-ins drive the gap.', Age: 'Older applicants on fixed incomes are denied more often on debt-to-income. They are part of the FIN-1203 re-review.', 'Race and ethnicity': 'The Hispanic gap comes from ZIP code acting as a stand-in for race in Credit Scoring v3.4 (case FIN-1203). The Other gap is a training-data gap: almost no examples of that group (TEST-628).' }
   };
+  window.cardinalDemoWhy = WHY;
   function rowContext(o, dim, list, basev, baseName) {
     var below = [], watch = [];
     list.forEach(function (x) { if (x[2]) return; var r = x[1] / basev; if (r < 0.8) below.push(x[0] + ' (' + r.toFixed(2) + ')'); else if (r < 0.9) watch.push(x[0] + ' (' + r.toFixed(2) + ')'); });
@@ -56399,35 +56400,35 @@ window.CARDINAL_PLACES = {
   function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;'); }
   var css = document.createElement('style');
   css.textContent = '#demo-circles .demo-body{display:flex;gap:18px;align-items:center}#demo-circles .demo-body>.g-row{flex:1 1 auto;min-width:0;flex-wrap:nowrap!important;gap:12px!important}#demo-circles .demo-body .g-unit.ds-fit .g-disc{width:100%!important;max-width:118px;height:auto!important}#demo-circles .demo-body .g-unit.ds-fit .g-delta,#demo-circles .demo-body .g-unit.ds-fit .g-sub{font-size:10.5px;line-height:1.3}' +
-    '#demo-circles .demo-side{flex:0 0 270px;background:#f4efe6;border:1px solid rgba(26,24,21,.08);border-radius:16px;padding:14px 16px 12px;margin:0 0 8px}' +
-    '#demo-circles .ds-t{font-size:12px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#1a1815}#demo-circles .ds-s{font-size:11.5px;color:#64748b;margin:2px 0 8px}' +
+    '#demo-circles .demo-ctx{display:none!important}#demo-circles .demo-side{order:-1;flex:0 0 290px;background:#f4efe6;border:1px solid rgba(26,24,21,.08);border-radius:16px;padding:14px 16px 12px;margin:0 0 8px}' +
+    '#demo-circles .ds-big{font-size:20px;font-weight:800;margin:8px 0 0;font-family:Georgia,serif}#demo-circles .ds-p{font-size:12.5px;color:#334155;line-height:1.5;padding:7px 0;border-top:1px dashed rgba(26,24,21,.12)}#demo-circles .ds-p b{color:#1a1815}#demo-circles .ds-t{font-size:12px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#1a1815}#demo-circles .ds-s{font-size:11.5px;color:#64748b;margin:2px 0 8px}' +
     '#demo-circles .ds-r{display:flex;justify-content:space-between;gap:10px;font-size:12.5px;color:#334155;padding:7px 0;border-top:1px dashed rgba(26,24,21,.12)}#demo-circles .ds-r b{font-weight:800;color:#1a1815;text-align:right;white-space:nowrap}' +
     '#demo-circles .ds-btn{display:block;width:100%;margin-top:8px;font:inherit;font-size:11.5px;background:#fff;border:1px solid rgba(26,24,21,.12);border-radius:8px;padding:6px;cursor:pointer;color:#1a1815}' +
     '@media (max-width:900px){#demo-circles .demo-body{flex-direction:column;align-items:stretch}#demo-circles .demo-side{flex:none}#demo-circles .demo-body>.g-row{flex-wrap:wrap!important}}';
   document.head.appendChild(css);
   var CASES = { fin: { Gender: 'Eden review, no case', Age: 'FIN-1203', 'Race and ethnicity': 'FIN-1203, TEST-628' } };
   function when(t) { var d = new Date(t), n = new Date(), h = d.getHours(), m = d.getMinutes(), tm = ((h % 12) || 12) + ':' + (m < 10 ? '0' : '') + m + (h < 12 ? ' AM' : ' PM'); var dd = Math.round((new Date(n.getFullYear(), n.getMonth(), n.getDate()) - new Date(d.getFullYear(), d.getMonth(), d.getDate())) / 864e5); return (dd === 0 ? 'Today' : dd === 1 ? 'Yesterday' : ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()] + ' ' + d.getDate()) + ', ' + tm; }
+  var DOING = { fin: { Gender: 'Eden is watching this row. A case opens automatically if the ratio drops under 0.80.', Age: 'Older applicants are part of the FIN-1203 re-review, and v3.5 is in shadow testing.', 'Race and ethnicity': 'v3.5 drops the ZIP code feature (FIN-1203). Genesis is adding training data for Other (TEST-628).' } };
   function side(o, dim) {
     var G = window.cardinalDemoGroups && window.cardinalDemoGroups(o), L = (window.cardinalDemoLog && window.cardinalDemoLog(o)) || [];
     if (!G || !G[dim]) return '';
     var list = G[dim], base = list.filter(function (x) { return x[2]; })[0] || list[0], others = list.filter(function (x) { return x !== base; });
     var worst = others.reduce(function (a, b) { return !a || b[1] < a[1] ? b : a; }, null), wr = worst ? worst[1] / base[1] : 1;
-    var below = others.filter(function (x) { return x[1] / base[1] < 0.8; }).length;
     var cut = Date.now() - 7 * 864e5, cut30 = Date.now() - 30 * 864e5, D = L.filter(function (e) { return e.dim === dim; });
     var big = null; list.forEach(function (x) { var w = D.filter(function (e) { return e.group === x[0] && e.t >= cut; }); if (!w.length) return; var ch = Math.round((w[0].to - w[w.length - 1].from) * 10) / 10; if (!big || Math.abs(ch) > Math.abs(big[1])) big = [x[0], ch]; });
     var decided = D.filter(function (e) { return e.t >= cut30; }).reduce(function (s, e) { return s + (e.decided || 0); }, 0);
-    var cs = (CASES[o] || {})[dim] || String(((window.CARDINAL_DATA || {})[o] || {}).primaryCase || 'None open');
-    var col = function (r) { return r < 0.8 ? '#B91C1C' : r < 0.9 ? '#A16207' : '#15803D'; };
-    var row = function (k, v) { return '<div class="ds-r"><span>' + esc(k) + '</span><b>' + v + '</b></div>'; };
-    return '<div class="ds-t">' + esc(dim) + ' at a glance</div><div class="ds-s">What stands out in this row</div>' +
-      row('Comparison group', esc(base[0]) + ' ' + (+base[1]).toFixed(1) + '%') +
-      (worst ? row('Widest gap', '<span style="color:' + col(wr) + '">' + esc(worst[0]) + ' · ' + wr.toFixed(2) + '</span>') : '') +
-      row('Below the 0.80 line', below ? '<span style="color:#B91C1C">' + below + (below === 1 ? ' group' : ' groups') + '</span>' : '<span style="color:#15803D">None</span>') +
-      row('Biggest move this week', big && Math.abs(big[1]) >= 0.05 ? esc(big[0]) + ' <span style="color:' + (big[1] > 0 ? '#15803D' : '#B91C1C') + '">' + (big[1] > 0 ? '▲ +' : '▼ ') + big[1].toFixed(1) + ' pts</span>' : 'No change') +
-      row('Decisions counted, 30 days', decided.toLocaleString()) +
-      (D.length ? row('Last change', when(D[0].t)) : '') +
-      row('Linked case', esc(cs)) +
-      '<button type="button" class="ds-btn" onclick="showScreen(\'eden\')">Open Eden Core →</button>';
+    var col = wr < 0.8 ? '#B91C1C' : wr < 0.9 ? '#A16207' : '#15803D';
+    var verdict = wr < 0.8 ? 'That fails the four-fifths rule.' : wr < 0.9 ? 'Above the line, but worth watching.' : 'Within a healthy range.';
+    var why = ((window.cardinalDemoWhy || {})[o] || {})[dim] || 'Eden is tracking this row against ' + base[0] + '.';
+    var doing = (DOING[o] || {})[dim] || ('Tracked in Eden' + (((window.CARDINAL_DATA || {})[o] || {}).primaryCase ? ', case ' + ((window.CARDINAL_DATA || {})[o] || {}).primaryCase : '') + '.');
+    var p = function (k, v) { return '<div class="ds-p"><b>' + k + '</b> ' + v + '</div>'; };
+    return '<div class="ds-t">' + esc(dim) + ': the story</div>' +
+      '<div class="ds-big" style="color:' + col + '">' + (worst ? esc(worst[0]) + ' \u00b7 ' + wr.toFixed(2) : 'No gap') + '</div><div class="ds-s">' + verdict + '</div>' +
+      p('What we see:', esc(base[0]) + ' are approved most, at ' + (+base[1]).toFixed(1) + '%.' + (worst ? ' ' + esc(worst[0]) + ' trail at ' + (+worst[1]).toFixed(1) + '%.' : '')) +
+      p('Why:', esc(why)) +
+      p('This week:', big && Math.abs(big[1]) >= 0.05 ? esc(big[0]) + ' moved most, <span style="color:' + (big[1] > 0 ? '#15803D' : '#B91C1C') + ';font-weight:700">' + (big[1] > 0 ? '\u25B2 +' : '\u25BC ') + big[1].toFixed(1) + ' pts</span>, out of ' + decided.toLocaleString() + ' decisions in the last 30 days.' : 'No group moved. ' + decided.toLocaleString() + ' decisions in the last 30 days.') +
+      p('What is being done:', esc(doing)) +
+      '<button type="button" class="ds-btn" onclick="showScreen(\'eden\')">Open Eden Core \u2192</button>';
   }
   function tick() {
     var host = document.getElementById('demo-circles'); if (!host || host.offsetParent === null) return;
@@ -56442,6 +56443,61 @@ window.CARDINAL_PLACES = {
     });
   }
   setInterval(tick, 700);
+})();
+// 10/9 (Brittany: "these two go together so combine and clean up so it looks like the style"). The weakest-group box
+// and the geography chart become one card in the same style as the circle rows: a heading, one line of context, the
+// state chart with the selected state's details in a beige side card, then the weakest group's details below.
+(function () {
+  var css = document.createElement('style');
+  css.textContent = '#demo-where{text-align:left!important;padding:12px 14px 10px!important;border-radius:14px!important;box-shadow:0 1px 3px rgba(26,24,21,.06),0 10px 24px rgba(26,24,21,.07)!important;border:none!important;margin-top:0!important}' +
+    '#demo-where>div:not(.dw-keep){display:none!important}#demo-where .dw-h{font-size:11.5px;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:.6px;margin:0 0 4px}#demo-where .dw-ctx{font-size:12.5px;color:#334155;line-height:1.5;margin:0 0 8px}' +
+    '#demo-where .dw-body{display:flex;gap:18px;align-items:center}#demo-where .dw-body>#dash-demo-geo-map{flex:1 1 auto;min-width:0;margin:0!important}#demo-where .dw-body>#dash-demo-geo-detail{flex:0 0 300px;margin:0!important}' +
+    '#dash-demo-geo-map>div:nth-child(-n+2){display:none!important}' +
+    '#dash-demo-geo-detail>div,#demo-where #dash-demo-group-detail>div{max-width:none!important;margin:0!important;border-top:1px solid rgba(26,24,21,.08)!important;border-right:1px solid rgba(26,24,21,.08)!important;border-bottom:1px solid rgba(26,24,21,.08)!important;border-left-width:4px!important;background:#f4efe6!important;border-radius:16px!important;padding:14px 16px!important}' +
+    '#dash-demo-geo-detail>div>div:first-child{font-size:12px!important;letter-spacing:.3px}#dash-demo-geo-detail>div>div,#demo-where #dash-demo-group-detail>div>div{white-space:normal!important}' +
+    '#demo-where #dash-demo-group-detail{background:none!important;border:none!important;box-shadow:none!important;padding:0!important;margin:12px 0 4px!important}#demo-where .dw-sub{font-size:11px;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:.6px;margin:14px 0 6px}' +
+    '@media (max-width:900px){#demo-where .dw-body{flex-direction:column;align-items:stretch}#demo-where .dw-body>#dash-demo-geo-detail{flex:none}}';
+  document.head.appendChild(css);
+  function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;'); }
+  function tick() {
+    var map = document.getElementById('dash-demo-geo-map'); if (!map || map.offsetParent === null && !document.getElementById('demo-where')) return;
+    var card = document.getElementById('demo-where') || map.closest('div[onclick]') || map.parentNode;
+    if (!card || card.id === 'dash-demographic-panel') return;
+    card.id = 'demo-where';
+    var det = document.getElementById('dash-demo-geo-detail'), grp = document.getElementById('dash-demo-group-detail');
+    var h = card.querySelector('.dw-h');
+    if (!h) { h = document.createElement('div'); h.className = 'dw-h dw-keep'; h.textContent = 'Where the gaps are, and why'; card.insertBefore(h, card.firstChild); var c = document.createElement('div'); c.className = 'dw-ctx dw-keep'; h.after(c); }
+    var body = card.querySelector('.dw-body');
+    if (!body) { body = document.createElement('div'); body.className = 'dw-body dw-keep'; card.querySelector('.dw-ctx').after(body); }
+    if (map.parentNode !== body) body.appendChild(map);
+    if (det && det.parentNode !== body) body.appendChild(det);
+    var sub = card.querySelector('.dw-sub');
+    if (!sub) { sub = document.createElement('div'); sub.className = 'dw-sub dw-keep'; sub.textContent = 'Group with the lowest approval'; body.after(sub); }
+    if (grp && grp.parentNode !== card) { grp.classList.add('dw-keep'); sub.after(grp); }
+    if (grp) grp.classList.add('dw-keep');
+    var head = (map.children[0] && map.children[0].tagName === 'DIV') ? map.children[0].textContent.trim() : '';
+    var gt = grp && grp.querySelector('div>div') ? grp.querySelector('div>div').textContent.trim().split(/\s{2,}| (?=\d+\.\d+ pts)/)[0] : '';
+    var ctx = (head ? '<strong style="color:#B91C1C">' + esc(head.replace(/\.$/, '')) + '.</strong> ' : '') + (gt ? 'The lowest group overall is ' + esc(gt.replace(':', ' at')) + '. ' : '') + 'Pick a state in the chart to see its details on the right.';
+    var cx = card.querySelector('.dw-ctx'); if (cx.innerHTML !== ctx) cx.innerHTML = ctx;
+  }
+  setInterval(tick, 700);
+})();
+// 10/9 (Brittany: "what to do with the two boxes"). "What this tells you" repeated the lowest-group box and the
+// race card, so it is hidden. The disparities list becomes one clean "The short version" card at the top.
+(function () {
+  var css = document.createElement('style');
+  css.textContent = '#dash-demographic-panel #pg-summary{display:none!important}' +
+    '#dash-short{padding:12px 14px 8px!important;box-shadow:0 1px 3px rgba(26,24,21,.06),0 10px 24px rgba(26,24,21,.07)!important;border:none!important}' +
+    '#dash-demo-disparity-callout-head{font-size:11.5px!important;font-weight:800!important;color:#475569!important;text-transform:uppercase;letter-spacing:.6px!important;margin:0 0 2px!important}' +
+    '#dash-short .ds-intro{font-size:12.5px;color:#334155;margin:0 0 6px}#dash-impacted-groups{gap:0!important}#dash-impacted-groups>div{font-size:12.5px!important;padding:8px 0;border-top:1px dashed rgba(26,24,21,.12)}#dash-impacted-groups>div>span:nth-child(2){color:#1a1815!important;font-size:12.5px!important}';
+  document.head.appendChild(css);
+  setInterval(function () {
+    var h = document.getElementById('dash-demo-disparity-callout-head'); if (!h) return;
+    var c = h.parentNode; if (c.id !== 'dash-short') c.id = 'dash-short';
+    if (h.textContent !== 'The short version') h.textContent = 'The short version';
+    if (!c.querySelector('.ds-intro')) { var i = document.createElement('div'); i.className = 'ds-intro'; i.textContent = 'The groups that need attention right now. Each row below tells the full story for gender, age, and race.'; h.after(i); }
+    [].forEach.call(document.querySelectorAll('#dash-impacted-groups>div>span:nth-child(2)'), function (sp) { var t = sp.textContent, n = t.replace(/(-?\d+)% approval rate vs white baseline/, function (m, x) { return 'approved ' + Math.abs(+x) + ' pts below White'; }).replace(/(-?\d+)% approval rate$/, function (m, x) { return 'approved ' + Math.abs(+x) + ' pts below the baseline'; }); if (n !== t) sp.textContent = n; });
+  }, 700);
 })();
 
 </script>
