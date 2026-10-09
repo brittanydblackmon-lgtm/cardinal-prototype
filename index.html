@@ -6554,7 +6554,7 @@ Settings
 <div style="font-size:20px"></div>
 <div style="flex:1">
 <div style="font-size:12px;font-weight:600;color:var(--chrome2);margin-bottom:4px">Automatic Remediation Cohorts</div>
-<div style="font-size:11px;color:var(--muted2);line-height:1.65">When bias is detected and fixed, Atonement automatically generates a list of affected individuals for re-evaluation. Compliance officer downloads CSV or pushes to CRM for re-engagement. Every re-evaluation tracked for regulatory audit trail.</div>
+<div style="font-size:11px;color:var(--muted2);line-height:1.65">When bias is detected and fixed, Atonement automatically generates a list of affected individuals for re-evaluation. Compliance officer downloads CSV or pushes to Salesforce for re-engagement. Every re-evaluation tracked for regulatory audit trail.</div>
 </div>
 <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:flex-end">
 <button class="btn-primary" style="font-size:11px;white-space:nowrap" onclick="downloadCohortCSV()">⬇ Download All Cohorts</button>
@@ -6589,7 +6589,7 @@ Settings
 <div style="display:flex;gap:6px;flex-wrap:wrap">
 <button type="button" style="border:1px solid #22c55e;color:#22c55e;background:transparent;border-radius:8px;padding:8px 16px;font-size:11px;cursor:pointer;font-family:var(--sans);flex:1;min-width:120px" onclick="exportCohortCSV()">Export Cohort CSV →</button>
 <button class="btn-ghost" style="flex:1;font-size:10px;min-width:100px" onclick="downloadCohortCSV()">⬇ CSV</button>
-<button class="btn-ghost" style="flex:1;font-size:10px" onclick="pushToSalesforce()">→ CRM</button>
+<button class="btn-ghost" style="flex:1;font-size:10px" onclick="pushToSalesforce()">→ Salesforce</button>
 </div>
 </div>
 </div>
@@ -8546,7 +8546,7 @@ Template Overview
 
 <div style="display:flex;gap:8px">
 <button class="btn-ghost" style="font-size:11px" onclick="exportLibrary()">⬇ Export All</button>
-<button class="btn-primary" style="font-size:11px" onclick="pushAllToSalesforce()">→ Push to CRM</button>
+<button class="btn-primary" style="font-size:11px" onclick="pushAllToSalesforce()">→ Push to Salesforce</button>
 </div>
 <div id="cohort-detail-grid"></div>
 </div>
@@ -8709,9 +8709,9 @@ Template Overview
 <div style="flex:1;min-width:160px">
 <div style="font-size:10px;color:var(--muted2);margin-bottom:5px;font-weight:500">Push to Platform</div>
 <select id="ml-push-platform" style="width:100%;background:var(--bg3);border:1px solid rgba(167, 167, 167,.12);border-radius:7px;padding:8px 10px;color:var(--text);font-size:11px;font-family:var(--sans)">
-<option>CRM marketing tool</option>
+<option>Salesforce Marketing Cloud</option>
 <option>HubSpot</option>
-<option>Email platform</option>
+<option>Marketo</option>
 <option>Braze</option>
 <option>CSV Download</option>
 </select>
@@ -26284,7 +26284,7 @@ window.atonementSignOffBlocked = function(queueId) {
 
 window.atonementExportCohort = function() {
   try {
-    if (typeof showToast === 'function') showToast('Cohort exported', 'CSV generated · CRM push available · audit trail logged');
+    if (typeof showToast === 'function') showToast('Cohort exported', 'CSV generated · Salesforce push available · audit trail logged');
   } catch(e){ console.warn('atonementExportCohort error', e); }
 };
 // ══ END ATONEMENT DEEP VIEW ══
@@ -29725,7 +29725,7 @@ const ATONEMENT_DATA = {
  ],
  defenseIntro:'Class-action lawsuit claims systematic ZIP code discrimination in credit scoring. Legal team retrieves Cohort #AT-1203 proving: bias detected within 24 hours, all 1,203 applicants re-evaluated, 687 approved, $2.1M revenue recovered. Settlement reduced from $12M to $2M.',
  case1:{title:'Credit Card Gender Bias: Settlement',detail:'Credit card model denied 1,203 women at 1.8x rate (head-of-household proxy). Atonement auto-generated Cohort #3104 after fix. 687 approved on re-review (57%). $2.1M revenue recovered.',before:'$12M lawsuit exposure',after:'$2M settlement + $2.1M revenue recovered',c:'green'},
- case2:{title:'Auto Loan Geographic Bias: Class Action Defense',detail:'Auto loan model denied rural applicants at 2.4x rate (distance-to-branch feature). 2,147 affected over 6 months. Cohort #4289 pushed to CRM. 1,294 approved (60%). $15M class-action prevented.',before:'$15M class-action lawsuit',after:'Settled for $1.8M + documented remediation',c:'green'},
+ case2:{title:'Auto Loan Geographic Bias: Class Action Defense',detail:'Auto loan model denied rural applicants at 2.4x rate (distance-to-branch feature). 2,147 affected over 6 months. Cohort #4289 pushed to Salesforce. 1,294 approved (60%). $15M class-action prevented.',before:'$15M class-action lawsuit',after:'Settled for $1.8M + documented remediation',c:'green'},
  echoTrail:[
  {time:'' + __cdr('Jan 15','fin') + ' 11:22',event:'ZIP code bias detected: Credit Scoring v3.4',ref:'Case #FIN-1203',c:'red'},
  {time:'' + __cdr('Jan 15','fin') + ' 11:23',event:'Cohort #AT-1203 auto-generated (1,203 applicants)',ref:'Cohort auto',c:'blue'},
@@ -29902,7 +29902,7 @@ function buildAtonement(org) {
  </div>
  <div style="display:flex;gap:6px">
  <button class="btn-ghost" style="flex:1;font-size:10px" onclick="downloadCohortCSV()">⬇ Download CSV</button>
- <button class="btn-ghost" style="flex:1;font-size:10px" onclick="pushToSalesforce()">→ CRM</button>
+ <button class="btn-ghost" style="flex:1;font-size:10px" onclick="pushToSalesforce()">→ Salesforce</button>
  <button class="btn-ghost" style="flex:1;font-size:10px" onclick="switchAtTab('defense',4)"> Legal report</button>
  </div>
  </div>`).join('');
@@ -30051,7 +30051,7 @@ function downloadCohortCSV() {
 }
 
 function pushToSalesforce() {
- addEveMsg('eve', 'Remediation cohort pushed to CRM. "Second Look" campaign triggered for all affected individuals. I will track re-engagement and report completion rates back here.', null, null, true);
+ addEveMsg('eve', 'Remediation cohort pushed to Salesforce. "Second Look" campaign triggered for all affected individuals. I will track re-engagement and report completion rates back here.', null, null, true);
  const panel = document.getElementById('eve-panel');
  if(panel) panel.classList.add('open');
  if(!eveInitialized) eveInitialized = true;
@@ -36225,7 +36225,7 @@ var PIPELINE_SOURCE_STATUS = {
     { connector: 'Google BigQuery (digital funnel and marketing)', status: 'connected', lastSync: '2026-09-26T04:02:00Z', records: 2840115, format: 'JSON' },
     { connector: 'AWS S3 (model files and decision logs)', status: 'connected', lastSync: '2026-09-25T23:55:00Z', records: 18420, format: 'CSV, ONNX' },
     { connector: 'Azure OpenAI (Pre-qual Chatbot transcripts)', status: 'connected', lastSync: '2026-09-25T22:30:00Z', records: 96540, format: 'JSONL' },
-    { connector: 'CRM (servicing and complaints)', status: 'not_connected', lastSync: null, records: 0, format: '—' }
+    { connector: 'Salesforce (servicing and complaints)', status: 'not_connected', lastSync: null, records: 0, format: '—' }
   ],
   health: [
     { connector: 'AWS S3 & Bedrock', status: 'connected', lastSync: '2026-09-25T14:30:00Z', records: 68910, format: 'Parquet' },
@@ -37192,7 +37192,7 @@ function pushToLedger(){
 const COHORT_LIBRARY_DATA = {
  ad:{
  cohorts:[
- {id:'#AT-0847',type:'remediation',typeLabel:'Remediation',title:'Personnel Assignment: Minority Technicians',period:__cdmText('Jan–Mar 2026','story'),size:847,done:412,rate:'48.6%',status:'In Progress',c:'amber',group:'Minority Technicians, Group A',push:['CRM','CSV']},
+ {id:'#AT-0847',type:'remediation',typeLabel:'Remediation',title:'Personnel Assignment: Minority Technicians',period:__cdmText('Jan–Mar 2026','story'),size:847,done:412,rate:'48.6%',status:'In Progress',c:'amber',group:'Minority Technicians, Group A',push:['Salesforce','CSV']},
  {id:'#TEST-614',type:'test',typeLabel:'Test Cohort',title:'Native American Technicians: Coverage Gap',period:__cdmText('Apr 2026','story'),size:200,done:0,rate:'Testing',status:'Running',c:'blue',group:'Native American Technicians',push:['CSV']},
  {id:'#TEST-615',type:'test',typeLabel:'Test Cohort',title:'Female Combat Roles: Coverage Gap',period:__cdmText('Apr 2026','story'),size:350,done:350,rate:'2.8x bias found',status:'Complete',c:'red',group:'Female Combat Roles',push:['CSV']},
  {id:'#TEST-616',type:'test',typeLabel:'Test Cohort',title:'Age 55+ Remote Personnel',period:__cdmText('Apr 2026','story'),size:400,done:400,rate:'Passing DI 0.87',status:'Complete',c:'green',group:'Age 55+ Remote',push:['CSV']},
@@ -37220,21 +37220,21 @@ const COHORT_LIBRARY_DATA = {
  biasReduceDesc:'Personnel Assignment model bias reduction documented for DoD compliance audit. Version comparison admissible as regulatory evidence.',
  crossTeamAlert:'Personnel Assignment v2.4 removed demographic_classification (protected attribute correlation: 0.81). Mission Readiness v1.1 still uses similar classification feature. Recommend review before next deployment.',
  apiPlatforms:[
- {name:'CRM',status:'Connected',icon:'',lastSync:'' + __cdr('Apr 5, 2026','ad') + '',c:'green'},
+ {name:'Salesforce',status:'Connected',icon:'',lastSync:'' + __cdr('Apr 5, 2026','ad') + '',c:'green'},
  {name:'ServiceNow',status:'Connected',icon:'',lastSync:'' + __cdr('Apr 3, 2026','ad') + '',c:'green'},
  {name:'HubSpot',status:'Not Connected',icon:'',lastSync:'—',c:'muted'},
  ],
  apiActivity:[
- {time:'' + __cdr('Apr 5','ad') + '',action:'Remediation Cohort #AT-0847 pushed to CRM',size:'847 records',c:'green'},
+ {time:'' + __cdr('Apr 5','ad') + '',action:'Remediation Cohort #AT-0847 pushed to Salesforce',size:'847 records',c:'green'},
  {time:'Apr 3',action:'Coverage Gap Report exported: CSV',size:'3 gap groups',c:'blue'},
  {time:'' + __cdr('Mar 28','ad') + '',action:'Test Cohort #TEST-615 results exported',size:'350 records',c:'green'},
  ],
  },
  fin:{
  cohorts:[
- {id:'#AT-1203',type:'remediation',typeLabel:'Remediation',title:'Credit Scoring: ZIP Code Proxy (Hispanic/Black)',period:__cdmText('Jan–Mar 2026','story'),size:1203,done:687,rate:'57.1%',status:'In Progress',c:'green',group:'Hispanic + Black applicants, low-income ZIPs',push:['CRM','HubSpot','CSV']},
- {id:'#AT-1204',type:'remediation',typeLabel:'Remediation',title:'Auto Loan: Geographic Distance Bias',period:__cdmText('Sep 2025–Feb 2026','story'),size:2147,done:1294,rate:'60.3%',status:'Complete',c:'green',group:'Rural applicants, distance-to-branch proxy',push:['CRM','CSV']},
- {id:'#MARKETING-401',type:'marketing',typeLabel:'Marketing Cohort',title:'Campaign Gap: Hispanic Ages 25-35 (7M → 6M)',period:__cdmText('Mar 2026','story'),size:1000000,done:980000,rate:'98%',status:'Complete',c:'green',group:'Hispanic, Ages 25-35, 1M not reached',push:['CRM marketing tool','Email platform','CSV']},
+ {id:'#AT-1203',type:'remediation',typeLabel:'Remediation',title:'Credit Scoring: ZIP Code Proxy (Hispanic/Black)',period:__cdmText('Jan–Mar 2026','story'),size:1203,done:687,rate:'57.1%',status:'In Progress',c:'green',group:'Hispanic + Black applicants, low-income ZIPs',push:['Salesforce','HubSpot','CSV']},
+ {id:'#AT-1204',type:'remediation',typeLabel:'Remediation',title:'Auto Loan: Geographic Distance Bias',period:__cdmText('Sep 2025–Feb 2026','story'),size:2147,done:1294,rate:'60.3%',status:'Complete',c:'green',group:'Rural applicants, distance-to-branch proxy',push:['Salesforce','CSV']},
+ {id:'#MARKETING-401',type:'marketing',typeLabel:'Marketing Cohort',title:'Campaign Gap: Hispanic Ages 25-35 (7M → 6M)',period:__cdmText('Mar 2026','story'),size:1000000,done:980000,rate:'98%',status:'Complete',c:'green',group:'Hispanic, Ages 25-35, 1M not reached',push:['Salesforce Marketing Cloud','Marketo','CSV']},
  {id:'#TEST-491',type:'test',typeLabel:'Test Cohort',title:'Rural Hispanic Women 50-65: Coverage Gap',period:__cdmText('Apr 2026','story'),size:300,done:300,rate:'45% vs 68%: BIAS',status:'Complete',c:'red',group:'Rural Hispanic Women, 50-65',push:['CSV']},
  {id:'#TEST-492',type:'test',typeLabel:'Test Cohort',title:'Pacific Islander Applicants: 44x Underrepresented',period:__cdmText('Apr 2026','story'),size:500,done:500,rate:'3.2x denial: BIAS',status:'Complete',c:'red',group:'Pacific Islander Applicants',push:['CSV']},
  {id:'#SYN-189',type:'synthetic',typeLabel:'Synthetic Personas',title:'Synthetic Identity Ring: 47 Apps, 1 iPhone',period:'' + __cdr('Apr 3, 2026','fin') + '',size:200,done:200,rate:'Fraud model tested',status:'Complete',c:'green',group:'Fraud pattern: single device, multiple SSNs',push:['CSV']},
@@ -37261,19 +37261,19 @@ const COHORT_LIBRARY_DATA = {
  biasReduceDesc:'Credit Scoring v3.4 → v3.5 bias reduction documented for CFPB audit. 20% bias reduction with one-click export chart. Disparate impact 0.74 → 0.91 documented as regulatory evidence.',
  crossTeamAlert:'Credit team removed ZIP code from Credit Scoring v3.4 (race correlation: 0.82 · proxy discrimination). Fraud Screening v2.7 still uses ZIP code as a signal. Eve recommends: remove ZIP code from Fraud Model v2.1 before next deployment.',
  apiPlatforms:[
- {name:'CRM marketing tool',status:'Connected',icon:'',lastSync:'' + __cdr('Apr 5, 2026','fin') + '',c:'green'},
+ {name:'Salesforce Marketing Cloud',status:'Connected',icon:'',lastSync:'' + __cdr('Apr 5, 2026','fin') + '',c:'green'},
  {name:'HubSpot',status:'Connected',icon:'',lastSync:'' + __cdr('Apr 3, 2026','fin') + '',c:'green'},
- {name:'Email platform',status:'Connected',icon:'',lastSync:'' + __cdr('Mar 28, 2026','fin') + '',c:'green'},
+ {name:'Marketo',status:'Connected',icon:'',lastSync:'' + __cdr('Mar 28, 2026','fin') + '',c:'green'},
  ],
  apiActivity:[
- {time:__cdmText('Mar 2026','story'),action:'Cohort #MARKETING-401 pushed to CRM marketing tool',size:'1M records: 98% reached',c:'green'},
+ {time:__cdmText('Mar 2026','story'),action:'Cohort #MARKETING-401 pushed to Salesforce Marketing Cloud',size:'1M records: 98% reached',c:'green'},
  {time:'' + __cdr('Apr 5','fin') + '',action:'Remediation Cohort #AT-1203 pushed to HubSpot',size:'1,203 applicants',c:'green'},
  {time:'' + __cdr('Apr 1','fin') + '',action:'Model comparison v3.4 vs v3.5 exported for CFPB',size:'PDF + data',c:'blue'},
  ],
  },
  health:{
  cohorts:[
- {id:'#AT-2847',type:'remediation',typeLabel:'Remediation',title:'Claims Adjudication: Age Discrimination (65+)',period:__cdmText('Oct 2025–Mar 2026','story'),size:2847,done:1847,rate:'64.9%',status:'In Progress',c:'amber',group:'Patients 65+, all conditions',push:['CRM','CSV']},
+ {id:'#AT-2847',type:'remediation',typeLabel:'Remediation',title:'Claims Adjudication: Age Discrimination (65+)',period:__cdmText('Oct 2025–Mar 2026','story'),size:2847,done:1847,rate:'64.9%',status:'In Progress',c:'amber',group:'Patients 65+, all conditions',push:['Salesforce','CSV']},
  {id:'#TEST-701',type:'test',typeLabel:'Test Cohort',title:'Patients 75+: 2.2x Underrepresented',period:__cdmText('Apr 2026','story'),size:500,done:500,rate:'3.4x denial: BIAS',status:'Complete',c:'red',group:'Patients Age 75+',push:['CSV']},
  {id:'#TEST-702',type:'test',typeLabel:'Test Cohort',title:'Disability + Age 60+: 5.7x Underrepresented',period:__cdmText('Apr 2026','story'),size:300,done:0,rate:'Testing',status:'Running',c:'blue',group:'Disability + Age 60+',push:['CSV']},
  {id:'#TEST-703',type:'test',typeLabel:'Test Cohort',title:'Rural Elderly: 2.7x Underrepresented',period:__cdmText('Apr 2026','story'),size:400,done:400,rate:'2.1x denial: BIAS',status:'Complete',c:'red',group:'Rural Elderly Patients',push:['CSV']},
@@ -37300,12 +37300,12 @@ const COHORT_LIBRARY_DATA = {
  biasReduceDesc:'Claims Adjudication v1.9 → v2.0 age bias reduction documented for CMS audit. 39% improvement admissible as ACA 1557 compliance evidence.',
  crossTeamAlert:'Claims Adjudication team removed age-cost proxy (age correlation: 0.81). Diagnostic Triage AI still uses expected treatment cost as a feature. Eve recommends: audit Diagnostic Triage AI for similar age-cost correlation before next deployment.',
  apiPlatforms:[
- {name:'Patient CRM',status:'Connected',icon:'',lastSync:'' + __cdr('Apr 5, 2026','health') + '',c:'green'},
+ {name:'Salesforce Health Cloud',status:'Connected',icon:'',lastSync:'' + __cdr('Apr 5, 2026','health') + '',c:'green'},
  {name:'Epic EHR',status:'Connected',icon:'',lastSync:'' + __cdr('Apr 2, 2026','health') + '',c:'green'},
  {name:'HubSpot',status:'Not Connected',icon:'',lastSync:'—',c:'muted'},
  ],
  apiActivity:[
- {time:'' + __cdr('Apr 5','health') + '',action:'Remediation Cohort #AT-2847 pushed to Patient CRM',size:'2,847 patients',c:'green'},
+ {time:'' + __cdr('Apr 5','health') + '',action:'Remediation Cohort #AT-2847 pushed to Salesforce Health Cloud',size:'2,847 patients',c:'green'},
  {time:'Apr 3',action:'Model comparison v1.9 vs v2.0 exported for CMS',size:'PDF + data',c:'blue'},
  {time:'' + __cdr('Apr 1','health') + '',action:'Coverage Gap Report exported: 4 groups flagged',size:'Report',c:'amber'},
  ],
@@ -37593,7 +37593,7 @@ ${(c.versions||[]).map((v,i)=>`<div style="font-size:10px;color:var(--${i===0?'a
 </div>
 <div style="display:flex;gap:6px;flex-wrap:wrap">
 <button class="btn-ghost" style="font-size:10px;padding:4px 10px" onclick="downloadCohortCSV()">⬇ CSV</button>
-<button class="btn-ghost" style="font-size:10px;padding:4px 10px" onclick="pushCohortToSalesforce()">⬆ CRM</button>
+<button class="btn-ghost" style="font-size:10px;padding:4px 10px" onclick="pushCohortToSalesforce()">⬆ Salesforce</button>
 <button class="btn-ghost" style="font-size:10px;padding:4px 10px" onclick="addTag(${cid})">Tag</button>
 ${c.legalHold?`<button class="btn-ghost" style="font-size:10px;padding:4px 10px;color:var(--red)" onclick="setLegalHold(${cid},false)">Release Hold</button>`:`<button class="btn-ghost" style="font-size:10px;padding:4px 10px" onclick="setLegalHold(${cid},true)">Legal Hold</button>`}
 </div>
@@ -48450,7 +48450,7 @@ window.genRenderScenarios = function () {
     try { var ls = JSON.parse(localStorage.getItem('cardinal-notes-' + p.id) || 'null'); if (ls && !window.__userNotes[nk]) window.__userNotes[nk] = ls; } catch (e) {}
     if (!(window.__userNotes[nk] || []).length) {
       var d = window.CARDINAL_DATA && CARDINAL_DATA[org], pc = d && d.primaryCase;
-      window.__userNotes[nk] = [{ title: 'Prep for this week', text: 'Walk through the open case' + (pc ? ' #' + pc : '') + ' with the approver, confirm the shadow test numbers, and get sign-off on the next step.', timestamp: new Date(Date.now() - 86400000).toISOString(), seeded: true }, { title: 'Regulator questions to expect', text: 'How did we find it, how fast, who approved the fix, and what changed for the people affected. Echo has the timeline.', timestamp: new Date(Date.now() - 3 * 86400000).toISOString(), seeded: true }];
+      window.__userNotes[nk] = [{ title: 'Reminder to self', text: org === 'fin' ? 'Before Friday\u2019s exam check-in, re-run the Brownsville (11212) numbers on the newest v3.5 shadow batch. If Hispanic approval there is still under the 0.80 line, ask Lisa about the income feature before I sign off.' : 'Before the next check-in, re-run the worst-gap group on the newest shadow batch and confirm it is above the 0.80 line before I sign off.', timestamp: new Date(Date.now() - 2 * 3600000).toISOString(), seeded: true, mine: true }, { title: 'Prep for this week', text: 'Walk through the open case' + (pc ? ' ' + String(pc).replace(/^#?/, '#') : '') + ' with the approver, confirm the shadow test numbers, and get sign-off on the next step.', timestamp: new Date(Date.now() - 86400000).toISOString(), seeded: true }, { title: 'Regulator questions to expect', text: 'How did we find it, how fast, who approved the fix, and what changed for the people affected. Echo has the timeline.', timestamp: new Date(Date.now() - 3 * 86400000).toISOString(), seeded: true }];
     }
     if (!(window.__userPins[pk] || []).length) {
       var mem = ((window.CARDINAL_DATA || {})[org] || {}).echoMemories || [];
@@ -52435,14 +52435,14 @@ window.CARDINAL_PLACES = {
     var score = 97;
     var ts = document.getElementById('echo-topsearch'), hb = ts && ts.parentNode === r.parentNode ? ts.nextElementSibling : r; if (hb && hb.id === 'u-echo-hero') hb = hb.nextElementSibling;
     var hero = placeHero('echo', r.parentNode, hb || r, {
-      score: score, title: 'Record Coverage', titleBody: 'Share of AI decisions, cases, and approvals Echo has recorded. It drops when a data source disconnects. Today the CRM is not connected, so it is 97, not 100.',
-      okBadge: '97% of Decisions Recorded', okTitle: 'Nearly Everything Recorded', okBody: 'Echo records nearly every AI decision and action. The gap is the CRM, which is not connected yet.',
+      score: score, title: 'Record Coverage', titleBody: 'Share of AI decisions, cases, and approvals Echo has recorded. It drops when a data source disconnects. Today Salesforce is not connected, so it is 97, not 100.',
+      okBadge: '97% of Decisions Recorded', okTitle: 'Nearly Everything Recorded', okBody: 'Echo records nearly every AI decision and action. The gap is Salesforce, which is not connected yet.',
       badBadge: 'Memory Gaps', badTitle: 'Gaps', badBody: 'Some decisions are not being captured.',
       okStatus: 'Above 80: Nearly Everything Recorded', badStatus: 'Below 80: Decisions Going Unrecorded',
       delta: 1, pillLabel: 'Sources Connected', pillVal: fin() ? '5 of 6' : 'All', subline: 'Active investigations ' + find(it, /investigations/i).value + ' · Days since last critical ' + find(it, /days since/i).value,
       avg: 88, pct: 84, confTitle: 'Memory Confidence', confSub: 'How complete is the record?',
       units: it, boxTitle: 'Echo at a glance',
-      rows: [['Sources Connected', fin() ? '5 of 6' : 'All', fin() ? 'The CRM is not connected yet, which is why coverage is 97 and not 100.' : 'Every source is connected.'], ['Integrity Checks', '100% passed', 'Every memory is checked against its seal.'], ['Last Memory', 'Just now', 'Echo records continuously.'], ['Kept For', '7 years', 'How long memories are retained.']]
+      rows: [['Sources Connected', fin() ? '5 of 6' : 'All', fin() ? 'Salesforce is not connected yet, which is why coverage is 97 and not 100.' : 'Every source is connected.'], ['Integrity Checks', '100% passed', 'Every memory is checked against its seal.'], ['Last Memory', 'Just now', 'Echo records continuously.'], ['Kept For', '7 years', 'How long memories are retained.']]
     });
     hide(r);
     var rec = document.getElementById('echo-recent-access-panel'), live = r.nextElementSibling; placeHist('echo', r.parentNode, rec && rec.parentNode === r.parentNode ? rec : (live && live.id !== 'u-echo-hist' ? live : r));
@@ -53115,9 +53115,10 @@ window.CARDINAL_PLACES = {
     people: [['x-people', 'Employees'], ['x-board', 'Team board'], ['x-customers', 'Customers'], ['x-impact', 'Demographics and geography'], ['x-plog', 'Employee activity log']],
     decisions: [['x-receipts', 'Decision receipts']],
     wb: [['x-wb', 'Sealed reports']],
+    agents: [['x-agents', 'Agent activity']],
     desk: [['x-pins', 'Pinned memories'], ['myworkspace', 'My notes and activity']]
   };
-  var NATIVE_FIRST = { cores: 'memories', hall: 'memories', cases: 'conversations', models: 'lineage', people: 'peoplelog', decisions: 'receipts', wb: 'whistleblower', desk: 'myworkspace' };
+  var NATIVE_FIRST = { agents: 'memories', cores: 'memories', hall: 'memories', cases: 'conversations', models: 'lineage', people: 'peoplelog', decisions: 'receipts', wb: 'whistleblower', desk: 'myworkspace' };
   var X = { room: 'hall', bucket: 'x-logged', detail: null, f: {}, page: 0 };
   window.__echoX = 1;
   window.__echoXState = X;
@@ -53360,7 +53361,7 @@ window.CARDINAL_PLACES = {
     if (mine) {
       var ae = document.activeElement, focusPh = keepFocus && ae && ae.tagName === 'INPUT' && panel.contains(ae) ? ae.placeholder : null, caret = focusPh ? ae.selectionStart : 0;
       var slot = document.getElementById('echo-case-history'), slotKeep = X.bucket === 'x-casehist' && slot && slot.parentNode && slot.parentNode.id === 'echo-x-casehist-slot';
-      if (!slotKeep) panel.innerHTML = X.bucket === 'x-customers' ? (window.cardinalCustomerDirectory ? cardinalCustomerDirectory('echo') : '') : X.bucket.indexOf('x-core-') === 0 ? pCores() : X.bucket === 'x-people' ? pPeople() : X.bucket === 'x-cases' ? pCases() : X.bucket === 'x-models' ? pModels() : X.bucket === 'x-pins' ? pPins() : X.bucket === 'x-score' ? pScore() : X.bucket === 'x-casehist' ? pCaseHist() : X.bucket === 'x-impact' ? (window.cardinalEchoImpact ? cardinalEchoImpact() : '') : X.bucket === 'x-receipts' ? pReceipts() : X.bucket === 'x-wb' ? pWb() : X.bucket === 'x-logged' ? pLogged() : X.bucket === 'x-plog' ? pPlog() : X.bucket === 'x-board' ? '<div class="ex-note">Everyone\'s work in one place: every fix, filing, and review, by team. The same board is pinned in Trust Loop.</div>' + (window.cardinalTeamBoard ? cardinalTeamBoard('All', 'echo') : '') : '';
+      if (!slotKeep) panel.innerHTML = X.bucket === 'x-agents' ? (window.cardinalAgentLog ? cardinalAgentLog('echo') : '') : X.bucket === 'x-customers' ? (window.cardinalCustomerDirectory ? cardinalCustomerDirectory('echo') : '') : X.bucket.indexOf('x-core-') === 0 ? pCores() : X.bucket === 'x-people' ? pPeople() : X.bucket === 'x-cases' ? pCases() : X.bucket === 'x-models' ? pModels() : X.bucket === 'x-pins' ? pPins() : X.bucket === 'x-score' ? pScore() : X.bucket === 'x-casehist' ? pCaseHist() : X.bucket === 'x-impact' ? (window.cardinalEchoImpact ? cardinalEchoImpact() : '') : X.bucket === 'x-receipts' ? pReceipts() : X.bucket === 'x-wb' ? pWb() : X.bucket === 'x-logged' ? pLogged() : X.bucket === 'x-plog' ? pPlog() : X.bucket === 'x-board' ? '<div class="ex-note">Everyone\'s work in one place: every fix, filing, and review, by team. The same board is pinned in Trust Loop.</div>' + (window.cardinalTeamBoard ? cardinalTeamBoard('All', 'echo') : '') : '';
       if (X.bucket === 'x-score') setTimeout(drawScore, 30);
       if (X.bucket === 'x-casehist') { var b = document.getElementById('echo-case-history'); if (b) b.removeAttribute('data-k'); }
       if (focusPh) { var ni = [].filter.call(panel.querySelectorAll('input'), function (i) { return i.placeholder === focusPh; })[0]; if (ni) { ni.focus(); try { ni.setSelectionRange(caret, caret); } catch (e) {} } }
@@ -53401,7 +53402,6 @@ window.CARDINAL_PLACES = {
     enforce();
   }, 700);
 })();
-
 </script>
 
 <script data-p="p16_map">
@@ -54923,7 +54923,9 @@ window.CARDINAL_PLACES = {
     return out.sort(function (a, b) { return b.t - a.t; });
   }
   function shTime(d) { var h = d.getHours(), mi = d.getMinutes(); return (h % 12 || 12) + ':' + (mi < 10 ? '0' : '') + mi + ' ' + (h < 12 ? 'AM' : 'PM'); }
-  // One row every day, even when nothing moved, so the log keeps growing day by day.
+  // One row every day, even when nothing moved, so the log keeps growing day by day. 10/9 (Brittany: "each day it
+  // should be different reasons"): quiet days say what was actually checked that day.
+  var QUIET = [['Checked {n} new decisions; fairness held inside the band', 'Eden'], ['Re-review batch of {k} applicants closed; counted at month end', 'Atonement'], ['Weekly drift check on every live model: all within the band', 'Adam'], ['{k} decision receipts sealed; record coverage steady at 97%', 'Echo'], ['Ran {k}0 attack prompts against company agents; no new gaps', 'Adam'], ['Policy packet reviewed by Legal; no changes needed', 'Compliance'], ['Access review: {k} permissions confirmed, none removed', 'Trust Ledger'], ['Daily report filed; no reviews overdue', 'Eve'], ['Model inventory synced; no new unregistered AI found', 'Watchman'], ['Complaint queue checked; no new fairness complaints', 'Compliance'], ['Sampled {k} adverse action notices; every one listed its reasons', 'Codex'], ['Security scan of vendor agents; no new threats', 'Watchman'], ['Fraud alerts reviewed ({k}); false positives inside the band', 'Obsidian'], ['Vendor attestations checked; all current', 'Compliance']];
   function withDaily(h, k, ev) {
     var asc = ev.slice().sort(function (a, b) { return a.t - b.t; }), out = ev.slice(), now = new Date(), DAYS = 120;
     var v = function (p) { return p[k] != null ? p[k] : p.score; };
@@ -54937,14 +54939,15 @@ window.CARDINAL_PLACES = {
       if (days[d.toDateString()]) continue;
       var t = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 6, 15); if (t > now) continue;
       var lbl = MON[d.getMonth()] + ' ' + d.getFullYear(), mi = -1; h.forEach(function (p, x) { if (p.month === lbl) mi = x; }); if (mi < 1) mi = h.length - 1;
-      out.push({ t: t, from: score, to: score, ch: 0, part: k === 'score' ? '' : k, who: 'Cardinal', kind: 'agent', what: 'Daily recalculation: no change. All 7 parts checked against the Cardinal Standard.', model: '', cs: '', note: 'Cardinal recalculates every morning. Nothing moved today.', signer: 'Automatic check', month: mi, hold: 1 });
+      var dh = Math.abs(Math.floor(t.getTime() / 864e5) * 2654435761 | 0), Q = QUIET[dh % QUIET.length], qn = 600 + dh % 900, qk = 3 + dh % 40;
+      out.push({ t: t, from: score, to: score, ch: 0, part: k === 'score' ? '' : k, who: Q[1], kind: 'agent', what: Q[0].replace('{n}', qn.toLocaleString()).replace('{k}', qk), model: '', cs: '', note: 'Cardinal recalculates every morning. These checks ran and the score held steady.', signer: 'Automatic check', month: mi, hold: 1 });
     }
     return out.sort(function (a, b) { return b.t - a.t; });
   }
   window.__shPage = window.__shPage || 0;
   window.cardinalScoreLogPage = function (pre, d) { window.__shPage = Math.max(0, (window.__shPage || 0) + d); var L = window.__shLog; if (L) cardinalScoreHistoryPart(pre, L.k); };
   var PCOL = { biasScore: ['#15803D', '#f0fdf4'], fraudScore: ['#B45309', '#fffbeb'], complianceScore: ['#1e3a8a', '#eff6ff'], transparencyScore: ['#0f766e', '#f0fdfa'], privacyScore: ['#6d28d9', '#f5f3ff'], governanceScore: ['#334155', '#f1f5f9'], monitoringScore: ['#B91C1C', '#fef2f2'] };
-  function movedPill(e) { if (e.hold) return '<span style="font-size:10.5px;font-weight:700;color:#64748b;background:#f1f5f9;border-radius:999px;padding:2px 9px">Nothing moved</span>'; var c = PCOL[e.part] || ['#475569', '#f1f5f9']; return '<span style="font-size:10.5px;font-weight:700;color:' + c[0] + ';background:' + c[1] + ';border-radius:999px;padding:2px 9px">' + esc(PNAME[e.part] || 'Trust Score') + '</span>'; }
+  function movedPill(e) { if (e.hold) return '<span style="font-size:10.5px;font-weight:700;color:#64748b;background:#f1f5f9;border-radius:999px;padding:2px 9px">Held steady</span>'; var c = PCOL[e.part] || ['#475569', '#f1f5f9']; return '<span style="font-size:10.5px;font-weight:700;color:' + c[0] + ';background:' + c[1] + ';border-radius:999px;padding:2px 9px">' + esc(PNAME[e.part] || 'Trust Score') + '</span>'; }
   window.cardinalScoreLogHTML = function (h, k, pre) {
     var ev = withDaily(h, k, shEvents(h, k)); window.__shLog = { h: h, k: k, ev: ev };
     var fFrom = window.__shFrom ? new Date(window.__shFrom + 'T00:00:00') : null, fTo = window.__shTo ? new Date(window.__shTo + 'T23:59:59') : null;
@@ -55073,7 +55076,6 @@ window.CARDINAL_PLACES = {
     try { cardinalLogActivity('view', 'Opened the employee profile for ' + name, null); } catch (e) {}
   };
 })();
-
 </script>
 
 <script data-p="p34_round2">
@@ -55132,7 +55134,7 @@ window.CARDINAL_PLACES = {
     m.innerHTML = '<div class="r2-card"><div style="display:flex;justify-content:space-between;gap:10px"><div><h3>' + esc(c.name) + '</h3><div class="sub">' + esc(c.id) + ' · ' + esc(c.type) + ' · Owner ' + esc(c.owner) + ' · Created ' + esc(c.created) + '</div></div><button type="button" class="r2-btn ghost" onclick="this.closest(\'.r2-pop\').remove()">Close</button></div>' +
       '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px"><div class="r2-tile"><b>' + esc(c.people) + '</b><span>People</span></div><div class="r2-tile"><b style="color:#15803D">' + done.toLocaleString() + '</b><span>Re-reviewed</span></div><div class="r2-tile"><b style="color:#A16207">' + (n - done).toLocaleString() + '</b><span>Remaining</span></div></div>' +
       '<div style="margin-top:12px;height:8px;background:#e7e1d4;border-radius:999px;overflow:hidden"><div style="height:100%;width:' + c.pct + '%;background:#22c55e"></div></div><div class="sub" style="margin-top:4px">' + c.pct + '% complete · ' + esc(c.status.replace('-', ' ')) + '</div>' +
-      '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px"><button type="button" class="r2-btn" onclick="try{downloadCohortCSV()}catch(e){}">Download CSV</button><button type="button" class="r2-btn" onclick="try{pushToSalesforce()}catch(e){}">Send to CRM</button>' + (c.cs ? '<button type="button" class="r2-btn ghost" onclick="this.closest(\'.r2-pop\').remove();try{cardinalNavigateToCase(' + esc(JSON.stringify(c.cs)) + ')}catch(e){}">Open case ' + esc(c.cs) + '</button>' : '') + '</div>' +
+      '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px"><button type="button" class="r2-btn" onclick="try{downloadCohortCSV()}catch(e){}">Download CSV</button><button type="button" class="r2-btn" onclick="try{pushToSalesforce()}catch(e){}">Send to Salesforce</button>' + (c.cs ? '<button type="button" class="r2-btn ghost" onclick="this.closest(\'.r2-pop\').remove();try{cardinalNavigateToCase(' + esc(JSON.stringify(c.cs)) + ')}catch(e){}">Open case ' + esc(c.cs) + '</button>' : '') + '</div>' +
       '<div class="sub" style="margin-top:12px">Every re-review in this cohort is sealed in Echo for the exam file.</div></div>';
     document.body.appendChild(m);
   };
@@ -55164,7 +55166,7 @@ window.CARDINAL_PLACES = {
       '<div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px">' +
       '<div class="r2-tile"><b style="color:#15803D">' + esc(tx('cohort-done')) + '</b><span>Re-evaluated</span></div><div class="r2-tile"><b style="color:#15803D">' + esc(tx('at-approved')) + '</b><span>Approved on re-review</span></div>' +
       '<div class="r2-tile"><b style="color:#A16207">' + esc(tx('cohort-remaining')) + '</b><span>Remaining</span></div><div class="r2-tile"><b style="color:#15803D">' + esc(tx('at-revenue').replace(/ revenue recovered/, '')) + '</b><span>Revenue recovered</span></div></div>' +
-      '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px"><button type="button" class="r2-btn" onclick="exportCohortCSV()">Export cohort CSV</button><button type="button" class="r2-btn" onclick="pushToSalesforce()">Send to CRM</button></div></div>';
+      '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px"><button type="button" class="r2-btn" onclick="exportCohortCSV()">Export cohort CSV</button><button type="button" class="r2-btn" onclick="pushToSalesforce()">Send to Salesforce</button></div></div>';
     var box = document.getElementById('r2-remed');
     if (!box) { box = document.createElement('div'); box.id = 'r2-remed'; grid.parentNode.insertBefore(box, grid); }
     if (box.__h !== html) { box.__h = html; box.innerHTML = html; }
@@ -55359,15 +55361,11 @@ window.CARDINAL_PLACES = {
   }
 
   // ── Small text fixes ────────────────────────────────────────────────
-  function words() {
-    var at = document.getElementById('screen-atonement');
-    if (at && at.offsetParent !== null && !at.__sf) { var w = document.createTreeWalker(at, NodeFilter.SHOW_TEXT), n, hit = 0; while ((n = w.nextNode())) { if (/Salesforce/.test(n.nodeValue)) { n.nodeValue = n.nodeValue.replace(/Salesforce/g, 'your CRM'); hit = 1; } } }
-    [].forEach.call(document.querySelectorAll('button'), function (b) { if (b.__w || !/Salesforce/.test(b.textContent) || b.children.length) return; b.__w = 1; b.textContent = b.textContent.replace(/Salesforce/g, 'CRM'); });
-  }
+  // 10/9: real product names stay (Brittany: "wherever the real name should be, do that").
+  function words() {}
 
   setInterval(function () { try { atonement(); } catch (e) {} try { halo(); } catch (e) {} try { codex(); } catch (e) {} try { compliance(); } catch (e) {} try { trustloop(); } catch (e) {} try { voicePicker(); } catch (e) {} try { words(); } catch (e) {} try { tableChecks(); } catch (e) {} }, 500);
 })();
-
 </script>
 
 <script data-p="p35_people">
@@ -55672,8 +55670,20 @@ window.CARDINAL_PLACES = {
       '<div style="display:grid;grid-template-columns:2fr 1fr auto;gap:8px;margin-top:8px;align-items:center"><input id="ak-link" type="text" placeholder="Link a case or model (optional), for example FIN-1203"><select id="ak-urg"><option>Normal</option><option>Today</option><option>Urgent</option></select><button type="button" class="ak-btn" onclick="askSend()">Send to a person</button></div>' +
       (ST.topic === 'reg' ? '<div style="font-size:11px;color:#64748b;margin-top:8px">Regulatory answers are guidance, not legal advice. Your counsel makes the final call.</div>' : '') + '</div>' +
       '<div style="font-size:12px;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:.5px;margin:16px 0 8px">Questions and answers</div>' +
-      '<div style="background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 1px 3px rgba(26,24,21,.06),0 10px 24px rgba(26,24,21,.08)"><table><thead><tr><th>Asked</th><th>Topic</th><th>Question</th><th>Asked by</th><th>Answered by</th><th>Status</th></tr></thead><tbody>' +
-      L.map(function (q) { var T = TOPICS[q.topic], ans = q.msgs.filter(function (m) { return m.role; }).slice(-1)[0]; return '<tr onclick="askOpen(\'' + q.id + '\')"><td style="white-space:nowrap;color:#475569">' + fdt(q.t) + '</td><td style="white-space:nowrap;font-weight:700;color:' + T.color + '">' + T.name + '</td><td>' + esc(q.q) + '</td><td style="white-space:nowrap">' + esc(q.by) + '</td><td style="white-space:nowrap">' + (ans ? esc(ans.who) + '<div style="font-size:11px;color:#64748b">' + fdt(ans.t) + '</div>' : '—') + '</td><td>' + pill(q.status) + '</td></tr>'; }).join('') + '</tbody></table></div>';
+      byDay(L);
+  }
+  // 10/9 (Brittany: "organized by day, like the trust score log, then by time"). Questions grouped under each day.
+  function byDay(L) {
+    var DAYN = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    var tm = function (d) { d = new Date(d); var h = d.getHours(), m = d.getMinutes(); return (h % 12 || 12) + ':' + (m < 10 ? '0' : '') + m + (h < 12 ? ' AM' : ' PM'); };
+    var key = function (d) { d = new Date(d); return d.getFullYear() + '-' + d.getMonth() + '-' + d.getDate(); };
+    var label = function (d) { d = new Date(d); var n = new Date(), dd = Math.round((new Date(n.getFullYear(), n.getMonth(), n.getDate()) - new Date(d.getFullYear(), d.getMonth(), d.getDate())) / 864e5); return (dd === 0 ? 'Today, ' : dd === 1 ? 'Yesterday, ' : '') + DAYN[d.getDay()] + ', ' + MON[d.getMonth()] + ' ' + d.getDate(); };
+    var S2 = L.slice().sort(function (x, y) { return new Date(y.t) - new Date(x.t); }), G = [];
+    S2.forEach(function (q) { var k = key(q.t); if (!G.length || G[G.length - 1].k !== k) G.push({ k: k, d: q.t, items: [] }); G[G.length - 1].items.push(q); });
+    return G.map(function (g) {
+      return '<div style="background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 1px 3px rgba(26,24,21,.06),0 10px 24px rgba(26,24,21,.08);margin:0 0 12px"><div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:#ebe4d6"><b style="font-size:13px">' + label(g.d) + '</b><span style="font-size:11.5px;color:#64748b">' + g.items.length + (g.items.length === 1 ? ' question' : ' questions') + '</span></div><table><thead><tr><th>Time</th><th>Topic</th><th>Question</th><th>Asked by</th><th>Answered by</th><th>Status</th></tr></thead><tbody>' +
+        g.items.map(function (q) { var T = TOPICS[q.topic], ans = q.msgs.filter(function (m) { return m.role; }).slice(-1)[0]; return '<tr onclick="askOpen(\'' + q.id + '\')"><td style="white-space:nowrap;color:#475569">' + tm(q.t) + '</td><td style="white-space:nowrap;font-weight:700;color:' + T.color + '">' + T.name + '</td><td>' + esc(q.q) + '</td><td style="white-space:nowrap">' + esc(q.by) + '</td><td style="white-space:nowrap">' + (ans ? esc(ans.who) + '<div style="font-size:11px;color:#64748b">' + (key(ans.t) === key(q.t) ? tm(ans.t) : fdt(ans.t)) + '</div>' : '<span style="color:#94a3b8">Waiting</span>') + '</td><td>' + pill(q.status) + '</td></tr>'; }).join('') + '</tbody></table></div>';
+    }).join('');
   }
   function draw(force) {
     var box = document.getElementById('tl-ask'); if (!box) return;
@@ -55699,7 +55709,6 @@ window.CARDINAL_PLACES = {
   }
   setInterval(tick, 400);
 })();
-
 </script>
 
 <script data-p="p37_circles">
@@ -56658,7 +56667,7 @@ window.CARDINAL_PLACES = {
   css.textContent =
     '#dash-core-status,#dash-demographic-panel,#dash-regulatory-panel{background:#fff!important;border:1px solid rgba(26,24,21,.06)!important;border-top:3px solid #ef4444!important;border-radius:16px!important;box-shadow:0 1px 3px rgba(26,24,21,.06),0 12px 28px rgba(26,24,21,.09)!important}' +
     '#dash-demographic-panel>div,#dash-demographic-panel .dash-demographic-inner{background:transparent!important}' +
-    '#dash-demographic-panel .dash-demographic-inner>#pg2,#dash-demographic-panel #pg2{background:transparent!important;border:none!important;box-shadow:none!important;padding:0!important}.c45-hide{display:none!important}' +
+    '#dash-demographic-panel .dash-demographic-inner>#pg2,#dash-demographic-panel #pg2{background:transparent!important;border:none!important;box-shadow:none!important;padding:0!important}.c45-hide{display:none!important}#screen-halo .halo-head>div:first-child{display:none!important}#screen-halo .halo-head{justify-content:flex-end!important}' +
     '#eden-sec-hero,#obs-sec-hero,#tsv2-hero,.tsv2-section.u-hero,#pl-rings,#myws-rings{box-shadow:0 1px 3px rgba(26,24,21,.06),0 12px 28px rgba(26,24,21,.09)!important}' +
     '#lucid-today{background:rgba(167,167,167,.04);border:1px solid rgba(167,167,167,.14);border-radius:14px;padding:16px 18px;margin-bottom:18px;box-shadow:0 1px 3px rgba(26,24,21,.06),0 12px 28px rgba(26,24,21,.09)}#lucid-tab-dashboard>.lucid-collab,#lucid-tab-dashboard>div{margin-bottom:16px}' +
     '.c45-flash{outline:3px solid #ef4444!important;outline-offset:4px;border-radius:12px;transition:outline-color .6s}';
@@ -56669,7 +56678,7 @@ window.CARDINAL_PLACES = {
     genesis: /^Genesis Core: Diagnose, Test & Prove$/, atonement: /^Atonement Core: Remediation Engine$/, compliance: /^Compliance Exchange$/,
     echo: /^Echo Core: Audit Memory & Integrity$/, cardinallibrary: /^Cardinal Library: Unified Knowledge Hub$/, trustscore: /^Trust Score\s*i?$/,
     trustledger: /^Trust Ledger: Tamper-Proof Verification Layer$/, sentinel: /^Watchman\s*i?$/, lucid: /^✦ Lucid Layer: Adam & Eve$/,
-    modellibrary: /^Cohort & Model Library$/, settings: /^Settings$/, trustloop: /^Trust Loop$/
+    modellibrary: /^Cohort & Model Library$/, settings: /^Settings$/, trustloop: /^Trust Loop$/, glossary: /^Glossary$/, usecases: /^Master Tag Library: All AI Use Cases$/
   };
   function quiet(e) { return e && !e.querySelector('input,select,textarea,canvas,table,.card,.tsv2-section') && (e.innerText || '').trim().length < 240; }
   function dedupe() {
@@ -56689,8 +56698,9 @@ window.CARDINAL_PLACES = {
   function caseId(o) { var c = String(((window.CARDINAL_DATA || {})[o] || {}).primaryCase || '').replace(/^#/, ''); return c; }
   window.cardinalEdenGo = function (what, topic) {
     var o = window.currentOrg || 'fin', cs = caseId(o);
+    window.__deepLinkUntil = Date.now() + 3000;
     try { showScreen('eden'); } catch (e) {}
-    var tries = -4, iv = setInterval(function () {
+    var tries = -2, iv = setInterval(function () {
       if (tries < 0) { tries++; return; }
       var target = null;
       if (what === 'case') {
@@ -56700,7 +56710,7 @@ window.CARDINAL_PLACES = {
       if ((!target || target.offsetParent === null) && ++tries < 20) return;
       clearInterval(iv); if (!target) return;
       try { note(target, what, topic, o, cs); } catch (e) {}
-      var go = function () { target.scrollIntoView({ block: 'center' }); }; go(); setTimeout(go, 400); setTimeout(go, 900); setTimeout(go, 1500);
+      var go = function () { var r = target.getBoundingClientRect(), mid = window.innerHeight / 2; if (Math.abs(r.top + r.height / 2 - mid) > 160) target.scrollIntoView({ block: 'center' }); }; go(); setTimeout(go, 350); setTimeout(go, 900);
       target.classList.add('c45-flash'); setTimeout(function () { target.classList.remove('c45-flash'); }, 3200);
       try { (window.cardinalShowToast || showToast)(what === 'case' ? 'Showing case ' + cs + ' in Eden: what was found, who is affected, and the fix' : 'Showing protected groups in Eden'); } catch (e) {}
     }, 150);
@@ -56749,7 +56759,6 @@ setInterval(function () {
     if (vis.length === 1 && vis[0].querySelector('button') && vis[0].style.marginLeft !== 'auto') { vis[0].style.marginLeft = 'auto'; vis[0].style.justifyContent = 'flex-end'; }
   });
 }, 700);
-
 </script>
 
 <script data-p="p46_loop">
@@ -56917,6 +56926,347 @@ setInterval(function () {
 
 </script>
 
+<script data-p="p47_agents">
+// 10/9 (Brittany: "everything Eve and Adam do should automatically save", "all the details of the company's agents
+// in Echo", "pull a file by date and time of what they did", "who they interacted with, decisions, to-do list",
+// "the red box in Lucid shouldn't be there", "should it have the day's date"). One agent activity record, kept in
+// Echo (AI agents) and shown in Lucid by day: what each agent did, decided, handed off, and who it worked with, with
+// date filters and a file download. Also: Nina's access level, and Echo search runs on Enter (no Search button).
+(function () {
+  function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;'); }
+  function org() { return window.currentOrg || 'fin'; }
+  function h32(s) { var x = 2166136261; for (var i = 0; i < s.length; i++) { x ^= s.charCodeAt(i); x = Math.imul(x, 16777619); } return Math.abs(x); }
+  var MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'], DAY = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  function tm(d) { var h = d.getHours(), m = d.getMinutes(); return ((h % 12) || 12) + ':' + (m < 10 ? '0' : '') + m + (h < 12 ? ' AM' : ' PM'); }
+  function dayName(d) { var n = new Date(); var t0 = new Date(n.getFullYear(), n.getMonth(), n.getDate()).getTime(), t = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime(); var dd = Math.round((t0 - t) / 864e5); return (dd === 0 ? 'Today, ' : dd === 1 ? 'Yesterday, ' : '') + DAY[d.getDay()] + ', ' + MON[d.getMonth()] + ' ' + d.getDate(); }
+  function iso(d) { return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
+  var RED = '#B91C1C', GRN = '#15803D';
+
+  var AGENTS = {
+    fin: [['Eve', 'Cardinal executive agent', '#7c3aed'], ['Adam', 'Cardinal technical agent', '#1a1815'], ['Collections Agent', 'Your agent · collections messages and fee waivers', '#A16207'], ['Pre-qual Chatbot', 'Vendor agent · answers loan pre-qualification questions', '#2563EB']],
+    def: [['Eve', 'Cardinal executive agent', '#7c3aed'], ['Adam', 'Cardinal technical agent', '#1a1815']]
+  };
+  var TYPES = { did: 'Did', decision: 'Decision', handoff: 'Handed to a person', talk: 'Conversation', todo: 'To-do' };
+  // Today for Blackmoor matches what Lucid shows.
+  var TODAY = {
+    fin: [
+      ['07:30', 'Adam', 'did', 'Ran 240 attack prompts against the Collections Agent; 2 got through', 'Collections Agent', 'Collections AI v1.3', 'Two prompts got the agent to offer a fee waiver it should not. Fix drafted at 11:10.'],
+      ['08:00', 'Eve', 'talk', 'Asked Adam for the overnight shadow results', 'Adam', 'Credit Scoring v3.5', 'Needed for the morning briefing.'],
+      ['08:02', 'Eve', 'did', 'Sent the morning briefing to 10 people', 'Riley Whitmore, Nina Roberts, +8', 'FIN-1203', 'Opened by 9 of 10 by 9:30.'],
+      ['08:12', 'Adam', 'talk', 'Sent Eve the overnight shadow results', 'Eve', 'Credit Scoring v3.5', 'Fairness ratio 0.83 on 3,241 decisions.'],
+      ['08:55', 'Adam', 'decision', 'Shadow check on v3.5: kept it in shadow at 5%', 'Nina Roberts', 'Credit Scoring v3.5', 'Fairness ratio 0.83, default rate unchanged. Full rollout waits on sign-offs.'],
+      ['09:05', 'Eve', 'did', 'Logged the v3.5 decision from Town Hall in Echo', 'Town Hall', 'FIN-1203', 'Receipt sealed.'],
+      ['09:20', 'Eve', 'handoff', 'Escalated the overdue review to a person', 'Lisa Torres', 'FIN-1203', 'Review was 2 days past due. Lisa accepted it at 9:41.'],
+      ['09:48', 'Pre-qual Chatbot', 'did', 'Answered 312 pre-qualification questions', 'Applicants', 'Pre-qual Chatbot', '3 answers mentioned ZIP code; flagged for Adam.'],
+      ['10:05', 'Adam', 'talk', 'Traded test results with the Pre-qual Chatbot vendor agent (external)', 'Pre-qual Chatbot', 'Pre-qual Chatbot', 'Vendor agent shared its last 7 days of answers; no customer data left Blackmoor.'],
+      ['10:12', 'Collections Agent', 'decision', 'Held 14 after-hours messages until morning', 'Customers', 'Collections AI v1.3', 'Follows the quiet-hours rule set by Legal.'],
+      ['10:30', 'Eve', 'did', 'Wrote the summary for the board', 'Board', 'FIN-1203', 'Saved as the daily report.'],
+      ['10:40', 'Eve', 'handoff', 'Flagged a Colorado disclosure gap', 'Lisa Torres', 'Compliance', 'Colorado AI Act notice missing from 2 letters.'],
+      ['11:10', 'Adam', 'did', 'Drafted a fix for the waive_fee tool', 'Grace Liu', 'Collections AI v1.3', 'Waiting on Grace to approve.'],
+      ['11:15', 'Eve', 'todo', 'Brief Riley Whitmore on the CFPB exam file', 'Riley Whitmore', 'FIN-1203', 'Planned for this afternoon.'],
+      ['11:15', 'Eve', 'todo', 'Draft adverse-action notices for re-decided applicants', 'Legal', 'FIN-1203', 'Planned for this afternoon.'],
+      ['11:20', 'Adam', 'todo', 'Rerun the prompt-injection tests on the Collections Agent', 'Collections Agent', 'Collections AI v1.3', 'After the waive_fee fix is approved.']
+    ]
+  };
+  var POOL = {
+    Eve: [['did', 'Sent the morning briefing to {n} people', 'Riley Whitmore, Nina Roberts, +{m}', 'FIN-1203'], ['did', 'Assembled {k} sections of the exam evidence packet', 'Morgan Hale', 'FIN-1203'], ['handoff', 'Escalated an overdue review', 'Lisa Torres', 'FIN-1203'], ['talk', 'Answered a question from Riley Whitmore about exam timing', 'Riley Whitmore', 'Compliance'], ['did', 'Wrote the daily report', 'Board', 'FIN-1203'], ['handoff', 'Sent a sign-off request', 'Grace Liu', 'Credit Scoring v3.5'], ['did', 'Logged {k} approvals from Town Hall in Echo', 'Town Hall', 'Echo']],
+    Adam: [['did', 'Ran {n} test cases against Credit Scoring v3.5', 'Nina Roberts', 'Credit Scoring v3.5'], ['decision', 'Kept v3.5 in shadow at 5% (fairness ratio 0.83)', 'Nina Roberts', 'Credit Scoring v3.5'], ['did', 'Checked {n} decisions for the ZIP code proxy', 'Hannah Brooks', 'Credit Scoring v3.4'], ['talk', 'Shared drift numbers with Eve', 'Eve', 'Auto Loan v2.1'], ['did', 'Ran {k}0 attack prompts against the Collections Agent', 'Collections Agent', 'Collections AI v1.3'], ['decision', 'Paused a test that touched real customer data', 'Grace Liu', 'Genesis']],
+    'Collections Agent': [['did', 'Sent {n} payment reminders', 'Customers', 'Collections AI v1.3'], ['decision', 'Approved {k} fee waivers under $25', 'Customers', 'Collections AI v1.3'], ['handoff', 'Sent {k} hardship requests to a person', 'Collections team', 'Collections AI v1.3']],
+    'Pre-qual Chatbot': [['did', 'Answered {n} pre-qualification questions', 'Applicants', 'Pre-qual Chatbot'], ['handoff', 'Passed {k} applicants to a loan officer', 'Loan officers', 'Pre-qual Chatbot']]
+  };
+  var CACHE = {};
+  function log(o) {
+    if (CACHE[o]) return CACHE[o];
+    var A = AGENTS[o] || AGENTS.def, now = new Date(), out = [];
+    var today = (TODAY[o] || []).map(function (r) { var p = r[0].split(':'), t = new Date(now.getFullYear(), now.getMonth(), now.getDate(), +p[0], +p[1]); return { t: t, agent: r[1], type: r[2], what: r[3], who: r[4], link: r[5], note: r[6] }; });
+    if (!today.length) today = [{ t: new Date(now.getFullYear(), now.getMonth(), now.getDate(), 8, 2), agent: 'Eve', type: 'did', what: 'Sent the morning briefing', who: 'Your team', link: String(((window.CARDINAL_DATA || {})[o] || {}).primaryCase || '').replace('#', ''), note: '' }];
+    out = out.concat(today);
+    for (var d = 1; d < 45; d++) {
+      var day = new Date(now.getFullYear(), now.getMonth(), now.getDate() - d); if (day.getDay() === 0 || day.getDay() === 6) continue;
+      A.forEach(function (a) {
+        var P = POOL[a[0]]; if (!P || (o !== 'fin' && a[0] !== 'Eve' && a[0] !== 'Adam')) return;
+        var n = 2 + h32(o + a[0] + d) % 3;
+        for (var j = 0; j < n; j++) {
+          var hh = h32(a[0] + d + ':' + j), p = P[hh % P.length], nn = 6 + hh % 40, kk = 2 + (hh >> 4) % 7;
+          var t = new Date(day.getFullYear(), day.getMonth(), day.getDate(), 7 + (hh >> 3) % 10, (hh >> 7) % 60);
+          var link = o === 'fin' ? p[3] : String(((window.CARDINAL_DATA || {})[o] || {}).primaryCase || '').replace('#', '');
+          out.push({ t: t, agent: a[0], type: p[0], what: p[1].replace('{n}', nn).replace('{k}', kk), who: p[2].replace('{m}', Math.max(1, nn - 2)), link: link, note: '' });
+        }
+      });
+    }
+    out.forEach(function (e) { e.rid = 'echo-ag-' + iso(e.t).replace(/-/g, '') + '-' + (h32(e.agent + e.what + e.t.getTime()) % 9000 + 1000); });
+    out.sort(function (a, b) { return b.t - a.t; });
+    return (CACHE[o] = out);
+  }
+  window.cardinalAgentEvents = log;
+
+  // ── Shared filters and table ────────────────────────────────────────
+  var F = window.__agf = window.__agf || { agent: '', type: '', from: '', to: '', q: '', page: 0, open: null };
+  function filtered(o) {
+    var from = F.from ? new Date(F.from + 'T00:00:00').getTime() : 0, to = F.to ? new Date(F.to + 'T23:59:59').getTime() : Infinity, q = F.q.toLowerCase();
+    return log(o).filter(function (e) { return (!F.agent || e.agent === F.agent) && (!F.type || e.type === F.type) && e.t >= from && e.t <= to && (!q || (e.what + ' ' + e.who + ' ' + e.link).toLowerCase().indexOf(q) >= 0); });
+  }
+  function color(o, a) { var r = (AGENTS[o] || AGENTS.def).concat(AGENTS.fin).filter(function (x) { return x[0] === a; })[0]; return r ? r[2] : '#475569'; }
+  function pill(o, a) { var c = color(o, a); return '<span style="display:inline-block;font-size:11px;font-weight:800;color:' + c + ';background:' + c + '14;border:1px solid ' + c + '40;border-radius:999px;padding:1px 8px;white-space:nowrap">' + esc(a) + '</span>'; }
+  function typeTag(t) { var c = t === 'decision' ? '#1d4ed8' : t === 'handoff' ? '#A16207' : t === 'todo' ? '#7c3aed' : t === 'talk' ? '#0f766e' : '#475569'; return '<span style="font-size:10.5px;font-weight:800;color:' + c + ';text-transform:uppercase;letter-spacing:.4px">' + TYPES[t] + '</span>'; }
+  window.agfSet = function (k, v, where) { F[k] = v; F.page = 0; F.open = null; redraw(where); };
+  window.agfOpen = function (id, where) { F.open = F.open === id ? null : id; redraw(where); };
+  window.agfPage = function (d, where) { F.page = Math.max(0, F.page + d); redraw(where); };
+  window.agfDownload = function () {
+    var o = org(), L = filtered(o), rows = [['Date', 'Time', 'Agent', 'Type', 'What happened', 'With', 'Case or model', 'Notes', 'Echo receipt']].concat(L.map(function (e) { return [iso(e.t), tm(e.t), e.agent, TYPES[e.type], e.what, e.who, e.link, e.note, e.rid]; }));
+    var csv = rows.map(function (r) { return r.map(function (c) { return '"' + String(c).replace(/"/g, '""') + '"'; }).join(','); }).join('\n');
+    var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' })); a.download = 'agent-activity_' + (F.from || iso(L.length ? L[L.length - 1].t : new Date())) + '_to_' + (F.to || iso(new Date())) + '.csv'; document.body.appendChild(a); a.click(); a.remove();
+    try { (window.cardinalShowToast || showToast)('Downloaded ' + L.length + ' agent actions. The download is logged in Echo.'); } catch (e) {}
+  };
+  function controls(o, where) {
+    var A = (AGENTS[o] || AGENTS.def), sel = 'font:inherit;font-size:12px;border:1px solid rgba(26,24,21,.14);border-radius:8px;padding:5px 8px;background:#fff';
+    return '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:0 0 12px">' +
+      '<select style="' + sel + '" onchange="agfSet(\'agent\',this.value,\'' + where + '\')"><option value="">All agents</option>' + A.map(function (a) { return '<option ' + (F.agent === a[0] ? 'selected' : '') + ' value="' + esc(a[0]) + '">' + esc(a[0]) + '</option>'; }).join('') + '</select>' +
+      '<select style="' + sel + '" onchange="agfSet(\'type\',this.value,\'' + where + '\')"><option value="">Everything</option>' + Object.keys(TYPES).map(function (k) { return '<option ' + (F.type === k ? 'selected' : '') + ' value="' + k + '">' + TYPES[k] + '</option>'; }).join('') + '</select>' +
+      '<label style="font-size:11.5px;color:#64748b">From <input type="date" value="' + F.from + '" style="' + sel + '" onchange="agfSet(\'from\',this.value,\'' + where + '\')"></label>' +
+      '<label style="font-size:11.5px;color:#64748b">To <input type="date" value="' + F.to + '" style="' + sel + '" onchange="agfSet(\'to\',this.value,\'' + where + '\')"></label>' +
+      '<input type="search" placeholder="Search what they did or who they worked with" value="' + esc(F.q) + '" style="' + sel + ';flex:1;min-width:200px" onkeydown="if(event.key===\'Enter\')agfSet(\'q\',this.value,\'' + where + '\')">' +
+      '<button type="button" onclick="agfDownload()" style="font:inherit;font-size:12px;font-weight:700;background:#1a1815;color:#fff;border:none;border-radius:8px;padding:6px 12px;cursor:pointer">Download file</button></div>';
+  }
+  function tiles(L) {
+    var people = {}; L.forEach(function (e) { String(e.who).split(/,\s*/).forEach(function (w) { if (/^[A-Z][a-z]+ [A-Z][a-z]+$/.test(w)) people[w] = 1; }); });
+    var k = function (v, l, c) { return '<div style="background:#fff;border-radius:14px;padding:12px 14px;border-top:3px solid ' + c + ';box-shadow:0 1px 3px rgba(26,24,21,.06),0 10px 24px rgba(26,24,21,.08);text-align:center"><b style="display:block;font-size:26px;font-weight:800;color:' + c + '">' + v + '</b><span style="font-size:11.5px;font-weight:700;color:#1a1815">' + l + '</span></div>'; };
+    return '<div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:0 0 14px">' + k(L.length, 'Actions logged', '#94a3b8') + k(L.filter(function (e) { return e.type === 'decision'; }).length, 'Decisions made', '#1d4ed8') + k(L.filter(function (e) { return e.type === 'handoff'; }).length, 'Handed to people', '#A16207') + k(Object.keys(people).length, 'People they worked with', '#7c3aed') + '</div>';
+  }
+  function table(o, L, where, perPage) {
+    var days = []; L.forEach(function (e) { var k = iso(e.t); if (!days.length || days[days.length - 1].k !== k) days.push({ k: k, d: e.t, items: [] }); days[days.length - 1].items.push(e); });
+    var pages = Math.max(1, Math.ceil(days.length / perPage)); if (F.page >= pages) F.page = pages - 1;
+    var show = days.slice(F.page * perPage, F.page * perPage + perPage);
+    var TH = 'text-align:left;font-size:10.5px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.4px;padding:8px 12px;background:#f4efe6', TD = 'padding:9px 12px;border-top:1px solid rgba(26,24,21,.06);font-size:12.5px;vertical-align:top';
+    var body = show.map(function (g) {
+      return '<div style="margin:0 0 14px;background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 1px 3px rgba(26,24,21,.06),0 10px 24px rgba(26,24,21,.07)"><div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:#ebe4d6"><b style="font-size:13px">' + dayName(g.d) + '</b><span style="font-size:11.5px;color:#64748b">' + g.items.length + ' actions · saved to Echo</span></div>' +
+        '<table style="width:100%;border-collapse:collapse"><thead><tr><th style="' + TH + ';width:84px">Time</th><th style="' + TH + ';width:150px">Agent</th><th style="' + TH + ';width:120px">Type</th><th style="' + TH + '">What happened</th><th style="' + TH + '">With</th><th style="' + TH + '">Case or model</th></tr></thead><tbody>' +
+        g.items.map(function (e, i) {
+          var open = F.open === e.rid;
+          return '<tr style="cursor:pointer;background:' + (i % 2 ? '#f7f3ea' : '#fff') + '" onclick="agfOpen(\'' + e.rid + '\',\'' + where + '\')"><td style="' + TD + ';white-space:nowrap;color:#475569">' + tm(e.t) + '</td><td style="' + TD + '">' + pill(o, e.agent) + '</td><td style="' + TD + '">' + typeTag(e.type) + '</td><td style="' + TD + ';font-weight:600;color:#1a1815">' + esc(e.what) + '</td><td style="' + TD + '">' + esc(e.who) + '</td><td style="' + TD + '">' + esc(e.link) + '</td></tr>' +
+            (open ? '<tr><td colspan="6" style="padding:10px 14px 12px;background:#f4efe6;font-size:12.5px;color:#334155;line-height:1.55"><b>What it means:</b> ' + esc(e.note || (e.type === 'todo' ? 'On the agent’s list for today.' : 'Done and recorded.')) + '<br><b>Echo receipt:</b> <code>' + e.rid + '</code> · sealed ' + MON[e.t.getMonth()] + ' ' + e.t.getDate() + ', ' + tm(e.t) + ' · cannot be edited</td></tr>' : '');
+        }).join('') + '</tbody></table></div>';
+    }).join('') || '<div style="padding:16px;color:#64748b">Nothing matches these filters.</div>';
+    var pager = pages > 1 ? '<div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;color:#64748b;margin-top:4px"><button type="button" ' + (F.page === 0 ? 'disabled' : '') + ' onclick="agfPage(-1,\'' + where + '\')" style="font:inherit;font-weight:700;border:1px solid rgba(26,24,21,.14);background:#fff;border-radius:8px;padding:4px 10px;cursor:pointer">← Newer</button><span>Page ' + (F.page + 1) + ' of ' + pages + '</span><button type="button" ' + (F.page >= pages - 1 ? 'disabled' : '') + ' onclick="agfPage(1,\'' + where + '\')" style="font:inherit;font-weight:700;border:1px solid rgba(26,24,21,.14);background:#fff;border-radius:8px;padding:4px 10px;cursor:pointer">Older →</button></div>' : '';
+    return body + pager;
+  }
+  window.cardinalAgentLog = function (where) {
+    var o = org(), L = filtered(o);
+    return '<div id="agf-' + where + '"><div style="font-size:12.5px;color:#475569;margin:0 0 10px">Everything ' + ((AGENTS[o] || AGENTS.def).map(function (a) { return a[0]; }).join(', ')) + ' did, decided, handed to people, and planned. Each action is saved here the moment it happens and cannot be edited.</div>' + controls(o, where) + tiles(L) + table(o, L, where, 5) + '</div>';
+  };
+  function redraw(where) {
+    var el = document.getElementById('agf-' + where); if (!el) return;
+    if (where === 'lucid') { var h = document.getElementById('lucid-agf'); if (h) h.innerHTML = lucidHistory(); return; }
+    var t = document.createElement('div'); t.innerHTML = cardinalAgentLog(where); el.replaceWith(t.firstChild);
+  }
+
+  // ── Echo: an "AI agents" room ─────────────────────────────────────────
+  function echoTile() {
+    var bar = document.getElementById('echo-rooms-bar'); if (!bar || document.getElementById('echo-agents-tile')) return;
+    var first = bar.firstElementChild; if (!first) return;
+    var tile = first.cloneNode(true); tile.id = 'echo-agents-tile'; tile.removeAttribute('onclick'); tile.classList.remove('active');
+    var tt = tile.querySelectorAll('div,span,strong'); if (tt.length >= 2) { tt[0].textContent = 'AI agents'; tt[tt.length - 1].textContent = 'Everything every agent did'; } else tile.textContent = 'AI agents';
+    tile.onclick = function (e) { e.preventDefault(); e.stopPropagation(); echoEnterRoom('agents'); };
+    var people = [].filter.call(bar.children, function (c) { return /^People/.test((c.textContent || '').trim()); })[0];
+    bar.insertBefore(tile, people ? people.nextSibling : null);
+  }
+  setInterval(function () {
+    var s = document.getElementById('screen-echo'); if (!s || s.offsetParent === null) return;
+    echoTile();
+    var X = window.__echoXState, t2 = document.getElementById('echo-agents-tile'); if (t2) t2.classList.toggle('active', !!(X && X.room === 'agents'));
+  }, 600);
+
+  // ── Lucid: date, tiles instead of the red alert, and history by day ────
+  function lucidHistory() {
+    var o = org(), L = filtered(o);
+    return '<div id="agf-lucid">' + controls(o, 'lucid') + table(o, L, 'lucid', 3) + '</div>';
+  }
+  function lucidTiles() {
+    var o = org(), now = new Date(), L = log(o).filter(function (e) { return iso(e.t) === iso(now); });
+    var k = function (v, l, sub, c) { return '<div style="background:#fff;border-radius:14px;padding:12px 14px;border-top:3px solid ' + c + ';box-shadow:0 1px 3px rgba(26,24,21,.08),0 12px 28px rgba(26,24,21,.10);text-align:center"><b style="display:block;font-size:28px;font-weight:800;color:' + c + '">' + v + '</b><span style="font-size:12px;font-weight:700;color:#1a1815">' + l + '</span><i style="display:block;font-style:normal;font-size:11px;color:#64748b;margin-top:2px">' + sub + '</i></div>'; };
+    var done = L.filter(function (e) { return e.type !== 'todo'; });
+    return '<div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:0 0 16px">' +
+      k(done.length, 'Actions so far today', 'All saved to Echo', '#94a3b8') +
+      k(L.filter(function (e) { return e.type === 'decision'; }).length, 'Decisions made', 'Each with a receipt', '#1d4ed8') +
+      k(L.filter(function (e) { return e.type === 'handoff'; }).length, 'Handed to people', 'Agents ask before acting', '#A16207') +
+      k(L.filter(function (e) { return e.type === 'todo'; }).length, 'Still to do today', 'On their lists', '#7c3aed') + '</div>';
+  }
+  setInterval(function () {
+    var s = document.getElementById('screen-lucid'); if (!s || s.offsetParent === null) return;
+    var al = document.getElementById('lucid-alert-banner');
+    if (al) { al.style.display = 'none'; var tl = document.getElementById('lucid-tiles'); if (!tl) { tl = document.createElement('div'); tl.id = 'lucid-tiles'; al.parentNode.insertBefore(tl, al); } var th = lucidTiles(); if (tl.__h !== th) { tl.__h = th; tl.innerHTML = th; } }
+    var today = document.getElementById('lucid-today');
+    if (today) {
+      var h = [].filter.call(today.querySelectorAll('div'), function (e) { return e.children.length === 0 && /^Eve and Adam today/.test(e.textContent.trim()); })[0];
+      var want = 'Eve and Adam today · ' + DAY[new Date().getDay()] + ', ' + MON[new Date().getMonth()] + ' ' + new Date().getDate();
+      if (h && h.textContent !== want) h.textContent = want;
+      [].forEach.call(today.querySelectorAll('button'), function (b) { if (/^Daily report$/.test(b.textContent.trim())) { b.textContent = 'Daily report · saved'; b.title = 'Saved to Echo automatically at the end of each day'; } });
+      if (!document.getElementById('lucid-agf-wrap')) {
+        var w = document.createElement('div'); w.id = 'lucid-agf-wrap';
+        w.style.cssText = 'background:rgba(167,167,167,.04);border:1px solid rgba(167,167,167,.14);border-radius:14px;padding:16px 18px;margin:0 0 18px;box-shadow:0 1px 3px rgba(26,24,21,.06),0 12px 28px rgba(26,24,21,.09)';
+        w.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin:0 0 8px"><div style="font-size:15px;font-weight:800;color:#1a1815">What the agents did, day by day</div><div style="font-size:11.5px;color:#64748b">Every action is saved to Echo as it happens. Pick dates to look back or download a file.</div></div><div id="lucid-agf"></div>';
+        today.after(w);
+      }
+      var hh = document.getElementById('lucid-agf'); if (hh && !hh.firstChild) hh.innerHTML = lucidHistory();
+    }
+  }, 700);
+
+  // ── Settings: Nina's real access level ───────────────────────────────
+  setInterval(function () {
+    var s = document.getElementById('screen-settings'); if (!s || s.offsetParent === null || org() !== 'fin') return;
+    [].forEach.call(s.querySelectorAll('.stat-card'), function (c) {
+      var l = c.querySelector('.stat-label'); if (!l || !/Access Level/i.test(l.textContent)) return;
+      var v = l.nextElementSibling, sub = c.querySelector('.stat-change');
+      if (v && v.textContent !== 'Member') v.textContent = 'Member';
+      if (sub && sub.textContent !== 'Data Science workspace · Echo by request') sub.textContent = 'Data Science workspace · Echo by request';
+    });
+  }, 900);
+
+  // ── Echo search: Enter runs it; the extra Search button goes ─────────
+  setInterval(function () {
+    var i = document.getElementById('echo-topsearch-input'); if (!i || i.offsetParent === null) return;
+    var b = [].filter.call(i.parentNode.querySelectorAll('button'), function (x) { return /^Search$/.test(x.textContent.trim()); })[0];
+    if (b && b.style.display !== 'none') { b.style.display = 'none'; i.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); b.click(); } }); }
+  }, 900);
+})();
+</script>
+<script data-p="p48_watchman">
+// 10/9 (Brittany: Watchman "looks small", "drop downs to choose instead of clicking", "date and then by time like the
+// trust score log", "boxes on the side"). The Cases and war rooms area becomes one full-width view: dropdowns choose
+// Cases / War rooms / Incident reports, the case, severity, and dates; the log is grouped by day, then time; side
+// boxes show the selected case and every open case. Also: FIN-1203 dates follow Echo's sealed record everywhere.
+(function () {
+  function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;'); }
+  function org() { return window.currentOrg || 'fin'; }
+  function D() { return (window.CARDINAL_DATA || {})[org()] || {}; }
+  function h32(s) { var x = 2166136261; for (var i = 0; i < s.length; i++) { x ^= s.charCodeAt(i); x = Math.imul(x, 16777619); } return Math.abs(x); }
+  var MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'], DAYN = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  function tm(d) { d = new Date(d); var h = d.getHours(), m = d.getMinutes(); return ((h % 12) || 12) + ':' + (m < 10 ? '0' : '') + m + (h < 12 ? ' AM' : ' PM'); }
+  function md(d) { d = new Date(d); return MON[d.getMonth()] + ' ' + d.getDate(); }
+  function iso(d) { d = new Date(d); return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
+  function dayName(d) { d = new Date(d); var n = new Date(), dd = Math.round((new Date(n.getFullYear(), n.getMonth(), n.getDate()) - new Date(d.getFullYear(), d.getMonth(), d.getDate())) / 864e5); return (dd === 0 ? 'Today, ' : dd === 1 ? 'Yesterday, ' : '') + DAYN[d.getDay()] + ', ' + MON[d.getMonth()] + ' ' + d.getDate() + (d.getFullYear() !== n.getFullYear() ? ', ' + d.getFullYear() : ''); }
+  var SEV = { Critical: '#B91C1C', High: '#C2410C', Medium: '#A16207', Low: '#64748b' };
+  var CORE = { eden: 'Eden', obsidian: 'Obsidian', genesis: 'Genesis', atonement: 'Atonement', warroom: 'War room', watchman: 'Watchman', sentinel: 'Watchman', compliance: 'Compliance', trustledger: 'Trust Ledger', trustloop: 'Trust Loop', halo: 'Halo' };
+
+  // ── One source of truth for case dates: Echo's sealed record ─────────
+  function mems(o) { return ((window.CARDINAL_DATA || {})[o] || {}).echoMemories || []; }
+  window.cardinalCaseDates = function (o, cs) {
+    cs = String(cs || '').replace(/^#/, ''); var L = mems(o).filter(function (m) { return String(m.caseId || '').replace(/^#/, '') === cs; }).sort(function (a, b) { return a.timestamp < b.timestamp ? -1 : 1; });
+    var det = L.filter(function (m) { return /detected/.test(m.eventType || ''); })[0] || L[0], op = L.filter(function (m) { return m.eventType === 'case-opened'; })[0] || det;
+    return { detected: det ? new Date(det.timestamp) : null, opened: op ? new Date(op.timestamp) : null };
+  };
+  function fixStory() {
+    var o = org(), cs = String(D().primaryCase || '').replace(/^#/, ''); if (!cs) return;
+    var cd = cardinalCaseDates(o, cs); if (!cd.opened) return;
+    var day = Math.floor((Date.now() - cd.opened) / 864e5) + 1;
+    // Echo's newest FIN-1203 shadow event matches the rest of the story (0.83).
+    mems(o).forEach(function (m) { if (/Shadow DI improved to 0\.79/.test(m.summary || '')) { m.summary = 'Shadow fairness ratio holds at 0.83; waiting on sign-offs before full rollout'; if (m.content) m.content = String(m.content).replace(/0\.79/g, '0.83'); } });
+    var s = document.querySelector('.screen.active'); if (!s) return;
+    var w = document.createTreeWalker(s, NodeFilter.SHOW_TEXT), n;
+    while ((n = w.nextNode())) {
+      var v = n.nodeValue, v2 = v;
+      if (v2.indexOf(cs) >= 0 && /is on Day \d+/.test(v2)) v2 = v2.replace(/is on Day \d+/, 'is on Day ' + day);
+      if (/Shadow DI improved to 0\.79/.test(v2)) v2 = v2.replace(/Shadow DI improved to 0\.79[^.]*/, 'Shadow fairness ratio holds at 0.83; waiting on sign-offs before full rollout');
+      if (v2 !== v) n.nodeValue = v2;
+    }
+    // War Room list and Lucid's root cause show Echo's dates.
+    var wl = document.getElementById('wr-incident-list');
+    if (wl && wl.offsetParent !== null) { var first = wl.firstElementChild; if (first && first.textContent.indexOf(cs) >= 0) [].forEach.call(first.querySelectorAll('div'), function (e) { if (e.children.length === 0 && /· Opened [A-Z][a-z]{2} \d+/.test(e.textContent)) { var t = e.textContent.replace(/Opened [A-Z][a-z]{2} \d+/, 'Opened ' + md(cd.opened)); if (t !== e.textContent) e.textContent = t; } }); }
+    var lu = document.getElementById('screen-lucid');
+    if (lu && lu.offsetParent !== null && cd.detected) [].forEach.call(lu.querySelectorAll('div,span'), function (e) { if (e.children.length === 0 && e.textContent.trim() === 'Detected') { var v = e.nextElementSibling, want = md(cd.detected) + ', ' + cd.detected.getFullYear(); if (v && v.textContent !== want) v.textContent = want; } });
+  }
+  setInterval(function () { try { fixStory(); } catch (e) {} }, 1200);
+
+  // ── Cases, war rooms, incident reports ───────────────────────────────
+  var OWN = ['Nina Roberts', 'Grace Liu', 'Lisa Torres'];
+  function cases(o) {
+    var E = (window.__EDO_EXT || {})[o] || {}, seen = {}, out = [];
+    (E.biasIncidentsActive || []).concat(E.fraudIncidentsActive || []).forEach(function (c) {
+      var id = String(c.caseId).replace(/^#/, ''); if (seen[id]) return; seen[id] = 1;
+      var cd = cardinalCaseDates(o, id), sla = c.slaDeadline ? Math.max(0, Math.ceil((new Date(c.slaDeadline) - Date.now()) / 864e5)) : null;
+      out.push({ id: id, sev: c.severity || 'Medium', model: c.modelId || '', affected: c.affectedCount || 0, who: c.cohortDescription || '', metric: c.metricViolation || '', sla: sla, opened: cd.opened || (c.detectedDate ? new Date(c.detectedDate) : null), owner: id === String(D().primaryCase || '').replace('#', '') ? (D().user || 'Nina Roberts') : OWN[h32(id) % OWN.length], room: (D().caseChannels || []).some(function (x) { return x.caseId === id; }) });
+    });
+    var rank = { Critical: 0, High: 1, Medium: 2, Low: 3 };
+    return out.sort(function (a, b) { return (rank[a.sev] - rank[b.sev]) || (b.affected - a.affected); });
+  }
+  function reports(o) {
+    var cs = String(D().primaryCase || '').replace('#', ''), now = new Date(), d = function (n, h) { return new Date(now.getFullYear(), now.getMonth(), now.getDate() + n, h || 10, 0); };
+    if (o !== 'fin') return [{ t: d(-2), cs: cs, what: 'Board incident summary drafted', to: 'Board', status: 'Draft', who: 'Eve' }];
+    return [
+      { t: d(-1, 16), cs: 'FIN-1203', what: 'CFPB pre-exam incident summary: ZIP code proxy, who was affected, and the fix', to: 'CFPB examination team', status: 'Draft · due before the exam', who: 'Morgan Hale' },
+      { t: d(-3, 11), cs: 'FIN-1203', what: 'Board incident report: 1,203 applicants, re-review progress, v3.5 status', to: 'Board risk committee', status: 'Sent', who: 'Riley Whitmore' },
+      { t: d(-6, 9), cs: 'FIN-0842', what: 'Collections Agent offered fee waivers it should not have (2 test prompts)', to: 'Internal: Compliance', status: 'Closed · fix in review', who: 'Adam' },
+      { t: d(-9, 14), cs: 'FIN-2207', what: 'Device-farm fraud ring: 31 applications blocked', to: 'Fraud operations', status: 'Closed', who: 'Obsidian' },
+      { t: d(-15, 10), cs: 'FIN-0891', what: 'Auto Loan v2.1 rural approval gap opened as a case', to: 'Internal: Model risk', status: 'Open', who: 'Nina Roberts' }
+    ];
+  }
+  function events(o, view) {
+    var out = [];
+    if (view === 'cases') mems(o).forEach(function (m) { var id = String(m.caseId || '').replace(/^#/, ''); if (!id || /PRE/.test(id)) return; out.push({ t: new Date(m.timestamp), cs: id, what: m.summary, who: String(m.author || '').replace(/ Core$/, ''), core: CORE[m.core] || m.core || '', sev: m.severity }); });
+    if (view === 'warrooms') {
+      (D().caseChannels || []).forEach(function (c) { (c.messages || []).forEach(function (m) { out.push({ t: new Date(m.timestamp), cs: c.caseId, what: m.content, who: String(m.author || '').replace(/: Cardinal$/, ''), core: 'War room' }); }); });
+      mems(o).forEach(function (m) { if (m.core === 'warroom') out.push({ t: new Date(m.timestamp), cs: String(m.caseId || '').replace(/^#/, ''), what: m.summary, who: 'Watchman', core: 'War room' }); });
+    }
+    if (view === 'reports') reports(o).forEach(function (r) { out.push({ t: r.t, cs: r.cs, what: r.what, who: r.who, core: r.to, status: r.status }); });
+    return out.sort(function (a, b) { return b.t - a.t; });
+  }
+  var F = window.__wm2 = window.__wm2 || { view: 'cases', cs: '', sev: '', from: '', to: '', q: '', page: 0 };
+  window.wm2Set = function (k, v) { F[k] = v; F.page = 0; draw(true); };
+  window.wm2Page = function (d) { F.page = Math.max(0, F.page + d); draw(true); };
+  window.wm2Pick = function (id) { F.cs = F.cs === id ? '' : id; F.page = 0; draw(true); };
+  function sevPill(s) { var c = SEV[s] || '#64748b'; return '<span style="font-size:10.5px;font-weight:800;color:' + c + ';background:' + c + '14;border:1px solid ' + c + '40;border-radius:999px;padding:1px 8px">' + esc(s) + '</span>'; }
+  function html() {
+    var o = org(), C = cases(o), byId = {}; C.forEach(function (c) { byId[c.id] = c; });
+    var from = F.from ? new Date(F.from + 'T00:00:00') : null, to = F.to ? new Date(F.to + 'T23:59:59') : null, q = F.q.toLowerCase();
+    var L = events(o, F.view).filter(function (e) { var c = byId[e.cs]; return (!F.cs || e.cs === F.cs) && (!F.sev || (c && c.sev === F.sev)) && (!from || e.t >= from) && (!to || e.t <= to) && (!q || (e.what + ' ' + e.who + ' ' + e.cs).toLowerCase().indexOf(q) >= 0); });
+    var sel = 'font:inherit;font-size:12.5px;border:1px solid rgba(26,24,21,.14);border-radius:9px;padding:6px 9px;background:#fff';
+    var VIEWS = [['cases', 'Cases: every step, every case'], ['warrooms', 'War rooms: live team rooms for serious cases'], ['reports', 'Incident reports: formal write-ups sent out']];
+    var ctl = '<div class="wm2-ctl"><select style="' + sel + ';font-weight:700" onchange="wm2Set(\'view\',this.value)">' + VIEWS.map(function (v) { return '<option value="' + v[0] + '" ' + (F.view === v[0] ? 'selected' : '') + '>' + v[1] + '</option>'; }).join('') + '</select>' +
+      '<select style="' + sel + '" onchange="wm2Set(\'cs\',this.value)"><option value="">All cases</option>' + C.map(function (c) { return '<option value="' + c.id + '" ' + (F.cs === c.id ? 'selected' : '') + '>' + c.id + ' · ' + esc(c.model) + '</option>'; }).join('') + '</select>' +
+      '<select style="' + sel + '" onchange="wm2Set(\'sev\',this.value)"><option value="">Any severity</option>' + ['Critical', 'High', 'Medium'].map(function (s) { return '<option ' + (F.sev === s ? 'selected' : '') + '>' + s + '</option>'; }).join('') + '</select>' +
+      '<label>From <input type="date" value="' + F.from + '" style="' + sel + '" onchange="wm2Set(\'from\',this.value)"></label><label>To <input type="date" value="' + F.to + '" style="' + sel + '" onchange="wm2Set(\'to\',this.value)"></label>' +
+      '<input type="search" placeholder="Search what happened or who" value="' + esc(F.q) + '" style="' + sel + ';flex:1;min-width:180px" onkeydown="if(event.key===\'Enter\')wm2Set(\'q\',this.value)"></div>';
+    var G = []; L.forEach(function (e) { var k = iso(e.t); if (!G.length || G[G.length - 1].k !== k) G.push({ k: k, d: e.t, items: [] }); G[G.length - 1].items.push(e); });
+    var per = 6, pages = Math.max(1, Math.ceil(G.length / per)); if (F.page >= pages) F.page = pages - 1;
+    var TH = 'text-align:left;font-size:10.5px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.4px;padding:8px 12px;background:#f4efe6', TD = 'padding:9px 12px;border-top:1px solid rgba(26,24,21,.06);font-size:12.5px;vertical-align:top';
+    var log = G.slice(F.page * per, F.page * per + per).map(function (g) {
+      return '<div class="wm2-day"><div class="wm2-dh"><b>' + dayName(g.d) + '</b><span>' + g.items.length + (g.items.length === 1 ? ' entry' : ' entries') + ' · sealed in Echo</span></div><table style="width:100%;border-collapse:collapse"><thead><tr><th style="' + TH + ';width:84px">Time</th><th style="' + TH + ';width:110px">Case</th><th style="' + TH + '">' + (F.view === 'reports' ? 'Report' : 'What happened') + '</th><th style="' + TH + ';width:150px">' + (F.view === 'reports' ? 'Sent to' : 'Where') + '</th><th style="' + TH + ';width:140px">' + (F.view === 'reports' ? 'Status' : 'Who') + '</th></tr></thead><tbody>' +
+        g.items.map(function (e, i) { var c = byId[e.cs]; return '<tr style="background:' + (i % 2 ? '#f7f3ea' : '#fff') + ';cursor:pointer" onclick="wm2Pick(\'' + esc(e.cs) + '\')"><td style="' + TD + ';white-space:nowrap;color:#475569">' + tm(e.t) + '</td><td style="' + TD + '"><span style="font-weight:800;color:' + (c ? SEV[c.sev] : '#1a1815') + '">' + esc(e.cs) + '</span></td><td style="' + TD + ';color:#1a1815;font-weight:600">' + esc(e.what) + '</td><td style="' + TD + '">' + esc(e.core) + '</td><td style="' + TD + '">' + esc(F.view === 'reports' ? e.status : e.who) + '</td></tr>'; }).join('') + '</tbody></table></div>';
+    }).join('') || '<div style="padding:18px;color:#64748b;background:#fff;border-radius:14px">Nothing matches these filters.</div>';
+    var pager = pages > 1 ? '<div class="wm2-pg"><button type="button" ' + (F.page ? '' : 'disabled') + ' onclick="wm2Page(-1)">← Newer</button><span>Page ' + (F.page + 1) + ' of ' + pages + '</span><button type="button" ' + (F.page < pages - 1 ? '' : 'disabled') + ' onclick="wm2Page(1)">Older →</button></div>' : '';
+    var pick = F.cs && byId[F.cs], open = C.length;
+    var side = (pick ? '<div class="wm2-box" style="border-top:3px solid ' + SEV[pick.sev] + '"><div class="wm2-bt">Selected case</div><div style="display:flex;justify-content:space-between;align-items:center;margin:4px 0 6px"><b style="font-size:18px">' + pick.id + '</b>' + sevPill(pick.sev) + '</div><div style="font-size:12.5px;color:#334155;line-height:1.5;margin-bottom:8px">' + esc(pick.model) + ': ' + esc(pick.metric) + '</div>' +
+      [['Who is affected', pick.affected.toLocaleString() + ' · ' + pick.who], ['Opened', pick.opened ? md(pick.opened) + ', ' + pick.opened.getFullYear() : '–'], ['Owner', pick.owner], ['Days left to fix', pick.sla == null ? '–' : pick.sla + (pick.sla === 1 ? ' day' : ' days')], ['War room', pick.room ? 'Open' : 'None (not needed yet)']].map(function (r) { return '<div class="wm2-r"><span>' + r[0] + '</span><b>' + esc(r[1]) + '</b></div>'; }).join('') +
+      '<div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap">' + (pick.room ? '<button type="button" class="wm2-btn dark" onclick="openWarRoomCase(\'' + pick.id + '\')">Open war room →</button>' : '') + '<button type="button" class="wm2-btn" onclick="cardinalEdenGo&&cardinalEdenGo(\'case\',\'Watchman\')">See in Eden</button><button type="button" class="wm2-btn" onclick="wm2Pick(\'' + pick.id + '\')">Clear</button></div></div>'
+      : '<div class="wm2-box"><div class="wm2-bt">Pick a case</div><div style="font-size:12.5px;color:#334155;line-height:1.5">Click any row or a case below to see who is affected, the owner, and the days left to fix it.</div></div>') +
+      '<div class="wm2-box"><div class="wm2-bt">Open cases · ' + open + '</div>' + C.map(function (c) { return '<div class="wm2-case' + (F.cs === c.id ? ' on' : '') + '" onclick="wm2Pick(\'' + c.id + '\')"><span class="dot" style="background:' + SEV[c.sev] + '"></span><div style="flex:1;min-width:0"><b>' + c.id + '</b> <span style="color:#64748b">' + esc(c.model) + '</span><div style="font-size:11px;color:#64748b">' + c.affected.toLocaleString() + ' affected' + (c.sla != null ? ' · ' + c.sla + ' days left' : '') + '</div></div>' + (c.room ? '<span title="War room open" style="font-size:10px;font-weight:800;color:#B91C1C">ROOM</span>' : '') + '</div>'; }).join('') + '</div>' +
+      '<div class="wm2-box"><div class="wm2-bt">What each view is</div><div style="font-size:12px;color:#334155;line-height:1.55"><b>Case:</b> one problem, tracked from the moment it is found until it is fixed.<br><b>War room:</b> the live team room and clock for a serious case.<br><b>Incident report:</b> the formal write-up sent to a regulator, the board, or a team when a rule says you must report.</div></div>';
+    return '<div class="wm2-head"><div><div style="font-size:16px;font-weight:800;color:#1a1815">Cases and war rooms</div><div style="font-size:12px;color:#64748b">Every step of every case, by day and time. Pick what to see with the menus.</div></div></div>' + ctl + '<div class="wm2-grid"><div>' + log + pager + '</div><div class="wm2-side">' + side + '</div></div>';
+  }
+  var css = document.createElement('style');
+  css.textContent = '#wm2{margin:6px 0 18px}#wm2 .wm2-head{display:flex;justify-content:space-between;align-items:flex-end;margin:0 0 10px}#wm2 .wm2-ctl{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:0 0 14px;font-size:12px;color:#64748b}' +
+    '#wm2 .wm2-grid{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:18px;align-items:start}#wm2 .wm2-day{background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 1px 3px rgba(26,24,21,.06),0 10px 24px rgba(26,24,21,.08);margin:0 0 14px}#wm2 .wm2-dh{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:#ebe4d6}#wm2 .wm2-dh b{font-size:13px}#wm2 .wm2-dh span{font-size:11.5px;color:#64748b}' +
+    '#wm2 .wm2-side{position:sticky;top:12px;display:flex;flex-direction:column;gap:12px}#wm2 .wm2-box{background:#fff;border-radius:14px;padding:14px 16px;box-shadow:0 1px 3px rgba(26,24,21,.06),0 12px 28px rgba(26,24,21,.09)}#wm2 .wm2-bt{font-size:11px;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:.6px}' +
+    '#wm2 .wm2-r{display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-top:1px dashed rgba(26,24,21,.12);font-size:12.5px;color:#334155}#wm2 .wm2-r b{color:#1a1815;text-align:right}' +
+    '#wm2 .wm2-case{display:flex;gap:8px;align-items:center;padding:8px;border-radius:10px;cursor:pointer;font-size:12.5px;margin-top:4px}#wm2 .wm2-case:hover,#wm2 .wm2-case.on{background:#f4efe6}#wm2 .wm2-case .dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}' +
+    '#wm2 .wm2-btn{font:inherit;font-size:12px;font-weight:700;border:1px solid rgba(26,24,21,.14);background:#fff;border-radius:8px;padding:5px 10px;cursor:pointer;color:#1a1815}#wm2 .wm2-btn.dark{background:#1a1815;color:#fff;border-color:#1a1815}' +
+    '#wm2 .wm2-pg{display:flex;justify-content:space-between;align-items:center;font-size:12px;color:#64748b}#wm2 .wm2-pg button{font:inherit;font-weight:700;border:1px solid rgba(26,24,21,.14);background:#fff;border-radius:8px;padding:4px 10px;cursor:pointer}' +
+    '@media (max-width:1000px){#wm2 .wm2-grid{grid-template-columns:1fr}#wm2 .wm2-side{position:static}}';
+  document.head.appendChild(css);
+  function host() { var b = [].filter.call(document.querySelectorAll('#screen-sentinel button'), function (x) { return x.textContent.trim() === 'Stress tests' && !x.closest('#wm-sub'); })[0]; return b && b.parentElement && b.parentElement.parentNode; }
+  function inCases() { var on = document.querySelector('#wm-rooms button.on b'); return on && /^Cases and war rooms$/.test(on.textContent.trim()); }
+  function draw(force) {
+    var s = document.getElementById('screen-sentinel'); if (!s || s.offsetParent === null) return;
+    var hst = host(), sub = document.getElementById('wm-sub'), box = document.getElementById('wm2'); if (!hst || !sub) return;
+    if (!inCases()) { if (box) box.style.display = 'none'; if (hst.__wm2) { hst.__wm2 = 0; hst.style.display = ''; } if (sub.__wm2) { sub.__wm2 = 0; sub.style.display = ''; } return; }
+    if (!box) { box = document.createElement('div'); box.id = 'wm2'; }
+    if (box.previousElementSibling !== sub) sub.parentNode.insertBefore(box, sub.nextSibling);
+    box.style.display = ''; if (hst.style.display !== 'none') { hst.__wm2 = 1; hst.style.display = 'none'; } if (sub.style.display !== 'none') { sub.__wm2 = 1; sub.style.display = 'none'; }
+    var h = html(); if (force || box.__h !== h) { var ae = document.activeElement, keep = ae && box.contains(ae) && ae.tagName === 'INPUT' && ae.type === 'search'; if (keep && !force) return; box.__h = h; box.innerHTML = h; }
+  }
+  setInterval(function () { try { draw(false); } catch (e) { if (window.console) console.warn('wm2', e); } }, 800);
+})();
+</script>
 </body>
 
 </html>
