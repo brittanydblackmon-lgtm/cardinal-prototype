@@ -33167,6 +33167,9 @@ window.renderBigWorkspacePage = function() {
     arr.forEach(function(m){ allMems.push(Object.assign({}, m, { __org: o })); });
   });
   var myPinnedMems = allMems.filter(function(m){ return myPinIds.indexOf(m.id) !== -1; });
+  // 10/8: notes can be pinned too.
+  var myPinnedNotes = myNotes.map(function (n, i) { return { n: n, i: i }; }).filter(function (x) { return x.n.pinned && !x.n.deleted; });
+  var myPinCount = myPinnedMems.length + myPinnedNotes.length;
 
   var myMems = allMems.filter(function(m){ return m.author === persona.name; });
 
@@ -33186,7 +33189,7 @@ window.renderBigWorkspacePage = function() {
   '</div>';
 
   html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">' +
-    '<div style="padding:12px;background:rgba(250,204,21,0.06);border:1px solid rgba(250,204,21,0.2);border-radius:10px;text-align:center;"><div style="font-size:22px;color:#FACC15;font-weight:800;line-height:1;">' + myPinnedMems.length + '</div><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.6px;font-weight:700;margin-top:6px;">Pins</div></div>' +
+    '<div style="padding:12px;background:rgba(250,204,21,0.06);border:1px solid rgba(250,204,21,0.2);border-radius:10px;text-align:center;"><div style="font-size:22px;color:#FACC15;font-weight:800;line-height:1;">' + myPinCount + '</div><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.6px;font-weight:700;margin-top:6px;">Pins</div></div>' +
     '<div style="padding:12px;background:rgba(168,85,247,0.06);border:1px solid rgba(168,85,247,0.2);border-radius:10px;text-align:center;"><div style="font-size:22px;color:#a855f7;font-weight:800;line-height:1;">' + (window.cardinalEmpStats ? __es.notes : myNotesShown) + '</div><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.6px;font-weight:700;margin-top:6px;">Notes</div></div>' +
     '<div style="padding:12px;background:rgba(167, 167, 167,0.06);border:1px solid rgba(167, 167, 167,0.15);border-radius:10px;text-align:center;"><div style="font-size:22px;color:var(--accent);font-weight:800;line-height:1;">' + __es.events + '</div><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.6px;font-weight:700;margin-top:6px;">Events</div></div>' +
     '<div style="padding:12px;background:rgba(34,197,94,0.06);border:1px solid rgba(34,197,94,0.2);border-radius:10px;text-align:center;"><div style="font-size:22px;color:#22c55e;font-weight:800;line-height:1;">' + __es.cases + '</div><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.6px;font-weight:700;margin-top:6px;">Cases</div></div>' +
@@ -33217,9 +33220,9 @@ window.renderBigWorkspacePage = function() {
 
   html += '<div>' +
     '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">' +
-      '<div style="font-size:12px;color:#1a1815;text-transform:uppercase;letter-spacing:0.6px;font-weight:800;">My Pinned Items (' + myPinnedMems.length + ')</div>' +
+      '<div style="font-size:12px;color:#1a1815;text-transform:uppercase;letter-spacing:0.6px;font-weight:800;">My Pinned Items (' + myPinCount + ')</div>' +
     '</div>';
-  if (myPinnedMems.length === 0) {
+  if (myPinCount === 0) {
     html += '<div style="padding:24px;background:rgba(26,24,21,0.045);border:1px dashed rgba(250,204,21,0.2);border-radius:10px;text-align:center;color:var(--muted);font-size:11px;">No pins yet. Right-click any case ID, model, or memory anywhere in Cardinal to pin it. Or click on memory cards in Echo.</div>';
   } else {
     html += '<div style="background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 1px 3px rgba(26,24,21,.06),0 8px 20px rgba(26,24,21,.06)"><table style="width:100%;border-collapse:collapse;font-size:12.5px"><thead><tr style="background:#ebe4d6">' + ['Pinned item', 'Case', 'Severity', 'When', ''].map(function (h) { return '<th style="text-align:left;font-size:10.5px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.4px;padding:9px 12px">' + h + '</th>'; }).join('') + '</tr></thead><tbody>' +
@@ -33233,6 +33236,7 @@ window.renderBigWorkspacePage = function() {
           '<td style="padding:10px 12px;white-space:nowrap;color:#475569">' + t.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) + '<div style="font-size:11px">' + t.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) + '</div></td>' +
           '<td style="padding:10px 12px;text-align:right"><button type="button" onclick="event.stopPropagation();echoTogglePersonalPin(\'' + mid + '\');renderBigWorkspacePage();" style="font:inherit;font-size:11px;font-weight:700;background:#fff;border:1px solid rgba(26,24,21,.15);border-radius:8px;padding:4px 10px;cursor:pointer" title="Unpin">Unpin</button></td></tr>';
       }).join('') +
+      myPinnedNotes.map(function (x, k) { var n = x.n, t = new Date(n.timestamp), i = myPinnedMems.length + k; var txt = String((n.title ? n.title + ': ' : '') + String(n.text || '').replace(/^\s*:\s*/, '')).replace(/</g, '&lt;'); return '<tr onclick="document.getElementById(\'big-note-body-' + x.i + '\') && document.getElementById(\'big-note-body-' + x.i + '\').scrollIntoView({behavior:\'smooth\',block:\'center\'})" style="cursor:pointer;background:' + (i % 2 ? '#f7f3ea' : '#fff') + '"><td style="padding:10px 12px;font-weight:600;color:#1a1815">' + (txt.length > 140 ? txt.slice(0, 140) + '…' : txt) + '</td><td style="padding:10px 12px;color:#64748b">—</td><td style="padding:10px 12px"><span style="font-size:10.5px;font-weight:700;color:#6d28d9;background:#f5f3ff;border-radius:999px;padding:2px 9px">Note</span></td><td style="padding:10px 12px;white-space:nowrap;color:#475569">' + t.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) + '<div style="font-size:11px">' + t.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) + '</div></td><td style="padding:10px 12px;text-align:right"><button type="button" onclick="event.stopPropagation();pinBigNote(' + x.i + ')" style="font:inherit;font-size:11px;font-weight:700;background:#fff;border:1px solid rgba(26,24,21,.15);border-radius:8px;padding:4px 10px;cursor:pointer">Unpin</button></td></tr>'; }).join('') +
     '</tbody></table></div>';
   }
   html += '</div>';
@@ -33243,9 +33247,9 @@ window.renderBigWorkspacePage = function() {
     html += '<div style="padding:24px;background:rgba(26,24,21,0.045);border:1px dashed rgba(168,85,247,0.2);border-radius:10px;text-align:center;color:var(--muted);font-size:11px;">No notes yet. Use the composer above, or right-click anywhere in Cardinal to add a contextual note.</div>';
   } else {
     html += '<div style="display:flex;flex-direction:column;gap:8px;">' +
-      myNotes.slice().reverse().map(function(n, idx){
-        var nts = new Date(n.timestamp);
-        var realIdx = myNotes.length - 1 - idx;
+      myNotes.map(function (n, i) { return { n: n, i: i }; }).reverse().sort(function (a, b) { return (b.n.pinned ? 1 : 0) - (a.n.pinned ? 1 : 0); }).map(function(x){
+        var n = x.n, nts = new Date(n.timestamp);
+        var realIdx = x.i;
         // 9/30 -- Brittany's rule: notes can be edited or deleted for 24 hours, then they lock.
         // Every version is kept (n.versions) and logged to Echo; deletes are soft (hidden,
         // never erased) so edits can't be used to quietly change the record.
@@ -33266,10 +33270,10 @@ window.renderBigWorkspacePage = function() {
         return '<div style="padding:14px 16px;background:#fff;border:0;border-radius:14px;box-shadow:0 1px 3px rgba(26,24,21,.06),0 8px 20px rgba(26,24,21,.06);">' +
           '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;gap:8px;">' +
             '<div>' +
-              (n.title ? '<div style="font-size:13px;color:var(--chrome2);font-weight:700;line-height:1.3;">' + escTitle + '</div>' : '') +
+              (n.title || n.pinned ? '<div style="font-size:13px;color:var(--chrome2);font-weight:700;line-height:1.3;">' + escTitle + (n.pinned ? ' <span style="font-size:10px;font-weight:700;color:#6d28d9;background:#f5f3ff;border-radius:999px;padding:1px 8px;margin-left:4px">Pinned</span>' : '') + '</div>' : '') +
               '<div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.6px;font-weight:600;font-family:monospace;margin-top:' + (n.title ? '4px' : '0') + ';">' + nts.toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' }) + '</div>' +
             '</div>' +
-            '<div style="display:flex;gap:6px;align-items:center">' + lockHtml + (editable ? '<button type="button" onclick="deleteBigNote(' + realIdx + ')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;line-height:1;" title="Delete (hidden from you, kept in Echo)">×</button>' : '') + '</div>' +
+            '<div style="display:flex;gap:6px;align-items:center">' + '<button type="button" onclick="pinBigNote(' + realIdx + ')" style="font:inherit;font-size:10.5px;font-weight:700;border-radius:6px;padding:3px 9px;cursor:pointer;' + (n.pinned ? 'background:#fff;color:#1a1815;border:1px solid rgba(26,24,21,.2)' : 'background:#1a1815;color:#fff;border:1px solid #1a1815') + '" title="' + (n.pinned ? 'Unpin this note' : 'Pin this note to the top of your workspace') + '">' + (n.pinned ? 'Unpin' : 'Pin') + '</button>' + lockHtml + (editable ? '<button type="button" onclick="deleteBigNote(' + realIdx + ')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;line-height:1;" title="Delete (hidden from you, kept in Echo)">×</button>' : '') + '</div>' +
           '</div>' +
           '<div id="big-note-body-' + realIdx + '" style="font-size:12px;color:var(--chrome2);line-height:1.7;white-space:pre-wrap;">' + escText + '</div>' +
           histHtml +
@@ -33321,6 +33325,14 @@ function bigNoteEchoLog(persona, eventType, n) {
   } catch (_nl) {}
 }
 function bigNoteEditable(n) { return n && !n.deleted && (Date.now() - new Date(n.timestamp).getTime()) < 24 * 3600000; }
+window.pinBigNote = function (idx) {
+  var persona = window.getActivePersona ? getActivePersona() : null; if (!persona) return;
+  window.__userNotes = window.__userNotes || {}; var list = window.__userNotes['notes:' + persona.id] || [], n = list[idx]; if (!n) return;
+  n.pinned = !n.pinned;
+  try { cardinalLogActivity('edit', (n.pinned ? 'Pinned a note: ' : 'Unpinned a note: ') + String(n.title || n.text || '').replace(/^\s*:\s*/, '').slice(0, 60), null); } catch (e) {}
+  try { (window.cardinalShowToast || showToast)(n.pinned ? 'Note pinned. It shows under My Pinned Items.' : 'Note unpinned.'); } catch (e) {}
+  renderBigWorkspacePage();
+};
 window.editBigNote = function (idx) {
   var persona = window.getActivePersona ? window.getActivePersona() : null;
   if (!persona) return;
@@ -47880,14 +47892,15 @@ window.genRenderScenarios = function () {
       '<input id="pl-q" placeholder="Search files, models, people" value="' + esc(F.q) + '" style="' + SEL + ';flex:1;min-width:200px">' +
       '<select id="pl-type" style="' + SEL + '">' + opts(uniq(all.map(function (r) { return r.type; })), F.type, 'All file types') + '</select>' +
       '<select id="pl-status" style="' + SEL + '">' + opts(['Live', 'Shadow', 'Review', 'Processing', 'Archived'], F.status, 'All statuses') + '</select>' +
+      '<div class="pl-bulk"><span>' + (nSel ? nSel + ' selected' : 'Select files, then:') + '</span>' + [['tag', 'Tags'], ['suppress', 'Suppress'], ['archive', 'Archive'], ['restore', 'Restore'], ['delete', 'Delete']].map(function (b) { return '<button type="button" class="pl-act' + (b[0] === 'delete' ? ' del' : '') + (nSel ? '' : ' off') + '" onclick="plBulk(\'' + b[0] + '\',this)">' + b[1] + '</button>'; }).join('') + '</div>' +
       '<select id="pl-by" style="' + SEL + '">' + opts(uniq(all.map(function (r) { return r.by; })), F.by, 'Uploaded by anyone') + '</select>' +
       '<label style="font-size:10.5px;color:#64748b">From<br><input id="pl-from" type="date" value="' + F.from + '" style="' + SEL + '"></label>' +
       '<label style="font-size:10.5px;color:#64748b">To<br><input id="pl-to" type="date" value="' + F.to + '" style="' + SEL + '"></label></div>' +
       (chips.length ? '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">' + chips.map(function (c) { return '<span style="font-size:10.5px;font-weight:700;padding:4px 10px;border-radius:999px;background:rgba(29,78,216,.08);color:#1e3a8a">' + esc(c[1]) + ' <a href="#" onclick="event.preventDefault();plClear(\'' + c[0] + '\')" style="color:#1e3a8a;text-decoration:none;margin-left:4px">×</a></span>'; }).join('') + '</div>' : '') +
       '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><div style="font-size:12px;font-weight:700;color:#1a1815">' + list.length + ' file' + (list.length === 1 ? '' : 's') + '</div>' +
-      (nSel ? '<div style="display:flex;gap:6px;align-items:center"><span style="font-size:11px;color:#64748b">' + nSel + ' selected</span><button type="button" class="btn-ghost" style="font-size:11px" onclick="plBulk(\'suppress\')">Create suppression</button><button type="button" class="btn-ghost" style="font-size:11px" onclick="plBulk(\'archive\')">Archive</button><button type="button" class="btn-ghost" style="font-size:11px;color:#B91C1C" onclick="plBulk(\'delete\')">Delete</button></div>' : '') + '</div>' +
+      '' + '</div>' +
       '<div style="border:1px solid rgba(26,24,21,.10);border-radius:10px;overflow:hidden"><table style="width:100%;border-collapse:collapse;font-size:11.5px"><thead><tr style="background:#f3f0e9;text-align:left;color:#475569">' +
-      '<th style="padding:9px 10px;width:28px"><input type="checkbox" onclick="plAll(this.checked)"' + (nSel && nSel === list.length ? ' checked' : '') + '></th><th style="padding:9px 8px">Name</th><th style="padding:9px 8px">Type</th><th style="padding:9px 8px">Feeds</th><th style="padding:9px 8px">Uploaded by</th><th style="padding:9px 8px">Uploaded</th><th style="padding:9px 8px">Size</th><th style="padding:9px 8px">Status</th><th style="padding:9px 8px"></th></tr></thead><tbody>' +
+      '<th style="padding:9px 10px;width:28px"><input type="checkbox" onclick="plAll(this.checked)"' + (nSel && nSel === list.length ? ' checked' : '') + '></th><th style="padding:9px 8px">Name</th><th style="padding:9px 8px">Type</th><th style="padding:9px 8px">Feeds</th><th style="padding:9px 8px">Uploaded by</th><th style="padding:9px 8px">Uploaded</th><th style="padding:9px 8px">Size</th><th style="padding:9px 8px">Status</th></tr></thead><tbody>' +
       list.map(function (r, i) {
         var c = STC[r.status] || STC.Live;
         return '<tr style="background:' + (i % 2 ? '#faf8f3' : '#fff') + ';border-top:1px solid rgba(26,24,21,.06)">' +
@@ -47896,7 +47909,7 @@ window.genRenderScenarios = function () {
           '<td style="padding:9px 8px;color:#475569">' + esc(r.type) + '</td><td style="padding:9px 8px;color:#475569">' + esc(r.feeds) + '</td>' +
           '<td style="padding:9px 8px;color:#475569">' + esc(r.by) + '</td><td style="padding:9px 8px;color:#475569">' + fmt(r.at) + '</td><td style="padding:9px 8px;color:#475569">' + esc(r.size) + '</td>' +
           '<td style="padding:9px 8px"><span style="font-size:10px;font-weight:800;padding:2px 8px;border-radius:999px;color:' + c[0] + ';background:' + c[1] + '">' + esc(r.status) + '</span></td>' +
-          '<td style="padding:9px 8px;white-space:nowrap"><div class="pl-acts">' + [['view', 'View'], ['tag', 'Tags'], ['suppress', 'Suppress'], ['archive', r.status === 'Archived' ? 'Restore' : 'Archive'], ['delete', 'Delete']].map(function (b) { return '<button type="button" class="pl-act' + (b[0] === 'delete' ? ' del' : '') + '" onclick="event.stopPropagation();plAct(\'' + r.id + '\',\'' + b[0] + '\',this)">' + b[1] + '</button>'; }).join('') + '</div></td></tr>';
+          '</tr>';
       }).join('') + (list.length ? '' : '<tr><td colspan="9" style="padding:18px;text-align:center;color:#64748b">No files match these filters.</td></tr>') + '</tbody></table></div><div id="pl-detail"></div>';
     var bind = function (id, key, ev) { var e = document.getElementById(id); if (e) e.addEventListener(ev || 'change', function () { F[key] = e.value; plRender(); if (id === 'pl-q') { var n = document.getElementById('pl-q'); n.focus(); n.setSelectionRange(n.value.length, n.value.length); } }); };
     bind('pl-q', 'q', 'input'); bind('pl-type', 'type'); bind('pl-status', 'status'); bind('pl-by', 'by'); bind('pl-from', 'from'); bind('pl-to', 'to');
@@ -47924,11 +47937,14 @@ window.genRenderScenarios = function () {
     try { cardinalLogActivity('edit', a + ': ' + r.name, null); } catch (e) {}
     plRender();
   };
-  window.plBulk = function (a) {
-    var list = rows(window.currentOrg || 'ad').filter(function (r) { return F.sel[r.id]; }); if (!list.length) return;
+  window.plBulk = function (a, btn) {
+    var list = rows(window.currentOrg || 'ad').filter(function (r) { return F.sel[r.id]; }); if (!list.length) { toast('Tick the files you want first, using the boxes on the left.'); return; }
+    if (a === 'tag') { window.__plBulkKeys = list.map(function (r) { return 'pl:' + r.name; }); if (typeof tgAdd === 'function') tgAdd(btn || document.body, 'pl:__bulk'); return; }
+    if (a === 'restore') { list.forEach(function (r) { if (r.status === 'Archived') r.status = 'Live'; }); toast(list.length + ' file' + (list.length === 1 ? '' : 's') + ' restored.'); F.sel = {}; plRender(); return; }
     if (a === 'suppress') suppress(list);
     if (a === 'archive') list.forEach(function (r) { r.status = 'Archived'; });
-    if (a === 'delete') { if (!confirm('Delete ' + list.length + ' files? Their upload records stay in Echo.')) return; ROWS[window.currentOrg || 'ad'] = rows(window.currentOrg || 'ad').filter(function (r) { return !F.sel[r.id]; }); }
+    if (a === 'delete') { ROWS[window.currentOrg || 'ad'] = rows(window.currentOrg || 'ad').filter(function (r) { return !F.sel[r.id]; }); toast(list.length + ' file' + (list.length === 1 ? '' : 's') + ' deleted. Their upload records stay in Echo.'); }
+    if (a === 'archive') toast(list.length + ' file' + (list.length === 1 ? '' : 's') + ' archived.');
     F.sel = {}; plRender();
   };
   window.plView = function (id) {
@@ -54331,7 +54347,7 @@ window.CARDINAL_PLACES = {
     p.innerHTML = '<input placeholder="Type a tag, press Enter"><div class="sg">' + Object.keys(all).sort().map(function (t) { return '<span class="tg-chip" style="cursor:pointer" data-t="' + esc(t) + '">' + esc(t) + '</span>'; }).join('') + '</div>';
     document.body.appendChild(p);
     var inp = p.querySelector('input'); inp.focus();
-    var add = function (t) { t = String(t || '').trim().toLowerCase().replace(/\s+/g, '-'); if (!t) return; var s = store(); s[key] = (s[key] || []); if (s[key].indexOf(t) < 0) s[key].push(t); p.remove(); refresh(true); try { cardinalLogActivity('edit', 'Tagged ' + key.split(':').slice(1).join(':') + ' as ' + t, null); } catch (e) {} };
+    var add = function (t) { t = String(t || '').trim().toLowerCase().replace(/\s+/g, '-'); if (!t) return; var s = store(); if (key === 'pl:__bulk') { (window.__plBulkKeys || []).forEach(function (k) { s[k] = s[k] || []; if (s[k].indexOf(t) < 0) s[k].push(t); }); p.remove(); refresh(true); try { (window.cardinalShowToast || showToast)('Tagged ' + (window.__plBulkKeys || []).length + ' files as ' + t + '.'); } catch (e) {} return; } s[key] = (s[key] || []); if (s[key].indexOf(t) < 0) s[key].push(t); p.remove(); refresh(true); try { cardinalLogActivity('edit', 'Tagged ' + key.split(':').slice(1).join(':') + ' as ' + t, null); } catch (e) {} };
     inp.addEventListener('keydown', function (e) { if (e.key === 'Enter') add(inp.value); if (e.key === 'Escape') p.remove(); });
     [].forEach.call(p.querySelectorAll('[data-t]'), function (c) { c.onclick = function () { add(c.getAttribute('data-t')); }; });
     setTimeout(function () { document.addEventListener('mousedown', function off(ev) { if (!p.contains(ev.target)) { p.remove(); document.removeEventListener('mousedown', off); } }); }, 0);
@@ -55633,7 +55649,8 @@ window.CARDINAL_PLACES = {
     });
     place(g, 'c37-tl', units);
   }
-  setInterval(function () { try { calendar(); } catch (e) {} try { watchman(); } catch (e) {} try { genesis(); } catch (e) {} try { ledger(); } catch (e) {} }, 700);
+  ['c37-wm', 'c37-gen', 'c37-genrow'].forEach(function (id) { var e = document.getElementById(id); if (e) e.remove(); });
+  setInterval(function () { try { calendar(); } catch (e) {} try { ledger(); } catch (e) {} }, 700);
 })();
 
 </script>
