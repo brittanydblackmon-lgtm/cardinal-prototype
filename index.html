@@ -54415,19 +54415,26 @@ window.CARDINAL_PLACES = {
     if (!table || table.offsetParent === null) return;
     if (ro) {
       var used0 = {};
+      var hr0 = table.querySelector('thead tr') || [].filter.call(table.querySelectorAll('tr'), function (r) { return r.querySelector('th'); })[0];
+      if (hr0 && !hr0.querySelector('.tg-th')) { var th0 = document.createElement('th'); th0.className = 'tg-th'; th0.textContent = 'Tags'; th0.style.cssText = 'padding:9px 8px;text-align:left;white-space:nowrap'; hr0.appendChild(th0); }
+      var picked = [];
       [].forEach.call(table.querySelectorAll('tbody tr'), function (tr) {
         if (tr.querySelector('th') || tr.children.length < 2) return;
-        var nc = nameCell(tr); if (!nc) return;
+        var old = tr.querySelector('.tg-ro'); if (old) old.remove();
         var key = scope + ':' + nameOf(tr), tags = tagsFor(key, tr.textContent || ''); tags.forEach(function (t) { used0[t] = 1; });
-        var box = nc.querySelector('.tg-ro'); if (!box) { box = document.createElement('div'); box.className = 'tg-ro'; box.style.marginTop = '3px'; nc.appendChild(box); }
-        if (scope === 'lib' && !box.__c) { box.__c = 1; box.style.cursor = 'pointer'; box.title = 'Click to add or edit tags'; box.onclick = function (e) { e.stopPropagation(); tgAdd(box, key); }; }
-        var h = tags.map(function (t) { return '<span class="tg-chip" style="font-size:10px">' + esc(t) + '</span>'; }).join('') + (scope === 'lib' ? '<span class="tg-chip" style="font-size:10px;background:#fff;border-style:dashed;color:#64748b">' + (tags.length ? 'Edit' : '+ Tag') + '</span>' : ''); if (box.__h !== h) { box.__h = h; box.innerHTML = h; }
+        var cb = tr.querySelector('input[type=checkbox]'); if (cb && cb.checked) picked.push(key);
+        var td = tr.querySelector('td.tg-col'); if (!td) { td = document.createElement('td'); td.className = 'tg-col'; td.style.cssText = 'padding:9px 8px'; tr.appendChild(td); }
+        var h = tags.length ? tags.map(function (t) { return '<span class="tg-chip" style="font-size:10px">' + esc(t) + '</span>'; }).join('') : '<span style="font-size:11px;color:#94a3b8">—</span>'; if (td.__h !== h) { td.__h = h; td.innerHTML = h; }
         var f0 = FILTER[scope]; tr.style.display = !f0 || tags.indexOf(f0) > -1 ? '' : 'none';
       });
       var bar0 = barHost.querySelector(':scope > .tg-bar[data-s="' + scope + '"]'), all0 = Object.keys(used0).sort();
       var o0 = '<option value="">Tag: any</option>' + all0.map(function (t) { return '<option' + (FILTER[scope] === t ? ' selected' : '') + '>' + esc(t) + '</option>'; }).join('');
-      if (!bar0) { bar0 = document.createElement('div'); bar0.className = 'tg-bar'; bar0.setAttribute('data-s', scope); bar0.innerHTML = '<span style="font-size:11.5px;color:#64748b">Filter by tag</span><select onchange="tgFilter(\'' + scope + '\',this.value)"></select>'; barHost.insertBefore(bar0, barHost.firstChild); }
+      if (!bar0) { bar0 = document.createElement('div'); bar0.className = 'tg-bar'; bar0.setAttribute('data-s', scope); bar0.innerHTML = '<span class="tg-sel" style="margin-right:auto"></span><span style="font-size:11.5px;color:#64748b">Filter by tag</span><select onchange="tgFilter(\'' + scope + '\',this.value)"></select>'; barHost.insertBefore(bar0, barHost.firstChild); }
       var se0 = bar0.querySelector('select'); if (se0.__o !== o0) { se0.__o = o0; se0.innerHTML = o0; }
+      // Library: tick rows, then add tags to all of them.
+      var selBox = bar0.querySelector('.tg-sel'), sh = scope === 'lib' && picked.length ? '<span style="font-size:11.5px;color:#64748b;margin-right:8px">' + picked.length + ' selected</span><button type="button" class="pl-bk" style="font-size:11.5px;padding:6px 12px">Add tags</button>' : '';
+      if (selBox && selBox.__h !== sh) { selBox.__h = sh; selBox.innerHTML = sh; var bt = selBox.querySelector('button'); if (bt) bt.onclick = function () { window.__plBulkKeys = picked.slice(); tgAdd(bt, 'pl:__bulk'); }; }
+      if (selBox && bt === undefined) { var bt2 = selBox.querySelector('button'); if (bt2) bt2.onclick = function () { window.__plBulkKeys = picked.slice(); tgAdd(bt2, 'pl:__bulk'); }; }
       [].forEach.call(document.querySelectorAll('.pl-dtags'), function (d) { var k = d.getAttribute('data-key'), tg = store()[k] || []; var h = tg.length ? tg.map(function (t) { return '<span class="tg-chip">' + esc(t) + ' <b onclick="tgRemove(' + esc(JSON.stringify(k)) + ',' + esc(JSON.stringify(t)) + ')" title="Remove tag">×</b></span>'; }).join('') : '<span style="font-size:11.5px;color:#64748b">No tags yet</span>'; if (d.__h !== h) { d.__h = h; d.innerHTML = h; } });
       return;
     }
