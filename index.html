@@ -54894,6 +54894,9 @@ window.CARDINAL_PLACES = {
       for (var z = steps.length - 1; z > 0; z--) { var j = (sd + z * 7) % (z + 1), t = steps[z]; steps[z] = steps[j]; steps[j] = t; }
       var mi = MON.indexOf(String(p.month).slice(0, 3)), yr = +String(p.month).slice(-4), last = new Date(yr, mi + 1, 0).getDate();
       var cur = v(h[i - 1]), dayCap = (yr === now.getFullYear() && mi === now.getMonth()) ? now.getDate() : last;
+      // Today: the score moves a few times during the day, ending where the month ends.
+      var curMonth = yr === now.getFullYear() && mi === now.getMonth(), nNorm = steps.length, extra = [];
+      if (curMonth) { var ip = steps.indexOf(1); if (ip > -1 && D > 0) { steps.splice(ip, 1); extra = [-1, 1, 1]; } else extra = [-1, 1]; nNorm = steps.length; steps = steps.concat(extra); }
       var m0 = out.length;
       steps.forEach(function (st, n) {
         var day = Math.min(dayCap, 2 + Math.floor((n + 1) * (dayCap - 2) / (steps.length + 1)) + (n % 2 && sd % 2 ? 0 : 0));
@@ -54902,6 +54905,7 @@ window.CARDINAL_PLACES = {
         if (out.length && out[out.length - 1].t >= t && out[out.length - 1].t.getMonth() === mi) t = new Date(out[out.length - 1].t.getTime() + (90 + sd % 120) * 60000);
         if (t.getHours() >= 19) t.setHours(17, 20 + n * 9 % 40); if (t.getHours() < 8) t.setHours(8, 10); if (c && c[2] === 'person' || true) { if (t.getDay() === 0) t.setDate(t.getDate() + 1); if (t.getDay() === 6) t.setDate(t.getDate() - 1); }
         if (t > now) t = new Date(now.getTime() - (steps.length - n) * 47 * 60000);
+        if (curMonth && n >= nNorm) { var ex = n - nNorm, SL = [[9, 12], [11, 40], [14, 5]]; t = new Date(now.getFullYear(), now.getMonth(), now.getDate(), SL[ex][0], SL[ex][1]); if (t > now) t = new Date(now.getTime() - (extra.length - ex) * 35 * 60000); }
         var pool = (st > 0 ? C.up : C.down).filter(function (c) { return !/stand-in for race|stand-in for a protected trait/.test(c[3]); }), pk = pool.filter(function (c) { return k === 'score' || c[0] === k; }); if (!pk.length) pk = pool;
         var ck = (st > 0 ? 'u' : 'd') + k; rot[ck] = (rot[ck] == null ? sd % pk.length : rot[ck] + 1); var c = pk[rot[ck] % pk.length];
         var ann = p.annotation ? (typeof p.annotation === 'object' ? p.annotation.summary : p.annotation) : null;
@@ -54941,6 +54945,9 @@ window.CARDINAL_PLACES = {
   function movedPill(e) { if (e.hold) return '<span style="font-size:10.5px;font-weight:700;color:#64748b;background:#f1f5f9;border-radius:999px;padding:2px 9px">Nothing moved</span>'; var c = PCOL[e.part] || ['#475569', '#f1f5f9']; return '<span style="font-size:10.5px;font-weight:700;color:' + c[0] + ';background:' + c[1] + ';border-radius:999px;padding:2px 9px">' + esc(PNAME[e.part] || 'Trust Score') + '</span>'; }
   window.cardinalScoreLogHTML = function (h, k, pre) {
     var ev = withDaily(h, k, shEvents(h, k)); window.__shLog = { h: h, k: k, ev: ev };
+    var fFrom = window.__shFrom ? new Date(window.__shFrom + 'T00:00:00') : null, fTo = window.__shTo ? new Date(window.__shTo + 'T23:59:59') : null;
+    if (fFrom || fTo) ev = ev.filter(function (e) { return (!fFrom || e.t >= fFrom) && (!fTo || e.t <= fTo); });
+    window.__shLog.ev = ev;
     var dayList = []; ev.forEach(function (e) { var d = fd(e.t); if (dayList.indexOf(d) < 0) dayList.push(d); });
     var PER = 14, pages = Math.max(1, Math.ceil(dayList.length / PER)), pg = Math.min(window.__shPage || 0, pages - 1), show = dayList.slice(pg * PER, pg * PER + PER);
     var body = '', lastDay = '';
@@ -54950,7 +54957,9 @@ window.CARDINAL_PLACES = {
       var c = e.ch > 0 ? '#15803D' : e.ch < 0 ? '#B91C1C' : '#64748b', wc = e.kind === 'agent' ? '#6d28d9' : '#1a1815';
       body += '<tr class="ex-click" style="cursor:pointer" title="Open the full story" onclick="cardinalScorePoint(' + i + ')"><td style="white-space:nowrap;color:#475569">' + shTime(e.t) + '</td><td style="white-space:nowrap;font-weight:800">' + (e.hold ? e.to : e.from + ' → ' + e.to) + '</td><td style="font-weight:700;color:' + c + '">' + (e.ch > 0 ? '+' : '') + (e.ch || '0') + '</td><td style="white-space:nowrap">' + movedPill(e) + '</td><td><div style="font-weight:600;color:#1a1815">' + esc(e.what) + (e.pinned ? ' <span style="font-size:10.5px;font-weight:700;color:#A16207">Pinned event</span>' : '') + '</div></td><td style="white-space:nowrap">' + esc(e.cs || e.model || '') + '</td></tr>';
     });
-    return '<div style="font-size:12px;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:.5px;margin:4px 0 8px">Score change log · every change, as it happened · click any row for the full story</div>' +
+    var P = esc(JSON.stringify(pre || 'echo-sh'));
+    return '<div style="display:flex;justify-content:space-between;align-items:flex-end;gap:10px;flex-wrap:wrap;margin:4px 0 8px"><div style="font-size:12px;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:.5px">Score change log · every change, as it happened · click any row for the full story</div>' +
+      '<div style="display:flex;gap:8px;align-items:center;font-size:11.5px;color:#64748b">From <input type="date" value="' + esc(window.__shFrom || '') + '" onchange="window.__shFrom=this.value;window.__shPage=0;cardinalScoreHistoryPart(' + P + ',window.__shLog.k)" style="font:inherit;font-size:12px;padding:5px 8px;border:1px solid rgba(26,24,21,.15);border-radius:8px">To <input type="date" value="' + esc(window.__shTo || '') + '" onchange="window.__shTo=this.value;window.__shPage=0;cardinalScoreHistoryPart(' + P + ',window.__shLog.k)" style="font:inherit;font-size:12px;padding:5px 8px;border:1px solid rgba(26,24,21,.15);border-radius:8px">' + (window.__shFrom || window.__shTo ? '<a href="javascript:void(0)" onclick="window.__shFrom=\'\';window.__shTo=\'\';window.__shPage=0;cardinalScoreHistoryPart(' + P + ',window.__shLog.k)" style="color:#1e3a8a;font-weight:700">Clear</a>' : '') + '</div></div>' +
       '<div class="ex-wrap"><table class="ex-tbl"><thead><tr><th>Time</th><th>Score</th><th>Change</th><th>What moved</th><th>What happened</th><th>Case or model</th></tr></thead><tbody>' + body + '</tbody></table></div>' +
       '<div class="ex-pager"><span>Days ' + (pg * PER + 1) + '–' + Math.min(dayList.length, pg * PER + PER) + ' of ' + dayList.length + ' · page ' + (pg + 1) + ' of ' + pages + '</span><span>' + (pg > 0 ? '<button type="button" onclick="cardinalScoreLogPage(' + esc(JSON.stringify(pre || 'echo-sh')) + ',-1)">Newer</button> ' : '') + (pg < pages - 1 ? '<button type="button" onclick="cardinalScoreLogPage(' + esc(JSON.stringify(pre || 'echo-sh')) + ',1)">Older</button>' : '') + '</span></div>';
   };
@@ -55826,7 +55835,19 @@ window.CARDINAL_PLACES = {
     '.tsv2-eve-section .eb2-chips{gap:6px;margin:0 0 10px}.tsv2-eve-section .eb2-chip{padding:7px 10px;border-radius:10px;border:1px solid rgba(124,58,237,.10)}.tsv2-eve-section .eb2-chip b{font-size:15px}.tsv2-eve-section .eb2-chip span{font-size:9.5px}' +
     '.tsv2-eve-section .eb2-lead{font-size:13px;margin:0 0 6px}.tsv2-eve-section .eb2-list li{font-size:12px;padding:4px 0 4px 18px}.tsv2-eve-section .eb2-list li:before{top:10px;width:6px;height:6px;background:linear-gradient(135deg,#a78bfa,#6d28d9)}' +
     '.tsv2-eve-section .eb2-next{font-size:12.5px;padding:9px 12px;background:#f4efe6;color:#1a1815;border-left:4px solid #7c3aed}.tsv2-eve-section .eb2-next strong{color:#6d28d9}.tsv2-eve-section .eb2-chips{display:none!important}.tsv2-eve-section .tsv2-eve-btn{font-size:11.5px!important;padding:7px 12px!important}';
+  css.textContent +=
+    '#echo-fedlens-toggle{display:none!important}' +
+    '.tsv2-eve-section .tsv2-eve-btn[id$="pdf-btn"],.tsv2-eve-section .tsv2-eve-btn[onclick*="BoardBrief"],.tsv2-eve-section .tsv2-eve-btn[onclick*="Brief"]{display:none!important}' +
+    '.eve-e{background:linear-gradient(180deg,#fffdf9,#efe8db)!important;color:#1a1815!important;font-family:Georgia,"Times New Roman",serif!important;font-weight:700!important;font-style:normal!important;border:1.5px solid rgba(124,58,237,.55)!important;box-shadow:0 2px 6px rgba(26,24,21,.12),0 8px 18px rgba(26,24,21,.10)!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;line-height:1!important;text-shadow:none!important}' +
+    '#eve-toggle-btn.eve-e-btn{background:linear-gradient(180deg,#fffdf9,#efe8db)!important;border:2px solid rgba(124,58,237,.55)!important;box-shadow:0 4px 12px rgba(26,24,21,.18),0 14px 30px rgba(26,24,21,.16)!important}#eve-toggle-btn .eve-e-glyph{font-family:Georgia,"Times New Roman",serif;font-weight:700;font-size:26px;color:#1a1815;line-height:1;margin-top:-3px}';
   document.head.appendChild(css);
+
+  // Eve's new icon: the soft "e" in a ring.
+  setInterval(function () {
+    [].forEach.call(document.querySelectorAll('.tsv2-eve-avatar, .eve-avatar, .msg-avatar.eve, .eve-peek-avatar'), function (el) { if (el.__ee) return; if (el.textContent.trim() === '✦' || el.textContent.trim() === '') { el.__ee = 1; el.textContent = 'e'; el.classList.add('eve-e'); } });
+    var tb = document.getElementById('eve-toggle-btn');
+    if (tb && !tb.__ee) { var svg = tb.querySelector('svg.eve-icon'); if (svg) { tb.__ee = 1; svg.style.display = 'none'; var g = document.createElement('span'); g.className = 'eve-e-glyph'; g.textContent = 'e'; tb.appendChild(g); tb.classList.add('eve-e-btn'); } }
+  }, 600);
 
   // Atonement: keep the summary and the tab row above the tab content.
   setInterval(function () {
@@ -55966,7 +55987,7 @@ window.CARDINAL_PLACES = {
       setTimeout(function () { el.classList.remove('pgi-up', 'pgi-dn'); }, 1400);
     });
   }
-  setInterval(liveImpact, 4000);
+
 
   // ── Echo: Demographics and geography, live ──────────────────────────
   var IMP = {
@@ -55991,7 +56012,7 @@ window.CARDINAL_PLACES = {
     LOG[o] = LOG[o].slice(0, 30);
     if (changed) { var p = document.getElementById('echo-impact'); if (p && p.offsetParent !== null) p.outerHTML = window.cardinalEchoImpact(); }
   }
-  setInterval(stepLive, 5000);
+
   function tm(d) { var h = d.getHours(), m = d.getMinutes(), s = d.getSeconds(); return (h % 12 || 12) + ':' + (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s + ' ' + (h < 12 ? 'AM' : 'PM'); }
   window.cardinalEchoImpact = function () {
     var o = org(), I = IMP[o] || IMP.fin, S = state(o), b = S.demo[0];
@@ -56005,6 +56026,194 @@ window.CARDINAL_PLACES = {
     return '<div id="echo-impact"><div class="ex-note">How decisions land on different groups of people and places, updated as new decisions come in. Protected traits are used only to test fairness, never to decide. Every change is sealed in Echo.</div>' +
       card('Demographics', demo) + card('Geography', geo) + card('Latest changes', logT) + '</div>';
   };
+})();
+
+</script>
+
+<script data-p="p40_live">
+// 10/8 (Brittany: "the gender, age, and race charts should move like the live detection bar, and the copy should
+// update everywhere at the same time"; "Echo demographics needs filters, age, more states, and history, not a
+// live feed"). One live model per company drives the Dashboard charts, their captions, and Echo's history view.
+(function () {
+  function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;'); }
+  function org() { return window.currentOrg || 'fin'; }
+  var MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  var BASE = {};
+  function snap(o) {
+    if (BASE[o]) return BASE[o]; var c = (typeof DASH_INDUSTRY !== 'undefined' && DASH_INDUSTRY[o]) || null; if (!c) return null;
+    BASE[o] = { g: c.demoGenderBars ? { male: c.demoGenderBars.male, female: c.demoGenderBars.female, other: c.demoGenderBars.other } : null, a: c.dashAgeChart ? c.dashAgeChart.values.slice() : null, r: c.demoRaceBars ? c.demoRaceBars.rows.map(function (x) { return x.pct; }) : null };
+    return BASE[o];
+  }
+  ['ad', 'fin', 'health', 'fed'].forEach(snap);
+  function iwalk(cur, base, span) { var r = Math.random(), nv = cur + (r < 0.3 ? -1 : r > 0.7 ? 1 : 0); return Math.max(base - span, Math.min(base + span, nv)); }
+  function walk(cur, base, span) { var nv = cur + (Math.random() - 0.5) * 0.8; return Math.max(base - span, Math.min(base + span, Math.round(nv * 10) / 10)); }
+  function tickModel(o) {
+    var c = DASH_INDUSTRY[o], b = snap(o); if (!c || !b) return;
+    if (b.g) ['male', 'female', 'other'].forEach(function (k) { c.demoGenderBars[k] = iwalk(c.demoGenderBars[k], b.g[k], 2); });
+    if (b.a) c.dashAgeChart.values = c.dashAgeChart.values.map(function (v, i) { return iwalk(v, b.a[i], 2); });
+    if (b.r) { var base0 = null; c.demoRaceBars.rows.forEach(function (row, i) { row.pct = row.isBaseline ? walk(row.pct, b.r[i], 0.6) : walk(row.pct, b.r[i], 1.2); if (row.isBaseline) base0 = row.pct; });
+      if (base0) { c.demoRaceBars.baselinePct = base0; c.demoRaceBars.rows.forEach(function (row) { if (row.isBaseline) return; var d = Math.round(row.pct - base0); row.delta = d + '%' + (d <= -10 ? ' ✗' : d < 0 ? ' ⚠' : ''); }); } }
+  }
+  function captions(o) {
+    var c = DASH_INDUSTRY[o]; if (!c) return;
+    var g = c.demoGenderBars, gn = document.getElementById('dr-demo-gender-note');
+    if (g && gn) { var lo = Math.min(g.male, g.female), hi = Math.max(g.male, g.female), who = g.male < g.female ? 'Men' : 'Women', other = g.male < g.female ? 'women' : 'men'; gn.textContent = who + ' ' + lo + '% vs ' + other + ' ' + hi + '% (ratio ' + (lo / hi).toFixed(2) + ')'; gn.style.color = lo / hi < 0.8 ? '#B91C1C' : lo / hi < 0.9 ? '#A16207' : '#15803D'; }
+    var a = c.dashAgeChart, an = document.getElementById('dr-demo-age-note');
+    if (a && an) { var idx = a.labels.map(function (l, i) { return i; }).filter(function (i) { return !/unk/i.test(a.labels[i]); }), low = idx.reduce(function (m, i) { return a.values[i] < a.values[m] ? i : m; }, idx[0]); an.textContent = '↘ Ages ' + a.labels[low] + ': ' + a.values[low] + '% vs ' + a.values[0] + '% for ages ' + a.labels[0] + ' (' + (a.values[0] - a.values[low]) + '-point gap)'; }
+  }
+  function redraw() {
+    var s = document.getElementById('screen-dashboard'); if (!s || s.offsetParent === null) return;
+    var o = org(), c = DASH_INDUSTRY[o];
+    try { drawDashGenderCompare(); } catch (e) {} try { drawDashAgeChart(); } catch (e) {} try { dashRenderRaceBars(c); } catch (e) {}
+    captions(o);
+  }
+  setInterval(function () { tickModel(org()); redraw(); var p = document.getElementById('echo-impact'); if (p && p.offsetParent !== null && !p.contains(document.activeElement)) p.outerHTML = window.cardinalEchoImpact(); }, 6000);
+  setTimeout(function () { captions(org()); }, 2500);
+
+  // Eden's Protected Group section shows the same numbers as the Dashboard.
+  function edenSync() {
+    var sec = document.getElementById('eden-sec-protected-impact'); if (!sec || sec.offsetParent === null) return;
+    var o = org(), c = DASH_INDUSTRY[o]; if (!c) return;
+    var cards = [].slice.call(sec.querySelectorAll('.card'));
+    var gc = cards.filter(function (x) { return /Gender distribution/i.test(x.textContent); })[0], g = c.demoGenderBars;
+    if (gc && g) {
+      var tt = gc.firstElementChild; if (tt && /assignment/.test(tt.textContent) && o !== 'ad') tt.textContent = tt.textContent.replace('assignment', 'approval');
+      var map = { Male: g.male, Female: g.female, Other: g.other };
+      [].forEach.call(gc.children, function (row) { var sp = row.querySelectorAll('span'); if (sp.length < 2) return; var k = sp[0].textContent.trim(); if (map[k] == null) return; var t = map[k] + '%'; if (sp[1].textContent !== t) sp[1].textContent = t; var bar = row.querySelector('div[style*="width:"] > div[style*="width"]') || row.querySelector('div > div[style*="width"]'); if (bar && bar.style.width !== map[k] + '%') bar.style.width = map[k] + '%'; });
+    }
+    var rc = cards.filter(function (x) { return /Racial \/ ethnic/i.test(x.textContent); })[0], rows = (c.demoRaceBars || {}).rows || [];
+    if (rc && rows.length) {
+      var tt2 = rc.firstElementChild; if (tt2 && /assignment/.test(tt2.textContent) && o !== 'ad') tt2.textContent = tt2.textContent.replace('assignment', 'approval');
+      var base = c.demoRaceBars.baselinePct;
+      [].forEach.call(rc.querySelectorAll('tbody tr'), function (tr) { var td = tr.children; if (td.length < 3) return; var lab = td[0].textContent.trim(), r = rows.filter(function (x) { return x.label === lab || (lab === 'Black/AA' && /Black/.test(x.label)); })[0]; if (!r) return; var v = r.pct.toFixed(1) + '%'; if (td[1].textContent !== v) td[1].textContent = v; var d = r.isBaseline ? 'BASELINE' : Math.round(r.pct - base) + '%'; if (td[2].textContent.trim() !== d) td[2].textContent = d; });
+    }
+    var ac = cards.filter(function (x) { return /Age group/i.test(x.textContent); })[0], ag = c.dashAgeChart;
+    if (ac && ag) {
+      var tt3 = ac.firstElementChild; if (tt3 && /assignment/.test(tt3.textContent) && o !== 'ad') tt3.textContent = tt3.textContent.replace('assignment', 'approval');
+      var leaves = [].filter.call(ac.querySelectorAll('*'), function (x) { return !x.children.length; });
+      var pcts = leaves.filter(function (x) { return /^\d{2}%$/.test(x.textContent.trim()); }), labs = leaves.filter(function (x) { return /^(\d{2}-\d{2}|\d{2}\+|Unk)$/.test(x.textContent.trim()); });
+      pcts.slice(0, ag.values.length).forEach(function (x, i) { var t = ag.values[i] + '%'; if (x.textContent !== t) x.textContent = t; var col = x.parentNode && [].filter.call(x.parentNode.querySelectorAll('div'), function (d) { return /height:\s*\d/.test(d.getAttribute('style') || ''); })[0]; if (col) col.style.height = ag.values[i] + '%'; });
+      labs.slice(0, ag.labels.length).forEach(function (x, i) { if (x.textContent !== ag.labels[i]) x.textContent = ag.labels[i]; });
+      var note = leaves.filter(function (x) { return /lower relative|shows .* lower/i.test(x.textContent); })[0];
+      if (note) { var idx = ag.labels.map(function (l, i) { return i; }).filter(function (i) { return !/unk/i.test(ag.labels[i]); }), low = idx.reduce(function (m, i) { return ag.values[i] < ag.values[m] ? i : m; }, idx[0]); note.textContent = '↘ Ages ' + ag.labels[low] + ': ' + ag.values[low] + '% vs ' + ag.values[0] + '% for ages ' + ag.labels[0] + ' (' + (ag.values[0] - ag.values[low]) + '-point gap)'; }
+    }
+  }
+  setInterval(edenSync, 1500);
+
+  // ── Echo: Demographics and geography, with history and filters ──────
+  var F = { view: 'race', months: 12, state: '' };
+  window.impF = function (k, v) { F[k] = v; var p = document.getElementById('echo-impact'); if (p) p.outerHTML = window.cardinalEchoImpact(); };
+  var EXTRA_STATES = { fin: [['GA', 'Atlanta metro', -6], ['PA', 'Philadelphia metro', -5], ['OH', 'Columbus and Cleveland', -4], ['NC', 'Charlotte metro', -3], ['AZ', 'Phoenix metro', -3], ['NJ', 'Newark metro', -2], ['MA', 'Boston metro', -1], ['WA', 'Seattle metro', 0], ['CO', 'Denver metro', 1]] };
+  function hash(s) { var h = 7; for (var i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) % 100003; return h; }
+  function groups(o) {
+    var c = DASH_INDUSTRY[o] || {}, out = { race: [], gender: [], age: [] };
+    ((c.demoRaceBars || {}).rows || []).forEach(function (r) { out.race.push([r.label, r.pct, !!r.isBaseline]); });
+    if (c.demoGenderBars) out.gender = [['Men', c.demoGenderBars.male, false], ['Women', c.demoGenderBars.female, true], ['Non-binary or other', c.demoGenderBars.other, false]];
+    if (c.dashAgeChart) out.age = c.dashAgeChart.labels.map(function (l, i) { return ['Age ' + l, c.dashAgeChart.values[i], i === 0]; });
+    return out;
+  }
+  function states(o) {
+    var g = ((DASH_INDUSTRY[o] || {}).demoGeo || {}).states || [];
+    var out = g.map(function (s) { return { st: s.abbr, where: s.city || '', gap: parseInt(s.delta, 10) || 0, n: parseInt((s.countText || '').replace(/,/g, ''), 10) || 0, rate: parseInt(s.approvalText, 10) || null, cs: String(s.note || '').replace(/^Case #/, '') }; });
+    (EXTRA_STATES[o] || []).forEach(function (x) { out.push({ st: x[0], where: x[1], gap: x[2], n: 60 + hash(o + x[0]) % 120, rate: null, cs: '' }); });
+    return out;
+  }
+  // Past values: groups below the baseline were steady, then started closing the gap once the re-review began.
+  function history(v, isBase, key, m) { var h = hash(key + m), drift = isBase ? 0 : (m <= 2 ? -m * 0.9 : -1.8 - (m - 2) * 0.15); return Math.round((v + drift + ((h % 9) - 4) * 0.15) * 10) / 10; }
+  window.cardinalEchoImpact = function () {
+    var o = org(), G = groups(o), now = new Date(), TH = 'text-align:left;font-size:10.5px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.4px;padding:9px 12px;background:#f4efe6;white-space:nowrap', TD = 'padding:9px 12px;border-top:1px solid rgba(26,24,21,.06);font-size:12.5px';
+    var sel = function (k, opts) { return '<select onchange="impF(\'' + k + '\',this.value)" style="font:inherit;font-size:12px;padding:7px 10px;border:1px solid rgba(26,24,21,.15);border-radius:8px;background:#fff">' + opts.map(function (x) { return '<option value="' + x[0] + '"' + (String(F[k]) === String(x[0]) ? ' selected' : '') + '>' + x[1] + '</option>'; }).join('') + '</select>'; };
+    var bar = '<div class="ex-bar">' + sel('view', [['race', 'Race and ethnicity'], ['gender', 'Gender'], ['age', 'Age'], ['state', 'States']]) + sel('months', [[3, 'Last 3 months'], [6, 'Last 6 months'], [12, 'Last 12 months']]) + '</div>';
+    var card = function (title, sub, inner) { return '<div style="background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 1px 3px rgba(26,24,21,.06),0 10px 24px rgba(26,24,21,.08);margin:0 0 14px"><div style="padding:10px 14px;background:#ebe4d6"><div style="font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.5px">' + title + '</div>' + (sub ? '<div style="font-size:11.5px;color:#64748b;margin-top:2px">' + sub + '</div>' : '') + '</div><div style="overflow-x:auto">' + inner + '</div></div>'; };
+    var html = '<div id="echo-impact"><div class="ex-note">How decisions land on different groups and places, today and month by month. Protected traits are used only to test fairness, never to decide. Every monthly snapshot is sealed in Echo.</div>' + bar;
+    if (F.view === 'state') {
+      var S = states(o).sort(function (a, b) { return a.gap - b.gap; });
+      html += card('States', S.length + ' states with applicants · gap = approval rate vs. the company baseline', '<table style="width:100%;border-collapse:collapse"><thead><tr><th style="' + TH + '">State</th><th style="' + TH + '">Where</th><th style="' + TH + '">Applicants</th><th style="' + TH + '">Gap now</th>' + [F.months - 1, Math.floor(F.months / 2), 0].map(function (m) { var d = new Date(now.getFullYear(), now.getMonth() - m, 1); return '<th style="' + TH + '">' + MON[d.getMonth()] + ' ' + d.getFullYear() + '</th>'; }).join('') + '<th style="' + TH + '">Case</th></tr></thead><tbody>' +
+        S.map(function (s, i) { var col = s.gap <= -15 ? '#B91C1C' : s.gap <= -8 ? '#A16207' : s.gap < 0 ? '#475569' : '#15803D'; return '<tr style="background:' + (i % 2 ? '#f7f3ea' : '#fff') + '"><td style="' + TD + ';font-weight:800">' + esc(s.st) + '</td><td style="' + TD + '">' + esc(s.where) + '</td><td style="' + TD + '">' + s.n.toLocaleString() + '</td><td style="' + TD + ';font-weight:800;color:' + col + '">' + (s.gap > 0 ? '+' : '') + s.gap + '%</td>' + [F.months - 1, Math.floor(F.months / 2), 0].map(function (m) { var v = m === 0 ? s.gap : Math.round(history(s.gap, s.gap >= 0, o + s.st, m)); return '<td style="' + TD + ';color:#475569">' + (v > 0 ? '+' : '') + v + '%</td>'; }).join('') + '<td style="' + TD + '">' + (s.cs ? '<a href="javascript:void(0)" onclick="echoCaseGo(' + esc(JSON.stringify(s.cs)) + ')" style="color:#1e3a8a;font-weight:700">' + esc(s.cs) + '</a>' : '—') + '</td></tr>'; }).join('') + '</tbody></table>');
+    } else {
+      var list = G[F.view] || [], basev = (list.filter(function (x) { return x[2]; })[0] || list[0] || [0, 1])[1], label = { race: 'Race and ethnicity', gender: 'Gender', age: 'Age' }[F.view];
+      html += card(label + ' today', 'Approval rate and ratio to the baseline group. Below 0.80 fails the four-fifths rule.', '<table style="width:100%;border-collapse:collapse"><thead><tr><th style="' + TH + '">Group</th><th style="' + TH + '">Approval rate</th><th style="' + TH + '">Ratio to baseline</th><th style="' + TH + '">Change over ' + F.months + ' months</th><th style="' + TH + '">Status</th></tr></thead><tbody>' +
+        list.map(function (x, i) { var r = x[2] ? 1 : x[1] / basev, past = history(x[1], x[2], o + x[0], F.months - 1), ch = Math.round((x[1] - past) * 10) / 10; return '<tr style="background:' + (i % 2 ? '#f7f3ea' : '#fff') + '"><td style="' + TD + ';font-weight:700">' + esc(x[0]) + (x[2] ? ' <span style="font-size:10.5px;color:#64748b">(baseline)</span>' : '') + '</td><td style="' + TD + '">' + x[1].toFixed(1) + '%</td><td style="' + TD + ';font-weight:700;color:' + (r < 0.8 ? '#B91C1C' : r < 0.9 ? '#A16207' : '#15803D') + '">' + (x[2] ? '1.00' : r.toFixed(2)) + '</td><td style="' + TD + ';font-weight:700;color:' + (ch > 0 ? '#15803D' : ch < 0 ? '#B91C1C' : '#64748b') + '">' + (ch > 0 ? '+' : '') + ch + ' pts</td><td style="' + TD + '">' + (x[2] ? '—' : r < 0.8 ? '<span style="color:#B91C1C;font-weight:700">Below the 0.80 line</span>' : r < 0.9 ? '<span style="color:#A16207;font-weight:700">Watch</span>' : '<span style="color:#15803D;font-weight:700">OK</span>') + '</td></tr>'; }).join('') + '</tbody></table>');
+      var months = []; for (var m = 0; m < F.months; m++) months.push(m);
+      html += card('Month by month', 'Approval rate for each group, sealed on the 1st of each month', '<table style="width:100%;border-collapse:collapse"><thead><tr><th style="' + TH + '">Month</th>' + list.map(function (x) { return '<th style="' + TH + '">' + esc(x[0]) + '</th>'; }).join('') + '</tr></thead><tbody>' +
+        months.map(function (m, i) { var d = new Date(now.getFullYear(), now.getMonth() - m, 1); var bv = history(basev, true, o + 'base', m); return '<tr style="background:' + (i % 2 ? '#f7f3ea' : '#fff') + '"><td style="' + TD + ';white-space:nowrap;font-weight:700">' + MON[d.getMonth()] + ' ' + d.getFullYear() + (m === 0 ? ' <span style="font-size:10.5px;color:#64748b">(to date)</span>' : '') + '</td>' + list.map(function (x) { var v = m === 0 ? x[1] : history(x[1], x[2], o + x[0], m), r = x[2] ? 1 : v / bv; return '<td style="' + TD + ';color:' + (r < 0.8 ? '#B91C1C' : r < 0.9 ? '#A16207' : '#1a1815') + '">' + v.toFixed(1) + '%</td>'; }).join('') + '</tr>'; }).join('') + '</tbody></table>');
+    }
+    return html + '</div>';
+  };
+})();
+
+</script>
+
+<script data-p="p41_ledger">
+// 10/8 (Brittany: "Trust Ledger: I don't get what was shared and what's not"). A plain answer under the audience
+// buttons: what each audience can see, item by item, and every view that is shared right now (who has it, since
+// when, until when, how many times it was opened), with a way to stop sharing.
+(function () {
+  function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;'); }
+  function org() { return window.currentOrg || 'fin'; }
+  var MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  function fd(d) { d = new Date(d); return MON[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear(); }
+  var TIERS = [['lead', 'Compliance lead'], ['regulator', 'Regulator'], ['auditor', 'Third-party auditor'], ['public', 'Public and press']];
+  var ROWS = [
+    ['Trust Score and certification', 'Full', 'Full', 'Full', 'Score and badge only'],
+    ['Decision receipts (proof a decision was checked)', 'Full', 'Full', 'Full', 'Count only'],
+    ['Cases and what went wrong', 'Full', 'Full', 'Summary', 'Never'],
+    ['Fixes and re-reviews of affected people', 'Full', 'Full', 'Summary', 'Totals only'],
+    ['Whistleblower reports', 'Committee only', 'Dates and outcome only', 'Count only', 'Never'],
+    ['Model details and test results', 'Full', 'Summary', 'Full', 'Never'],
+    ['Customer or applicant personal data', 'Never on the ledger', 'Never on the ledger', 'Never on the ledger', 'Never on the ledger']
+  ];
+  window.__tlShares = window.__tlShares || {};
+  function shares(o) {
+    if (window.__tlShares[o]) return window.__tlShares[o];
+    var now = Date.now(), d = function (n) { return new Date(now + n * 864e5); };
+    var who = { fin: ['CFPB examination team', 'Sponsor bank third-party risk', 'Riley Whitmore', 'Morgan Hale'], ad: ['DoD program office', 'Prime contractor audit team', 'Compliance lead', 'Legal'], health: ['CMS audit team', 'State insurance department', 'Compliance lead', 'Legal'], fed: ['OMB reviewers', 'Inspector General auditors', 'Program office', 'Chief Counsel'] }[o] || ['Regulator', 'Auditor', 'Compliance lead', 'Legal'];
+    return (window.__tlShares[o] = [
+      { name: who[0], tier: 'regulator', by: who[2], made: d(-2), until: d(23), views: 4, on: true },
+      { name: who[1], tier: 'auditor', by: who[3], made: d(-9), until: d(38), views: 2, on: true },
+      { name: 'Public trust page', tier: 'public', by: who[2], made: d(-120), until: null, views: 1204, on: true },
+      { name: 'Last year’s annual review', tier: 'auditor', by: who[2], made: d(-300), until: d(-235), views: 7, on: false }
+    ]);
+  }
+  window.tlStopShare = function (i) { var S = shares(org()), s = S[i]; if (!s) return; s.on = false; s.until = new Date(); draw(true); try { (window.cardinalShowToast || showToast)('Stopped sharing with ' + s.name + '. Their link no longer works. Logged in Echo.'); } catch (e) {} };
+  function tier() { return window.__tlPreviewTier || 'lead'; }
+  function html() {
+    var t = tier(), S = shares(org()), TH = 'text-align:left;font-size:10.5px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.4px;padding:9px 12px;background:#f4efe6', TD = 'padding:9px 12px;border-top:1px solid rgba(26,24,21,.06);font-size:12.5px';
+    var col = function (v) { return /^Full/.test(v) ? '#15803D' : /Never/.test(v) ? '#94a3b8' : '#A16207'; };
+    var matrix = '<table style="width:100%;border-collapse:collapse"><thead><tr><th style="' + TH + '">What</th>' + TIERS.map(function (x) { return '<th style="' + TH + (x[0] === t ? ';background:#1a1815;color:#fff' : '') + '">' + x[1] + '</th>'; }).join('') + '</tr></thead><tbody>' +
+      ROWS.map(function (r, i) { return '<tr style="background:' + (i % 2 ? '#f7f3ea' : '#fff') + '"><td style="' + TD + ';font-weight:700">' + esc(r[0]) + '</td>' + r.slice(1).map(function (v, k) { var on = TIERS[k][0] === t; return '<td style="' + TD + ';font-weight:700;color:' + col(v) + (on ? ';background:rgba(26,24,21,.05)' : '') + '">' + esc(v) + '</td>'; }).join('') + '</tr>'; }).join('') + '</tbody></table>';
+    var list = '<table style="width:100%;border-collapse:collapse"><thead><tr><th style="' + TH + '">Shared with</th><th style="' + TH + '">They see</th><th style="' + TH + '">Shared by</th><th style="' + TH + '">Since</th><th style="' + TH + '">Until</th><th style="' + TH + '">Opened</th><th style="' + TH + '"></th></tr></thead><tbody>' +
+      S.map(function (s, i) { var tn = (TIERS.filter(function (x) { return x[0] === s.tier; })[0] || ['', s.tier])[1]; return '<tr style="background:' + (i % 2 ? '#f7f3ea' : '#fff') + ';' + (s.on ? '' : 'opacity:.6') + '"><td style="' + TD + ';font-weight:700">' + esc(s.name) + '</td><td style="' + TD + '">The ' + esc(tn.toLowerCase()) + ' view</td><td style="' + TD + '">' + esc(s.by) + '</td><td style="' + TD + ';white-space:nowrap">' + fd(s.made) + '</td><td style="' + TD + ';white-space:nowrap">' + (s.until ? fd(s.until) : 'Always on') + '</td><td style="' + TD + '">' + s.views.toLocaleString() + ' times</td><td style="' + TD + ';text-align:right">' + (s.on ? '<button type="button" onclick="tlStopShare(' + i + ')" style="font:inherit;font-size:11.5px;font-weight:700;background:#fff;color:#B91C1C;border:1px solid rgba(220,38,38,.35);border-radius:8px;padding:4px 10px;cursor:pointer">Stop sharing</button>' : '<span style="font-size:11.5px;color:#64748b">Ended</span>') + '</td></tr>'; }).join('') + '</tbody></table>';
+    var card = function (title, sub, inner) { return '<div style="background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 1px 3px rgba(26,24,21,.06),0 10px 24px rgba(26,24,21,.08);margin:12px 0 0"><div style="padding:10px 14px;background:#ebe4d6"><div style="font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.5px">' + title + '</div><div style="font-size:11.5px;color:#64748b;margin-top:2px">' + sub + '</div></div><div style="overflow-x:auto">' + inner + '</div></div>'; };
+    return card('What each audience can see', 'Pick an audience above to highlight its column. Personal data never goes on the ledger, only proof that a check happened.', matrix) +
+      card('Shared right now', S.filter(function (s) { return s.on; }).length + ' active views. Each link shows only its audience’s column, and every opening is logged.', list);
+  }
+  function draw(force) {
+    var pills = document.getElementById('tl-preview-tier-pills'); if (!pills || pills.offsetParent === null) return;
+    var host = document.getElementById('tl-share-clear'); if (!host) { host = document.createElement('div'); host.id = 'tl-share-clear'; }
+    var anchor = pills.parentNode; if (host.previousElementSibling !== anchor) anchor.parentNode.insertBefore(host, anchor.nextSibling);
+    var h = html(); if (force || host.__h !== h) { host.__h = h; host.innerHTML = h; }
+  }
+  setInterval(draw, 600);
+})();
+// 10/8 (Brittany: "Watchman still jumps"). Switching sections redrew Watchman's panel, showed it, then hid parts of
+// it a moment later, so the page jumped twice. Now the area keeps its height and stays invisible until the redraw
+// settles, then fades in.
+(function () {
+  var css = document.createElement('style');
+  css.textContent = '#screen-sentinel .wm-settle{opacity:0!important}#screen-sentinel .wm-fade{transition:opacity .18s ease}';
+  document.head.appendChild(css);
+  function settle() {
+    var r = document.getElementById('sentinel-engine-root'); if (!r) return;
+    r.style.minHeight = r.offsetHeight + 'px'; r.style.visibility = 'hidden';
+    setTimeout(function () { r = document.getElementById('sentinel-engine-root') || r; r.style.visibility = ''; }, 90);
+    setTimeout(function () { var r2 = document.getElementById('sentinel-engine-root'); if (r2) r2.style.minHeight = ''; }, 700);
+  }
+  function wrap() {
+    var o = window.wmGo; if (typeof o !== 'function' || o.__settle) return false;
+    var w = function () { settle(); return o.apply(this, arguments); }; w.__settle = 1; window.wmGo = w; return true;
+  }
+  var tries = 0, iv = setInterval(function () { if (wrap() || ++tries > 40) clearInterval(iv); }, 250);
 })();
 
 </script>
