@@ -57517,6 +57517,57 @@ setInterval(function () {
   setInterval(function () { watch(); try { run(); } catch (e) {} }, 1000);
 })();
 </script>
+<script data-p="p51_wild">
+// 10/9 (Brittany: "after you get to a certain part in the Halo Core, it should just pop up... as you're scrolling down
+// reading, the Seen in the wild is there in case they want to read it, or you can just exit... and it'll just stay at the
+// bottom"). The Seen in the wild card becomes a panel pinned to the bottom of Halo: it slides up once you have scrolled
+// partway down, can be minimized to a slim bar that stays put, and reopens with a click. Halo only.
+(function () {
+  var S = window.__wild = window.__wild || { shown: false, min: false };
+  var css = document.createElement('style');
+  css.textContent = '#wild-sheet{position:fixed;bottom:0;z-index:900;background:#f4efe6;border-radius:16px 16px 0 0;box-shadow:0 -8px 28px rgba(26,24,21,.16);transform:translateY(110%);transition:transform .35s ease;display:none}' +
+    '#wild-sheet.up{transform:translateY(0)}#wild-sheet .wh{display:flex;align-items:center;gap:10px;padding:10px 16px;cursor:pointer;user-select:none}' +
+    '#wild-sheet .wh b{font-size:13.5px;color:#1a1815}#wild-sheet .wh span{font-size:12px;color:#64748b;flex:1}' +
+    '#wild-sheet .wh button{font:inherit;font-size:12px;font-weight:700;border:1px solid rgba(26,24,21,.14);background:#fff;border-radius:8px;padding:4px 10px;cursor:pointer;color:#1a1815}' +
+    '#wild-sheet .wb{padding:0 16px 14px;max-height:42vh;overflow:auto}#wild-sheet.min .wb{display:none}' +
+    '#wild-sheet #halo-in-the-wild{margin:0!important;padding:0!important;background:transparent!important;border:none!important;box-shadow:none!important}' +
+    '#wild-sheet #halo-in-the-wild>div:nth-child(1),#wild-sheet #halo-in-the-wild>div:nth-child(2){display:none}' +
+    '#wild-sheet #halo-in-the-wild>div:nth-child(3){display:flex!important;gap:10px;overflow-x:auto;padding-bottom:4px;scroll-snap-type:x proximity}' +
+    '#wild-sheet #halo-in-the-wild>div:nth-child(3)>div{flex:0 0 300px;scroll-snap-align:start;background:#fff!important}';
+  document.head.appendChild(css);
+  function scroller(el) { var c = el && el.parentElement; while (c && !(c.scrollHeight > c.clientHeight + 5 && /(auto|scroll)/.test(getComputedStyle(c).overflowY))) c = c.parentElement; return c || document.scrollingElement; }
+  function sheet() {
+    var sh = document.getElementById('wild-sheet'); if (sh) return sh;
+    sh = document.createElement('div'); sh.id = 'wild-sheet';
+    sh.innerHTML = '<div class="wh" onclick="wildToggle(event)"><b>Seen in the wild</b><span></span><button type="button"></button></div><div class="wb"></div>';
+    document.body.appendChild(sh); return sh;
+  }
+  window.wildToggle = function (e) { if (e) e.stopPropagation(); S.min = !S.min; paint(); };
+  function paint() {
+    var sh = sheet(); sh.classList.toggle('min', !!S.min);
+    var b = sh.querySelector('.wh button'), t = S.min ? 'Show' : 'Minimize'; if (b.textContent !== t) b.textContent = t;
+  }
+  function tick() {
+    var scr = document.getElementById('screen-halo'), sh = sheet();
+    var on = scr && scr.offsetParent !== null;
+    if (!on) { if (sh.style.display !== 'none') { sh.style.display = 'none'; sh.classList.remove('up'); } S.shown = false; return; }
+    var card = document.getElementById('halo-in-the-wild'); if (!card) return;
+    var body = sh.querySelector('.wb'); if (card.parentNode !== body) body.appendChild(card);
+    var n = card.querySelectorAll(':scope>div:nth-child(3)>div').length, lbl = n ? n + ' real incidents from the news, and the Cardinal check that catches each one' : '';
+    var sp = sh.querySelector('.wh span'); if (sp.textContent !== lbl) sp.textContent = lbl;
+    // Line the panel up with the page area (not under the sidebar).
+    var c = document.querySelector('.content') || scr, r = c.getBoundingClientRect(), L = Math.round(r.left + 16) + 'px', W = Math.round(r.width - 32 - 64) + 'px'; // leave room for the scroll arrows and Eve on the right
+    if (sh.style.left !== L) sh.style.left = L; if (sh.style.width !== W) sh.style.width = W;
+    var sc = scroller(scr.firstElementChild || scr), y = sc.scrollTop, max = sc.scrollHeight - sc.clientHeight;
+    if (!S.shown && (y > 500 || (max > 0 && y / max > 0.3))) S.shown = true;
+    if (S.shown) { if (sh.style.display !== 'block') { sh.style.display = 'block'; void sh.offsetWidth; } if (!sh.classList.contains('up')) sh.classList.add('up'); paint(); }
+    else if (sh.style.display !== 'none') { sh.style.display = 'none'; sh.classList.remove('up'); }
+    // Room at the end of the page so the panel never covers the last section.
+    var pad = S.shown ? (sh.offsetHeight + 16) + 'px' : ''; if (scr.style.paddingBottom !== pad) scr.style.paddingBottom = pad;
+  }
+  setInterval(function () { try { tick(); } catch (e) {} }, 300);
+})();
+</script>
 </body>
 
 </html>
