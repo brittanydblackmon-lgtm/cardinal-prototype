@@ -56534,6 +56534,91 @@ window.CARDINAL_PLACES = {
 
 </script>
 
+<script data-p="p44_heat">
+// 10/9 (Brittany: "should we update this box?" then "yes"). Trust Score's "Where the score is weakest" grid is rebuilt
+// in the Dashboard's new style: worst and best cells as big numbers on the left, a tighter grid on the right with
+// neighborhood names next to each ZIP, a plain "times more likely to be denied" label, then one line of story and a
+// footer. The "Other" column for Blackmoor now matches the Dashboard (too few applicants per ZIP; 3.3x overall).
+(function () {
+  function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;'); }
+  var RED = '#DC2626', GRN = '#16A34A', YEL = '#CA8A04';
+  var DOING = { fin: 'Credit Scoring v3.5 drops ZIP code as an input and holds a fairness ratio of 0.83 in shadow testing. Denied applicants in these ZIPs are being re-reviewed under FIN-1203.' };
+  var css = document.createElement('style');
+  css.textContent =
+    '#tsv2-heat-intro,#tsv2-heat-finding{display:none!important}' +
+    '.hm2{display:grid;grid-template-columns:210px minmax(0,1fr);gap:24px;align-items:center;background:#fff;border-radius:14px;padding:18px 20px;box-shadow:0 1px 3px rgba(26,24,21,.06),0 8px 20px rgba(26,24,21,.06);margin-top:10px}' +
+    '.hm2 .big{text-align:center;padding:6px 0}.hm2 .big+.big{border-top:1px dashed rgba(26,24,21,.12);margin-top:6px;padding-top:12px}' +
+    '.hm2 .big .l{font-size:11.5px;font-weight:700;color:#475569}.hm2 .big .n{font-size:40px;font-weight:800;letter-spacing:-1px;line-height:1.1;margin:2px 0}.hm2 .big .c{font-size:11.5px;color:#64748b;line-height:1.35}' +
+    '.hm2-axis{font-size:11px;font-weight:700;color:#475569;margin:0 0 6px;text-align:center}' +
+    '.hm2 .tsv2-heat-grid{display:grid!important;gap:5px!important;justify-content:center}.hm2 .tsv2-heat-cell{height:34px!important;min-height:0!important;padding:0!important;display:flex!important;align-items:center;justify-content:center;font-size:12px!important;font-weight:800!important;border-radius:7px!important}' +
+    '.hm2 .tsv2-heat-row-label{font-size:11.5px!important;font-weight:700!important;color:#1a1815!important;text-align:right!important;padding-right:8px!important;display:flex;align-items:center;justify-content:flex-end;white-space:nowrap}.hm2 .tsv2-heat-row-label small{font-weight:500;color:#64748b;margin-left:5px}' +
+    '.hm2 .tsv2-heat-col-label{font-size:11px!important;font-weight:800!important;text-align:center!important;line-height:1.2}.hm2 .tsv2-heat-col-label small{display:block;font-weight:600;color:#B91C1C;text-transform:none;letter-spacing:0}' +
+    '.hm2 .tsv2-heat-cell.hm2-na{background:repeating-linear-gradient(45deg,#f4efe6,#f4efe6 5px,#ebe4d6 5px,#ebe4d6 10px)!important;color:#64748b!important;font-size:10.5px!important;font-weight:700!important}' +
+    '.hm2 .tsv2-heatmap-legend{justify-content:center;margin-top:10px!important}' +
+    '.hm2-story{margin-top:12px;font-size:12.5px;color:#334155;line-height:1.55}.hm2-story b{color:#1a1815}' +
+    '.hm2-foot{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-top:8px;font-size:11px;color:#64748b}.hm2-foot button{font:inherit;font-size:11.5px;font-weight:700;background:#fff;border:1px solid rgba(26,24,21,.14);border-radius:8px;padding:4px 10px;cursor:pointer;color:#1a1815}' +
+    '@media (max-width:900px){.hm2{grid-template-columns:1fr}.hm2 .tsv2-heat-grid{overflow-x:auto}}';
+  document.head.appendChild(css);
+
+  function hood(tip) { var m = /^([^.,]+)/.exec(tip || ''); return m ? m[1].replace(/\s+(Manhattan|Bronx|Brooklyn|Queens)$/, '').trim() : ''; }
+  function otherOverall(o) {
+    var G = window.cardinalDemoGroups && window.cardinalDemoGroups(o), R = G && G['Race and ethnicity']; if (!R) return null;
+    var w = R.filter(function (x) { return x[2]; })[0], ot = R.filter(function (x) { return /^Other/.test(x[0]); })[0]; if (!w || !ot) return null;
+    return (100 - ot[1]) / (100 - w[1]);
+  }
+  function restyle(d) {
+    var render = document.getElementById('tsv2-heatmap-render'); if (!render || !d) return;
+    var sec = render.closest('.tsv2-section') || render.parentNode, o = window.currentOrg || 'fin', ctx = d.heatmapContext || {};
+    var wrap = sec.querySelector('.hm2');
+    if (!wrap) {
+      wrap = document.createElement('div'); wrap.className = 'hm2';
+      wrap.innerHTML = '<div class="hm2-left"></div><div class="hm2-right"><div class="hm2-axis"></div></div>';
+      sec.insertBefore(wrap, render);
+      wrap.querySelector('.hm2-right').appendChild(render);
+      var leg = document.getElementById('tsv2-heatmap-legend'); if (leg) wrap.querySelector('.hm2-right').appendChild(leg);
+      var st = document.createElement('div'); st.className = 'hm2-tail'; wrap.after(st);
+    }
+    var grid = render.querySelector('.tsv2-heat-grid'); if (!grid) return;
+    var cols = [].map.call(grid.querySelectorAll('.tsv2-heat-col-label'), function (e) { return e.textContent.trim(); });
+    grid.style.gridTemplateColumns = 'max-content repeat(' + cols.length + ', minmax(64px, 96px))';
+    var rowTips = ctx.rowLabels || [], zipRows = o === 'fin';
+    [].forEach.call(grid.querySelectorAll('.tsv2-heat-row-label'), function (e, i) { var t = rowTips[i] || {}, h = zipRows ? hood(t.tooltip) : ''; var html = esc(t.label || e.textContent.trim()) + (h ? '<small>' + esc(h) + '</small>' : ''); if (e.innerHTML !== html) e.innerHTML = html; });
+    var oo = o === 'fin' ? otherOverall(o) : null, otherIdx = cols.indexOf('Other');
+    if (oo && otherIdx >= 0) {
+      var hdr = grid.querySelectorAll('.tsv2-heat-col-label')[otherIdx]; if (hdr && !hdr.querySelector('small')) hdr.innerHTML = 'Other<small>' + oo.toFixed(1) + 'x overall</small>';
+      var cells = grid.querySelectorAll('.tsv2-heat-cell');
+      for (var r = 0; r * cols.length + otherIdx < cells.length; r++) { var c = cells[r * cols.length + otherIdx]; c.classList.add('hm2-na'); c.textContent = 'Too few'; c.setAttribute('data-disp', ''); }
+    }
+    // Worst and best measured cells.
+    var meas = [].filter.call(grid.querySelectorAll('.tsv2-heat-cell'), function (c) { return !c.classList.contains('hm2-na') && c.getAttribute('data-disp'); }).map(function (c) { return { v: +c.getAttribute('data-disp'), co: c.getAttribute('data-cohort') || '' }; });
+    if (!meas.length) return;
+    var worst = meas.reduce(function (a, b) { return b.v > a.v ? b : a; }), best = meas.reduce(function (a, b) { return b.v < a.v ? b : a; });
+    var lab = function (co) { var p = co.split(' × '), row = p[0], col = p[1] || '', t = rowTips.filter(function (x) { return x.label === row; })[0], h = zipRows && t ? hood(t.tooltip) : ''; return esc(col) + (zipRows ? ' applicants' : '') + '<br>' + esc(row) + (h ? ' (' + esc(h) + ')' : ''); };
+    var VB = { fin: 'be denied', health: 'be denied' }[o] || 'get an adverse decision', VL = { fin: 'denied', health: 'denied' }[o] ? 'denied less often' : 'fewer adverse decisions';
+    var colr = function (v) { return v >= 1.5 ? RED : v >= 1.06 ? YEL : GRN; };
+    var left = '<div class="big"><div class="l">Worst cell</div><div class="n" style="color:' + colr(worst.v) + '">' + worst.v.toFixed(2) + 'x</div><div class="c">' + lab(worst.co) + '<br>' + worst.v.toFixed(1) + 'x more likely to ' + VB + '</div></div>' +
+      '<div class="big"><div class="l">Best cell</div><div class="n" style="color:' + colr(best.v) + '">' + best.v.toFixed(2) + 'x</div><div class="c">' + lab(best.co) + '<br>' + (best.v < 1 ? VL + ' than the baseline' : 'same as the baseline') + '</div></div>';
+    var L = wrap.querySelector('.hm2-left'); if (L.innerHTML !== left) L.innerHTML = left;
+    var base = o === 'fin' ? 'White applicants' : 'the baseline group';
+    var ax = 'Times more likely to ' + VB + ' than ' + base + ' · 1.0x means the same · higher is worse';
+    var A = wrap.querySelector('.hm2-axis'); if (A.textContent !== ax) A.textContent = ax;
+    var lo = document.getElementById('tsv2-heat-leg-low'), hi = document.getElementById('tsv2-heat-leg-high'); if (lo) lo.textContent = '1.0x same as baseline'; if (hi) hi.textContent = '2.5x or more likely to ' + VB;
+    var severe = meas.filter(function (m) { return m.v >= 1.5; }).length;
+    var tail = '<div class="hm2-story"><b>Top finding:</b> ' + esc(ctx.topFinding || '') + (DOING[o] ? ' <b>What is being done:</b> ' + esc(DOING[o]) : '') + (oo ? ' <b>Other:</b> too few applicants in each ZIP to measure on their own; across all ZIPs they are ' + oo.toFixed(1) + 'x more likely to be denied (TEST-628).' : '') + '</div>' +
+      '<div class="hm2-foot"><span>' + meas.length + ' measured cells · ' + severe + ' at 1.5x or worse · compared with ' + base + '</span><button type="button" onclick="tsv2OpenTopFindingCase()">Open case in Eden →</button></div>';
+    var T = sec.querySelector('.hm2-tail'); if (T && T.innerHTML !== tail) T.innerHTML = tail;
+  }
+  var tries = 0, iv = setInterval(function () {
+    var o = window.tsv2BuildHeatmap; if (typeof o !== 'function' || o.__hm2) { if (++tries > 40) clearInterval(iv); return; }
+    var w = function (d) { var r = o.apply(this, arguments); try { restyle(d); } catch (e) { if (window.console) console.warn('hm2', e); } return r; }; w.__hm2 = 1;
+    window.tsv2BuildHeatmap = tsv2BuildHeatmap = w; clearInterval(iv);
+  }, 250);
+  // If the grid was already drawn before the wrap took hold, restyle it once from the current org's data.
+  setInterval(function () { var g = document.querySelector('#tsv2-heatmap-render .tsv2-heat-grid'); if (g && !g.closest('.hm2') && window.CARDINAL_DATA) restyle(CARDINAL_DATA[window.currentOrg || 'fin']); }, 1000);
+})();
+
+</script>
+
 </body>
 
 </html>
