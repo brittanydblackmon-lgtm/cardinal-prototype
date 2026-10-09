@@ -56069,30 +56069,78 @@ window.CARDINAL_PLACES = {
   }
   // 10/8: the charts stay still; a row of shadow circles above them carries the live numbers.
   setTimeout(function () { captions(org()); }, 2500);
-  var LV = {};
-  function liveVals(o) {
-    var c = DASH_INDUSTRY[o]; if (!c) return [];
-    var g = c.demoGenderBars || {}, a = c.dashAgeChart || { labels: [], values: [] }, r = ((c.demoRaceBars || {}).rows) || [];
-    var base = (r.filter(function (x) { return x.isBaseline; })[0] || {}).pct;
-    var lowAge = a.labels.map(function (l, i) { return i; }).filter(function (i) { return !/unk/i.test(a.labels[i]); }).reduce(function (m, i) { return a.values[i] < a.values[m] ? i : m; }, 0);
-    var items = [];
-    if (g.female != null) items.push(['Women', g.female, null, 'Gender']);
-    if (g.male != null) items.push(['Men', g.male, g.female, 'Gender']);
-    if (a.values.length) items.push(['Ages ' + a.labels[lowAge], a.values[lowAge], a.values[0], 'Age']);
-    r.filter(function (x) { return !x.isBaseline; }).sort(function (x, y) { return x.pct - y.pct; }).slice(0, 3).forEach(function (x) { items.push([x.label, x.pct, base, 'Race and ethnicity']); });
-    var S = LV[o] = LV[o] || {};
-    return items.map(function (it) { var k = it[0], d = S[k] == null ? 0 : S[k]; d = Math.max(-0.4, Math.min(0.4, d + (Math.random() - 0.5) * 0.3)); S[k] = Math.round(d * 10) / 10; return { label: it[0], v: Math.round((it[1] + S[k]) * 10) / 10, ref: it[2], dim: it[3] }; });
+  // 10/9 (Brittany): the circles replace the charts, organized into Gender, Age, and Race and ethnicity, with
+  // White and Asian included and finer age ranges. Circles are not links. Every change is logged with why (Echo).
+  var AGE7 = { fin: [['18-24', 76], ['25-34', 80], ['35-44', 82], ['45-54', 79], ['55-64', 75], ['65-74', 70], ['75+', 64]] };
+  function groupsLive(o) {
+    var c = DASH_INDUSTRY[o]; if (!c) return null;
+    var g = c.demoGenderBars || {}, r = ((c.demoRaceBars || {}).rows) || [], a = c.dashAgeChart || { labels: [], values: [] };
+    var ages = AGE7[o] ? AGE7[o].map(function (x) { return [x[0], x[1]]; }) : a.labels.filter(function (l) { return !/unk/i.test(l); }).map(function (l) { return [l, a.values[a.labels.indexOf(l)]]; });
+    var ageBase = ages.reduce(function (m, x) { return x[1] > m ? x[1] : m; }, 0);
+    return {
+      Gender: [['Women', g.female, true], ['Men', g.male, false], ['Non-binary or other', g.other, false]].filter(function (x) { return x[1] != null; }),
+      Age: ages.map(function (x) { return ['Ages ' + x[0], x[1], x[1] === ageBase]; }),
+      'Race and ethnicity': r.map(function (x) { return [x.label, x.pct, !!x.isBaseline]; })
+    };
   }
+  window.cardinalDemoGroups = groupsLive;
+  var LV = {};
+  function live(o, dim, name, base) { var S = LV[o] = LV[o] || {}, k = dim + '|' + name; if (S[k] == null) S[k] = 0; return Math.round((base + S[k]) * 10) / 10; }
+  // History: each group's rate moves a few times a day as decisions come in; the chain ends at today's rate.
+  function h32(s) { var x = 2166136261; for (var i = 0; i < s.length; i++) { x ^= s.charCodeAt(i); x = Math.imul(x, 16777619); } return Math.abs(x); }
+  var LOGC = {};
+  function demoLog(o) {
+    if (LOGC[o]) return LOGC[o];
+    var G = groupsLive(o); if (!G) return [];
+    var cd = (window.CARDINAL_DATA || {})[o] || {}, cs = String(cd.primaryCase || '').replace(/^#/, ''), model = cd.primaryModel || 'the model', now = new Date(), out = [];
+    var UP = ['{n} new applications decided for this group; {k} approved', 'Re-review approved {k} applicants in this group (case {cs})', '{n} shadow decisions from the fix counted; fairness held', 'Corrected adverse action records restored {k} approvals'];
+    var DN = ['{n} new applications decided; {k} denied, mostly for debt-to-income', 'A data refresh removed {k} approvals that were later withdrawn', '{n} new decisions from {model} still using the old feature', '{k} applications in this group moved to manual review'];
+    Object.keys(G).forEach(function (dim) {
+      G[dim].forEach(function (gp) {
+        var cur = gp[1], name = gp[0], seed = h32(o + dim + name);
+        for (var d = 0; d < 30; d++) {
+          var n = (seed >> (d % 13)) % 3; if (gp[2] && n > 1) n = 1;
+          for (var j = 0; j < n; j++) {
+            var hh = h32(name + d + ':' + j), step = ((hh % 5) + 1) / 10 * ((hh >> 3) % 2 ? 1 : -1);
+            if (!gp[2] && d < 20 && hh % 3 === 0) step = Math.abs(step);
+            var t = new Date(now.getFullYear(), now.getMonth(), now.getDate() - d, 8 + (hh % 9), (hh >> 5) % 60);
+            if (t > now) continue; if (t.getDay() === 0 || t.getDay() === 6) continue;
+            var to = Math.round(cur * 10) / 10, from = Math.round((cur - step) * 10) / 10;
+            var tpl = (step > 0 ? UP : DN)[(hh >> 7) % 4], nn = 20 + hh % 60, kk = Math.max(1, Math.round(nn * (step > 0 ? 0.8 : 0.3)));
+            out.push({ t: t, dim: dim, group: name, base: gp[2], from: from, to: to, ch: Math.round((to - from) * 10) / 10, why: tpl.replace('{n}', nn).replace('{k}', kk).replace('{cs}', cs).replace('{model}', model), cs: /re-review|shadow|old feature/i.test(tpl) ? cs : '', model: /shadow/.test(tpl) ? String(model).replace(/v(\d+)\.(\d+)/, function (a, x, y) { return 'v' + x + '.' + (+y + 1); }) : model, decided: nn });
+            cur = from;
+          }
+        }
+      });
+    });
+    out.sort(function (a, b) { return b.t - a.t; });
+    return (LOGC[o] = out);
+  }
+  window.cardinalDemoLog = demoLog;
   function circles() {
     var s = document.getElementById('screen-dashboard'); if (!s || s.offsetParent === null || !window.cardinalGaugeRow) return;
     var grid = document.querySelector('#dash-demographic-panel .dash-demo-3col'); if (!grid) return;
-    var host = document.getElementById('demo-circles'); if (!host) { host = document.createElement('div'); host.id = 'demo-circles'; host.className = 'c37'; host.style.margin = '6px 0 14px'; }
+    if (grid.style.display !== 'none') grid.style.display = 'none';
+    var chips = [].filter.call(document.querySelectorAll('#dash-demographic-panel *'), function (e) { return e.children.length === 0 && /^Explore any group$/.test(e.textContent.trim()); })[0];
+    if (chips && chips.parentNode && chips.parentNode.style.display !== 'none') chips.parentNode.style.display = 'none';
+    var host = document.getElementById('demo-circles'); if (!host) { host = document.createElement('div'); host.id = 'demo-circles'; }
     if (host.nextElementSibling !== grid) grid.parentNode.insertBefore(host, grid);
-    var units = liveVals(window.currentOrg || 'fin').map(function (x) { var ratio = x.ref ? x.v / x.ref : 1, col = !x.ref ? '#22c55e' : ratio < 0.8 ? '#ef4444' : ratio < 0.9 ? '#FACC15' : '#22c55e'; return { value: x.v.toFixed(1) + '%', pct: x.v / 100, color: col, label: x.label, status: x.ref ? (ratio < 0.8 ? 'Below the 0.80 Line' : ratio < 0.9 ? 'Watch' : 'OK') : 'Baseline', pillLabel: x.ref ? 'Ratio' : 'Baseline', pillVal: x.ref ? ratio.toFixed(2) : '', sub: x.label + ' · ' + x.dim, calc: 'just now', delta: { d: 0, text: '' }, go: "showScreen('echo');setTimeout(function(){try{echoEnterRoom('people');echoGo('x-impact')}catch(e){}},500)", tip: 'Approval rate for ' + x.label + (x.ref ? ', and its ratio to the baseline group' : '') + '. Updates as new decisions come in.' }; });
-    host.innerHTML = cardinalGaugeRow(units);
+    var o = window.currentOrg || 'fin', G = groupsLive(o); if (!G) return;
+    var S = LV[o] = LV[o] || {};
+    Object.keys(S).forEach(function (k) { S[k] = Math.max(-0.4, Math.min(0.4, Math.round((S[k] + (Math.random() - 0.5) * 0.3) * 10) / 10)); });
+    var html = Object.keys(G).map(function (dim) {
+      var list = G[dim], basev = (list.filter(function (x) { return x[2]; })[0] || list[0])[1], baseName = (list.filter(function (x) { return x[2]; })[0] || list[0])[0];
+      var units = list.map(function (x) {
+        var v = live(o, dim, x[0], x[1]), ratio = x[2] ? 1 : v / basev, col = x[2] ? '#22c55e' : ratio < 0.8 ? '#ef4444' : ratio < 0.9 ? '#FACC15' : '#22c55e';
+        return { value: v.toFixed(1) + '%', pct: v / 100, color: col, label: x[0], status: x[2] ? 'Baseline' : ratio < 0.8 ? 'Below 0.80' : ratio < 0.9 ? 'Watch' : 'OK', pillLabel: x[2] ? 'Baseline' : 'Ratio', pillVal: x[2] ? '' : ratio.toFixed(2), sub: x[2] ? 'Comparison group' : 'vs ' + baseName + ' ' + (+basev).toFixed(1) + '%', calc: 'just now', delta: { d: 0, text: '' }, tip: 'Approval rate for ' + x[0] + (x[2] ? '. This is the comparison group.' : ', and its ratio to ' + baseName + '. Below 0.80 fails the four-fifths rule.') };
+      });
+      return '<div class="demo-row"><div class="demo-row-h">' + esc(dim) + '</div>' + cardinalGaugeRow(units) + '</div>';
+    }).join('');
+    host.innerHTML = html;
   }
-  var dcss = document.createElement('style'); dcss.textContent = '#demo-circles .g-row{justify-content:center!important;gap:34px!important;flex-wrap:wrap!important;overflow:visible!important}#demo-circles .g-unit{flex:0 0 160px!important;max-width:160px!important;min-width:160px!important}'; document.head.appendChild(dcss);
+  var dcss = document.createElement('style'); dcss.textContent = '#demo-circles{margin:6px 0 14px}#demo-circles .demo-row{background:#fff;border-radius:14px;padding:12px 14px 6px;margin:0 0 12px;box-shadow:0 1px 3px rgba(26,24,21,.06),0 10px 24px rgba(26,24,21,.07)}#demo-circles .demo-row-h{font-size:11.5px;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:.6px;margin:0 0 6px}#demo-circles .g-row{justify-content:center!important;gap:22px!important;flex-wrap:wrap!important}#demo-circles .g-unit{flex:0 0 140px!important;max-width:140px!important;min-width:140px!important;cursor:default}#demo-circles .g-disc{max-width:118px!important}#demo-circles .g-delta{display:none!important}#demo-circles .g-pill{font-size:10px!important;padding:4px 9px!important}#demo-circles .g-sub{font-size:10.5px!important;line-height:1.3}'; document.head.appendChild(dcss);
   setInterval(circles, 5000); setTimeout(circles, 1500);
+
 
   // Eden's Protected Group section shows the same numbers as the Dashboard.
   function edenSync() {
@@ -56112,6 +56160,7 @@ window.CARDINAL_PLACES = {
       [].forEach.call(rc.querySelectorAll('tbody tr'), function (tr) { var td = tr.children; if (td.length < 3) return; var lab = td[0].textContent.trim(), r = rows.filter(function (x) { return x.label === lab || (lab === 'Black/AA' && /Black/.test(x.label)); })[0]; if (!r) return; var v = r.pct.toFixed(1) + '%'; if (td[1].textContent !== v) td[1].textContent = v; var d = r.isBaseline ? 'BASELINE' : Math.round(r.pct - base) + '%'; if (td[2].textContent.trim() !== d) td[2].textContent = d; });
     }
     var ac = cards.filter(function (x) { return /Age group/i.test(x.textContent); })[0], ag = c.dashAgeChart;
+    if (typeof AGE7 !== 'undefined' && AGE7[o]) { var A7 = AGE7[o]; ag = { labels: A7.slice(0, 5).map(function (x) { return x[0]; }).concat(['65+']), values: A7.slice(0, 5).map(function (x) { return x[1]; }).concat([Math.round((A7[5][1] + A7[6][1]) / 2)]) }; }
     if (ac && ag) {
       var tt3 = ac.firstElementChild; if (tt3 && /assignment/.test(tt3.textContent) && o !== 'ad') tt3.textContent = tt3.textContent.replace('assignment', 'approval');
       var leaves = [].filter.call(ac.querySelectorAll('*'), function (x) { return !x.children.length; });
@@ -56133,7 +56182,7 @@ window.CARDINAL_PLACES = {
     var c = DASH_INDUSTRY[o] || {}, out = { race: [], gender: [], age: [] };
     ((c.demoRaceBars || {}).rows || []).forEach(function (r) { out.race.push([r.label, r.pct, !!r.isBaseline]); });
     if (c.demoGenderBars) out.gender = [['Men', c.demoGenderBars.male, false], ['Women', c.demoGenderBars.female, true], ['Non-binary or other', c.demoGenderBars.other, false]];
-    if (c.dashAgeChart) out.age = c.dashAgeChart.labels.map(function (l, i) { return ['Age ' + l, c.dashAgeChart.values[i], i === 0]; });
+    var DG = window.cardinalDemoGroups && cardinalDemoGroups(o); if (DG && DG.Age) out.age = DG.Age.map(function (x) { return [x[0], x[1], x[2]]; }); else if (c.dashAgeChart) out.age = c.dashAgeChart.labels.map(function (l, i) { return ['Age ' + l, c.dashAgeChart.values[i], i === 0]; });
     return out;
   }
   function states(o) {
@@ -56164,8 +56213,43 @@ window.CARDINAL_PLACES = {
     }
     return html + '</div>';
   };
-})();
 
+  var FL = { from: '', to: '', group: '', page: 0 };
+  window.impLogF = function (k, v) { FL[k] = v; if (k !== 'page') FL.page = 0; var p = document.getElementById('echo-impact'); if (p) p.outerHTML = window.cardinalEchoImpact(); };
+  window.impLogOpen = function (i) {
+    var e = (window.__impRows || [])[i]; if (!e) return;
+    var fmt = function (d) { var h = d.getHours(), m = d.getMinutes(); return MON[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear() + ' · ' + (h % 12 || 12) + ':' + (m < 10 ? '0' : '') + m + ' ' + (h < 12 ? 'AM' : 'PM'); };
+    var m = document.createElement('div'); m.id = 'imp-pop'; m.style.cssText = 'position:fixed;inset:0;z-index:10000;background:rgba(26,24,21,.45);display:flex;align-items:center;justify-content:center;padding:16px';
+    m.onclick = function (ev) { if (ev.target === m) m.remove(); };
+    var box = function (t, b) { return '<div style="background:#fff;border-radius:12px;padding:12px 14px;margin-top:10px"><div style="font-size:11px;font-weight:800;color:#6d28d9;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">' + t + '</div><div style="font-size:13px;line-height:1.5">' + b + '</div></div>'; };
+    m.innerHTML = '<div style="background:#f4efe6;border-radius:16px;box-shadow:0 24px 60px rgba(0,0,0,.3);width:min(620px,100%);max-height:90vh;overflow:auto;padding:20px 22px;color:#1a1815"><div style="display:flex;justify-content:space-between;gap:10px"><div><div style="font-size:12px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.5px">' + esc(e.dim) + ' · ' + esc(fmt(e.t)) + '</div><div style="font-size:22px;font-weight:800;margin-top:2px">' + esc(e.group) + ': ' + e.from.toFixed(1) + '% → ' + e.to.toFixed(1) + '% <span style="font-size:14px;color:' + (e.ch > 0 ? '#15803D' : '#B91C1C') + '">' + (e.ch > 0 ? '+' : '') + e.ch + ' pts</span></div></div><button type="button" onclick="document.getElementById(\'imp-pop\').remove()" style="font:inherit;font-size:12px;font-weight:700;background:#fff;border:1px solid rgba(26,24,21,.15);border-radius:9px;padding:6px 12px;cursor:pointer;height:fit-content">Close</button></div>' +
+      box('What happened', esc(e.why) + '.') +
+      box('Why the rate moved', 'The approval rate for ' + esc(e.group) + ' is recalculated every time new decisions come in. ' + e.decided + ' decisions were added in this batch, which ' + (e.ch > 0 ? 'raised' : 'lowered') + ' the rate by ' + Math.abs(e.ch) + ' points.' + (e.base ? ' This is the comparison group, so every other group’s ratio moved with it.' : '')) +
+      box('Related', (e.model ? 'Model: <strong>' + esc(e.model) + '</strong>' : '') + (e.cs ? '<br>Case: <strong>' + esc(e.cs) + '</strong>' : '') + '<br>Checked by Eden, sealed in Echo') +
+      '<div style="font-size:11.5px;color:#64748b;margin-top:12px;font-family:monospace">Sealed 0x' + h32(e.group + e.t.getTime()).toString(16) + h32(e.dim + e.t.getTime()).toString(16) + '</div></div>';
+    document.body.appendChild(m);
+  };
+  var oImp = window.cardinalEchoImpact;
+  window.cardinalEchoImpact = function () {
+    var html = oImp(), o = org(), dimMap = { race: 'Race and ethnicity', gender: 'Gender', age: 'Age' }, dim = dimMap[F.view];
+    if (!dim) return html;
+    var all = demoLog(o).filter(function (e) { return e.dim === dim; }), groupsIn = []; all.forEach(function (e) { if (groupsIn.indexOf(e.group) < 0) groupsIn.push(e.group); });
+    var fF = FL.from ? new Date(FL.from + 'T00:00:00') : null, fT = FL.to ? new Date(FL.to + 'T23:59:59') : null;
+    var rows = all.filter(function (e) { return (!FL.group || e.group === FL.group) && (!fF || e.t >= fF) && (!fT || e.t <= fT); });
+    var per = 40, pages = Math.max(1, Math.ceil(rows.length / per)), pg = Math.min(FL.page, pages - 1), page = rows.slice(pg * per, pg * per + per);
+    window.__impRows = page;
+    var TH = 'text-align:left;font-size:10.5px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.4px;padding:9px 12px;background:#f4efe6', TD = 'padding:9px 12px;border-top:1px solid rgba(26,24,21,.06);font-size:12.5px';
+    var lastDay = '', body = '';
+    page.forEach(function (e, i) { var day = MON[e.t.getMonth()] + ' ' + e.t.getDate() + ', ' + e.t.getFullYear(); if (day !== lastDay) { lastDay = day; var n = page.filter(function (x) { return x.t.toDateString() === e.t.toDateString(); }).length; body += '<tr><td colspan="6" style="background:#ebe4d6;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;padding:7px 12px">' + day + (n > 1 ? ' · ' + n + ' changes' : '') + '</td></tr>'; }
+      var h = e.t.getHours(), mi = e.t.getMinutes(); body += '<tr style="cursor:pointer" onclick="impLogOpen(' + i + ')" title="Open the full story"><td style="' + TD + ';white-space:nowrap;color:#475569">' + (h % 12 || 12) + ':' + (mi < 10 ? '0' : '') + mi + ' ' + (h < 12 ? 'AM' : 'PM') + '</td><td style="' + TD + ';font-weight:700">' + esc(e.group) + '</td><td style="' + TD + ';white-space:nowrap;font-weight:800">' + e.from.toFixed(1) + '% → ' + e.to.toFixed(1) + '%</td><td style="' + TD + ';font-weight:700;color:' + (e.ch > 0 ? '#15803D' : '#B91C1C') + '">' + (e.ch > 0 ? '+' : '') + e.ch + '</td><td style="' + TD + '">' + esc(e.why) + '</td><td style="' + TD + ';white-space:nowrap">' + esc(e.cs || '—') + '</td></tr>'; });
+    var inp = 'font:inherit;font-size:12px;padding:6px 9px;border:1px solid rgba(26,24,21,.15);border-radius:8px;background:#fff';
+    var log = '<div style="background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 1px 3px rgba(26,24,21,.06),0 10px 24px rgba(26,24,21,.08);margin:0 0 14px"><div style="padding:10px 14px;background:#ebe4d6;display:flex;justify-content:space-between;align-items:flex-end;gap:10px;flex-wrap:wrap"><div><div style="font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.5px">' + esc(dim) + ': every change</div><div style="font-size:11.5px;color:#64748b;margin-top:2px">Each time a rate moved, with why. Click any row for the full story.</div></div>' +
+      '<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;font-size:11.5px;color:#64748b"><select onchange="impLogF(\'group\',this.value)" style="' + inp + '"><option value="">All groups</option>' + groupsIn.map(function (g) { return '<option' + (FL.group === g ? ' selected' : '') + '>' + esc(g) + '</option>'; }).join('') + '</select>From <input type="date" value="' + esc(FL.from) + '" onchange="impLogF(\'from\',this.value)" style="' + inp + '">To <input type="date" value="' + esc(FL.to) + '" onchange="impLogF(\'to\',this.value)" style="' + inp + '"></div></div>' +
+      '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse"><thead><tr><th style="' + TH + '">Time</th><th style="' + TH + '">Group</th><th style="' + TH + '">Approval rate</th><th style="' + TH + '">Change</th><th style="' + TH + '">Why it moved</th><th style="' + TH + '">Case</th></tr></thead><tbody>' + (body || '<tr><td colspan="6" style="' + TD + ';color:#64748b">No changes match.</td></tr>') + '</tbody></table></div>' +
+      '<div class="ex-pager" style="padding:8px 12px"><span>' + rows.length + ' changes · page ' + (pg + 1) + ' of ' + pages + '</span><span>' + (pg > 0 ? '<button type="button" onclick="impLogF(\'page\',' + (pg - 1) + ')">Newer</button> ' : '') + (pg < pages - 1 ? '<button type="button" onclick="impLogF(\'page\',' + (pg + 1) + ')">Older</button>' : '') + '</span></div></div>';
+    return html.replace(/<\/div>$/, log + '</div>');
+  };
+})();
 </script>
 
 <script data-p="p41_ledger">
