@@ -33286,12 +33286,7 @@ window.renderBigWorkspacePage = function() {
         var versions = n.versions || [];
         var histHtml = versions.length ? '<details style="margin-top:8px"><summary style="cursor:pointer;font-size:9.5px;color:var(--muted2);font-weight:700">Edited · ' + versions.length + ' earlier version' + (versions.length === 1 ? '' : 's') + ' kept in Echo</summary>' +
           versions.slice().reverse().map(function (v) { return '<div style="margin-top:6px;padding:6px 9px;border-left:2px solid var(--border2);font-size:10.5px;color:var(--muted2);white-space:pre-wrap"><span style="font-size:9px;font-family:monospace">' + new Date(v.at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) + '</span><br>' + (v.title ? '<strong>' + String(v.title).replace(/</g, '&lt;') + '</strong><br>' : '') + String(v.text || '').replace(/</g, '&lt;') + '</div>'; }).join('') + '</details>' : '';
-        var lockHtml = editable
-          ? '<button type="button" onclick="editBigNote(' + realIdx + ')" style="background:none;border:1px solid rgba(168,85,247,.3);border-radius:6px;color:#7E22CE;cursor:pointer;font-size:10px;padding:2px 8px" title="Editable for ' + hrsLeft + ' more hour' + (hrsLeft === 1 ? '' : 's') + '">Edit</button>'
-          : '<span style="font-size:9.5px;color:var(--muted)" title="Notes lock 24 hours after saving so the record can\'t be quietly changed">Edit locked</span>'
-        // 10/10 (Brittany's friend: "what if you get a long list of notes"): Remove is always available. It only takes the
-        // note off your workspace; the note and every version stay in Echo. Editing still locks after 24 hours.
-        lockHtml += ' <button type="button" onclick="if(confirm(\'Remove this note from your workspace? It stays in Echo.\'))deleteBigNote(' + realIdx + ')" style="background:none;border:1px solid rgba(26,24,21,.15);border-radius:6px;color:#475569;cursor:pointer;font-size:10px;padding:2px 8px" title="Removes it from your workspace. Echo keeps the note and every version.">Remove</button>';
+        var lockHtml = '<button type="button" onclick="editBigNote(' + realIdx + ')" style="font:inherit;font-size:10.5px;font-weight:700;border-radius:6px;padding:3px 9px;cursor:pointer;background:#1a1815;color:#fff;border:1px solid #1a1815" title="Edit this note. The original and every change stay in Echo.">Edit</button>';
         var escTitle = (n.title || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
         var escText = (n.text || '').replace(/^\s*:\s*/, '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
         var linkMem = n.linkedMemoryId ? escJs(n.linkedMemoryId) : '';
@@ -33303,7 +33298,7 @@ window.renderBigWorkspacePage = function() {
               (n.title || n.pinned ? '<div style="font-size:13px;color:var(--chrome2);font-weight:700;line-height:1.3;">' + escTitle + (n.pinned ? ' <span style="font-size:10px;font-weight:700;color:#6d28d9;background:#f5f3ff;border-radius:999px;padding:1px 8px;margin-left:4px">Pinned</span>' : '') + '</div>' : '') +
               '<div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.6px;font-weight:600;font-family:monospace;margin-top:' + (n.title ? '4px' : '0') + ';">' + nts.toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' }) + '</div>' +
             '</div>' +
-            '<div style="display:flex;gap:6px;align-items:center">' + '<button type="button" onclick="pinBigNote(' + realIdx + ')" style="font:inherit;font-size:10.5px;font-weight:700;border-radius:6px;padding:3px 9px;cursor:pointer;' + (n.pinned ? 'background:#fff;color:#1a1815;border:1px solid rgba(26,24,21,.2)' : 'background:#1a1815;color:#fff;border:1px solid #1a1815') + '" title="' + (n.pinned ? 'Unpin this note' : 'Pin this note to the top of your workspace') + '">' + (n.pinned ? 'Unpin' : 'Pin') + '</button>' + lockHtml + (editable ? '<button type="button" onclick="deleteBigNote(' + realIdx + ')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;line-height:1;" title="Delete (hidden from you, kept in Echo)">×</button>' : '') + '</div>' +
+            '<div style="display:flex;gap:6px;align-items:center">' + '<button type="button" onclick="pinBigNote(' + realIdx + ')" style="font:inherit;font-size:10.5px;font-weight:700;border-radius:6px;padding:3px 9px;cursor:pointer;' + (n.pinned ? 'background:#fff;color:#1a1815;border:1px solid rgba(26,24,21,.2)' : 'background:#1a1815;color:#fff;border:1px solid #1a1815') + '" title="' + (n.pinned ? 'Unpin this note' : 'Pin this note to the top of your workspace') + '">' + (n.pinned ? 'Unpin' : 'Pin') + '</button>' + lockHtml + '<button type="button" aria-label="Remove note" onclick="if(confirm(\'Remove this note from your workspace? It stays in Echo.\'))deleteBigNote(' + realIdx + ')" style="background:none;border:none;color:#475569;cursor:pointer;font-size:18px;line-height:1;padding:0 2px" title="Remove from your workspace. Echo keeps the note and every version.">\u00d7</button>' + '</div>' +
           '</div>' +
           '<div id="big-note-body-' + realIdx + '" style="font-size:12px;color:var(--chrome2);line-height:1.7;white-space:pre-wrap;">' + escText + '</div>' +
           histHtml +
@@ -33351,10 +33346,11 @@ function bigNoteEchoLog(persona, eventType, n) {
     var mems = window.CARDINAL_DATA && window.CARDINAL_DATA[org] && window.CARDINAL_DATA[org].echoMemories;
     if (!mems) return;
     mems.push({ id: 'echo-note-' + Date.now(), timestamp: new Date().toISOString(), author: persona.name, authorRole: 'user-note', eventType: eventType, core: 'myworkspace', severity: 'informational',
-      summary: (eventType === 'note-edited' ? 'Note edited' : 'Note deleted') + ' by ' + persona.name + (n.title ? ': ' + n.title : ''), content: 'Original preserved. Versions on file: ' + ((n.versions || []).length + 1) + '.', isSealed: true, addendums: [], linkedMemories: [], comments: [], accessTier: 'role-restricted', accessRoles: [], caseId: null, modelId: null, userId: persona.name, industryContext: org });
+      summary: (eventType === 'note-edited' ? 'Note edited' : 'Note removed from workspace') + ' by ' + persona.name + (n.title ? ': ' + n.title : ''), content: (function () { var v = (n.versions || []).slice(-1)[0], when = new Date().toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' }); return eventType === 'note-edited' && v ? 'Before: "' + String(v.text || '').replace(/^\s*:\s*/, '') + '"\nAfter: "' + String(n.text || '') + '"\nChanged ' + when + '. Original written ' + new Date(n.timestamp).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' }) + '. Versions on file: ' + (n.versions.length + 1) + '.' : 'Removed ' + when + '. The note and every version stay on file: "' + String(n.text || '').replace(/^\s*:\s*/, '') + '"'; })(), isSealed: true, addendums: [], linkedMemories: [], comments: [], accessTier: 'role-restricted', accessRoles: [], caseId: null, modelId: null, userId: persona.name, industryContext: org });
   } catch (_nl) {}
 }
-function bigNoteEditable(n) { return n && !n.deleted && (Date.now() - new Date(n.timestamp).getTime()) < 24 * 3600000; }
+// 10/10 (Brittany): notes can always be edited. Every edit keeps the original and the new text, with the time, in Echo.
+function bigNoteEditable(n) { return n && !n.deleted; }
 window.pinBigNote = function (idx) {
   var persona = window.getActivePersona ? getActivePersona() : null; if (!persona) return;
   window.__userNotes = window.__userNotes || {}; var list = window.__userNotes['notes:' + persona.id] || [], n = list[idx]; if (!n) return;
@@ -33371,8 +33367,8 @@ window.editBigNote = function (idx) {
   if (!bigNoteEditable(n) || !body) return;
   body.innerHTML = '<textarea id="big-note-edit-' + idx + '" style="width:100%;min-height:90px;padding:8px 10px;border-radius:8px;border:1px solid rgba(168,85,247,.3);background:var(--bg3);color:var(--text);font-size:12px;line-height:1.6;box-sizing:border-box"></textarea>' +
     '<div style="display:flex;gap:6px;justify-content:flex-end;margin-top:6px"><button type="button" onclick="renderBigWorkspacePage()" style="font-size:11px;padding:5px 12px;border-radius:7px;border:1px solid var(--border2);background:transparent;color:var(--muted2);cursor:pointer">Cancel</button>' +
-    '<button type="button" onclick="saveBigNoteEdit(' + idx + ')" style="font-size:11px;padding:5px 12px;border-radius:7px;border:0;background:#7E22CE;color:#fff;font-weight:700;cursor:pointer">Save edit</button></div>' +
-    '<div style="font-size:9.5px;color:var(--muted);margin-top:4px">The original stays on file in Echo Core.</div>';
+    '<button type="button" onclick="saveBigNoteEdit(' + idx + ')" style="font-size:11px;padding:5px 12px;border-radius:7px;border:0;background:#1a1815;color:#fff;font-weight:700;cursor:pointer">Save edit</button></div>' +
+    '<div style="font-size:9.5px;color:var(--muted);margin-top:4px">The original, this edit, and the time of the change stay on file in Echo.</div>';
   document.getElementById('big-note-edit-' + idx).value = n.text || '';
 };
 window.saveBigNoteEdit = function (idx) {
@@ -53713,11 +53709,11 @@ window.CARDINAL_PLACES = {
     [/^(in review|review|pending|watch|waiting on vendor|needs owner|running|medium|warning|partly met|in progress|exam due|due soon|approaching|changes requested|at risk)$/i, Y],
     [/^(failed|fail|critical|blocked|denied|declined|gap|overdue|violation|changes needed|not connected|imminent|urgent|breach)$/i, R],
     [/^(in shadow|shadow|testing|pilot)$/i, P],
-    [/^(archive|archived|drafted|draft|paused|inactive|retired|closed|not started)$/i, N]
+    [/^(archive|archived|drafted|draft|paused|on hold|inactive|retired|closed|not started)$/i, N]
   ];
   var TIP = {
     active: 'In use right now.', live: 'Running on real decisions right now.', approved: 'A named person signed off.', passed: 'Met every check in the test.', passing: 'Meeting every check.', applied: 'The fix is in place.',
-    'in review': 'Waiting on a named reviewer.', pending: 'Waiting on someone before it can move.', watch: 'Fine for now, but trending the wrong way.', 'waiting on vendor': 'The outside vendor has to ship a fix.', 'needs owner': 'Nobody is named as responsible yet.',
+    'on hold': 'Paused on purpose. Being watched, no fix in motion right now.', 'in review': 'Waiting on a named reviewer.', pending: 'Waiting on someone before it can move.', watch: 'Fine for now, but trending the wrong way.', 'waiting on vendor': 'The outside vendor has to ship a fix.', 'needs owner': 'Nobody is named as responsible yet.',
     running: 'The test is still collecting results.', 'in progress': 'Work has started but is not finished.', failed: 'Did not meet a check. Needs a fix.', critical: 'Most urgent. Act first.', blocked: 'Stopped until a required approval happens.',
     'in shadow': 'Tested quietly on a small slice of real traffic. Customers are not affected by it yet.', archive: 'No longer in use. Kept for the record.', archived: 'No longer in use. Kept for the record.', drafted: 'Proposed but not started.', 'changes needed': 'A reviewer sent it back with changes.', gap: 'Something required is missing.', 'at risk': 'Likely to miss the line if nothing changes.'
   };
@@ -53729,7 +53725,7 @@ window.CARDINAL_PLACES = {
   function sweep() {
     var scr = document.querySelector('.screen.active'); if (!scr) return;
     [].forEach.call(scr.querySelectorAll('td span, td div, td, li span, .lib-card span, [class*=badge], [class*=pill], [class*=status], span'), function (el) {
-      if (el.children.length || el.closest('th, thead, .gn-head, .g-unit, .u-hero, button, select, h1, h2, h3, .tsv2-cert-badge, .sidebar, #wm-rooms, #wm-sub, #echo-x-subbar, .core-tabbar, .ex-chips, .dash-activity-ticker-live')) return;
+      if (el.children.length || el.closest('th, thead, .gn-head, .g-unit, .u-hero, button, select, h1, h2, h3, .tsv2-cert-badge, .sidebar, #wm-rooms, #wm-sub, .wr2-steps, .wr2-tabs, .wr2-rooms, #echo-x-subbar, .core-tabbar, .ex-chips, .dash-activity-ticker-live')) return;
       var t = (el.textContent || '').trim(); if (!t || t.length > 22) return;
       if (el.__st === t) return;
       var c = null; MAP.forEach(function (m) { if (!c && m[0].test(t)) c = m[1]; }); if (!c) return;
@@ -57278,6 +57274,58 @@ setInterval(function () {
       { t: d(-15, 10), cs: 'FIN-0891', what: 'Auto Loan v2.1 rural approval gap opened as a case', to: 'Internal: Model risk', status: 'Open', who: 'Nina Roberts' }
     ];
   }
+  // 10/10 (Brittany: "incidents should show every time something happens... multiple incidents can happen a day...
+  // some incidents haven't opened a case yet"). One row per event: when it happened, when it was caught, by what, the model,
+  // and the case it belongs to (or none yet). Dates count back from today.
+  var INC = {
+    fin: [
+      [-6, 1, 14, 'FIN-0842', 'Medium', 'Collections AI v1.3', 'Offered a fee waiver outside policy in a payment-plan chat', 'Watchman', [-5, 9, 12], 'Nina Roberts, Compliance on-call'],
+      [-6, 3, 40, 'FIN-0842', 'Medium', 'Collections AI v1.3', 'Mentioned a neighborhood risk tier while talking to a customer', 'Watchman', [-5, 9, 12], 'Nina Roberts, Compliance on-call'],
+      [-6, 6, 5, 'FIN-0842', 'Low', 'Collections AI v1.3', 'Promised a callback time the team could not schedule', 'Watchman', [-5, 9, 12], 'Nina Roberts'],
+      [-4, 16, 25, '', 'Medium', 'Offer Targeting v1.2', 'Sent a pre-approved loan offer to an applicant the bank had just declined', 'Watchman', [-4, 17, 2], 'Marketing operations'],
+      [-3, 11, 2, 'FIN-2207', 'Medium', 'Fraud Screening v2.7', 'Nine applications from one device in four minutes (Chicago device farm)', 'Obsidian', [-3, 11, 2], 'Fraud operations'],
+      [-2, 14, 10, 'FIN-1203', 'Critical', 'Credit Scoring v3.4', 'Approval gap widened in ZIP 11212 (fairness ratio 0.73)', 'Eden', [-2, 14, 10], 'Nina Roberts, Jordan Ellis'],
+      [-1, 9, 40, '', 'High', 'Personal chatbot (not approved)', 'An employee pasted applicant notes into a personal chatbot', 'Watchman Security', [-1, 9, 41], 'Security team'],
+      [-1, 22, 47, '', 'Medium', 'Customer Assistant v2.0', 'Quoted an outdated overdraft fee to a customer', 'Library', [0, 7, 30], 'Customer experience lead'],
+      [0, 8, 15, 'FIN-3045', 'Medium', 'Underwriting v4.1', 'Three shell-company applications from one NYC address', 'Obsidian', [0, 8, 15], 'Fraud operations']
+    ],
+    ad: [
+      [-6, 2, 30, 'AD-2847', 'High', 'Fleet Health v2.4', 'Missed a bearing wear warning on an aircraft at Twentynine Palms', 'Eden', [-5, 8, 40], 'Maintenance control'],
+      [-6, 4, 10, 'AD-2847', 'High', 'Fleet Health v2.4', 'Cleared a part whose paperwork did not match the supplier record', 'Obsidian', [-5, 8, 40], 'Maintenance control, Supply chain'],
+      [-4, 13, 20, 'AD-2918', 'Medium', 'Fraud Detection v3.2', 'Spoofed device logins on the parts portal at Pendleton', 'Obsidian', [-4, 13, 22], 'Security team'],
+      [-3, 10, 5, '', 'Medium', 'Supplier Chat Agent v1.0', 'Gave a vendor a delivery date that was never approved', 'Watchman', [-3, 15, 0], 'Supply chain lead'],
+      [-2, 16, 45, 'AD-2902', 'Medium', 'Maintenance Routing v1.2', 'Sent a coastal-base inspection to a crew without the right certification', 'Watchman', [-2, 16, 50], 'Maintenance control'],
+      [-1, 11, 30, '', 'High', 'Personal chatbot (not approved)', 'A technician pasted a maintenance log into a personal chatbot', 'Watchman Security', [-1, 11, 31], 'Security team'],
+      [0, 9, 0, 'AD-2751', 'Low', 'Maintenance Routing v1.2', 'Weekend crew scheduling gap at Yuma grew slightly', 'Eden', [0, 9, 5], 'Maintenance control']
+    ],
+    health: [
+      [-6, 0, 50, 'HS-2847', 'High', 'Claims Adjudication v1.9', 'Denied a cardiology follow-up for a member aged 78 without clinician review', 'Eden', [-5, 8, 30], 'Clinical review lead'],
+      [-6, 2, 15, 'HS-2847', 'High', 'Claims Adjudication v1.9', 'Denied an infusion claim for a member aged 81 without clinician review', 'Eden', [-5, 8, 30], 'Clinical review lead'],
+      [-4, 14, 0, 'HS-2901', 'Medium', 'Prior Auth v1.5', 'The same procedure was billed twice through two providers', 'Obsidian', [-4, 14, 3], 'Payment integrity'],
+      [-3, 9, 45, '', 'Medium', 'Member Assistant v1.4', 'Told a member a drug was covered when it needed prior approval', 'Library', [-3, 13, 10], 'Member services lead'],
+      [-2, 11, 20, 'HS-1204', 'High', 'Triage Priority v2.0', 'A rural patient was ranked lower for a same-day slot', 'Eden', [-2, 11, 25], 'Care management'],
+      [-1, 15, 5, '', 'High', 'Personal chatbot (not approved)', 'A nurse pasted patient notes into a personal chatbot', 'Watchman Security', [-1, 15, 6], 'Privacy officer'],
+      [0, 8, 40, 'HS-3127', 'Low', 'Prior Auth v1.5', 'A Spanish-language request waited a day longer for approval', 'Eden', [0, 8, 45], 'Language access team']
+    ],
+    fed: [
+      [-6, 1, 30, 'FED-PDV-001', 'High', 'IRS Tax Fraud Detection v3.1', 'Flagged three self-employed filers in Miami for normal income swings', 'Eden', [-5, 9, 0], 'Patricia Alvarez'],
+      [-6, 5, 10, 'FED-PDV-001', 'High', 'IRS Tax Fraud Detection v3.1', 'Flagged a rideshare driver in Atlanta for a seasonal income gap', 'Eden', [-5, 9, 0], 'Patricia Alvarez'],
+      [-3, 10, 15, '', 'Medium', 'Taxpayer Assistant v2.2', 'Gave a filer an outdated deadline for an extension', 'Library', [-3, 14, 40], 'Taxpayer services lead'],
+      [-2, 13, 0, '', 'Medium', 'Return Routing v1.4', 'Sent a batch of returns to the wrong review queue', 'Watchman', [-2, 13, 20], 'Operations lead'],
+      [-1, 10, 25, '', 'High', 'Personal chatbot (not approved)', 'An employee pasted taxpayer details into a personal chatbot', 'Watchman Security', [-1, 10, 26], 'Privacy officer']
+    ]
+  };
+  window.__wmIncCase = window.__wmIncCase || {};
+  function incidents(o) {
+    var now = new Date(), d = function (n, h, m) { return new Date(now.getFullYear(), now.getMonth(), now.getDate() + n, h, m || 0); };
+    return (INC[o] || []).map(function (r, i) { var key = o + i; return { i: i, key: key, t: d(r[0], r[1], r[2]), cs: r[3] || window.__wmIncCase[key] || '', sev: r[4], model: r[5], what: r[6], by: r[7], caught: d(r[8][0], r[8][1], r[8][2]), told: r[9] }; }).filter(function (x) { return x.t <= now; });
+  }
+  function caughtLbl(t, c) {
+    var mins = Math.round((c - t) / 60000), same = iso(t) === iso(c);
+    if (mins < 2) return 'Right away';
+    if (same) return tm(c) + ' (' + (mins < 60 ? mins + ' min' : Math.round(mins / 60) + ' hr') + ' later)';
+    return (Math.round((new Date(c.getFullYear(), c.getMonth(), c.getDate()) - new Date(t.getFullYear(), t.getMonth(), t.getDate())) / 864e5) === 1 ? 'Next day, ' : md(c) + ', ') + tm(c) + ' (' + Math.round(mins / 60) + ' hrs later)';
+  }
   function events(o, view) {
     var out = [];
     if (view === 'cases') mems(o).forEach(function (m) { var id = String(m.caseId || '').replace(/^#/, ''); if (!id || /PRE/.test(id)) return; if (o === 'fin' && id === 'FIN-1203' && /Collections AI/.test(m.summary || '')) id = 'FIN-0842'; out.push({ t: new Date(m.timestamp), cs: id, what: String(m.summary || '').replace(/^(January|February|March|April|May|June|July|August|September|October|November|December) digest/, 'Monthly digest'), who: String(m.author || '').replace(/ Core$/, ''), core: CORE[m.core] || m.core || '', sev: m.severity }); });
@@ -57285,7 +57333,7 @@ setInterval(function () {
       (D().caseChannels || []).forEach(function (c) { (c.messages || []).forEach(function (m) { out.push({ t: new Date(m.timestamp), cs: c.caseId, what: m.content, who: String(m.author || '').replace(/: Cardinal$/, ''), core: 'War room' }); }); });
       mems(o).forEach(function (m) { if (m.core === 'warroom') out.push({ t: new Date(m.timestamp), cs: String(m.caseId || '').replace(/^#/, ''), what: m.summary, who: 'Watchman', core: 'War room' }); });
     }
-    if (view === 'reports') reports(o).forEach(function (r, i) { out.push({ t: r.t, cs: r.cs, what: r.what, who: r.who, core: r.to, status: r.status, ri: i }); });
+    if (view === 'reports') incidents(o).forEach(function (x) { out.push({ t: x.t, cs: x.cs, what: x.what, who: x.by, core: x.by, sev: x.sev, model: x.model, caught: x.caught, ri: x.i, inc: 1 }); });
     return out.sort(function (a, b) { return b.t - a.t; });
   }
   var F = window.__wm2 = window.__wm2 || { view: 'cases', cs: '', sev: '', from: '', to: '', q: '', page: 0 };
@@ -57293,55 +57341,83 @@ setInterval(function () {
   var qT; window.wm2Q = function (v) { clearTimeout(qT); qT = setTimeout(function () { F.q = v; F.page = 0; F.focusQ = 1; draw(true); }, 250); };
   window.wm2Page = function (d) { F.page = Math.max(0, F.page + d); draw(true); };
   // Click a row to open it (Brittany: "you should be able to click into the cases, war rooms, and incidents").
-  window.wm2Open = function (cs, ri) {
-    var o = org();
-    if (F.view === 'warrooms') { try { openWarRoomCase(cs); } catch (e) {} return; }
-    var c = cases(o).filter(function (x) { return x.id === cs; })[0];
-    var row = function (k, v) { return '<div class="wm2-r"><span>' + k + '</span><b>' + esc(v) + '</b></div>'; };
-    var body;
-    if (F.view === 'reports') {
-      var r = reports(o)[ri]; if (!r) return; var st = repStatus(r.status);
-      body = '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px"><div><div class="wm2-bt">Incident report \u00b7 ' + esc(r.cs) + '</div><div style="font-size:17px;font-weight:800;margin-top:4px;line-height:1.35">' + esc(r.what) + '</div></div>' + stPill(st) + '</div>' +
-        '<div style="margin-top:12px">' + row('Sent to', r.to) + row('Written by', r.who) + row('Date', dayName(r.t) + ', ' + tm(r.t)) + row('Status', r.status) + (c ? row('Who is affected', c.affected.toLocaleString() + ' \u00b7 ' + c.who) : '') + '</div>' +
-        '<div class="wm2-bt" style="margin-top:14px">What the report says</div><div style="font-size:12.5px;color:#334155;line-height:1.6;margin-top:4px">' +
-        (c ? '<b>What happened:</b> ' + esc(c.model) + ': ' + esc(c.metric) + '.<br><b>Who was affected:</b> ' + c.affected.toLocaleString() + ' (' + esc(c.who) + ').<br><b>What we did:</b> opened case ' + esc(c.id) + (c.room ? ', set up a war room,' : '') + ' and started the fix.<br><b>Next step:</b> ' + (st === 'Draft' ? 'legal review, then send.' : st === 'Done' ? 'none; this report is closed.' : 'finish the fix, then close the report.') : esc(r.what)) + '</div>';
-    } else {
-      if (!c) return;
-      var L = events(o, 'cases').filter(function (e) { return e.cs === cs; });
-      body = '<div style="display:flex;justify-content:space-between;align-items:center;gap:12px"><div><div class="wm2-bt">Case</div><div style="font-size:20px;font-weight:800">' + esc(c.id) + '</div></div><div style="display:flex;gap:6px">' + sevPill(c.sev) + stPill(c.status) + '</div></div>' +
-        '<div style="font-size:13px;color:#334155;margin:6px 0 10px;line-height:1.5">' + esc(c.model) + ': ' + esc(c.metric) + '</div>' +
-        row('Who is affected', c.affected.toLocaleString() + ' \u00b7 ' + c.who) + row('Opened', c.opened ? md(c.opened) + ', ' + c.opened.getFullYear() : '\u2013') + row('Owner', c.owner) + row('Days left to fix', c.sla == null ? '\u2013' : c.sla + (c.sla === 1 ? ' day' : ' days')) + row('War room', c.room ? 'Open' : 'None yet') +
-        '<div class="wm2-bt" style="margin-top:14px">Every step, newest first</div>' +
-        '<div style="margin-top:6px">' + L.map(function (e) { return '<div style="display:flex;gap:10px;padding:7px 0;border-top:1px dashed rgba(26,24,21,.12);font-size:12.5px"><span style="width:118px;flex-shrink:0;color:#64748b">' + md(e.t) + ', ' + tm(e.t) + '</span><span style="flex:1;color:#1a1815">' + esc(e.what) + '</span><span style="color:#64748b;white-space:nowrap">' + esc(e.core) + '</span></div>'; }).join('') + '</div>' +
-        '<div style="display:flex;gap:6px;margin-top:12px;flex-wrap:wrap">' + (c.room ? '<button type="button" class="wm2-btn dark" onclick="document.getElementById(\'wm2-modal\').remove();openWarRoomCase(\'' + c.id + '\')">Open war room \u2192</button>' : '') + '<button type="button" class="wm2-btn" onclick="document.getElementById(\'wm2-modal\').remove();cardinalEdenGo&&cardinalEdenGo(\'case\',\'Watchman\')">See in Eden</button></div>';
-    }
+  function modal(body) {
     var m = document.getElementById('wm2-modal'); if (m) m.remove();
     m = document.createElement('div'); m.id = 'wm2-modal';
     m.style.cssText = 'position:fixed;inset:0;background:rgba(26,24,21,.45);z-index:4000;display:flex;align-items:center;justify-content:center;padding:20px';
-    m.innerHTML = '<div id="wm2" style="margin:0"><div class="wm2-box" style="width:min(680px,94vw);max-height:86vh;overflow:auto;background:#f4efe6;position:relative;padding:20px 22px"><button type="button" aria-label="Close" onclick="document.getElementById(\'wm2-modal\').remove()" style="position:absolute;top:10px;right:12px;border:none;background:none;font-size:20px;cursor:pointer;color:#64748b">\u00d7</button>' + body + '</div></div>';
+    m.innerHTML = '<div id="wm2" style="margin:0"><div class="wm2-box" style="width:min(760px,94vw);max-height:88vh;overflow:auto;background:#f4efe6;position:relative;padding:20px 22px"><button type="button" aria-label="Close" onclick="document.getElementById(\'wm2-modal\').remove()" style="position:absolute;top:10px;right:12px;border:none;background:none;font-size:22px;cursor:pointer;color:#64748b">×</button>' + body + '</div></div>';
     m.addEventListener('click', function (e) { if (e.target === m) m.remove(); });
     document.body.appendChild(m);
+  }
+  function tile(k, v, sub) { return '<div style="background:#fff;border-radius:12px;padding:10px 12px"><div class="wm2-bt">' + k + '</div><div style="font-size:15px;font-weight:800;color:#1a1815;margin-top:3px;line-height:1.3">' + esc(v) + '</div>' + (sub ? '<div style="font-size:11.5px;color:#64748b;margin-top:2px">' + esc(sub) + '</div>' : '') + '</div>'; }
+  function tiles(a) { return '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin:12px 0 4px">' + a.join('') + '</div>'; }
+  function stepRow(t, txt, who, tag, red) { return '<div style="display:grid;grid-template-columns:132px 1fr auto;gap:10px;padding:8px 0;border-top:1px dashed rgba(26,24,21,.12);font-size:12.5px;align-items:start"><span style="color:#64748b">' + md(t) + ', ' + tm(t) + '</span><span style="color:' + (red ? '#B91C1C' : '#1a1815') + ';' + (red ? 'font-weight:700' : '') + '">' + (tag ? '<span style="font-size:10px;font-weight:800;color:#475569;background:#ebe4d6;border-radius:999px;padding:1px 7px;margin-right:6px">' + tag + '</span>' : '') + esc(txt) + '</span><span style="color:#64748b;white-space:nowrap">' + esc(who || '') + '</span></div>'; }
+  function casePopup(cs) {
+    var o = org(), c = cases(o).filter(function (x) { return x.id === cs; })[0]; if (!c) return;
+    var inc = incidents(o).filter(function (x) { return x.cs === cs; });
+    var steps = events(o, 'cases').filter(function (e) { return e.cs === cs; }).map(function (e) { return { t: e.t, txt: e.what, who: e.core || e.who, red: /dismiss|ignored|no response|overdue|missed/i.test(e.what) }; });
+    var flags = {};
+    inc.forEach(function (x) { steps.push({ t: x.t, txt: x.what + ' (' + x.model + ')', who: x.by, tag: 'Incident' }); var k = +x.caught + '|' + x.by; (flags[k] = flags[k] || { t: x.caught, by: x.by, told: x.told, gaps: [] }).gaps.push(Math.round((x.caught - x.t) / 3600000)); });
+    Object.keys(flags).forEach(function (k) { var f = flags[k], n = f.gaps.length, lo = Math.min.apply(null, f.gaps), hi = Math.max.apply(null, f.gaps), late = hi > 6;
+      steps.push({ t: f.t, txt: 'Flagged to ' + f.told + (n > 1 ? ' (' + n + ' incidents)' : '') + (late ? ', ' + (lo === hi ? hi : lo + ' to ' + hi) + ' hours after ' + (n > 1 ? 'they' : 'it') + ' happened' : ''), who: f.by, tag: 'Flagged', red: late }); });
+    if (c.opened) steps.push({ t: c.opened, txt: 'Case opened and assigned to ' + c.owner, who: 'Watchman', tag: 'Opened' });
+    steps.sort(function (a, b) { return a.t - b.t; });
+    var body = '<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding-right:24px"><div><div class="wm2-bt">Case</div><div style="font-size:22px;font-weight:800">' + esc(c.id) + '</div></div><div style="display:flex;gap:6px">' + sevPill(c.sev) + stPill(c.status) + '</div></div>' +
+      '<div style="font-size:13px;color:#334155;margin:6px 0 0;line-height:1.5"><b>' + esc(c.model) + ':</b> ' + esc(c.metric) + '</div>' +
+      tiles([tile('Who is affected', c.affected.toLocaleString(), c.who), tile('Opened', c.opened ? md(c.opened) + ', ' + c.opened.getFullYear() : '–', c.opened ? tm(c.opened) : ''), tile('Owner', c.owner, 'Watchman assigned'), tile('Days left to fix', c.sla == null ? '–' : c.sla + (c.sla === 1 ? ' day' : ' days'), c.room ? 'War room open' : 'No war room yet')]) +
+      '<div class="wm2-bt" style="margin-top:14px">Case timeline, oldest first · ' + steps.length + ' steps' + (inc.length ? ' · ' + inc.length + ' linked incident' + (inc.length === 1 ? '' : 's') : '') + '</div>' +
+      '<div style="margin-top:4px;background:#fff;border-radius:12px;padding:2px 12px 6px">' + steps.map(function (x) { return stepRow(x.t, x.txt, x.who, x.tag, x.red); }).join('') + '</div>' +
+      '<div style="font-size:11.5px;color:#64748b;margin-top:8px">Every step is sealed in Echo and cannot be changed.</div>' +
+      '<div style="display:flex;gap:6px;margin-top:12px;flex-wrap:wrap">' + (c.room ? '<button type="button" class="wm2-btn dark" onclick="document.getElementById(\'wm2-modal\').remove();openWarRoomCase(\'' + c.id + '\')">Open war room →</button>' : '') + '<button type="button" class="wm2-btn" onclick="document.getElementById(\'wm2-modal\').remove();cardinalEdenGo&&cardinalEdenGo(\'case\',\'Watchman\')">See in Eden</button></div>';
+    modal(body);
+  }
+  function incPopup(ri) {
+    var o = org(), x = incidents(o).filter(function (y) { return y.i === ri; })[0]; if (!x) return;
+    var late = x.caught - x.t > 6 * 3600000;
+    var body = '<div style="padding-right:24px"><div class="wm2-bt">Incident · ' + dayName(x.t) + '</div><div style="font-size:18px;font-weight:800;margin-top:4px;line-height:1.35">' + esc(x.what) + '</div></div>' +
+      tiles([tile('Happened', tm(x.t), md(x.t)), tile('Caught', caughtLbl(x.t, x.caught).replace(/ \(.*/, ''), 'by ' + x.by), tile('Model', x.model, ''), tile('Severity', x.sev, '')]) +
+      (late ? '<div style="background:#fef2f2;color:#B91C1C;border-radius:10px;padding:8px 12px;font-size:12.5px;font-weight:600;margin-top:8px">Caught ' + Math.round((x.caught - x.t) / 3600000) + ' hours after it happened. Watchman logs the gap so the team can close it.</div>' : '') +
+      '<div class="wm2-bt" style="margin-top:14px">Who was told</div><div style="font-size:13px;color:#1a1815;margin-top:4px">' + esc(x.told) + ' · ' + md(x.caught) + ', ' + tm(x.caught) + '</div>' +
+      '<div class="wm2-bt" style="margin-top:14px">Case</div>' +
+      (x.cs && window.__wmIncCase[x.key] ? '<div style="font-size:13px;margin-top:4px">Case <b>' + esc(x.cs) + '</b> was opened from this incident. Watchman assigned an owner and started the clock.</div>' : x.cs ? '<div style="font-size:13px;margin-top:4px">Part of <b>' + esc(x.cs) + '</b>. Every incident on this case is in its timeline.</div><div style="margin-top:10px"><button type="button" class="wm2-btn dark" onclick="wm2CaseFromInc(\'' + esc(x.cs) + '\')">Open case ' + esc(x.cs) + ' →</button></div>'
+        : '<div style="font-size:13px;margin-top:4px;color:#334155">No case yet. Someone needs to decide: open a case, or mark it reviewed with a reason. Either way it is sealed in Echo.</div><div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap"><button type="button" class="wm2-btn dark" onclick="wm2NewCase(\'' + x.key + '\')">Open a case</button><button type="button" class="wm2-btn" onclick="document.getElementById(\'wm2-modal\').remove();try{cardinalShowToast(\'Marked reviewed. Sealed in Echo with your name and the time.\')}catch(e){}">Mark reviewed</button></div>');
+    modal(body);
+  }
+  window.wm2CaseFromInc = function (cs) { casePopup(cs); };
+  window.wm2NewCase = function (key) {
+    var o = org(), pre = { fin: 'FIN-', ad: 'AD-', health: 'HS-', fed: 'FED-' }[o] || 'CASE-', id = pre + (3100 + (h32(key) % 800));
+    window.__wmIncCase[key] = id; var m = document.getElementById('wm2-modal'); if (m) m.remove();
+    try { cardinalShowToast('Case ' + id + ' opened from this incident. Watchman assigned an owner and started the clock.'); } catch (e) {}
+    draw(true);
+  };
+  // Click a row to open it (Brittany: "you should be able to click into the cases, war rooms, and incidents").
+  window.wm2Open = function (cs, ri) {
+    if (F.view === 'warrooms') { try { openWarRoomCase(cs); } catch (e) {} return; }
+    if (F.view === 'reports' && ri >= 0) return incPopup(ri);
+    casePopup(cs);
   };
   window.wm2Pick = function (id) { F.cs = F.cs === id ? '' : id; F.page = 0; draw(true); };
   function sevPill(s) { var c = SEV[s] || '#64748b'; return '<span style="font-size:10.5px;font-weight:800;color:' + c + ';background:' + c + '14;border:1px solid ' + c + '40;border-radius:999px;padding:1px 8px">' + esc(s) + '</span>'; }
   function html() {
     var o = org(), C = cases(o), byId = {}; C.forEach(function (c) { byId[c.id] = c; });
     var from = F.from ? new Date(F.from + 'T00:00:00') : null, to = F.to ? new Date(F.to + 'T23:59:59') : null, q = F.q.toLowerCase();
-    var L = events(o, F.view).filter(function (e) { var c = byId[e.cs]; e.st = F.view === 'reports' ? repStatus(e.status) : (c ? c.status : 'Done'); var isAI = /^(Eve|Adam|Watchman|Eden|Obsidian|Genesis|Atonement|Halo|Echo|Cardinal|Codex|Compliance|Trust Ledger|Trust Loop)\b/.test(e.who); return (!F.who || (F.who === 'people' ? !isAI : F.who === 'ai' ? isAI : e.who.indexOf(F.who) === 0)) && (!F.cs || e.cs === F.cs) && (!F.st || e.st === F.st) && (!F.sev || (c && c.sev === F.sev)) && (!from || e.t >= from) && (!to || e.t <= to) && (!q || (e.what + ' ' + e.who + ' ' + e.cs).toLowerCase().indexOf(q) >= 0); });
+    var L = events(o, F.view).filter(function (e) { var c = byId[e.cs]; e.st = e.inc ? (e.cs ? (c ? c.status : 'In progress') : 'Pending') : (c ? c.status : 'Done'); var isAI = /^(Eve|Adam|Watchman|Eden|Obsidian|Genesis|Atonement|Halo|Echo|Cardinal|Codex|Compliance|Trust Ledger|Trust Loop)\b/.test(e.who); return (!F.who || (F.who === 'people' ? !isAI : F.who === 'ai' ? isAI : e.who.indexOf(F.who) === 0)) && (!F.cs || e.cs === F.cs) && (!F.st || e.st === F.st) && (!F.sev || (e.inc ? e.sev === F.sev : (c && c.sev === F.sev))) && (!from || e.t >= from) && (!to || e.t <= to) && (!q || (e.what + ' ' + e.who + ' ' + e.cs + ' ' + (e.model || '')).toLowerCase().indexOf(q) >= 0); });
     var sel = 'font:inherit;font-size:12.5px;border:1px solid rgba(26,24,21,.14);border-radius:9px;padding:6px 9px;background:#fff';
     var VIEWS = [['cases', 'Cases: every step, every case'], ['warrooms', 'War rooms: live team rooms for serious cases'], ['reports', 'Incident reports: formal write-ups sent out']];
     var ctl = '<div class="wm2-ctl">' +
-      '<select style="' + sel + '" onchange="wm2Set(\'sev\',this.value)"><option value="">Any severity</option>' + ['Critical', 'High', 'Medium'].map(function (s) { return '<option ' + (F.sev === s ? 'selected' : '') + '>' + s + '</option>'; }).join('') + '</select>' +
+      '<select style="' + sel + '" onchange="wm2Set(\'sev\',this.value)"><option value="">Any severity</option>' + ['Critical', 'High', 'Medium', 'Low'].map(function (s) { return '<option ' + (F.sev === s ? 'selected' : '') + '>' + s + '</option>'; }).join('') + '</select>' +
       '<select style="' + sel + '" onchange="wm2Set(\'who\',this.value)"><option value="">Anyone</option>' + [['Eve', 'Eve (AI)'], ['Adam', 'Adam (AI)'], ['ai', 'Any AI or system'], ['people', 'People only']].map(function (w) { return '<option value="' + w[0] + '" ' + (F.who === w[0] ? 'selected' : '') + '>' + w[1] + '</option>'; }).join('') + '</select>' +
-      '<select style="' + sel + '" onchange="wm2Set(\'st\',this.value)"><option value="">Any status</option>' + ['Draft', 'In progress', 'On hold', 'Done'].map(function (s) { return '<option ' + (F.st === s ? 'selected' : '') + '>' + s + '</option>'; }).join('') + '</select>' +
+      '<select style="' + sel + '" onchange="wm2Set(\'st\',this.value)"><option value="">Any status</option>' + (F.view === 'reports' ? ['Pending', 'In progress', 'On hold', 'Done'] : ['In progress', 'On hold', 'Done']).map(function (s) { return '<option ' + (F.st === s ? 'selected' : '') + '>' + s + '</option>'; }).join('') + '</select>' +
       '<label>From <input type="date" value="' + F.from + '" style="' + sel + '" onchange="wm2Set(\'from\',this.value)"></label><label>To <input type="date" value="' + F.to + '" style="' + sel + '" onchange="wm2Set(\'to\',this.value)"></label>' +
       '<input type="search" placeholder="Search a case ID, what happened, or who" value="' + esc(F.q) + '" style="' + sel + ';flex:1;min-width:180px" oninput="wm2Q(this.value)"></div>';
     var G = []; L.forEach(function (e) { var k = iso(e.t); if (!G.length || G[G.length - 1].k !== k) G.push({ k: k, d: e.t, items: [] }); G[G.length - 1].items.push(e); });
     var per = 6, pages = Math.max(1, Math.ceil(G.length / per)); if (F.page >= pages) F.page = pages - 1;
     var TH = 'text-align:left;font-size:10.5px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.4px;padding:8px 12px;background:#f4efe6', TD = 'padding:9px 12px;border-top:1px solid rgba(26,24,21,.06);font-size:12.5px;vertical-align:top;overflow-wrap:break-word';
     var log = G.slice(F.page * per, F.page * per + per).map(function (g) {
-      return '<div class="wm2-day"><div class="wm2-dh"><b>' + dayName(g.d) + '</b><span>' + g.items.length + (g.items.length === 1 ? ' entry' : ' entries') + ' · sealed in Echo</span></div><table class="p4t" style="width:100%;min-width:1040px;border-collapse:collapse;table-layout:fixed"><colgroup><col style="width:7%"><col style="width:8%"><col style="width:9%"><col style="width:10%"><col style="width:32%"><col style="width:14%"><col style="width:10%"><col style="width:10%"></colgroup><thead><tr><th style="' + TH + '">Time</th><th style="' + TH + '">Case</th><th style="' + TH + '">Severity</th><th style="' + TH + '">Status</th><th style="' + TH + '">' + (F.view === 'reports' ? 'Report' : 'What happened') + '</th><th style="' + TH + '">Model</th><th style="' + TH + '">' + (F.view === 'reports' ? 'Sent to' : 'Where') + '</th><th style="' + TH + '">Who</th></tr></thead><tbody>' +
-        g.items.map(function (e, i) { var c = byId[e.cs]; return '<tr style="background:' + (i % 2 ? '#f7f3ea' : '#fff') + ';cursor:pointer" onclick="wm2Open(\'' + esc(e.cs) + '\',' + (e.ri == null ? -1 : e.ri) + ')"><td style="' + TD + ';white-space:nowrap;color:#475569">' + tm(e.t) + '</td><td style="' + TD + '"><span style="font-weight:800;white-space:nowrap;color:' + (c ? SEV[c.sev] : '#1a1815') + '">' + esc(e.cs) + '</span></td><td style="' + TD + '">' + (c ? sevPill(c.sev) : '<span style="color:#94a3b8">\u2013</span>') + '</td><td style="' + TD + '">' + stPill(e.st) + '</td><td style="' + TD + ';color:#1a1815;font-weight:600;white-space:normal">' + esc(e.what) + '</td><td style="' + TD + ';color:#475569">' + esc(c ? c.model : '') + '</td><td style="' + TD + '">' + esc(e.core) + '</td><td style="' + TD + '">' + esc(e.who) + '</td></tr>'; }).join('') + '</tbody></table></div>';
+      return '<div class="wm2-day"><div class="wm2-dh"><b>' + dayName(g.d) + '</b><span>' + g.items.length + (g.items.length === 1 ? ' entry' : ' entries') + ' · sealed in Echo</span></div><table class="p4t" style="width:100%;min-width:1040px;border-collapse:collapse;table-layout:fixed"><colgroup><col style="width:7%"><col style="width:8%"><col style="width:9%"><col style="width:10%"><col style="width:32%"><col style="width:14%"><col style="width:10%"><col style="width:10%"></colgroup><thead><tr><th style="' + TH + '">Time</th><th style="' + TH + '">Case</th><th style="' + TH + '">Severity</th><th style="' + TH + '">Status</th><th style="' + TH + '">What happened</th><th style="' + TH + '">Model</th><th style="' + TH + '">' + (F.view === 'reports' ? 'Caught by' : 'Where') + '</th><th style="' + TH + '">' + (F.view === 'reports' ? 'Caught' : 'Who') + '</th></tr></thead><tbody>' +
+        g.items.map(function (e, i) { var c = byId[e.cs], sv = e.inc ? e.sev : (c && c.sev), late = e.inc && (e.caught - e.t) > 6 * 3600000;
+          var caseCell = e.cs ? '<span style="font-weight:800;white-space:nowrap;color:' + (SEV[sv] || '#1a1815') + '">' + esc(e.cs) + '</span>' : '<span style="font-size:11.5px;color:#64748b;font-style:italic;white-space:nowrap">No case yet</span>';
+          return '<tr style="background:' + (i % 2 ? '#f7f3ea' : '#fff') + ';cursor:pointer" onclick="wm2Open(\'' + esc(e.cs) + '\',' + (e.ri == null ? -1 : e.ri) + ')"><td style="' + TD + ';white-space:nowrap;color:#475569">' + tm(e.t) + '</td><td style="' + TD + '">' + caseCell + '</td><td style="' + TD + '">' + (sv ? sevPill(sv) : '<span style="color:#94a3b8">\u2013</span>') + '</td><td style="' + TD + '">' + stPill(e.st) + '</td><td style="' + TD + ';color:#1a1815;font-weight:600;white-space:normal">' + esc(e.what) + '</td><td style="' + TD + ';color:#475569">' + esc(e.model || (c ? c.model : '')) + '</td><td style="' + TD + '">' + esc(e.core) + '</td><td style="' + TD + (late ? ';color:#B91C1C;font-weight:700' : '') + '">' + esc(e.inc ? caughtLbl(e.t, e.caught) : e.who) + '</td></tr>'; }).join('') + '</tbody></table></div>';
     }).join('') || '<div style="padding:18px;color:#64748b;background:#fff;border-radius:14px">Nothing matches these filters.</div>';
     var pager = pages > 1 ? '<div class="wm2-pg"><button type="button" ' + (F.page ? '' : 'disabled') + ' onclick="wm2Page(-1)">← Newer</button><span>Page ' + (F.page + 1) + ' of ' + pages + '</span><button type="button" ' + (F.page < pages - 1 ? '' : 'disabled') + ' onclick="wm2Page(1)">Older →</button></div>' : '';
     var pick = F.cs && byId[F.cs], open = C.length;
@@ -57361,22 +57437,38 @@ setInterval(function () {
     '#wm2 .wm2-case{display:flex;gap:8px;align-items:center;padding:8px;border-radius:10px;cursor:pointer;font-size:12.5px;margin-top:4px}#wm2 .wm2-case:hover,#wm2 .wm2-case.on{background:#f4efe6}#wm2 .wm2-case .dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}' +
     '#wm2 .wm2-btn{font:inherit;font-size:12px;font-weight:700;border:1px solid rgba(26,24,21,.14);background:#fff;border-radius:8px;padding:5px 10px;cursor:pointer;color:#1a1815}#wm2 .wm2-btn.dark{background:#1a1815;color:#fff;border-color:#1a1815}' +
     '#wm2 .wm2-pg{display:flex;justify-content:space-between;align-items:center;font-size:12px;color:#64748b}#wm2 .wm2-pg button{font:inherit;font-weight:700;border:1px solid rgba(26,24,21,.14);background:#fff;border-radius:8px;padding:4px 10px;cursor:pointer}' +
+    '#screen-sentinel.wm-alt .wm-hide-alt,#screen-sentinel.wm-alt #sent-top,#screen-sentinel.wm-alt #u-sentinel-hero,#screen-sentinel.wm-alt #u-sentinel-hist,#screen-sentinel.wm-alt #sentinel-weekly-digest,#screen-sentinel.wm-alt [id^="u-sentinel"]{display:none!important}' +
     '@media (max-width:1000px){#wm2 .wm2-grid{grid-template-columns:1fr}#wm2 .wm2-side{position:static}}';
   document.head.appendChild(css);
   // One bar for all of Watchman (Brittany: "just make the bar case, war room, incidents, testing, security, AI vendor").
-  var TABS = [['cases', 'Cases', 'v'], ['warrooms', 'War rooms', 'v'], ['reports', 'Incidents', 'v'], ['lab', 'Testing', 'n'], ['security', 'Security', 'n'], ['vendors', 'AI vendors', 'n']];
+  // 10/10 (Brittany: "Watchman should only be that": cases, incidents, war rooms). Testing moved to Genesis and vendor,
+  // shadow AI, agent, and security coverage got their own sidebar item (AI Coverage). The underlying Watchman sections
+  // are reused, shown in three modes: watch (Watchman), cov (AI Coverage), lab (Genesis stress tests).
+  var MODES = {
+    watch: { title: 'Watchman: Cases, Incidents & War Rooms', tabs: [['cases', 'Cases', 'v'], ['reports', 'Incidents', 'v'], ['warrooms', 'War rooms', 'v']] },
+    cov: { title: 'AI Coverage: Vendors, Shadow AI & Agents', tabs: [['vendors', 'Vendor AI', 'n'], ['shadow', 'Shadow AI', 'n'], ['runtime', 'Agents and runtime rules', 'n'], ['security', 'Security watch', 'n']] },
+    lab: { title: 'Genesis: Stress Tests & Playbooks', tabs: [['lab', 'Stress tests', 'n'], ['playbooks', 'Playbooks', 'n']] }
+  };
+  window.__wmMode = window.__wmMode || 'watch';
+  function TABS() { return MODES[window.__wmMode].tabs; }
   window.__wmTab = window.__wmTab || 'cases';
   window.wmTab = function (t) {
-    window.__wmTab = t; var tab = TABS.filter(function (x) { return x[0] === t; })[0];
+    var tab = null; Object.keys(MODES).forEach(function (m) { MODES[m].tabs.forEach(function (x) { if (x[0] === t && !tab) { tab = x; if (MODES[window.__wmMode].tabs.indexOf(x) < 0) window.__wmMode = m; } }); });
+    window.__wmTab = t;
     if (tab && tab[2] === 'v') { F.view = t; F.page = 0; try { if (window.__sentWR || (window.__sentinelTab && window.__sentinelTab !== 'cases')) { window.__sentWR = false; wmGo('cases'); } } catch (e) {} }
     else { try { wmGo(t); } catch (e) {} }
     drawBar(); draw(true);
+  };
+  window.wmMode = function (m, navEl) {
+    window.__wmMode = m; var first = MODES[m].tabs[0][0];
+    try { showScreen('sentinel', navEl || null); } catch (e) {}
+    setTimeout(function () { wmTab(first); }, 60);
   };
   function drawBar() {
     var sub = document.getElementById('wm-sub'); if (!sub) return;
     var bar = document.getElementById('wm-bar'); if (!bar) { bar = document.createElement('div'); bar.id = 'wm-bar'; }
     var tiles = document.getElementById('wm-rooms'), anchor = tiles && tiles.parentNode === sub.parentNode ? tiles : sub; if (bar.nextElementSibling !== anchor) anchor.parentNode.insertBefore(bar, anchor);
-    var h = TABS.map(function (t) { return '<button type="button" class="' + (window.__wmTab === t[0] ? 'on' : '') + '" onclick="wmTab(\'' + t[0] + '\')">' + t[1] + '</button>'; }).join('');
+    var h = TABS().map(function (t) { return '<button type="button" class="' + (window.__wmTab === t[0] ? 'on' : '') + '" onclick="wmTab(\'' + t[0] + '\')">' + t[1] + '</button>'; }).join('');
     if (bar.__h !== h) { bar.__h = h; bar.innerHTML = h; }
   }
   function host() { var b = [].filter.call(document.querySelectorAll('#screen-sentinel button'), function (x) { return x.textContent.trim() === 'Stress tests' && !x.closest('#wm-sub'); })[0]; return b && b.parentElement && b.parentElement.parentNode; }
@@ -57385,7 +57477,11 @@ setInterval(function () {
     var s = document.getElementById('screen-sentinel'); if (!s || s.offsetParent === null) return;
     var hst = host(), sub = document.getElementById('wm-sub'), box = document.getElementById('wm2'); if (!hst || !sub) return;
     drawBar();
-    if (!inCases()) { if (box) box.style.display = 'none'; if (hst.__wm2) { hst.__wm2 = 0; hst.style.display = ''; } if (sub.__wm2) { sub.__wm2 = 0; sub.style.display = ''; } return; }
+    var tt = document.getElementById('topbar-title'), want = MODES[window.__wmMode].title; if (tt && tt.textContent !== want) tt.textContent = want;
+    s.classList.toggle('wm-alt', window.__wmMode !== 'watch');
+    // Watchman's own header row and Case Posture card only belong on Watchman.
+    if (!document.querySelector('#sentinel-engine-root .wm-hide-alt')) { var root = document.getElementById('sentinel-engine-root'); if (root) [].forEach.call(root.querySelectorAll('div'), function (e) { if (e.children.length) return; var t = e.textContent.trim(); if (t === 'Cardinal Watchman' && e.parentElement) { e.parentElement.classList.add('wm-hide-alt'); s.__altMarked = 1; } if (t === 'Case Posture') { var c = e.closest('.card'); if (c) c.classList.add('wm-hide-alt'); } }); }
+    if (!inCases()) { if (box) box.style.display = 'none'; if (hst.__wm2) { hst.__wm2 = 0; hst.style.display = ''; } if (sub.style.display !== 'none') { sub.__wm2 = 1; sub.style.display = 'none'; } return; }
     if (!box) { box = document.createElement('div'); box.id = 'wm2'; }
     if (box.previousElementSibling !== hst) hst.parentNode.insertBefore(box, hst.nextSibling);
     if (window.__sentWR) { window.__sentWR = false; try { wmGo('cases'); } catch (e) {} }
@@ -57618,6 +57714,320 @@ setInterval(function () {
   }
   wrap('eveToggleFromOrbital');
   setTimeout(function () { wrap('eveToggleFromOrbital'); }, 1500);
+})();
+</script>
+<script data-p="p53_warroom">
+// 10/10 (Brittany: the war room "needs to look way better... if I'm landing here I need to see everything: what everyone
+// is talking about, the evidence, who is affected, how we are moving... show a case that was finalized and how long it
+// took... the final incident report: generate it, send it to Trust Loop or export it"). A clean war room in the brand
+// style: a room switcher, a hero with the clock, then tabs: Overview, Conversation, Evidence, Team and decisions,
+// Deadlines, Close-out. The old war room stays underneath, hidden, so nothing that links to it breaks.
+(function () {
+  function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;'); }
+  function org() { return window.currentOrg || 'ad'; }
+  function CD(o) { return ((window.CARDINAL_DATA || {})[o || org()]) || {}; }
+  function h32(s) { var x = 2166136261; s = String(s); for (var i = 0; i < s.length; i++) { x ^= s.charCodeAt(i); x = Math.imul(x, 16777619); } return Math.abs(x); }
+  var MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  function tm(d) { d = new Date(d); var h = d.getHours(), m = d.getMinutes(); return ((h % 12) || 12) + ':' + (m < 10 ? '0' : '') + m + (h < 12 ? ' AM' : ' PM'); }
+  function md(d) { d = new Date(d); return MON[d.getMonth()] + ' ' + d.getDate(); }
+  function mdy(d) { d = new Date(d); return md(d) + ', ' + d.getFullYear(); }
+  function day(n, h, m) { var x = new Date(); return new Date(x.getFullYear(), x.getMonth(), x.getDate() + n, h || 9, m || 0); }
+  var SEV = { Critical: '#B91C1C', High: '#C2410C', Medium: '#A16207', Low: '#64748b' };
+  var SIGN = {
+    fin: [['Data science', 'Nina Roberts'], ['Compliance', 'Riley Whitmore'], ['Legal', 'Morgan Hale'], ['Model owner', 'Hannah Brooks']],
+    ad: [['Data science', 'Sarah Chen'], ['Compliance', 'James Martinez'], ['Legal', "Kevin O'Brien"], ['Model owner', 'Lisa Walker']],
+    health: [['Data science', 'Priyanka Rao'], ['Compliance', 'Elena Ruiz'], ['Legal', 'Marcus Bell'], ['Model owner', 'Dr. Aisha Patel']],
+    fed: [['Data science', 'Andre Lewis'], ['Compliance', 'Patricia Alvarez'], ['Legal', 'Owen Clarke'], ['Model owner', 'Dana Kim']]
+  };
+  var ROLE = { 'Nina Roberts': 'Lead Data Scientist', 'Riley Whitmore': 'Chief Compliance Officer', 'Morgan Hale': 'General Counsel', 'Hannah Brooks': 'Product owner, credit models', 'Lisa Torres': 'Model risk analyst', 'Jordan Ellis': 'Chief Risk Officer', 'Grace Liu': 'Fair lending analyst',
+    'Sarah Chen': 'Lead Data Scientist', 'James Martinez': 'Compliance Lead', 'James Park': 'Maintenance engineering lead', "Kevin O'Brien": 'General Counsel', 'Lisa Walker': 'CTO',
+    'Dr. Maya Osei': 'Chief Medical Officer', 'Priyanka Rao': 'Senior Data Scientist', 'Elena Ruiz': 'Chief Compliance Officer', 'Marcus Bell': 'General Counsel', 'Dr. Aisha Patel': 'Head of Clinical AI', 'General Counsel': 'Legal',
+    'Patricia Alvarez': 'Chief Privacy Officer', 'Andre Lewis': 'Lead Data Scientist', 'Owen Clarke': 'Chief Counsel', 'Renee Morales': 'Taxpayer advocate liaison', 'Dana Kim': 'Chief AI Officer',
+    Eve: 'Cardinal AI: watches, flags, and summarizes', Adam: 'Cardinal AI: tests and drafts fixes (cannot launch)' };
+  // One finished case per company, so the room shows what "done" looks like and how long it took.
+  var CLOSED = {
+    fin: { id: 'FIN-0977', sev: 'High', model: 'Card Limit v2.0', what: 'Offered lower credit limits to applicants over 62 with the same income and history', affected: 412, who: 'Applicants over 62', open: -41, close: -30, team: ['Nina Roberts', 'Riley Whitmore', 'Morgan Hale', 'Hannah Brooks', 'Eve', 'Adam'] },
+    ad: { id: 'AD-2710', sev: 'High', model: 'Parts Forecast v1.3', what: 'Under-ordered seals for coastal bases, which delayed two inspections', affected: 38, who: 'Aircraft at coastal bases', open: -38, close: -29, team: ['Sarah Chen', 'James Martinez', "Kevin O'Brien", 'Lisa Walker', 'Eve', 'Adam'] },
+    health: { id: 'HS-0388', sev: 'High', model: 'Appointment Scheduler v1.1', what: 'Gave members over 75 later appointment slots for the same referral', affected: 266, who: 'Members over 75', open: -44, close: -32, team: ['Priyanka Rao', 'Elena Ruiz', 'Marcus Bell', 'Dr. Aisha Patel', 'Eve', 'Adam'] },
+    fed: { id: 'FED-RTR-014', sev: 'High', model: 'Refund Timing v2.0', what: 'Held refunds longer for filers in two rural counties', affected: 318, who: 'Filers in two rural counties', open: -36, close: -26, team: ['Andre Lewis', 'Patricia Alvarez', 'Owen Clarke', 'Dana Kim', 'Eve', 'Adam'] }
+  };
+  var S = window.__wr2 = window.__wr2 || { tab: 'overview', cs: '', local: {}, report: {} };
+
+  function caseOf(o, id) {
+    var E = (window.__EDO_EXT || {})[o] || {}, L = (E.biasIncidentsActive || []).concat(E.fraudIncidentsActive || []);
+    return L.filter(function (c) { return String(c.caseId).replace(/^#/, '') === id; })[0];
+  }
+  function rooms(o) {
+    var out = (CD(o).caseChannels || []).map(function (ch) {
+      var c = caseOf(o, ch.caseId) || {}, cd = window.cardinalCaseDates ? cardinalCaseDates(o, ch.caseId) : {};
+      return { id: ch.caseId, closed: false, sev: c.severity || 'Medium', model: c.modelId || '', what: c.metricViolation || c.cohortDescription || '', who: c.cohortDescription || '', affected: c.affectedCount || 0, status: c.status || 'open', opened: cd.opened || (c.detectedDate ? new Date(c.detectedDate) : day(-7)), sla: c.slaDeadline ? new Date(c.slaDeadline) : null, ch: ch };
+    });
+    var k = CLOSED[o]; if (k) out.push({ id: k.id, closed: true, sev: k.sev, model: k.model, what: k.what, who: k.who, affected: k.affected, status: 'closed', opened: day(k.open, 9, 20), closedAt: day(k.close, 16, 5), sla: null, ch: { members: k.team, messages: closedMsgs(o, k) }, k: k });
+    return out;
+  }
+  function closedMsgs(o, k) {
+    var s = SIGN[o] || SIGN.fin, t = function (n, h, m) { return day(k.open + n, h, m).toISOString(); };
+    return [
+      { timestamp: t(0, 9, 20), author: 'Eve: Cardinal', content: 'Opened ' + k.id + ': ' + k.model + '. ' + k.what + '. ' + k.affected + ' affected. Owner: ' + s[0][1] + '.' },
+      { timestamp: t(1, 10, 5), author: s[0][1], content: 'Root cause found: the model learned a stand-in for age from account tenure. Adam, test a version without it.' },
+      { timestamp: t(4, 15, 30), author: 'Adam: Cardinal', content: 'Fix tested in shadow on real traffic for 3 days. The gap closed and nothing else moved. Saved to the Library for sign-off.' },
+      { timestamp: t(7, 11, 0), author: s[1][1], content: 'Compliance signed off. Re-review of the ' + k.affected + ' affected is done; corrections went out.' },
+      { timestamp: t(9, 14, 10), author: s[2][1], content: 'Legal signed off. No outside notice required; the incident report is filed with the board.' },
+      { timestamp: t(11, 16, 5), author: s[3][1], content: 'Model owner signed off and launched the fix. Closing the case.' }
+    ];
+  }
+  function pick(o) {
+    var R = rooms(o), want = window.__wrFocusCaseId;
+    if (want && want !== S.lastFocus) { S.lastFocus = want; if (R.some(function (r) { return r.id === want; })) { S.cs = want; S.tab = 'overview'; } }
+    if (!R.some(function (r) { return r.id === S.cs; })) S.cs = R[0] ? R[0].id : '';
+    return R.filter(function (r) { return r.id === S.cs; })[0];
+  }
+  function msgs(o, r) { return (r.ch.messages || []).concat(S.local[o + r.id] || []).slice().sort(function (a, b) { return new Date(a.timestamp) - new Date(b.timestamp); }); }
+  function stage(o, r) {
+    if (r.closed) return 8;
+    var q = window.cardinalLaunchQueue ? (cardinalLaunchQueue(o) || []).filter(function (x) { return x.cs === r.id; })[0] : null;
+    if (q) return 5;
+    return { 'open': 2, 'under-investigation': 2, 'under-review': 2, 'escalated': 2, 'escalated-review': 2, 'remediation-in-progress': 3, 'shadow-deploy': 4, 'shadow-test': 4, 'awaiting-approval': 5, 'monitoring': 6 }[r.status] || 2;
+  }
+  var STAGES = ['Detected', 'Case opened', 'Root cause', 'Fix built', 'Tested in shadow', 'Sign-offs', 'Launched', 'Closed'];
+  function signs(o, r) {
+    var q = !r.closed && window.cardinalLaunchQueue ? (cardinalLaunchQueue(o) || []).filter(function (x) { return x.cs === r.id; })[0] : null;
+    return (SIGN[o] || SIGN.fin).map(function (s, i) { var done = r.closed || (q && q.signs && q.signs[s[0]]); return { role: s[0], name: s[1], done: !!done, at: r.closed ? day(r.k.open + 7 + i, 11, 0) : (done && done.t) || null }; });
+  }
+  function deadlines(o, r) {
+    var L = [];
+    if (r.sla) L.push({ t: r.sla, what: 'Fix deadline for ' + r.id, who: 'Case owner', hard: true });
+    var nd = window.cardinalNextDeadline ? cardinalNextDeadline(o) : null; if (nd && !r.closed) L.push({ t: day(nd.days, 9, 0), what: nd.name, who: nd.req || '', hard: true });
+    if (!r.closed) {
+      L.push({ t: day(Math.max(1, (r.sla ? Math.ceil((r.sla - Date.now()) / 864e5) : 7) - 2), 17, 0), what: 'All four sign-offs due', who: (SIGN[o] || SIGN.fin).map(function (s) { return s[1]; }).join(', ') });
+      var mon = new Date(); mon.setDate(mon.getDate() + ((8 - mon.getDay()) % 7 || 7)); mon.setHours(9, 0, 0, 0); L.push({ t: mon, what: 'Weekly board risk update', who: 'Eve drafts, owner sends' });
+      L.push({ t: day(1, 10, 0), what: 'Daily stand-up in this room', who: 'Everyone on the team' });
+    } else L.push({ t: r.closedAt, what: 'Closed', who: 'All four sign-offs complete' });
+    return L.sort(function (a, b) { return a.t - b.t; });
+  }
+  function evidence(o, r) {
+    var own = (SIGN[o] || SIGN.fin)[0][1], t0 = new Date(r.opened);
+    var E = [
+      ['Detection record', 'Eden', 'The alert that opened this case, with the model, metric, and time', 'Eve', t0, 'eden'],
+      ['Root cause analysis', 'Lucid', 'Which input caused it and why, in plain words', own, new Date(+t0 + 864e5), 'lucid'],
+      ['Affected people list', 'Library', r.affected.toLocaleString() + ' people, each with what changed for them', 'Eve', new Date(+t0 + 864e5 * 1.5), 'library'],
+      ['Fix test results', 'Genesis', 'Before and after on the same data, plus side effects checked', 'Adam', new Date(+t0 + 864e5 * 4), 'genesis'],
+      ['Shadow test on real traffic', 'Atonement', 'The fix run quietly next to the live model', 'Adam', new Date(+t0 + 864e5 * 6), 'atonement'],
+      ['Full sealed record', 'Echo', 'Every step, message, and decision, sealed and time-stamped', 'Echo', new Date(), 'echo']
+    ];
+    return E.filter(function (e) { return e[4] <= new Date() || r.closed; }).map(function (e) { return { name: e[0], core: e[1], what: e[2], by: e[3], t: e[4], go: e[5], hash: (h32(r.id + e[0]).toString(16) + 'a3f9').slice(0, 10) }; });
+  }
+  function decisions(o, r) {
+    var D = [];
+    (CD(o).echoMemories || []).forEach(function (m) { if (String(m.caseId || '').replace(/^#/, '') !== r.id) return; if (!/approv|sign|decid|decision|dismiss|escalat|launch|assign|override/i.test((m.eventType || '') + ' ' + (m.summary || ''))) return; D.push({ t: new Date(m.timestamp), what: m.summary, by: String(m.author || '').replace(/ Core$/, ''), red: /dismiss|override/i.test(m.summary || '') }); });
+    msgs(o, r).forEach(function (m) { if (/sign(ed)? off|approve|decid|launch|assign|escalat/i.test(m.content || '')) D.push({ t: new Date(m.timestamp), what: m.content, by: String(m.author || '').replace(/: Cardinal$/, '') }); });
+    signs(o, r).forEach(function (s) { if (s.done && s.at && !r.closed) D.push({ t: s.at, what: s.role + ' signed off', by: s.name }); });
+    return D.sort(function (a, b) { return b.t - a.t; });
+  }
+  function clean(t) { t = String(t || '').replace(/^(AUTO|TECH|SYS|NOTE):\s*/i, ''); return t.charAt(0).toUpperCase() + t.slice(1); }
+  function ago(t) { var m = Math.round((Date.now() - t) / 60000); return m < 60 ? m + ' min ago' : m < 1440 ? Math.round(m / 60) + ' hr ago' : Math.round(m / 1440) + ' days ago'; }
+  function pill(txt, c) { return '<span class="wr2-pill" style="color:' + c + ';border-color:' + c + '55;background:' + c + '12">' + esc(txt) + '</span>'; }
+  function statusTxt(r) { return r.closed ? 'Closed' : { monitoring: 'On hold' }[r.status] || 'In progress'; }
+
+  // ── Tabs ─────────────────────────────────────────────────────────────
+  function tOverview(o, r) {
+    var st = stage(o, r), M = msgs(o, r), sg = signs(o, r), done = sg.filter(function (x) { return x.done; }).length, dl = deadlines(o, r).filter(function (d) { return d.hard && d.t >= new Date(); })[0];
+    var steps = '<div class="wr2-steps">' + STAGES.map(function (s, i) { return '<div class="wr2-step' + (i < st ? ' done' : i === st ? ' now' : '') + '"><i>' + (i < st ? '✓' : i + 1) + '</i><span>' + s + '</span></div>'; }).join('') + '</div>';
+    var where = r.closed ? 'Closed ' + mdy(r.closedAt) + ' after ' + Math.round((r.closedAt - r.opened) / 864e5) + ' days. All four sign-offs are on file and the incident report is final.'
+      : 'Now at <b>' + STAGES[st] + '</b>. ' + done + ' of 4 sign-offs in. ' + (dl ? 'Next: ' + esc(dl.what) + ' on ' + md(dl.t) + ' at ' + tm(dl.t) + '.' : '');
+    var last = M.slice(-3).reverse().map(function (m) { return '<div class="wr2-mini"><b>' + esc(String(m.author).replace(/: Cardinal$/, '')) + '</b><span>' + esc(clean(m.content)) + '</span><em>' + md(m.timestamp) + ', ' + tm(m.timestamp) + '</em></div>'; }).join('');
+    return '<div class="wr2-box"><div class="wr2-k">Where this stands</div><div class="wr2-big">' + where + '</div>' + steps + '</div>' +
+      '<div class="wr2-grid2"><div class="wr2-box"><div class="wr2-k">Latest in the conversation</div>' + (last || '<div class="wr2-mut">No messages yet.</div>') + '<button type="button" class="wr2-btn" onclick="wr2Tab(\'chat\')">Open the conversation →</button></div>' +
+      '<div class="wr2-box"><div class="wr2-k">Who is affected</div><div class="wr2-num" style="color:' + (SEV[r.sev] || '#1a1815') + '">' + r.affected.toLocaleString() + '</div><div class="wr2-mut">' + esc(r.who) + '</div>' +
+      '<div class="wr2-k" style="margin-top:14px">Sign-offs</div>' + sg.map(function (s) { return '<div class="wr2-row"><span>' + s.role + ' · ' + esc(s.name) + '</span>' + (s.done ? pill('Signed', '#15803D') : pill('Waiting', '#A16207')) + '</div>'; }).join('') + '</div></div>';
+  }
+  function tChat(o, r) {
+    var M = msgs(o, r), lastDay = '';
+    var list = M.map(function (m) {
+      var d = new Date(m.timestamp), dk = mdy(d), a = String(m.author || ''), ai = /Cardinal|^Eve|^Adam/.test(a), name = a.replace(/: Cardinal$/, '');
+      var sep = dk !== lastDay ? '<div class="wr2-day">' + (lastDay = dk) + '</div>' : '';
+      return sep + '<div class="wr2-msg' + (ai ? ' ai' : '') + '"><div class="wr2-av">' + esc(name.replace(/^Dr\. /, '').split(' ').map(function (w) { return w[0]; }).join('').slice(0, 2)) + '</div><div><div class="wr2-mh"><b>' + esc(name) + '</b><span>' + esc(ROLE[name] || '') + '</span><em>' + tm(d) + '</em></div><div class="wr2-mt">' + esc(clean(m.content)) + '</div></div></div>';
+    }).join('');
+    return '<div class="wr2-box wr2-chat"><div class="wr2-k">Conversation · ' + M.length + ' messages · every message is sealed in Echo</div><div class="wr2-thread" id="wr2-thread">' + list + '</div>' +
+      (r.closed ? '<div class="wr2-mut" style="margin-top:10px">This room is closed. The conversation is kept as part of the record.</div>' : '<div class="wr2-compose"><input id="wr2-in" placeholder="Write to the team. Use @ to assign or ask for a sign-off." onkeydown="if(event.key===\'Enter\')wr2Send()"><button type="button" class="wr2-btn dark" onclick="wr2Send()">Send</button></div>') + '</div>';
+  }
+  function tEvidence(o, r) {
+    var E = evidence(o, r);
+    return '<div class="wr2-box"><div class="wr2-k">Evidence · ' + E.length + ' files · each one sealed with a fingerprint so it cannot be swapped</div><table class="wr2-t"><thead><tr><th>File</th><th>What it shows</th><th>From</th><th>Added</th><th>Fingerprint</th><th></th></tr></thead><tbody>' +
+      E.map(function (e, i) { return '<tr><td><b>' + esc(e.name) + '</b></td><td>' + esc(e.what) + '</td><td>' + esc(e.core) + ' · ' + esc(e.by) + '</td><td style="white-space:nowrap">' + md(e.t) + ', ' + tm(e.t) + '</td><td><code>' + e.hash + '</code></td><td><button type="button" class="wr2-btn" onclick="wr2Go(\'' + e.go + '\')">Open →</button></td></tr>'; }).join('') + '</tbody></table></div>' +
+      '<div class="wr2-box"><div class="wr2-k">Who is affected</div><div class="wr2-row"><span><b>' + r.affected.toLocaleString() + '</b> · ' + esc(r.who) + '</span><button type="button" class="wr2-btn" onclick="wr2Go(\'library\')">See the people →</button></div></div>';
+  }
+  function tTeam(o, r) {
+    var sg = signs(o, r), signBy = {}; sg.forEach(function (s) { signBy[s.name] = s; });
+    var team = (r.ch.members || []).slice(); sg.forEach(function (s) { if (team.indexOf(s.name) < 0) team.push(s.name); });
+    var owner = sg[0].name;
+    var cards = team.map(function (n) {
+      var job = n === owner ? 'Case owner. Leads the fix.' : n === 'Eve' ? 'Watches the case, flags changes, writes the summaries.' : n === 'Adam' ? 'Tests and drafts fixes. Cannot launch on his own.' : signBy[n] ? signBy[n].role + ' sign-off' : 'Supporting the case';
+      var st = signBy[n] ? (signBy[n].done ? pill('Signed', '#15803D') : pill('Sign-off waiting', '#A16207')) : /^(Eve|Adam)$/.test(n) ? pill('AI', '#475569') : pill('Active', '#1d4ed8');
+      return '<div class="wr2-person"><div class="wr2-av">' + esc(n.replace(/^Dr\. /, '').split(' ').map(function (w) { return w[0]; }).join('').slice(0, 2)) + '</div><div style="flex:1;min-width:0"><b>' + esc(n) + '</b><div class="wr2-mut">' + esc(ROLE[n] || '') + '</div><div style="font-size:12.5px;margin-top:4px">' + esc(job) + '</div></div>' + st + '</div>';
+    }).join('');
+    var D = decisions(o, r);
+    return '<div class="wr2-box"><div class="wr2-k">Team and who is doing what · ' + team.length + ' people</div><div class="wr2-people">' + cards + '</div></div>' +
+      '<div class="wr2-box"><div class="wr2-k">Decisions and approvals · newest first · sealed in Echo</div>' + (D.length ? D.map(function (d) { return '<div class="wr2-line"><span class="wr2-when">' + md(d.t) + ', ' + tm(d.t) + '</span><span style="flex:1;' + (d.red ? 'color:#B91C1C;font-weight:700' : '') + '">' + esc(d.what) + '</span><span class="wr2-mut">' + esc(d.by) + '</span></div>'; }).join('') : '<div class="wr2-mut">No decisions recorded yet.</div>') + '</div>';
+  }
+  function tDead(o, r) {
+    var L = deadlines(o, r), now = new Date();
+    return '<div class="wr2-box"><div class="wr2-k">Deadlines and dates, soonest first</div>' + L.map(function (d) {
+      var days = Math.ceil((d.t - now) / 864e5), when = d.t < now ? 'Done' : days <= 0 ? 'Today' : days === 1 ? 'Tomorrow' : 'In ' + days + ' days', c = d.t < now ? '#15803D' : days <= 3 ? '#B91C1C' : days <= 7 ? '#A16207' : '#475569';
+      return '<div class="wr2-dl"><div class="wr2-dd"><b>' + md(d.t) + '</b><span>' + ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][d.t.getDay()] + ' · ' + tm(d.t) + '</span></div><div style="flex:1;min-width:0"><b>' + esc(d.what) + '</b><div class="wr2-mut">' + esc(d.who) + '</div></div>' + pill(when, c) + '</div>';
+    }).join('') + '</div>';
+  }
+  function checklist(o, r) {
+    var st = stage(o, r), sg = signs(o, r), n = sg.filter(function (x) { return x.done; }).length;
+    return [['Root cause written up', st >= 3], ['Fix tested in shadow on real traffic', st >= 5 || r.closed], ['All four sign-offs (' + n + ' of 4)', n === 4], ['Affected people re-reviewed and corrected', r.closed], ['Regulator and board notified where required', r.closed], ['Final incident report generated', !!S.report[o + r.id] || r.closed]];
+  }
+  function tClose(o, r) {
+    var C = checklist(o, r), left = C.filter(function (c) { return !c[1]; }).length;
+    return '<div class="wr2-box"><div class="wr2-k">What has to be true before this case can close</div>' + C.map(function (c) { return '<div class="wr2-row"><span>' + (c[1] ? '<b style="color:#15803D">✓</b> ' : '<b style="color:#A16207">○</b> ') + esc(c[0]) + '</span>' + (c[1] ? pill('Done', '#15803D') : pill('Open', '#A16207')) + '</div>'; }).join('') +
+      '<div class="wr2-mut" style="margin-top:10px">' + (r.closed ? 'Closed ' + mdy(r.closedAt) + '. Opened ' + mdy(r.opened) + ', so it took ' + Math.round((r.closedAt - r.opened) / 864e5) + ' days from first alert to close.' : left + ' item' + (left === 1 ? '' : 's') + ' still open. The case cannot be marked closed until every item is done and sealed in Echo.') + '</div></div>' +
+      '<div class="wr2-box"><div class="wr2-k">Incident report</div><div style="font-size:13px;color:#334155;line-height:1.55">The formal write-up of what happened, who was affected, what was done, and who signed off. Generate it here, then send it to Trust Loop or export it.</div><div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap"><button type="button" class="wr2-btn dark" onclick="wr2Report()">' + (r.closed ? 'View final incident report' : 'Generate incident report') + '</button></div></div>';
+  }
+  // ── Report pop-up ────────────────────────────────────────────────────
+  function reportText(o, r) {
+    var sg = signs(o, r), C = checklist(o, r), final = r.closed || C.every(function (c) { return c[1] || /Final incident report/.test(c[0]); });
+    var D = deadlines(o, r), M = msgs(o, r);
+    return { final: final, title: 'Incident report · ' + r.id + (final ? '' : ' · DRAFT'),
+      parts: [['What happened', r.model + ': ' + r.what + '.'], ['Who was affected', r.affected.toLocaleString() + ' · ' + r.who + '.'], ['Timeline', 'First alert ' + mdy(r.opened) + ', ' + tm(r.opened) + '. ' + (r.closed ? 'Closed ' + mdy(r.closedAt) + ' (' + Math.round((r.closedAt - r.opened) / 864e5) + ' days). ' : 'Still open. ') + M.length + ' messages in the war room.'],
+        ['What was done', r.closed ? 'Root cause found, fix tested in shadow, affected people re-reviewed and corrected, fix launched after all four sign-offs.' : 'Root cause found; fix ' + (stage(o, r) >= 4 ? 'tested in shadow and waiting on sign-offs.' : 'in progress.')],
+        ['Sign-offs', sg.map(function (s) { return s.role + ': ' + s.name + (s.done ? ' (signed)' : ' (waiting)'); }).join(' · ')],
+        ['Evidence', evidence(o, r).map(function (e) { return e.name + ' [' + e.hash + ']'; }).join(' · ')],
+        ['Open items', C.filter(function (c) { return !c[1]; }).map(function (c) { return c[0]; }).join(' · ') || 'None']] };
+  }
+  window.wr2Report = function () {
+    var o = org(), r = pick(o); if (!r) return; S.report[o + r.id] = 1; var R = reportText(o, r);
+    var m = document.getElementById('wr2-modal'); if (m) m.remove();
+    m = document.createElement('div'); m.id = 'wr2-modal'; m.style.cssText = 'position:fixed;inset:0;background:rgba(26,24,21,.45);z-index:4000;display:flex;align-items:center;justify-content:center;padding:20px';
+    m.innerHTML = '<div class="wr2-rep"><button type="button" aria-label="Close" onclick="document.getElementById(\'wr2-modal\').remove()" class="wr2-x">×</button><div class="wr2-k">' + esc(R.title) + '</div><div style="font-size:19px;font-weight:800;margin:4px 0 12px">' + esc(r.model) + '</div>' +
+      R.parts.map(function (p) { return '<div class="wr2-rp"><b>' + p[0] + '</b><div>' + esc(p[1]) + '</div></div>'; }).join('') +
+      '<div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap"><button type="button" class="wr2-btn dark" onclick="wr2SendReport()">Send to Trust Loop</button><button type="button" class="wr2-btn" onclick="wr2Export()">Export</button></div>' +
+      (R.final ? '' : '<div class="wr2-mut" style="margin-top:8px">This is a draft. It becomes final when every close-out item is done.</div>') + '</div>';
+    m.addEventListener('click', function (e) { if (e.target === m) m.remove(); });
+    document.body.appendChild(m); draw(true);
+  };
+  window.wr2SendReport = function () {
+    var o = org(), r = pick(o); var m = document.getElementById('wr2-modal'); if (m) m.remove();
+    try { (CD(o).echoMemories || []).unshift({ id: 'echo-wr2-' + Date.now(), timestamp: new Date().toISOString(), author: (window.getActivePersona && getActivePersona() || {}).name || 'You', eventType: 'report-sent', core: 'warroom', severity: 'informational', summary: 'Incident report for ' + r.id + ' sent to Trust Loop', caseId: r.id, isSealed: true }); } catch (e) {}
+    try { cardinalShowToast('Incident report for ' + r.id + ' sent to Trust Loop and sealed in Echo.'); } catch (e) {}
+  };
+  window.wr2Export = function () {
+    var o = org(), r = pick(o), R = reportText(o, r);
+    var txt = R.title + '\n' + r.model + '\n\n' + R.parts.map(function (p) { return p[0].toUpperCase() + '\n' + p[1]; }).join('\n\n') + '\n\nGenerated ' + new Date().toLocaleString() + ' by Project Cardinal.\n';
+    try { var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([txt], { type: 'text/plain' })); a.download = 'cardinal-incident-report-' + r.id + '.txt'; document.body.appendChild(a); a.click(); a.remove(); } catch (e) {}
+    try { cardinalShowToast('Incident report exported.'); } catch (e) {}
+  };
+  window.wr2Send = function () {
+    var o = org(), r = pick(o), i = document.getElementById('wr2-in'); if (!r || !i || !i.value.trim()) return;
+    var p = window.getActivePersona ? getActivePersona() : null;
+    (S.local[o + r.id] = S.local[o + r.id] || []).push({ timestamp: new Date().toISOString(), author: p ? p.name : 'You', content: i.value.trim() });
+    i.value = ''; draw(true); var th = document.getElementById('wr2-thread'); if (th) th.scrollTop = th.scrollHeight;
+  };
+  window.wr2Go = function (scr) { var nav = document.querySelector('.nav-item[onclick*="\'' + scr + '\'"]'); try { showScreen(scr, nav); } catch (e) {} };
+  window.wr2Tab = function (t) { S.tab = t; draw(true); if (t === 'chat') { var th = document.getElementById('wr2-thread'); if (th) th.scrollTop = th.scrollHeight; } };
+  window.wr2Room = function (id) { S.cs = id; S.tab = 'overview'; window.__wrFocusCaseId = id; S.lastFocus = id; draw(true); };
+
+  function html(o) {
+    var R = rooms(o), r = pick(o); if (!r) return '<div class="wr2-box">No war rooms are open.</div>';
+    var opened = new Date(r.opened), now = r.closed ? r.closedAt : new Date(), el = now - opened, dd = Math.floor(el / 864e5), hh = Math.floor(el % 864e5 / 36e5);
+    var left = r.sla ? Math.ceil((r.sla - Date.now()) / 864e5) : null;
+    var tabs = [['overview', 'Overview'], ['chat', 'Conversation'], ['evidence', 'Evidence'], ['team', 'Team and decisions'], ['dead', 'Deadlines'], ['close', 'Close-out']];
+    var body = { overview: tOverview, chat: tChat, evidence: tEvidence, team: tTeam, dead: tDead, close: tClose }[S.tab] || tOverview;
+    return '<div class="wr2-rooms">' + R.map(function (x) { return '<button type="button" class="wr2-room' + (x.id === r.id ? ' on' : '') + '" onclick="wr2Room(\'' + x.id + '\')"><i style="background:' + (x.closed ? '#15803D' : SEV[x.sev]) + '"></i><b>' + esc(x.id) + '</b><span>' + (x.closed ? 'Closed in ' + Math.round((x.closedAt - x.opened) / 864e5) + ' days' : esc(x.sev) + ' · open') + '</span></button>'; }).join('') + '</div>' +
+      '<div class="wr2-hero" style="border-top:4px solid ' + (r.closed ? '#15803D' : SEV[r.sev]) + '"><div style="flex:1;min-width:260px"><div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">' + pill(r.sev, SEV[r.sev] || '#475569') + pill(statusTxt(r), r.closed ? '#15803D' : '#A16207') + '<span class="wr2-mut">War room · opened ' + mdy(opened) + ', ' + tm(opened) + '</span></div>' +
+      '<div class="wr2-title">' + esc(r.id) + ': ' + esc(r.model) + '</div><div style="font-size:13.5px;color:#334155;line-height:1.5">' + esc(r.what) + '</div></div>' +
+      '<div class="wr2-clock"><div class="wr2-k">' + (r.closed ? 'Took' : 'Open for') + '</div><div class="wr2-num">' + dd + 'd ' + hh + 'h</div>' + (left != null ? '<div class="wr2-mut" style="color:' + (left <= 3 ? '#B91C1C' : '#A16207') + ';font-weight:700">' + left + ' days left to fix</div>' : r.closed ? '<div class="wr2-mut" style="color:#15803D;font-weight:700">Closed ' + mdy(r.closedAt) + '</div>' : '') + '</div>' +
+      '<div class="wr2-clock"><div class="wr2-k">Affected</div><div class="wr2-num">' + r.affected.toLocaleString() + '</div><div class="wr2-mut">' + esc((r.ch.members || []).length) + ' on the team</div></div></div>' +
+      '<div class="wr2-tabs">' + tabs.map(function (t) { return '<button type="button" class="' + (S.tab === t[0] ? 'on' : '') + '" onclick="wr2Tab(\'' + t[0] + '\')">' + t[1] + '</button>'; }).join('') + '</div>' + body(o, r);
+  }
+  var css = document.createElement('style');
+  css.textContent = '#screen-warroom.wr2-on>*:not(#wr2){display:none!important}#wr2{padding:4px 0 24px;color:#1a1815}' +
+    '.wr2-rooms{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 12px}.wr2-room{font:inherit;display:flex;align-items:center;gap:8px;border:1px solid rgba(26,24,21,.12);background:#f4efe6;border-radius:12px;padding:8px 12px;cursor:pointer;font-size:12.5px}.wr2-room i{width:9px;height:9px;border-radius:50%}.wr2-room span{color:#64748b}.wr2-room.on{background:#1a1815;color:#fff;border-color:#1a1815}.wr2-room.on span{color:#d6d3cd}' +
+    '.wr2-hero{display:flex;gap:16px;align-items:stretch;flex-wrap:wrap;background:#f4efe6;border-radius:16px;padding:16px 18px;box-shadow:0 1px 3px rgba(26,24,21,.06),0 10px 24px rgba(26,24,21,.08)}.wr2-title{font-size:21px;font-weight:800;margin:8px 0 4px;line-height:1.25}' +
+    '.wr2-clock{background:#fff;border-radius:12px;padding:12px 16px;min-width:150px}.wr2-num{font-size:26px;font-weight:900;letter-spacing:-.02em;line-height:1.15;margin-top:2px}' +
+    '.wr2-tabs{display:flex;gap:6px;flex-wrap:wrap;background:#ebe4d6;border-radius:14px;padding:6px;margin:14px 0 12px}.wr2-tabs button{flex:1;min-width:110px;font:inherit;font-size:13px;font-weight:700;border:none;background:transparent;border-radius:10px;padding:9px 12px;cursor:pointer;color:#475569}.wr2-tabs button.on{background:#fff;color:#1a1815;box-shadow:0 1px 3px rgba(26,24,21,.08),0 6px 14px rgba(26,24,21,.08)}' +
+    '.wr2-box{background:#f4efe6;border-radius:14px;padding:14px 16px;margin:0 0 12px;box-shadow:0 1px 3px rgba(26,24,21,.05),0 8px 20px rgba(26,24,21,.06)}.wr2-k{font-size:11px;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}.wr2-big{font-size:15px;line-height:1.5}.wr2-mut{font-size:12px;color:#64748b}' +
+    '.wr2-grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px}.wr2-grid2>.wr2-box{margin:0}' +
+    '.wr2-steps{display:flex;gap:4px;margin-top:12px;flex-wrap:wrap}.wr2-step{flex:1;min-width:84px;display:flex;flex-direction:column;align-items:center;gap:4px;font-size:11px;color:#64748b;text-align:center}.wr2-step i{font-style:normal;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;background:#fff;border:2px solid #d6cfc1;color:#64748b}.wr2-step.done i{background:#15803D;border-color:#15803D;color:#fff}.wr2-step.now i{background:#FACC15;border-color:#1a1815;color:#1a1815}.wr2-step.now span{color:#1a1815;font-weight:800}' +
+    '.wr2-pill{display:inline-block;font-size:10.5px;font-weight:700;border:1px solid;border-radius:999px;padding:2px 9px;white-space:nowrap;line-height:1.5}' +
+    '.wr2-mini{display:grid;grid-template-columns:auto 1fr;gap:2px 8px;padding:8px 0;border-top:1px dashed rgba(26,24,21,.12);font-size:12.5px}.wr2-mini em{grid-column:2;font-style:normal;color:#64748b;font-size:11px}' +
+    '.wr2-btn{font:inherit;font-size:12px;font-weight:700;border:1px solid rgba(26,24,21,.15);background:#fff;border-radius:8px;padding:6px 12px;cursor:pointer;color:#1a1815;margin-top:8px}.wr2-btn.dark{background:#1a1815;color:#fff;border-color:#1a1815}' +
+    '.wr2-row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:7px 0;border-top:1px dashed rgba(26,24,21,.12);font-size:12.5px}.wr2-row .wr2-btn{margin-top:0}' +
+    '.wr2-chat .wr2-thread{max-height:520px;overflow:auto;background:#fff;border-radius:12px;padding:6px 14px}.wr2-day{text-align:center;font-size:11px;font-weight:800;color:#64748b;margin:12px 0 4px;text-transform:uppercase;letter-spacing:.5px}' +
+    '.wr2-msg{display:flex;gap:10px;padding:10px 0;border-top:1px solid rgba(26,24,21,.06)}.wr2-msg.ai .wr2-av{background:#1a1815;color:#FACC15}.wr2-av{width:32px;height:32px;border-radius:50%;background:#ebe4d6;display:flex;align-items:center;justify-content:center;font-size:11.5px;font-weight:800;flex-shrink:0}' +
+    '.wr2-mh{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}.wr2-mh span{font-size:11.5px;color:#64748b}.wr2-mh em{font-style:normal;font-size:11px;color:#94a3b8;margin-left:auto}.wr2-mt{font-size:14px;line-height:1.5;margin-top:2px}' +
+    '.wr2-compose{display:flex;gap:8px;margin-top:10px}.wr2-compose input{flex:1;font:inherit;font-size:13px;border:1px solid rgba(26,24,21,.15);border-radius:10px;padding:9px 12px;background:#fff}.wr2-compose .wr2-btn{margin-top:0}' +
+    '.wr2-t{width:100%;border-collapse:collapse;font-size:12.5px}.wr2-t th{text-align:left;font-size:10.5px;font-weight:800;color:#64748b;text-transform:uppercase;padding:6px 8px}.wr2-t td{padding:9px 8px;border-top:1px solid rgba(26,24,21,.07);vertical-align:top}.wr2-t tr:nth-child(even) td{background:#fff}.wr2-t code{font-size:11px;color:#475569}.wr2-t .wr2-btn{margin-top:0}' +
+    '.wr2-people{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:8px}.wr2-person{display:flex;gap:10px;align-items:flex-start;background:#fff;border-radius:12px;padding:10px 12px}' +
+    '.wr2-line{display:flex;gap:10px;padding:8px 0;border-top:1px dashed rgba(26,24,21,.12);font-size:12.5px;align-items:baseline}.wr2-when{width:120px;flex-shrink:0;color:#64748b}' +
+    '.wr2-dl{display:flex;gap:12px;align-items:center;padding:10px 0;border-top:1px dashed rgba(26,24,21,.12);font-size:13px}.wr2-dd{width:96px;flex-shrink:0;display:flex;flex-direction:column}.wr2-dd span{font-size:11px;color:#64748b}' +
+    '.wr2-rep{width:min(720px,94vw);max-height:88vh;overflow:auto;background:#f4efe6;border-radius:16px;padding:20px 22px;position:relative}.wr2-x{position:absolute;top:10px;right:12px;border:none;background:none;font-size:22px;cursor:pointer;color:#64748b}.wr2-rp{background:#fff;border-radius:10px;padding:10px 12px;margin-bottom:8px;font-size:13px;line-height:1.5}.wr2-rp b{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#475569;margin-bottom:2px}';
+  document.head.appendChild(css);
+
+  function draw(force) {
+    var scr = document.getElementById('screen-warroom'); if (!scr || scr.offsetParent === null) return;
+    var tt = document.getElementById('topbar-title'); if (tt && tt.textContent.trim() === 'warroom') tt.textContent = 'War Room';
+    var o = org(), box = document.getElementById('wr2');
+    if (!box) { box = document.createElement('div'); box.id = 'wr2'; }
+    if (scr.firstElementChild !== box) scr.insertBefore(box, scr.firstElementChild);
+    scr.classList.add('wr2-on');
+    var r = pick(o), key = o + '|' + S.cs + '|' + S.tab + '|' + (r ? msgs(o, r).length + '|' + signs(o, r).filter(function (s) { return s.done; }).length + '|' + !!S.report[o + S.cs] : '');
+    var ae = document.activeElement; if (!force && ae && ae.id === 'wr2-in') return;
+    if (force || box.__k !== key) { var th = document.getElementById('wr2-thread'), y = th ? th.scrollTop : null, keepIn = ae && ae.id === 'wr2-in'; box.__k = key; box.innerHTML = html(o); var th2 = document.getElementById('wr2-thread'); if (th2) th2.scrollTop = y == null ? th2.scrollHeight : y; if (keepIn) { var ni = document.getElementById('wr2-in'); if (ni) ni.focus(); } }
+  }
+  setInterval(function () { try { draw(false); } catch (e) { if (window.console) console.warn('wr2', e); } }, 700);
+})();
+</script>
+<script data-p="p54_coverage">
+// 10/10 (Brittany: "does the Watchman need to be split... what is it really telling me... external vendors have AI agents
+// too"). Watchman is only cases, incidents, and war rooms. A new sidebar item, AI Coverage, holds Vendor AI, Shadow AI,
+// agents and runtime rules, and the security watch. Stress tests and playbooks open from Genesis, where testing lives.
+(function () {
+  function navs() { return [].slice.call(document.querySelectorAll('.sidebar .nav-item, nav .nav-item, .nav-item')); }
+  function watchNav() { return navs().filter(function (n) { return /showScreen\('sentinel'/.test(n.getAttribute('onclick') || '') && n.id !== 'nav-coverage'; })[0]; }
+  function genNav() { return navs().filter(function (n) { return /showScreen\('genesis'/.test(n.getAttribute('onclick') || ''); })[0]; }
+  window.p54Open = function (mode, tab, el) {
+    window.__wmMode = mode;
+    try { showScreen('sentinel', el || null); } catch (e) {}
+    setTimeout(function () { try { wmTab(tab); } catch (e) {} }, 80);
+  };
+  window.p54GenLab = function () { p54Open('lab', 'lab', genNav()); };
+  function sidebar() {
+    var w = watchNav(); if (!w) return;
+    var lab = w.querySelector('.nav-item-label span span'); if (lab && lab.textContent !== '· Cases') lab.textContent = '· Cases';
+    var oc = "window.__wmMode='watch';showScreen('sentinel',this);setTimeout(function(){try{wmTab('cases')}catch(e){}},80)";
+    if (w.getAttribute('onclick') !== oc) { w.setAttribute('onclick', oc); w.title = 'Watchman: cases, incidents, and war rooms'; }
+    var c = document.getElementById('nav-coverage');
+    if (!c) {
+      c = w.cloneNode(true); c.id = 'nav-coverage'; c.classList.remove('active');
+      c.setAttribute('onclick', "p54Open('cov','vendors',this)"); c.title = 'AI Coverage: vendor AI, shadow AI, agents, and security'; c.setAttribute('data-label', 'AI Coverage');
+      var b = c.querySelector('.nav-badge'); if (b) b.remove();
+      var svg = c.querySelector('svg'); if (svg) svg.innerHTML = '<circle cx="7" cy="7" r="5.2" stroke="currentColor" stroke-width="1.4"/><path d="M1.8 7h10.4M7 1.8c1.6 1.6 1.6 8.8 0 10.4M7 1.8c-1.6 1.6-1.6 8.8 0 10.4" stroke="currentColor" stroke-width="1.2"/>';
+      var l = c.querySelector('.nav-item-label'); if (l) l.innerHTML = '<span>AI Coverage <span style="opacity:.6;font-size:.92em">· Vendors</span></span>';
+    }
+    if (c.previousElementSibling !== w) w.parentNode.insertBefore(c, w.nextSibling);
+    // Keep the right item highlighted while the shared screen is showing.
+    var scr = document.getElementById('screen-sentinel'), on = scr && scr.offsetParent !== null, m = window.__wmMode || 'watch', g = genNav();
+    if (on) {
+      var want = m === 'cov' ? c : m === 'lab' ? g : w;
+      [w, c, g].forEach(function (n) { if (n) n.classList.toggle('active', n === want); });
+    } else c.classList.remove('active');
+  }
+  function genesisLink() {
+    var gs = document.getElementById('screen-genesis'); if (!gs || gs.offsetParent === null) return;
+    var anchor = document.getElementById('gen-scenarios') || document.getElementById('gen-stats-row'); if (!anchor) return;
+    var box = document.getElementById('gen-stress-link');
+    if (!box) {
+      box = document.createElement('div'); box.id = 'gen-stress-link';
+      box.style.cssText = 'background:#f4efe6;border-radius:14px;padding:14px 16px;margin:0 0 14px;display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;box-shadow:0 1px 3px rgba(26,24,21,.05),0 8px 20px rgba(26,24,21,.06)';
+      box.innerHTML = '<div style="flex:1;min-width:240px"><div style="font-size:11px;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:.5px">Stress tests and response playbooks</div><div style="font-size:13px;color:#334155;line-height:1.5;margin-top:4px">Push your AI with attacks and edge cases before they happen for real, and rehearse the playbook your team runs when something breaks.</div></div><button type="button" onclick="p54GenLab()" style="font:inherit;font-size:12.5px;font-weight:700;border:none;background:#1a1815;color:#fff;border-radius:9px;padding:8px 14px;cursor:pointer;white-space:nowrap">Open stress tests →</button>';
+    }
+    if (box.nextElementSibling !== anchor) anchor.parentNode.insertBefore(box, anchor);
+  }
+  setInterval(function () { try { sidebar(); } catch (e) {} try { genesisLink(); } catch (e) {} }, 500);
 })();
 </script>
 </body>
