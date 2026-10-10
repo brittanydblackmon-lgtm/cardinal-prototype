@@ -57260,8 +57260,11 @@ setInterval(function () {
       var cd = cardinalCaseDates(o, id), sla = c.slaDeadline ? Math.max(0, Math.ceil((new Date(c.slaDeadline) - Date.now()) / 864e5)) : null;
       out.push({ id: id, sev: c.severity || 'Medium', model: c.modelId || '', affected: c.affectedCount || 0, who: c.cohortDescription || '', metric: c.metricViolation || '', sla: sla, opened: cd.opened || (c.detectedDate ? new Date(c.detectedDate) : null), owner: id === String(D().primaryCase || '').replace('#', '') ? (D().user || 'Nina Roberts') : OWN[h32(id) % OWN.length], room: (D().caseChannels || []).some(function (x) { return x.caseId === id; }), status: STATUS[c.status] || 'In progress' });
     });
+    // 10/10 (Brittany: "we should show a closed case in the cases"): the finished example from the war room.
+    var k = window.cardinalClosedRoom ? cardinalClosedRoom(o) : null;
+    if (k && !seen[k.id]) out.push({ id: k.id, sev: k.sev, model: k.model, affected: k.affected, who: k.who, metric: k.what, sla: null, opened: k.opened, closedAt: k.closedAt, owner: (k.ch.members || [])[0] || '', room: true, status: 'Done' });
     var rank = { Critical: 0, High: 1, Medium: 2, Low: 3 };
-    return out.sort(function (a, b) { return (rank[a.sev] - rank[b.sev]) || (b.affected - a.affected); });
+    return out.sort(function (a, b) { return ((a.status === 'Done') - (b.status === 'Done')) || (rank[a.sev] - rank[b.sev]) || (b.affected - a.affected); });
   }
   function reports(o) {
     var cs = String(D().primaryCase || '').replace('#', ''), now = new Date(), d = function (n, h) { return new Date(now.getFullYear(), now.getMonth(), now.getDate() + n, h || 10, 0); };
@@ -57329,6 +57332,8 @@ setInterval(function () {
   function events(o, view) {
     var out = [];
     if (view === 'cases') mems(o).forEach(function (m) { var id = String(m.caseId || '').replace(/^#/, ''); if (!id || /PRE/.test(id)) return; if (o === 'fin' && id === 'FIN-1203' && /Collections AI/.test(m.summary || '')) id = 'FIN-0842'; out.push({ t: new Date(m.timestamp), cs: id, what: String(m.summary || '').replace(/^(January|February|March|April|May|June|July|August|September|October|November|December) digest/, 'Monthly digest'), who: String(m.author || '').replace(/ Core$/, ''), core: CORE[m.core] || m.core || '', sev: m.severity }); });
+    var kc = window.cardinalClosedRoom ? cardinalClosedRoom(o) : null;
+    if (kc && (view === 'cases' || view === 'warrooms')) (kc.ch.messages || []).forEach(function (m) { out.push({ t: new Date(m.timestamp), cs: kc.id, what: String(m.content), who: String(m.author || '').replace(/: Cardinal$/, ''), core: 'War room' }); });
     if (view === 'warrooms') {
       (D().caseChannels || []).forEach(function (c) { (c.messages || []).forEach(function (m) { out.push({ t: new Date(m.timestamp), cs: c.caseId, what: m.content, who: String(m.author || '').replace(/: Cardinal$/, ''), core: 'War room' }); }); });
       mems(o).forEach(function (m) { if (m.core === 'warroom') out.push({ t: new Date(m.timestamp), cs: String(m.caseId || '').replace(/^#/, ''), what: m.summary, who: 'Watchman', core: 'War room' }); });
@@ -57427,7 +57432,9 @@ setInterval(function () {
       : '<div class="wm2-box"><div class="wm2-bt">Pick a case</div><div style="font-size:12.5px;color:#334155;line-height:1.5">Click any row or a case below to see who is affected, the owner, and the days left to fix it.</div></div>') +
       '<div class="wm2-box"><div class="wm2-bt">Open cases · ' + open + '</div><div style="font-size:11px;color:#64748b;margin:2px 0 4px">Most urgent first. Use search to find any other case.</div>' + C.slice(0, 8).map(function (c) { return '<div class="wm2-case' + (F.cs === c.id ? ' on' : '') + '" onclick="wm2Pick(\'' + c.id + '\')"><span class="dot" style="background:' + SEV[c.sev] + '"></span><div style="flex:1;min-width:0"><b>' + c.id + '</b> <span style="color:#64748b">' + esc(c.model) + '</span><div style="font-size:11px;color:#64748b">' + c.affected.toLocaleString() + ' affected' + (c.sla != null ? ' · ' + c.sla + ' days left' : '') + '</div></div>' + (c.room ? '<span title="War room open" style="font-size:10px;font-weight:800;color:#B91C1C">ROOM</span>' : '') + '</div>'; }).join('') + '</div>' +
       '<div class="wm2-box"><div class="wm2-bt">What each view is</div><div style="font-size:12px;color:#334155;line-height:1.55"><b>Case:</b> one problem, tracked from the moment it is found until it is fixed.<br><b>War room:</b> the live team room and clock for a serious case.<br><b>Incident report:</b> the formal write-up sent to a regulator, the board, or a team when a rule says you must report.</div></div>';
-    return ctl + '<div style="margin-top:4px">' + log + pager + '</div>';
+    var kd = C.filter(function (c) { return c.status === 'Done' && c.closedAt; })[0];
+    var strip = kd && F.view !== 'reports' ? '<div class="wm2-closed" onclick="wm2CaseFromInc(\'' + kd.id + '\')"><span style="width:9px;height:9px;border-radius:50%;background:#15803D;display:inline-block"></span><b>Recently closed</b><span><b>' + kd.id + '</b> \u00b7 ' + esc(kd.model) + ' \u00b7 closed ' + md(kd.closedAt) + ' in ' + Math.round((kd.closedAt - kd.opened) / 864e5) + ' days, all four sign-offs on file</span><em>See how it closed \u2192</em></div>' : '';
+    return ctl + strip + '<div style="margin-top:4px">' + log + pager + '</div>';
   }
   var css = document.createElement('style');
   css.textContent = '#wm-rooms{display:none!important}#wm-bar{display:flex;gap:6px;flex-wrap:wrap;background:#ebe4d6;border-radius:14px;padding:6px;margin:6px 0 10px}#wm-bar button{flex:1;min-width:110px;font:inherit;font-size:13px;font-weight:700;border:none;background:transparent;border-radius:10px;padding:10px 12px;cursor:pointer;color:#475569}#wm-bar button.on{background:#fff;color:#1a1815;box-shadow:0 1px 3px rgba(26,24,21,.08),0 6px 14px rgba(26,24,21,.08)}#wm2{margin:6px 0 18px}#wm2 .wm2-head{display:flex;justify-content:space-between;align-items:flex-end;margin:0 0 10px}#wm2 .wm2-ctl{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:0 0 14px;font-size:12px;color:#64748b}' +
@@ -57437,6 +57444,7 @@ setInterval(function () {
     '#wm2 .wm2-case{display:flex;gap:8px;align-items:center;padding:8px;border-radius:10px;cursor:pointer;font-size:12.5px;margin-top:4px}#wm2 .wm2-case:hover,#wm2 .wm2-case.on{background:#f4efe6}#wm2 .wm2-case .dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}' +
     '#wm2 .wm2-btn{font:inherit;font-size:12px;font-weight:700;border:1px solid rgba(26,24,21,.14);background:#fff;border-radius:8px;padding:5px 10px;cursor:pointer;color:#1a1815}#wm2 .wm2-btn.dark{background:#1a1815;color:#fff;border-color:#1a1815}' +
     '#wm2 .wm2-pg{display:flex;justify-content:space-between;align-items:center;font-size:12px;color:#64748b}#wm2 .wm2-pg button{font:inherit;font-weight:700;border:1px solid rgba(26,24,21,.14);background:#fff;border-radius:8px;padding:4px 10px;cursor:pointer}' +
+    '#wm2 .wm2-closed{display:flex;gap:10px;align-items:center;flex-wrap:wrap;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:10px 14px;margin:0 0 12px;cursor:pointer;font-size:12.5px;color:#1a1815}#wm2 .wm2-closed em{font-style:normal;font-weight:700;color:#15803D;margin-left:auto}' +
     '#screen-sentinel.wm-alt .wm-hide-alt,#screen-sentinel.wm-alt #sent-top,#screen-sentinel.wm-alt #u-sentinel-hero,#screen-sentinel.wm-alt #u-sentinel-hist,#screen-sentinel.wm-alt #sentinel-weekly-digest,#screen-sentinel.wm-alt [id^="u-sentinel"]{display:none!important}' +
     '@media (max-width:1000px){#wm2 .wm2-grid{grid-template-columns:1fr}#wm2 .wm2-side{position:static}}';
   document.head.appendChild(css);
@@ -57758,7 +57766,9 @@ setInterval(function () {
     return L.filter(function (c) { return String(c.caseId).replace(/^#/, '') === id; })[0];
   }
   function rooms(o) {
-    var out = (CD(o).caseChannels || []).map(function (ch) {
+    var kid = (CLOSED[o] || {}).id;
+    // The old war room creates an empty channel for any case it opens; the closed example has its own record.
+    var out = (CD(o).caseChannels || []).filter(function (ch) { return ch.caseId !== kid; }).map(function (ch) {
       var c = caseOf(o, ch.caseId) || {}, cd = window.cardinalCaseDates ? cardinalCaseDates(o, ch.caseId) : {};
       return { id: ch.caseId, closed: false, sev: c.severity || 'Medium', model: c.modelId || '', what: c.metricViolation || c.cohortDescription || '', who: c.cohortDescription || '', affected: c.affectedCount || 0, status: c.status || 'open', opened: cd.opened || (c.detectedDate ? new Date(c.detectedDate) : day(-7)), sla: c.slaDeadline ? new Date(c.slaDeadline) : null, ch: ch };
     });
@@ -57815,7 +57825,9 @@ setInterval(function () {
       ['Shadow test on real traffic', 'Atonement', 'The fix run quietly next to the live model', 'Adam', new Date(+t0 + 864e5 * 6), 'atonement'],
       ['Full sealed record', 'Echo', 'Every step, message, and decision, sealed and time-stamped', 'Echo', new Date(), 'echo']
     ];
-    return E.filter(function (e) { return e[4] <= new Date() || r.closed; }).map(function (e) { return { name: e[0], core: e[1], what: e[2], by: e[3], t: e[4], go: e[5], hash: (h32(r.id + e[0]).toString(16) + 'a3f9').slice(0, 10) }; });
+    // Anything the team attached or drafted in the conversation is evidence too.
+    msgs(o, r).forEach(function (m) { var c = clean(m.content); if (/attach|table|narrative|packet|report|appendix|export|log|results/i.test(c)) E.push([c.replace(/\.$/, '').slice(0, 70), 'War room', 'Shared in the conversation', String(m.author).replace(/: Cardinal$/, ''), new Date(m.timestamp), 'warroom']); });
+    return E.filter(function (e) { return e[4] <= new Date() || r.closed; }).sort(function (a, b) { return b[4] - a[4]; }).map(function (e) { return { name: e[0], core: e[1], what: e[2], by: e[3], t: e[4], go: e[5], hash: (h32(r.id + e[0]).toString(16) + 'a3f9').slice(0, 10) }; });
   }
   function decisions(o, r) {
     var D = [];
@@ -57831,25 +57843,36 @@ setInterval(function () {
 
   // ── Tabs ─────────────────────────────────────────────────────────────
   function tOverview(o, r) {
-    var st = stage(o, r), M = msgs(o, r), sg = signs(o, r), done = sg.filter(function (x) { return x.done; }).length, dl = deadlines(o, r).filter(function (d) { return d.hard && d.t >= new Date(); })[0];
+    var st = stage(o, r), M = msgs(o, r), sg = signs(o, r), done = sg.filter(function (x) { return x.done; }).length, D = deadlines(o, r), dl = D.filter(function (d) { return d.hard && d.t >= new Date(); })[0], E = evidence(o, r);
     var steps = '<div class="wr2-steps">' + STAGES.map(function (s, i) { return '<div class="wr2-step' + (i < st ? ' done' : i === st ? ' now' : '') + '"><i>' + (i < st ? '✓' : i + 1) + '</i><span>' + s + '</span></div>'; }).join('') + '</div>';
     var where = r.closed ? 'Closed ' + mdy(r.closedAt) + ' after ' + Math.round((r.closedAt - r.opened) / 864e5) + ' days. All four sign-offs are on file and the incident report is final.'
-      : 'Now at <b>' + STAGES[st] + '</b>. ' + done + ' of 4 sign-offs in. ' + (dl ? 'Next: ' + esc(dl.what) + ' on ' + md(dl.t) + ' at ' + tm(dl.t) + '.' : '');
-    var last = M.slice(-3).reverse().map(function (m) { return '<div class="wr2-mini"><b>' + esc(String(m.author).replace(/: Cardinal$/, '')) + '</b><span>' + esc(clean(m.content)) + '</span><em>' + md(m.timestamp) + ', ' + tm(m.timestamp) + '</em></div>'; }).join('');
-    return '<div class="wr2-box"><div class="wr2-k">Where this stands</div><div class="wr2-big">' + where + '</div>' + steps + '</div>' +
-      '<div class="wr2-grid2"><div class="wr2-box"><div class="wr2-k">Latest in the conversation</div>' + (last || '<div class="wr2-mut">No messages yet.</div>') + '<button type="button" class="wr2-btn" onclick="wr2Tab(\'chat\')">Open the conversation →</button></div>' +
-      '<div class="wr2-box"><div class="wr2-k">Who is affected</div><div class="wr2-num" style="color:' + (SEV[r.sev] || '#1a1815') + '">' + r.affected.toLocaleString() + '</div><div class="wr2-mut">' + esc(r.who) + '</div>' +
-      '<div class="wr2-k" style="margin-top:14px">Sign-offs</div>' + sg.map(function (s) { return '<div class="wr2-row"><span>' + s.role + ' · ' + esc(s.name) + '</span>' + (s.done ? pill('Signed', '#15803D') : pill('Waiting', '#A16207')) + '</div>'; }).join('') + '</div></div>';
+      : 'Now at <b>' + STAGES[st] + '</b>. ' + done + ' of 4 sign-offs in.' + (dl ? ' Next: <b>' + esc(dl.what) + '</b> on ' + md(dl.t) + '.' : '');
+    var last = M.slice(-3).reverse().map(function (m) { var n = String(m.author).replace(/: Cardinal$/, ''); return '<div class="wr2-mini"><span class="wr2-av sm" style="' + avStyle(n) + '">' + ini(n) + '</span><div><b>' + esc(n) + '</b> <em>' + md(m.timestamp) + ', ' + tm(m.timestamp) + '</em><div>' + esc(clean(m.content)) + '</div></div></div>'; }).join('');
+    var ev = E.slice(0, 4).map(function (e) { return '<div class="wr2-ev" onclick="wr2Go(\'' + e.go + '\')"><span class="wr2-ico" style="background:' + coreCol(e.core) + '">' + esc(e.core.charAt(0)) + '</span><div style="flex:1;min-width:0"><b>' + esc(e.name) + '</b><div class="wr2-mut">' + esc(e.core) + ' · ' + esc(e.by) + ' · ' + md(e.t) + '</div></div><code>' + e.hash + '</code></div>'; }).join('');
+    var nx = D.filter(function (d) { return d.t >= new Date(); }).slice(0, 3).map(function (d) { var days = Math.ceil((d.t - new Date()) / 864e5), c = days <= 3 ? '#B91C1C' : days <= 7 ? '#A16207' : '#475569'; return '<div class="wr2-row"><span><b>' + md(d.t) + '</b> · ' + esc(d.what) + '</span>' + pill(days <= 1 ? (days <= 0 ? 'Today' : 'Tomorrow') : 'In ' + days + ' days', c) + '</div>'; }).join('');
+    return '<div class="wr2-box" style="border-left:4px solid ' + (r.closed ? '#15803D' : SEV[r.sev]) + '"><div class="wr2-k">Where this stands</div><div class="wr2-big">' + where + '</div>' + steps + '</div>' +
+      '<div class="wr2-grid2"><div class="wr2-box"><div class="wr2-k">Evidence · ' + E.length + ' files, each sealed with a fingerprint</div>' + ev + '<button type="button" class="wr2-btn" onclick="wr2Tab(\'evidence\')">All evidence →</button></div>' +
+      '<div class="wr2-box"><div class="wr2-k">Latest in the conversation</div>' + (last || '<div class="wr2-mut">No messages yet.</div>') + '<button type="button" class="wr2-btn" onclick="wr2Tab(\'chat\')">Open the conversation →</button></div></div>' +
+      '<div class="wr2-grid2"><div class="wr2-box"><div class="wr2-k">Sign-offs · ' + done + ' of 4</div>' + sg.map(function (s) { return '<div class="wr2-row"><span>' + s.role + ' · <b>' + esc(s.name) + '</b></span>' + (s.done ? pill('Signed', '#15803D') : pill('Waiting', '#A16207')) + '</div>'; }).join('') + '</div>' +
+      '<div class="wr2-box"><div class="wr2-k">Coming up</div>' + (nx || '<div class="wr2-mut">Nothing scheduled.</div>') + '<button type="button" class="wr2-btn" onclick="wr2Tab(\'dead\')">All deadlines →</button></div></div>';
   }
+  function ini(n) { return esc(String(n).replace(/^Dr\. /, '').split(' ').map(function (w) { return w[0]; }).join('').slice(0, 2)); }
+  function avStyle(n) { if (/^(Eve|Adam)$/.test(n)) return 'background:#1a1815;color:#FACC15'; var P = ['#fee2e2;color:#B91C1C', '#dbeafe;color:#1d4ed8', '#dcfce7;color:#15803D', '#fef9c3;color:#A16207', '#ede9fe;color:#6D28D9', '#ffedd5;color:#C2410C']; return 'background:' + P[h32(n) % P.length]; }
+  function coreCol(c) { return { Eden: '#ef4444', Obsidian: '#1a1815', Lucid: '#8b5cf6', Library: '#0ea5e9', Genesis: '#22c55e', Atonement: '#f59e0b', Echo: '#64748b', 'War room': '#B91C1C' }[c] || '#475569'; }
   function tChat(o, r) {
-    var M = msgs(o, r), lastDay = '';
+    var M = msgs(o, r), lastDay = '', left = r.sla ? Math.ceil((r.sla - Date.now()) / 864e5) : null, team = (r.ch.members || []);
     var list = M.map(function (m) {
-      var d = new Date(m.timestamp), dk = mdy(d), a = String(m.author || ''), ai = /Cardinal|^Eve|^Adam/.test(a), name = a.replace(/: Cardinal$/, '');
-      var sep = dk !== lastDay ? '<div class="wr2-day">' + (lastDay = dk) + '</div>' : '';
-      return sep + '<div class="wr2-msg' + (ai ? ' ai' : '') + '"><div class="wr2-av">' + esc(name.replace(/^Dr\. /, '').split(' ').map(function (w) { return w[0]; }).join('').slice(0, 2)) + '</div><div><div class="wr2-mh"><b>' + esc(name) + '</b><span>' + esc(ROLE[name] || '') + '</span><em>' + tm(d) + '</em></div><div class="wr2-mt">' + esc(clean(m.content)) + '</div></div></div>';
+      var d = new Date(m.timestamp), dk = mdy(d), a = String(m.author || ''), name = a.replace(/: Cardinal$/, ''), c = clean(m.content), ai = /^(Eve|Adam)$/.test(name);
+      var kind = /sign(ed)? off|approv|launch|closing/i.test(c) ? 'ok' : /urgent|overdue|escalat|risk|missed|critical|deadline/i.test(c) ? 'hot' : '';
+      var sep = dk !== lastDay ? '<div class="wr2-day"><span>' + (lastDay = dk) + '</span></div>' : '';
+      return sep + '<div class="wr2-msg ' + kind + '"><span class="wr2-av" style="' + avStyle(name) + '">' + ini(name) + '</span><div style="flex:1;min-width:0"><div class="wr2-mh"><b>' + esc(name) + '</b><span>' + esc(ROLE[name] || '') + '</span><em>' + tm(d) + ' · sealed</em></div><div class="wr2-bub">' + esc(c) + '</div>' + (kind === 'ok' ? '<div class="wr2-tag ok">Decision recorded</div>' : kind === 'hot' ? '<div class="wr2-tag hot">Flagged urgent</div>' : '') + '</div></div>';
     }).join('');
-    return '<div class="wr2-box wr2-chat"><div class="wr2-k">Conversation · ' + M.length + ' messages · every message is sealed in Echo</div><div class="wr2-thread" id="wr2-thread">' + list + '</div>' +
-      (r.closed ? '<div class="wr2-mut" style="margin-top:10px">This room is closed. The conversation is kept as part of the record.</div>' : '<div class="wr2-compose"><input id="wr2-in" placeholder="Write to the team. Use @ to assign or ask for a sign-off." onkeydown="if(event.key===\'Enter\')wr2Send()"><button type="button" class="wr2-btn dark" onclick="wr2Send()">Send</button></div>') + '</div>';
+    var head = '<div class="wr2-chead" style="background:' + (r.closed ? '#15803D' : SEV[r.sev]) + '"><div><b>#case-' + esc(r.id) + '</b><span>' + team.length + ' members · ' + M.length + ' messages · everything here is sealed in Echo</span></div><div class="wr2-avs">' + team.slice(0, 6).map(function (n) { return '<span class="wr2-av sm" style="' + avStyle(n) + '">' + ini(n) + '</span>'; }).join('') + '</div>' + (r.closed ? '<em>Closed</em>' : left != null ? '<em>' + left + ' days left</em>' : '') + '</div>';
+    var pins = decisions(o, r).slice(0, 2).map(function (d) { return '<div class="wr2-pin">● ' + esc(d.what) + ' <span>' + esc(d.by) + ', ' + md(d.t) + '</span></div>'; }).join('');
+    return '<div class="wr2-box wr2-chat">' + head + (pins ? '<div class="wr2-pins"><div class="wr2-k" style="margin:0 0 4px">Pinned decisions</div>' + pins + '</div>' : '') + '<div class="wr2-thread" id="wr2-thread">' + list + '</div>' +
+      (r.closed ? '<div class="wr2-mut" style="margin-top:10px">This room is closed. The conversation is kept as part of the record.</div>' :
+        '<div class="wr2-compose"><input id="wr2-in" placeholder="Message #case-' + esc(r.id) + '. Use @ to assign or ask for a sign-off." onkeydown="if(event.key===\'Enter\')wr2Send()"><button type="button" class="wr2-btn dark" onclick="wr2Send()">Send</button></div>' +
+        '<div class="wr2-chips">' + [['@ Assign someone', '@'], ['Request a sign-off', 'Requesting sign-off from '], ['Attach evidence', 'Attached: '], ['Escalate', 'Escalating to ']].map(function (x) { return '<button type="button" onclick="var i=document.getElementById(\'wr2-in\');i.value=\'' + x[1] + '\';i.focus()">' + x[0] + '</button>'; }).join('') + '</div>') + '</div>';
   }
   function tEvidence(o, r) {
     var E = evidence(o, r);
@@ -57931,18 +57954,33 @@ setInterval(function () {
   window.wr2Room = function (id) { S.cs = id; S.tab = 'overview'; window.__wrFocusCaseId = id; S.lastFocus = id; draw(true); };
 
   function html(o) {
-    var R = rooms(o), r = pick(o); if (!r) return '<div class="wr2-box">No war rooms are open.</div>';
-    var opened = new Date(r.opened), now = r.closed ? r.closedAt : new Date(), el = now - opened, dd = Math.floor(el / 864e5), hh = Math.floor(el % 864e5 / 36e5);
-    var left = r.sla ? Math.ceil((r.sla - Date.now()) / 864e5) : null;
+    var r = pick(o); if (!r) return '<div class="wr2-box">No war rooms are open.</div>';
+    var opened = new Date(r.opened), end = r.closed ? r.closedAt : new Date(), days = Math.floor((end - opened) / 864e5), sg = signs(o, r), done = sg.filter(function (x) { return x.done; }).length;
+    var left = r.sla ? Math.max(0, Math.ceil((r.sla - Date.now()) / 864e5)) : null, total = r.sla ? Math.max(1, Math.ceil((r.sla - opened) / 864e5)) : 14, E = evidence(o, r);
+    var H = (typeof HALO_CFG !== 'undefined' && HALO_CFG[o]) || {}, primary = String((CD(o).primaryCase || '')).replace('#', '') === r.id, exp = primary ? H.exposureQ4 : '';
+    var units = [];
+    if (r.closed) units.push({ value: String(Math.round((r.closedAt - opened) / 864e5)) + 'D', pct: 1, color: '#22c55e', label: 'Time to close', status: 'Closed ' + md(r.closedAt), delta: null, sub: 'Opened ' + md(opened) + ', closed ' + md(r.closedAt) });
+    else units.push({ value: left + 'D', pct: left / total, color: left <= 3 ? '#ef4444' : left <= 7 ? '#FACC15' : '#22c55e', label: 'Time left to fix', status: left <= 3 ? 'Deadline Close' : 'On the Clock', delta: null, sub: 'Deadline ' + md(r.sla) + ', ' + tm(r.sla) });
+    units.push({ value: days + 'D', pct: Math.min(1, days / 90), color: days > 30 ? '#ef4444' : '#FACC15', label: 'Open for', status: r.closed ? 'Closed' : 'Since ' + md(opened), delta: null, good: 'down' });
+    units.push({ value: r.affected.toLocaleString(), pct: 0.75, color: '#ef4444', label: 'People affected', status: 'Being Re-reviewed', delta: null, onclick: "wr2Go('library')" });
+    if (exp) units.push({ value: exp, pct: 0.8, color: '#ef4444', label: 'Exposure if not fixed', status: 'Projected', delta: null, onclick: "wr2Go('halo')" });
+    units.push({ value: done + '/4', pct: done / 4 || 0.03, color: done === 4 ? '#22c55e' : '#FACC15', label: 'Sign-offs', status: done === 4 ? 'All Signed' : (4 - done) + ' Waiting', delta: null, onclick: "wr2Tab('team')" });
+    units.push({ value: String(E.length), pct: 1, color: '#a78bfa', label: 'Evidence files', status: 'Sealed', delta: null, onclick: "wr2Tab('evidence')" });
     var tabs = [['overview', 'Overview'], ['chat', 'Conversation'], ['evidence', 'Evidence'], ['team', 'Team and decisions'], ['dead', 'Deadlines'], ['close', 'Close-out']];
     var body = { overview: tOverview, chat: tChat, evidence: tEvidence, team: tTeam, dead: tDead, close: tClose }[S.tab] || tOverview;
-    return '<div class="wr2-rooms">' + R.map(function (x) { return '<button type="button" class="wr2-room' + (x.id === r.id ? ' on' : '') + '" onclick="wr2Room(\'' + x.id + '\')"><i style="background:' + (x.closed ? '#15803D' : SEV[x.sev]) + '"></i><b>' + esc(x.id) + '</b><span>' + (x.closed ? 'Closed in ' + Math.round((x.closedAt - x.opened) / 864e5) + ' days' : esc(x.sev) + ' · open') + '</span></button>'; }).join('') + '</div>' +
-      '<div class="wr2-hero" style="border-top:4px solid ' + (r.closed ? '#15803D' : SEV[r.sev]) + '"><div style="flex:1;min-width:260px"><div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">' + pill(r.sev, SEV[r.sev] || '#475569') + pill(statusTxt(r), r.closed ? '#15803D' : '#A16207') + '<span class="wr2-mut">War room · opened ' + mdy(opened) + ', ' + tm(opened) + '</span></div>' +
-      '<div class="wr2-title">' + esc(r.id) + ': ' + esc(r.model) + '</div><div style="font-size:13.5px;color:#334155;line-height:1.5">' + esc(r.what) + '</div></div>' +
-      '<div class="wr2-clock"><div class="wr2-k">' + (r.closed ? 'Took' : 'Open for') + '</div><div class="wr2-num">' + dd + 'd ' + hh + 'h</div>' + (left != null ? '<div class="wr2-mut" style="color:' + (left <= 3 ? '#B91C1C' : '#A16207') + ';font-weight:700">' + left + ' days left to fix</div>' : r.closed ? '<div class="wr2-mut" style="color:#15803D;font-weight:700">Closed ' + mdy(r.closedAt) + '</div>' : '') + '</div>' +
-      '<div class="wr2-clock"><div class="wr2-k">Affected</div><div class="wr2-num">' + r.affected.toLocaleString() + '</div><div class="wr2-mut">' + esc((r.ch.members || []).length) + ' on the team</div></div></div>' +
-      '<div class="wr2-tabs">' + tabs.map(function (t) { return '<button type="button" class="' + (S.tab === t[0] ? 'on' : '') + '" onclick="wr2Tab(\'' + t[0] + '\')">' + t[1] + '</button>'; }).join('') + '</div>' + body(o, r);
+    var col = r.closed ? '#15803D' : SEV[r.sev];
+    var banner = '<div class="wr2-alert" style="border-color:' + col + '55;background:' + col + '12"><span class="wr2-dot" style="background:' + col + '"></span><div style="flex:1;min-width:240px"><div class="wr2-at" style="color:' + col + '">' + (r.closed ? 'CLOSED' : esc(r.sev.toUpperCase())) + ': ' + esc(r.id) + ' · ' + esc(r.model) + '</div><div class="wr2-ab">' + esc(r.what) + '. ' + r.affected.toLocaleString() + ' affected' + (exp ? ', ' + exp + ' exposure' : '') + '.</div></div>' +
+      '<div class="wr2-clk"><div class="wr2-k">' + (r.closed ? 'Time to close' : 'Time open') + '</div><div class="wr2-tick" style="color:' + col + '" data-from="' + (+opened) + '"' + (r.closed ? ' data-to="' + (+r.closedAt) + '"' : '') + '></div></div>' +
+      (r.sla && !r.closed ? '<div class="wr2-clk"><div class="wr2-k">Fix deadline in</div><div class="wr2-tick" style="color:' + (left <= 3 ? '#B91C1C' : '#A16207') + '" data-until="' + (+r.sla) + '"></div></div>' : '') +
+      '<div style="display:flex;gap:6px;flex-direction:column;justify-content:center"><button type="button" class="wr2-btn dark" style="margin:0" onclick="wr2Tab(\'close\')">' + (r.closed ? 'Final report' : 'Incident report') + '</button>' + (r.closed ? '' : '<button type="button" class="wr2-btn" style="margin:0" onclick="wr2Tab(\'chat\');setTimeout(function(){var i=document.getElementById(\'wr2-in\');if(i){i.value=\'Escalating to \';i.focus()}},50)">Escalate</button>') + '</div></div>';
+    var hero = window.cardinalGaugeRow ? '<section class="tsv2-section u-hero wr2-hero2"><div class="tsv2-section-title" style="font-size:11px;font-weight:800;letter-spacing:.6px;color:#475569;text-transform:uppercase;margin-bottom:10px">War room at a glance</div>' + cardinalGaugeRow(units) + '</section>' : '';
+    return banner + hero + '<div class="wr2-tabs">' + tabs.map(function (t) { return '<button type="button" class="' + (S.tab === t[0] ? 'on' : '') + '" onclick="wr2Tab(\'' + t[0] + '\')">' + t[1] + '</button>'; }).join('') + '</div>' + body(o, r);
   }
+  function fmtDur(ms) { ms = Math.max(0, ms); var d = Math.floor(ms / 864e5), h = Math.floor(ms % 864e5 / 36e5), m = Math.floor(ms % 36e5 / 6e4), s = Math.floor(ms % 6e4 / 1e3); var p = function (x) { return (x < 10 ? '0' : '') + x; }; return d + 'd ' + p(h) + ':' + p(m) + ':' + p(s); }
+  function tick() { [].forEach.call(document.querySelectorAll('#wr2 .wr2-tick'), function (e) { var n = Date.now(), t = e.getAttribute('data-until') ? fmtDur(+e.getAttribute('data-until') - n) : fmtDur((+e.getAttribute('data-to') || n) - +e.getAttribute('data-from')); if (e.textContent !== t) e.textContent = t; }); }
+  setInterval(tick, 1000);
+  // Watchman's Cases list shows the closed example too.
+  window.cardinalClosedRoom = function (o) { return rooms(o).filter(function (r) { return r.closed; })[0]; };
   var css = document.createElement('style');
   css.textContent = '#screen-warroom.wr2-on>*:not(#wr2){display:none!important}#wr2{padding:4px 0 24px;color:#1a1815}' +
     '.wr2-rooms{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 12px}.wr2-room{font:inherit;display:flex;align-items:center;gap:8px;border:1px solid rgba(26,24,21,.12);background:#f4efe6;border-radius:12px;padding:8px 12px;cursor:pointer;font-size:12.5px}.wr2-room i{width:9px;height:9px;border-radius:50%}.wr2-room span{color:#64748b}.wr2-room.on{background:#1a1815;color:#fff;border-color:#1a1815}.wr2-room.on span{color:#d6d3cd}' +
@@ -57965,6 +58003,17 @@ setInterval(function () {
     '.wr2-line{display:flex;gap:10px;padding:8px 0;border-top:1px dashed rgba(26,24,21,.12);font-size:12.5px;align-items:baseline}.wr2-when{width:120px;flex-shrink:0;color:#64748b}' +
     '.wr2-dl{display:flex;gap:12px;align-items:center;padding:10px 0;border-top:1px dashed rgba(26,24,21,.12);font-size:13px}.wr2-dd{width:96px;flex-shrink:0;display:flex;flex-direction:column}.wr2-dd span{font-size:11px;color:#64748b}' +
     '.wr2-rep{width:min(720px,94vw);max-height:88vh;overflow:auto;background:#f4efe6;border-radius:16px;padding:20px 22px;position:relative}.wr2-x{position:absolute;top:10px;right:12px;border:none;background:none;font-size:22px;cursor:pointer;color:#64748b}.wr2-rp{background:#fff;border-radius:10px;padding:10px 12px;margin-bottom:8px;font-size:13px;line-height:1.5}.wr2-rp b{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#475569;margin-bottom:2px}';
+  css.textContent += '.wr2-alert{display:flex;gap:14px;align-items:center;flex-wrap:wrap;border:1px solid;border-radius:16px;padding:14px 16px;margin:0 0 12px}.wr2-dot{width:12px;height:12px;border-radius:50%;animation:wr2p 1.6s infinite}@keyframes wr2p{0%,100%{opacity:1}50%{opacity:.35}}.wr2-at{font-size:14px;font-weight:900;letter-spacing:.2px}.wr2-ab{font-size:13px;color:#334155;margin-top:3px;line-height:1.45}' +
+    '.wr2-clk{background:#fff;border-radius:12px;padding:8px 14px;min-width:150px}.wr2-tick{font-size:22px;font-weight:900;font-variant-numeric:tabular-nums;letter-spacing:-.5px}' +
+    '.wr2-hero2{margin:0 0 4px}' +
+    '.wr2-av.sm{width:24px;height:24px;font-size:9.5px}.wr2-mini{display:flex;gap:8px}.wr2-mini em{font-style:normal;color:#94a3b8;font-size:11px}' +
+    '.wr2-ev{display:flex;gap:10px;align-items:center;padding:8px;border-radius:10px;cursor:pointer;margin-top:4px;background:#fff}.wr2-ev:hover{box-shadow:0 0 0 2px rgba(26,24,21,.12)}.wr2-ev code{font-size:10.5px;color:#64748b}.wr2-ico{width:26px;height:26px;border-radius:8px;color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0}' +
+    '.wr2-chead{display:flex;align-items:center;gap:12px;color:#fff;border-radius:12px;padding:10px 14px;margin-bottom:8px;flex-wrap:wrap}.wr2-chead b{font-size:15px;display:block}.wr2-chead span{font-size:11.5px;opacity:.9}.wr2-chead em{font-style:normal;font-weight:800;background:rgba(255,255,255,.2);border-radius:999px;padding:3px 10px;font-size:12px;margin-left:auto}.wr2-avs{display:flex}.wr2-avs .wr2-av{margin-left:-6px;border:2px solid #fff}' +
+    '.wr2-pins{background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;padding:8px 12px;margin-bottom:8px}.wr2-pin{font-size:12.5px;color:#1a1815;padding:2px 0}.wr2-pin span{color:#64748b;font-size:11.5px}' +
+    '.wr2-bub{background:#f4efe6;border:1px solid rgba(26,24,21,.08);border-radius:10px;padding:9px 12px;font-size:13.5px;line-height:1.5;margin-top:4px}.wr2-msg.ok .wr2-bub{border-left:3px solid #15803D}.wr2-msg.hot .wr2-bub{border-left:3px solid #B91C1C;background:#fef2f2}' +
+    '.wr2-tag{display:inline-block;font-size:10.5px;font-weight:800;border-radius:999px;padding:1px 8px;margin-top:4px}.wr2-tag.ok{color:#15803D;background:#f0fdf4}.wr2-tag.hot{color:#B91C1C;background:#fef2f2}' +
+    '.wr2-day{text-align:center;position:relative;margin:12px 0 4px}.wr2-day span{background:#fff;padding:0 10px;position:relative;z-index:1;font-size:11px;font-weight:800;color:#64748b;letter-spacing:.5px;text-transform:uppercase}.wr2-day:before{content:"";position:absolute;left:0;right:0;top:50%;border-top:1px solid rgba(26,24,21,.1)}' +
+    '.wr2-chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.wr2-chips button{font:inherit;font-size:11.5px;font-weight:700;border:1px solid rgba(26,24,21,.15);background:#fff;border-radius:999px;padding:4px 10px;cursor:pointer;color:#1a1815}';
   document.head.appendChild(css);
 
   function draw(force) {
@@ -57976,7 +58025,7 @@ setInterval(function () {
     scr.classList.add('wr2-on');
     var r = pick(o), key = o + '|' + S.cs + '|' + S.tab + '|' + (r ? msgs(o, r).length + '|' + signs(o, r).filter(function (s) { return s.done; }).length + '|' + !!S.report[o + S.cs] : '');
     var ae = document.activeElement; if (!force && ae && ae.id === 'wr2-in') return;
-    if (force || box.__k !== key) { var th = document.getElementById('wr2-thread'), y = th ? th.scrollTop : null, keepIn = ae && ae.id === 'wr2-in'; box.__k = key; box.innerHTML = html(o); var th2 = document.getElementById('wr2-thread'); if (th2) th2.scrollTop = y == null ? th2.scrollHeight : y; if (keepIn) { var ni = document.getElementById('wr2-in'); if (ni) ni.focus(); } }
+    if (force || box.__k !== key) { var th = document.getElementById('wr2-thread'), y = th ? th.scrollTop : null, keepIn = ae && ae.id === 'wr2-in'; box.__k = key; box.innerHTML = html(o); tick(); var th2 = document.getElementById('wr2-thread'); if (th2) th2.scrollTop = y == null ? th2.scrollHeight : y; if (keepIn) { var ni = document.getElementById('wr2-in'); if (ni) ni.focus(); } }
   }
   setInterval(function () { try { draw(false); } catch (e) { if (window.console) console.warn('wr2', e); } }, 700);
 })();
