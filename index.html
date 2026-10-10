@@ -50135,7 +50135,7 @@ window.CARDINAL_PLACES = {
     if (!top) { top = document.createElement('div'); top.id = 'sent-top'; top.className = 'card'; top.style.cssText = 'padding:16px 18px;margin:0 0 14px'; }
     top.setAttribute('data-k', key);
     var stat = function (n, l, c) { return '<div style="padding:10px 12px;border-radius:10px;border:1px solid rgba(26,24,21,.08);background:#fff"><div style="font-size:22px;font-weight:800;color:' + (c || '#1a1815') + '">' + n + '</div><div style="font-size:11px;color:#64748b">' + l + '</div></div>'; };
-    top.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap"><div><div style="font-size:18px;font-weight:700;color:#1a1815">Watchman: cases, incidents, and war rooms</div><div style="font-size:12px;color:#64748b;margin-top:2px">Everything that went wrong, who owns it, and the clock it is on.</div></div>' +
+    top.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap"><div></div>' +
       '<div style="display:flex;gap:6px;flex-wrap:wrap"><button type="button" class="btn-primary" style="font-size:12px" onclick="snShowForm(true);var a=document.getElementById(\'sn-actions\');if(a)a.scrollIntoView({behavior:\'smooth\',block:\'center\'})">+ Open a new case</button><button type="button" class="btn-ghost" style="font-size:12px" onclick="snOpenWarRoom(null)">Open a war room</button></div></div>' +
       '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-top:12px">' + stat(uniq.length, 'Open cases') + stat(crit, 'Critical', crit ? '#B91C1C' : '#15803D') + stat(inc.length, 'Incident clocks running', inc.length ? '#FACC15' : '#15803D') + stat(rooms.length, 'War rooms open') + '</div>' +
       '<div style="margin-top:12px"><div style="font-size:10.5px;font-weight:800;color:#64748b;text-transform:uppercase;margin-bottom:6px">War rooms</div>' +
@@ -57330,12 +57330,12 @@ setInterval(function () {
     return (Math.round((new Date(c.getFullYear(), c.getMonth(), c.getDate()) - new Date(t.getFullYear(), t.getMonth(), t.getDate())) / 864e5) === 1 ? 'Next day, ' : md(c) + ', ') + tm(c) + ' (' + Math.round(mins / 60) + ' hrs later)';
   }
   function events(o, view) {
-    var out = [];
-    if (view === 'cases') mems(o).forEach(function (m) { var id = String(m.caseId || '').replace(/^#/, ''); if (!id || /PRE/.test(id)) return; if (o === 'fin' && id === 'FIN-1203' && /Collections AI/.test(m.summary || '')) id = 'FIN-0842'; out.push({ t: new Date(m.timestamp), cs: id, what: String(m.summary || '').replace(/^(January|February|March|April|May|June|July|August|September|October|November|December) digest/, 'Monthly digest'), who: String(m.author || '').replace(/ Core$/, ''), core: CORE[m.core] || m.core || '', sev: m.severity }); });
+    var out = [], cl = function (t) { t = String(t || '').replace(/^(AUTO|TECH|SYS|NOTE):\s*/i, ''); return t.charAt(0).toUpperCase() + t.slice(1); };
+    if (view === 'cases') mems(o).forEach(function (m) { var id = String(m.caseId || '').replace(/^#/, ''); if (!id || /PRE/.test(id)) return; if (o === 'fin' && id === 'FIN-1203' && /Collections AI/.test(m.summary || '')) id = 'FIN-0842'; out.push({ t: new Date(m.timestamp), cs: id, what: cl(m.summary).replace(/^(January|February|March|April|May|June|July|August|September|October|November|December) digest/, 'Monthly digest'), who: String(m.author || '').replace(/ Core$/, ''), core: CORE[m.core] || m.core || '', sev: m.severity }); });
     var kc = window.cardinalClosedRoom ? cardinalClosedRoom(o) : null;
-    if (kc && (view === 'cases' || view === 'warrooms')) (kc.ch.messages || []).forEach(function (m) { out.push({ t: new Date(m.timestamp), cs: kc.id, what: String(m.content), who: String(m.author || '').replace(/: Cardinal$/, ''), core: 'War room' }); });
+    if (kc && (view === 'cases' || view === 'warrooms')) (kc.ch.messages || []).forEach(function (m) { out.push({ t: new Date(m.timestamp), cs: kc.id, what: cl(m.content), who: String(m.author || '').replace(/: Cardinal$/, ''), core: 'War room' }); });
     if (view === 'warrooms') {
-      (D().caseChannels || []).forEach(function (c) { (c.messages || []).forEach(function (m) { out.push({ t: new Date(m.timestamp), cs: c.caseId, what: m.content, who: String(m.author || '').replace(/: Cardinal$/, ''), core: 'War room' }); }); });
+      (D().caseChannels || []).forEach(function (c) { if (kc && c.caseId === kc.id) return; (c.messages || []).forEach(function (m) { out.push({ t: new Date(m.timestamp), cs: c.caseId, what: cl(m.content), who: String(m.author || '').replace(/: Cardinal$/, ''), core: 'War room' }); }); });
       mems(o).forEach(function (m) { if (m.core === 'warroom') out.push({ t: new Date(m.timestamp), cs: String(m.caseId || '').replace(/^#/, ''), what: m.summary, who: 'Watchman', core: 'War room' }); });
     }
     if (view === 'reports') incidents(o).forEach(function (x) { out.push({ t: x.t, cs: x.cs, what: x.what, who: x.by, core: x.by, sev: x.sev, model: x.model, caught: x.caught, ri: x.i, inc: 1 }); });
@@ -57454,7 +57454,7 @@ setInterval(function () {
   // are reused, shown in three modes: watch (Watchman), cov (AI Coverage), lab (Genesis stress tests).
   var MODES = {
     watch: { title: 'Watchman: Cases, Incidents & War Rooms', tabs: [['cases', 'Cases', 'v'], ['reports', 'Incidents', 'v'], ['warrooms', 'War rooms', 'v']] },
-    cov: { title: 'AI Coverage: Vendors, Shadow AI & Agents', tabs: [['vendors', 'Vendor AI', 'n'], ['shadow', 'Shadow AI', 'n'], ['runtime', 'Agents and runtime rules', 'n'], ['security', 'Security watch', 'n']] },
+    cov: { title: 'Genesis: AI Coverage (Vendors, Shadow AI & Agents)', tabs: [['vendors', 'Vendor AI', 'n'], ['shadow', 'Shadow AI', 'n'], ['runtime', 'Agents and runtime rules', 'n'], ['security', 'Security watch', 'n']] },
     lab: { title: 'Genesis: Stress Tests & Playbooks', tabs: [['lab', 'Stress tests', 'n'], ['playbooks', 'Playbooks', 'n']] }
   };
   window.__wmMode = window.__wmMode || 'watch';
@@ -58014,6 +58014,15 @@ setInterval(function () {
     '.wr2-tag{display:inline-block;font-size:10.5px;font-weight:800;border-radius:999px;padding:1px 8px;margin-top:4px}.wr2-tag.ok{color:#15803D;background:#f0fdf4}.wr2-tag.hot{color:#B91C1C;background:#fef2f2}' +
     '.wr2-day{text-align:center;position:relative;margin:12px 0 4px}.wr2-day span{background:#fff;padding:0 10px;position:relative;z-index:1;font-size:11px;font-weight:800;color:#64748b;letter-spacing:.5px;text-transform:uppercase}.wr2-day:before{content:"";position:absolute;left:0;right:0;top:50%;border-top:1px solid rgba(26,24,21,.1)}' +
     '.wr2-chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.wr2-chips button{font:inherit;font-size:11.5px;font-weight:700;border:1px solid rgba(26,24,21,.15);background:#fff;border-radius:999px;padding:4px 10px;cursor:pointer;color:#1a1815}';
+  // 10/10 (Brittany: "font and size should be like this", the Watchman table): one type scale for the whole room.
+  css.textContent += '#wr2{font-size:12.5px}#wr2 .wr2-k{font-size:10.5px;color:#64748b;letter-spacing:.4px}#wr2 .wr2-big{font-size:12.5px;font-weight:600}#wr2 .wr2-mut{font-size:11.5px}' +
+    '#wr2 .wr2-at{font-size:13px}#wr2 .wr2-ab{font-size:12.5px}#wr2 .wr2-tick{font-size:18px}#wr2 .wr2-title{font-size:16px}' +
+    '#wr2 .wr2-tabs button{font-size:12.5px;padding:8px 10px}#wr2 .wr2-step{font-size:10.5px}#wr2 .wr2-step i{width:22px;height:22px;font-size:11px}' +
+    '#wr2 .wr2-bub{font-size:12.5px;font-weight:600;color:#1a1815;padding:8px 11px}#wr2 .wr2-mh b{font-size:12.5px}#wr2 .wr2-mh span,#wr2 .wr2-mh em{font-size:10.5px}#wr2 .wr2-av{width:28px;height:28px;font-size:10px}' +
+    '#wr2 .wr2-chead b{font-size:13px}#wr2 .wr2-chead span{font-size:11px}#wr2 .wr2-pin{font-size:12px}' +
+    '#wr2 .wr2-row,#wr2 .wr2-line,#wr2 .wr2-dl,#wr2 .wr2-mini{font-size:12.5px}#wr2 .wr2-row b,#wr2 .wr2-dl b,#wr2 .wr2-ev b,#wr2 .wr2-person b{font-weight:800}' +
+    '#wr2 .wr2-t{font-size:12.5px}#wr2 .wr2-t th{font-size:10.5px;color:#64748b;letter-spacing:.4px}#wr2 .wr2-t td b{font-weight:800}#wr2 .wr2-person{font-size:12.5px}#wr2 .wr2-person div[style*="font-size:12.5px"]{font-weight:600}' +
+    '#wr2 .wr2-btn{font-size:12px}#wr2 .wr2-compose input{font-size:12.5px}#wr2 .wr2-pill{font-size:10.5px}';
   document.head.appendChild(css);
 
   function draw(force) {
@@ -58044,6 +58053,7 @@ setInterval(function () {
     setTimeout(function () { try { wmTab(tab); } catch (e) {} }, 80);
   };
   window.p54GenLab = function () { p54Open('lab', 'lab', genNav()); };
+  window.p54GenCov = function () { p54Open('cov', 'vendors', genNav()); };
   function sidebar() {
     var w = watchNav(); if (!w) return;
     var lab = w.querySelector('.nav-item-label span span'); if (lab && lab.textContent !== '· Cases') lab.textContent = '· Cases';
@@ -58057,12 +58067,13 @@ setInterval(function () {
       var svg = c.querySelector('svg'); if (svg) svg.innerHTML = '<circle cx="7" cy="7" r="5.2" stroke="currentColor" stroke-width="1.4"/><path d="M1.8 7h10.4M7 1.8c1.6 1.6 1.6 8.8 0 10.4M7 1.8c-1.6 1.6-1.6 8.8 0 10.4" stroke="currentColor" stroke-width="1.2"/>';
       var l = c.querySelector('.nav-item-label'); if (l) l.innerHTML = '<span>AI Coverage <span style="opacity:.6;font-size:.92em">· Vendors</span></span>';
     }
-    if (c.previousElementSibling !== w) w.parentNode.insertBefore(c, w.nextSibling);
+    // 10/10 (Brittany): hidden from the sidebar for the demo; opens from a card in Genesis instead.
+    if (c.parentNode) c.parentNode.removeChild(c);
     // Keep the right item highlighted while the shared screen is showing.
     var scr = document.getElementById('screen-sentinel'), on = scr && scr.offsetParent !== null, m = window.__wmMode || 'watch', g = genNav();
     if (on) {
-      var want = m === 'cov' ? c : m === 'lab' ? g : w;
-      [w, c, g].forEach(function (n) { if (n) n.classList.toggle('active', n === want); });
+      var want = m === 'cov' || m === 'lab' ? g : w;
+      [w, g].forEach(function (n) { if (n) n.classList.toggle('active', n === want); });
     } else c.classList.remove('active');
   }
   function genesisLink() {
@@ -58074,7 +58085,10 @@ setInterval(function () {
       box.style.cssText = 'background:#f4efe6;border-radius:14px;padding:14px 16px;margin:0 0 14px;display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;box-shadow:0 1px 3px rgba(26,24,21,.05),0 8px 20px rgba(26,24,21,.06)';
       box.innerHTML = '<div style="flex:1;min-width:240px"><div style="font-size:11px;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:.5px">Stress tests and response playbooks</div><div style="font-size:13px;color:#334155;line-height:1.5;margin-top:4px">Push your AI with attacks and edge cases before they happen for real, and rehearse the playbook your team runs when something breaks.</div></div><button type="button" onclick="p54GenLab()" style="font:inherit;font-size:12.5px;font-weight:700;border:none;background:#1a1815;color:#fff;border-radius:9px;padding:8px 14px;cursor:pointer;white-space:nowrap">Open stress tests →</button>';
     }
-    if (box.nextElementSibling !== anchor) anchor.parentNode.insertBefore(box, anchor);
+    var cov = document.getElementById('gen-cov-link');
+    if (!cov) { cov = box.cloneNode(true); cov.id = 'gen-cov-link'; var tx = cov.firstElementChild.children; tx[0].textContent = 'AI coverage: vendors, shadow AI, and agents'; tx[1].textContent = 'Every outside vendor whose AI touches your decisions, AI tools nobody approved, the live rules that keep agents in line, and who is trying to misuse the models.'; var bt = cov.querySelector('button'); bt.setAttribute('onclick', 'p54GenCov()'); bt.textContent = 'Open AI coverage \u2192'; }
+    if (box.nextElementSibling !== cov) anchor.parentNode.insertBefore(box, anchor);
+    if (cov.nextElementSibling !== anchor) anchor.parentNode.insertBefore(cov, anchor);
   }
   setInterval(function () { try { sidebar(); } catch (e) {} try { genesisLink(); } catch (e) {} }, 500);
 })();
