@@ -58478,7 +58478,7 @@ setInterval(function () {
 // Evaluated, Continuously monitored), what evidence is missing, and links to its cases and Echo history. The Library
 // keeps the company's own assets; Atlas is the map of how they connect. One end-to-end example per company.
 (function () {
-  var NAME = 'Atlas', SUB = 'AI Map';
+  var NAME = 'Atlas', SUB = 'AI inventory';
   function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;'); }
   function org() { return window.currentOrg || 'ad'; }
   var MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -58571,13 +58571,30 @@ setInterval(function () {
   window.atlasTab = function (t) { F.tab = t; draw(true); };
   window.atlasEx = function () { F.exMin = !F.exMin; draw(true); };
   window.atlasQ = function (v) { F.q = v; draw(true, true); };
+  // The coverage key lives behind an "i" next to the table title (Brittany 10/11).
+  window.atlasLegend = function (btn) {
+    var p = document.getElementById('at-legpop'); if (p) { p.remove(); return; }
+    p = document.createElement('div'); p.id = 'at-legpop'; p.innerHTML = window.__atLegend || '';
+    var r = btn.getBoundingClientRect(); p.style.cssText = 'position:fixed;z-index:4200;top:' + (r.bottom + 8) + 'px;left:' + Math.max(16, Math.min(r.left - 20, window.innerWidth - 720)) + 'px;width:min(700px,92vw)';
+    document.body.appendChild(p);
+    setTimeout(function () { document.addEventListener('mousedown', function off(e) { if (!p.contains(e.target) && e.target !== btn) { p.remove(); document.removeEventListener('mousedown', off); } }); }, 0);
+  };
+  // "Right now": what Pulse, Genesis, and Atonement say about this system today.
+  function nowHtml(o, s) {
+    var R = [], ps = window.cardinalPulseStatus ? cardinalPulseStatus(o, s.name) : null, wf = window.cardinalWatchFlags ? cardinalWatchFlags(o)[s.name] : '', vf = window.cardinalVendorFix ? cardinalVendorFix(o, s.name) : null;
+    R.push(['Pulse', ps ? ps.where + (ps.what ? ': ' + ps.what : '') : 'Working fine. Nothing flagged.']);
+    if (wf) R.push(['Watch for', wf + ' (from a Genesis write-up)']);
+    if (vf) R.push(['Vendor fix', vf[4] + ': ' + vf[3]]);
+    if (s.cs) R.push(['Case', s.cs + ' is open in Watchman']);
+    return '<div class="at-k" style="margin-top:12px">Right now</div><div class="at-now">' + R.map(function (r) { return '<div><span>' + r[0] + '</span><b>' + esc(r[1]) + '</b></div>'; }).join('') + '</div>';
+  }
   window.atlasOpen = function (id, keep) {
     var o = org(), L = list(o), s = L.filter(function (x) { return x.id === id; })[0]; if (!s) return;
     var kids = L.filter(function (x) { return x.parent === s.id; }), par = L.filter(function (x) { return x.id === s.parent; })[0];
     var obs = s.origin === 'Third-party' ? '<div class="at-two"><div><b>What Cardinal observed directly</b><div>' + (s.st[1] === 'C' ? 'API activity, permissions, tool calls, and outputs that pass through the bank’s systems.' : 'Only that it exists.') + (s.st[2] === 'E' ? ' Behavior tested by Genesis on authorized test cases.' : '') + '</div></div><div><b>What the vendor says</b><div>Security report and model documentation supplied by the vendor. Marked as vendor-provided, not independently verified.</div></div></div>' : '';
     var body = '<div class="at-k">' + esc(s.origin) + ' · ' + esc(s.kind) + ' · ' + esc(s.id) + '</div><div style="font-size:17px;font-weight:700;margin:2px 0 6px">' + esc(s.name) + '</div><div style="font-size:12.5px;color:#334155;line-height:1.5">' + esc(s.what) + '</div>' +
       '<div class="at-ladbig">' + ST.map(function (x, i) { var on = s.st[i] !== '-'; return '<div class="' + (on ? 'on' : '') + '"><i>' + (on ? '✓' : i + 1) + '</i><b>' + x[1] + '</b><span>' + x[2] + '</span></div>'; }).join('') + '</div>' +
-      detailInfo(o, s) + '<div class="at-facts"><div><span>Owner</span><b>' + esc(s.owner) + '</b></div><div><span>Last evaluated</span><b>' + lastCell(s) + '</b></div><div><span>Part of</span><b>' + (par ? esc(par.name) : '–') + '</b></div><div><span>Linked case</span><b>' + (s.cs || 'None') + '</b></div></div>' +
+      nowHtml(o, s) + detailInfo(o, s) + '<div class="at-facts"><div><span>Owner</span><b>' + esc(s.owner) + '</b></div><div><span>Last evaluated</span><b>' + lastCell(s) + '</b></div><div><span>Part of</span><b>' + (par ? esc(par.name) : '–') + '</b></div><div><span>Linked case</span><b>' + (s.cs || 'None') + '</b></div></div>' +
       (s.gaps ? '<div class="at-gap"><b>Evidence gaps</b><div>' + esc(s.gaps) + '. Cardinal will not give this the same assurance as a system it can fully see.</div></div>' : '<div class="at-ok">No evidence gaps on file.</div>') + obs +
       (kids.length ? '<div class="at-k" style="margin-top:12px">Connected to this</div>' + kids.map(function (k) { return '<div class="at-row" onclick="atlasOpen(\'' + k.id + '\')">' + pill(k.origin, ORIGIN_C[k.origin]) + '<span style="flex:1">' + esc(k.name) + ' · ' + esc(k.kind) + '</span>' + covBar(k.st) + '</div>'; }).join('') : '') +
       logHtml(o, s) + '<div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">' + (s.cs ? '<button type="button" class="at-btn dark" onclick="document.getElementById(\'at-modal\').remove();try{openWarRoomCase(\'' + s.cs + '\')}catch(e){}">Open case ' + esc(s.cs) + ' →</button>' : '') + '<button type="button" class="at-btn" onclick="document.getElementById(\'at-modal\').remove();showScreen(\'echo\',null)">History in Echo →</button>' + ((window.__atlasReq[o] || []).some(function (r) { return r.id === s.id; }) ? '<button type="button" class="at-btn dark" onclick="atlasGoReq()">Evaluation requested \u00b7 see it in Genesis \u2192</button>' : s.origin !== 'Cardinal AI' ? '<button type="button" class="at-btn dark" onclick="atlasChoose(\'' + s.id + '\')">Request an evaluation (Genesis)</button>' : '') + '</div>';
@@ -58664,12 +58681,13 @@ setInterval(function () {
     var TABS = [['all', 'All'], ['internal', 'Internal'], ['agents', 'Agents'], ['shadow', 'Shadow AI'], ['third', 'Third-party'], ['cardinal', 'Cardinal AI']];
     L = list(o);
     var q = F.q.toLowerCase(), rows = L.filter(function (x) { return (F.tab === 'all' || (F.tab === 'internal' && x.origin === 'Internal') || (F.tab === 'third' && x.origin === 'Third-party') || (F.tab === 'agents' && x.kind === 'Agent') || (F.tab === 'shadow' && x.origin === 'Shadow AI') || (F.tab === 'gaps' && x.gaps) || (F.tab === 'cardinal' && x.origin === 'Cardinal AI')) && (F.tab === 'cardinal' || F.tab === 'agents' || x.origin !== 'Cardinal AI') && (!q || (x.name + ' ' + x.owner + ' ' + x.id).toLowerCase().indexOf(q) >= 0); });
-    var table = '<div class="at-card" style="border-top-color:#1d4ed8"><div class="at-ct"><span style="background:#1d4ed8"></span>AI systems and connections · ' + rows.length + '</div><div class="at-tabs">' + TABS.map(function (t) { return '<button type="button" class="' + (F.tab === t[0] ? 'on' : '') + '" onclick="atlasTab(\'' + t[0] + '\')">' + t[1] + '</button>'; }).join('') + (F.tab === 'gaps' ? '<button type="button" class="on" onclick="atlasTab(\'all\')">Showing evidence gaps \u00d7</button>' : '') + '<input type="search" placeholder="Search a system, owner, or ID" value="' + esc(F.q) + '" oninput="atlasQ(this.value)"></div><div class="at-live" style="margin:0 0 6px"><span></span>Live: Cardinal re-checks every connected system every 5 minutes</div>' +
+    var table = '<div class="at-card" style="border-top-color:#1d4ed8"><div class="at-ct"><span style="background:#1d4ed8"></span>AI systems and connections · ' + rows.length + '<button type="button" class="at-i" title="How to read the coverage line" onclick="atlasLegend(this)">i</button></div><div class="at-tabs">' + TABS.map(function (t) { return '<button type="button" class="' + (F.tab === t[0] ? 'on' : '') + '" onclick="atlasTab(\'' + t[0] + '\')">' + t[1] + '</button>'; }).join('') + (F.tab === 'gaps' ? '<button type="button" class="on" onclick="atlasTab(\'all\')">Showing evidence gaps \u00d7</button>' : '') + '<input type="search" placeholder="Search a system, owner, or ID" value="' + esc(F.q) + '" oninput="atlasQ(this.value)"></div><div class="at-live" style="margin:0 0 6px"><span></span>Live: Cardinal re-checks every connected system every 5 minutes</div>' +
       '<table class="at-t"><thead><tr><th>System</th><th>Origin</th><th>Owner</th><th>Case</th><th>Coverage</th><th>Last evaluated</th><th>Evidence gaps</th></tr></thead><tbody>' + rows.map(function (x, i) { return '<tr onclick="atlasOpen(\'' + x.id + '\')"><td><div class="at-nm">' + esc(x.name) + '</div><div class="at-mut">' + esc(x.kind) + ' · ' + esc(x.id) + '</div>' + (function () { var f = window.cardinalWatchFlags ? cardinalWatchFlags(org())[x.name] : ''; return f ? '<div style="font-size:11px;color:#1d4ed8;margin-top:2px">Watch for: ' + esc(f) + '</div>' : ''; })() + '</td><td>' + pill(x.origin, ORIGIN_C[x.origin]) + '</td><td>' + esc(x.owner) + '</td><td>' + (x.cs ? '<b style="color:#B91C1C">' + esc(x.cs) + '</b>' : '<span class="at-mut">\u2013</span>') + '</td><td>' + covBar(x.st) + '</td><td style="white-space:nowrap">' + lastCell(x) + '</td><td>' + (x.gaps ? '<span style="color:#B91C1C">' + esc(x.gaps) + '</span>' : '<span class="at-mut">None</span>') + '</td></tr>'; }).join('') + '</tbody></table></div>';
     var legend = '<div class="at-card" style="border-top-color:#22c55e"><div class="at-ct"><span style="background:#22c55e"></span>How to read the coverage line</div><div class="at-leg2">' + ST.map(function (x, k) { var col = k >= 3 ? '#15803D' : k === 2 ? '#22c55e' : k === 1 ? '#FACC15' : '#ef4444'; return '<div><div class="at-covb">' + ST.map(function (y, i) { return '<i style="background:' + (i <= k ? col : '#e5e7eb') + '"></i>'; }).join('') + '</div><b>' + (k + 1) + ' of 4 \u00b7 ' + x[1] + '</b><span>' + x[2] + '</span></div>'; }).join('') + '</div><div class="at-mut" style="margin-top:8px">A vendor system Cardinal can only partly see never gets the same assurance as a system it can fully see. The gap is shown, not hidden.</div></div>';
     // 10/10 (Brittany): no quote box; the letter key sits right under the gauges; the example goes last and can be minimized.
     var ex = '<div class="at-exwrap"><div class="at-exbar"><b>Example: one system, end to end</b><button type="button" class="at-btn" onclick="atlasEx()">' + (F.exMin ? 'Show' : 'Minimize') + '</button></div>' + (F.exMin ? '' : e2e) + '</div>';
-    return hero + alerts(o) + legend + table + ex;
+    window.__atLegend = legend;
+    return hero + alerts(o) + table;
   }
   var css = document.createElement('style');
   css.textContent = '#screen-atlas{padding:4px 0 30px}#atlas-root{font-size:12.5px;color:#1a1815}.at-head{background:#fff;border:1px solid rgba(26,24,21,.08);border-left:4px solid #C2410C;border-radius:14px;padding:12px 16px;margin:0 0 14px}.at-tag{font-size:15px;font-weight:700;margin-bottom:3px}.at-mut{font-size:11.5px;color:#64748b}' +
@@ -58696,6 +58714,7 @@ setInterval(function () {
   css.textContent += '.at-logd{color:#334155!important}.at-logr .at-mut:first-child{color:#334155!important}.at-line span:first-child{color:#334155!important}';
   css.textContent += '#screen-atlas table tr:nth-child(even) td{background:#f8fafc!important}#screen-atlas table tr:nth-child(odd) td{background:#fff!important}#screen-atlas table th{background:#f1f5f9!important}';
   css.textContent += '.at-leg2{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}@media (max-width:900px){.at-leg2{grid-template-columns:1fr 1fr}}.at-leg2>div{background:#f8fafc;border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:4px}.at-leg2 .at-covb{margin-bottom:4px}.at-leg2 b{font-weight:600;font-size:12.5px}.at-leg2 span{color:#64748b;font-size:11.5px}';
+  css.textContent += '.at-i{margin-left:8px;width:20px;height:20px;border-radius:50%;border:1px solid #cbd5e1;background:#fff;color:#475569;font:inherit;font-size:11px;font-weight:700;cursor:pointer;text-transform:none;letter-spacing:0}#at-legpop .at-card{margin:0;box-shadow:0 18px 50px rgba(26,24,21,.25)}.at-now{display:flex;flex-direction:column;gap:0;border:1px solid #e5e7eb;border-radius:12px;padding:2px 12px}.at-now div{display:grid;grid-template-columns:110px 1fr;gap:10px;padding:8px 0;border-top:1px dashed rgba(26,24,21,.12)}.at-now div:first-child{border-top:none}.at-now span{color:#64748b}.at-now b{font-weight:500}';
   document.head.appendChild(css);
 
   function ensure() {
@@ -59204,10 +59223,10 @@ setInterval(function () {
 
   // Old links still land in the right place: Customers, Case lists, and Cohorts now open inside People.
   window.libShowCaseLists = function () { openPeople('aff'); };
-  function openPeople(k) { S.sub = k; var t = document.getElementById('lib-tab-people'); if (t) t.click(); else setTimeout(function () { var t2 = document.getElementById('lib-tab-people'); if (t2) t2.click(); }, 800); }
+  function openPeople(k) { S.sub = k; window.__pplKeepSub = 1; var t = document.getElementById('lib-tab-people'); if (t) t.click(); else setTimeout(function () { var t2 = document.getElementById('lib-tab-people'); if (t2) t2.click(); }, 800); }
   window.cardinalOpenPeople = openPeople;
   function tick() {
-    var scr = document.getElementById('screen-cardinallibrary'); if (!scr || scr.offsetParent === null) return;
+    var scr = document.getElementById('screen-cardinallibrary'); if (!scr || scr.offsetParent === null) { tick.vis = 0; return; }
     var first = scr.querySelector('.lib-tab'), cust = document.getElementById('lib-tab-customers'); if (!first || !cust) return;
     var tab = document.getElementById('lib-tab-people');
     if (!tab) {
@@ -59227,6 +59246,8 @@ setInterval(function () {
     // Anything that opened the old tabs is moved into People.
     var map = { customers: 'all', caselists: 'aff', cohorts: 'coh' };
     Object.keys(map).forEach(function (k) { var c = document.getElementById('lib-tab-content-' + k); if (c && c.style.display !== 'none' && c.offsetParent !== null) { c.style.display = 'none'; openPeople(map[k]); } });
+    // Brittany 10/11: the Library always opens on People.
+    if (!tick.vis) { tick.vis = 1; var act = scr.querySelector('.lib-tab.active'); var deep = (window.__deepLinkUntil || 0) > Date.now(); if (!deep && (!act || /usecases/.test(act.getAttribute('onclick') || '') || act === tab)) { window.__pplKeepSub = 0; tab.click(); } }
     if (box.style.display !== 'none' && box.__k !== org() + S.sub) { box.innerHTML = html(org()); box.__k = org() + S.sub; }
     if (box.style.display !== 'none' && !tab.classList.contains('active')) tab.classList.add('active');
   }
@@ -59318,6 +59339,7 @@ setInterval(function () {
     out.forEach(function (x) { var o2 = ST[x.id]; if (o2) { x.stage = o2.stage; x.where = o2.where; x.next = o2.next; } });
     return out;
   }
+  window.cardinalPulseStatus = function (o, name) { var I = issues(o).filter(function (x) { return x.sys === name && x.stage !== 'done'; }).sort(function (a, b) { return (a.stage === 'look' ? 0 : 1) - (b.stage === 'look' ? 0 : 1); }); return I[0] ? { where: I[0].stage === 'look' ? 'Needs a look' : I[0].where, what: I[0].what.replace(/\.$/, '') } : null; };
   function sysState(o) { var I = issues(o), m = {}; I.forEach(function (x) { if (x.stage === 'done') return; if (!m[x.sys] || x.stage === 'look') m[x.sys] = x.stage; }); return m; }
 
   // ── Screen ───────────────────────────────────────────────────────
@@ -59483,6 +59505,7 @@ setInterval(function () {
     fed: [['Taxpayer Help Assistant vendor', 'Changed the model without notice (FED-3015)', -3, 'Version pinned; agreed to 30 days notice', 'Fixed', 0], ['Identity proofing vendor', 'Fails more for recent address changes', -6, 'Investigating their match rules', 'Waiting on vendor', 14]]
   };
 
+  window.cardinalVendorFix = function (o, name) { return (VEND[o] || []).filter(function (v) { return v[0] === name || name.indexOf(v[0]) === 0 || v[0].indexOf(name) === 0; })[0] || null; };
   // ── Genesis sections ──────────────────────────────────────────────
   window.gaAsk = function (what) { seal(what); toast(what + '. Sealed in Echo.'); };
   window.gaReport = function () {
