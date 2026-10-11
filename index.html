@@ -59590,6 +59590,32 @@ setInterval(function () {
       ]);
   }
 
+  // Compare models (Brittany 10/11: "can look better"): a model against its fix by default, a verdict first, paired bars.
+  var CMP = window.__gaCmp = window.__gaCmp || {};
+  function cmpModels(o) { var L = (window.CARDINAL_MODELS || []).filter(function (m) { return m.industry === o && m.status !== 'archive'; }).map(function (m) { return m.name; }); var m = MAIN[o]; [m[1], m[2]].forEach(function (n) { if (L.indexOf(n) < 0) L.unshift(n); }); return L.slice(0, 14); }
+  function metrics(o, name) {
+    var m = (window.CARDINAL_MODELS || []).filter(function (x) { return x.name === name; })[0] || {}, h = (function (x) { var v = 2166136261; for (var i = 0; i < x.length; i++) { v ^= x.charCodeAt(i); v = Math.imul(v, 16777619); } return Math.abs(v); })(o + name);
+    var fix = name === MAIN[o][2], old = name === MAIN[o][1];
+    var di = fix ? { fin: 0.83, ad: 0.84, health: 0.89, fed: 0.82 }[o] : m.di || (old ? 0.74 : 0.82 + (h % 12) / 100);
+    var ts = fix ? 86 : m.trustScore || 70 + h % 20;
+    return [['Trust Score', ts, 100, ''], ['Fairness ratio', +(+di).toFixed(2), 1, ''], ['Accuracy', fix ? 91 : 86 + h % 8, 100, '%'], ['Transparency', fix ? 90 : 72 + (h >> 3) % 18, 100, ''], ['Governance', fix ? 88 : 68 + (h >> 5) % 20, 100, ''], ['Test coverage', fix ? 92 : 70 + (h >> 7) % 20, 100, '%']];
+  }
+  window.gaCmpSet = function (k, v) { CMP[org() + k] = v; var e = document.getElementById('ga-compare'); if (e) { e.__k = ''; } };
+  function gCompare(o) {
+    var L = cmpModels(o), A = CMP[o + 'a'] || MAIN[o][1], B = CMP[o + 'b'] || MAIN[o][2], MA = metrics(o, A), MB = metrics(o, B), winsB = 0;
+    var sel = function (k, v) { return '<select onchange="gaCmpSet(\'' + k + '\',this.value)">' + L.map(function (n) { return '<option' + (n === v ? ' selected' : '') + '>' + esc(n) + '</option>'; }).join('') + '</select>'; };
+    var rows = MA.map(function (x, i) { var a = x[1], b = MB[i][1], w = b > a ? 'b' : a > b ? 'a' : ''; if (w === 'b') winsB++; var pa = Math.round(a / x[2] * 100), pb = Math.round(b / x[2] * 100); return '<div class="ga-cmp-r"><div class="ga-cmp-k">' + x[0] + '</div><div class="ga-cmp-bars"><div class="' + (w === 'a' ? 'win' : '') + '"><i style="width:' + pa + '%;background:#94a3b8"></i><b>' + a + x[3] + '</b></div><div class="' + (w === 'b' ? 'win' : '') + '"><i style="width:' + pb + '%;background:#1d4ed8"></i><b>' + b + x[3] + '</b></div></div></div>'; }).join('');
+    var lead = winsB >= 4 ? B + ' is better on ' + winsB + ' of 6 measures.' : winsB <= 2 ? A + ' is better on ' + (6 - winsB) + ' of 6 measures.' : 'Close: each wins 3 of 6 measures.';
+    var fairOk = MB[1][1] >= 0.8;
+    return '<div class="ga-h">Compare models</div><div class="ga-cmp-pick"><span class="ga-cmp-dot" style="background:#94a3b8"></span>' + sel('a', A) + '<span style="color:#64748b">vs</span><span class="ga-cmp-dot" style="background:#1d4ed8"></span>' + sel('b', B) + '</div>' +
+      '<div class="ga-cmp-verdict"><b>' + esc(lead) + '</b><span>' + (fairOk ? esc(B) + ' passes the 0.80 fairness line.' : esc(B) + ' does not pass the 0.80 fairness line yet.') + (B === MAIN[o][2] ? ' It is the fix for ' + MAIN[o][0] + ': ' + esc(MAIN[o][3].charAt(0).toLowerCase() + MAIN[o][3].slice(1)) + '.' : '') + '</span></div>' +
+      rows + '<div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">' + (B === MAIN[o][2] ? '<button type="button" style="' + BTN + '" onclick="flowToAtonement()">Send ' + esc(B) + ' to Atonement</button>' : '') + '<button type="button" style="' + BTN + '" onclick="gaAsk(\'Comparison of ' + esc(A).replace(/'/g, '') + ' and ' + esc(B).replace(/'/g, '') + ' exported\')">Export comparison</button></div>';
+  }
+  function placeCompare() {
+    var host = document.getElementById('gen-tab-compare'); if (!host) return;
+    var e = document.getElementById('ga-compare'); if (!e) { e = document.createElement('div'); e.id = 'ga-compare'; host.insertBefore(e, host.firstChild); }
+    var k = org() + (CMP[org() + 'a'] || '') + (CMP[org() + 'b'] || ''); if (e.__k !== k) { e.__k = k; e.innerHTML = gCompare(org()); }
+  }
   // Write-ups (was Lessons; Brittany 10/11: "a whole report for each one... what did we learn... stored in Echo").
   window.gaWriteup = function (i) {
     var o = org(), l = lessons(o)[i]; if (!l) return; var g = pc(o), m = MAIN[o], isAgent = l[1] === g.id;
@@ -59740,12 +59766,14 @@ setInterval(function () {
     '#genesis-log-entries table{display:none!important}.ga-logd{font-size:11px;font-weight:700;color:#334155;text-transform:uppercase;letter-spacing:.5px;margin:14px 0 2px;padding-bottom:5px;border-bottom:1px dashed rgba(26,24,21,.15)}#ga-log .ga-logd:first-child{margin-top:4px}.ga-logl{display:grid;grid-template-columns:80px 1fr;gap:10px;padding:7px 0;font-size:12.5px}.ga-logl span:first-child{color:#334155}.ga-logl b{font-weight:600}.ga-logl em{font-style:normal;font-size:11.5px;color:#1d4ed8;background:#eff6ff;border-radius:999px;padding:1px 8px;margin-left:4px}' +
     '#gnws .btn-primary,#gnws .btn-ghost,#gnws [class*=btn-]{background:#1a1815!important;color:#fff!important;border:none!important}' +
     '.ga-cov{margin:6px 0 12px}.ga-covbar{height:12px;background:#fee2e2;border-radius:999px;overflow:hidden}.ga-covbar i{display:block;height:100%;background:#22c55e;border-radius:999px}.ga-csrow{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}@media (max-width:900px){.ga-csrow{grid-template-columns:1fr 1fr}}.ga-cs{border:1px solid #e5e7eb;border-left:4px solid var(--c);border-radius:12px;padding:10px 12px}.ga-cs b{display:block;font-size:22px;font-weight:700;color:var(--c)}.ga-cs span{display:block;font-weight:600;font-size:12.5px}.ga-cs em{font-style:normal;font-size:11.5px;color:#64748b}' +
+    '#gen-tab-compare > :not(#ga-compare){display:none!important}#ga-compare{font-size:12.5px;color:#1a1815}.ga-cmp-pick{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:6px 0 12px}.ga-cmp-pick select{font:inherit;font-size:12.5px;border:1px solid #e5e7eb;border-radius:8px;padding:6px 10px;background:#fff}.ga-cmp-dot{width:10px;height:10px;border-radius:50%}.ga-cmp-verdict{border-left:4px solid #1d4ed8;background:#eff6ff;border-radius:10px;padding:10px 14px;margin-bottom:12px;display:flex;flex-direction:column;gap:2px}.ga-cmp-verdict b{font-size:14px}.ga-cmp-verdict span{color:#334155}' +
+    '.ga-cmp-r{display:grid;grid-template-columns:140px 1fr;gap:12px;align-items:center;padding:8px 0;border-top:1px dashed rgba(26,24,21,.12)}.ga-cmp-k{font-weight:600}.ga-cmp-bars{display:flex;flex-direction:column;gap:5px}.ga-cmp-bars div{display:grid;grid-template-columns:1fr 60px;gap:8px;align-items:center;position:relative}.ga-cmp-bars div::before{content:"";grid-column:1;grid-row:1;height:12px;background:#f1f5f9;border-radius:999px}.ga-cmp-bars i{grid-column:1;grid-row:1;height:12px;border-radius:999px}.ga-cmp-bars b{font-weight:500;color:#475569}.ga-cmp-bars .win b{font-weight:700;color:#15803D}.ga-cmp-bars .win b::after{content:" best";font-size:10.5px;font-weight:600}' +
     '.ga-t{width:100%;border-collapse:collapse;font-size:12.5px}.ga-t th{text-align:left;font-size:11.5px;font-weight:600;color:#64748b;padding:8px 10px;background:#f1f5f9!important}.ga-t td{padding:9px 10px;border-top:1px solid #eef0f3;vertical-align:top;background:#fff!important}.ga-t tr:nth-child(even) td{background:#f8fafc!important}' +
     '.ga-pill{display:inline-block;font-size:11px;font-weight:600;border:1px solid;border-radius:999px;padding:1px 9px;white-space:nowrap}' +
     '.ga-chips{display:flex;flex-wrap:wrap;gap:8px}.ga-chips span{display:inline-flex;align-items:center;gap:8px;background:#fef2f2;border:1px solid #fecaca;color:#7f1d1d;border-radius:999px;padding:5px 6px 5px 12px;font-size:12.5px}.ga-chips span button{font:inherit;font-size:11px;font-weight:600;border:none;background:#1a1815;color:#fff;border-radius:999px;padding:3px 9px;cursor:pointer}' +
     '.ga-ramp{border:1px solid #e5e7eb;border-radius:12px;padding:12px 14px;margin-bottom:10px}.ga-steps{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin:12px 0 8px}.ga-steps div{display:flex;flex-direction:column;gap:5px;font-size:12px;color:#64748b}.ga-steps i{height:8px;border-radius:999px;background:#e5e7eb}.ga-steps .done i{background:#22c55e}.ga-steps .done{color:#15803D}.ga-steps .now i{background:#1d4ed8}.ga-steps .now{color:#1d4ed8;font-weight:600}';
   document.head.appendChild(css);
-  setInterval(function () { try { place('genesis'); place('atonement'); logList(); } catch (e) {} }, 400);
+  setInterval(function () { try { place('genesis'); place('atonement'); logList(); placeCompare(); } catch (e) {} }, 400);
 })();
 </script>
 <script data-p="p63_libitem">
