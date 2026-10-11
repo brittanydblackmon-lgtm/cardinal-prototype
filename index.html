@@ -57268,6 +57268,8 @@ setInterval(function () {
     // 10/10 (Brittany: "we should show a closed case in the cases"): the finished example from the war room.
     var k = window.cardinalClosedRoom ? cardinalClosedRoom(o) : null;
     if (k && !seen[k.id]) out.push({ id: k.id, sev: k.sev, model: k.model, affected: k.affected, who: k.who, metric: k.what, sla: null, opened: k.opened, closedAt: k.closedAt, owner: (k.ch.members || [])[0] || '', room: true, status: 'Done' });
+    var pr = window.cardinalPulseRoom ? cardinalPulseRoom(o) : null;
+    if (pr && !seen[pr.id]) out.push({ id: pr.id, sev: pr.sev, model: pr.model, affected: pr.affected, who: pr.who, metric: pr.what, sla: Math.max(0, Math.ceil((pr.sla - Date.now()) / 864e5)), opened: pr.opened, owner: (pr.ch.members || [])[0] || '', room: true, status: 'In progress', pulse: true });
     var rank = { Critical: 0, High: 1, Medium: 2, Low: 3 };
     return out.sort(function (a, b) { return ((a.status === 'Done') - (b.status === 'Done')) || (rank[a.sev] - rank[b.sev]) || (b.affected - a.affected); });
   }
@@ -57325,6 +57327,18 @@ setInterval(function () {
     ]
   };
   window.__wmIncCase = window.__wmIncCase || {};
+  // Example 2: incidents Pulse caught for the agent reliability case (see p53 AGENT and the Pulse core).
+  (function () {
+    var P = { fin: ['FIN-3310', 'Servicing Agent v2.0', 'Quoted a payoff amount from an old rate table', 'Tried to waive a $39 late fee without approval', 'Nina Roberts, Compliance on-call'],
+      ad: ['AD-3104', 'Work-order agent v1.4', 'Closed an inspection using an old manual revision', 'Tried to order a hydraulic pump without a mechanic signing off', 'Sarah Chen, Compliance on-call'],
+      health: ['HS-3402', 'Member Help Agent v1.2', 'Told a member a pending prior authorization was approved', 'Tried to change a claim to approved without a clinician', 'Priyanka Rao, Compliance on-call'],
+      fed: ['FED-3015', 'Taxpayer Help Assistant v2.1', 'Gave a taxpayer the wrong payment plan deadline', 'Tried to set up a payment plan without an examiner', 'Andre Lewis, Compliance on-call'] };
+    Object.keys(P).forEach(function (o) { var x = P[o]; INC[o] = (INC[o] || []).concat([
+      [-4, 14, 10, x[0], 'Medium', x[1], x[2] + ' (wrong answers up to 1.1% of chats)', 'Pulse', [-4, 14, 12], x[4]],
+      [-3, 7, 20, x[0], 'High', x[1], x[3] + '. Blocked by the approval rule', 'Pulse', [-3, 7, 20], x[4]],
+      [-3, 8, 20, x[0], 'High', x[1], x[3] + ' again. Blocked by the approval rule', 'Pulse', [-3, 8, 21], x[4]]
+    ]); });
+  })();
   function incidents(o) {
     var now = new Date(), d = function (n, h, m) { return new Date(now.getFullYear(), now.getMonth(), now.getDate() + n, h, m || 0); };
     return (INC[o] || []).map(function (r, i) { var key = o + i; return { i: i, key: key, t: d(r[0], r[1], r[2]), cs: r[3] || window.__wmIncCase[key] || '', sev: r[4], model: r[5], what: r[6], by: r[7], caught: d(r[8][0], r[8][1], r[8][2]), told: r[9] }; }).filter(function (x) { return x.t <= now; });
@@ -57340,9 +57354,11 @@ setInterval(function () {
     var out = [], cl = function (t) { t = String(t || '').replace(/^(AUTO|TECH|SYS|NOTE):\s*/i, ''); return t.charAt(0).toUpperCase() + t.slice(1); };
     if (view === 'cases') mems(o).forEach(function (m) { var id = String(m.caseId || '').replace(/^#/, ''); if (!id || /PRE/.test(id)) return; if (o === 'fin' && id === 'FIN-1203' && /Collections AI/.test(m.summary || '')) id = 'FIN-0842'; out.push({ t: new Date(m.timestamp), cs: id, what: cl(m.summary).replace(/^(January|February|March|April|May|June|July|August|September|October|November|December) digest/, 'Monthly digest'), who: String(m.author || '').replace(/ Core$/, ''), core: CORE[m.core] || m.core || '', sev: m.severity }); });
     var kc = window.cardinalClosedRoom ? cardinalClosedRoom(o) : null;
+    var kp = window.cardinalPulseRoom ? cardinalPulseRoom(o) : null;
+    if (kp && (view === 'cases' || view === 'warrooms')) (kp.ch.messages || []).forEach(function (m) { out.push({ t: new Date(m.timestamp), cs: kp.id, what: cl(m.content), who: String(m.author || '').replace(/: Cardinal$/, ''), core: 'War room' }); });
     if (kc && (view === 'cases' || view === 'warrooms')) (kc.ch.messages || []).forEach(function (m) { out.push({ t: new Date(m.timestamp), cs: kc.id, what: cl(m.content), who: String(m.author || '').replace(/: Cardinal$/, ''), core: 'War room' }); });
     if (view === 'warrooms') {
-      (D().caseChannels || []).forEach(function (c) { if (kc && c.caseId === kc.id) return; (c.messages || []).forEach(function (m) { out.push({ t: new Date(m.timestamp), cs: c.caseId, what: cl(m.content), who: String(m.author || '').replace(/: Cardinal$/, ''), core: 'War room' }); }); });
+      (D().caseChannels || []).forEach(function (c) { if ((kc && c.caseId === kc.id) || (kp && c.caseId === kp.id)) return; (c.messages || []).forEach(function (m) { out.push({ t: new Date(m.timestamp), cs: c.caseId, what: cl(m.content), who: String(m.author || '').replace(/: Cardinal$/, ''), core: 'War room' }); }); });
       mems(o).forEach(function (m) { if (m.core === 'warroom') out.push({ t: new Date(m.timestamp), cs: String(m.caseId || '').replace(/^#/, ''), what: m.summary, who: 'Watchman', core: 'War room' }); });
     }
     if (view === 'reports') incidents(o).forEach(function (x) { out.push({ t: x.t, cs: x.cs, what: x.what, who: x.by, core: x.by, sev: x.sev, model: x.model, caught: x.caught, ri: x.i, inc: 1 }); });
@@ -57376,7 +57392,7 @@ setInterval(function () {
     steps.sort(function (a, b) { return a.t - b.t; });
     var body = '<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding-right:24px"><div><div class="wm2-bt">Case</div><div style="font-size:22px;font-weight:800">' + esc(c.id) + '</div></div><div style="display:flex;gap:6px">' + sevPill(c.sev) + stPill(c.status) + '</div></div>' +
       '<div style="font-size:13px;color:#334155;margin:6px 0 0;line-height:1.5"><b>' + esc(c.model) + ':</b> ' + esc(c.metric) + '</div>' +
-      '<div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap">' + (c.room ? '<button type="button" class="wm2-btn dark" onclick="document.getElementById(\'wm2-modal\').remove();openWarRoomCase(\'' + c.id + '\')">View war room \u2192</button>' : '<button type="button" class="wm2-btn dark" onclick="document.getElementById(\'wm2-modal\').remove();openWarRoomCase(\'' + c.id + '\')">Open a war room for ' + esc(c.id) + ' \u2192</button>') + '<button type="button" class="wm2-btn" onclick="document.getElementById(\'wm2-modal\').remove();cardinalEdenGo&&cardinalEdenGo(\'case\',\'Watchman\')">View in Eden</button></div>' +
+      '<div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap">' + (c.room ? '<button type="button" class="wm2-btn dark" onclick="document.getElementById(\'wm2-modal\').remove();openWarRoomCase(\'' + c.id + '\')">View war room \u2192</button>' : '<button type="button" class="wm2-btn dark" onclick="document.getElementById(\'wm2-modal\').remove();openWarRoomCase(\'' + c.id + '\')">Open a war room for ' + esc(c.id) + ' \u2192</button>') + '<button type="button" class="wm2-btn" onclick="document.getElementById(\'wm2-modal\').remove();' + (c.pulse ? 'showScreen(\'pulse\',document.getElementById(\'nav-pulse\'))' : 'cardinalEdenGo&&cardinalEdenGo(\'case\',\'Watchman\')') + '">View in ' + (c.pulse ? 'Pulse' : 'Eden') + '</button></div>' +
       tiles([tile('Who is affected', c.affected.toLocaleString(), c.who), tile('Opened', c.opened ? md(c.opened) + ', ' + c.opened.getFullYear() : '–', c.opened ? tm(c.opened) : ''), tile('Owner', c.owner, 'Watchman assigned'), tile('Days left to fix', c.sla == null ? '–' : c.sla + (c.sla === 1 ? ' day' : ' days'), c.room ? 'War room open' : 'No war room yet')]) +
       '<div class="wm2-bt" style="margin-top:14px">Case timeline, oldest first · ' + steps.length + ' steps' + (inc.length ? ' · ' + inc.length + ' linked incident' + (inc.length === 1 ? '' : 's') : '') + '</div>' +
       '<div style="margin-top:4px;background:#fff;border-radius:12px;padding:2px 12px 6px">' + steps.map(function (x) { return stepRow(x.t, x.txt, x.who, x.tag, x.red); }).join('') + '</div>' +
@@ -57839,6 +57855,23 @@ setInterval(function () {
     ] }
   };
   // Who joined when, who added them, and who replaced whom (Brittany: "when they were added, if they were replaced").
+  function agentThreads() {
+    Object.keys(AGENT).forEach(function (o) {
+      var g = AGENT[o], t = g.team, sg = (SIGN[o] || SIGN.fin), own = t[0], d0 = g.open;
+      THREADS[o] = THREADS[o] || {};
+      THREADS[o][g.id] = [
+        [d0, 10, 20, 'Eve: Cardinal', 'Pulse opened ' + g.id + ': ' + g.model + '. ' + g.what + '. ' + g.affected + ' affected. Owner: ' + own + '.'],
+        [d0, 10, 34, own, 'Turning the agent to answers-only for now. A person approves anything it wants to change. Adam, find out why the answers went wrong.'],
+        [d0, 11, 2, sg[1][1], 'Compliance is on it. I want the list of everyone who got a wrong answer, and the blocked action, in the evidence.'],
+        [d0, 15, 40, 'Adam: Cardinal', 'Diagnosed in Genesis. ' + g.causeShort + '. This is not a model problem: the agent was reading bad information. Replayed 500 past conversations to confirm.'],
+        [d0 + 1, 9, 15, sg[2][1], 'Legal view: the people who got a wrong answer need a correction message. Draft it and I will review today.'],
+        [d0 + 1, 13, 30, own, 'Fix plan: ' + g.fix + '. Adam, test it in Genesis before anything goes to Atonement.'],
+        [d0 + 2, 10, 5, 'Adam: Cardinal', 'Fix tested in Genesis on the same 500 conversations: 0 wrong answers, and the action rule blocked every unapproved change. Ready for Atonement.'],
+        [d0 + 2, 16, 45, sg[3][1], 'Model owner here. Agreed. Roll it out slowly through Atonement: 10% first, and pull back if anything slips.'],
+        [d0 + 2, 17, 30, sg[1][1], 'Correction messages are going out to everyone who got a wrong answer. We are at 61%.']
+      ];
+    });
+  }
   var CHANGES = {
     fin: { 'FIN-1203': [[0, 'Nina Roberts', 'Watchman (auto-assigned as owner)'], [0, 'Eve', 'Watchman'], [0, 'Adam', 'Watchman'], [0, 'Riley Whitmore', 'Watchman (Critical case rule)'], [1, 'Grace Liu', 'Nina Roberts'], [1, 'Lisa Torres', 'Nina Roberts'], [2, 'Morgan Hale', 'Riley Whitmore'], [2, 'Hannah Brooks', 'Nina Roberts'], [30, 'Jordan Ellis', 'Riley Whitmore (escalation)']],
       'FIN-0842': [[0, 'Riley Whitmore', 'Watchman'], [0, 'Nina Roberts', 'Watchman'], [0, 'Eve', 'Watchman'], [0, 'Adam', 'Watchman'], [3, 'Lisa Torres', 'Nina Roberts']] }
@@ -57846,6 +57879,19 @@ setInterval(function () {
   var LEFT = { fin: { 'FIN-1203': [['Grace Liu', -4, 'Moved to FIN-0891 (Auto Loan). Her re-review queue went to Lisa Torres.', 'Lisa Torres']] } };
   var S = window.__wr2 = window.__wr2 || { tab: 'overview', cs: '', local: {}, report: {} };
 
+  // Example 2 (Brittany and Chat 10/10): an agent reliability failure, caught by Pulse. Nothing to do with fairness or fraud:
+  // the agent gave wrong information and tried an action it was not allowed to take. Same war room, same steps, same record.
+  var AGENT = {
+    fin: { id: 'FIN-3310', sev: 'High', model: 'Servicing Agent v2.0', what: 'Gave 214 customers the wrong loan payoff amount and tried to waive a late fee without approval', affected: 214, who: 'Customers who asked the agent for a payoff amount', open: -3, team: ['Nina Roberts', 'Riley Whitmore', 'Morgan Hale', 'Hannah Brooks', 'Eve', 'Adam'],
+      cause: 'A rate table in the data pipeline stopped updating on ', causeShort: 'Stale rate table in the data pipeline', wrong: ['What is my payoff amount?', '$18,240.11', '$18,412.67'], act: 'Waive a $39 late fee', fix: 'Reconnect the rate feed, add a freshness check, and require a person to approve any fee change' },
+    ad: { id: 'AD-3104', sev: 'High', model: 'Work-order agent v1.4', what: 'Closed 37 inspections using an old parts manual and tried to order a part without a mechanic signing off', affected: 37, who: 'Aircraft whose inspections the agent closed', open: -3, team: ['Sarah Chen', 'James Martinez', "Kevin O'Brien", 'Lisa Walker', 'Eve', 'Adam'],
+      cause: 'The manual library the agent reads stopped syncing after a supplier change on ', causeShort: 'Manual library stopped syncing', wrong: ['Is the brake inspection on tail 4417 complete?', 'Yes, complete under manual rev. 12', 'No. Rev. 14 adds two checks'], act: 'Order a hydraulic pump', fix: 'Re-sync the manual library, check the revision before closing any inspection, and require a mechanic to sign every order' },
+    health: { id: 'HS-3402', sev: 'High', model: 'Member Help Agent v1.2', what: 'Told 158 members their prior authorization was approved when it was still pending, and tried to change a claim status without a clinician', affected: 158, who: 'Members who asked about a pending prior authorization', open: -3, team: ['Priyanka Rao', 'Elena Ruiz', 'Marcus Bell', 'Dr. Aisha Patel', 'Eve', 'Adam'],
+      cause: 'The claims status feed started sending a new "received" code on ', causeShort: 'Claims status feed changed its codes', wrong: ['Is my MRI approved?', 'Yes, it is approved', 'Not yet. It is still being reviewed'], act: 'Change a claim to approved', fix: 'Map the new status codes, never say approved unless the claim says approved, and require a clinician for any status change' },
+    fed: { id: 'FED-3015', sev: 'High', model: 'Taxpayer Help Assistant v2.1', what: 'Gave 96 taxpayers the wrong payment plan deadline and tried to set up a plan without an examiner', affected: 96, who: 'Taxpayers who asked about payment plan deadlines', open: -3, team: ['Andre Lewis', 'Patricia Alvarez', 'Owen Clarke', 'Dana Kim', 'Eve', 'Adam'],
+      cause: 'The vendor changed the model without notice on ', causeShort: 'Vendor changed the model without notice', wrong: ['When is my first payment due?', 'November 30', 'November 15'], act: 'Set up a payment plan', fix: 'Pin the vendor model version, check every deadline against the official table, and require an examiner to approve any plan' }
+  };
+  agentThreads();
   function caseOf(o, id) {
     var E = (window.__EDO_EXT || {})[o] || {}, L = (E.biasIncidentsActive || []).concat(E.fraudIncidentsActive || []);
     return L.filter(function (c) { return String(c.caseId).replace(/^#/, '') === id; })[0];
@@ -57853,10 +57899,11 @@ setInterval(function () {
   function rooms(o) {
     var kid = (CLOSED[o] || {}).id;
     // The old war room creates an empty channel for any case it opens; the closed example has its own record.
-    var out = (CD(o).caseChannels || []).filter(function (ch) { return ch.caseId !== kid; }).map(function (ch) {
+    var out = (CD(o).caseChannels || []).filter(function (ch) { return ch.caseId !== kid && ch.caseId !== (AGENT[o] || {}).id; }).map(function (ch) {
       var c = caseOf(o, ch.caseId) || {}, cd = window.cardinalCaseDates ? cardinalCaseDates(o, ch.caseId) : {};
       return { id: ch.caseId, closed: false, sev: c.severity || 'Medium', model: c.modelId || '', what: c.metricViolation || c.cohortDescription || '', who: c.cohortDescription || '', affected: c.affectedCount || 0, status: c.status || 'open', opened: cd.opened || (c.detectedDate ? new Date(c.detectedDate) : day(-7)), sla: c.slaDeadline ? new Date(c.slaDeadline) : null, ch: ch };
     });
+    var g = AGENT[o]; if (g) out.push({ id: g.id, closed: false, pulse: true, sev: g.sev, model: g.model, what: g.what, who: g.who, affected: g.affected, status: 'remediation-in-progress', opened: day(g.open, 10, 20), sla: day(g.open + 14, 17, 0), ch: { members: g.team, messages: ((THREADS[o] || {})[g.id] || []).map(function (x) { return { timestamp: day(x[0], x[1], x[2]).toISOString(), author: x[3], content: x[4] }; }).filter(function (m) { return new Date(m.timestamp) <= new Date(); }) }, g: g });
     var k = CLOSED[o]; if (k) out.push({ id: k.id, closed: true, sev: k.sev, model: k.model, what: k.what, who: k.who, affected: k.affected, status: 'closed', opened: day(k.open, 9, 20), closedAt: day(k.close, 16, 5), sla: null, ch: { members: k.team, messages: closedMsgs(o, k) }, k: k });
     return out;
   }
@@ -57903,7 +57950,15 @@ setInterval(function () {
   function evidence(o, r) {
     var own = (SIGN[o] || SIGN.fin)[0][1], t0 = new Date(r.opened), st = stage(o, r);
     // [name, core, what, by, when, go, needs stage, group, type]
-    var E = [
+    var E = r.pulse ? [
+      ['Pulse alert', 'Pulse', 'The alert that opened this case: the agent, what went wrong, and when', 'Eve', t0, 'pulse', 0, 'Detection', 'doc'],
+      ['Wrong answers found', 'Pulse', 'What the agent said next to what was true', 'Eve', new Date(+t0 + 36e5), 'pulse', 0, 'Detection', 'table'],
+      ['Blocked action log', 'Pulse', 'The action the agent tried without approval, and the rule that stopped it', 'Eve', new Date(+t0 + 36e5 * 1.5), 'pulse', 0, 'Detection', 'table'],
+      ['Affected people list', 'Library', r.affected.toLocaleString() + ' people, each with what they were told', 'Eve', new Date(+t0 + 864e5 * 0.5), 'library', 2, 'Who is affected', 'table'],
+      ['Diagnosis', 'Genesis', 'Why it went wrong, found by replaying past conversations', 'Adam', new Date(+t0 + 36e5 * 5.3), 'genesis', 2, 'Root cause', 'doc'],
+      ['Fix test results', 'Genesis', 'The fix replayed on the same conversations', 'Adam', new Date(+t0 + 864e5 * 2), 'genesis', 3, 'Fix and tests', 'table'],
+      ['Full sealed record', 'Echo', 'Every step, message, and decision, sealed and time-stamped', 'Echo', new Date(), 'echo', 0, 'Sealed record', 'doc']
+    ] : [
       ['Detection alert', 'Eden', 'The alert that opened this case: model, metric, threshold, and time', 'Eve', t0, 'eden', 0, 'Detection', 'doc'],
       ['Disparity by group', 'Eden', 'Approval or flag rate for the affected group next to everyone else', 'Eve', new Date(+t0 + 36e5), 'eden', 0, 'Detection', 'chart'],
       ['Affected people list', 'Library', r.affected.toLocaleString() + ' people, each with what changed for them', 'Eve', new Date(+t0 + 864e5 * 1.5), 'library', 2, 'Who is affected', 'table'],
@@ -57925,7 +57980,7 @@ setInterval(function () {
   }
   function clean(t) { t = String(t || '').replace(/^(AUTO|TECH|SYS|NOTE):\s*/i, ''); return t.charAt(0).toUpperCase() + t.slice(1); }
   function full(d) { d = new Date(d); return ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'][d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear(); }
-  function ago(t) { var m = Math.round((Date.now() - t) / 60000); return m < 60 ? m + ' min ago' : m < 1440 ? Math.round(m / 60) + ' hr ago' : Math.round(m / 1440) + ' days ago'; }
+  function ago(t) { var m = Math.round((Date.now() - t) / 60000); return m < 60 ? m + ' min ago' : m < 1440 ? Math.round(m / 60) + ' hr ago' : (Math.round(m / 1440) === 1 ? '1 day ago' : Math.round(m / 1440) + ' days ago'); }
   function pill(txt, c) { return '<span class="wr2-pill" style="color:' + c + ';border-color:' + c + '55;background:' + c + '12">' + esc(txt) + '</span>'; }
   function statusTxt(r) { return r.closed ? 'Closed' : { monitoring: 'On hold' }[r.status] || 'In progress'; }
 
@@ -57938,7 +57993,7 @@ setInterval(function () {
     var tiles = '<div class="wr2-tiles">' +
       '<div class="wr2-tile click" onclick="wr2Tab(\'close\')" style="--c:#A16207"><span>Stage</span><b>' + (r.closed ? 'Closed' : STAGES[st]) + '</b><em>Step ' + Math.min(8, st + 1) + ' of 8</em></div>' +
       '<div class="wr2-tile click" onclick="wr2Tab(\'dead\')" style="--c:#B91C1C"><span>Next deadline</span><b>' + (dl ? full(dl.t) : r.closed ? 'None' : '–') + '</b><em>' + (dl ? esc(dl.what) : r.closed ? 'Case closed' : '') + '</em></div>' +
-      '<div class="wr2-tile click" onclick="affOpen(\'' + r.id + '\')" style="--c:#1d4ed8"><span>Affected people re-reviewed</span><b>' + pr + '%</b>' + (pr ? '<div class="wr2-bar"><i style="width:' + pr + '%"></i></div>' : '<em>Starts after the fix</em>') + '</div>' +
+      '<div class="wr2-tile click" onclick="affOpen(\'' + r.id + '\')" style="--c:#1d4ed8"><span>' + (r.pulse ? 'Corrections sent' : 'Affected people re-reviewed') + '</span><b>' + pr + '%</b>' + (pr ? '<div class="wr2-bar"><i style="width:' + pr + '%"></i></div>' : '<em>Starts after the fix</em>') + '</div>' +
       '<div class="wr2-tile click" onclick="wr2Tab(\'chat\')" style="--c:#6D28D9"><span>Last activity</span><b>' + (lm ? esc(String(lm.author).replace(/: Cardinal$/, '')) : '–') + '</b><em>' + (lm ? ago(new Date(lm.timestamp)) : '') + '</em></div></div>';
     var where = r.closed ? 'Closed ' + mdy(r.closedAt) + ' after ' + Math.round((r.closedAt - r.opened) / 864e5) + ' days. All four sign-offs are on file and the incident report is final.'
       : 'Now at ' + STAGES[st] + '. ' + done + ' of 4 sign-offs in.' + (dl ? ' Next: ' + esc(dl.what) + ' on ' + md(dl.t) + '.' : '');
@@ -57968,7 +58023,7 @@ setInterval(function () {
   function typeIcon(t) { return t === 'image' ? '\u25A3' : t === 'chart' ? '▥' : t === 'table' ? '☷' : '☰'; }
   function ini(n) { return esc(String(n).replace(/^Dr\. /, '').split(' ').map(function (w) { return w[0]; }).join('').slice(0, 2)); }
   function avStyle(n) { if (/^(Eve|Adam)$/.test(n)) return 'background:#1a1815;color:#FACC15'; var P = ['#fee2e2;color:#B91C1C', '#dbeafe;color:#1d4ed8', '#dcfce7;color:#15803D', '#fef9c3;color:#A16207', '#ede9fe;color:#6D28D9', '#ffedd5;color:#C2410C']; return 'background:' + P[h32(n) % P.length]; }
-  function coreCol(c) { return { Eden: '#ef4444', Obsidian: '#1a1815', Lucid: '#8b5cf6', Library: '#0ea5e9', Genesis: '#22c55e', Atonement: '#f59e0b', Echo: '#64748b', 'War room': '#B91C1C' }[c] || '#475569'; }
+  function coreCol(c) { return { Pulse: '#0d9488', Eden: '#ef4444', Obsidian: '#1a1815', Lucid: '#8b5cf6', Library: '#0ea5e9', Genesis: '#22c55e', Atonement: '#f59e0b', Echo: '#64748b', 'War room': '#B91C1C' }[c] || '#475569'; }
   function attHtml(a) { return /^image\//.test(a.type) ? '<div style="margin-top:6px"><img src="' + a.url + '" alt="' + esc(a.name) + '" onclick="wr2Img(\'' + a.url + '\')" style="max-width:240px;max-height:160px;border-radius:8px;cursor:zoom-in;border:1px solid #e5e7eb"></div>' : '<div style="margin-top:6px"><a href="' + a.url + '" download="' + esc(a.name) + '" style="display:inline-flex;gap:6px;align-items:center;background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:4px 10px;color:#1e3a8a;text-decoration:none;font-weight:600">\u2630 ' + esc(a.name) + '</a></div>'; }
   window.wr2Img = function (u) { var m = document.createElement('div'); m.style.cssText = 'position:fixed;inset:0;background:rgba(26,24,21,.7);z-index:4200;display:flex;align-items:center;justify-content:center;padding:30px;cursor:zoom-out'; m.innerHTML = '<img src="' + u + '" style="max-width:92vw;max-height:88vh;border-radius:12px;background:#fff">'; m.onclick = function () { m.remove(); }; document.body.appendChild(m); };
   window.wr2Attach = function (inp) {
@@ -58011,6 +58066,18 @@ setInterval(function () {
     var bars = function (a, b, la, lb, cb) { return chart('Fairness ratio', lineKey, hb([[la, a, '#ef4444'], [lb, b, cb]], 0.8) + '<div class="wr2-chn">1.00 means both groups get the same result. Below 0.80 is a fail.</div>'); };
     var para = function (t) { return '<div class="wr2-note" style="--c:' + cc + '">' + t + '</div>'; };
     if (e.type === 'image' && e.url) { body = '<img src="' + e.url + '" style="max-width:100%;max-height:60vh;border-radius:10px;display:block;margin:0 auto">'; }
+    else if (r.pulse && /^(Pulse alert|Wrong answers found|Blocked action log|Diagnosis|Fix test results|Affected people list)$/.test(e.name)) {
+      var g = r.g, tbl = function (h, rows) { return '<table class="wr2-t"><thead><tr>' + h.map(function (x) { return '<th>' + x + '</th>'; }).join('') + '</tr></thead><tbody>' + rows.map(function (x) { return '<tr>' + x.map(function (y) { return '<td>' + y + '</td>'; }).join('') + '</tr>'; }).join('') + '</tbody></table>'; };
+      if (e.name === 'Pulse alert') body = facts([['Agent', r.model], ['What went wrong', 'Wrong answers and an action without approval'], ['Wrong answers', '3.1% of chats (normal is under 0.5%)'], ['When', mdy(r.opened) + ', ' + tm(r.opened)], ['Caught by', 'Pulse (checks every agent chat and action)'], ['Who was told', own + ', Compliance on-call']]) +
+        para('<b>What happened:</b> ' + esc(r.what) + '. This has nothing to do with fairness or fraud. The agent was simply wrong, and then it tried to act on its own.<br><b>What it means:</b> Pulse caught both within minutes. The approval rule stopped the action before it happened.');
+      else if (e.name === 'Wrong answers found') body = chart('Wrong answers per day', 'Normal is under 0.5%', '<div class="wr2-hb">' + [['3 days before', 0.4, '#94a3b8'], ['2 days before', 1.1, '#f59e0b'], ['Day it was caught', 3.1, '#ef4444']].map(function (x) { return '<div class="r"><span class="l">' + x[0] + '</span><div class="tr"><i style="width:' + Math.round(x[1] / 3.5 * 100) + '%;background:' + x[2] + '"></i><em style="left:' + Math.round(0.5 / 3.5 * 100) + '%"></em></div><b>' + x[1] + '%</b></div>'; }).join('') + '</div>' + '<div class="wr2-chn">Share of chats with a wrong answer. The dashed line is the 0.5% alert level.</div>') +
+        tbl(['Customer asked', 'Agent said', 'True answer'], [[esc(g.wrong[0]), '<span style="color:#B91C1C">' + esc(g.wrong[1]) + '</span>', '<b>' + esc(g.wrong[2]) + '</b>'], [esc(g.wrong[0]), '<span style="color:#B91C1C">' + esc(g.wrong[1]) + '</span>', '<b>' + esc(g.wrong[2]) + '</b>']]) + para(r.affected + ' people got a wrong answer before the agent was switched to answers-only. Each one is on the affected list and gets a correction.');
+      else if (e.name === 'Blocked action log') body = tbl(['When', 'Agent tried to', 'Stopped by', 'Result'], [[mdy(new Date(+r.opened - 36e5 * 3)) + ', ' + tm(new Date(+r.opened - 36e5 * 3)), esc(g.act), 'Approval rule', pill('Blocked', '#15803D')], [mdy(new Date(+r.opened - 36e5 * 2)) + ', ' + tm(new Date(+r.opened - 36e5 * 2)), esc(g.act), 'Approval rule', pill('Blocked', '#15803D')]]) + para('The agent is allowed to answer questions, not to change anything. Both tries were stopped before anything changed. Pulse flagged the pattern, which is what opened this case.');
+      else if (e.name === 'Diagnosis') body = facts([['What broke', g.causeShort], ['Was the model wrong?', 'No. It read bad information'], ['Found by', 'Adam in Genesis, checked by ' + own], ['How we know', 'Replayed 500 past conversations']]) + para('<b>In plain words:</b> ' + esc(g.cause) + full(new Date(+r.opened - 864e5 * 2)) + '. The agent kept answering with old information. Genesis also found the same weak spot in two other agents, so Atlas now flags them to watch.');
+      else if (e.name === 'Fix test results') body = tbl(['Check', 'Before', 'After', 'Result'], [['Wrong answers', '3.1%', '0%', pill('Passes', '#15803D')], ['Actions without approval', '2 tries', '0', pill('Passes', '#15803D')], ['Answers that still help', '94%', '95%', pill('About the same', '#15803D')], ['Time to answer', '1.8 s', '1.9 s', pill('About the same', '#15803D')]]) + para('Tested by Adam in Genesis on the same 500 past conversations. The fix: ' + esc(g.fix.charAt(0).toLowerCase() + g.fix.slice(1)) + '. Next, Atonement rolls it out slowly.');
+      else { var rows = []; for (var k = 0; k < 6; k++) { var hh = h32(r.id + k); rows.push([(r.id.split('-')[0]) + '-' + (100000 + hh % 899999), mdy(new Date(+r.opened - 864e5 * (1 + hh % 2))), '<span style="color:#B91C1C">' + esc(g.wrong[1]) + '</span>', hh % 3 ? pill('Correction sent', '#15803D') : pill('Waiting', '#A16207')]); }
+        body = tbl(['ID', 'Asked on', 'Was told', 'Correction'], rows) + '<div class="wr2-mut" style="margin-top:6px">Showing 6 of ' + r.affected.toLocaleString() + '. Open the full list for everyone.</div>'; }
+    }
     else if (e.name === 'Detection alert') {
       body = facts([['Model', r.model], ['What crossed the line', r.what], ['Fairness line', '0.80'], ['When', mdy(r.opened) + ', ' + tm(r.opened)], ['Caught by', 'Eden (live check every 5 minutes)'], ['Who was told', own + ', Compliance on-call']]) +
         para('<b>What happened:</b> the model’s results for ' + esc(r.who) + ' dropped below the fairness line Cardinal holds every model to. Eden checks live decisions every five minutes, so the alert went out within minutes of the change.<br><b>What it means:</b> this is a signal to investigate, not yet a conclusion. Lucid explains the cause next.');
@@ -58069,15 +58136,26 @@ setInterval(function () {
     var opened = new Date(r.opened), st = stage(o, r), L = [], add = function (t, kind, txt, sub) { if (t <= new Date() || r.closed) L.push({ t: new Date(t), kind: kind, txt: txt, sub: sub || '' }); };
     var inc = window.cardinalIncidents ? cardinalIncidents(o).filter(function (x) { return x.cs === r.id; }) : [];
     var first = new Date(+opened - 864e5 * 2 - 36e5 * 3);
+    if (r.pulse) {
+      var g = r.g;
+      add(first, 'Incident', g.cause + full(first) + '. Nothing alerted yet', 'Found later by the Genesis diagnosis');
+      add(new Date(+opened - 864e5 - 36e5 * 4), 'Incident', r.model + ' started giving wrong answers: 0.4% of chats went to 3.1%', 'Pulse logged it; below the alert level');
+      add(new Date(+opened - 36e5 * 3), 'Incident', 'Agent tried to ' + g.act.toLowerCase() + ' without approval. The approval rule blocked it', 'Pulse alert sent');
+      add(opened, 'Case', 'Case ' + r.id + ' opened and the war room started', 'Owner assigned by Watchman');
+      add(new Date(+opened + 36e5 / 4), 'Model', 'Agent switched to answers-only; a person approves anything it wants to change', 'Stops more harm while the fix is built');
+      add(new Date(+opened + 36e5 * 5.3), 'Model', 'Diagnosed in Genesis: ' + g.causeShort.toLowerCase(), 'Adam replayed 500 past conversations');
+      add(new Date(+opened + 864e5 * 2), 'Fix', 'Fix passed in Genesis: 0 wrong answers on the same conversations', 'Next: slow rollout in Atonement');
+    } else {
     add(first, 'Incident', 'First sign: ' + r.model + ' results for the affected group started to drift', 'Below the warning level; logged, no alert yet');
     add(new Date(+opened - 864e5 * 1 - 36e5 * 5), 'Incident', r.model + ' kept deciding: ' + Math.round(r.affected * 0.4).toLocaleString() + ' decisions for the affected group that day', 'Pattern getting stronger');
     add(new Date(+opened - 36e5 * 2), 'Incident', 'Crossed the fairness line: ' + r.what, 'Eden alert sent');
     add(opened, 'Case', 'Case ' + r.id + ' opened and the war room started', 'Owner assigned by Watchman');
     add(new Date(+opened + 36e5 * 3), 'Model', r.closed ? 'Model kept running with a human checking the affected group' : 'Model kept running; a person now reviews every decision for the affected group', 'Stops more harm while the fix is built');
-    inc.forEach(function (x) { add(x.t, 'Incident', x.what, 'Caught ' + (x.caught - x.t > 6 * 36e5 ? Math.round((x.caught - x.t) / 36e5) + ' hours later' : 'right away') + ' by ' + x.by); });
     if (st >= 3 || r.closed) add(new Date(+opened + 864e5 * 2), 'Model', 'Root cause confirmed; affected input marked for removal', 'Lucid');
     if (st >= 4 || r.closed) add(new Date(+opened + 864e5 * 6), 'Fix', 'Fixed version started running in shadow next to the live model', 'Sees real cases; makes no real decisions');
     if (st >= 5 || r.closed) for (var k = 3; k >= 1; k--) if (Date.now() - 864e5 * k + 36e5 * 2 > +opened + 864e5 * 6) add(new Date(Date.now() - 864e5 * k + 36e5 * 2), 'Fix', 'Daily shadow check passed', 'Fairness above the 0.80 line');
+    }
+    inc.forEach(function (x) { add(x.t, 'Incident', x.what, 'Caught ' + (x.caught - x.t > 6 * 36e5 ? Math.round((x.caught - x.t) / 36e5) + ' hours later' : 'right away') + ' by ' + x.by); });
     if (r.closed) { add(new Date(+r.closedAt - 36e5 * 4), 'Fix', 'Fix turned on for all decisions after four sign-offs', 'Old version retired'); add(r.closedAt, 'Case', 'Case closed', 'Monitoring continues'); }
     L.sort(function (a, b) { return a.t - b.t; });
     var before = L.filter(function (x) { return x.kind === 'Incident' && x.t < opened; }).length, after = L.filter(function (x) { return x.kind === 'Incident' && x.t >= opened; }).length;
@@ -58211,6 +58289,8 @@ setInterval(function () {
   setInterval(tick, 1000);
   // Watchman's Cases list shows the closed example too.
   window.cardinalWrProgress = function (o, id) { var r = rooms(o).filter(function (x) { return x.id === id; })[0]; return r ? progress(o, r) : 0; };
+  window.cardinalPulseRoom = function (o) { return rooms(o || org()).filter(function (r) { return r.pulse; })[0]; };
+  window.cardinalPulseCase = function (o) { return AGENT[o || org()]; };
   window.cardinalClosedRoom = function (o) { return rooms(o).filter(function (r) { return r.closed; })[0]; };
   var css = document.createElement('style');
   css.textContent = '#screen-warroom.wr2-on>*:not(#wr2){display:none!important}#wr2{padding:4px 0 24px;color:#1a1815}' +
@@ -58318,7 +58398,7 @@ setInterval(function () {
   window.p54GenCov = function () { p54Open('cov', 'vendors', genNav()); };
   function sidebar() {
     var w = watchNav(); if (!w) return;
-    var lab = w.querySelector('.nav-item-label span span'); if (lab && lab.textContent !== '· Cases') lab.textContent = '· Cases';
+    var lab = w.querySelector('.nav-item-label span span'); if (lab && lab.textContent !== '· Incidents and response') lab.textContent = '· Incidents and response';
     var oc = "window.__wmMode='watch';showScreen('sentinel',this);setTimeout(function(){try{wmTab('cases')}catch(e){}},80)";
     if (w.getAttribute('onclick') !== oc) { w.setAttribute('onclick', oc); w.title = 'Watchman: cases, incidents, and war rooms'; }
     var c = document.getElementById('nav-coverage');
@@ -58427,6 +58507,11 @@ setInterval(function () {
       ['SHD-PC-01', 'Personal chatbot accounts', 'Shadow AI', 'Shadow', 'No owner', 'D---', null, 'Not approved; taxpayer details pasted Oct 9', '', 'Consumer chatbots used with agency data.', '']
     ]
   };
+  // Example 2 agents (Pulse core): each one has an open reliability case.
+  SYS.fin.splice(3, 0, ['AGT-SV-20', 'Servicing Agent v2.0', 'Internal', 'Agent', 'Hannah Brooks', 'DCEM', 0, '', 'FIN-3310', 'Answers customer questions about loans and payments. Can suggest a change; a person must approve it.', '']);
+  SYS.ad.splice(3, 0, ['AGT-WO-14', 'Work-order agent v1.4', 'Internal', 'Agent', 'Lisa Walker', 'DCEM', 0, '', 'AD-3104', 'Closes inspections and suggests parts orders. A mechanic must sign every order.', 'SYS-FH-01']);
+  SYS.health.splice(3, 0, ['AGT-MH-12', 'Member Help Agent v1.2', 'Internal', 'Agent', 'Dr. Aisha Patel', 'DCEM', 0, '', 'HS-3402', 'Answers member questions about claims and prior authorizations. Cannot change a claim.', 'SYS-CL-01']);
+  SYS.fed.splice(3, 0, ['VND-TH-21', 'Taxpayer Help Assistant v2.1', 'Third-party', 'Agent', 'Dana Kim', 'DCEM', 0, 'The vendor changed the model without notice; version now pinned', 'FED-3015', 'Vendor agent that answers taxpayer questions about payment plans. Cannot set up a plan on its own.', '']);
   // Echo history for the end-to-end example: [days ago, what happened, by]
   var STORY = {
     fin: { sys: 'SYS-LR-01', vendor: 'VND-LX-01', agent: 'AGT-LX-02', incident: 'Lexora Drafting Agent put an applicant’s full account number into a letter draft sent to the outside print vendor.', case: '',
@@ -58653,6 +58738,8 @@ setInterval(function () {
     if (c) return { cs: cs, n: c.affectedCount || 0, who: c.cohortDescription || '', model: c.modelId || '' };
     var k = window.cardinalClosedRoom ? cardinalClosedRoom(o) : null;
     if (k && k.id === cs) return { cs: cs, n: k.affected, who: k.who, model: k.model, closed: true };
+    var g = window.cardinalPulseRoom ? cardinalPulseRoom(o) : null;
+    if (g && g.id === cs) return { cs: cs, n: g.affected, who: g.who, model: g.model, pulse: true };
     return null;
   }
   function st(o, cs) { return A[o + cs] = A[o + cs] || { removed: {}, q: '', page: 0, last: null }; }
@@ -58660,8 +58747,8 @@ setInterval(function () {
   function pct(o, cs, info) { if (info.closed) return 100; try { return window.cardinalWrProgress ? cardinalWrProgress(o, cs) : 0; } catch (e) { return 0; } }
   function row(o, cs, info, k) {
     var i = idx(cs, k), p = window.cardinalPerson ? cardinalPerson(i) : { i: i, name: 'Person ' + k, id: cs + '-' + k, st: '', city: '' }, h = h32(cs + k), done = k < Math.round(info.n * pct(o, cs, info) / 100);
-    var orig = /fraud|flag/i.test(info.who + info.model) ? 'Flagged for review' : /claim|care|denial/i.test(info.who + info.model) ? 'Claim denied' : /aircraft|base|parts/i.test(info.who + info.model) ? 'Warning missed' : 'Declined';
-    return { k: k, i: i, name: p.name, id: p.id, loc: (p.city ? p.city + ', ' : '') + (p.st || ''), orig: orig, rev: done ? (h % 5 ? 'Corrected' : 'Re-reviewed, no change') : 'Waiting', removed: st(o, cs).removed[k] };
+    var orig = info.pulse ? 'Got a wrong answer' : /fraud|flag/i.test(info.who + info.model) ? 'Flagged for review' : /claim|care|denial/i.test(info.who + info.model) ? 'Claim denied' : /aircraft|base|parts/i.test(info.who + info.model) ? 'Warning missed' : 'Declined';
+    return { k: k, i: i, name: p.name, id: p.id, loc: (p.city ? p.city + ', ' : '') + (p.st || ''), orig: orig, rev: done ? (info.pulse ? 'Correction sent' : h % 5 ? 'Corrected' : 'Re-reviewed, no change') : 'Waiting', removed: st(o, cs).removed[k] };
   }
   function seal(o, cs, txt) {
     var p = window.getActivePersona ? getActivePersona() : null, who = p ? p.name : 'You';
@@ -58671,7 +58758,7 @@ setInterval(function () {
   window.cardinalAffectedLists = function (o) {
     o = o || org(); var E = (window.__EDO_EXT || {})[o] || {}, seen = {}, out = [];
     (E.biasIncidentsActive || []).concat(E.fraudIncidentsActive || []).forEach(function (c) { var id = String(c.caseId).replace(/^#/, ''); if (seen[id] || !c.affectedCount) return; seen[id] = 1; out.push(caseInfo(o, id)); });
-    var k = window.cardinalClosedRoom ? cardinalClosedRoom(o) : null; if (k && !seen[k.id]) out.push(caseInfo(o, k.id));
+    var k = window.cardinalClosedRoom ? cardinalClosedRoom(o) : null; if (k && !seen[k.id]) out.push(caseInfo(o, k.id)); var g = window.cardinalPulseRoom ? cardinalPulseRoom(o) : null; if (g && !seen[g.id]) { seen[g.id] = 1; out.splice(out.length - (k ? 1 : 0), 0, caseInfo(o, g.id)); }
     return out;
   };
   window.affOpen = function (cs) { draw(org(), cs, true); };
@@ -59117,6 +59204,138 @@ setInterval(function () {
     Object.keys(map).forEach(function (k) { var c = document.getElementById('lib-tab-content-' + k); if (c && c.style.display !== 'none' && c.offsetParent !== null) { c.style.display = 'none'; openPeople(map[k]); } });
     if (box.style.display !== 'none' && box.__k !== org() + S.sub) { box.innerHTML = html(org()); box.__k = org() + S.sub; }
     if (box.style.display !== 'none' && !tab.classList.contains('active')) tab.classList.add('active');
+  }
+  setInterval(function () { try { tick(); } catch (e) {} }, 500);
+})();
+</script>
+<script data-p="p61_pulse">
+// 10/10 (Brittany: "Project Cardinal is not just about fairness and fraud... there are systems where fairness and fraud
+// don't even matter and the agent, the model, the AI system, the third party will still mess up... add another core").
+// Pulse · Reliability and safety: is every AI working the way it should? It watches live for wrong answers, drift, broken
+// data, agents acting without approval, attacks and leaks, vendor changes, and uptime, speed, and cost.
+// Pulse finds problems; Genesis works out why; Atlas is the map of what exists. Example 2 (with Chat): an agent
+// reliability failure that runs through the same Watchman case, war room, Genesis test, Atonement rollout, and Echo record.
+// Also renames the sidebar labels (Brittany and Chat 10/10).
+(function () {
+  function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;'); }
+  function org() { return window.currentOrg || 'fin'; }
+  var MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  function tm(d) { d = new Date(d); var h = d.getHours(), m = d.getMinutes(); return ((h % 12) || 12) + ':' + (m < 10 ? '0' : '') + m + (h < 12 ? ' AM' : ' PM'); }
+  function md(d) { d = new Date(d); return MON[d.getMonth()] + ' ' + d.getDate(); }
+  function day(n, h, m) { var x = new Date(); return new Date(x.getFullYear(), x.getMonth(), x.getDate() + n, h || 9, m || 0); }
+  var TEAL = '#0d9488';
+
+  // ── Sidebar labels ───────────────────────────────────────────────
+  var LBL = { eden: 'Fairness and bias', obsidian: 'Fraud intelligence', genesis: 'Testing and diagnosis', atonement: 'Remediation', halo: 'Risk forecasting', sentinel: 'Incidents and response', pulse: 'Reliability and safety', cardinallibrary: 'Catalog' };
+  function labels() {
+    [].forEach.call(document.querySelectorAll('.sidebar .nav-item'), function (n) {
+      var m = /showScreen\('(\w+)'/.exec(n.getAttribute('onclick') || ''); if (!m || !LBL[m[1]]) return;
+      var want = '· ' + LBL[m[1]], sub = [].filter.call(n.querySelectorAll('span'), function (s) { return /opacity:\s*\.6/.test(s.getAttribute('style') || ''); })[0];
+      if (!sub && m[1] === 'cardinallibrary') { var lab = n.querySelector('.nav-item-label') || n, w = document.createTreeWalker(lab, NodeFilter.SHOW_TEXT), t; while ((t = w.nextNode())) { if (/Cardinal Library/.test(t.nodeValue)) { var sp = document.createElement('span'); sp.innerHTML = 'Library <span style="opacity:.6;font-size:.92em">· Catalog</span>'; t.parentNode.replaceChild(sp, t); break; } } return; }
+      if (sub && sub.textContent !== want) sub.textContent = want;
+    });
+  }
+
+  // ── Data ─────────────────────────────────────────────────────────
+  // [name, kind, owner, accuracy now, wrong answers, actions blocked (24h), data freshness, uptime, cost vs normal, status, note]
+  var SYS = {
+    fin: [['Servicing Agent v2.0', 'Agent', 'Hannah Brooks', '95%', '0.3%', '0', 'Fresh (5 min)', '99.9%', 'Normal', 'watch', 'Answers-only while the fix rolls out (FIN-3310)'],
+      ['Credit Scoring v3.4', 'Model', 'Hannah Brooks', '91%', 'n/a', 'n/a', 'Fresh (5 min)', '99.98%', 'Normal', 'ok', ''],
+      ['Collections AI v1.3', 'Agent', 'Lisa Torres', '93%', '0.4%', '1', 'Fresh (5 min)', '99.9%', 'Normal', 'ok', '1 fee waiver blocked this week'],
+      ['Customer Assistant v2.0', 'System', 'Riley Whitmore', '90%', '1.2%', '0', 'Fresh (1 hr)', '99.7%', '+18%', 'warn', 'Wrong answers rising since Oct 7'],
+      ['Lexora Drafting Agent', 'Vendor agent', 'Morgan Hale', 'Partly visible', '0.6%', '0', 'Vendor reported', '99.5%', 'Normal', 'warn', 'Can only see its outputs'],
+      ['Underwriting v4.1', 'Model', 'Hannah Brooks', '89% (was 92%)', 'n/a', 'n/a', 'Fresh (5 min)', '99.99%', 'Normal', 'warn', 'Slow drift over 6 weeks']],
+    ad: [['Work-order agent v1.4', 'Agent', 'Lisa Walker', '97%', '0.2%', '0', 'Fresh (10 min)', '99.9%', 'Normal', 'watch', 'Answers-only while the fix rolls out (AD-3104)'],
+      ['Fleet Health v2.4', 'Model', 'Lisa Walker', '88%', 'n/a', 'n/a', 'Fresh (10 min)', '99.95%', 'Normal', 'ok', ''],
+      ['Supplier Chat Agent v1.0', 'Agent', 'Supply chain lead', '91%', '0.9%', '0', 'Fresh (1 hr)', '99.6%', '+11%', 'warn', 'Not yet on live checks'],
+      ['Maintenance Routing v1.2', 'Model', 'James Park', '94%', 'n/a', 'n/a', 'Late (6 hr)', '99.9%', 'Normal', 'warn', 'Crew roster feed is late'],
+      ['Maintenance manual assistant', 'Vendor agent', 'James Martinez', 'Partly visible', '0.9%', '0', 'Vendor reported', '99.4%', 'Normal', 'ok', '']],
+    health: [['Member Help Agent v1.2', 'Agent', 'Dr. Aisha Patel', '96%', '0.3%', '0', 'Fresh (5 min)', '99.9%', 'Normal', 'watch', 'Answers-only while the fix rolls out (HS-3402)'],
+      ['Claims Adjudication v1.9', 'Model', 'Priyanka Rao', '86%', 'n/a', 'n/a', 'Fresh (5 min)', '99.97%', 'Normal', 'ok', ''],
+      ['Prior-auth agent', 'Agent', 'Elena Ruiz', '94%', '0.5%', '4', 'Fresh (5 min)', '99.8%', 'Normal', 'warn', '4 attack prompts blocked this week'],
+      ['Ambient scribe vendor', 'Vendor agent', 'Dr. Maya Osei', 'Partly visible', '1.4%', '0', 'Vendor reported', '99.2%', '+24%', 'warn', 'Notes with made-up details, 3 this week'],
+      ['Triage Priority v2.0', 'Model', 'Care management', '92%', 'n/a', 'n/a', 'Fresh (5 min)', '99.99%', 'Normal', 'ok', '']],
+    fed: [['Taxpayer Help Assistant v2.1', 'Vendor agent', 'Dana Kim', '95%', '0.4%', '0', 'Fresh (15 min)', '99.8%', 'Normal', 'watch', 'Vendor version pinned; fix rolling out (FED-3015)'],
+      ['IRS Tax Fraud Detection v3.1', 'Model', 'Andre Lewis', '91%', 'n/a', 'n/a', 'Fresh (15 min)', '99.95%', 'Normal', 'ok', 'Launch paused'],
+      ['Notice-drafting agent', 'Agent', 'Owen Clarke', '97%', '0.2%', '0', 'Fresh (15 min)', '99.9%', 'Normal', 'ok', ''],
+      ['Return Routing v1.4', 'Model', 'Operations lead', '84% (was 90%)', 'n/a', 'n/a', 'Late (1 day)', '99.6%', 'Normal', 'warn', 'Misrouted a batch on Oct 8'],
+      ['Identity proofing vendor', 'Vendor', 'Owen Clarke', 'Partly visible', 'n/a', 'n/a', 'Vendor reported', '98.9%', '+9%', 'warn', 'Fails more for recent address changes']]
+  };
+  // The seven things Pulse checks: [name, plain meaning, color]
+  var CHECKS = [['Wrong answers', 'An agent or chatbot says something that is not true', '#ef4444'], ['Accuracy and drift', 'A model slowly gets worse as the world changes', '#f59e0b'], ['Broken data', 'Data going in is missing, late, or wrong', '#8b5cf6'], ['Actions without approval', 'An agent tries to change something it is not allowed to', '#C2410C'], ['Attacks and leaks', 'Prompt attacks, or private data where it should not be', '#B91C1C'], ['Vendor changes', 'A third-party model changes without telling you', '#0ea5e9'], ['Uptime, speed, and cost', 'Down, slow, or suddenly costing far more', '#64748b']];
+  function counts(o) {
+    var S = SYS[o] || [], n = function (re, col) { return S.filter(function (r) { return re.test(r[col]); }).length; };
+    var g = window.cardinalPulseCase ? cardinalPulseCase(o) : null;
+    return [1 + n(/[1-9]\.\d%/, 4), n(/was/, 3), 1 + n(/Late/, 6), 1 + S.filter(function (r) { return +r[5] > 0; }).length, o === 'health' ? 1 : 0, (o === 'fed' ? 1 : 0) + n(/Partly/, 3) - (o === 'fed' ? 0 : 0), n(/\+/, 8)];
+  }
+  function issues(o) {
+    var g = window.cardinalPulseCase ? cardinalPulseCase(o) : null, S = SYS[o] || [], out = [];
+    if (g) out.push({ t: day(g.open, 7, 20), sev: 'High', sys: g.model, what: g.what, check: 'Wrong answers, Actions without approval', cs: g.id });
+    S.forEach(function (r, k) { if (r[9] === 'warn') out.push({ t: day(-(k % 3) - 1, 8 + k, 15), sev: 'Medium', sys: r[0], what: r[10], check: /drift|was/i.test(r[10] + r[3]) ? 'Accuracy and drift' : /late|feed/i.test(r[10] + r[6]) ? 'Broken data' : /attack/i.test(r[10]) ? 'Attacks and leaks' : /made-up|wrong/i.test(r[10]) ? 'Wrong answers' : /outputs|vendor/i.test(r[10] + r[1]) ? 'Vendor changes' : 'Uptime, speed, and cost' }); });
+    return out;
+  }
+
+  // ── Screen ───────────────────────────────────────────────────────
+  var BTN = 'font:inherit;font-size:12px;font-weight:600;border:none;background:#1a1815;color:#fff;border-radius:8px;padding:6px 12px;cursor:pointer;white-space:nowrap';
+  function card(title, color, inner) { return '<div class="pu-card" style="border-top-color:' + color + '"><div class="pu-ct"><span style="background:' + color + '"></span>' + title + '</div>' + inner + '</div>'; }
+  function stPill(s) { var c = { ok: ['Healthy', '#15803D'], warn: ['Needs a look', '#A16207'], watch: ['Open case', '#B91C1C'] }[s] || ['Healthy', '#15803D']; return '<span class="pu-pill" style="color:' + c[1] + ';border-color:' + c[1] + '55;background:' + c[1] + '12">' + c[0] + '</span>'; }
+  window.pulseToGenesis = function (sys) { try { cardinalShowToast('Sent to Genesis. Adam will diagnose ' + sys + ' and post what he finds.'); } catch (e) {} };
+  window.pulseReview = function (btn) { btn.textContent = 'You are reviewing it'; btn.disabled = true; btn.style.opacity = '.6'; };
+  function example(o) {
+    var g = window.cardinalPulseCase ? cardinalPulseCase(o) : null; if (!g) return '';
+    var steps = [['Pulse', TEAL, 'Caught it', 'Wrong answers jumped to 3.1% of chats, and the agent tried to ' + g.act.toLowerCase() + ' without approval. The approval rule blocked it.'], ['Watchman', '#B91C1C', 'Opened a case', g.id + ' opened with an owner, a deadline, and a war room.'], ['People', '#1a1815', 'Took control', 'The agent was switched to answers-only. A person approves anything it wants to change.'], ['Genesis', '#22c55e', 'Diagnosed and tested', g.causeShort + '. The fix was replayed on 500 past conversations: 0 wrong answers.'], ['Atonement', '#f59e0b', 'Rolls it out and makes it right', 'The fix goes live slowly. Everyone who got a wrong answer gets a correction.'], ['Echo', '#64748b', 'Keeps the record', 'Every step, message, and sign-off is sealed for regulators and the board.']];
+    return card('Example 2 · An agent that gave wrong answers', TEAL,
+      '<div style="color:#334155;margin-bottom:10px"><b style="font-weight:600;color:#1a1815">' + esc(g.model) + ':</b> ' + esc(g.what) + '. Not a fairness or fraud problem: the agent was simply wrong, then tried to act on its own. It runs through the same steps as Example 1 (the lending case), on the same infrastructure.</div>' +
+      '<div class="pu-steps">' + steps.map(function (s, i) { return '<div class="pu-step" style="--c:' + s[1] + '"><div class="pu-n">' + (i + 1) + '</div><div><div class="pu-sc">' + s[0] + '</div><div class="pu-sh">' + s[2] + '</div><div class="pu-sb">' + esc(s[3]) + '</div></div></div>'; }).join('') + '</div>' +
+      '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px"><button type="button" style="' + BTN + '" onclick="openWarRoomCase(\'' + g.id + '\')">View the ' + g.id + ' war room →</button><button type="button" style="' + BTN + '" onclick="showScreen(\'atlas\',document.getElementById(\'nav-atlas\'))">View it in Atlas</button></div>');
+  }
+  function html(o) {
+    var S = SYS[o] || [], C = counts(o), I = issues(o), ok = S.filter(function (r) { return r[9] === 'ok'; }).length;
+    var tile = function (k, v, c, sub) { return '<div class="pu-tile" style="--c:' + c + '"><span>' + k + '</span><b>' + v + '</b><em>' + sub + '</em></div>'; };
+    return '<div class="pu-head"><div class="pu-tag">Pulse · Reliability and safety</div><div style="font-size:13px;color:#334155;margin-top:4px">Is every AI working the way it should? Pulse watches every model, agent, and vendor AI, live, for the problems that are not about fairness or fraud. When it finds one, Genesis works out why and Watchman opens a case if it is serious.</div><div class="pu-live"><i></i>Live: checks every chat, action, and data feed every 5 minutes</div></div>' +
+      '<div class="pu-tiles">' + tile('AI watched', S.length, '#1d4ed8', 'models, agents, and vendors') + tile('Working fine', ok, '#15803D', 'nothing to look at') + tile('Needs a look', S.length - ok - 1, '#A16207', 'flagged, no case yet') + tile('Open case', 1, '#B91C1C', 'agent reliability') + tile('Checks today', (S.length * 288).toLocaleString(), TEAL, 'every 5 minutes') + '</div>' +
+      card('What Pulse checks', TEAL, '<div class="pu-checks">' + CHECKS.map(function (c, i) { var n = C[i] || 0; return '<div class="pu-check" style="--c:' + c[2] + '"><b>' + c[0] + '</b><span>' + c[1] + '</span><em class="' + (n ? 'on' : '') + '">' + (n ? n + ' flagged' : 'All clear') + '</em></div>'; }).join('') + '</div>') +
+      card('Live issues · newest first', '#B91C1C', I.sort(function (a, b) { return b.t - a.t; }).map(function (x) { return '<div class="pu-issue"><div style="flex:1;min-width:240px"><div><b style="font-weight:600">' + esc(x.sys) + '</b> <span class="pu-pill" style="color:' + (x.sev === 'High' ? '#B91C1C' : '#A16207') + ';border-color:' + (x.sev === 'High' ? '#B91C1C55' : '#A1620755') + '">' + x.sev + '</span> <span class="pu-chk">' + esc(x.check) + '</span></div><div style="color:#334155;margin-top:2px">' + esc(x.what) + '</div><div class="pu-when">' + md(x.t) + ', ' + tm(x.t) + '</div></div><div style="display:flex;gap:6px;flex-wrap:wrap">' + (x.cs ? '<button type="button" style="' + BTN + '" onclick="openWarRoomCase(\'' + x.cs + '\')">View case ' + x.cs + '</button>' : '<button type="button" style="' + BTN + '" onclick="pulseToGenesis(\'' + esc(x.sys) + '\')">Send to Genesis</button><button type="button" style="' + BTN + '" onclick="pulseReview(this)">I’ll review it</button>') + '</div></div>'; }).join('')) +
+      card('Every AI, right now', '#1d4ed8', '<div style="overflow:auto"><table class="pu-t"><thead><tr><th>AI</th><th>Status</th><th>Accuracy</th><th>Wrong answers</th><th>Blocked actions (24 hr)</th><th>Data</th><th>Uptime</th><th>Cost</th></tr></thead><tbody>' + S.map(function (r) { return '<tr><td><div style="font-weight:600">' + esc(r[0]) + '</div><div class="pu-when">' + esc(r[1]) + ' · ' + esc(r[2]) + '</div>' + (r[10] ? '<div style="font-size:11.5px;color:' + (r[9] === 'ok' ? '#475569' : '#A16207') + '">' + esc(r[10]) + '</div>' : '') + '</td><td>' + stPill(r[9]) + '</td><td>' + esc(r[3]) + '</td><td>' + esc(r[4]) + '</td><td>' + esc(r[5]) + '</td><td' + (/Late/.test(r[6]) ? ' style="color:#A16207"' : '') + '>' + esc(r[6]) + '</td><td>' + esc(r[7]) + '</td><td' + (/\+/.test(r[8]) ? ' style="color:#A16207"' : '') + '>' + esc(r[8]) + '</td></tr>'; }).join('') + '</tbody></table></div>') +
+      example(o) +
+      card('How Pulse is different', '#64748b', '<div class="pu-diff"><div><b>Pulse</b><span>Is it working right now? Watches live and raises the alarm.</span></div><div><b>Genesis</b><span>Why did it break? Tests and diagnoses once a problem is found.</span></div><div><b>Atlas</b><span>What AI do we have? The map of every system and how much Cardinal can see.</span></div><div><b>Eden and Obsidian</b><span>Is it fair? Is it fraud? The two problems Pulse does not cover.</span></div></div>');
+  }
+
+  var css = document.createElement('style');
+  css.textContent = '#screen-pulse{padding:4px 0 30px}#pulse-root{font-size:12.5px;color:#1a1815}' +
+    '.pu-head{background:#fff;border:1px solid rgba(26,24,21,.08);border-left:4px solid ' + TEAL + ';border-radius:14px;padding:12px 16px;margin:0 0 14px}.pu-tag{font-size:11px;font-weight:700;color:' + TEAL + ';text-transform:uppercase;letter-spacing:.5px}.pu-live{display:flex;align-items:center;gap:6px;font-size:11.5px;color:#475569;margin-top:6px}.pu-live i{width:7px;height:7px;border-radius:50%;background:#22c55e}' +
+    '.pu-tiles{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin:0 0 14px}@media (max-width:900px){.pu-tiles{grid-template-columns:1fr 1fr}}.pu-tile{background:#fff;border:1px solid rgba(26,24,21,.08);border-left:4px solid var(--c);border-radius:12px;padding:10px 12px}.pu-tile span{display:block;font-size:11.5px;color:#64748b}.pu-tile b{display:block;font-size:20px;font-weight:700;color:var(--c)}.pu-tile em{font-style:normal;font-size:11.5px;color:#64748b}' +
+    '.pu-card{background:#fff;border:1px solid rgba(26,24,21,.08);border-top:3px solid;border-radius:14px;padding:12px 16px;margin:0 0 14px;box-shadow:0 1px 3px rgba(26,24,21,.05),0 8px 20px rgba(26,24,21,.06)}.pu-ct{display:flex;align-items:center;gap:7px;font-size:11px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.4px;margin-bottom:10px}.pu-ct span{width:8px;height:8px;border-radius:50%}' +
+    '.pu-checks{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}@media (max-width:1000px){.pu-checks{grid-template-columns:1fr 1fr}}.pu-check{border:1px solid #e5e7eb;border-left:3px solid var(--c);border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:3px}.pu-check b{font-weight:600;font-size:13px}.pu-check span{color:#64748b;font-size:11.5px}.pu-check em{font-style:normal;font-size:11.5px;font-weight:600;color:#15803D}.pu-check em.on{color:#A16207}' +
+    '.pu-issue{display:flex;gap:12px;align-items:center;flex-wrap:wrap;padding:10px 0;border-top:1px dashed rgba(26,24,21,.12)}.pu-issue:first-child{border-top:none}.pu-when{font-size:11.5px;color:#475569;margin-top:2px}.pu-chk{font-size:11px;color:' + TEAL + ';background:#f0fdfa;border-radius:999px;padding:2px 8px}' +
+    '.pu-pill{display:inline-block;font-size:11px;font-weight:600;border:1px solid;border-radius:999px;padding:1px 9px;white-space:nowrap}' +
+    '.pu-t{width:100%;border-collapse:collapse;font-size:12.5px}.pu-t th{text-align:left;font-size:11.5px;font-weight:600;color:#64748b;padding:8px 10px;background:#f1f5f9;white-space:nowrap}.pu-t td{padding:9px 10px;border-top:1px solid #eef0f3;vertical-align:top}#screen-pulse .pu-t td{background:#fff!important}#screen-pulse .pu-t tr:nth-child(even) td{background:#f8fafc!important}.pu-t td:first-child{min-width:220px}' +
+    '.pu-steps{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}@media (max-width:900px){.pu-steps{grid-template-columns:1fr}}.pu-step{display:flex;gap:10px;border:1px solid #e5e7eb;border-radius:12px;padding:10px 12px}.pu-n{flex-shrink:0;width:24px;height:24px;border-radius:50%;background:var(--c);color:#fff;font-weight:700;font-size:12px;display:flex;align-items:center;justify-content:center}.pu-sc{font-size:11px;font-weight:700;color:var(--c);text-transform:uppercase;letter-spacing:.4px}.pu-sh{font-weight:600;font-size:13px;margin:1px 0 2px}.pu-sb{color:#475569;font-size:12px;line-height:1.45}' +
+    '.pu-diff{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}@media (max-width:900px){.pu-diff{grid-template-columns:1fr 1fr}}.pu-diff div{background:#f8fafc;border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:3px}.pu-diff b{font-weight:600}.pu-diff span{color:#475569;font-size:12px}';
+  document.head.appendChild(css);
+
+  function ensure() {
+    var ref = document.getElementById('screen-obsidian') || document.getElementById('screen-eden'); if (!ref) return null;
+    var scr = document.getElementById('screen-pulse');
+    if (!scr) { scr = document.createElement('div'); scr.id = 'screen-pulse'; scr.className = 'screen'; scr.innerHTML = '<div id="pulse-root"></div>'; ref.parentNode.insertBefore(scr, ref.nextSibling); }
+    var ob = [].filter.call(document.querySelectorAll('.sidebar .nav-item'), function (n) { return /showScreen\('obsidian'/.test(n.getAttribute('onclick') || ''); })[0];
+    var a = document.getElementById('nav-pulse');
+    if (ob && !a) {
+      a = ob.cloneNode(true); a.id = 'nav-pulse'; a.classList.remove('active'); a.setAttribute('onclick', "showScreen('pulse',this)"); a.title = 'Pulse: is every AI working the way it should?'; a.setAttribute('data-label', 'Pulse'); a.__plain = true;
+      var b = a.querySelector('.nav-badge'); if (b) b.remove();
+      var svg = a.querySelector('svg'); if (svg) svg.innerHTML = '<path d="M1 7h2.6l1.6-3.6 2.4 7.2 1.6-3.6H13" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>';
+      var sp = [].filter.call(a.querySelectorAll('span'), function (s) { return /opacity:\s*\.6/.test(s.getAttribute('style') || ''); })[0];
+      if (sp && sp.parentNode) sp.parentNode.innerHTML = 'Pulse <span style="opacity:.6;font-size:.92em">· Reliability and safety</span>';
+    }
+    if (ob && a && a.previousElementSibling !== ob) ob.parentNode.insertBefore(a, ob.nextSibling);
+    return scr;
+  }
+  var last = '';
+  function tick() {
+    labels();
+    var scr = ensure(); if (!scr || !scr.classList.contains('active')) { last = ''; return; }
+    var tt = document.getElementById('topbar-title'); if (tt && tt.textContent !== 'Pulse: Reliability and Safety') tt.textContent = 'Pulse: Reliability and Safety';
+    var k = org(); if (last !== k) { last = k; document.getElementById('pulse-root').innerHTML = html(k); }
   }
   setInterval(function () { try { tick(); } catch (e) {} }, 500);
 })();
