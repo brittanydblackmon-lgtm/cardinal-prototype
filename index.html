@@ -58080,8 +58080,17 @@ setInterval(function () {
     var status = r.closed ? ['Fixed and live', '#15803D', 'The fixed version makes every decision; the old one is retired.'] : st >= 5 ? ['Running with a person checking; fix waiting on sign-offs', '#A16207', 'The fixed version is ready in shadow. It turns on after all four sign-offs.'] : st >= 4 ? ['Running with a person checking; fix in shadow', '#A16207', 'The fixed version is being tested on real cases without making decisions.'] : ['Running with a person checking', '#B91C1C', 'No fix yet. A person reviews the affected group until one is ready.'];
     var C = { Incident: '#B91C1C', Case: '#1a1815', Model: '#1d4ed8', Fix: '#15803D' }, last = '';
     return '<div class="wr2-tiles"><div class="wr2-tile" style="--c:' + status[1] + '"><span>Model status now</span><b style="font-size:14px">' + status[0] + '</b><em>' + status[2] + '</em></div><div class="wr2-tile" style="--c:#B91C1C"><span>Incidents before the case opened</span><b>' + before + '</b><em>first on ' + full(first) + '</em></div><div class="wr2-tile" style="--c:#C2410C"><span>Incidents since</span><b>' + after + '</b><em>' + (after ? 'see below' : 'none') + '</em></div></div>' +
-      card('What the system did, oldest first \u00b7 sealed in Echo', '#1d4ed8', L.map(function (x) { var dk = full(x.t), sep = dk !== last ? '<div class="wr2-logd">' + (last = dk) + '</div>' : ''; return sep + '<div class="wr2-line"><span class="wr2-when">' + tm(x.t) + '</span>' + pill(x.kind, C[x.kind]) + '<span style="flex:1">' + esc(x.txt) + (x.sub ? '<div class="wr2-mut">' + esc(x.sub) + '</div>' : '') + '</span></div>'; }).join(''));
+      card('What the system did \u00b7 sealed in Echo', '#1d4ed8', (function () {
+        // Newest first by default; a switch flips it to oldest first (Brittany 10/10: "always start with most recent").
+        var list = function (A) { last = ''; return A.map(function (x) { var dk = full(x.t), sep = dk !== last ? '<div class="wr2-logd">' + (last = dk) + '</div>' : ''; return sep + '<div class="wr2-line"><span class="wr2-when">' + tm(x.t) + '</span>' + pill(x.kind, C[x.kind]) + '<span style="flex:1">' + esc(x.txt) + (x.sub ? '<div class="wr2-mut">' + esc(x.sub) + '</div>' : '') + '</span></div>'; }).join(''); };
+        var old = window.__wr2SysOld === 1;
+        return '<div class="wr2-ord"><button type="button" class="' + (old ? '' : 'on') + '" onclick="wr2SysOrder(0,this)">Newest first</button><button type="button" class="' + (old ? 'on' : '') + '" onclick="wr2SysOrder(1,this)">Oldest first</button></div>' +
+          '<div class="wr2-sysl" data-o="0"' + (old ? ' style="display:none"' : '') + '>' + list(L.slice().reverse()) + '</div><div class="wr2-sysl" data-o="1"' + (old ? '' : ' style="display:none"') + '>' + list(L) + '</div>';
+      })());
   }
+  // Every time a war room opens, the System log starts on the newest entry again.
+  (function () { var go = window.openWarRoomCase; if (typeof go === 'function' && !go.__ord) { window.openWarRoomCase = function () { window.__wr2SysOld = 0; return go.apply(this, arguments); }; window.openWarRoomCase.__ord = 1; } })();
+  window.wr2SysOrder = function (v, btn) { window.__wr2SysOld = v; var box = btn.closest('.wr2-card'); [].forEach.call(box.querySelectorAll('.wr2-ord button'), function (b, i) { b.classList.toggle('on', i === v); }); [].forEach.call(box.querySelectorAll('.wr2-sysl'), function (d) { d.style.display = +d.getAttribute('data-o') === v ? '' : 'none'; }); };
   function tDead(o, r) {
     var L = deadlines(o, r), now = new Date();
     return '<div class="wr2-box"><div class="wr2-k">Deadlines and dates, soonest first</div>' + L.map(function (d) {
@@ -58250,6 +58259,7 @@ setInterval(function () {
     '.wr2-note{background:color-mix(in srgb,var(--c) 6%,#fff);border-left:3px solid var(--c);border-radius:10px;padding:11px 14px;font-size:13px;line-height:1.6;color:#334155}.wr2-note b{color:#1a1815;font-weight:600}' +
     '#wr2-modal .wr2-t th{text-transform:none;font-size:11.5px;font-weight:600;letter-spacing:0}' +
     '@media (max-width:560px){.wr2-mf{grid-template-columns:1fr 1fr}.wr2-hb .r{grid-template-columns:96px 1fr 36px}}';
+  css.textContent += '.wr2-ord{display:inline-flex;gap:4px;background:#f1f5f9;border-radius:10px;padding:3px;margin:2px 0 10px}.wr2-ord button{font:inherit;font-size:12px;font-weight:600;border:none;background:transparent;color:#475569;border-radius:8px;padding:5px 12px;cursor:pointer}.wr2-ord button.on{background:#1a1815;color:#fff}';
   document.head.appendChild(css);
 
   function draw(force) {
