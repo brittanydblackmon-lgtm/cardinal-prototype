@@ -59565,12 +59565,17 @@ setInterval(function () {
   }
   window.gaDiagF = function (b, f) { [].forEach.call(b.parentNode.children, function (x) { x.classList.toggle('on', x === b); }); [].forEach.call(document.querySelectorAll('#gen-diagnose tbody tr'), function (tr) { var s = (tr.querySelector('[data-st]') || {}).getAttribute ? tr.querySelector('[data-st]').getAttribute('data-st') : ''; tr.style.display = f === 'All' || s === f ? '' : 'none'; }); };
   function gCoverage(o) {
-    var G = GAPS[o] || [];
-    return head('Coverage', 'Which groups and situations have never been tested? Ask Eve "show untested groups this quarter" and this is what comes back. The fairness checks below show how each tested group did.') +
-      tiles([['Groups tested this quarter', '41', '#15803D'], ['Never tested', String(G.length), '#B91C1C', 'see below'], ['Tests run', '128', '#1d4ed8', 'models, agents, systems']]) +
+    var G = GAPS[o] || [], tested = 41, total = tested + G.length, pct = Math.round(tested / total * 100), bad = o === 'fin' ? 3 : 2;
+    var step = function (n, k, c, sub) { return '<div class="ga-cs" style="--c:' + c + '"><b>' + n + '</b><span>' + k + '</span><em>' + sub + '</em></div>'; };
+    return head('Coverage this quarter') +
+      '<div class="ga-cov"><div class="ga-covbar"><i style="width:' + pct + '%"></i></div><div class="ga-mut" style="margin-top:6px">' + tested + ' of ' + total + ' groups that matter have been tested (' + pct + '%). The target is 100% before any launch.</div></div>' +
+      '<div class="ga-csrow">' + step(total, 'Groups that matter', '#1d4ed8', 'from your customers and the law') + step(tested, 'Tested', '#15803D', 'at least once this quarter') + step(G.length, 'Never tested', '#B91C1C', 'listed below') + step(bad, 'Tested, problem found', '#A16207', 'details further down') + '</div>' +
+      '<div class="ga-h" style="margin-top:14px;font-size:13px">Never tested: test these first</div>' +
       '<div class="ga-chips">' + G.map(function (x) { return '<span>' + esc(x) + ' <button type="button" onclick="gaAsk(\'Asked Adam to test: ' + esc(x).replace(/'/g, '') + '\')">Test this</button></span>'; }).join('') + '</div>' +
-      '<div style="display:flex;gap:8px;margin-top:12px"><button type="button" style="' + BTN + '" onclick="gaReport()">Generate validation report</button></div>';
+      '<div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap"><button type="button" style="' + BTN + '" onclick="gaAsk(\'Asked Adam to test all ' + G.length + ' untested groups\')">Test all ' + G.length + '</button><button type="button" style="' + BTN + '" onclick="gaReport()">Generate validation report</button></div>' +
+      '<div class="ga-mut" style="margin-top:14px">Below: tested groups where a problem was found, the proof of what caused it, and groups hit by more than one thing at once.</div>';
   }
+
   window.gaUpload = function (inp) { var f = inp.files && inp.files[0]; if (!f) return; seal('Test data uploaded to the testing environment: ' + f.name); toast(f.name + ' added to the testing environment. Sealed in Echo.'); inp.value = ''; };
   window.gaNewTest = function () { try { gnBuild(true); } catch (e) { toast('New test opened.'); } };
   function gBuild(o) {
@@ -59718,7 +59723,8 @@ setInterval(function () {
       if (bk && ab && bk.parentNode !== ab.parentNode) ab.parentNode.insertBefore(bk, ab);
       for (var c = 1; c < chain.length; c++) if (chain[c - 1].parentNode === chain[c].parentNode && chain[c - 1].nextElementSibling !== chain[c]) chain[c - 1].parentNode.insertBefore(chain[c], chain[c - 1].nextSibling);
       // Plain names for the two older tools.
-      [].forEach.call(document.querySelectorAll('#gen-scenarios *, #gen-tab-ab *'), function (x) { if (x.children.length) return; var t = x.textContent.trim(); if (t === 'Scenario Tests: Beyond Bias') x.textContent = 'Scenario tests: security, safety, and edge cases'; else if (t === 'Threshold Testing Workspace') x.textContent = 'Try a decision threshold'; });
+      var RN = { 'Scenario Tests: Beyond Bias': 'Scenario tests: security, safety, and edge cases', 'Threshold Testing Workspace': 'Try a decision threshold', 'Proactive Coverage Gap Discovery': 'Tested groups where a problem was found', 'Active Counterfactual Test': 'Proof of cause', 'Intersectionality Detection': 'Groups hit by more than one thing' };
+      [].forEach.call(document.querySelectorAll('#gen-scenarios *, #gen-tab-ab *, #gen-tab-coverage *, #gen-tab-counterfactual *, #gen-tab-intersectionality *'), function (x) { if (x.children.length) return; var t = x.textContent.trim(); if (RN[t]) x.textContent = RN[t]; });
     }
     if (core === 'atonement') {
       var bar = scr.querySelector('.core-tabbar'), st = document.getElementById('at-start');
@@ -59733,6 +59739,7 @@ setInterval(function () {
     '.ga-click tbody tr{cursor:pointer}.ga-click tbody tr:hover td{background:#eef2ff!important}.ga-kv{display:grid;grid-template-columns:130px 1fr;gap:10px;padding:8px 0;border-top:1px dashed rgba(26,24,21,.12)}.ga-kv span{color:#64748b}.ga-kv b{font-weight:500}.ga-rep{padding:10px 0;border-top:1px dashed rgba(26,24,21,.12)}.ga-rep div{font-size:11px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.4px}.ga-rep p{margin:4px 0 0;line-height:1.55;color:#1a1815}' +
     '#genesis-log-entries table{display:none!important}.ga-logd{font-size:11px;font-weight:700;color:#334155;text-transform:uppercase;letter-spacing:.5px;margin:14px 0 2px;padding-bottom:5px;border-bottom:1px dashed rgba(26,24,21,.15)}#ga-log .ga-logd:first-child{margin-top:4px}.ga-logl{display:grid;grid-template-columns:80px 1fr;gap:10px;padding:7px 0;font-size:12.5px}.ga-logl span:first-child{color:#334155}.ga-logl b{font-weight:600}.ga-logl em{font-style:normal;font-size:11.5px;color:#1d4ed8;background:#eff6ff;border-radius:999px;padding:1px 8px;margin-left:4px}' +
     '#gnws .btn-primary,#gnws .btn-ghost,#gnws [class*=btn-]{background:#1a1815!important;color:#fff!important;border:none!important}' +
+    '.ga-cov{margin:6px 0 12px}.ga-covbar{height:12px;background:#fee2e2;border-radius:999px;overflow:hidden}.ga-covbar i{display:block;height:100%;background:#22c55e;border-radius:999px}.ga-csrow{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}@media (max-width:900px){.ga-csrow{grid-template-columns:1fr 1fr}}.ga-cs{border:1px solid #e5e7eb;border-left:4px solid var(--c);border-radius:12px;padding:10px 12px}.ga-cs b{display:block;font-size:22px;font-weight:700;color:var(--c)}.ga-cs span{display:block;font-weight:600;font-size:12.5px}.ga-cs em{font-style:normal;font-size:11.5px;color:#64748b}' +
     '.ga-t{width:100%;border-collapse:collapse;font-size:12.5px}.ga-t th{text-align:left;font-size:11.5px;font-weight:600;color:#64748b;padding:8px 10px;background:#f1f5f9!important}.ga-t td{padding:9px 10px;border-top:1px solid #eef0f3;vertical-align:top;background:#fff!important}.ga-t tr:nth-child(even) td{background:#f8fafc!important}' +
     '.ga-pill{display:inline-block;font-size:11px;font-weight:600;border:1px solid;border-radius:999px;padding:1px 9px;white-space:nowrap}' +
     '.ga-chips{display:flex;flex-wrap:wrap;gap:8px}.ga-chips span{display:inline-flex;align-items:center;gap:8px;background:#fef2f2;border:1px solid #fecaca;color:#7f1d1d;border-radius:999px;padding:5px 6px 5px 12px;font-size:12.5px}.ga-chips span button{font:inherit;font-size:11px;font-weight:600;border:none;background:#1a1815;color:#fff;border-radius:999px;padding:3px 9px;cursor:pointer}' +
