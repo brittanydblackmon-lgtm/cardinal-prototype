@@ -57512,6 +57512,17 @@ setInterval(function () {
     else { try { cardinalSentinelUiSetMainTab(t); } catch (e) { try { wmGo(t); } catch (e2) {} } }
     drawBar(); draw(true);
   };
+  // The circles at the top still call the old tab switcher; route cases, incidents, and war rooms to the new lists
+  // (Brittany 10/11: "War rooms open... glitches and didn't take me nowhere").
+  (function () {
+    var MAP = { cases: 'cases', incidents: 'reports', warrooms: 'warrooms' };
+    var wrap = function () {
+      var old = window.cardinalSentinelUiSetMainTab; if (typeof old !== 'function' || old.__wm2) return;
+      var f = function (t) { if (MAP[t] && window.__wmMode === 'watch' && !window.__wmIn) { window.__wmIn = 1; try { wmTab(MAP[t]); } finally { window.__wmIn = 0; } var b = document.getElementById('wm2') || document.querySelector('#screen-sentinel .wm2-bar'); if (b) setTimeout(function () { b.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 100); return; } return old.apply(this, arguments); };
+      f.__wm2 = 1; window.cardinalSentinelUiSetMainTab = f;
+    };
+    wrap(); setInterval(wrap, 1000);
+  })();
   window.wmMode = function (m, navEl) {
     window.__wmMode = m; var first = MODES[m].tabs[0][0];
     try { showScreen('sentinel', navEl || null); } catch (e) {}
