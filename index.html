@@ -58562,7 +58562,7 @@ setInterval(function () {
     var gs = document.getElementById('screen-genesis'); if (!gs || gs.offsetParent === null) return;
     var o = org(), R = window.__atlasReq[o] || [], box = document.getElementById('gen-atlas-req');
     if (!R.length) { if (box) box.remove(); return; }
-    var anchor = document.getElementById('gen-stress-link') || document.getElementById('gen-scenarios'); if (!anchor) return;
+    var anchor = document.getElementById('gnws') || document.getElementById('gen-stress-link') || document.getElementById('gen-scenarios'); if (!anchor) return;
     if (!box) { box = document.createElement('div'); box.id = 'gen-atlas-req'; box.style.cssText = 'background:#fff;border:1px solid rgba(26,24,21,.08);border-top:3px solid #6D28D9;border-radius:14px;padding:12px 14px;margin:0 0 14px;font-size:12.5px;color:#1a1815;transition:box-shadow .3s'; }
     if (box.nextElementSibling !== anchor) anchor.parentNode.insertBefore(box, anchor);
     var key = o + R.length; if (box.__k === key) return; box.__k = key;
@@ -58739,6 +58739,86 @@ setInterval(function () {
     var comp = document.getElementById('screen-compliance');
     if (comp && comp.offsetParent) [].forEach.call(comp.querySelectorAll('.badge.badge-green'), function (x) { if (x.textContent.trim() === 'Certified' && /Cardinal Certification/.test((x.parentElement || {}).textContent || '')) { x.textContent = 'Held: ' + k.cr[0] + ' open'; x.className = x.className.replace('badge-green', 'badge-yellow'); } });
   }, 800);
+})();
+</script>
+<script data-p="p58_flow">
+// 10/10 (Brittany: "where do I look first in Genesis?", "the recommended fix: for what?", "we have shadow deployment in both
+// Genesis and Atonement"). One clear flow: Genesis tests a fix on past data ("would this have worked?"), then hands it to
+// Atonement with written notes; Atonement runs it in shadow on real traffic ("does it work for real?") and collects the
+// four sign-offs. Genesis gets a "Start here" row and a hand-off card (the A/B shadow box moves out); Atonement's
+// Recommended fix opens with what the fix is for and where it came from, and Shadow deployment explains its job.
+(function () {
+  function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;'); }
+  function org() { return window.currentOrg || 'fin'; }
+  var MON = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  function day(n) { var x = new Date(); return new Date(x.getFullYear(), x.getMonth(), x.getDate() + n, 10, 0); }
+  function full(d) { return MON[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear(); }
+  var H = {
+    fin: { from: 'Credit Scoring v3.4', to: 'Credit Scoring v3.5', cs: 'FIN-1203', issue: 'ZIP code was acting as a stand-in for race', before: 0.74, after: 0.83, acc: '91% → 90%', tested: '12 months of past applications (24,060 decisions)',
+      notes: [['Adam (AI)', -14, 'Remove ZIP code entirely and retrain on verified income and payment history. Nothing else changes.'], ['Nina Roberts', -13, 'After launch, watch ZIP 10453 and 11212 weekly for 90 days.'], ['Morgan Hale', -12, 'Keep the adverse action letters unchanged until Legal signs off.']] },
+    ad: { from: 'Fleet Health v2.4', to: 'Fleet Health v2.5', cs: 'AD-2847', issue: 'wear warnings arrived late at desert and coastal bases', before: 0.67, after: 0.84, acc: 'Fraud catch 91% → 90%', tested: '847 past part-replacement calls',
+      notes: [['Adam (AI)', -14, 'Remove climate_blind_wear and add base climate as a wear factor.'], ['Sarah Chen', -13, 'Roll out to desert bases first, then coastal.'], ['James Martinez', -12, 'Tell the contracting officer before the 15% step.']] },
+    health: { from: 'Claims Adjudication v1.9', to: 'Claims Adjudication v2.0', cs: 'HS-2847', issue: 'age was acting as a cost stand-in for members 65 and older', before: 0.64, after: 0.89, acc: '93% → 92%', tested: '4,102 past claims',
+      notes: [['Adam (AI)', -14, 'Remove age_cost_proxy and require clinician review on every specialty denial for members 75 and older.'], ['Priyanka Rao', -13, 'Re-review the 2,847 denied claims in date order.'], ['Elena Ruiz', -12, 'Send member letters within 30 days of any overturned denial.']] },
+    fed: { from: 'IRS Tax Fraud Detection v3.1', to: 'IRS Tax Fraud Detection v3.2', cs: 'FED-PDV-001', issue: 'self-employed filers in some metros were flagged far more often', before: 0.54, after: 0.82, acc: 'Fraud caught unchanged', tested: '1,200 past returns',
+      notes: [['Adam (AI)', -14, 'Drop schedule_c_volatility and add a one-step online appeal.'], ['Andre Lewis', -13, 'Re-score the 1,200 flagged filers before launch.'], ['Owen Clarke', -12, 'Attach the appeals design to the impact assessment.']] }
+  };
+  var CARD = 'background:#fff;border:1px solid rgba(26,24,21,.08);border-top:3px solid;border-radius:14px;padding:12px 14px;margin:0 0 14px;font-size:12.5px;color:#1a1815;box-shadow:0 1px 3px rgba(26,24,21,.05),0 8px 20px rgba(26,24,21,.06)';
+  function head(t, c) { return '<div style="display:flex;align-items:center;gap:7px;font-size:10.5px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px"><span style="width:8px;height:8px;border-radius:50%;background:' + c + '"></span>' + t + '</div>'; }
+  var BTN = 'font:inherit;font-size:12px;font-weight:600;border:none;background:#1a1815;color:#fff;border-radius:8px;padding:6px 12px;cursor:pointer';
+  window.flowToAtonement = function () { try { cardinalJump("showScreen('atonement',null);setTimeout(function(){try{coreTabGo('atonement',2)}catch(e){}},200)", '#at-fix-context'); } catch (e) { showScreen('atonement', null); } };
+  window.flowToGenesis = function () { try { cardinalJump("showScreen('genesis',null);coreTabGo('genesis',0)", '#gen-handoff'); } catch (e) { showScreen('genesis', null); } };
+  window.flowJump = function (id) { var e = document.getElementById(id); if (e) { e.scrollIntoView({ behavior: 'smooth', block: 'center' }); e.style.boxShadow = '0 0 0 3px rgba(109,40,217,.3)'; setTimeout(function () { e.style.boxShadow = ''; }, 1600); } };
+  function notes(h) { return h.notes.map(function (n) { return '<div style="display:flex;gap:10px;padding:7px 0;border-top:1px dashed rgba(26,24,21,.12)"><span style="width:110px;flex-shrink:0;color:#64748b">' + full(day(n[1])) + '</span><span style="width:120px;flex-shrink:0;font-weight:600">' + esc(n[0]) + '</span><span style="flex:1">' + esc(n[2]) + '</span></div>'; }).join(''); }
+  function genesis() {
+    var gs = document.getElementById('screen-genesis'); if (!gs || gs.offsetParent === null) return;
+    var o = org(), h = H[o], hero = document.getElementById('u-genesis-hero'), ws = document.getElementById('gnws'); if (!hero || !ws || !h) return;
+    // Start here
+    var rows = ws.innerText, rowEls = [].slice.call(ws.querySelectorAll('.gn-list > *'), 1), running = rowEls.filter(function (r) { return /\bRunning\b/.test(r.innerText); }).length, failed = rowEls.filter(function (r) { return /\bFailed\b/.test(r.innerText); }).length, req = ((window.__atlasReq || {})[o] || []).length + (document.getElementById('gen-discovery-alert') ? 1 : 0);
+    var tile = function (k, v, c, sub, go) { return '<div onclick="' + go + '" style="cursor:pointer;background:#fff;border:1px solid rgba(26,24,21,.08);border-left:4px solid ' + c + ';border-radius:12px;padding:10px 12px"><div style="font-size:10.5px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.4px">' + k + '</div><div style="font-size:18px;font-weight:700;color:' + c + '">' + v + '</div><div style="font-size:11.5px;color:#64748b">' + sub + '</div></div>'; };
+    var sh = '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px"><div style="font-size:13px;font-weight:600">Start here</div><div style="font-size:11.5px;color:#64748b">Genesis tests on past data. When a fix passes, it is handed to Atonement to run on real traffic.</div></div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px">' +
+      tile('Requests waiting', req, '#6D28D9', 'From Atlas and Eve’s discovery', "flowJump(document.getElementById('gen-atlas-req')?'gen-atlas-req':'gen-discovery-alert')") +
+      tile('Running now', running, '#1d4ed8', 'Tests still collecting results', "flowJump('gnws')") +
+      tile('Failed, needs a fix', failed, '#B91C1C', 'Open the test to see why', "flowJump('gnws')") +
+      tile('Ready to hand off', 1, '#15803D', h.to + ' passed', "flowJump('gen-handoff')") + '</div>';
+    var st = document.getElementById('gen-start'); if (!st) { st = document.createElement('div'); st.id = 'gen-start'; st.style.cssText = 'margin:0 0 14px;transition:box-shadow .3s'; }
+    if (hero.nextElementSibling !== st) hero.parentNode.insertBefore(st, hero.nextSibling);
+    if (st.__h !== sh) { st.__h = sh; st.innerHTML = sh; }
+    // Hand-off card replaces the A/B shadow box (that job belongs to Atonement now).
+    [].forEach.call(gs.querySelectorAll('.card'), function (c) { var t = (c.firstElementChild || {}).textContent || ''; if (/^\s*A\/B Shadow Deployment/.test(c.innerText) && c.style.display !== 'none') c.style.display = 'none'; });
+    var ho = document.getElementById('gen-handoff'); if (!ho) { ho = document.createElement('div'); ho.id = 'gen-handoff'; ho.style.cssText = CARD + ';border-top-color:#15803D;transition:box-shadow .3s'; }
+    if (ws.nextElementSibling !== ho) ws.parentNode.insertBefore(ho, ws.nextSibling);
+    var hh = head('Hand off to Atonement · ' + esc(h.to), '#15803D') +
+      '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px;margin-bottom:10px">' + [['Fixes', h.from + ': ' + h.issue], ['Case', h.cs], ['Fairness on past data', h.before.toFixed(2) + ' → ' + h.after.toFixed(2)], ['Accuracy', h.acc], ['Tested on', h.tested], ['Result', 'Passed. Safe to try on real traffic']].map(function (x) { return '<div style="background:#f8fafc;border:1px solid #eef0f3;border-radius:10px;padding:8px 10px"><div style="font-size:10.5px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.4px">' + x[0] + '</div><div style="font-weight:600">' + esc(x[1]) + '</div></div>'; }).join('') + '</div>' +
+      '<div style="font-size:10.5px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.4px">Notes for Atonement: what to do and why</div>' + notes(h) +
+      '<div style="font-size:12px;color:#334155;margin-top:8px"><b style="font-weight:600">Next in Atonement:</b> run ' + esc(h.to) + ' in shadow next to the live model on real cases, then collect the four sign-offs. Nothing goes live from Genesis.</div>' +
+      '<div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap"><button type="button" style="' + BTN + '" onclick="flowToAtonement()">Send to Atonement →</button><button type="button" style="' + BTN + '" onclick="openWarRoomCase(\'' + h.cs + '\')">Open ' + h.cs + ' war room →</button></div>';
+    if (ho.__h !== hh) { ho.__h = hh; ho.innerHTML = hh; }
+  }
+  function atonement() {
+    var at = document.getElementById('screen-atonement'); if (!at || at.offsetParent === null) return;
+    var o = org(), h = H[o]; if (!h) return;
+    var fix = document.getElementById('at-tab-fix');
+    if (fix) {
+      var c = document.getElementById('at-fix-context'); if (!c) { c = document.createElement('div'); c.id = 'at-fix-context'; c.style.cssText = CARD + ';border-top-color:#1d4ed8;transition:box-shadow .3s'; }
+      if (fix.firstElementChild !== c) fix.insertBefore(c, fix.firstElementChild);
+      var q = window.cardinalLaunchQueue ? (cardinalLaunchQueue(o) || []).filter(function (x) { return x.cs === h.cs; })[0] : null, signed = q ? Object.keys(q.signs || {}).length : 0;
+      var ch = head('What this fix is for', '#1d4ed8') +
+        '<div style="font-size:13px;margin-bottom:8px"><b style="font-weight:600">' + esc(h.to) + '</b> fixes <b style="font-weight:600">' + esc(h.from) + '</b>: ' + esc(h.issue) + ' (case ' + h.cs + ').</div>' +
+        '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px;margin-bottom:10px">' + [['Came from', 'Genesis test, ' + full(day(-14))], ['Tested on', h.tested], ['Past-data result', h.before.toFixed(2) + ' → ' + h.after.toFixed(2) + ' fairness'], ['Now', 'Running in shadow on real traffic'], ['Sign-offs', signed + ' of 4']].map(function (x) { return '<div style="background:#f8fafc;border:1px solid #eef0f3;border-radius:10px;padding:8px 10px"><div style="font-size:10.5px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.4px">' + x[0] + '</div><div style="font-weight:600">' + esc(x[1]) + '</div></div>'; }).join('') + '</div>' +
+        '<div style="font-size:10.5px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.4px">Hand-off notes from Genesis</div>' + notes(h) +
+        '<div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap"><button type="button" style="' + BTN + '" onclick="coreTabGo(\'atonement\',3)">See the shadow run →</button><button type="button" style="' + BTN + '" onclick="flowToGenesis()">See the Genesis test →</button><button type="button" style="' + BTN + '" onclick="openWarRoomCase(\'' + h.cs + '\')">Open ' + h.cs + ' war room →</button></div>';
+      if (c.__h !== ch) { c.__h = ch; c.innerHTML = ch; }
+    }
+    var sh = document.getElementById('at-tab-shadow');
+    if (sh) {
+      var e = document.getElementById('at-shadow-explain'); if (!e) { e = document.createElement('div'); e.id = 'at-shadow-explain'; e.style.cssText = 'background:#eff6ff;border:1px solid #bfdbfe;border-radius:12px;padding:10px 12px;margin:0 0 12px;font-size:12.5px;color:#1e3a8a'; }
+      if (sh.firstElementChild !== e) sh.insertBefore(e, sh.firstElementChild);
+      var et = '<b style="font-weight:600">How this differs from Genesis:</b> Genesis tested ' + esc(h.to) + ' on past data. Here it runs quietly next to the live model and sees the same real cases, but the live model still makes every real decision. It goes live only after the four sign-offs.';
+      if (e.__h !== et) { e.__h = et; e.innerHTML = et; }
+    }
+  }
+  setInterval(function () { try { genesis(); } catch (x) {} try { atonement(); } catch (x) {} }, 700);
 })();
 </script>
 </body>
