@@ -59806,6 +59806,113 @@ setInterval(function () {
   document.head.appendChild(css);
 })();
 </script>
+<script data-p="p64_messages">
+// 10/11 (Brittany: "the activity log only has I opened it... versus I launched this, I did whatever... in case I don't
+// remember doing that"; "they need to know when they have a new message... like a text message bubble with a number...
+// a pop-up on the side like Slack, with an X, and you can respond: type, speak, upload, like, or approve... only while
+// they are in the system... a setting to turn it on or off").
+// 1. My Activity Log records actions, not only screens. 2. Red unread bubbles on My Workspace, Trust Loop, and
+// Discussions. 3. In-app message pop-ups with quick reply, voice, attach, like, approve. 4. On/off in Settings.
+(function () {
+  function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;'); }
+  function org() { return window.currentOrg || 'fin'; }
+  function me() { var p = window.getActivePersona ? getActivePersona() : null; return p ? p.name : 'You'; }
+  function log(t, ref) { try { cardinalLogActivity('edit', t, ref || null); } catch (e) {} }
+  function seal(t) { try { (((window.CARDINAL_DATA || {})[org()] || {}).echoMemories || []).unshift({ id: 'echo-msg-' + Date.now(), timestamp: new Date().toISOString(), author: me(), eventType: 'message', core: 'trustloop', severity: 'informational', summary: t, isSealed: true }); } catch (e) {} }
+
+  // ── 1. Actions in My Activity Log ─────────────────────────────────
+  var SKIP = /pushed to ledger|calculated|loading|welcome/i;
+  function wrap(name, fn) { var f = window[name]; if (typeof f !== 'function' || f.__act2) return; var g = function () { try { fn.apply(null, arguments); } catch (e) {} return f.apply(this, arguments); }; g.__act2 = 1; window[name] = g; }
+  function install() {
+    wrap('cardinalShowToast', function (t) { t = String(t || '').replace(/\s*Sealed in Echo\.?\s*$/i, '').replace(/\s*The download is logged in Echo\.?$/i, '').trim(); if (t && !SKIP.test(t)) log(t.replace(/\.$/, '')); });
+    wrap('openWarRoomCase', function (cs) { log('Opened the ' + cs + ' war room', cs); });
+    wrap('cardinalLaunchSign', function (model, i) { log('Signed off on ' + model, model); });
+    wrap('gnLaunch', function () { var n = (document.getElementById('gn-name') || {}).value; log('Launched a test' + (n ? ': ' + n : '')); });
+    wrap('affRemove', function (cs, k) { log('Changed who is on the ' + cs + ' affected list', cs); });
+    wrap('affCsv', function (cs) { log('Downloaded the ' + cs + ' affected list', cs); });
+    wrap('wr2Nudge', function () { log('Sent a sign-off reminder'); });
+    wrap('pplCsv', function () { log('Downloaded a people list from the Library'); });
+    wrap('gaWriteup', function () { log('Read a Genesis write-up'); });
+  }
+  setInterval(install, 1000);
+
+  // ── 2. Unread bubbles ─────────────────────────────────────────────
+  var NEW = window.__msgNew = window.__msgNew || {};
+  function unread(o) { var d = (window.CARDINAL_DATA || {})[o] || {}, n = 0; (d.trustLoopChannels || []).forEach(function (c) { n += c.unreadCount || 0; }); return n + ((NEW[o] || []).filter(function (m) { return !m.done; }).length); }
+  function bubble(el, n) {
+    if (!el) return; var b = el.querySelector('.msg-bub');
+    if (!n) { if (b) b.remove(); return; }
+    if (!b) { b = document.createElement('span'); b.className = 'msg-bub'; el.appendChild(b); }
+    var t = n > 99 ? '99+' : String(n); if (b.textContent !== t) b.textContent = t;
+  }
+  function badges() {
+    var o = org(), n = unread(o);
+    [].forEach.call(document.querySelectorAll('.sidebar .nav-item'), function (x) { var oc = x.getAttribute('onclick') || ''; if (/showScreen\('(myworkspace|trustloop)'/.test(oc)) bubble(x, n); });
+    [].forEach.call(document.querySelectorAll('#screen-myworkspace button'), function (x) { if (/mywsTab\('convos'\)/.test(x.getAttribute('onclick') || '') && !/g-pill/.test(x.className)) bubble(x, n); });
+  }
+  setInterval(function () { try { badges(); } catch (e) {} }, 800);
+
+  // ── 3. Message pop-ups ────────────────────────────────────────────
+  var MSG = {
+    fin: [['Riley Whitmore', '#governance-team', 'Can you sign off on the FIN-3310 fix today? The rollout is waiting on you.', 1], ['Hannah Brooks', '#data-science', 'The 10% rollout of the servicing agent fix looks clean so far. Want me to move it to 25%?', 1], ['Morgan Hale', '#legal', 'Correction letter for the payoff errors is ready for your review.', 0]],
+    ad: [['James Martinez', '#governance-team', 'Can you sign off on the AD-3104 fix today? The rollout is waiting on you.', 1], ['Lisa Walker', '#data-science', 'The work-order agent fix is clean at 10%. Move it to 25%?', 1], ["Kevin O'Brien", '#legal', 'The inspection correction notice is ready for your review.', 0]],
+    health: [['Elena Ruiz', '#governance-team', 'Can you sign off on the HS-3402 fix today? The rollout is waiting on you.', 1], ['Dr. Aisha Patel', '#clinical', 'Member Help Agent fix looks clean at 10%. Move it to 25%?', 1], ['Marcus Bell', '#legal', 'The member correction message is ready for your review.', 0]],
+    fed: [['Patricia Alvarez', '#governance-team', 'Can you sign off on the FED-3015 fix today? The rollout is waiting on you.', 1], ['Andre Lewis', '#data-science', 'The help assistant fix is clean at 10%. Move it to 25%?', 1], ['Owen Clarke', '#legal', 'The taxpayer correction notice is ready for your review.', 0]]
+  };
+  function on() { try { return localStorage.getItem('cardinal-msg-popups') !== 'off'; } catch (e) { return true; } }
+  function ini(n) { return String(n).split(/\s+/).filter(function (x) { return /^[A-Z]/.test(x); }).slice(0, 2).map(function (x) { return x[0]; }).join(''); }
+  var shown = 0, startAt = 0;
+  function show(m) {
+    var o = org(); (NEW[o] = NEW[o] || []).push(m);
+    var box = document.getElementById('msg-pop'); if (box) box.remove();
+    box = document.createElement('div'); box.id = 'msg-pop'; box.__m = m;
+    box.innerHTML = '<div class="mp-top"><span class="mp-av">' + esc(ini(m.from)) + '</span><div style="flex:1;min-width:0"><div class="mp-who">' + esc(m.from) + ' <span>' + esc(m.ch) + ' · now</span></div><div class="mp-txt">' + esc(m.text) + '</div></div><button type="button" class="mp-x" aria-label="Close" onclick="msgClose()">×</button></div>' +
+      '<div class="mp-acts"><button type="button" onclick="msgReplyOpen()">Reply</button><button type="button" onclick="msgQuick(\'Liked\')">Like</button>' + (m.ask ? '<button type="button" class="dark" onclick="msgQuick(\'Approved\')">Approve</button>' : '') + '<button type="button" onclick="msgOpenLoop()">Open in Trust Loop</button></div>' +
+      '<div class="mp-reply" style="display:none"><input id="mp-in" placeholder="Write a reply" onkeydown="if(event.key===\'Enter\')msgSend()"><label class="mp-ic" title="Attach a file"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.5l-8.6 8.6a5 5 0 0 1-7.1-7.1l8.6-8.6a3.3 3.3 0 0 1 4.7 4.7l-8.6 8.6a1.7 1.7 0 0 1-2.4-2.4l7.9-7.9"/></svg><input type="file" style="display:none" onchange="msgAttach(this)"></label><button type="button" class="mp-ic" title="Speak your reply" onclick="msgMic(this)"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></button><button type="button" class="dark" onclick="msgSend()">Send</button></div><div class="mp-att"></div>';
+    document.body.appendChild(box);
+  }
+  function cur() { var b = document.getElementById('msg-pop'); return b && b.__m; }
+  function finish(text) {
+    var m = cur(); if (!m) return; m.done = 1;
+    var o = org(), d = (window.CARDINAL_DATA || {})[o] || {}, ch = (d.trustLoopChannels || []).filter(function (c) { return c.name === m.ch || '#' + c.name === m.ch; })[0];
+    if (ch) { (ch.messages = ch.messages || []).push({ timestamp: new Date().toISOString(), author: m.from, content: m.text }); ch.messages.push({ timestamp: new Date().toISOString(), author: me(), content: text }); }
+    log('Replied to ' + m.from + ' in ' + m.ch + ': ' + text); seal(me() + ' replied to ' + m.from + ' in ' + m.ch + ': ' + text);
+    var b = document.getElementById('msg-pop'); if (b) { b.innerHTML = '<div class="mp-done">Sent to ' + esc(m.from) + '. Saved in Trust Loop and sealed in Echo.</div>'; setTimeout(function () { if (b.parentNode) b.remove(); }, 2200); }
+  }
+  window.msgClose = function () { var b = document.getElementById('msg-pop'); if (b) b.remove(); };
+  window.msgReplyOpen = function () { var b = document.getElementById('msg-pop'); if (!b) return; b.querySelector('.mp-reply').style.display = 'flex'; var i = document.getElementById('mp-in'); if (i) i.focus(); };
+  window.msgQuick = function (t) { finish(t); };
+  window.msgSend = function () { var i = document.getElementById('mp-in'), v = i ? i.value.trim() : '', att = (document.getElementById('msg-pop') || {}).__att; if (!v && !att) return; finish((v || 'Sent a file') + (att ? ' (attached: ' + att + ')' : '')); };
+  window.msgAttach = function (inp) { var f = inp.files && inp.files[0]; if (!f) return; var b = document.getElementById('msg-pop'); b.__att = f.name; b.querySelector('.mp-att').textContent = 'Attached: ' + f.name; };
+  window.msgMic = function (btn) {
+    var SR = window.SpeechRecognition || window.webkitSpeechRecognition, i = document.getElementById('mp-in');
+    if (!SR) { if (i) i.placeholder = 'Voice needs Chrome or Safari. Type instead.'; return; }
+    try { var r = new SR(); r.lang = 'en-US'; r.interimResults = true; btn.classList.add('rec'); r.onresult = function (e) { var t = ''; for (var k = 0; k < e.results.length; k++) t += e.results[k][0].transcript; if (i) i.value = t; }; r.onend = function () { btn.classList.remove('rec'); }; r.start(); } catch (e) { btn.classList.remove('rec'); }
+  };
+  window.msgOpenLoop = function () { msgClose(); try { showScreen('trustloop', null); } catch (e) {} };
+  // Only while someone is signed in and using Cardinal: first message after 40 seconds, then every 3 minutes, 3 at most.
+  setInterval(function () {
+    if (!window.__cardinalUnlocked || !on() || document.hidden) return;
+    if (!startAt) { startAt = Date.now(); return; }
+    var o = org(), L = MSG[o] || MSG.fin, due = shown === 0 ? 40000 : 180000 * shown + 40000;
+    if (shown < L.length && Date.now() - startAt > due && !document.getElementById('msg-pop') && !document.querySelector('[id$=-modal]')) { var x = L[shown++]; show({ from: x[0], ch: x[1], text: x[2], ask: !!x[3] }); }
+  }, 2000);
+  window.cardinalDemoMessage = function () { var o = org(), L = MSG[o] || MSG.fin, x = L[shown % L.length]; shown++; show({ from: x[0], ch: x[1], text: x[2], ask: !!x[3] }); };
+
+  // ── 4. Settings switch ────────────────────────────────────────────
+  window.msgToggle = function (b) { var next = on() ? 'off' : 'on'; try { localStorage.setItem('cardinal-msg-popups', next); } catch (e) {} b.closest('#set-msgs').outerHTML = setCard(); log('Turned message pop-ups ' + next); };
+  function setCard() { var o2 = on(); return '<div class="card" id="set-msgs" style="padding:22px;margin-bottom:20px;width:100%;box-sizing:border-box;display:flex;justify-content:space-between;align-items:center;gap:16px"><div><div style="font-size:15px;font-weight:700;color:var(--chrome2);margin-bottom:4px">Message pop-ups</div><div style="font-size:12px;color:var(--muted2)">Show new Trust Loop messages in a small pop-up while you are in Cardinal, so you can reply, like, or approve right there. Nothing pops up when you are signed out.</div></div><button type="button" onclick="msgToggle(this)" style="font:inherit;font-size:12px;font-weight:600;border:none;border-radius:999px;padding:7px 14px;cursor:pointer;white-space:nowrap;background:' + (o2 ? '#1a1815' : '#e5e7eb') + ';color:' + (o2 ? '#fff' : '#1a1815') + '">' + (o2 ? 'On' : 'Off') + '</button></div>'; }
+  setInterval(function () { var s = document.getElementById('screen-settings'); if (!s || document.getElementById('set-msgs')) return; var a = document.getElementById('settings-client-access'); var h = document.createElement('div'); h.innerHTML = setCard(); if (a) a.parentNode.insertBefore(h.firstChild, a.nextSibling); }, 1000);
+
+  var css = document.createElement('style');
+  css.textContent = '.msg-bub{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;padding:0 5px;border-radius:999px;background:#ef4444;color:#fff;font-size:10.5px;font-weight:700;margin-left:6px;line-height:1;vertical-align:middle}.sidebar .nav-item .msg-bub{margin-left:auto}' +
+    '#msg-pop{position:fixed;left:236px;bottom:20px;z-index:4300;width:min(360px,calc(100vw - 32px));background:#fff;border-radius:16px;border-top:4px solid #1d4ed8;box-shadow:0 20px 50px rgba(26,24,21,.28);padding:12px 14px;font-size:12.5px;color:#1a1815;animation:mpIn .25s ease-out}@keyframes mpIn{from{transform:translateY(16px);opacity:0}to{transform:none;opacity:1}}@media (max-width:760px){#msg-pop{left:16px}}' +
+    '.mp-top{display:flex;gap:10px;align-items:flex-start}.mp-av{width:32px;height:32px;border-radius:50%;background:#1a1815;color:#fff;font-weight:700;font-size:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0}.mp-who{font-weight:600}.mp-who span{font-weight:400;color:#64748b;font-size:11.5px}.mp-txt{margin-top:2px;line-height:1.45;color:#334155}.mp-x{border:none;background:#f1f5f9;width:26px;height:26px;border-radius:50%;cursor:pointer;color:#475569;font-size:16px;flex-shrink:0}' +
+    '.mp-acts{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}.mp-acts button,.mp-reply button.dark{font:inherit;font-size:12px;font-weight:600;border:1px solid #e5e7eb;background:#fff;color:#1a1815;border-radius:8px;padding:5px 10px;cursor:pointer}.mp-acts button.dark,.mp-reply button.dark{background:#1a1815;color:#fff;border-color:#1a1815}' +
+    '.mp-reply{gap:6px;align-items:center;margin-top:10px}.mp-reply input{flex:1;min-width:0;font:inherit;font-size:12.5px;border:1px solid #e5e7eb;border-radius:8px;padding:7px 10px}.mp-ic{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:8px;border:1px solid #e5e7eb;background:#fff;color:#475569;cursor:pointer}.mp-ic.rec{background:#fef2f2;color:#ef4444;border-color:#fecaca}.mp-att{font-size:11.5px;color:#475569;margin-top:6px}.mp-done{color:#15803D;font-weight:600;padding:4px 0}';
+  document.head.appendChild(css);
+})();
+</script>
 </body>
 
 </html>
