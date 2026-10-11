@@ -58561,6 +58561,7 @@ setInterval(function () {
   var F = window.__atlas = window.__atlas || { tab: 'all', q: '' };
   // Cardinal's own AI is on the map too, held to the same Standard (answers "who checks Adam and Eve?").
   var OWN = [['CAI-EVE', 'Eve', 'Cardinal AI', 'Agent', 'Cardinal', 'DCEM', 0, '', '', 'Cardinal\u2019s own assistant: watches, flags, and summarizes. Cannot change any model. Held to the same Cardinal Standard as your AI and audited independently.', ''], ['CAI-ADAM', 'Adam', 'Cardinal AI', 'Agent', 'Cardinal', 'DCEM', 0, '', '', 'Cardinal\u2019s own engineer agent: tests and drafts fixes in a copy of your system. Cannot launch anything; four named people must sign first.', '']];
+  window.cardinalAtlasList = function (o) { return list(o || org()); };
   function list(o) { return (SYS[o] || []).concat(OWN).map(function (r) { return { id: r[0], name: r[1], origin: r[2], kind: r[3], owner: r[4], st: r[5], last: r[6], gaps: r[7], cs: r[8], what: r[9], parent: r[10] }; }); }
   function pill(t, c) { return '<span class="at-pill" style="color:' + c + ';border-color:' + c + '55;background:' + c + '12">' + esc(t) + '</span>'; }
   function ladder(st, words) { return '<span class="at-lad' + (words ? ' w' : '') + '">' + ST.map(function (x, i) { var on = st[i] !== '-'; return '<span class="at-ld"><i title="' + x[1] + ': ' + x[2] + '" class="' + (on ? 'on' : '') + '">' + x[0] + '</i>' + (words ? '<em>' + x[1] + '</em>' : '') + '</span>'; }).join('') + '</span>'; }
@@ -58590,7 +58591,7 @@ setInterval(function () {
   // "Right now": what Pulse, Genesis, and Atonement say about this system today.
   function nowHtml(o, s) {
     var R = [], ps = window.cardinalPulseStatus ? cardinalPulseStatus(o, s.name) : null, wf = window.cardinalWatchFlags ? cardinalWatchFlags(o)[s.name] : '', vf = window.cardinalVendorFix ? cardinalVendorFix(o, s.name) : null;
-    R.push(['Pulse', ps ? ps.where + (ps.what ? ': ' + ps.what : '') : 'Working fine. Nothing flagged.']);
+    R.push(['Pulse', ps ? ps.where + (ps.what ? ' · ' + ps.what : '') : 'Working fine. Nothing flagged.']);
     if (wf) R.push(['Watch for', wf + ' (from a Genesis write-up)']);
     if (vf) R.push(['Vendor fix', vf[4] + ': ' + vf[3]]);
     if (s.cs) R.push(['Case', s.cs + ' is open in Watchman']);
@@ -59121,6 +59122,7 @@ setInterval(function () {
     (MORE_SYN[o] || []).forEach(function (c) { out.push({ id: c[0], name: c[1], n: c[2], model: c[3], status: c[4], owner: 'Adam (AI)', upd: ago(c[5]) }); });
     return out;
   }
+  window.cardinalPersonaSets = function (o) { return personas(o || org()); };
   // Uploaded lists: one example per company, plus anything uploaded in this session.
   var UPL = window.__pplUploads = window.__pplUploads || {};
   var EX_UPL = { fin: ['UPL-FIN-01', 'Regulator exam sample', 'exam_sample_q3.csv', 250, 'Morgan Hale', 8], ad: ['UPL-AD-01', 'Audit sample of crew records', 'audit_sample_sept.csv', 120, 'Sarah Chen', 12], health: ['UPL-HS-01', 'Audit sample of denied claims', 'denied_claims_sample.csv', 300, 'Dr. Aisha Patel', 9], fed: ['UPL-FED-01', 'Inspector general review sample', 'ig_review_sample.csv', 180, 'Owen Clarke', 7] };
@@ -59504,7 +59506,7 @@ setInterval(function () {
     return L;
   }
   // Atlas shows each lesson as a "watch for" flag on the systems it names.
-  window.cardinalWatchFlags = function (o) { var F = {}; lessons(o || org()).forEach(function (l) { l[2].split(', ').forEach(function (n) { if (!F[n]) F[n] = l[0].charAt(0).toLowerCase() + l[0].slice(1); }); }); return F; };
+  window.cardinalWatchFlags = function (o) { var F = {}; lessons(o || org()).forEach(function (l) { l[2].split(', ').forEach(function (n) { if (!F[n]) F[n] = /^[A-Z]{2}/.test(l[0]) ? l[0] : l[0].charAt(0).toLowerCase() + l[0].slice(1); }); }); return F; };
   // Vendor fixes: [vendor, problem, asked, vendor answer, status, due]
   var VEND = {
     fin: [['Lexora AI (legal drafting)', 'Tool permissions are set by the vendor; no step-by-step activity log', -12, 'Activity log coming in their next release', 'Waiting on vendor', 18], ['Support LLM provider', 'Training data terms not confirmed', -9, 'Sent signed terms for review', 'In review', 5], ['Credit bureau attributes feed', 'Black box; can only test outputs', -20, 'Shared their own bias test summary', 'Partly fixed', 30]],
@@ -59719,6 +59721,89 @@ setInterval(function () {
     '.ga-ramp{border:1px solid #e5e7eb;border-radius:12px;padding:12px 14px;margin-bottom:10px}.ga-steps{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin:12px 0 8px}.ga-steps div{display:flex;flex-direction:column;gap:5px;font-size:12px;color:#64748b}.ga-steps i{height:8px;border-radius:999px;background:#e5e7eb}.ga-steps .done i{background:#22c55e}.ga-steps .done{color:#15803D}.ga-steps .now i{background:#1d4ed8}.ga-steps .now{color:#1d4ed8;font-weight:600}';
   document.head.appendChild(css);
   setInterval(function () { try { place('genesis'); place('atonement'); logList(); } catch (e) {} }, 400);
+})();
+</script>
+<script data-p="p63_libitem">
+// 10/11 (Brittany: "use cases, models, AI systems, vendors: I should be able to click on it and it opens a pop-up with
+// everything about that... if Genesis is building use cases or personas from it... what happened, last time it was
+// edited"). AI systems and vendor AI open a full pop-up; use cases and models get the same "about this" block on top
+// of the pop-ups they already had: owner, last edited, what Pulse says now, cases, Genesis work, and history.
+(function () {
+  function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;'); }
+  function org() { return window.currentOrg || 'fin'; }
+  function h32(s) { var x = 2166136261; s = String(s); for (var i = 0; i < s.length; i++) { x ^= s.charCodeAt(i); x = Math.imul(x, 16777619); } return Math.abs(x); }
+  var MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  function day(n, h) { var x = new Date(); return new Date(x.getFullYear(), x.getMonth(), x.getDate() + n, h || 10, 0); }
+  function md(d) { d = new Date(d); return MON[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear(); }
+  var TEAM = { fin: ['Nina Roberts', 'Hannah Brooks', 'Riley Whitmore', 'Lisa Torres'], ad: ['Sarah Chen', 'Lisa Walker', 'James Martinez', 'James Park'], health: ['Priyanka Rao', 'Dr. Aisha Patel', 'Elena Ruiz', 'Dr. Maya Osei'], fed: ['Andre Lewis', 'Dana Kim', 'Patricia Alvarez', 'Owen Clarke'] };
+  var BTN = 'font:inherit;font-size:12px;font-weight:600;border:none;background:#1a1815;color:#fff;border-radius:8px;padding:6px 12px;cursor:pointer;white-space:nowrap';
+  function atlasRow(o, names) { var L = window.cardinalAtlasList ? cardinalAtlasList(o) : []; return L.filter(function (s) { return names.some(function (n) { return n && (s.name === n || s.name.indexOf(n) === 0 || n.indexOf(s.name) === 0); }); })[0]; }
+  // The shared "about this" block. names = the item plus anything linked to it (models, agents).
+  function about(o, name, linked, owner, added) {
+    var names = [name].concat(linked || []), h = h32(o + name), T = TEAM[o] || TEAM.fin, a = atlasRow(o, names);
+    owner = owner || (a && a.owner) || T[h % T.length];
+    var editedBy = T[(h >> 3) % T.length], edited = day(-(1 + h % 12), 9 + h % 7);
+    var cases = [], seen = {};
+    if (a && a.cs) { cases.push(a.cs); seen[a.cs] = 1; }
+    (window.cardinalIncidents ? cardinalIncidents(o) : []).forEach(function (x) { if (x.cs && !seen[x.cs] && names.some(function (n) { return n && x.model && (x.model === n || x.model.indexOf(n) === 0); })) { seen[x.cs] = 1; cases.push(x.cs); } });
+    var pulse = null; names.some(function (n) { pulse = window.cardinalPulseStatus ? cardinalPulseStatus(o, n) : null; return !!pulse; });
+    var gen = [];
+    (window.cardinalPersonaSets ? cardinalPersonaSets(o) : []).forEach(function (p) { if (names.some(function (n) { return n && p.model && (p.model === n || p.model.indexOf(n.replace(/ v[\d.]+$/, '')) === 0); })) gen.push('Test personas: ' + p.name + ' (' + p.n + ' made-up people)'); });
+    (window.cardinalDiag ? cardinalDiag(o) : []).forEach(function (d) { if (names.indexOf(d[0]) >= 0) gen.push('Being diagnosed: ' + d[1]); });
+    var wf = window.cardinalWatchFlags ? cardinalWatchFlags(o) : {}; names.forEach(function (n) { if (wf[n]) gen.push('Watch flag from a write-up: ' + wf[n]); });
+    if (!gen.length) gen.push('Nothing built from it in Genesis yet.');
+    var hist = [[added ? new Date(added) : day(-(60 + h % 200)), 'Added to the Cardinal Library', T[(h >> 5) % T.length]], [day(-(14 + h % 20)), 'Evaluated against the Cardinal Standard', 'Adam (AI)'], [edited, 'Last edited: details updated', editedBy]].sort(function (x, y) { return y[0] - x[0]; });
+    var row = function (k, v) { return '<div class="li-kv"><span>' + k + '</span><b>' + v + '</b></div>'; };
+    var caseLinks = cases.length ? cases.map(function (c) { return '<a href="javascript:void(0)" onclick="cardinalOpenCase(\'' + c + '\')">' + esc(c) + '</a>'; }).join(', ') : 'None';
+    return '<div class="li-box"><div class="li-h">About this</div>' +
+      row('Owner', esc(owner)) + row('Last edited', md(edited) + ' by ' + esc(editedBy)) + row('Right now', esc(pulse ? pulse.where + (pulse.what ? ' · ' + pulse.what : '') : 'Working fine. Nothing flagged by Pulse.')) + row('Cases', caseLinks) +
+      '<div class="li-h" style="margin-top:12px">In Genesis</div>' + gen.map(function (g) { return '<div class="li-li">' + esc(g) + '</div>'; }).join('') +
+      '<div class="li-h" style="margin-top:12px">History</div>' + hist.map(function (x) { return '<div class="li-hist"><span>' + md(x[0]) + '</span><span>' + esc(x[1]) + ' · ' + esc(x[2]) + '</span></div>'; }).join('') +
+      '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">' + (a ? '<button type="button" style="' + BTN + '" onclick="liClose();showScreen(\'atlas\',document.getElementById(\'nav-atlas\'));setTimeout(function(){try{atlasOpen(\'' + a.id + '\')}catch(e){}},700)">View in Atlas</button>' : '') + (pulse ? '<button type="button" style="' + BTN + '" onclick="liClose();showScreen(\'pulse\',document.getElementById(\'nav-pulse\'))">View in Pulse</button>' : '') + '<button type="button" style="' + BTN + '" onclick="liClose();showScreen(\'genesis\',null)">View in Genesis</button></div></div>';
+  }
+  window.liClose = function () { ['li-modal', 'lib-uc-modal'].forEach(function (id) { var m = document.getElementById(id); if (m) m.remove(); }); var md2 = document.getElementById('model-detail-modal'); if (md2 && md2.offsetParent) { try { closeModelDetail(); } catch (e) { md2.style.display = 'none'; } } };
+  function pop(kind, color, name, sub, facts, body) {
+    var m = document.getElementById('li-modal'); if (m) m.remove();
+    m = document.createElement('div'); m.id = 'li-modal'; m.style.cssText = 'position:fixed;inset:0;background:rgba(26,24,21,.45);z-index:4100;display:flex;align-items:center;justify-content:center;padding:20px';
+    m.innerHTML = '<div style="width:min(680px,94vw);max-height:88vh;overflow:auto;background:#fff;border-radius:18px;border-top:4px solid ' + color + ';padding:18px 22px;position:relative;font-size:12.5px;color:#1a1815;box-shadow:0 24px 60px rgba(26,24,21,.25)"><button type="button" aria-label="Close" onclick="document.getElementById(\'li-modal\').remove()" style="position:absolute;top:14px;right:16px;width:32px;height:32px;border-radius:50%;border:none;background:#f1f5f9;color:#475569;font-size:20px;cursor:pointer">×</button>' +
+      '<div style="display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;background:#f1f5f9;border-radius:999px;padding:3px 10px"><i style="width:8px;height:8px;border-radius:50%;background:' + color + '"></i>' + kind + '</div><div style="font-size:19px;font-weight:700;margin:8px 0 2px">' + esc(name) + '</div><div style="color:#475569;margin-bottom:12px">' + esc(sub) + '</div>' +
+      '<div class="li-facts">' + facts.map(function (f) { return '<div><span>' + f[0] + '</span><b>' + esc(f[1] || '–') + '</b></div>'; }).join('') + '</div>' + body + '</div>';
+    m.addEventListener('click', function (e) { if (e.target === m) m.remove(); });
+    document.body.appendChild(m);
+  }
+  // AI systems and vendors: rows open the pop-up.
+  document.addEventListener('click', function (e) {
+    var tr = e.target.closest && e.target.closest('#lib-tab-content-systems tbody tr, #lib-tab-content-vendors tbody tr'); if (!tr) return;
+    if (e.target.closest('input,a,button,select')) return;
+    var c = [].map.call(tr.children, function (td) { return td.textContent.trim(); }), o = org();
+    if (!c.filter(Boolean).length) return;
+    var vals = c.filter(function (x, i) { return i > 0 || x; }); if (tr.children[0] && tr.children[0].querySelector('input')) vals = c.slice(1);
+    e.stopPropagation(); e.preventDefault();
+    if (tr.closest('#lib-tab-content-systems')) {
+      var models = (vals[2] || '').split(/,\s*/).filter(Boolean), agents = (vals[3] || '').split(/,\s*/).filter(Boolean);
+      pop('AI system', '#1d4ed8', vals[0], vals[1] || 'AI system', [['Status', (vals[4] || '').replace(/\s+/g, ' ')], ['Models', models.length + ''], ['Agents', agents.length + ''], ['Worst result', (vals[5] || '').replace(/ \+\d+ more$/, '')]],
+        '<div class="li-h">What it is made of</div>' + models.concat(agents).map(function (n) { return '<div class="li-li">' + esc(n) + (agents.indexOf(n) >= 0 ? ' <span class="li-tag">Agent</span>' : ' <span class="li-tag">Model</span>') + '</div>'; }).join('') + about(o, vals[0], models.concat(agents)));
+    } else {
+      pop('Vendor AI', '#C2410C', vals[0], vals[1] || 'Vendor AI', [['Used in', vals[2]], ['Status', vals[7]], ['Evidence on file', vals[3]], ['Evidence missing', vals[4]]],
+        (window.cardinalVendorFix && cardinalVendorFix(o, vals[0]) ? '<div class="li-h">Vendor fix</div><div class="li-li">' + esc(cardinalVendorFix(o, vals[0])[4] + ': ' + cardinalVendorFix(o, vals[0])[3]) + '</div>' : '') + about(o, vals[0], [vals[2]], null, vals[6]));
+    }
+  }, true);
+  // Use cases and models: add the same block to the pop-ups they already have.
+  function wrapUC() {
+    var f = window.cardinalLibOpenUseCase; if (typeof f !== 'function' || f.__li) return;
+    var g = function (id) { var r = f.apply(this, arguments); setTimeout(function () { var m = document.getElementById('lib-uc-modal'); if (!m || m.querySelector('.li-box')) return; var name = ((m.innerText || '').split('\n').filter(Boolean)[1] || '').trim(); var box = m.querySelector('div > div') || m; var holder = document.createElement('div'); holder.innerHTML = about(org(), name, []); box.appendChild(holder.firstChild); }, 150); return r; };
+    g.__li = 1; window.cardinalLibOpenUseCase = g;
+  }
+  function wrapModel() {
+    var f = window.openModelDetail; if (typeof f !== 'function' || f.__li) return;
+    var g = function (id) { var r = f.apply(this, arguments); var tries = 0; (function put() { var inner = document.getElementById('mdm-body-inner'), t = (document.getElementById('mdm-header-title') || {}).textContent || ''; if (!inner || !t) { if (tries++ < 10) setTimeout(put, 150); return; } var old = inner.querySelector('.li-box'); if (old) old.remove(); var m = (window.CARDINAL_MODELS || []).filter(function (x) { return x.id === id || x.name === id || x.name === t.trim(); })[0] || {}; var holder = document.createElement('div'); holder.innerHTML = about(org(), m.name || t.trim(), [], m.owner, m.deployedDate); inner.insertBefore(holder.firstChild, inner.firstChild); })(); return r; };
+    g.__li = 1; window.openModelDetail = g;
+  }
+  setInterval(function () { wrapUC(); wrapModel(); }, 800);
+  var css = document.createElement('style');
+  css.textContent = '.li-box{border:1px solid #e5e7eb;border-radius:14px;padding:12px 14px;margin:12px 0;background:#fff;font-size:12.5px;color:#1a1815}.li-h{font-size:11px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px}.li-kv{display:grid;grid-template-columns:110px 1fr;gap:10px;padding:7px 0;border-top:1px dashed rgba(26,24,21,.12)}.li-kv span{color:#64748b}.li-kv b{font-weight:500}.li-kv a{color:#1e3a8a;font-weight:600;text-decoration:none}.li-li{padding:6px 0;border-top:1px dashed rgba(26,24,21,.12)}.li-hist{display:grid;grid-template-columns:110px 1fr;gap:10px;padding:6px 0;border-top:1px dashed rgba(26,24,21,.12)}.li-hist span:first-child{color:#334155}.li-tag{font-size:10.5px;background:#f1f5f9;border-radius:999px;padding:1px 7px;color:#475569}' +
+    '.li-facts{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}@media (max-width:640px){.li-facts{grid-template-columns:1fr 1fr}}.li-facts div{border:1px solid #e5e7eb;border-radius:12px;padding:10px 12px}.li-facts span{display:block;font-size:11.5px;color:#64748b}.li-facts b{font-weight:600;font-size:12.5px}';
+  document.head.appendChild(css);
 })();
 </script>
 </body>
