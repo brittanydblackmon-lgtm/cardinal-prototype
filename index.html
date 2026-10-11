@@ -50048,7 +50048,7 @@ window.CARDINAL_PLACES = {
 (function () {
   var TABS = {
     // 10/10 (Brittany): Genesis = testing and diagnosis; Atonement = remediation. New sections come from p62_genat.
-    genesis: [['Tests', ['gnws', 'gen-tab-ab', 'gen-discovery-alert', 'gen-scenarios']], ['Diagnose', ['gen-diagnose']], ['Coverage', ['gen-coverage-top', 'gen-tab-coverage', 'gen-tab-counterfactual', 'gen-tab-intersectionality']], ['Compare models', ['gen-tab-compare']], ['Build kit', ['gen-buildkit-top', 'gen-tab-cohort', 'gen-tab-pmprofiles', 'gen-tab-adam']], ['Write-ups', ['gen-lessons']], ['Activity log', ['genesis-log-panel']]],
+    genesis: [['Overview', ['gnws', 'gen-discovery-alert']], ['Diagnose', ['gen-diagnose']], ['Coverage', ['gen-coverage-top', 'gen-tab-coverage', 'gen-tab-counterfactual', 'gen-tab-intersectionality']], ['Compare models', ['gen-tab-compare']], ['Testing environment', ['gen-buildkit-top', 'gen-tab-ab', 'gen-scenarios', 'gen-tab-cohort', 'gen-tab-pmprofiles', 'gen-tab-adam']], ['Write-ups', ['gen-lessons']], ['Activity log', ['genesis-log-panel']]],
     atonement: [['Fixes', ['atws', 'at-tab-fix', 'atonement-deep-view']], ['Rollout', ['at-rollout', 'at-tab-shadow']], ['Sign-offs', ['at-signoffs']], ['Make it right', ['at-right-top', 'at-tab-cohorts']], ['After launch', ['at-after']], ['Vendor fixes', ['at-vendor']], ['Trail', ['at-trail', 'at-tab-simulation', 'at-tab-defense']]]
   };
   var HIDE = { genesis: ['gen-overview-grid', 'gen-isolate-bar'], atonement: ['at-tabs', 'echo-tab-forensics', 'echo-tab-guardrails'] };
@@ -59070,7 +59070,7 @@ setInterval(function () {
       if (k === 'genesis') {
         var start = document.getElementById('gen-start'); if (start && start.nextElementSibling !== bar) start.parentNode.insertBefore(bar, start.nextSibling);
         var tests = idx === 0;
-        ['gnws', 'gen-handoff', 'gen-atlas-req', 'gen-stress-link', 'gen-discovery-alert'].forEach(function (id) { var e = document.getElementById(id); if (e) { var want = tests ? '' : 'none'; if (e.style.display !== want) e.style.display = want; } });
+        ['gnws', 'gen-handoff', 'gen-atlas-req', 'gen-stress-link', 'gen-discovery-alert'].forEach(function (id) { var e = document.getElementById(id); if (e) { var want = (id === 'gen-stress-link' ? idx === 4 : tests) ? '' : 'none'; if (e.style.display !== want) e.style.display = want; } });
       }
     });
   }
@@ -59542,7 +59542,7 @@ setInterval(function () {
     m.innerHTML = '<div style="width:min(620px,94vw);max-height:88vh;overflow:auto;background:#fff;border-radius:18px;border-top:4px solid ' + c + ';padding:18px 22px;position:relative;font-size:12.5px;color:#1a1815"><button type="button" onclick="document.getElementById(\'ga-modal\').remove()" style="position:absolute;top:14px;right:16px;width:32px;height:32px;border-radius:50%;border:none;background:#f1f5f9;font-size:20px;cursor:pointer;color:#475569">×</button>' +
       pill(d.st, c) + '<div style="font-size:19px;font-weight:700;margin:8px 0 10px">' + esc(d.sys) + '</div>' +
       '<div class="ga-kv"><span>What happened?</span><b>' + esc(d.what) + '</b></div><div class="ga-kv"><span>Cause</span><b>' + esc(d.cause) + '</b></div><div class="ga-kv"><span>Next step</span><b>' + esc(d.next) + '</b></div><div class="ga-kv"><span>Working on it</span><b>' + esc(d.who) + '</b></div>' +
-      '<div class="ga-h" style="margin-top:14px;font-size:13px">Send it on</div><div style="display:flex;gap:8px;flex-wrap:wrap">' + btn('More testing', 'test') + btn('Open a case', 'case') + btn('Ask a person', 'person') + btn('Send to Atonement', 'aton') + '</div><div class="ga-mut" style="margin-top:10px">Each choice is sealed in Echo. Finished diagnoses move to the Tests tab.</div></div>';
+      '<div class="ga-h" style="margin-top:14px;font-size:13px">Send it on</div><div style="display:flex;gap:8px;flex-wrap:wrap">' + btn('More testing', 'test') + btn('Open a case', 'case') + btn('Ask a person', 'person') + btn('Send to Atonement', 'aton') + '</div><div class="ga-mut" style="margin-top:10px">Each choice is sealed in Echo. Finished diagnoses move to Overview.</div></div>';
     m.addEventListener('click', function (e) { if (e.target === m) m.remove(); });
     document.body.appendChild(m);
   };
@@ -59558,7 +59558,7 @@ setInterval(function () {
     var R = diagRows(o), D = R.filter(function (d) { return d.st !== 'Done'; }), moved = R.length - D.length + 2;
     var st = function (s) { return pill(s, s === 'Cause found' ? '#1d4ed8' : '#A16207'); };
     return head('Diagnose') + '<div style="height:8px"></div>' +
-      tiles([['Still looking', String(D.filter(function (d) { return d.st === 'In progress'; }).length), '#A16207', 'working out the cause'], ['Cause found', String(D.filter(function (d) { return d.st === 'Cause found'; }).length), '#1d4ed8', 'next step chosen'], ['Finished', String(moved), '#15803D', 'moved to Tests', "gaTab('genesis',0)"]]) +
+      tiles([['Still looking', String(D.filter(function (d) { return d.st === 'In progress'; }).length), '#A16207', 'working out the cause'], ['Cause found', String(D.filter(function (d) { return d.st === 'Cause found'; }).length), '#1d4ed8', 'next step chosen'], ['Finished', String(moved), '#15803D', 'moved to Overview', "gaTab('genesis',0)"]]) +
       '<div class="ga-filter">' + ['All', 'In progress', 'Cause found'].map(function (f, i) { return '<button type="button" class="' + (i ? '' : 'on') + '" onclick="gaDiagF(this,\'' + f + '\')">' + f + '</button>'; }).join('') + '</div>' +
       (D.length ? '<div style="overflow:auto"><table class="ga-t ga-click"><thead><tr><th>AI</th><th>What happened?</th><th>Cause</th><th>Status</th><th>Next step</th><th>Who</th></tr></thead><tbody>' + D.map(function (d) { return '<tr onclick="gaDiagOpen(\'' + d.k + '\')"><td><b style="font-weight:600" data-st="' + d.st + '">' + esc(d.sys) + '</b></td><td>' + esc(d.what) + '</td><td>' + esc(d.cause) + '</td><td>' + st(d.st) + '</td><td>' + esc(d.next) + '</td><td>' + esc(d.who) + '</td></tr>'; }).join('') + '</tbody></table></div>' : '<div class="ga-mut">Nothing being diagnosed right now.</div>') +
       '<div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap"><button type="button" style="' + BTN + '" onclick="gaAsk(\'Asked Adam to start a new diagnosis\')">Ask Adam to diagnose something</button></div>';
@@ -59571,17 +59571,20 @@ setInterval(function () {
       '<div class="ga-chips">' + G.map(function (x) { return '<span>' + esc(x) + ' <button type="button" onclick="gaAsk(\'Asked Adam to test: ' + esc(x).replace(/'/g, '') + '\')">Test this</button></span>'; }).join('') + '</div>' +
       '<div style="display:flex;gap:8px;margin-top:12px"><button type="button" style="' + BTN + '" onclick="gaReport()">Generate validation report</button></div>';
   }
+  window.gaUpload = function (inp) { var f = inp.files && inp.files[0]; if (!f) return; seal('Test data uploaded to the testing environment: ' + f.name); toast(f.name + ' added to the testing environment. Sealed in Echo.'); inp.value = ''; };
+  window.gaNewTest = function () { try { gnBuild(true); } catch (e) { toast('New test opened.'); } };
   function gBuild(o) {
-    return head('Build kit', 'The testing environment. Test personas, saved test setups, and the agents and models built only for testing live here. Adam can build here on his own, but he can never launch anything. Your team can build here too.') +
-      tiles([['Test personas', String(o === 'fin' ? 3 : 2) + ' sets', '#0ea5e9', 'made-up people', "showScreen('cardinallibrary',null);setTimeout(function(){try{cardinalOpenPeople('syn')}catch(e){}},900)"], ['Saved test setups', '6', '#8b5cf6', 'reuse instead of rebuilding'], ['Built by Adam', '4', '#22c55e', 'each with his notes']]) +
-      table(['Built', 'By', 'For', 'Notes'], [
+    return head('Testing environment') + '<div style="height:8px"></div>' +
+      '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px"><button type="button" style="' + BTN + '" onclick="gaNewTest()">+ New test</button><button type="button" style="' + BTN + '" onclick="showScreen(\'pipeline\',null)">Use data from the Data Pipeline</button><label style="' + BTN + ';display:inline-flex;align-items:center">Upload test data<input type="file" style="display:none" onchange="gaUpload(this)"></label><button type="button" style="' + BTN + '" onclick="gaAsk(\'Asked Adam to build a new test setup\')">Ask Adam to build something</button></div>' +
+      tiles([['Test personas', String(o === 'fin' ? 3 : 2) + ' sets', '#0ea5e9', 'made-up people', "showScreen('cardinallibrary',null);setTimeout(function(){try{cardinalOpenPeople('syn')}catch(e){}},900)"], ['Saved test setups', '6', '#8b5cf6', 'reuse instead of rebuilding'], ['Built by Adam', '4', '#22c55e', 'he builds; he never launches']]) +
+      table(['Saved setup', 'By', 'For', 'Notes'], [
         ['Replay of 500 past agent chats', 'Adam', esc(pc(o).model), 'Reusable for any agent that answers questions'],
         ['Red team prompt set (240 attacks)', 'Adam', 'Every agent', 'Updated monthly with new attacks'],
         ['Untested group personas', 'Adam', 'Coverage gaps', 'One set per group on the Coverage tab'],
         ['Before and after fairness check', esc(SIGN[o][0]), esc(MAIN[o][1]), 'The same check used in the war room']
-      ]) +
-      '<div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap"><button type="button" style="' + BTN + '" onclick="showScreen(\'cardinallibrary\',null);setTimeout(function(){try{cardinalOpenPeople(\'syn\')}catch(e){}},900)">View test personas in the Library</button><button type="button" style="' + BTN + '" onclick="gaAsk(\'Asked Adam to build a new test setup\')">Ask Adam to build something</button></div>';
+      ]);
   }
+
   // Write-ups (was Lessons; Brittany 10/11: "a whole report for each one... what did we learn... stored in Echo").
   window.gaWriteup = function (i) {
     var o = org(), l = lessons(o)[i]; if (!l) return; var g = pc(o), m = MAIN[o], isAgent = l[1] === g.id;
@@ -59689,7 +59692,7 @@ setInterval(function () {
     genesis: [['gen-diagnose', 1, gDiagnose], ['gen-coverage-top', 2, gCoverage], ['gen-buildkit-top', 4, gBuild], ['gen-lessons', 5, gLessons]],
     atonement: [['at-rollout', 1, aRollout], ['at-signoffs', 2, aSign], ['at-right-top', 3, aRight], ['at-after', 4, aAfter], ['at-vendor', 5, aVendor], ['at-trail', 6, aTrail]]
   };
-  var FIRST = { 'gen-coverage-top': 'gen-tab-coverage', 'gen-buildkit-top': 'gen-tab-cohort', 'at-right-top': 'at-tab-cohorts', 'at-trail': 'at-tab-simulation', 'at-rollout': 'at-tab-shadow' };
+  var FIRST = { 'gen-coverage-top': 'gen-tab-coverage', 'at-right-top': 'at-tab-cohorts', 'at-trail': 'at-tab-simulation', 'at-rollout': 'at-tab-shadow' };
   function place(core) {
     var scr = document.getElementById('screen-' + core); if (!scr || scr.offsetParent === null) return;
     var o = org(), idx = window['__p59' + core] || 0;
@@ -59699,10 +59702,24 @@ setInterval(function () {
       if (!el) { el = document.createElement('div'); el.id = s[0]; el.className = 'card ga-sec'; }
       var before = FIRST[s[0]] && document.getElementById(FIRST[s[0]]);
       if (before) { if (el.nextElementSibling !== before) before.parentNode.insertBefore(el, before); }
+      else if (s[0] === 'gen-buildkit-top') { var ab2 = document.getElementById('gen-tab-ab'); if (ab2 && !el.parentNode) ab2.parentNode.insertBefore(el, ab2); }
       else if (el.parentNode !== anchor.parentNode) anchor.parentNode.appendChild(el);
       if (el.__k !== o) { el.__k = o; el.innerHTML = s[2](o); }
       var want = idx === s[1] ? '' : 'none'; if (el.style.display !== want) el.style.display = want;
     });
+    if (core === 'genesis') {
+      // Overview: the never-tested warning first, then requests, the test list, and the hand-off (Brittany 10/11: most important first).
+      var disc = document.getElementById('gen-discovery-alert'), nxt = document.getElementById('gen-atlas-req') || document.getElementById('gnws');
+      if (disc && nxt && disc.nextElementSibling !== nxt) nxt.parentNode.insertBefore(disc, nxt);
+      // Testing environment: set-up first, then the threshold tool, stress tests, scenario tests, personas and profiles, Adam.
+      var chain = ['gen-buildkit-top', 'gen-tab-ab', 'gen-stress-link', 'gen-scenarios', 'gen-tab-cohort', 'gen-tab-pmprofiles', 'gen-tab-adam'].map(function (id) { return document.getElementById(id); }).filter(Boolean);
+      var bk = document.getElementById('gen-buildkit-top'), ab = document.getElementById('gen-tab-ab');
+      if (bk && ab && !bk.parentNode) ab.parentNode.insertBefore(bk, ab);
+      if (bk && ab && bk.parentNode !== ab.parentNode) ab.parentNode.insertBefore(bk, ab);
+      for (var c = 1; c < chain.length; c++) if (chain[c - 1].parentNode === chain[c].parentNode && chain[c - 1].nextElementSibling !== chain[c]) chain[c - 1].parentNode.insertBefore(chain[c], chain[c - 1].nextSibling);
+      // Plain names for the two older tools.
+      [].forEach.call(document.querySelectorAll('#gen-scenarios *, #gen-tab-ab *'), function (x) { if (x.children.length) return; var t = x.textContent.trim(); if (t === 'Scenario Tests: Beyond Bias') x.textContent = 'Scenario tests: security, safety, and edge cases'; else if (t === 'Threshold Testing Workspace') x.textContent = 'Try a decision threshold'; });
+    }
     if (core === 'atonement') {
       var bar = scr.querySelector('.core-tabbar'), st = document.getElementById('at-start');
       if (bar) { if (!st) { st = document.createElement('div'); st.id = 'at-start'; st.className = 'card ga-sec'; } if (st.previousElementSibling !== bar) bar.parentNode.insertBefore(st, bar.nextSibling); if (st.__k !== o) { st.__k = o; st.innerHTML = aStart(o); } }
