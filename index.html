@@ -58720,10 +58720,11 @@ setInterval(function () {
   function listsHtml(o) {
     var L = window.cardinalAffectedLists(o);
     return '<div style="background:#fff;border:1px solid rgba(26,24,21,.08);border-top:3px solid #0ea5e9;border-radius:14px;padding:12px 14px;font-size:12.5px;color:#1a1815"><div style="font-size:11.5px;color:#64748b;margin-bottom:8px">Everyone affected by each case, in one place. Open a group to see each person, remove or restore someone, or download a CSV. Every change is sealed in Echo.</div>' +
-      '<input type="search" placeholder="Search a case, model, or group" oninput="var q=this.value.toLowerCase().trim();[].forEach.call(document.querySelectorAll(\'#lib-tab-content-caselists .aff-row\'),function(r){r.style.display=!q||r.getAttribute(\'data-q\').indexOf(q)>=0?\'\':\'none\'})" style="width:100%;box-sizing:border-box;font:inherit;font-size:13px;padding:9px 12px;border:1px solid #e5e7eb;border-radius:10px;margin:0 0 10px;background:#fff">' +
+      '<input type="search" placeholder="Search a case, model, or group" oninput="var q=this.value.toLowerCase().trim();[].forEach.call(this.parentNode.querySelectorAll(\'.aff-row\'),function(r){r.style.display=!q||r.getAttribute(\'data-q\').indexOf(q)>=0?\'\':\'none\'})" style="width:100%;box-sizing:border-box;font:inherit;font-size:13px;padding:9px 12px;border:1px solid #e5e7eb;border-radius:10px;margin:0 0 10px;background:#fff">' +
       '<table style="width:100%;border-collapse:collapse"><thead><tr>' + ['Case', 'Model', 'Who', 'People', 'Removed', 'Last edited', ''].map(function (h) { return '<th style="text-align:left;font-size:10.5px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.4px;padding:7px 8px;background:#f1f5f9">' + h + '</th>'; }).join('') + '</tr></thead><tbody>' +
-      L.map(function (x, n) { var s = st(o, x.cs); return '<tr class="aff-row" data-q="' + esc((x.cs + ' ' + x.model + ' ' + x.who).toLowerCase()) + '" style="background:' + (n % 2 ? '#f8fafc' : '#fff') + ';cursor:pointer" onclick="affOpen(\'' + esc(x.cs) + '\')"><td style="padding:8px;font-weight:600;color:#1e3a8a">' + esc(x.cs) + (x.closed ? ' <span style="font-size:10.5px;color:#15803D">closed</span>' : '') + '</td><td style="padding:8px">' + esc(x.model) + '</td><td style="padding:8px;color:#475569">' + esc(x.who) + '</td><td style="padding:8px">' + x.n.toLocaleString() + '</td><td style="padding:8px">' + Object.keys(s.removed).length + '</td><td style="padding:8px;white-space:nowrap;color:#475569">' + fdt(lastEdit(o, x)) + (s.last ? '<div style="font-size:11px;color:#64748b">' + esc(s.last.who) + '</div>' : x.closed ? '<div style="font-size:11px;color:#64748b">List locked when the case closed</div>' : '') + '</td><td style="padding:8px;text-align:right"><button type="button" onclick="event.stopPropagation();affOpen(\'' + esc(x.cs) + '\')" style="font:inherit;font-size:11.5px;font-weight:600;border:none;background:#1a1815;color:#fff;border-radius:7px;padding:5px 11px;cursor:pointer;white-space:nowrap">View impact group</button></td></tr>'; }).join('') + '</tbody></table></div>';
+      L.map(function (x, n) { var s = st(o, x.cs); return '<tr class="aff-row" data-q="' + esc((x.cs + ' ' + x.model + ' ' + x.who).toLowerCase()) + '" style="background:' + (n % 2 ? '#f8fafc' : '#fff') + ';cursor:pointer" onclick="affOpen(\'' + esc(x.cs) + '\')"><td style="padding:8px;font-weight:600;color:#1e3a8a">' + esc(x.cs) + (x.closed ? ' <span style="font-size:10.5px;color:#15803D">closed</span>' : '') + '</td><td style="padding:8px">' + esc(x.model) + '</td><td style="padding:8px;color:#475569">' + esc(x.who) + '</td><td style="padding:8px">' + x.n.toLocaleString() + '</td><td style="padding:8px">' + Object.keys(s.removed).length + '</td><td style="padding:8px;white-space:nowrap;color:#475569">' + fdt(lastEdit(o, x)) + (s.last ? '<div style="font-size:11px;color:#64748b">' + esc(s.last.who) + '</div>' : x.closed ? '<div style="font-size:11px;color:#64748b">List locked when the case closed</div>' : '') + '</td><td style="padding:8px;text-align:right"><button type="button" onclick="event.stopPropagation();affOpen(\'' + esc(x.cs) + '\')" style="font:inherit;font-size:11.5px;font-weight:600;border:none;background:#1a1815;color:#fff;border-radius:7px;padding:5px 11px;cursor:pointer;white-space:nowrap">View group</button></td></tr>'; }).join('') + '</tbody></table></div>';
   }
+  window.cardinalAffectedListsHtml = listsHtml;
   window.libShowCaseLists = function () { var t = document.getElementById('lib-tab-caselists'); if (t) t.click(); };
   function library() {
     var scr = document.getElementById('screen-cardinallibrary'); if (!scr || scr.offsetParent === null) return;
@@ -58731,7 +58732,7 @@ setInterval(function () {
     var cust = document.getElementById('lib-tab-customers'), first = scr.querySelector('.lib-tab'); if (!cust || !first) return;
     var tab = document.getElementById('lib-tab-caselists');
     if (!tab) {
-      tab = document.createElement('button'); tab.type = 'button'; tab.id = 'lib-tab-caselists'; tab.className = cust.className.replace(/\bactive\b/, '').trim(); tab.textContent = 'Impact groups';
+      tab = document.createElement('button'); tab.type = 'button'; tab.id = 'lib-tab-caselists'; tab.className = cust.className.replace(/\bactive\b/, '').trim(); tab.textContent = 'Affected groups';
       tab.onclick = function () {
         [].forEach.call(scr.querySelectorAll('.lib-tab'), function (b) { b.classList.remove('active'); }); tab.classList.add('active');
         [].forEach.call(scr.querySelectorAll('[id^=lib-tab-content-]'), function (e) { e.style.display = 'none'; });
@@ -58936,6 +58937,188 @@ setInterval(function () {
   var oGo = window.coreTabGo;
   if (typeof oGo === 'function') window.coreTabGo = function (core, i) { if (core === 'genesis' || core === 'atonement') window['__p59' + core] = i; return oGo.apply(this, arguments); };
   setInterval(function () { try { tick(); } catch (e) {} }, 300);
+})();
+</script>
+<script data-p="p60_people">
+// 10/10 (Brittany: "a general name for everybody who's a customer... you click on that and it has sub cards... all the
+// customers, impact groups, cohorts, the personas Genesis creates, someone uploaded a CSV... you can view the list and it
+// shows the people in that list"). The Library gets one "People" tab with five lists: All customers, Affected groups,
+// Cohorts, Test personas (made up by Genesis, never real people), and Uploaded lists. Every list opens the same way:
+// search, page through, download a CSV. Uploads and downloads are sealed in Echo.
+(function () {
+  function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;'); }
+  function org() { return window.currentOrg || 'fin'; }
+  function h32(s) { var x = 2166136261; s = String(s); for (var i = 0; i < s.length; i++) { x ^= s.charCodeAt(i); x = Math.imul(x, 16777619); } return Math.abs(x); }
+  var MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  function fd(d) { d = new Date(d); return MON[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear(); }
+  function ago(n) { var d = new Date(); d.setDate(d.getDate() - n); d.setHours(9 + n % 7, (n * 13) % 60, 0, 0); return d; }
+  function me() { var p = window.getActivePersona ? getActivePersona() : null; return p ? p.name : 'You'; }
+  function cfg() { return (window.CARDINAL_PEOPLE_CFG || {})[org()] || { word: 'Customers', one: 'customer' }; }
+  function total() { return window.cardinalPersonTotal ? cardinalPersonTotal() : 0; }
+  function short(n) { return n >= 1e6 ? (n / 1e6).toFixed(1) + 'M' : n >= 1e4 ? Math.round(n / 1e3) + 'K' : n.toLocaleString(); }
+  function seal(txt) {
+    try { (((window.CARDINAL_DATA || {})[org()] || {}).echoMemories || []).unshift({ id: 'echo-ppl-' + Date.now(), timestamp: new Date().toISOString(), author: me(), eventType: 'people-list', core: 'library', severity: 'informational', summary: txt, isSealed: true }); } catch (e) {}
+  }
+
+  // Cohorts: real people grouped for testing or watching (groups hurt by a case live under Affected groups).
+  var MORE_COH = {
+    ad: [['TEST-AD-11', 'Crews at desert bases', 620, 'running', 'James Park', 5], ['TEST-AD-12', 'Coastal base maintenance crews', 540, 'complete', 'Lisa Walker', 19], ['TEST-AD-14', 'Reservists returning to duty', 310, 'live', 'Sarah Chen', 2]],
+    health: [['TEST-HS-21', 'Members 65+ with chronic conditions', 900, 'running', 'Dr. Aisha Patel', 3], ['TEST-HS-22', 'Rural members far from in-network care', 450, 'complete', 'Priyanka Rao', 14], ['TEST-HS-23', 'Members who speak Spanish at home', 380, 'live', 'Elena Ruiz', 6]],
+    fed: [['TEST-FED-31', 'Filers with recent address changes', 700, 'running', 'Andre Lewis', 2], ['TEST-FED-32', 'Gig workers with several 1099 forms', 520, 'complete', 'Owen Clarke', 11]]
+  };
+  function cohorts(o) {
+    var out = (window.CARDINAL_COHORTS || []).filter(function (c) { return c.industry === o && c.type === 'test'; }).map(function (c, k) { return { id: c.id, name: c.name, n: c.size, status: c.status, owner: c.owner, upd: ago(2 + k * 3), cs: c.linkedCase || '' }; });
+    (MORE_COH[o] || []).forEach(function (c) { out.push({ id: c[0], name: c[1], n: c[2], status: c[3], owner: c[4], upd: ago(c[5]) }); });
+    return out;
+  }
+  // Test personas: made-up people Genesis builds to test a model without touching real records.
+  var MORE_SYN = {
+    ad: [['SYN-AD-07', 'Made-up crews at desert and coastal bases', 150, 'Fleet Health v2.5', 'running', 2], ['SYN-AD-09', 'Made-up mechanics trying to skip sign-off', 40, 'Work-order agent', 'complete', 9]],
+    health: [['SYN-HS-12', 'Made-up members 65+ with the same diagnoses as younger members', 240, 'Claims Adjudication v2.0', 'running', 1], ['SYN-HS-14', 'Made-up patients asking the agent to approve care', 60, 'Prior-auth agent', 'running', 1]],
+    fed: [['SYN-FED-05', 'Made-up self-employed filers with normal income swings', 300, 'IRS Tax Fraud Detection v3.2', 'complete', 6], ['SYN-FED-06', 'Made-up filers asking for a notice without review', 50, 'Notice-drafting agent', 'complete', 12]]
+  };
+  function personas(o) {
+    var out = (window.CARDINAL_COHORTS || []).filter(function (c) { return c.industry === o && c.type === 'synthetic'; }).map(function (c, k) { return { id: c.id, name: c.name, n: c.size, status: c.status, owner: c.owner, upd: ago(1 + k * 4), model: c.linkedCase ? 'Credit Scoring v3.5' : 'Fraud Screening v2.7' }; });
+    (MORE_SYN[o] || []).forEach(function (c) { out.push({ id: c[0], name: c[1], n: c[2], model: c[3], status: c[4], owner: 'Adam (AI)', upd: ago(c[5]) }); });
+    return out;
+  }
+  // Uploaded lists: one example per company, plus anything uploaded in this session.
+  var UPL = window.__pplUploads = window.__pplUploads || {};
+  var EX_UPL = { fin: ['UPL-FIN-01', 'Regulator exam sample', 'exam_sample_q3.csv', 250, 'Morgan Hale', 8], ad: ['UPL-AD-01', 'Audit sample of crew records', 'audit_sample_sept.csv', 120, 'Sarah Chen', 12], health: ['UPL-HS-01', 'Audit sample of denied claims', 'denied_claims_sample.csv', 300, 'Dr. Aisha Patel', 9], fed: ['UPL-FED-01', 'Inspector general review sample', 'ig_review_sample.csv', 180, 'Owen Clarke', 7] };
+  function uploads(o) { var e = EX_UPL[o] || EX_UPL.fin; return (UPL[o] || []).concat([{ id: e[0], name: e[1], file: e[2], n: e[3], owner: e[4], upd: ago(e[5]) }]); }
+
+  function lists(o) { return { all: total(), aff: (window.cardinalAffectedLists ? cardinalAffectedLists(o) : []).length, coh: cohorts(o).length, syn: personas(o).length, upl: uploads(o).length }; }
+  var CARDS = [
+    ['all', '#1d4ed8', function () { return 'All ' + cfg().word.toLowerCase(); }, function (n) { return short(n.all) + ' people'; }, 'Everyone in your records. Look anyone up by name, email, or ID.'],
+    ['aff', '#B91C1C', function () { return 'Affected groups'; }, function (n) { return n.aff + ' groups'; }, 'People a case touched. One group per case, from the war room.'],
+    ['coh', '#8b5cf6', function () { return 'Cohorts'; }, function (n) { return n.coh + ' cohorts'; }, 'Real people grouped to test or watch something.'],
+    ['syn', '#0ea5e9', function () { return 'Test personas'; }, function (n) { return n.syn + ' sets'; }, 'Made-up people Genesis builds for tests. Never real records.'],
+    ['upl', '#A16207', function () { return 'Uploaded lists'; }, function (n) { return n.upl + ' list' + (n.upl === 1 ? '' : 's'); }, 'Lists someone brought in, like an audit sample.']
+  ];
+  var S = window.__ppl = window.__ppl || { sub: 'all' };
+
+  var TH = 'text-align:left;font-size:11.5px;font-weight:600;color:#64748b;padding:8px 10px;background:#f1f5f9';
+  var TD = 'padding:9px 10px;border-top:1px solid #eef0f3;vertical-align:top';
+  var BTN = 'font:inherit;font-size:12px;font-weight:600;border:none;background:#1a1815;color:#fff;border-radius:8px;padding:6px 12px;cursor:pointer;white-space:nowrap';
+  function statusPill(s) { var c = /running|live|in-progress/.test(s) ? '#1d4ed8' : /complete/.test(s) ? '#15803D' : '#64748b'; var t = { running: 'Running', live: 'Live', 'in-progress': 'In progress', complete: 'Complete', archive: 'Archived', monitoring: 'Watching' }[s] || s; return '<span style="font-size:11px;font-weight:600;color:' + c + ';border:1px solid ' + c + '55;background:' + c + '12;border-radius:999px;padding:2px 9px;white-space:nowrap">' + esc(t) + '</span>'; }
+  function search(ph) { return '<input type="search" placeholder="' + ph + '" oninput="var q=this.value.toLowerCase().trim();[].forEach.call(this.parentNode.querySelectorAll(\'.ppl-row\'),function(r){r.style.display=!q||r.getAttribute(\'data-q\').indexOf(q)>=0?\'\':\'none\'})" style="width:100%;box-sizing:border-box;font:inherit;font-size:13px;padding:9px 12px;border:1px solid #e5e7eb;border-radius:10px;margin:0 0 10px;background:#fff">'; }
+  function table(heads, rows) { return '<div style="border:1px solid #e5e7eb;border-radius:12px;overflow:auto"><table style="width:100%;border-collapse:collapse;font-size:12.5px"><thead><tr>' + heads.map(function (h) { return '<th style="' + TH + '">' + h + '</th>'; }).join('') + '</tr></thead><tbody>' + rows.join('') + '</tbody></table></div>'; }
+  function panel(o) {
+    var s = S.sub;
+    if (s === 'all') return window.cardinalCustomerDirectory ? cardinalCustomerDirectory('ppl') : '';
+    if (s === 'aff') return window.cardinalAffectedListsHtml ? cardinalAffectedListsHtml(o) : '';
+    var intro = { coh: 'Real people grouped to test or watch something, such as applicants 75+ on a fixed income. Groups a case hurt are under Affected groups.', syn: 'Made-up people Genesis builds so a model can be tested without using anyone’s real record. Each set says which test it was made for.', upl: 'Lists people brought into Cardinal, like a sample an auditor asked for. Each upload is sealed in Echo with who added it and when.' }[s];
+    var L = s === 'coh' ? cohorts(o) : s === 'syn' ? personas(o) : uploads(o);
+    var heads = s === 'coh' ? ['Cohort', 'People', 'Status', 'Owner', 'Last edited', ''] : s === 'syn' ? ['Persona set', 'People', 'Made for', 'Status', 'Last edited', ''] : ['List', 'People', 'File', 'Uploaded by', 'Uploaded', ''];
+    var rows = L.map(function (x, n) {
+      var q = (x.id + ' ' + x.name + ' ' + (x.owner || '') + ' ' + (x.model || '') + ' ' + (x.file || '')).toLowerCase();
+      var first = '<td style="' + TD + '"><div style="font-weight:600">' + esc(x.name) + '</div><div style="font-size:11.5px;color:#64748b">' + esc(x.id) + (x.cs ? ' · ' + esc(x.cs) : '') + '</div></td>';
+      var mid = s === 'coh' ? '<td style="' + TD + '">' + statusPill(x.status) + '</td><td style="' + TD + '">' + esc(x.owner) + '</td>' : s === 'syn' ? '<td style="' + TD + '">' + esc(x.model) + '</td><td style="' + TD + '">' + statusPill(x.status) + '</td>' : '<td style="' + TD + ';color:#475569">' + esc(x.file) + '</td><td style="' + TD + '">' + esc(x.owner) + '</td>';
+      return '<tr class="ppl-row" data-q="' + esc(q) + '" style="background:' + (n % 2 ? '#f8fafc' : '#fff') + ';cursor:pointer" onclick="pplOpen(\'' + s + '\',\'' + esc(x.id) + '\')">' + first + '<td style="' + TD + '">' + x.n.toLocaleString() + '</td>' + mid + '<td style="' + TD + ';white-space:nowrap;color:#475569">' + fd(x.upd) + '</td><td style="' + TD + ';text-align:right"><button type="button" style="' + BTN + '" onclick="event.stopPropagation();pplOpen(\'' + s + '\',\'' + esc(x.id) + '\')">View ' + (s === 'syn' ? 'personas' : 'people') + '</button></td></tr>';
+    });
+    var up = s === 'upl' ? '<div style="display:flex;justify-content:flex-end;margin-bottom:10px"><label style="' + BTN + ';display:inline-flex;align-items:center;gap:6px">Upload a CSV<input type="file" accept=".csv,text/csv" style="display:none" onchange="pplUpload(this)"></label></div>' : '';
+    return '<div style="background:#fff;border:1px solid rgba(26,24,21,.08);border-radius:14px;padding:14px 16px;font-size:12.5px;color:#1a1815"><div style="font-size:12.5px;color:#475569;margin-bottom:10px">' + intro + '</div>' + up + search('Search by name, ID, or owner') + table(heads, rows) + '</div>';
+  }
+  function html(o) {
+    var N = lists(o);
+    return '<div style="font-size:12.5px;color:#1a1815"><div style="margin:0 0 10px"><div style="font-size:16px;font-weight:700">People</div><div style="font-size:12.5px;color:#475569">Every list of people Cardinal keeps, in one place. Pick a list, then open it to see who is on it.</div></div>' +
+      '<div class="ppl-cards">' + CARDS.map(function (c) { return '<button type="button" class="ppl-card' + (S.sub === c[0] ? ' on' : '') + '" style="--c:' + c[1] + '" onclick="pplSub(\'' + c[0] + '\')"><span class="ppl-t"><i></i>' + esc(c[2]()) + '</span><b>' + c[3](N) + '</b><em>' + c[4] + '</em></button>'; }).join('') + '</div>' +
+      '<div id="ppl-panel" style="margin-top:12px">' + panel(o) + '</div></div>';
+  }
+  window.pplSub = function (k) { S.sub = k; var b = document.getElementById('lib-tab-content-people'); if (b) { b.innerHTML = html(org()); b.__k = org() + k; } };
+
+  // One way to open any list: same people records as the Library, so names and profiles match everywhere.
+  var SYN_F = ['Alex', 'Jordan', 'Sam', 'Taylor', 'Casey', 'Riley', 'Morgan', 'Jamie', 'Avery', 'Quinn', 'Drew', 'Reese'], SYN_L = ['Test', 'Sample', 'Model', 'Persona'];
+  function rowsFor(k, x) {
+    var o = org(), c = cfg(), out = [];
+    var pick = function (j) { return (h32(x.id) + j * 104729) % Math.max(1, total()); };
+    for (var j = 0; j < x.n; j++) {
+      if (k === 'syn') { var h = h32(x.id + j); out.push({ syn: 1, name: SYN_F[h % SYN_F.length] + ' ' + SYN_L[(h >> 5) % SYN_L.length] + ' ' + (j + 1), id: x.id + '-' + String(j + 1).padStart(4, '0'), a: 'Age ' + (22 + h % 60), b: ['Low income', 'Middle income', 'High income'][(h >> 3) % 3], c: ['City', 'Suburb', 'Rural'][(h >> 7) % 3] }); }
+      else if (x.rows) { var r = x.rows[j] || []; out.push({ name: r[0] || 'Row ' + (j + 1), id: r[1] || '', a: r[2] || '', b: r[3] || '', c: '' }); }
+      else { var i = pick(j), p = window.cardinalPerson ? cardinalPerson(i) : { name: 'Person ' + j, id: '', city: '', st: '' }; out.push({ i: i, name: p.name, id: p.id, a: (p.city ? p.city + ', ' : '') + (p.st || ''), b: p.email || '', c: '' }); }
+    }
+    return out;
+  }
+  function find(k, id) { var o = org(), L = k === 'coh' ? cohorts(o) : k === 'syn' ? personas(o) : uploads(o); return L.filter(function (x) { return x.id === id; })[0]; }
+  var P = { q: '', page: 0 };
+  window.pplOpen = function (k, id) { P = { k: k, id: id, q: '', page: 0 }; draw(true); };
+  window.pplQ = function (v) { P.q = v; P.page = 0; draw(false, true); };
+  window.pplPage = function (d) { P.page = Math.max(0, P.page + d); draw(); };
+  window.pplCsv = function () {
+    var x = find(P.k, P.id); if (!x) return; var R = rowsFor(P.k, x), syn = P.k === 'syn';
+    var L = [syn ? 'Name,ID,Age,Income,Area,Note' : 'Name,ID,Location,Email'].concat(R.map(function (r) { return [r.name, r.id, r.a, r.b].concat(syn ? [r.c, 'Made up for testing, not a real person'] : []).map(function (v) { return '"' + String(v).replace(/"/g, '""') + '"'; }).join(','); }));
+    try { var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([L.join('\n')], { type: 'text/csv' })); a.download = 'cardinal-' + x.id + '.csv'; document.body.appendChild(a); a.click(); a.remove(); } catch (e) {}
+    seal(x.name + ' (' + x.id + ') downloaded as CSV, ' + x.n.toLocaleString() + ' rows');
+    try { cardinalShowToast('CSV downloaded. The download is logged in Echo.'); } catch (e) {}
+  };
+  function draw(open, keep) {
+    var x = find(P.k, P.id); if (!x) return;
+    var m = document.getElementById('ppl-modal'); if (!m && !open) return;
+    if (!m) { m = document.createElement('div'); m.id = 'ppl-modal'; m.style.cssText = 'position:fixed;inset:0;background:rgba(26,24,21,.45);z-index:4100;display:flex;align-items:center;justify-content:center;padding:20px'; m.addEventListener('click', function (e) { if (e.target === m) m.remove(); }); document.body.appendChild(m); }
+    var syn = P.k === 'syn', all = rowsFor(P.k, x), q = P.q.toLowerCase(), R = q ? all.filter(function (r) { return (r.name + ' ' + r.id + ' ' + r.a + ' ' + r.b).toLowerCase().indexOf(q) >= 0; }) : all, per = 25, from = P.page * per, page = R.slice(from, from + per);
+    var col = { coh: '#8b5cf6', syn: '#0ea5e9', upl: '#A16207' }[P.k], kind = { coh: 'Cohort', syn: 'Test personas', upl: 'Uploaded list' }[P.k];
+    var heads = syn ? ['Name', 'ID', 'Age', 'Income', 'Area'] : ['Name', 'ID', 'Location', 'Email'];
+    m.innerHTML = '<div style="width:min(900px,96vw);max-height:90vh;overflow:auto;background:#fff;border-radius:18px;border-top:4px solid ' + col + ';padding:18px 22px;position:relative;font-size:12.5px;color:#1a1815;box-shadow:0 24px 60px rgba(26,24,21,.25)">' +
+      '<button type="button" aria-label="Close" onclick="document.getElementById(\'ppl-modal\').remove()" style="position:absolute;top:14px;right:16px;width:32px;height:32px;border-radius:50%;border:none;background:#f1f5f9;color:#475569;font-size:20px;cursor:pointer">×</button>' +
+      '<div style="display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;background:#f1f5f9;border-radius:999px;padding:3px 10px"><i style="width:8px;height:8px;border-radius:50%;background:' + col + '"></i>' + kind + '</div>' +
+      '<div style="font-size:19px;font-weight:700;margin:8px 0 2px">' + esc(x.name) + '</div><div style="font-size:12.5px;color:#475569;margin-bottom:12px">' + x.n.toLocaleString() + ' ' + (syn ? 'made-up people' : 'people') + ' · ' + esc(x.id) + (x.model ? ' · made for ' + esc(x.model) : '') + (x.file ? ' · from ' + esc(x.file) : '') + ' · ' + esc(x.owner) + '</div>' +
+      (syn ? '<div style="background:#f0f9ff;border-left:3px solid #0ea5e9;border-radius:10px;padding:10px 14px;margin-bottom:12px;color:#334155">These people are made up. Genesis builds them so a model can be tested without using anyone’s real record. They never get a real decision.</div>' : '') +
+      '<div style="display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap"><input id="ppl-q" value="' + esc(P.q) + '" placeholder="Search by name, ID, or location" oninput="clearTimeout(window.__pplT);var v=this.value;window.__pplT=setTimeout(function(){pplQ(v)},250)" style="flex:1;min-width:220px;font:inherit;font-size:13px;border:1px solid #e5e7eb;border-radius:10px;padding:8px 12px"><button type="button" style="' + BTN + '" onclick="pplCsv()">Download CSV</button></div>' +
+      table(heads, page.map(function (r, n) { return '<tr style="background:' + (n % 2 ? '#f8fafc' : '#fff') + '"><td style="' + TD + '">' + (r.i != null ? '<a href="javascript:void(0)" onclick="custOpen(' + r.i + ')" style="color:#1e3a8a;font-weight:600;text-decoration:none">' + esc(r.name) + '</a>' : '<span style="font-weight:600">' + esc(r.name) + '</span>' + (syn ? ' <span style="font-size:10.5px;color:#0369a1;background:#e0f2fe;border-radius:999px;padding:1px 7px;margin-left:4px">Made up</span>' : '')) + '</td><td style="' + TD + ';color:#475569">' + esc(r.id) + '</td><td style="' + TD + '">' + esc(r.a) + '</td><td style="' + TD + ';color:#475569">' + esc(r.b) + '</td>' + (syn ? '<td style="' + TD + '">' + esc(r.c) + '</td>' : '') + '</tr>'; })) +
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;font-size:12px;color:#64748b"><span>Showing ' + (R.length ? from + 1 : 0) + '–' + Math.min(R.length, from + per) + ' of ' + R.length.toLocaleString() + '</span><span><button type="button" style="' + BTN + ';background:#fff;color:#1a1815;border:1px solid #e5e7eb" onclick="pplPage(-1)"' + (P.page ? '' : ' disabled') + '>Back</button> <button type="button" style="' + BTN + ';background:#fff;color:#1a1815;border:1px solid #e5e7eb" onclick="pplPage(1)"' + (from + per < R.length ? '' : ' disabled') + '>Next</button></span></div></div>';
+    if (keep) { var i = document.getElementById('ppl-q'); if (i) { i.focus(); i.setSelectionRange(i.value.length, i.value.length); } }
+  }
+  window.pplUpload = function (inp) {
+    var f = inp.files && inp.files[0]; if (!f) return;
+    var rd = new FileReader();
+    rd.onload = function () {
+      var lines = String(rd.result).split(/\r?\n/).filter(function (l) { return l.trim(); }), rows = lines.slice(1).map(function (l) { return l.split(',').map(function (v) { return v.replace(/^"|"$/g, '').trim(); }); });
+      var o = org(), x = { id: 'UPL-' + o.toUpperCase() + '-' + String((UPL[o] || []).length + 2).padStart(2, '0'), name: f.name.replace(/\.csv$/i, '').replace(/[_-]+/g, ' '), file: f.name, n: rows.length, owner: me(), upd: new Date(), rows: rows };
+      (UPL[o] = UPL[o] || []).unshift(x);
+      seal('Uploaded list "' + x.name + '" (' + x.n.toLocaleString() + ' people) added to the Library from ' + f.name);
+      try { cardinalShowToast('List uploaded. Sealed in Echo.'); } catch (e) {}
+      pplSub('upl');
+    };
+    rd.readAsText(f);
+  };
+
+  var css = document.createElement('style');
+  css.textContent = '#lib-tab-customers,#lib-tab-caselists{display:none!important}.lib-tab.ppl-hide{display:none!important}' +
+    '.ppl-cards{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}@media (max-width:1100px){.ppl-cards{grid-template-columns:repeat(3,1fr)}}@media (max-width:640px){.ppl-cards{grid-template-columns:1fr 1fr}}' +
+    '.ppl-card{font:inherit;text-align:left;cursor:pointer;background:#fff;border:1px solid rgba(26,24,21,.08);border-top:3px solid var(--c);border-radius:14px;padding:12px 14px;display:flex;flex-direction:column;gap:3px;color:#1a1815;box-shadow:0 1px 3px rgba(26,24,21,.05)}' +
+    '.ppl-card:hover{box-shadow:0 1px 3px rgba(26,24,21,.05),0 8px 20px rgba(26,24,21,.08)}.ppl-card.on{box-shadow:0 0 0 2px #1a1815}' +
+    '.ppl-t{display:flex;align-items:center;gap:7px;font-size:13px;font-weight:600}.ppl-t i{width:8px;height:8px;border-radius:50%;background:var(--c)}.ppl-card b{font-size:18px;font-weight:700;color:var(--c)}.ppl-card em{font-style:normal;font-size:11.5px;color:#64748b;line-height:1.4}';
+  document.head.appendChild(css);
+
+  // Old links still land in the right place: Customers, Case lists, and Cohorts now open inside People.
+  window.libShowCaseLists = function () { openPeople('aff'); };
+  function openPeople(k) { S.sub = k; var t = document.getElementById('lib-tab-people'); if (t) t.click(); else setTimeout(function () { var t2 = document.getElementById('lib-tab-people'); if (t2) t2.click(); }, 800); }
+  window.cardinalOpenPeople = openPeople;
+  function tick() {
+    var scr = document.getElementById('screen-cardinallibrary'); if (!scr || scr.offsetParent === null) return;
+    var first = scr.querySelector('.lib-tab'), cust = document.getElementById('lib-tab-customers'); if (!first || !cust) return;
+    var tab = document.getElementById('lib-tab-people');
+    if (!tab) {
+      tab = document.createElement('button'); tab.type = 'button'; tab.id = 'lib-tab-people'; tab.className = cust.className.replace(/\bactive\b/, '').trim();
+      tab.onclick = function () {
+        [].forEach.call(scr.querySelectorAll('.lib-tab'), function (b) { b.classList.remove('active'); b.style.background = 'transparent'; b.style.border = '1px solid transparent'; b.style.color = 'var(--muted)'; }); tab.classList.add('active'); tab.style.cssText = '';
+        [].forEach.call(scr.querySelectorAll('[id^=lib-tab-content-]'), function (e) { e.style.display = 'none'; });
+        var box = document.getElementById('lib-tab-content-people'); box.style.display = ''; box.innerHTML = html(org()); box.__k = org() + S.sub;
+      };
+      [].forEach.call(scr.querySelectorAll('.lib-tab'), function (b) { if (b !== tab) b.addEventListener('click', function () { var box = document.getElementById('lib-tab-content-people'); if (box) box.style.display = 'none'; tab.classList.remove('active'); }, true); });
+    }
+    if (tab.parentNode !== cust.parentNode || tab.nextElementSibling !== cust) cust.parentNode.insertBefore(tab, cust);
+    var label = 'People · ' + short(total()); if (tab.textContent !== label) tab.textContent = label;
+    [].forEach.call(scr.querySelectorAll('.lib-tab'), function (b) { if (/cardinalLibrarySwitchTab\('cohorts'/.test(b.getAttribute('onclick') || '') && !b.classList.contains('ppl-hide')) b.classList.add('ppl-hide'); });
+    var box = document.getElementById('lib-tab-content-people');
+    if (!box) { box = document.createElement('div'); box.id = 'lib-tab-content-people'; box.style.display = 'none'; var anyC = scr.querySelector('[id^=lib-tab-content-]'); anyC.parentNode.insertBefore(box, anyC); }
+    // Anything that opened the old tabs is moved into People.
+    var map = { customers: 'all', caselists: 'aff', cohorts: 'coh' };
+    Object.keys(map).forEach(function (k) { var c = document.getElementById('lib-tab-content-' + k); if (c && c.style.display !== 'none' && c.offsetParent !== null) { c.style.display = 'none'; openPeople(map[k]); } });
+    if (box.style.display !== 'none' && box.__k !== org() + S.sub) { box.innerHTML = html(org()); box.__k = org() + S.sub; }
+    if (box.style.display !== 'none' && !tab.classList.contains('active')) tab.classList.add('active');
+  }
+  setInterval(function () { try { tick(); } catch (e) {} }, 500);
 })();
 </script>
 </body>
