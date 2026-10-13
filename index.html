@@ -60233,41 +60233,57 @@ setInterval(function () {
 (function () {
   function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;'); }
   function q(sel) { try { return [].filter.call(document.querySelectorAll(sel), function (x) { return x.offsetParent !== null && x.offsetHeight > 10; })[0] || null; } catch (e) { return null; } }
-  function closeAll() { ['wr2-modal', 'pu-modal', 'ga-modal', 'li-modal', 'at-modal', 'ppl-modal', 'wm2-modal', 'aff-modal', 'msg-pop', 'at-evepop', 'core-info-pop', 'ga-tool-modal'].forEach(function (id) { var m = document.getElementById(id); if (m) m.remove(); }); }
+  function closeAll() { ['wr2-modal', 'pu-modal', 'ga-modal', 'li-modal', 'at-modal', 'ppl-modal', 'wm2-modal', 'aff-modal', 'msg-pop', 'at-evepop', 'core-info-pop', 'ga-tool-modal', 'ts-pop'].forEach(function (id) { var m = document.getElementById(id); if (m) m.remove(); }); }
   function go(name) { try { var nav = name === 'pulse' ? document.getElementById('nav-pulse') : name === 'atlas' ? document.getElementById('nav-atlas') : null; if (name === 'sentinel') window.__wmMode = 'watch'; showScreen(name, nav); } catch (e) {} }
   function fin() { if ((window.currentOrg || '') === 'fin') return; var b = [].filter.call(document.querySelectorAll('.ind-btn'), function (x) { return /switchIndustry\('fin'/.test(x.getAttribute('onclick') || ''); })[0]; if (b) b.click(); }
-  // [title, caption, run (opens the right place), target selector]
-  var STEPS = [
-    ['Meet Blackmoor Wealth', 'A bank with 4.5 million customers and 22 AI models. Cardinal gives its AI one Trust Score: 81 today. But certification is held, because a Critical case is still open.', function () { fin(); go('dashboard'); }, '#screen-dashboard .u-hero, #screen-dashboard .tsv2-section'],
-    ['Eden catches unfair outcomes', 'Eden checks live decisions every 5 minutes. Credit Scoring v3.4 fell under the 0.80 fairness line: ZIP code was acting as a stand-in for race.', function () { go('eden'); }, '#eden-sec-hero'],
-    ['The case it opened', 'Every serious finding becomes a case with an owner and a deadline. FIN-1203: 1,203 applicants affected.', function () { go('eden'); setTimeout(function () { try { edTab('eden', 1); } catch (e) {} }, 300); }, '#eden-sec-cases'],
-    ['Watchman runs the response', 'Watchman tracks every case and incident from detection to closed, and how fast each one was caught.', function () { go('sentinel'); setTimeout(function () { try { wmTab('cases'); } catch (e) {} }, 300); }, '#wm2'],
-    ['One war room per serious case', 'The clock, the people affected, this case’s exposure, and the four sign-offs, on one page. The team works here together.', function () { closeAll(); try { openWarRoomCase('FIN-1203'); } catch (e) {} setTimeout(function () { try { wr2Tab('overview'); } catch (e) {} }, 400); }, '#wr2 .wr2-hero2'],
-    ['Evidence, sealed', 'Every chart, test, and file is collected by stage and sealed in Echo, ready for a regulator.', function () { try { openWarRoomCase('FIN-1203'); } catch (e) {} setTimeout(function () { try { wr2Tab('evidence'); } catch (e) {} }, 400); }, '#wr2 .wr2-evgrid, #wr2 .wr2-card'],
-    ['Genesis tests the fix', 'Genesis tests any AI before it touches people. The fix, v3.5, beats v3.4 on 5 of 6 measures and passes the fairness line.', function () { go('genesis'); setTimeout(function () { try { coreTabGo('genesis', 3); } catch (e) {} }, 400); }, '#ga-compare'],
-    ['Atonement rolls it out safely', 'Fixes go live slowly: shadow, 5%, 10%, 25%, then 100%. If anything slips, it pauses on its own.', function () { go('atonement'); setTimeout(function () { try { coreTabGo('atonement', 1); } catch (e) {} }, 400); }, '#at-rollout'],
-    ['And makes it right for people', 'Everyone affected is re-reviewed, told what happened, and can appeal. Nothing launches without the sign-offs.', function () { go('atonement'); setTimeout(function () { try { coreTabGo('atonement', 3); } catch (e) {} }, 400); }, '#at-right-top'],
-    ['Not only fairness and fraud', 'Pulse watches whether every AI works the way it should: wrong answers, drift, broken data, agents acting without approval.', function () { go('pulse'); setTimeout(function () { try { pulseTab('prog'); } catch (e) {} }, 400); }, '#pulse-root .pu-card'],
-    ['An agent that went wrong', 'The servicing agent quoted wrong payoff amounts and tried to waive a fee on its own. Same war room, same steps, same record.', function () { closeAll(); try { openWarRoomCase('FIN-3310'); } catch (e) {} setTimeout(function () { try { wr2Tab('syslog'); } catch (e) {} }, 400); }, '#wr2 .wr2-card'],
-    ['Every AI in one map', 'Atlas lists every model, agent, vendor, and shadow AI tool, and how much Cardinal can see into each one.', function () { go('atlas'); }, '#screen-atlas .at-t'],
-    ['What it costs to wait', 'Halo forecasts penalties and deadlines if nothing is fixed: $73M by Q2 2027 here, against about $45K to fix.', function () { go('halo'); }, '#screen-halo .halo-panels-grid'],
-    ['The permanent record', 'Echo keeps every event, decision, and sign-off, and nothing in it can be edited. That is the proof.', function () { go('echo'); }, '#screen-echo .tsv2-section, #screen-echo .card'],
-    ['Your turn', 'That was one bank, two very different failures, one system. Explore freely: every number and name opens to show more.', function () { go('dashboard'); }, '']
-  ];
+  function tsPop() { go('dashboard'); setTimeout(function () { try { dashTrustPop(); } catch (e) {} }, 500); }
+  function certBox() { var p = document.getElementById('ts-pop'); if (!p) return null; var L = [].filter.call(p.querySelectorAll('div'), function (x) { return /^Certification:/i.test((x.textContent || '').trim()) && x.offsetParent && /border-left/.test(x.getAttribute('style') || ''); }); return L[L.length - 1] || null; }
+  // Two tours (Chat 10/13): the full vision, and the pre-seed scope from the PRD (items tagged Pre-seed).
+  // Each step: [title, caption, run (opens the right place), target selector or function]
+  var TOURS = {
+    vision: { name: 'Full vision', dur: 12000, steps: [
+      ['One score for all of its AI', 'Blackmoor Wealth: 4.5 million customers, 22 AI models. Cardinal rolls them into one Trust Score, 81 today, and shows exactly which parts pull it down.', function () { fin(); tsPop(); }, '#ts-pop > div'],
+      ['Every AI it uses, in one place', 'Atlas lists every model, agent, vendor, and shadow AI tool in scope, and how much Cardinal can see into each one.', function () { go('atlas'); }, '#screen-atlas .at-t'],
+      ['Eden finds an unfair outcome', 'Credit Scoring v3.4 fell under the 0.80 fairness line. ZIP code appears to be acting as a proxy for race.', function () { go('eden'); }, '#eden-sec-hero'],
+      ['It becomes a case', 'The finding affects real people, so it becomes a case with an owner and a deadline. FIN-1203: 1,203 applicants affected.', function () { go('eden'); setTimeout(function () { try { edTab('eden', 1); } catch (e) {} }, 300); }, '#eden-sec-cases'],
+      ['One war room per serious case', 'Ownership, the clock, the people affected, this case’s exposure, and the sign-offs needed, on one page.', function () { closeAll(); try { openWarRoomCase('FIN-1203'); } catch (e) {} setTimeout(function () { try { wr2Tab('overview'); } catch (e) {} }, 400); }, '#wr2 .wr2-hero2'],
+      ['Genesis tests the fix first', 'A proposed fix is tested before it touches anyone. v3.5 beats v3.4 on 5 of 6 measures and passes the fairness line.', function () { go('genesis'); setTimeout(function () { try { coreTabGo('genesis', 3); } catch (e) {} }, 400); }, '#ga-compare'],
+      ['Atonement stages the rollout', 'Fixes are designed to go live in steps (shadow, 5%, 10%, 25%, 100%) with a named person approving each one.', function () { go('atonement'); setTimeout(function () { try { coreTabGo('atonement', 1); } catch (e) {} }, 400); }, '#at-rollout'],
+      ['People come first', 'Cardinal tracks the re-review of everyone affected, the notices the bank sends, and every appeal.', function () { go('atonement'); setTimeout(function () { try { coreTabGo('atonement', 3); } catch (e) {} }, 400); }, '#at-right-top'],
+      ['The evidence is kept', 'Findings, decisions, tests, and approvals are preserved in Echo for independent review, in a record designed to be tamper-evident.', function () { go('echo'); }, '#screen-echo .tsv2-section, #screen-echo .card'],
+      ['Proof anyone can check', 'The Trust Ledger lets an auditor or regulator trace the history and verify it independently.', function () { go('trustledger'); }, '#screen-trustledger .u-hero, #screen-trustledger .tsv2-section, #screen-trustledger .card'],
+      ['Not only fairness and fraud', 'Pulse watches whether every AI works the way it should: wrong answers, drift, broken data, agents acting without approval.', function () { go('pulse'); setTimeout(function () { try { pulseTab('prog'); } catch (e) {} }, 400); }, '#pulse-root .pu-card'],
+      ['The same system, a different AI', 'The servicing agent quoted wrong payoff amounts and tried to waive a fee on its own. Same war room, same steps, same record.', function () { closeAll(); try { openWarRoomCase('FIN-3310'); } catch (e) {} setTimeout(function () { try { wr2Tab('syslog'); } catch (e) {} }, 400); }, '#wr2 .wr2-card'],
+      ['Halo looks ahead', 'Halo forecasts where unresolved AI risk could create the most exposure, so teams act before failures grow.', function () { go('halo'); }, function () { return q('#screen-halo .halo-map-shell') || q('#screen-halo .halo-panels-grid'); }],
+      ['Is the evidence enough?', 'Certification is decided independently against the Cardinal Standard. Here it is held until the Critical case closes: a good average cannot hide a serious problem.', function () { tsPop(); }, certBox],
+      ['One system for consequential AI', 'Cardinal finds AI failures, holds the response accountable, keeps the proof, and evaluates trust independently. Explore freely: everything opens to show more.', function () { go('dashboard'); }, '']
+    ] },
+    preseed: { name: 'Pre-seed scope', dur: 11000, steps: [
+      ['Start with the data', 'Financial services first. Cardinal connects to the bank’s decision logs and model outputs, maps the fields, and checks data quality before any analysis.', function () { fin(); go('pipeline'); }, '#screen-pipeline .u-hero, #screen-pipeline .tsv2-section, #screen-pipeline .card'],
+      ['Fairness and proxy checks', 'Standard fairness metrics per model and group, plus proxy detection. ZIP code appears to be acting as a proxy for race in Credit Scoring v3.4.', function () { go('eden'); }, '#eden-sec-hero'],
+      ['Where fairness and fraud overlap', 'The same features can drive both bias and fraud blind spots. Cardinal shows where they overlap.', function () { go('eden'); setTimeout(function () { try { edTab('eden', 3); } catch (e) {} }, 300); }, '#eden-sec-bf'],
+      ['A case with an owner', 'Each finding opens a case, routed to the model’s owner, with a deadline. It cannot close without a recheck and a named human sign-off.', function () { closeAll(); try { openWarRoomCase('FIN-1203'); } catch (e) {} setTimeout(function () { try { wr2Tab('overview'); } catch (e) {} }, 400); }, '#wr2 .wr2-hero2'],
+      ['Test coverage and proof of cause', 'Genesis shows which groups were never tested and proves the cause by changing one input at a time.', function () { go('genesis'); setTimeout(function () { try { coreTabGo('genesis', 2); } catch (e) {} }, 400); }, '#gen-coverage-top'],
+      ['The people affected', 'A remediation list of everyone affected and their re-review status, ready to export to the bank’s own systems.', function () { go('atonement'); setTimeout(function () { try { coreTabGo('atonement', 3); } catch (e) {} }, 400); }, '#at-right-top'],
+      ['Every step recorded', 'An append-only record with a receipt for every decision and change, designed to be tamper-evident.', function () { go('echo'); }, '#screen-echo .tsv2-section, #screen-echo .card'],
+      ['A score you can explain', 'The Trust Score is computed from measured inputs and shows its math. This is the financial-services starting point for the larger Cardinal vision.', function () { tsPop(); }, '#ts-pop > div']
+    ] }
+  };
+  function STEPSf() { return TOURS[T.tour || 'vision'].steps; }
+  function tgt(x) { return !x ? null : typeof x === 'function' ? x() : q(x); }
   var T = window.__tour = window.__tour || { on: false, i: 0, play: true, t: 0 };
-  var DUR = 12000;
   function el(id, tag) { var e = document.getElementById(id); if (!e) { e = document.createElement(tag || 'div'); e.id = id; document.body.appendChild(e); } return e; }
   function render() {
-    var s = STEPS[T.i], cap = el('tour-cap'), spot = el('tour-spot'), arr = el('tour-arrow'), blk = el('tour-block');
+    var STEPS = STEPSf(), s = STEPS[T.i], cap = el('tour-cap'), spot = el('tour-spot'), arr = el('tour-arrow'), blk = el('tour-block');
     blk.onclick = function (e) { e.stopPropagation(); };
     if (T.settling) [cap, spot, arr].forEach(function (e) { e.classList.add('tour-hide'); });
-    cap.innerHTML = '<div class="tc-top"><span>Guided demo · ' + (T.i + 1) + ' of ' + STEPS.length + '</span><button type="button" class="tc-x" onclick="tourEnd()" aria-label="Close the guided demo">×</button></div><div class="tc-h">' + esc(s[0]) + '</div><div class="tc-b">' + esc(s[1]) + '</div><div class="tc-bar"><i id="tour-prog"></i></div>' +
+    cap.innerHTML = '<div class="tc-top"><span>' + TOURS[T.tour || 'vision'].name + ' · ' + (T.i + 1) + ' of ' + STEPS.length + ' · Illustrative prototype</span><button type="button" class="tc-x" onclick="tourEnd()" aria-label="Close the guided demo">×</button></div><div class="tc-h">' + esc(s[0]) + '</div><div class="tc-b">' + esc(s[1]) + '</div><div class="tc-bar"><i id="tour-prog"></i></div>' +
       '<div class="tc-acts"><button type="button" class="tc-skip" onclick="tourEnd()">Skip</button><button type="button" onclick="tourStep(-1)"' + (T.i ? '' : ' disabled') + '>Back</button><button type="button" onclick="tourPlay()">' + (T.play ? 'Pause' : 'Play') + '</button>' + (T.i < STEPS.length - 1 ? '<button type="button" class="dark" onclick="tourStep(1)">Next</button>' : '<button type="button" class="dark" onclick="tourEnd()">Explore freely</button>') + '</div>';
     T.t = Date.now();
   }
   function place() {
     if (!T.on || T.settling) return;
-    var s = STEPS[T.i], t = s[3] ? q(s[3]) : null, spot = el('tour-spot'), cap = el('tour-cap'), arr = el('tour-arrow');
+    var s = STEPSf()[T.i], t = tgt(s[3]), spot = el('tour-spot'), cap = el('tour-cap'), arr = el('tour-arrow');
     var W = window.innerWidth, H = window.innerHeight, cw = Math.min(380, W - 32);
     if (!t) { spot.style.cssText = 'left:50%;top:50%;width:0;height:0'; arr.style.display = 'none'; cap.style.left = (W - cw) / 2 + 'px'; cap.style.top = Math.max(16, H / 2 - 110) + 'px'; cap.style.width = cw + 'px'; return; }
     var r = t.getBoundingClientRect(), pad = 8, top = Math.max(8, r.top - pad), left = Math.max(8, r.left - pad), w = Math.min(W - 16, r.width + pad * 2), h = Math.min(H - 16 - top, r.height + pad * 2);
@@ -60284,7 +60300,7 @@ setInterval(function () {
     else { arr.style.left = (cx + 30) + 'px'; arr.style.top = (cy + cap.offsetHeight + 2) + 'px'; arr.style.transform = 'rotate(90deg)'; }
   }
   function show(i) {
-    T.i = Math.max(0, Math.min(STEPS.length - 1, i)); closeAll();
+    var STEPS = STEPSf(); T.i = Math.max(0, Math.min(STEPS.length - 1, i)); closeAll();
     // No jumping between steps: fade the spotlight and caption out while the next screen opens and scrolls, then fade in.
     T.settling = true; ['tour-spot', 'tour-cap', 'tour-arrow'].forEach(function (id) { var e = document.getElementById(id); if (e) e.classList.add('tour-hide'); });
     var me0 = T.i; setTimeout(function () { if (T.i !== me0) return; T.settling = false; place(); setTimeout(function () { ['tour-spot', 'tour-cap', 'tour-arrow'].forEach(function (id) { var e = document.getElementById(id); if (e) e.classList.remove('tour-hide'); }); }, 60); T.t = Date.now(); }, 1800);
@@ -60293,28 +60309,30 @@ setInterval(function () {
     // After the screen settles, bring the target into view, then keep the spotlight on it.
     // Pages jump back to the top when a screen opens, so bring the target into view a few times as things settle.
     var my = T.i;
-    [500, 1000, 1400, 1700].forEach(function (ms) { setTimeout(function () { if (!T.on || T.i !== my) return; var s = STEPS[T.i], t = s[3] ? q(s[3]) : null; if (!t) return; var r = t.getBoundingClientRect(); if (r.top < 60 || r.top > window.innerHeight * 0.55) { window.__keepUntil = 0; t.scrollIntoView({ behavior: 'auto', block: t.offsetHeight > window.innerHeight * 0.6 ? 'start' : 'center' }); } }, ms); });
+    [500, 1000, 1400, 1700].forEach(function (ms) { setTimeout(function () { if (!T.on || T.i !== my) return; var s = STEPSf()[T.i], t = tgt(s[3]); if (!t) return; var r = t.getBoundingClientRect(); if (r.top < 60 || r.top > window.innerHeight * 0.55) { window.__keepUntil = 0; t.scrollIntoView({ behavior: 'auto', block: t.offsetHeight > window.innerHeight * 0.6 ? 'start' : 'center' }); } }, ms); });
   }
   window.tourStep = function (d) { show(T.i + d); };
   window.tourPlay = function () { T.play = !T.play; T.t = Date.now(); render(); };
   window.tourEnd = function () { T.on = false; window.__tourOn = false; ['tour-cap', 'tour-spot', 'tour-arrow', 'tour-block'].forEach(function (id) { var e = document.getElementById(id); if (e) e.remove(); }); try { showScreen('dashboard', null); } catch (e) {} };
-  window.tourStart = function () { var c = document.getElementById('tour-choose'); if (c) c.remove(); T.on = true; window.__tourOn = true; T.play = true; show(0); };
+  window.tourStart = function (k) { var c = document.getElementById('tour-choose'); if (c) c.remove(); T.tour = TOURS[k] ? k : 'vision'; T.on = true; window.__tourOn = true; T.play = true; show(0); };
   document.addEventListener('keydown', function (e) { if (!T.on) return; if (e.key === 'ArrowRight') tourStep(1); else if (e.key === 'ArrowLeft') tourStep(-1); else if (e.key === 'Escape') tourEnd(); });
   setInterval(function () {
     if (!T.on) return; place();
     if (T.settling) return;
-    var p = document.getElementById('tour-prog'), f = T.play ? Math.min(1, (Date.now() - T.t) / DUR) : (p ? parseFloat(p.style.width) / 100 || 0 : 0);
+    var p = document.getElementById('tour-prog'), f = T.play ? Math.min(1, (Date.now() - T.t) / TOURS[T.tour || 'vision'].dur) : (p ? parseFloat(p.style.width) / 100 || 0 : 0);
     if (p && T.play) p.style.width = (f * 100) + '%';
-    if (T.play && f >= 1) { if (T.i < STEPS.length - 1) show(T.i + 1); else { T.play = false; render(); } }
+    if (T.play && f >= 1) { if (T.i < STEPSf().length - 1) show(T.i + 1); else { T.play = false; render(); } }
     var m = document.getElementById('msg-pop'); if (m) m.remove(); var a = document.getElementById('at-evepop'); if (a) a.remove(); var pk = document.getElementById('eve-peek-bubble'); if (pk && pk.classList.contains('show')) pk.classList.remove('show');
   }, 150);
 
   // The start screen: once per visit, right after sign-in.
   function choose() {
     var c = document.createElement('div'); c.id = 'tour-choose';
-    c.innerHTML = '<div class="tch-box"><div class="tch-k">Project Cardinal</div><div class="tch-h">How would you like to explore?</div><div class="tch-row">' +
-      '<button type="button" onclick="tourStart()"><span class="tch-ic"><svg viewBox="0 0 24 24" width="16" height="16" fill="#6d28d9"><path d="M8 5v14l11-7z"/></svg></span><b>Watch the guided demo</b><span>See Cardinal catch two AI failures, run the response, test the fix, and keep the proof.</span><em>About 3 minutes</em></button>' +
-      '<button type="button" onclick="document.getElementById(\'tour-choose\').remove()"><span class="tch-ic"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#6d28d9" stroke-width="2" stroke-linejoin="round"><path d="M5 3l14 7-6 2-2 6z"/></svg></span><b>Explore freely</b><span>Open any core, ask Eve, and click into anything at your own pace.</span><em>Self-guided</em></button></div></div>';
+    var ic = function (p) { return '<span class="tch-ic"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#6d28d9" stroke-width="2" stroke-linejoin="round">' + p + '</svg></span>'; };
+    c.innerHTML = '<div class="tch-box"><button type="button" class="tch-x" aria-label="Close" onclick="document.getElementById(\'tour-choose\').remove()">×</button><div class="tch-k">Project Cardinal</div><div class="tch-h">How would you like to explore?</div><div class="tch-row">' +
+      '<button type="button" onclick="tourStart(\'vision\')">' + ic('<path d="M8 5v14l11-7z" fill="#6d28d9"/>') + '<b>Watch the full vision</b><span>One bank, two AI failures: catch them, run the response, test the fix, keep the proof, and certify independently.</span><em>About 3 minutes</em></button>' +
+      '<button type="button" onclick="tourStart(\'preseed\')">' + ic('<path d="M4 20h16M6 16l4-4 3 3 5-6"/>') + '<b>Watch the pre-seed scope</b><span>What we build first for financial services: detection, the case, the evidence, and an explainable score.</span><em>About 90 seconds</em></button>' +
+      '<button type="button" onclick="document.getElementById(\'tour-choose\').remove()">' + ic('<path d="M5 3l14 7-6 2-2 6z"/>') + '<b>Explore freely</b><span>Open any core, ask Eve, and click into anything at your own pace.</span><em>Self-guided</em></button></div><div class="tch-note">Illustrative prototype with sample data.</div></div>';
     document.body.appendChild(c);
   }
   var shownOnce = false;
@@ -60327,18 +60345,18 @@ setInterval(function () {
   // A small button in the top bar to start the demo any time.
   setInterval(function () {
     if (document.getElementById('tour-btn')) return; var any = document.querySelector('.ind-btn'); if (!any) return;
-    var b = document.createElement('button'); b.id = 'tour-btn'; b.type = 'button'; b.textContent = 'Guided demo'; b.onclick = function () { tourStart(); };
+    var b = document.createElement('button'); b.id = 'tour-btn'; b.type = 'button'; b.textContent = 'Guided demo'; b.onclick = function () { var c = document.getElementById('tour-choose'); if (!c) { (function () { try { choose(); } catch (e) {} })(); } };
     any.parentNode.parentNode.insertBefore(b, any.parentNode);
   }, 1000);
 
   var css = document.createElement('style');
-  css.textContent = '#tour-block{position:fixed;inset:0;z-index:9996}#tour-spot{position:fixed;z-index:9997;border-radius:14px;box-shadow:0 0 0 9999px rgba(26,24,21,.55),0 0 0 3px #a78bfa;pointer-events:none;transition:all .35s ease}' +
-    '#tour-cap{position:fixed;z-index:9999;background:#fff;border-radius:16px;border-top:4px solid #7c3aed;box-shadow:0 24px 60px rgba(26,24,21,.35);padding:14px 16px;font-size:13px;color:#1a1815;transition:left .35s ease,top .35s ease}' +
+  css.textContent = '#tour-block{position:fixed;inset:0;z-index:100000}#tour-spot{position:fixed;z-index:100001;border-radius:14px;box-shadow:0 0 0 9999px rgba(26,24,21,.55),0 0 0 3px #a78bfa;pointer-events:none;transition:all .35s ease}' +
+    '#tour-cap{position:fixed;z-index:100003;background:#fff;border-radius:16px;border-top:4px solid #7c3aed;box-shadow:0 24px 60px rgba(26,24,21,.35);padding:14px 16px;font-size:13px;color:#1a1815;transition:left .35s ease,top .35s ease}' +
     '.tc-top{display:flex;justify-content:space-between;align-items:center;font-size:11.5px;color:#6d28d9;font-weight:600}.tc-top button{font:inherit;font-size:11.5px;border:none;background:none;color:#64748b;cursor:pointer}.tc-h{font-size:17px;font-weight:700;margin:6px 0 4px}.tc-b{line-height:1.5;color:#334155}.tc-bar{height:4px;background:#ede9fe;border-radius:999px;margin:12px 0 10px;overflow:hidden}.tc-bar i{display:block;height:100%;width:0;background:#7c3aed}' +
     '.tc-acts{display:flex;gap:8px;justify-content:flex-end}.tc-acts button{font:inherit;font-size:12.5px;font-weight:600;border:1px solid #e5e7eb;background:#fff;color:#1a1815;border-radius:8px;padding:6px 14px;cursor:pointer}.tc-acts button.dark{background:#1a1815;color:#fff;border-color:#1a1815}.tc-acts button:disabled{opacity:.4;cursor:default}' +
-    '#tour-arrow{position:fixed;z-index:9998;width:0;height:0;border-top:11px solid transparent;border-bottom:11px solid transparent;border-left:20px solid #7c3aed;transition:left .35s ease,top .35s ease;filter:drop-shadow(0 2px 4px rgba(0,0,0,.25))}' +
+    '#tour-arrow{position:fixed;z-index:100002;width:0;height:0;border-top:11px solid transparent;border-bottom:11px solid transparent;border-left:20px solid #7c3aed;transition:left .35s ease,top .35s ease;filter:drop-shadow(0 2px 4px rgba(0,0,0,.25))}' +
     '#tour-choose{position:fixed;inset:0;z-index:9995;background:rgba(26,24,21,.55);display:flex;align-items:center;justify-content:center;padding:20px}.tch-box{width:min(760px,96vw);background:#fff;border-radius:20px;padding:24px 26px;box-shadow:0 30px 80px rgba(0,0,0,.35)}.tch-k{font-size:12px;font-weight:700;color:#6d28d9;letter-spacing:.5px;text-transform:uppercase}.tch-h{font-size:22px;font-weight:700;margin:6px 0 16px;color:#1a1815}' +
-    '.tch-row{display:grid;grid-template-columns:1fr 1fr;gap:14px}@media (max-width:640px){.tch-row{grid-template-columns:1fr}}.tch-row button{font:inherit;text-align:left;cursor:pointer;background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:18px;display:flex;flex-direction:column;gap:6px;color:#1a1815}.tch-row button:hover{border-color:#a78bfa;box-shadow:0 10px 26px rgba(124,58,237,.15)}.tch-row b{font-size:16px}.tch-row span{color:#475569;line-height:1.5}.tch-row em{font-style:normal;font-size:12px;font-weight:600;background:#f1f5f9;border-radius:999px;padding:3px 10px;align-self:flex-start;color:#334155}.tch-ic{width:38px;height:38px;border-radius:50%;background:linear-gradient(180deg,#f5f3ff,#ede9fe);border:1.5px solid rgba(124,58,237,.45);color:#6d28d9!important;display:flex;align-items:center;justify-content:center;font-size:14px;box-shadow:0 6px 16px rgba(124,58,237,.25)}' +
+    '.tch-box{position:relative}.tch-x{position:absolute;top:14px;right:16px;width:30px;height:30px;border-radius:50%;border:none;background:#f1f5f9;color:#475569;font-size:18px;cursor:pointer}.tch-note{font-size:11.5px;color:#64748b;margin-top:12px}.tch-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}@media (max-width:820px){.tch-row{grid-template-columns:1fr}}.tch-row button{font:inherit;text-align:left;cursor:pointer;background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:18px;display:flex;flex-direction:column;gap:6px;color:#1a1815}.tch-row button:hover{border-color:#a78bfa;box-shadow:0 10px 26px rgba(124,58,237,.15)}.tch-row b{font-size:16px}.tch-row span{color:#475569;line-height:1.5}.tch-row em{font-style:normal;font-size:12px;font-weight:600;background:#f1f5f9;border-radius:999px;padding:3px 10px;align-self:flex-start;color:#334155}.tch-ic{width:38px;height:38px;border-radius:50%;background:linear-gradient(180deg,#f5f3ff,#ede9fe);border:1.5px solid rgba(124,58,237,.45);color:#6d28d9!important;display:flex;align-items:center;justify-content:center;font-size:14px;box-shadow:0 6px 16px rgba(124,58,237,.25)}' +
     '.tour-hide{opacity:0!important}#tour-spot,#tour-cap,#tour-arrow{transition:opacity .25s ease!important}.tc-x{font:inherit;font-size:18px!important;line-height:1;width:26px;height:26px;border-radius:50%;border:none!important;background:#f1f5f9!important;color:#475569!important;cursor:pointer}.tc-acts .tc-skip{margin-right:auto;border:none;background:none;color:#64748b}' +
     '#tour-btn{font:inherit;font-size:12px;font-weight:600;border:none;background:#1a1815;color:#fff;border-radius:8px;padding:6px 12px;cursor:pointer;margin-right:8px;white-space:nowrap}';
   document.head.appendChild(css);
