@@ -58289,7 +58289,17 @@ setInterval(function () {
     (S.local[o + r.id] = S.local[o + r.id] || []).push({ timestamp: new Date().toISOString(), author: p ? p.name : 'You', content: i.value.trim() });
     i.value = ''; draw(true); var th = document.getElementById('wr2-thread'); if (th) th.scrollTop = th.scrollHeight;
   };
-  window.wr2Go = function (scr) { var nav = document.querySelector('.nav-item[onclick*="\'' + scr + '\'"]'); try { showScreen(scr, nav); } catch (e) {} };
+  // Deep links from the war room land on the exact item, not the core's home page (Brittany 10/13).
+  window.wr2Go = function (scr) {
+    var o = org(), r = pick(o), nav = document.querySelector('.nav-item[onclick*="\'' + scr + '\'"]');
+    var m = document.getElementById('wr2-modal'); if (m) m.remove();
+    if (scr === 'genesis' && r) { if (r.pulse) { try { showScreen('genesis', null); } catch (e) {} setTimeout(function () { try { coreTabGo('genesis', 5); var L = document.querySelectorAll('#gen-lessons tbody tr'); [].some.call(L, function (tr, i) { if (tr.textContent.indexOf(r.id) >= 0) { gaWriteup(i); return true; } }); } catch (e) {} }, 500); return; } try { flowToGenesis(); } catch (e) {} return; }
+    if (scr === 'atonement') { try { showScreen('atonement', null); } catch (e) {} setTimeout(function () { try { gaTab('atonement', r && r.closed ? 6 : 1); } catch (e) {} }, 400); return; }
+    if (scr === 'pulse' && r) { try { pulseFind(r.model); } catch (e) {} return; }
+    if (scr === 'library' && r) { try { showScreen('cardinallibrary', null); setTimeout(function () { cardinalOpenPeople('aff'); }, 700); } catch (e) {} return; }
+    if (scr === 'eden') { try { cardinalEdenGo('case', 'War room'); return; } catch (e) {} }
+    try { showScreen(scr, nav); } catch (e) {}
+  };
   window.wr2Tab = function (t) { S.tab = t; draw(true); if (t === 'chat') { var th = document.getElementById('wr2-thread'); if (th) th.scrollTop = th.scrollHeight; } };
   window.wr2Room = function (id) { S.cs = id; S.tab = 'overview'; window.__wrFocusCaseId = id; S.lastFocus = id; draw(true); };
 
@@ -59429,6 +59439,11 @@ setInterval(function () {
     }
     return out + (a ? '<div style="margin-top:10px"><a href="javascript:void(0)" class="pu-lnk" onclick="document.getElementById(\'pu-modal\').remove();showScreen(\'atlas\',document.getElementById(\'nav-atlas\'));setTimeout(function(){try{atlasOpen(\'' + a.id + '\')}catch(e){}},700)">View ' + esc(x.sys) + ' in Atlas →</a></div>' : '');
   }
+  // Open Pulse on the right tab with this AI's issue showing (used by the war room, Library, and Atlas).
+  window.pulseFind = function (name) {
+    try { showScreen('pulse', document.getElementById('nav-pulse')); } catch (e) {}
+    setTimeout(function () { var o = org(), x = issues(o).filter(function (i) { return i.sys === name && i.stage !== 'done'; })[0] || issues(o).filter(function (i) { return i.sys === name; })[0]; if (!x) { V.tab = 'all'; redraw(); return; } V.tab = x.stage; redraw(); pulseOpen(x.id); }, 600);
+  };
   window.pulseOpen = function (id) {
     var o = org(), x = issues(o).filter(function (y) { return y.id === id; })[0]; if (!x) return;
     var c = STAGE[x.stage], steps = [[x.t, 'Pulse caught it: ' + x.what], [new Date(+x.t + 6e4 * 3), 'Owner told: ' + ((SYS[o] || []).filter(function (r) { return r[0] === x.sys; })[0] || [])[2]]];
@@ -59963,7 +59978,7 @@ setInterval(function () {
       row('Owner', esc(owner)) + row('Last edited', md(edited) + ' by ' + esc(editedBy)) + row('Right now', esc(pulse ? pulse.where + (pulse.what ? ' · ' + pulse.what : '') : 'Working fine. Nothing flagged by Pulse.')) + row('Cases', caseLinks) +
       '<div class="li-h" style="margin-top:12px">In Genesis</div>' + gen.map(function (g) { return '<div class="li-li">' + esc(g) + '</div>'; }).join('') +
       '<div class="li-h" style="margin-top:12px">History</div>' + hist.map(function (x) { return '<div class="li-hist"><span>' + md(x[0]) + '</span><span>' + esc(x[1]) + ' · ' + esc(x[2]) + '</span></div>'; }).join('') +
-      '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">' + (a ? '<button type="button" style="' + BTN + '" onclick="liClose();showScreen(\'atlas\',document.getElementById(\'nav-atlas\'));setTimeout(function(){try{atlasOpen(\'' + a.id + '\')}catch(e){}},700)">View in Atlas</button>' : '') + (pulse ? '<button type="button" style="' + BTN + '" onclick="liClose();showScreen(\'pulse\',document.getElementById(\'nav-pulse\'))">View in Pulse</button>' : '') + '<button type="button" style="' + BTN + '" onclick="liClose();showScreen(\'genesis\',null)">View in Genesis</button></div></div>';
+      '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">' + (a ? '<button type="button" style="' + BTN + '" onclick="liClose();showScreen(\'atlas\',document.getElementById(\'nav-atlas\'));setTimeout(function(){try{atlasOpen(\'' + a.id + '\')}catch(e){}},700)">View in Atlas</button>' : '') + (pulse ? '<button type="button" style="' + BTN + '" onclick="liClose();pulseFind(\'' + esc(names.filter(function (n) { return window.cardinalPulseStatus && cardinalPulseStatus(o, n); })[0] || name).replace(/'/g, '') + '\')">View in Pulse</button>' : '') + ((window.cardinalDiag ? cardinalDiag(o) : []).some(function (d) { return names.indexOf(d[0]) >= 0; }) ? '<button type="button" style="' + BTN + '" onclick="liClose();gaDiagGo(\'' + esc((window.cardinalDiag(o).filter(function (d) { return names.indexOf(d[0]) >= 0; })[0] || [])[0] || '').replace(/'/g, '') + '\')">View in Genesis</button>' : '<button type="button" style="' + BTN + '" onclick="liClose();showScreen(\'genesis\',null)">View in Genesis</button>') + '</div></div>';
   }
   window.liClose = function () { ['li-modal', 'lib-uc-modal'].forEach(function (id) { var m = document.getElementById(id); if (m) m.remove(); }); var md2 = document.getElementById('model-detail-modal'); if (md2 && md2.offsetParent) { try { closeModelDetail(); } catch (e) { md2.style.display = 'none'; } } };
   function pop(kind, color, name, sub, facts, body) {
