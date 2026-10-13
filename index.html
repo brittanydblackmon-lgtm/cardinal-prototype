@@ -51023,6 +51023,9 @@ window.CARDINAL_PLACES = {
 // Vercel Web Analytics as page paths like /view/investor/pear/eden, so each screen they open shows up too.
 (function () {
   var GROUP = { cardinal2026: 'friend', cardinal: 'investor', invest: 'investor', demo: 'friend' };
+  // Per-firm passcodes (10/13): each one signs in like an investor code and tags the visit with that firm.
+  var FIRM = { wischoff: 'wischoff' };
+  Object.keys(FIRM).forEach(function (c) { GROUP[c] = 'investor'; });
   try { var me = new URLSearchParams(location.search).get('me'); if (me === '1') localStorage.setItem('cardinal-owner', '1'); if (me === '0') localStorage.removeItem('cardinal-owner'); } catch (e) {}
   function isOwner() { try { return localStorage.getItem('cardinal-owner') === '1'; } catch (e) { return false; } }
   window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
@@ -51048,7 +51051,8 @@ window.CARDINAL_PLACES = {
   if (typeof oGate === 'function') window.checkGate = checkGate = function () {
     var pw = document.getElementById('gate-password'), val = pw ? pw.value.trim().toLowerCase() : '';
     var g = GROUP[val];
-    if (g === 'investor' && pw && val === 'invest') pw.value = 'cardinal2026'; // the original check accepts it; the group is remembered here
+    if (g === 'investor' && pw && (val === 'invest' || FIRM[val])) pw.value = 'cardinal2026'; // the original check accepts it; the group is remembered here
+    if (FIRM[val]) { ref = FIRM[val]; try { sessionStorage.setItem('cardinal-ref', ref); } catch (e) {} }
     var r = oGate.apply(this, arguments);
     if (g) { window.__cardinalViewer = { group: g, ref: ref }; track(''); }
     return r;
@@ -51066,7 +51070,6 @@ window.CARDINAL_PLACES = {
     return r;
   };
 })();
-
 </script>
 
 <script data-p="p5_standard">
