@@ -60193,6 +60193,119 @@ setInterval(function () {
   setInterval(function () { try { apply('eden'); apply('obsidian'); } catch (e) {} }, 400);
 })();
 </script>
+<script data-p="p66_tour">
+// 10/13 (Brittany and Chat: "an investor opens the prototype and has two choices: Watch guided demo, or Explore freely...
+// the guided demo moves through the real prototype"). A scripted walkthrough of the seeded Finance data: it opens each
+// screen, spotlights the part that matters, points an arrow at it, and shows a short caption. Back, Next, Pause, Skip.
+// Plays on its own (about 3 to 4 minutes). Same every time: no AI, just the sample data already in the prototype.
+(function () {
+  function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;'); }
+  function q(sel) { try { return [].filter.call(document.querySelectorAll(sel), function (x) { return x.offsetParent !== null && x.offsetHeight > 10; })[0] || null; } catch (e) { return null; } }
+  function closeAll() { ['wr2-modal', 'pu-modal', 'ga-modal', 'li-modal', 'at-modal', 'ppl-modal', 'wm2-modal', 'aff-modal', 'msg-pop', 'at-evepop', 'core-info-pop', 'ga-tool-modal'].forEach(function (id) { var m = document.getElementById(id); if (m) m.remove(); }); }
+  function go(name) { try { var nav = name === 'pulse' ? document.getElementById('nav-pulse') : name === 'atlas' ? document.getElementById('nav-atlas') : null; if (name === 'sentinel') window.__wmMode = 'watch'; showScreen(name, nav); } catch (e) {} }
+  function fin() { if ((window.currentOrg || '') === 'fin') return; var b = [].filter.call(document.querySelectorAll('.ind-btn'), function (x) { return /switchIndustry\('fin'/.test(x.getAttribute('onclick') || ''); })[0]; if (b) b.click(); }
+  // [title, caption, run (opens the right place), target selector]
+  var STEPS = [
+    ['Meet Blackmoor Wealth', 'A bank with 4.5 million customers and 22 AI models. Cardinal gives its AI one Trust Score: 81 today. But certification is held, because a Critical case is still open.', function () { fin(); go('dashboard'); }, '#screen-dashboard .u-hero, #screen-dashboard .tsv2-section'],
+    ['Eden catches unfair outcomes', 'Eden checks live decisions every 5 minutes. Credit Scoring v3.4 fell under the 0.80 fairness line: ZIP code was acting as a stand-in for race.', function () { go('eden'); }, '#eden-sec-hero'],
+    ['The case it opened', 'Every serious finding becomes a case with an owner and a deadline. FIN-1203: 1,203 applicants affected.', function () { go('eden'); setTimeout(function () { try { edTab('eden', 1); } catch (e) {} }, 300); }, '#eden-sec-cases'],
+    ['Watchman runs the response', 'Watchman tracks every case and incident from detection to closed, and how fast each one was caught.', function () { go('sentinel'); setTimeout(function () { try { wmTab('cases'); } catch (e) {} }, 300); }, '#wm2'],
+    ['One war room per serious case', 'The clock, the people affected, this case’s exposure, and the four sign-offs, on one page. The team works here together.', function () { closeAll(); try { openWarRoomCase('FIN-1203'); } catch (e) {} setTimeout(function () { try { wr2Tab('overview'); } catch (e) {} }, 400); }, '#wr2 .wr2-hero2'],
+    ['Evidence, sealed', 'Every chart, test, and file is collected by stage and sealed in Echo, ready for a regulator.', function () { try { openWarRoomCase('FIN-1203'); } catch (e) {} setTimeout(function () { try { wr2Tab('evidence'); } catch (e) {} }, 400); }, '#wr2 .wr2-evgrid, #wr2 .wr2-card'],
+    ['Genesis tests the fix', 'Genesis tests any AI before it touches people. The fix, v3.5, beats v3.4 on 5 of 6 measures and passes the fairness line.', function () { go('genesis'); setTimeout(function () { try { coreTabGo('genesis', 3); } catch (e) {} }, 400); }, '#ga-compare'],
+    ['Atonement rolls it out safely', 'Fixes go live slowly: shadow, 5%, 10%, 25%, then 100%. If anything slips, it pauses on its own.', function () { go('atonement'); setTimeout(function () { try { coreTabGo('atonement', 1); } catch (e) {} }, 400); }, '#at-rollout'],
+    ['And makes it right for people', 'Everyone affected is re-reviewed, told what happened, and can appeal. Nothing launches without the sign-offs.', function () { go('atonement'); setTimeout(function () { try { coreTabGo('atonement', 3); } catch (e) {} }, 400); }, '#at-right-top'],
+    ['Not only fairness and fraud', 'Pulse watches whether every AI works the way it should: wrong answers, drift, broken data, agents acting without approval.', function () { go('pulse'); setTimeout(function () { try { pulseTab('prog'); } catch (e) {} }, 400); }, '#pulse-root .pu-card'],
+    ['An agent that went wrong', 'The servicing agent quoted wrong payoff amounts and tried to waive a fee on its own. Same war room, same steps, same record.', function () { closeAll(); try { openWarRoomCase('FIN-3310'); } catch (e) {} setTimeout(function () { try { wr2Tab('syslog'); } catch (e) {} }, 400); }, '#wr2 .wr2-card'],
+    ['Every AI in one map', 'Atlas lists every model, agent, vendor, and shadow AI tool, and how much Cardinal can see into each one.', function () { go('atlas'); }, '#screen-atlas .at-t'],
+    ['What it costs to wait', 'Halo forecasts penalties and deadlines if nothing is fixed: $73M by Q2 2027 here, against about $45K to fix.', function () { go('halo'); }, '#screen-halo .halo-panels-grid'],
+    ['The permanent record', 'Echo keeps every event, decision, and sign-off, and nothing in it can be edited. That is the proof.', function () { go('echo'); }, '#screen-echo .tsv2-section, #screen-echo .card'],
+    ['Your turn', 'That was one bank, two very different failures, one system. Explore freely: every number and name opens to show more.', function () { go('dashboard'); }, '']
+  ];
+  var T = window.__tour = window.__tour || { on: false, i: 0, play: true, t: 0 };
+  var DUR = 12000;
+  function el(id, tag) { var e = document.getElementById(id); if (!e) { e = document.createElement(tag || 'div'); e.id = id; document.body.appendChild(e); } return e; }
+  function render() {
+    var s = STEPS[T.i], cap = el('tour-cap'), spot = el('tour-spot'), arr = el('tour-arrow'), blk = el('tour-block');
+    blk.onclick = function (e) { e.stopPropagation(); };
+    cap.innerHTML = '<div class="tc-top"><span>Guided demo · ' + (T.i + 1) + ' of ' + STEPS.length + '</span><button type="button" onclick="tourEnd()" aria-label="Skip">Skip</button></div><div class="tc-h">' + esc(s[0]) + '</div><div class="tc-b">' + esc(s[1]) + '</div><div class="tc-bar"><i id="tour-prog"></i></div>' +
+      '<div class="tc-acts"><button type="button" onclick="tourStep(-1)"' + (T.i ? '' : ' disabled') + '>Back</button><button type="button" onclick="tourPlay()">' + (T.play ? 'Pause' : 'Play') + '</button>' + (T.i < STEPS.length - 1 ? '<button type="button" class="dark" onclick="tourStep(1)">Next</button>' : '<button type="button" class="dark" onclick="tourEnd()">Explore freely</button>') + '</div>';
+    T.t = Date.now();
+  }
+  function place() {
+    if (!T.on) return;
+    var s = STEPS[T.i], t = s[3] ? q(s[3]) : null, spot = el('tour-spot'), cap = el('tour-cap'), arr = el('tour-arrow');
+    var W = window.innerWidth, H = window.innerHeight, cw = Math.min(380, W - 32);
+    if (!t) { spot.style.cssText = 'left:50%;top:50%;width:0;height:0'; arr.style.display = 'none'; cap.style.left = (W - cw) / 2 + 'px'; cap.style.top = Math.max(16, H / 2 - 110) + 'px'; cap.style.width = cw + 'px'; return; }
+    var r = t.getBoundingClientRect(), pad = 8, top = Math.max(8, r.top - pad), left = Math.max(8, r.left - pad), w = Math.min(W - 16, r.width + pad * 2), h = Math.min(H - 16 - top, r.height + pad * 2);
+    spot.style.cssText = 'left:' + left + 'px;top:' + top + 'px;width:' + w + 'px;height:' + Math.max(40, h) + 'px';
+    // Caption beside the spotlight where there is room, otherwise below or above it.
+    var cx, cy, dir;
+    if (left + w + cw + 40 < W) { cx = left + w + 28; cy = Math.min(H - 240, Math.max(16, top + 10)); dir = 'left'; }
+    else if (top + h + 230 < H) { cx = Math.min(W - cw - 16, Math.max(16, left + 20)); cy = top + h + 26; dir = 'up'; }
+    else { cx = Math.min(W - cw - 16, Math.max(16, left + 20)); cy = Math.max(16, top - 250); dir = 'down'; }
+    cap.style.left = cx + 'px'; cap.style.top = cy + 'px'; cap.style.width = cw + 'px';
+    arr.style.display = 'block';
+    if (dir === 'left') { arr.style.left = (cx - 22) + 'px'; arr.style.top = (cy + 24) + 'px'; arr.style.transform = 'rotate(180deg)'; }
+    else if (dir === 'up') { arr.style.left = (cx + 30) + 'px'; arr.style.top = (cy - 22) + 'px'; arr.style.transform = 'rotate(-90deg)'; }
+    else { arr.style.left = (cx + 30) + 'px'; arr.style.top = (cy + cap.offsetHeight + 2) + 'px'; arr.style.transform = 'rotate(90deg)'; }
+  }
+  function show(i) {
+    T.i = Math.max(0, Math.min(STEPS.length - 1, i)); closeAll();
+    try { STEPS[T.i][2](); } catch (e) {}
+    render();
+    // After the screen settles, bring the target into view, then keep the spotlight on it.
+    // Pages jump back to the top when a screen opens, so bring the target into view a few times as things settle.
+    var my = T.i;
+    [900, 1500, 2200, 3000].forEach(function (ms) { setTimeout(function () { if (!T.on || T.i !== my) return; var s = STEPS[T.i], t = s[3] ? q(s[3]) : null; if (!t) return; var r = t.getBoundingClientRect(); if (r.top < 60 || r.top > window.innerHeight * 0.55) { window.__keepUntil = 0; t.scrollIntoView({ behavior: ms > 900 ? 'auto' : 'smooth', block: t.offsetHeight > window.innerHeight * 0.6 ? 'start' : 'center' }); } }, ms); });
+  }
+  window.tourStep = function (d) { show(T.i + d); };
+  window.tourPlay = function () { T.play = !T.play; T.t = Date.now(); render(); };
+  window.tourEnd = function () { T.on = false; window.__tourOn = false; ['tour-cap', 'tour-spot', 'tour-arrow', 'tour-block'].forEach(function (id) { var e = document.getElementById(id); if (e) e.remove(); }); try { showScreen('dashboard', null); } catch (e) {} };
+  window.tourStart = function () { var c = document.getElementById('tour-choose'); if (c) c.remove(); T.on = true; window.__tourOn = true; T.play = true; show(0); };
+  document.addEventListener('keydown', function (e) { if (!T.on) return; if (e.key === 'ArrowRight') tourStep(1); else if (e.key === 'ArrowLeft') tourStep(-1); else if (e.key === 'Escape') tourEnd(); });
+  setInterval(function () {
+    if (!T.on) return; place();
+    var p = document.getElementById('tour-prog'), f = T.play ? Math.min(1, (Date.now() - T.t) / DUR) : (p ? parseFloat(p.style.width) / 100 || 0 : 0);
+    if (p && T.play) p.style.width = (f * 100) + '%';
+    if (T.play && f >= 1) { if (T.i < STEPS.length - 1) show(T.i + 1); else { T.play = false; render(); } }
+    var m = document.getElementById('msg-pop'); if (m) m.remove(); var a = document.getElementById('at-evepop'); if (a) a.remove(); var pk = document.getElementById('eve-peek-bubble'); if (pk && pk.classList.contains('show')) pk.classList.remove('show');
+  }, 150);
+
+  // The start screen: once per visit, right after sign-in.
+  function choose() {
+    var c = document.createElement('div'); c.id = 'tour-choose';
+    c.innerHTML = '<div class="tch-box"><div class="tch-k">Project Cardinal</div><div class="tch-h">How would you like to explore?</div><div class="tch-row">' +
+      '<button type="button" onclick="tourStart()"><span class="tch-ic">&#9654;</span><b>Watch the guided demo</b><span>See Cardinal catch two AI failures, run the response, test the fix, and keep the proof.</span><em>About 3 minutes</em></button>' +
+      '<button type="button" onclick="document.getElementById(\'tour-choose\').remove()"><span class="tch-ic">&#10148;</span><b>Explore freely</b><span>Open any core, ask Eve, and click into anything at your own pace.</span><em>Self-guided</em></button></div></div>';
+    document.body.appendChild(c);
+  }
+  var shownOnce = false;
+  setInterval(function () {
+    if (shownOnce || !window.__cardinalUnlocked) return;
+    var dash = document.getElementById('screen-dashboard'); if (!dash || !dash.classList.contains('active')) return;
+    shownOnce = true; var seen = false; try { seen = sessionStorage.getItem('cardinal-tour-choice') === '1'; sessionStorage.setItem('cardinal-tour-choice', '1'); } catch (e) {}
+    if (!seen) setTimeout(choose, 600);
+  }, 500);
+  // A small button in the top bar to start the demo any time.
+  setInterval(function () {
+    if (document.getElementById('tour-btn')) return; var any = document.querySelector('.ind-btn'); if (!any) return;
+    var b = document.createElement('button'); b.id = 'tour-btn'; b.type = 'button'; b.textContent = 'Guided demo'; b.onclick = function () { tourStart(); };
+    any.parentNode.parentNode.insertBefore(b, any.parentNode);
+  }, 1000);
+
+  var css = document.createElement('style');
+  css.textContent = '#tour-block{position:fixed;inset:0;z-index:9996}#tour-spot{position:fixed;z-index:9997;border-radius:14px;box-shadow:0 0 0 9999px rgba(26,24,21,.55),0 0 0 3px #a78bfa;pointer-events:none;transition:all .35s ease}' +
+    '#tour-cap{position:fixed;z-index:9999;background:#fff;border-radius:16px;border-top:4px solid #7c3aed;box-shadow:0 24px 60px rgba(26,24,21,.35);padding:14px 16px;font-size:13px;color:#1a1815;transition:left .35s ease,top .35s ease}' +
+    '.tc-top{display:flex;justify-content:space-between;align-items:center;font-size:11.5px;color:#6d28d9;font-weight:600}.tc-top button{font:inherit;font-size:11.5px;border:none;background:none;color:#64748b;cursor:pointer}.tc-h{font-size:17px;font-weight:700;margin:6px 0 4px}.tc-b{line-height:1.5;color:#334155}.tc-bar{height:4px;background:#ede9fe;border-radius:999px;margin:12px 0 10px;overflow:hidden}.tc-bar i{display:block;height:100%;width:0;background:#7c3aed}' +
+    '.tc-acts{display:flex;gap:8px;justify-content:flex-end}.tc-acts button{font:inherit;font-size:12.5px;font-weight:600;border:1px solid #e5e7eb;background:#fff;color:#1a1815;border-radius:8px;padding:6px 14px;cursor:pointer}.tc-acts button.dark{background:#1a1815;color:#fff;border-color:#1a1815}.tc-acts button:disabled{opacity:.4;cursor:default}' +
+    '#tour-arrow{position:fixed;z-index:9998;width:0;height:0;border-top:11px solid transparent;border-bottom:11px solid transparent;border-left:20px solid #7c3aed;transition:left .35s ease,top .35s ease;filter:drop-shadow(0 2px 4px rgba(0,0,0,.25))}' +
+    '#tour-choose{position:fixed;inset:0;z-index:9995;background:rgba(26,24,21,.55);display:flex;align-items:center;justify-content:center;padding:20px}.tch-box{width:min(760px,96vw);background:#fff;border-radius:20px;padding:24px 26px;box-shadow:0 30px 80px rgba(0,0,0,.35)}.tch-k{font-size:12px;font-weight:700;color:#6d28d9;letter-spacing:.5px;text-transform:uppercase}.tch-h{font-size:22px;font-weight:700;margin:6px 0 16px;color:#1a1815}' +
+    '.tch-row{display:grid;grid-template-columns:1fr 1fr;gap:14px}@media (max-width:640px){.tch-row{grid-template-columns:1fr}}.tch-row button{font:inherit;text-align:left;cursor:pointer;background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:18px;display:flex;flex-direction:column;gap:6px;color:#1a1815}.tch-row button:hover{border-color:#a78bfa;box-shadow:0 10px 26px rgba(124,58,237,.15)}.tch-row b{font-size:16px}.tch-row span{color:#475569;line-height:1.5}.tch-row em{font-style:normal;font-size:12px;font-weight:600;background:#f1f5f9;border-radius:999px;padding:3px 10px;align-self:flex-start;color:#334155}.tch-ic{width:34px;height:34px;border-radius:50%;background:#1a1815;color:#fff!important;display:flex;align-items:center;justify-content:center;font-size:14px}' +
+    '#tour-btn{font:inherit;font-size:12px;font-weight:600;border:none;background:#1a1815;color:#fff;border-radius:8px;padding:6px 12px;cursor:pointer;margin-right:8px;white-space:nowrap}';
+  document.head.appendChild(css);
+})();
+</script>
 </body>
 
 </html>
