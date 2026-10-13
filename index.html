@@ -179,6 +179,17 @@
 -->
 <html lang="en">
 <head>
+<script>
+// 10/13 (Brittany: "if another investor that's never logged in, everything should reset"). Every visit starts the
+// same: anything a viewer clicked, minimized, or changed last time is cleared before the app loads. Kept: the owner
+// flag for analytics, the invite link, theme, and voice settings.
+(function () {
+  var KEEP = { 'cardinal-owner': 1, 'cardinal-theme': 1, 'cardinal-eve-tts-enabled': 1, 'cardinal-adam-tts-enabled': 1, 'cardinal-ref': 1 };
+  [window.localStorage, window.sessionStorage].forEach(function (st) {
+    try { Object.keys(st).forEach(function (k) { if (!KEEP[k] && /cardinal|eve|tour/i.test(k)) st.removeItem(k); }); } catch (e) {}
+  });
+})();
+</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Project Cardinal: Platform</title>
@@ -8397,8 +8408,7 @@ Template Overview
 <div id="screen-pipeline" class="screen">
 <div class="section-hdr" style="margin-bottom:14px">
 <div>
-<div style="font-size:15px;font-weight:600;color:var(--chrome2)">Data Pipeline: Bring Your AI System In</div>
-<div style="font-size:11px;color:var(--muted);margin-top:2px" id="pipeline-org-context">Upload assets directly, or connect a live enterprise data source. Cardinal handles both the same way from here on out.</div>
+
 </div>
 <span id="pipeline-sovereign-badge" class="badge" style="background:rgba(167,167,167,.1);color:var(--chrome2);border:1px solid var(--border2);display:flex;align-items:center;gap:5px;"><span id="pipeline-sovereign-badge-text">SOC 2 Type II Environment</span></span>
 </div>
@@ -14814,8 +14824,7 @@ window.renderEden = function (org) {
     '<div style="max-height:340px;overflow-y:auto;overflow-x:auto;border:1px solid var(--border2);border-radius:10px;margin-top:8px;background:var(--card)"><table class="data-table"><thead style="position:sticky;top:0;background:var(--card);z-index:1"><tr><th onclick="edoSortModels(\'model\')"' + edoT('Model', 'Monitored model name and version.') + '>Model</th><th onclick="edoSortModels(\'di\')"' + edoT('Disparate Impact (DI)', 'Ratio of favorable rates: EEOC 0.80 floor.') + '>DI</th><th ' + edoT('Equalized Odds', 'Should be <0.10.') + '>EO</th><th ' + edoT('Proxy Variable', 'Feature correlating with protected class.') + '>Top Proxy</th><th>Affected</th><th ' + edoT('Status', 'Critical / Watch / Passing.') + '>Status</th><th ' + edoT('Trend (30d)', 'Direction of bias metric over last 30 days.') + '>Trend</th><th ' + edoT('Stamp', 'Whether this model is actively counted in the live Trust Score. Unstamp during remediation to exclude it.') + '>Stamp</th></tr></thead><tbody>' + mrows + '</tbody></table></div></section>' +
     '<section id="edo-sec-cohort" style="margin-bottom:20px"><h2 style="font-size:14px"' + edoT('Cohort Explorer', 'Search affected groups and individuals.') + '>Cohort Explorer: Affected Individuals</h2><p style="font-size:11px;color:var(--muted)">Search and filter across ' + nAff + ' affected individuals (aggregated).</p>' +
     '<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:10px 0"><span class="badge badge-blue" style="font-size:10px"' + edoT('Cohort View', 'Aggregated group-level statistics. No PII.') + '>Cohort View</span>' + (edoCanPii() ? '<span class="badge badge-green" style="font-size:10px"' + edoT('Individual View', 'PII drill-in enabled for your role.') + '>Individual View</span>' : '<span class="badge badge-amber" style="font-size:10px"' + edoT('Restricted Access', 'This view shows individual PII and requires Admin or Legal Counsel role.') + '>\ud83d\udd12 Admin Access Required</span>') +
-    '<span style="margin-left:auto;font-size:10px;color:var(--muted)">Demo as:</span>' +
-    '<button type="button" class="btn-ghost" style="font-size:9px" onclick="edoSetDemoRole(\'Compliance Officer\')">Compliance</button><button type="button" class="btn-ghost" style="font-size:9px" onclick="edoSetDemoRole(\'Data Scientist\')">Data Scientist</button><button type="button" class="btn-ghost" style="font-size:9px" onclick="edoSetDemoRole(\'Executive\')">Executive</button><button type="button" class="btn-ghost" style="font-size:9px" onclick="edoSetDemoRole(\'Legal Counsel\')">Legal Counsel</button><button type="button" class="btn-ghost" style="font-size:9px" onclick="edoSetDemoRole(\'Admin\')">Admin</button></div>' +
+    '</div>' +
     '<div style="display:flex;gap:8px;margin-bottom:10px"><button type="button" class="btn-ghost" style="font-size:10px' + (window.__edo.cohortSummary ? ';border-color:var(--accent)' : '') + '"' + edoT('Cohort Summary', 'Aggregated cohort statistics. Available to all roles. No PII shown.') + ' onclick="edoCohortToggle(true)">Cohort Summary</button><button type="button" class="btn-ghost" style="font-size:10px' + (!window.__edo.cohortSummary ? ';border-color:var(--accent)' : '') + '"' + edoT('Individual Drill-In', 'Per-person record with PII. Admin and Legal Counsel only. Every access logged to Echo Core.') + ' onclick="if(window.edoCanPii())window.edoCohortToggle(false)">Individual Drill\u2011In ' + (!edoCanPii() ? '\ud83d\udd12' : '') + '</button><button type="button" class="btn-ghost" style="font-size:10px;margin-left:auto"' + edoT('Export Cohort CSV', 'Downloads anonymized cohort data; Admin export adds individual IDs only, not full names.') + ' onclick="edoExportCsv()">Export Cohort CSV</button></div>' +
     '<div style="max-height:340px;overflow-y:auto;border:1px solid var(--border2);border-radius:10px;background:var(--card)">' +
     (window.__edo.cohortSummary ? '<table class="data-table"><thead style="position:sticky;top:0;background:var(--card);z-index:1"><tr><th>Group</th><th>Affected</th><th>DI</th><th>Fraud Conn</th><th>Case</th></tr></thead><tbody>' + cohortRows + '</tbody></table>' : piiBlock) +
@@ -15063,7 +15072,7 @@ window.renderObsidian = function (org) {
     '<div style="max-height:340px;overflow-y:auto;overflow-x:auto;margin-top:10px;border:1px solid var(--border2);border-radius:10px;background:var(--card)"><table class="data-table"><thead style="position:sticky;top:0;background:var(--card);z-index:1"><tr><th ' + edoT('Model', 'Monitored model.') + '>Model</th><th ' + edoT('Synthetic Identity Rate', 'Percent caught / blocked in monitor.') + '>Syn ID</th><th ' + edoT('Behavioral Anomaly', 'Behavioral fraud detection rate.') + '>Behav</th><th ' + edoT('Cluster Fraud', 'Ring detection rate.') + '>Cluster</th><th ' + edoT('Top Pattern', 'Dominant fraud typology.') + '>Pattern</th><th ' + edoT('Bias\u2011Fraud', 'Linked cases count.') + '>B\u2011F</th><th>Status</th><th ' + edoT('Trend (30d)', '30-day trajectory.') + '>Tr</th><th ' + edoT('Stamp', 'Whether this model is actively counted in the live Trust Score. Unstamp during remediation to exclude it.') + '>Stamp</th></tr></thead><tbody>' + mrows + '</tbody></table></div></section>' +
     '<section id="edo-sec-cohort" style="margin-top:20px"><h2 style="font-size:14px">Cohort Explorer: Fraud Lens</h2><p style="font-size:11px;color:var(--muted)">' + nAff + ' individuals in monitored cohorts (aggregated).</p>' +
     '<div style="display:flex;flex-wrap:wrap;gap:8px;margin:8px 0"><span class="badge badge-blue" style="font-size:10px">Cohort View</span>' + (edoCanPii() ? '<span class="badge badge-green" style="font-size:10px">Individual View</span>' : '<span class="badge badge-amber" style="font-size:10px">\ud83d\udd12 Admin Access Required</span>') +
-    '<span style="margin-left:auto;font-size:10px">Demo:</span><button type="button" class="btn-ghost" style="font-size:9px" onclick="edoSetDemoRole(\'Compliance Officer\')">Compliance</button><button type="button" class="btn-ghost" style="font-size:9px" onclick="edoSetDemoRole(\'Admin\')">Admin</button></div>' +
+    '</div>' +
     '<div style="display:flex;gap:8px"><button type="button" class="btn-ghost" style="font-size:10px' + (window.__edo.cohortSummary ? ';border-color:#fb923c' : '') + '" onclick="edoCohortToggle(true)">Cohort Summary</button><button type="button" class="btn-ghost" style="font-size:10px' + (!window.__edo.cohortSummary ? ';border-color:#fb923c' : '') + '" onclick="edoCanPii()&&edoCohortToggle(false)">Individual Drill\u2011In</button><button type="button" class="btn-ghost" style="font-size:10px;margin-left:auto" onclick="edoExportCsv()">Export CSV</button></div>' +
     '<div style="max-height:340px;overflow-y:auto;border:1px solid var(--border2);border-radius:10px;background:var(--card)">' +
     (window.__edo.cohortSummary ? '<table class="data-table"><thead style="position:sticky;top:0;background:var(--card);z-index:1"><tr><th>Cohort</th><th>Note</th></tr></thead><tbody>' + cohortRows + '</tbody></table>' : piiBlock) +
@@ -22028,7 +22037,7 @@ function buildWorkQueue(org) {
   };
   el.innerHTML =
     '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:12px">' +
-    '<div><div style="font-size:15px;font-weight:700;color:var(--chrome2)">Work Queue</div><div style="font-size:11px;color:var(--muted);margin-top:3px">Every fix, filing, and review, assigned to a team or an agent. Agents draft; a named person approves before anything goes live.</div></div>' +
+    '<div></div>' +
     '<div style="display:flex;gap:8px"><button type="button" class="btn-ghost" style="font-size:11px" onclick="cardinalShowToast&&cardinalShowToast(\'Synced to Jira (demo): ' + list.length + ' tickets\')">Sync to Jira / ServiceNow</button><button type="button" class="btn-primary" style="font-size:11px" onclick="wqCreateOpen()">+ Create Ticket</button></div></div>' +
     (awaitingMine ? '<div style="padding:9px 12px;border-radius:9px;background:rgba(168,85,247,.06);border:1px solid rgba(168,85,247,.25);font-size:11px;color:var(--chrome2);margin-bottom:10px">✦ <strong>' + awaitingMine + '</strong> agent draft' + (awaitingMine === 1 ? ' is' : 's are') + ' waiting on your approval.</div>' : '') +
     '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">' + ['All', 'Mine', 'Data Science', 'Engineering', 'Legal', 'Compliance', 'Eve', 'Adam'].map(chip).join('') + '</div>' +
@@ -45082,7 +45091,7 @@ function openModelDetail(modelId, sourceContext) {
     badgeEl.className = mdmBadgeClass(det.statusLabel);
   }
   if (crumb) {
-    crumb.innerHTML = '<button type="button" style="background:none;border:none;color:var(--accent);cursor:pointer;font-size:11px;font-family:var(--sans);padding:0" title="Back (close drill-in)" onclick="closeModelDetail()">\u2190 ' + mdmEsc(sourceContext || 'Cardinal') + '</button>';
+    crumb.innerHTML = '<button type="button" style="background:none;border:none;color:var(--accent);cursor:pointer;font-size:11px;font-family:var(--sans);padding:0" title="Back (close drill-in)" onclick="closeModelDetail()">\u2190 ' + mdmEsc(({ cardinallibrary: 'Cardinal Library', modellibrary: 'Cardinal Library', eden: 'Eden', obsidian: 'Obsidian', genesis: 'Genesis', atonement: 'Atonement', pulse: 'Pulse', atlas: 'Atlas', echo: 'Echo', trustscore: 'Trust Score', dashboard: 'Dashboard', sentinel: 'Watchman', warroom: 'War room', halo: 'Halo', marketing: 'Codex' })[sourceContext] || sourceContext || 'Cardinal') + '</button>';
   }
   if (body) body.innerHTML = mdmPaintDrillInBody(det, resolved);
   var dd = document.getElementById('mdm-search-dd');
@@ -48510,7 +48519,7 @@ window.genRenderScenarios = function () {
     else if (TAB === 'cases') body = cases.length ? cases.map(function (c) { return card('<div style="display:flex;justify-content:space-between;gap:8px;align-items:center"><div><div style="font-size:12px;font-weight:700;color:#1a1815">Case #' + esc(c.caseId) + '</div><div style="font-size:10.5px;color:#64748b">' + (c.members || []).length + ' members · ' + (c.unreadCount || 0) + ' unread</div></div><div style="display:flex;gap:6px"><button type="button" class="btn-ghost" style="font-size:11px" onclick="cardinalNavigateToCase(\'' + esc(c.caseId) + '\')">Open case</button><button type="button" class="btn-ghost" style="font-size:11px" onclick="window.__wrFocusCaseId=\'' + esc(c.caseId) + '\';showScreen(\'warroom\',null)">War room</button></div></div>'); }).join('') : card('<div style="font-size:11.5px;color:#64748b">You are not on any open case.</div>');
     else if (TAB === 'convos') body = convos.length ? convos.map(function (c) { var last = (c.messages || []).slice(-1)[0] || {}; return card('<div style="cursor:pointer" onclick="window.__tlSelectedChannelId=\'' + esc(c.id) + '\';showScreen(\'trustloop\',null)"><div style="display:flex;justify-content:space-between"><strong style="font-size:12px;color:#1a1815">' + esc(c.name) + '</strong><span style="font-size:10.5px;color:#64748b">' + (c.unreadCount || 0) + ' unread</span></div><div style="font-size:11px;color:#475569;margin-top:3px">' + esc(last.author || '') + ': ' + esc(String(last.content || '').slice(0, 110)) + '</div></div>'); }).join('') : card('<div style="font-size:11.5px;color:#64748b">No conversations yet.</div>');
     else body = notes.length ? notes.slice().reverse().map(function (n) { return card('<div style="font-size:12px;font-weight:700;color:#1a1815">' + esc(n.title || 'Note') + '</div><div style="font-size:11.5px;color:#334155;margin-top:3px">' + esc(n.text) + '</div><div style="font-size:10px;color:#64748b;margin-top:4px">' + new Date(n.timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + '</div>'); }).join('') : card('<div style="font-size:11.5px;color:#64748b">No notes yet.</div>');
-    box.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><div><div style="font-size:15px;font-weight:700;color:var(--chrome2)">My work</div><div style="font-size:11px;color:var(--muted2)">Everything assigned to you, the cases and conversations you are in, and your notes. All of it is also kept in Echo.</div></div>' +
+    box.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><div><div style="font-size:15px;font-weight:700;color:var(--chrome2)">My work</div></div>' +
       '<div style="display:flex;gap:4px;background:#f3f0e9;padding:3px;border-radius:9px">' + tabs.map(function (t) { return '<button type="button" onclick="mywsTab(\'' + t[0] + '\')" style="font-size:11.5px;padding:6px 12px;border-radius:7px;border:0;cursor:pointer;font-weight:700;background:' + (TAB === t[0] ? '#fff' : 'transparent') + ';color:' + (TAB === t[0] ? '#1a1815' : '#64748b') + '">' + t[1] + ' (' + t[2] + ')</button>'; }).join('') + '</div></div>' +
       '<div style="display:flex;flex-direction:column;gap:6px;margin-top:12px">' + body + '</div>';
   }
@@ -48561,7 +48570,7 @@ window.genRenderScenarios = function () {
     var org = window.currentOrg || 'ad', P = PLAN[org] || PLAN.fin;
     var box = document.getElementById('lucid-today');
     if (!box) { box = document.createElement('div'); box.id = 'lucid-today'; box.style.cssText = 'margin:0 0 16px'; scr.insertBefore(box, scr.firstChild); }
-    box.innerHTML = '<div style="font-size:15px;font-weight:700;color:var(--chrome2);margin-bottom:4px">Eve and Adam today</div><div style="font-size:11px;color:var(--muted2);margin-bottom:10px">What your AI teammates planned, finished, and are working on right now. Everything they do is logged in Echo.</div>' +
+    box.innerHTML = '<div style="font-size:15px;font-weight:700;color:var(--chrome2);margin-bottom:4px">Eve and Adam today</div>' +
       '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">' + col('Eve', P.eve) + col('Adam', P.adam) + '</div>';
     var th = document.getElementById('lucid-townhall-messages');
     if (th && !th.querySelector('.lucid-outside')) {
@@ -48735,6 +48744,9 @@ window.genRenderScenarios = function () {
     ]
   };
   var ROWS = {};
+  // Other screens (model and person profiles) list the Codex documents tied to them (Brittany 10/13).
+  window.cardinalDocs = function (o) { return rows(o); };
+  window.cardinalDocOpen = function (id) { try { docOpen(id); } catch (e) {} var v = document.getElementById('doc-viewer'); if (v) v.style.zIndex = '10050'; };
   function rows(org) { if (!ROWS[org]) ROWS[org] = (SEED[org] || []).map(function (r, i) { return { id: org + 'd' + i, name: r[0], type: r[1], ties: r[2], by: r[3], at: ago(r[4]), ver: r[5], status: r[6], find: r[7], size: r[8], c: r[9] || {}, hist: Array.apply(null, Array(r[5])).map(function (_, k) { return 'v' + (k + 1) + ' · ' + fmt(ago(r[4] + (r[5] - 1 - k) * 3)); }) }; }); return ROWS[org]; }
   var F = { q: '', type: '', fmt: '', status: '', by: '', from: '', to: '' }, SELD = {};
   var STC = { Approved: ['#15803D', 'rgba(21,128,61,.1)'], 'Changes needed': ['#B91C1C', 'rgba(220,38,38,.1)'], 'In review': ['#FACC15', 'rgba(250,204,21,.16)'] };
@@ -49527,26 +49539,30 @@ window.CARDINAL_PLACES = {
     }
     var wf = document.getElementById('eden-sec-workforce'); if (wf) wf.style.display = 'none';
     [].forEach.call(root.querySelectorAll('button'), function (b) { var t = b.textContent.trim(); if (TIPS[t] && !b.title) b.title = TIPS[t]; });
-    // Hide sections you don't need (Brittany: "they can hide it so they don't have to see it"); remembered per browser.
-    var hid = hidden(scr), count = 0;
+    // Minimize sections you don't need (Brittany 10/13: "minimize, not hide... how do I get it back?"). The button sits left
+    // of the title; one click folds the section to its title, another click opens it. Resets on each sign-in.
+    var hid = hidden(scr);
     [].forEach.call(sc.children, function (sec) {
       var h = sec.querySelector(':scope > h2'); if (!h) return;
-      var key = h.textContent.replace(/Hide$/, '').replace(/[:\d].*$/, '').trim();
-      if (!h.querySelector('.edo-hide-btn')) { var b = document.createElement('button'); b.type = 'button'; b.className = 'edo-hide-btn'; b.textContent = 'Hide'; b.title = 'Hide this section from your view'; b.style.cssText = 'margin-left:10px;font-size:10px;font-weight:600;padding:2px 8px;border-radius:6px;border:1px solid rgba(26,24,21,.15);background:#fff;color:#64748b;cursor:pointer;vertical-align:middle'; b.onclick = function (e) { e.stopPropagation(); var x = hidden(scr); x[key] = 1; saveHidden(scr, x); run(scr); }; h.appendChild(b); }
-      var off = !!hid[key]; if (off) count++; if (sec.id !== 'eden-sec-workforce') sec.style.display = off ? 'none' : '';
+      var old = h.querySelector('.edo-hide-btn'); if (old) old.remove();
+      if (!h.__k) h.__k = h.textContent.replace(/[:\d].*$/, '').trim();
+      var key = h.__k, b = h.querySelector('.edo-min-btn');
+      if (!b) { b = document.createElement('button'); b.type = 'button'; b.className = 'edo-min-btn'; b.onclick = function (e) { e.stopPropagation(); var x = hidden(scr); if (x[key]) delete x[key]; else x[key] = 1; saveHidden(scr, x); run(scr); }; h.insertBefore(b, h.firstChild); }
+      var off = !!hid[key], lab = off ? '+' : '\u2212';
+      if (b.textContent !== lab) { b.textContent = lab; b.title = off ? 'Expand this section' : 'Minimize this section'; b.setAttribute('aria-label', b.title); }
+      if (sec.classList.contains('edo-min') !== off) sec.classList.toggle('edo-min', off);
     });
-    var chip = root.querySelector('.edo-hidden-chip');
-    if (count) { if (!chip) { chip = document.createElement('div'); chip.className = 'edo-hidden-chip'; chip.style.cssText = 'margin:0 0 10px;font-size:11px;color:#64748b'; sc.insertBefore(chip, sc.children[2] || null); } chip.innerHTML = count + ' section' + (count === 1 ? '' : 's') + ' hidden from your view · <a href="#" style="color:#1d4ed8;font-weight:700">Show all</a>'; chip.querySelector('a').onclick = function (e) { e.preventDefault(); saveHidden(scr, {}); run(scr); }; }
-    else if (chip) chip.remove();
+    var chip = root.querySelector('.edo-hidden-chip'); if (chip) chip.remove();
+    if (!document.getElementById('edo-min-css')) { var st = document.createElement('style'); st.id = 'edo-min-css'; st.textContent = '.edo-min>:not(h2){display:none!important}.edo-min>h2{margin-bottom:0!important;opacity:.75}.edo-min-btn{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;margin-right:8px;vertical-align:middle;border-radius:6px;border:1.5px solid rgba(124,58,237,.45);background:#f5f3ff;color:#6d28d9;font:700 14px/1 system-ui,sans-serif;cursor:pointer;padding:0}.edo-min-btn:hover{background:#ede9fe}'; document.head.appendChild(st); }
   }
-  function hidden(scr) { try { return JSON.parse(localStorage.getItem('cardinal-hidden-' + scr) || '{}'); } catch (e) { return {}; } }
-  function saveHidden(scr, o) { try { localStorage.setItem('cardinal-hidden-' + scr, JSON.stringify(o)); } catch (e) {} }
+  function hidden(scr) { try { return JSON.parse(sessionStorage.getItem('cardinal-hidden-' + scr) || '{}'); } catch (e) { return {}; } }
+  function saveHidden(scr, o) { try { sessionStorage.setItem('cardinal-hidden-' + scr, JSON.stringify(o)); } catch (e) {} }
   // 10/3 evening (Brittany: "what is cohort explorer telling me? I can't click on it").
   setInterval(function () {
     ['eden', 'obsidian'].forEach(function (scr) {
       var e = document.getElementById('screen-' + scr); if (!e || e.offsetParent === null) return;
       var sec = e.querySelector('#edo-sec-cohort'); if (!sec) return;
-      if (!sec.querySelector('.cohort-intro')) { var h = sec.querySelector('h2'); if (h) { var p = document.createElement('div'); p.className = 'cohort-intro'; p.style.cssText = 'font-size:12px;color:#475569;margin:4px 0 10px;line-height:1.5'; p.textContent = 'The groups behind the numbers above. Each row is a group of affected ' + ((window.currentOrg || 'ad') === 'ad' ? 'aircraft' : 'people') + ', with its gap, its link to fraud, and its case. Opening the individual records inside a group is limited to Admin and Legal; switch "Demo as" to Admin to see it.'; h.parentNode.insertBefore(p, h.nextSibling); } }
+      if (!sec.querySelector('.cohort-intro')) { var h = sec.querySelector('h2'); if (h) { var p = document.createElement('div'); p.className = 'cohort-intro'; p.style.cssText = 'font-size:12px;color:#475569;margin:4px 0 10px;line-height:1.5'; p.textContent = 'The groups behind the numbers above. Each row is a group of affected ' + ((window.currentOrg || 'ad') === 'ad' ? 'aircraft' : 'people') + ', with its gap, its link to fraud, and its case. Opening the individual records inside a group is limited to Admin and Legal; switch to an Admin or Legal persona to see it.'; h.parentNode.insertBefore(p, h.nextSibling); } }
       [].forEach.call(sec.querySelectorAll('tbody tr'), function (tr) {
         if (tr.__ck) return; tr.__ck = 1; tr.style.cursor = 'pointer';
         tr.addEventListener('click', function (ev) { if (ev.target.closest('button,a')) return; var b = tr.querySelector('button'); if (b) { b.click(); return; } try { cardinalShowToast('Opening individual records needs Admin or Legal access. Switch "Demo as" to Admin to see this group.'); } catch (e2) {} });
@@ -50237,7 +50253,7 @@ window.CARDINAL_PLACES = {
     var box = document.createElement('div'); box.id = 'gl-combined'; box.className = 'card'; box.style.cssText = 'margin-bottom:14px;display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:18px;align-items:start';
     var left = document.createElement('div'); left.innerHTML = '<div style="font-size:12px;font-weight:700;color:#1a1815;margin-bottom:8px">Search Cardinal terms</div>';
     var srow = searchCard.firstElementChild; srow.style.border = '1px solid rgba(26,24,21,.15)'; srow.style.borderRadius = '10px'; srow.style.padding = '9px 12px'; srow.style.background = '#fff'; left.appendChild(srow);
-    var right = document.createElement('div'); right.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><div><div style="font-size:12px;font-weight:700;color:#1a1815">Your team’s terms</div><div style="font-size:10.5px;color:#64748b">Words your team uses, so Eve explains things the same way.</div></div><button type="button" class="btn-primary" style="font-size:11.5px" onclick="glossaryAddPopup()">+ Add a term</button></div>';
+    var right = document.createElement('div'); right.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><div><div style="font-size:12px;font-weight:700;color:#1a1815">Your team’s terms</div></div><button type="button" class="btn-primary" style="font-size:11.5px" onclick="glossaryAddPopup()">+ Add a term</button></div>';
     right.appendChild(custom);
     box.appendChild(left); box.appendChild(right);
     searchCard.parentNode.insertBefore(box, searchCard); searchCard.style.display = 'none'; customCard.style.display = 'none';
@@ -54328,6 +54344,43 @@ window.CARDINAL_PLACES = {
   }
   function tbl(head, rows) { return '<table style="width:100%;border-collapse:collapse;font-size:12.5px"><thead><tr>' + head.map(function (x) { return '<th style="text-align:left;font-size:10.5px;color:#64748b;text-transform:uppercase;padding:8px 14px;border-bottom:1px solid rgba(26,24,21,.08)">' + x + '</th>'; }).join('') + '</tr></thead><tbody>' + rows.map(function (r, n) { return '<tr style="background:' + (n % 2 ? '#f7f3ea' : '#fff') + '">' + r.map(function (x) { return '<td style="padding:8px 14px">' + x + '</td>'; }).join('') + '</tr>'; }).join('') + '</tbody></table>'; }
   window.custTab = function (t) { [].forEach.call(document.querySelectorAll('#cust-prof [data-ct]'), function (e) { e.style.display = e.getAttribute('data-ct') === t ? (t === 'ov' ? 'grid' : '') : 'none'; }); [].forEach.call(document.querySelectorAll('#cust-prof .ctab'), function (b) { var on = b.getAttribute('data-t') === t; b.style.background = on ? '#fff' : 'transparent'; b.style.boxShadow = on ? '0 1px 3px rgba(26,24,21,.12)' : 'none'; }); };
+  function fdt(d) { d = new Date(d); var hh = d.getHours(), mm = d.getMinutes(); return fd(d) + ', ' + ((hh % 12) || 12) + ':' + (mm < 10 ? '0' : '') + mm + (hh < 12 ? ' AM' : ' PM'); }
+  var SENDER = { fin: { Marketing: 'Lisa Torres, Marketing', 'Required notice': 'Morgan Hale, Compliance', Statements: 'Statements team (automated)', Servicing: 'Hannah Brooks, Servicing', Decision: 'Riley Whitmore, Credit Risk', Updates: 'Member services', Default: 'Customer care' }, other: { Marketing: 'Outreach team', 'Required notice': 'Compliance team', Statements: 'Statements team (automated)', Servicing: 'Service team', Decision: 'Program decisions team', Updates: 'Program office', Default: 'Program office' } };
+  function msgInfo(p, i, j, x, dd, st) {
+    var o = (typeof org === 'function' ? org() : window.currentOrg) || 'fin', hh = hash(i + 'msg' + j), type = x[2], subj = x[1], S = SENDER[o] || SENDER.other;
+    var model = (p.models || [])[j % Math.max(1, (p.models || []).length)] || 'Credit Scoring v3.4';
+    var priv = /Privacy/.test(subj);
+    var src = priv ? 'All customers: required yearly notice (no AI involved)' : type === 'Marketing' ? (p.cohort ? 'Cohort: ' + p.cohort : 'Segment: Refinance eligible, built by Marketing Propensity v4.5')
+      : type === 'Decision' || type === 'Required notice' ? 'Model decision: ' + model
+      : type === 'Servicing' ? (hh % 2 ? 'CSV upload: october_payment_reminders.csv (uploaded by Hannah Brooks)' : 'Model list: Payment Default Early Warning v1.4')
+      : 'All active accounts (no AI involved)';
+    var body = { 'Monthly statement': 'Your statement for the month is ready. Log in to view your balance, payments, and activity.', 'Fall refinance offer': 'You may qualify for a lower rate. See the attached rate sheet and apply in minutes.', 'Adverse action notice': 'We could not approve your application. The main reasons are listed below, and you have the right to a free copy of your credit report.', 'Payment reminder': 'Your payment is due in 3 days. Reply PAY to pay now or call us to set up a plan.', 'Privacy notice update': 'We updated how we use and share your information. Nothing changes unless you choose to opt out.', 'Credit line review result': 'We reviewed your credit line. Your result and the reasons are in your account.', 'Program update': 'There is an update to your program. Details are in your account.', 'Decision notice': 'A decision was made on your request. The reasons are listed in your account.', 'Reminder': 'This is a reminder about your upcoming date.', 'Privacy notice': 'We updated our privacy notice.' }[subj] || 'Message details are in the account.';
+    var coll = priv ? 'Privacy notice (PDF) with opt-out form' : { Marketing: 'Fall rate sheet (PDF, approved by Compliance Sep 28)', 'Required notice': 'Notice of action taken and reasons (PDF); credit score disclosure', Statements: 'Monthly statement (PDF)', Servicing: 'None', Decision: 'Decision letter with reasons (PDF)' }[type] || 'None';
+    var opened = st === 'Opened' ? new Date(dd.getTime() + (20 + hh % 600) * 6e4) : null;
+    var act = st === 'Suppressed' ? 'None. Not sent while the re-review is open.' : !opened ? 'Not opened yet' : type === 'Marketing' ? (hh % 3 ? 'Opened only' : 'Clicked the rate sheet link') : type === 'Servicing' ? (hh % 2 ? 'Made a payment the same day' : 'Opened only') : type === 'Required notice' ? (hh % 2 ? 'Requested a free credit report' : 'Opened only') : 'Opened only';
+    return { subj: subj, ch: x[0], type: type, at: dd, st: st, from: S[type] || S.Default, body: body, coll: coll, opened: opened, act: act, src: src, model: model, seal: 'echo-msg-' + (100000 + hh % 899999), to: p.name + ' (' + (x[0] === 'SMS' || x[0] === 'Push' ? p.phone : x[0] === 'Mail' ? p.city + ', ' + p.st : p.email) + ')' };
+  }
+  window.custMsg = function (j) {
+    var M = (window.__custMsgs || [])[j]; if (!M) return;
+    var kvr = function (k, v) { return '<div style="display:grid;grid-template-columns:150px 1fr;gap:10px;padding:7px 0;border-top:1px solid rgba(26,24,21,.06);font-size:12.5px"><span style="color:#64748b">' + k + '</span><b style="font-weight:600;color:#1a1815">' + v + '</b></div>'; };
+    var src = /^Model decision: /.test(M.src) || /^Model list: /.test(M.src) ? M.src.replace(/: (.*)$/, function (a, n) { return ': <a href="javascript:void(0)" onclick="custModel(' + esc(JSON.stringify(n.replace(/ \(.*$/, ''))) + ')" style="color:#1e3a8a;text-decoration:none">' + esc(n) + '</a>'; }) : esc(M.src);
+    var w = document.createElement('div'); w.id = 'cust-msg';
+    w.style.cssText = 'position:fixed;inset:0;z-index:10001;background:rgba(26,24,21,.35);display:flex;align-items:center;justify-content:center;padding:16px';
+    w.innerHTML = '<div style="background:#fff;border-radius:16px;box-shadow:0 30px 80px rgba(0,0,0,.35);width:min(600px,100%);max-height:90vh;overflow:auto;padding:20px 22px;position:relative"><button type="button" aria-label="Close" onclick="this.closest(\'#cust-msg\').remove()" style="position:absolute;top:12px;right:14px;width:28px;height:28px;border-radius:50%;border:none;background:#f1f5f9;color:#475569;font-size:17px;cursor:pointer">\u00d7</button>' +
+      '<div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.4px">' + esc(M.ch) + ' \u00b7 ' + esc(M.type) + '</div><div style="font-size:18px;font-weight:800;color:#1a1815;margin:2px 0 10px">' + esc(M.subj) + '</div>' +
+      '<div style="background:#f7f3ea;border-radius:10px;padding:12px 14px;font-size:13px;line-height:1.55;color:#1a1815;margin-bottom:10px">' + esc(M.body) + '</div>' +
+      kvr('Received', fdt(M.at)) + kvr('To', esc(M.to)) + kvr('Sent by', esc(M.from)) + kvr('Status', M.st === 'Suppressed' ? '<span style="color:#B91C1C">Not sent: suppressed during re-review</span>' : esc(M.st)) +
+      kvr('Opened', M.opened ? fdt(M.opened) : '\u2014') + kvr('Action taken', esc(M.act)) + kvr('Collateral', esc(M.coll)) + kvr('Where it came from', src) + kvr('Echo record', '<span style="font-family:monospace;font-weight:500">' + M.seal + '</span>') +
+      '<div style="font-size:11.5px;color:#64748b;margin-top:10px">Sealed in Echo when it was sent. Opening it here is logged with your name and the time.</div></div>';
+    w.addEventListener('click', function (e) { if (e.target === w) w.remove(); });
+    var old = document.getElementById('cust-msg'); if (old) old.remove(); document.body.appendChild(w);
+  };
+  // Codex documents that reached this person (Brittany 10/13: "if Maria receives something that was uploaded to Codex, it should show in her profile").
+  function custDocs(p) {
+    var D = window.cardinalDocs ? cardinalDocs(org()) : [], keys = (p.models || []).concat(p.cohort ? [p.cohort] : []);
+    var hit = D.filter(function (d) { return /Marketing|Notice|Letter|Disclosure|Policy|creative/i.test(d.type + ' ' + d.name) && keys.some(function (k) { var f = String(k).replace(/ v[\d.]+$/, ''); return d.ties.indexOf(k) >= 0 || (f.length > 6 && d.ties.indexOf(f) >= 0); }); }).slice(0, 5);
+    return '<div style="' + CARD + '"><div style="' + HEAD + '">Codex documents that reached them</div>' + (hit.length ? hit.map(function (d) { return '<div style="padding:7px 0;border-top:1px solid rgba(26,24,21,.06);font-size:12.5px"><a href="javascript:void(0)" onclick="cardinalDocOpen(' + esc(JSON.stringify(d.id)) + ')" style="color:#1e3a8a;font-weight:700;text-decoration:none">' + esc(d.name) + '</a><div style="color:#64748b;font-size:11.5px">' + esc(d.type) + ' \u00b7 tied to ' + esc(d.ties) + ' \u00b7 ' + esc(d.status) + '</div></div>'; }).join('') : '<div style="font-size:12.5px;color:#64748b">No Codex documents have reached them yet.</div>') + '</div>';
+  }
   window.custOpen = function (i) {
     var p = person(i), c = CFG[org()] || CFG.fin, h = hash(org() + 'prof' + i), co = ((window.CARDINAL_DATA || {})[org()] || {}).org || '';
     var decs = [], comms = [];
@@ -54337,7 +54390,15 @@ window.CARDINAL_PLACES = {
       decs.push([fd(k === 0 && p.lastDate ? p.lastDate : d), mlink(m), '<span style="font-weight:700;color:' + (den ? '#B91C1C' : '#15803D') + '">' + (den ? 'Denied' : 'Approved') + '</span>', den ? (p.flagged ? 'Debt-to-income above limit (flagged for re-review: ZIP code proxy)' : 'Credit history too short') : 'Met the criteria', '<span style="font-family:monospace">CP-' + String(767000 + i % 999).padStart(6, '0') + '-' + String(k + 1).padStart(2, '0') + '</span>', den && p.flagged ? '<span style="color:#A16207;font-weight:700">Re-review in progress</span>' : '—']);
     }
     var CM = c.word === 'Customers' ? [['Email', 'Monthly statement', 'Statements'], ['Email', 'Fall refinance offer', 'Marketing'], ['Mail', 'Adverse action notice', 'Required notice'], ['SMS', 'Payment reminder', 'Servicing'], ['Email', 'Privacy notice update', 'Required notice'], ['Push', 'Credit line review result', 'Decision']] : [['Email', 'Program update', 'Updates'], ['Mail', 'Decision notice', 'Required notice'], ['SMS', 'Reminder', 'Servicing'], ['Email', 'Privacy notice', 'Required notice']];
-    for (var j = 0; j < 7; j++) { var x = CM[(h + j) % CM.length], dd = new Date(2026, 9 - j, 2 + (h >> j) % 25); comms.push([fd(dd), x[0], esc(x[1]), x[2], (h >> j) & 1 ? 'Opened' : 'Delivered', x[1] === 'Fall refinance offer' && p.flagged ? '<span style="color:#B91C1C;font-weight:700">Suppressed during re-review</span>' : '']); }
+    // Each message opens with everything about it (Brittany 10/13: "time and date received, who sent it, when they opened
+    // it, did they take any action, what collateral, and what segment it came from: a model, cohort, or CSV").
+    var MSGS = window.__custMsgs = [];
+    for (var j = 0; j < 7; j++) {
+      var x = CM[(h + j) % CM.length], dd = new Date(2026, 9 - j, 2 + (h >> j) % 25, 8 + (h >> (j + 1)) % 10, (h >> (j + 3)) % 60), st = (h >> j) & 1 ? 'Opened' : 'Delivered', sup = x[1] === 'Fall refinance offer' && p.flagged;
+      if (dd > new Date()) dd = new Date(dd.getTime() - 30 * 864e5);
+      MSGS.push(msgInfo(p, i, j, x, dd, sup ? 'Suppressed' : st));
+      comms.push([fdt(dd), x[0], '<a href="javascript:void(0)" onclick="custMsg(' + j + ')" style="color:#1e3a8a;font-weight:700;text-decoration:none" title="Open this message">' + esc(x[1]) + '</a>', x[2], sup ? 'Not sent' : st, sup ? '<span style="color:#B91C1C;font-weight:700">Suppressed during re-review</span>' : '']);
+    }
     var denials = decs.filter(function (d) { return /Denied/.test(d[2]); }).length;
     var ini = (p.first[0] + p.last[0]).toUpperCase();
     var m = document.createElement('div'); m.id = 'cust-prof';
@@ -54357,9 +54418,10 @@ window.CARDINAL_PLACES = {
       '<div style="' + CARD + '"><div style="' + HEAD + '">AI decisions</div>' + kv([['Decisions on record', decs.length], ['Approved', decs.length - denials], ['Denied', denials], ['Last decision', esc(p.lastDate)], ['Re-review', p.flagged ? '<span style="color:#A16207">In progress</span>' : 'None needed']]) + '</div>' +
       '<div style="' + CARD + '"><div style="' + HEAD + '">Models that decided about them</div>' + kvRaw(p.models.map(function (x) { return [mlink(x), '<a href="javascript:void(0)" onclick="custModel(' + esc(JSON.stringify(x)) + ')" style="color:#1e3a8a;font-weight:700;text-decoration:none">View model →</a>']; })) + '</div>' +
       '<div style="' + CARD + '"><div style="' + HEAD + '">Segments and suppressions</div>' + kv([['Segments', p.cohort ? esc(p.cohort) : 'Standard'], ['Suppressions', p.flagged ? 'Kept out of marketing offers until re-review ends' : 'None'], ['Marketing consent', (h & 1) ? 'Yes' : 'No']]) + '</div>' +
-      '<div style="' + CARD + '"><div style="' + HEAD + '">Recent messages</div>' + tbl(['Date', 'Message', 'Status'], comms.slice(0, 4).map(function (r) { return [r[0], r[2], r[4]]; })) + '</div></div>' +
+      custDocs(p) +
+      '<div style="' + CARD + '"><div style="' + HEAD + '">Recent messages</div>' + tbl(['Received', 'Message', 'Status'], comms.slice(0, 4).map(function (r) { return [r[0], r[2], r[4]]; })) + '</div></div>' +
       '<div data-ct="dec" style="display:none;' + CARD + '"><div style="' + HEAD + '">Every AI decision, with its receipt</div>' + tbl(['Date', 'Model', 'Decision', 'Reason given', 'Receipt', 'Re-review'], decs) + '</div>' +
-      '<div data-ct="com" style="display:none;' + CARD + '"><div style="' + HEAD + '">Every message received</div>' + tbl(['Date', 'Channel', 'Message', 'Type', 'Status', 'Note'], comms) + '</div>' +
+      '<div data-ct="com" style="display:none;' + CARD + '"><div style="' + HEAD + '">Every message received</div>' + tbl(['Received', 'Channel', 'Message', 'Type', 'Status', 'Note'], comms) + '</div>' +
       '<div data-ct="rights" style="display:none;' + CARD + '"><div style="' + HEAD + '">Data rights requests</div>' + tbl(['Date', 'Request', 'Status', 'Closed'], h % 3 ? [[fd(new Date(2025, h % 12, 4)), 'Copy of my data', '<span style="color:#15803D;font-weight:700">Completed</span>', fd(new Date(2025, h % 12, 18))]] : [['—', 'No requests', '—', '—']]) + '</div>' +
       '<div style="font-size:11.5px;color:#64748b;margin-top:12px">Opening this profile was logged in Echo with your name and the time.</div></div>';
     m.addEventListener('click', function (ev) { if (ev.target === m) m.remove(); });
@@ -58785,7 +58847,11 @@ setInterval(function () {
     if (!window.__atlasSeen) window.__atlasSeen = Date.now(); if (Date.now() - window.__atlasSeen < 4000) return;
     if (window.__atlasPop) return; window.__atlasPop = 1; var o = org(), A = ALERTS[o] || []; if (!A.length) return;
     var p = document.createElement('div'); p.id = 'at-evepop';
-    p.innerHTML = '<span class="at-eav">e</span><div style="flex:1"><div style="display:flex;justify-content:space-between;gap:8px"><b>Eve</b><button type="button" class="at-evx" aria-label="Close" onclick="document.getElementById(\'at-evepop\').remove()">×</button></div><div>' + A.length + ' things in ' + NAME + ' need a look. The first: ' + esc(A[0][1]) + '</div><div style="display:flex;gap:6px;margin-top:8px"><button type="button" class="at-btn dark" onclick="document.getElementById(\'at-evepop\').remove();var e=document.querySelector(\'.at-eve\');if(e)e.scrollIntoView({behavior:\'smooth\',block:\'center\'})">Show me</button><button type="button" class="at-btn" onclick="document.getElementById(\'at-evepop\').remove()">Later</button></div></div>';
+    // Brittany 10/13: the pop-up should not repeat what is already on screen. It names the most urgent item, "Show me" opens
+    // that record, and "Later" asks Eve for a reminder that comes back at the chosen time.
+    var top = (window.cardinalAtlasList ? cardinalAtlasList(o) : []).filter(function (x) { return x.id === A[0][0]; })[0], nm = top ? top.name : 'the first flag';
+    window.__atlasTop = A[0][0];
+    p.innerHTML = '<span class="at-eav">e</span><div style="flex:1"><div style="display:flex;justify-content:space-between;gap:8px"><b>Eve</b><button type="button" class="at-evx" aria-label="Close" onclick="document.getElementById(\'at-evepop\').remove()">\u00d7</button></div><div>' + A.length + ' things need a look today. Start with <b>' + esc(nm) + '</b>. Want me to open its record?</div><div style="display:flex;gap:6px;margin-top:8px"><button type="button" class="at-btn dark" onclick="document.getElementById(\'at-evepop\').remove();try{atlasOpen(window.__atlasTop)}catch(e){}">Show me</button><button type="button" class="at-btn" onclick="document.getElementById(\'at-evepop\').remove();cardinalRemindAsk(' + esc(JSON.stringify('Look at ' + nm + ' in Atlas: ' + A[0][1])) + ',' + esc(JSON.stringify("window.__deepLinkUntil=Date.now()+3000;showScreen('atlas',document.getElementById('nav-atlas'));setTimeout(function(){try{atlasOpen('" + A[0][0] + "')}catch(e){}},700)")) + ')">Remind me later</button></div></div>';
     document.body.appendChild(p);
   }
   setInterval(function () { try { draw(false); } catch (e) { if (window.console) console.warn('atlas', e); } try { genesisReq(); } catch (e) {} try { evePop(); } catch (e) {} }, 600);
@@ -59997,8 +60063,15 @@ setInterval(function () {
     return '<div class="li-box"><div class="li-h">About this</div>' +
       row('Owner', esc(owner)) + row('Last edited', md(edited) + ' by ' + esc(editedBy)) + row('Right now', esc(pulse ? pulse.where + (pulse.what ? ' · ' + pulse.what : '') : 'Working fine. Nothing flagged by Pulse.')) + row('Cases', caseLinks) +
       '<div class="li-h" style="margin-top:12px">In Genesis</div>' + gen.map(function (g) { return '<div class="li-li">' + esc(g) + '</div>'; }).join('') +
+      docsHtml(o, names) +
       '<div class="li-h" style="margin-top:12px">History</div>' + hist.map(function (x) { return '<div class="li-hist"><span>' + md(x[0]) + '</span><span>' + esc(x[1]) + ' · ' + esc(x[2]) + '</span></div>'; }).join('') +
       '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">' + (a ? '<button type="button" style="' + BTN + '" onclick="liClose();showScreen(\'atlas\',document.getElementById(\'nav-atlas\'));setTimeout(function(){try{atlasOpen(\'' + a.id + '\')}catch(e){}},700)">View in Atlas</button>' : '') + (pulse ? '<button type="button" style="' + BTN + '" onclick="liClose();pulseFind(\'' + esc(names.filter(function (n) { return window.cardinalPulseStatus && cardinalPulseStatus(o, n); })[0] || name).replace(/'/g, '') + '\')">View in Pulse</button>' : '') + ((window.cardinalDiag ? cardinalDiag(o) : []).some(function (d) { return names.indexOf(d[0]) >= 0; }) ? '<button type="button" style="' + BTN + '" onclick="liClose();gaDiagGo(\'' + esc((window.cardinalDiag(o).filter(function (d) { return names.indexOf(d[0]) >= 0; })[0] || [])[0] || '').replace(/'/g, '') + '\')">View in Genesis</button>' : '<button type="button" style="' + BTN + '" onclick="liClose();showScreen(\'genesis\',null)">View in Genesis</button>') + '</div></div>';
+  }
+  // Codex documents tied to this item (Brittany 10/13: "if something was uploaded to Codex it should show in the model's profile").
+  function docsHtml(o, names) {
+    var D = window.cardinalDocs ? cardinalDocs(o) : [], fam = function (n) { return String(n || '').replace(/ v[\d.]+$/, ''); };
+    var hit = D.filter(function (d) { return names.some(function (n) { return n && (d.ties.indexOf(n) >= 0 || (fam(n).length > 6 && d.ties.indexOf(fam(n)) >= 0)); }); });
+    return '<div class="li-h" style="margin-top:12px">Codex documents</div>' + (hit.length ? hit.map(function (d) { return '<div class="li-li"><a href="javascript:void(0)" onclick="cardinalDocOpen(\'' + d.id + '\')">' + esc(d.name) + '</a> <span style="color:#64748b">\u00b7 ' + esc(d.type) + ' \u00b7 ' + esc(d.status) + ' \u00b7 uploaded by ' + esc(d.by) + ' \u00b7 ' + md(d.at) + '</span></div>'; }).join('') : '<div class="li-li" style="color:#64748b">No documents in Codex are tied to it yet.</div>');
   }
   window.liClose = function () { ['li-modal', 'lib-uc-modal'].forEach(function (id) { var m = document.getElementById(id); if (m) m.remove(); }); var md2 = document.getElementById('model-detail-modal'); if (md2 && md2.offsetParent) { try { closeModelDetail(); } catch (e) { md2.style.display = 'none'; } } };
   function pop(kind, color, name, sub, facts, body) {
@@ -60377,6 +60450,257 @@ setInterval(function () {
     '.tch-box{position:relative}.tch-x{position:absolute;top:14px;right:16px;width:30px;height:30px;border-radius:50%;border:none;background:#f1f5f9;color:#475569;font-size:18px;cursor:pointer}.tch-note{font-size:11.5px;color:#64748b;margin-top:12px}.tch-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}@media (max-width:820px){.tch-row{grid-template-columns:1fr}}.tch-row button{font:inherit;text-align:left;cursor:pointer;background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:18px;display:flex;flex-direction:column;gap:6px;color:#1a1815}.tch-row button:hover{border-color:#a78bfa;box-shadow:0 10px 26px rgba(124,58,237,.15)}.tch-row b{font-size:16px}.tch-row span{color:#475569;line-height:1.5}.tch-row em{font-style:normal;font-size:12px;font-weight:600;background:#f1f5f9;border-radius:999px;padding:3px 10px;align-self:flex-start;color:#334155}.tch-ic{width:38px;height:38px;border-radius:50%;background:linear-gradient(180deg,#f5f3ff,#ede9fe);border:1.5px solid rgba(124,58,237,.45);color:#6d28d9!important;display:flex;align-items:center;justify-content:center;font-size:14px;box-shadow:0 6px 16px rgba(124,58,237,.25)}' +
     '.tour-hide{opacity:0!important}#tour-spot,#tour-cap,#tour-arrow{transition:opacity .25s ease!important}.tc-x{font:inherit;font-size:18px!important;line-height:1;width:26px;height:26px;border-radius:50%;border:none!important;background:#f1f5f9!important;color:#475569!important;cursor:pointer}.tc-acts .tc-skip{margin-right:auto;border:none;background:none;color:#64748b}' +
     '#tour-btn{font:inherit;font-size:12px;font-weight:600;border:none;background:#1a1815;color:#fff;border-radius:8px;padding:6px 12px;cursor:pointer;margin-right:8px;white-space:nowrap}';
+  document.head.appendChild(css);
+})();
+</script>
+<script data-p="p67_buttons">
+// 10/13 (Brittany: "none of the buttons should be plain beige or plain white... keep the beige and do the purple
+// outline like the Eve icon, or make them black. Pick one"). Picked: action buttons keep their light fill and get a
+// purple rim, like the Eve icon; main actions stay black. Tabs, filters, and the industry switcher are left alone.
+(function () {
+  var VERB = /^(export|download|view|open|send|refresh|next|previous|prev|back|unpin|pin|add|assign|approve|clear|generate|share|copy|print|run|start|create|save|upload|request|escalate|notify|ask|show|see|go|jump|load|compare|review|explain|remind|snooze|edit|delete|remove|reject|sign|mark|follow|reply|attach|close case|reopen|retry|preview|launch|draft|submit|confirm|cancel|restore|undo|reset|import|connect|invite|filter by|full)\b/i;
+  var SKIP_CLS = /tab|pill|chip|collapse|ppl-card|ind-btn|tc-|tch|edo-min-btn|p59-on|ex-on|\bon\b|active|g-pill|seg|toggle|tour|eve-|lib-tab|at-i|tc-x|tch-x/i;
+  var SKIP_UP = '.ed-tabs,[role=tablist],.sidebar,#sidebar,nav,.topbar,#topbar,.ind-switch,#tour-cap,#tour-choose,.eve-panel,#eve-panel,.halo-map-controls,.leaflet-control,[class*=tabbar],[class*=tab-bar],[class*=-tabs]';
+  function rgb(c) { var m = (c || '').match(/[\d.]+/g); return m ? m.map(Number) : [0, 0, 0, 0]; }
+  function neutral(c) { var v = rgb(c); return Math.abs(v[0] - v[1]) < 16 && Math.abs(v[1] - v[2]) < 22; }
+  function light(bg) { var v = rgb(bg), a = v.length > 3 ? v[3] : 1; if (a === 0) return true; return a >= 0.3 && v[0] > 225 && v[1] > 220 && v[2] > 205; }
+  function mark(b) {
+    if (b.__rim !== undefined) return;
+    var t = (b.innerText || '').trim(), cls = String(b.className || '');
+    b.__rim = false;
+    if (!t || t.length > 44 || /\n/.test(t) || !/[a-z]/i.test(t)) return;
+    if (SKIP_CLS.test(cls) || b.closest(SKIP_UP)) return;
+    var cs = getComputedStyle(b), col = rgb(cs.color);
+    if (col[0] > 200 && col[1] > 200) return;                       // light text: dark panel or dark button
+    if (!light(cs.backgroundColor)) return;                          // already black or colored
+    var bw = parseFloat(cs.borderTopWidth) || 0, bc = cs.borderTopColor;
+    if (bw && !neutral(bc) && rgb(bc)[3] !== 0) return;              // already has a meaning color (green Stamped, red Delete)
+    var action = /→|›|»/.test(t) || VERB.test(t);
+    var sibs = b.parentNode ? [].filter.call(b.parentNode.children, function (x) { return x.tagName === 'BUTTON'; }).length : 0;
+    if (!action && (sibs >= 3 || !bw)) return;                       // filter groups and plain text toggles stay as they are
+    b.__rim = true; b.classList.add('cb-rim');
+  }
+  var css = document.createElement('style');
+  css.textContent = 'button.cb-rim{border:1.5px solid rgba(124,58,237,.45)!important;box-shadow:0 2px 8px rgba(124,58,237,.12)!important;border-radius:8px}button.cb-rim:hover{border-color:rgba(124,58,237,.75)!important;background:#f5f3ff!important;box-shadow:0 4px 12px rgba(124,58,237,.2)!important}';
+  document.head.appendChild(css);
+  function sweep() { try { [].forEach.call(document.querySelectorAll('button:not(.cb-rim)'), function (b) { if (b.offsetParent !== null) mark(b); }); } catch (e) {} }
+  setInterval(sweep, 900);
+})();
+</script>
+<script data-p="p68_modeldetail">
+// 10/13 (Brittany: "I can't even click on the model... it should give me all the details about that model"). 25 of the
+// 37 models had no detail record, so the Library said "Unknown model". Each one now gets a full record built from its
+// own facts (owner, status, fairness ratio, cases, dates), using its family's record (or a same-company model) for shape.
+(function () {
+  var MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  function my(s) { if (!s) return null; var d = new Date(s + 'T12:00:00'); return isNaN(d) ? null : MON[d.getMonth()] + ' ' + d.getFullYear(); }
+  function fam(n) { return String(n || '').replace(/\s+v[\d.]+$/i, '').trim(); }
+  function ver(n) { var m = String(n || '').match(/v[\d.]+$/i); return m ? m[0] : ''; }
+  function pick(D, m) {
+    var same = Object.keys(D).filter(function (k) { return D[k] && D[k].industryOrg === m.industry && D[k].identity; });
+    var f = same.filter(function (k) { return fam(D[k].identity.name) === fam(m.name); })[0];
+    if (f) return f;
+    var ok = same.filter(function (k) { var c = ((D[k].biasMetrics || {}).di || {}).current; return (c >= 0.8) === (m.di >= 0.8); });
+    return ok[0] || same[0] || Object.keys(D)[0];
+  }
+  function build() {
+    var CD = window.CARDINAL_DATA, M = window.CARDINAL_MODELS, D = CD && CD.modelDetailDrillIn;
+    if (!D || !M || !M.length || typeof window.cardinalResolveModelDetailKey !== 'function') return false;
+    M.forEach(function (m) {
+      if (!m || !m.name || D[m.name]) return;
+      var k0 = cardinalResolveModelDetailKey(m.name); if (k0 && D[k0]) return;
+      var tk = pick(D, m), T = D[tk]; if (!T) return;
+      var tn = T.identity.name, x;
+      try { x = JSON.parse(JSON.stringify(T).split(tn).join(m.name)); } catch (e) { return; }
+      var di = typeof m.di === 'number' ? m.di : ((T.biasMetrics || {}).di || {}).current || 0.85;
+      var st = m.status === 'archive' ? 'Archived' : m.status === 'test' ? 'In testing' : di < 0.8 ? 'Critical' : di < 0.85 ? 'Watch' : 'Passing';
+      x.statusLabel = st;
+      x.identity.name = m.name; x.identity.version = ver(m.name) || x.identity.version;
+      x.identity.creationDate = my(m.deployedDate) || 'Not deployed yet';
+      x.identity.lastUpdate = my(m.lastReview) || x.identity.lastUpdate;
+      x.identity.owner = m.owner;
+      x.identity.description = m.status === 'test' ? 'In testing in Genesis. Not deployed to customers yet; it goes live only after every required sign-off.' : m.status === 'archive' ? 'Retired. No longer making decisions; kept with its full record for audits.' : 'Production model monitored under Cardinal fairness and fraud checks.';
+      var bd = x.biasMetrics && x.biasMetrics.di;
+      if (bd) {
+        var last = (bd.history30d || []).slice(-1)[0], shift = last ? Math.round(di * 100) - last.value : 0;
+        bd.current = di; (bd.history30d || []).forEach(function (p) { p.value = Math.max(40, Math.min(100, p.value + shift)); });
+      }
+      x.linkedCases = (m.cases || []).slice();
+      x.cohortsAffected = x.linkedCases.length ? [m.name] : [];
+      if (!x.linkedCases.length) { x.biasFraudBlurb = 'No open fairness or fraud cases on this model.'; x.fraudPatterns = []; }
+      if (di >= 0.8 && x.proxyVariables) x.proxyVariables = x.proxyVariables.map(function (p) { return Object.assign({}, p, { correlation: Math.min(p.correlation, 0.21), severity: 'low' }); });
+      var sibs = M.filter(function (y) { return y.industry === m.industry && fam(y.name) === fam(m.name); }).sort(function (a, b) { return String(a.deployedDate || '9999').localeCompare(String(b.deployedDate || '9999')); });
+      x.lineage = sibs.map(function (y) { return { phase: y.status === 'live' ? 'Production' : y.status === 'test' ? 'Testing' : 'Archived', label: y.name, note: y.name === m.name ? 'This version' : (y.status === 'live' ? 'Active' : y.status === 'test' ? 'In Genesis' : 'Retired') }; });
+      x.__built = 1;
+      D[m.name] = x;
+    });
+    return true;
+  }
+  setInterval(function () { try { build(); } catch (e) {} }, 2000);
+  setTimeout(function () { try { build(); } catch (e) {} }, 300);
+})();
+</script>
+<script data-p="p69_inbox">
+// 10/13 (Brittany: "if it says it's sent to Genesis, when you get to Genesis you need to make sure it shows in a place
+// where it's like, oh, this has been added... like a queue. Even for Atonement"). Anything sent to Genesis or Atonement
+// (from Atlas, Pulse, a Genesis test, or a diagnosis) now: shows a toast with a "Go to" button, adds a purple count on
+// that core in the sidebar, and lands in a "Just sent here" list at the top of that core until someone opens it.
+(function () {
+  function org() { return window.currentOrg || 'fin'; }
+  function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;'); }
+  function me() { return (window.getActivePersona && getActivePersona() || {}).name || 'You'; }
+  function tm(d) { var h = d.getHours(), m = d.getMinutes(); return ((h % 12) || 12) + ':' + (m < 10 ? '0' : '') + m + (h < 12 ? ' AM' : ' PM'); }
+  var IN = window.__inbox = window.__inbox || { genesis: {}, atonement: {} };
+  var NAME = { genesis: 'Genesis', atonement: 'Atonement' };
+  function list(core) { var o = org(); return (IN[core][o] = IN[core][o] || []); }
+  function add(core, it) {
+    it.t = new Date(); it.by = me(); it.id = core + Date.now() + Math.random().toString(36).slice(2, 6); it.isNew = true;
+    list(core).unshift(it); toast(core, it); badge(); draw(true);
+  }
+  function toast(core, it) {
+    var t = document.getElementById('ib-toast'); if (t) t.remove();
+    t = document.createElement('div'); t.id = 'ib-toast';
+    t.innerHTML = '<div><b>Sent to ' + NAME[core] + '</b><span>' + esc(it.title) + '. It is waiting under "Just sent here" in ' + NAME[core] + '.</span></div><button type="button" onclick="inboxGo(\'' + core + '\',\'' + it.id + '\')">Go to ' + NAME[core] + ' →</button><button type="button" class="ib-tx" aria-label="Close" onclick="this.parentNode.remove()">×</button>';
+    document.body.appendChild(t); setTimeout(function () { if (t.parentNode) t.remove(); }, 9000);
+  }
+  // Run a send action without its old text-only toast, so only the toast with the "Go to" button shows.
+  function quiet(fn, self, args) { var o = window.cardinalShowToast; window.cardinalShowToast = function () {}; try { return fn.apply(self, args); } finally { window.cardinalShowToast = o; } }
+  function wrap(name, hook) {
+    var f = window[name]; if (typeof f !== 'function' || f.__ib) return;
+    var g = function () { var a = arguments, r = hook.apply(this, [f, a]); return r; }; g.__ib = 1; window[name] = g;
+  }
+  function hookAll() {
+    wrap('atlasRequest', function (f, a) {
+      var s = (window.cardinalAtlasList ? cardinalAtlasList(org()) : []).filter(function (x) { return x.id === a[0]; })[0];
+      var r = quiet(f, this, a);
+      if (s) add('genesis', { title: s.name, from: 'Atlas', what: a[1] === 'me' ? 'Evaluation request: in your backlog to test' : 'Evaluation request: Adam is testing it', sel: '#gen-atlas-req' });
+      return r;
+    });
+    wrap('pulseAct', function (f, a) {
+      if (a[1] !== 'genesis') return f.apply(this, a);
+      var r = quiet(f, this, a), d = (window.cardinalDiag ? cardinalDiag(org()) : []).slice(-1)[0];
+      add('genesis', { title: d ? d[0] : 'A Pulse issue', from: 'Pulse', what: 'Diagnose why: ' + (d ? d[1] : 'Adam is working out the cause'), sel: '#gen-diagnose' });
+      return r;
+    });
+    wrap('gnDo', function (f, a) {
+      if (a[1] !== 'promote') return f.apply(this, a);
+      var r = quiet(f, this, a), row = document.querySelector('[onclick*="gnOpen(\'' + a[0] + '\')"]');
+      add('atonement', { title: row ? (row.innerText || '').split('\n')[0].slice(0, 80) : 'A tested fix', from: 'Genesis', what: 'Winning variant to approve as a fix', sel: '#at-fix-context' });
+      return r;
+    });
+    wrap('gaDiagDo', function (f, a) {
+      if (a[1] !== 'aton') return f.apply(this, a);
+      var r = quiet(f, this, a), d = (window.cardinalDiag ? cardinalDiag(org()) : []).filter(function (x) { return (x[0] + x[1]).indexOf(a[0]) >= 0; })[0];
+      add('atonement', { title: d ? d[0] : 'A diagnosed issue', from: 'Genesis diagnosis', what: 'Needs a fix', sel: '#at-fix-context' });
+      return r;
+    });
+  }
+  setInterval(hookAll, 1000);
+  window.inboxGo = function (core, id) {
+    var t = document.getElementById('ib-toast'); if (t) t.remove();
+    var it = list(core).filter(function (x) { return x.id === id; })[0]; if (it) it.isNew = false; badge();
+    window.__deepLinkUntil = Date.now() + 3000;
+    var nav = document.querySelector('.nav-item[onclick*="\'' + core + '\'"]');
+    try { showScreen(core, nav); } catch (e) {}
+    var n = 0, iv = setInterval(function () {
+      var el = (it && it.sel && document.querySelector(it.sel)) || document.getElementById('ib-' + core);
+      if ((el && el.offsetParent) || ++n > 20) { clearInterval(iv); if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); el.classList.add('ib-flash'); setTimeout(function () { el.classList.remove('ib-flash'); }, 2200); } draw(true); }
+    }, 150);
+  };
+  window.inboxClear = function (core) { IN[core][org()] = []; badge(); draw(true); };
+  function badge() {
+    ['genesis', 'atonement'].forEach(function (core) {
+      var nav = document.querySelector('.nav-item[onclick*="\'' + core + '\'"]'); if (!nav) return;
+      var n = list(core).filter(function (x) { return x.isNew; }).length, b = nav.querySelector('.ib-badge');
+      if (!n) { if (b) b.remove(); return; }
+      if (!b) { b = document.createElement('span'); b.className = 'ib-badge'; nav.appendChild(b); }
+      if (b.textContent !== String(n)) b.textContent = n;
+    });
+  }
+  function draw(force) {
+    ['genesis', 'atonement'].forEach(function (core) {
+      var scr = document.getElementById('screen-' + core); if (!scr || scr.offsetParent === null) return;
+      var L = list(core), box = document.getElementById('ib-' + core);
+      if (!L.length) { if (box) box.remove(); return; }
+      if (!box) { box = document.createElement('div'); box.id = 'ib-' + core; box.className = 'ib-box'; }
+      var hdr = scr.querySelector(':scope > .section-hdr, :scope > .page-hdr'), first = hdr ? hdr.nextElementSibling : scr.firstElementChild;
+      if (box.parentNode !== scr || (first !== box && box.previousElementSibling !== hdr)) scr.insertBefore(box, first);
+      var key = org() + L.map(function (x) { return x.id + x.isNew; }).join();
+      if (!force && box.__k === key) return; box.__k = key;
+      var nNew = L.filter(function (x) { return x.isNew; }).length;
+      box.innerHTML = '<div class="ib-h"><span class="ib-dot"></span>Just sent here · ' + L.length + (nNew ? ' <em>' + nNew + ' new</em>' : '') + '<button type="button" class="ib-clr" onclick="inboxClear(\'' + core + '\')">Clear list</button></div>' +
+        L.map(function (x) { return '<div class="ib-row">' + (x.isNew ? '<span class="ib-new">New</span>' : '') + '<div class="ib-main"><b>' + esc(x.title) + '</b><span>' + esc(x.what) + '</span><span class="ib-meta">From ' + esc(x.from) + ' · sent by ' + esc(x.by) + ' · today ' + tm(x.t) + '</span></div><button type="button" class="ib-open" onclick="inboxGo(\'' + core + '\',\'' + x.id + '\')">Open →</button></div>'; }).join('');
+    });
+  }
+  // Opened items stop being "new" once someone has had the list on screen for a few seconds.
+  var seenAt = {};
+  setInterval(function () {
+    try {
+      badge(); draw();
+      ['genesis', 'atonement'].forEach(function (core) {
+        var box = document.getElementById('ib-' + core), vis = box && box.offsetParent !== null && box.getBoundingClientRect().top < window.innerHeight;
+        if (!vis) { seenAt[core] = 0; return; }
+        if (!seenAt[core]) seenAt[core] = Date.now();
+        if (Date.now() - seenAt[core] > 6000 && list(core).some(function (x) { return x.isNew; })) { list(core).forEach(function (x) { x.isNew = false; }); badge(); draw(true); }
+      });
+    } catch (e) {}
+  }, 700);
+  var css = document.createElement('style');
+  css.textContent = '#ib-toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:9000;display:flex;align-items:center;gap:12px;background:#fff;border:1.5px solid rgba(124,58,237,.45);box-shadow:0 14px 34px rgba(26,24,21,.18);border-radius:14px;padding:12px 14px;max-width:min(620px,94vw);font-size:12.5px;color:#1a1815}#ib-toast div{display:flex;flex-direction:column;gap:2px}#ib-toast span{color:#475569}#ib-toast button{font:inherit;font-size:12px;font-weight:600;border:none;background:#1a1815;color:#fff;border-radius:8px;padding:7px 12px;cursor:pointer;white-space:nowrap}#ib-toast .ib-tx{background:#f1f5f9;color:#475569;border-radius:50%;width:26px;height:26px;padding:0;font-size:16px}' +
+    '.ib-box{background:#fff;border:1px solid rgba(26,24,21,.08);border-top:3px solid #6D28D9;border-radius:14px;padding:12px 14px;margin:0 0 14px;font-size:12.5px;color:#1a1815}.ib-h{display:flex;align-items:center;gap:7px;font-size:10.5px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px}.ib-h em{font-style:normal;background:#6D28D9;color:#fff;border-radius:999px;padding:1px 8px;text-transform:none;letter-spacing:0}.ib-dot{width:8px;height:8px;border-radius:50%;background:#6D28D9}.ib-clr{margin-left:auto;font:inherit;font-size:11px;font-weight:600;text-transform:none;letter-spacing:0;border:1.5px solid rgba(124,58,237,.45);background:#fff;color:#475569;border-radius:8px;padding:3px 9px;cursor:pointer}' +
+    '.ib-row{display:flex;gap:10px;align-items:center;padding:9px 0;border-top:1px dashed rgba(26,24,21,.12)}.ib-main{flex:1;display:flex;flex-direction:column;gap:2px}.ib-main b{font-weight:600}.ib-main span{color:#334155}.ib-main .ib-meta{color:#64748b;font-size:11.5px}.ib-new{font-size:10.5px;font-weight:700;color:#6D28D9;background:#f5f3ff;border:1px solid rgba(124,58,237,.35);border-radius:999px;padding:1px 8px}.ib-open{font:inherit;font-size:12px;font-weight:600;border:none;background:#1a1815;color:#fff;border-radius:8px;padding:6px 12px;cursor:pointer;white-space:nowrap}' +
+    '.ib-badge{margin-left:auto;min-width:18px;height:18px;border-radius:999px;background:#6D28D9;color:#fff;font-size:10.5px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;padding:0 5px}.ib-flash{box-shadow:0 0 0 3px rgba(124,58,237,.45)!important;transition:box-shadow .3s}';
+  document.head.appendChild(css);
+})();
+</script>
+<script data-p="p70_remind">
+// 10/13 (Brittany: "if I click Later, it should be: tell Eve to remind me, and set a timer... if I say remind me in two
+// minutes, it should show up in two minutes, pop up on the side. I click it and it takes me where I need to go, or a
+// button to remind me again in ten minutes, thirty, or an hour"). One reminder system for the whole prototype.
+// cardinalRemindAsk(text, go) shows the "Remind me in" choices; go is the code that takes you back to the right place.
+(function () {
+  function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;'); }
+  function tm(d) { var h = d.getHours(), m = d.getMinutes(); return ((h % 12) || 12) + ':' + (m < 10 ? '0' : '') + m + (h < 12 ? ' AM' : ' PM'); }
+  var R = window.__reminders = window.__reminders || [], seq = 0;
+  var GOS = {};
+  window.cardinalRemind = function (text, minutes, go) {
+    var r = { id: 'rm' + (++seq), text: text, due: Date.now() + minutes * 60000, go: go || '' };
+    R.push(r);
+    try { cardinalShowToast('Eve will remind you at ' + tm(new Date(r.due)) + '.'); } catch (e) {}
+    return r.id;
+  };
+  window.cardinalRemindAsk = function (text, go) {
+    var k = 'g' + (++seq); GOS[k] = { text: text, go: go || '' };
+    var m = document.getElementById('rm-ask'); if (m) m.remove();
+    m = document.createElement('div'); m.id = 'rm-ask';
+    m.innerHTML = '<div class="rm-card"><div class="rm-top"><span class="rm-av">e</span><b>Remind me about this</b><button type="button" class="rm-x" aria-label="Close" onclick="document.getElementById(\'rm-ask\').remove()">×</button></div><div class="rm-txt">' + esc(text) + '</div><div class="rm-btns">' +
+      [[2, 'In 2 minutes'], [10, 'In 10 minutes'], [30, 'In 30 minutes'], [60, 'In 1 hour']].map(function (x) { return '<button type="button" onclick="rmSet(\'' + k + '\',' + x[0] + ')">' + x[1] + '</button>'; }).join('') + '</div></div>';
+    m.addEventListener('click', function (e) { if (e.target === m) m.remove(); });
+    document.body.appendChild(m);
+  };
+  window.rmSet = function (k, min) { var g = GOS[k]; var m = document.getElementById('rm-ask'); if (m) m.remove(); if (g) cardinalRemind(g.text, min, g.go); };
+  window.rmGo = function (id) { var r = R.filter(function (x) { return x.id === id; })[0]; rmClose(id); if (r && r.go) { try { (new Function(r.go))(); } catch (e) {} } };
+  window.rmSnooze = function (id, min) { var r = R.filter(function (x) { return x.id === id; })[0]; rmClose(id); if (r) cardinalRemind(r.text, min, r.go); };
+  window.rmClose = function (id) { var c = document.getElementById('rm-' + id); if (c) c.remove(); for (var i = R.length - 1; i >= 0; i--) if (R[i].id === id) R.splice(i, 1); };
+  function stack() { var s = document.getElementById('rm-stack'); if (!s) { s = document.createElement('div'); s.id = 'rm-stack'; document.body.appendChild(s); } return s; }
+  setInterval(function () {
+    var now = Date.now();
+    R.forEach(function (r) {
+      if (r.shown || r.due > now) return; r.shown = true;
+      var c = document.createElement('div'); c.id = 'rm-' + r.id; c.className = 'rm-pop';
+      c.innerHTML = '<div class="rm-top"><span class="rm-av">e</span><b>Reminder</b><span class="rm-when">' + tm(new Date()) + '</span><button type="button" class="rm-x" aria-label="Dismiss" onclick="rmClose(\'' + r.id + '\')">×</button></div><div class="rm-txt">' + esc(r.text) + '</div>' +
+        (r.go ? '<button type="button" class="rm-go" onclick="rmGo(\'' + r.id + '\')">Take me there →</button>' : '') +
+        '<div class="rm-sn"><span>Remind me again:</span><button type="button" onclick="rmSnooze(\'' + r.id + '\',10)">10 min</button><button type="button" onclick="rmSnooze(\'' + r.id + '\',30)">30 min</button><button type="button" onclick="rmSnooze(\'' + r.id + '\',60)">1 hour</button></div>';
+      stack().appendChild(c);
+    });
+  }, 1000);
+  var css = document.createElement('style');
+  css.textContent = '#rm-ask{position:fixed;inset:0;z-index:10060;background:rgba(26,24,21,.25);display:flex;align-items:center;justify-content:center;padding:16px}.rm-card,.rm-pop{background:#fff;border:1.5px solid rgba(124,58,237,.45);border-radius:14px;box-shadow:0 18px 44px rgba(26,24,21,.22);padding:14px 16px;width:min(380px,92vw);font-size:12.5px;color:#1a1815}' +
+    '.rm-top{display:flex;align-items:center;gap:8px;margin-bottom:6px}.rm-top b{font-size:13.5px}.rm-when{color:#64748b;font-size:11.5px}.rm-x{margin-left:auto;width:26px;height:26px;border-radius:50%;border:none;background:#f1f5f9;color:#475569;font-size:16px;cursor:pointer}' +
+    '.rm-av{width:24px;height:24px;border-radius:50%;background:linear-gradient(180deg,#f5f3ff,#ede9fe);border:1.5px solid rgba(124,58,237,.45);color:#6d28d9;font-weight:800;display:inline-flex;align-items:center;justify-content:center;font-size:12px}.rm-txt{color:#334155;line-height:1.5;margin-bottom:10px}' +
+    '.rm-btns{display:grid;grid-template-columns:1fr 1fr;gap:6px}.rm-btns button,.rm-sn button{font:inherit;font-size:12px;font-weight:600;border:1.5px solid rgba(124,58,237,.45);background:#fff;color:#1a1815;border-radius:8px;padding:7px 10px;cursor:pointer}.rm-btns button:hover,.rm-sn button:hover{background:#f5f3ff}' +
+    '#rm-stack{position:fixed;right:20px;top:84px;z-index:10055;display:flex;flex-direction:column;gap:10px}.rm-pop{animation:rmIn .35s ease}@keyframes rmIn{from{transform:translateX(30px);opacity:0}to{transform:none;opacity:1}}' +
+    '.rm-go{font:inherit;font-size:12.5px;font-weight:600;border:none;background:#1a1815;color:#fff;border-radius:8px;padding:8px 12px;cursor:pointer;width:100%;margin-bottom:8px}.rm-sn{display:flex;align-items:center;gap:6px;flex-wrap:wrap}.rm-sn span{color:#64748b;font-size:11.5px}.rm-sn button{padding:4px 9px;font-size:11.5px}';
   document.head.appendChild(css);
 })();
 </script>
