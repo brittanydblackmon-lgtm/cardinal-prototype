@@ -60260,12 +60260,13 @@ setInterval(function () {
   function render() {
     var s = STEPS[T.i], cap = el('tour-cap'), spot = el('tour-spot'), arr = el('tour-arrow'), blk = el('tour-block');
     blk.onclick = function (e) { e.stopPropagation(); };
-    cap.innerHTML = '<div class="tc-top"><span>Guided demo · ' + (T.i + 1) + ' of ' + STEPS.length + '</span><button type="button" onclick="tourEnd()" aria-label="Skip">Skip</button></div><div class="tc-h">' + esc(s[0]) + '</div><div class="tc-b">' + esc(s[1]) + '</div><div class="tc-bar"><i id="tour-prog"></i></div>' +
-      '<div class="tc-acts"><button type="button" onclick="tourStep(-1)"' + (T.i ? '' : ' disabled') + '>Back</button><button type="button" onclick="tourPlay()">' + (T.play ? 'Pause' : 'Play') + '</button>' + (T.i < STEPS.length - 1 ? '<button type="button" class="dark" onclick="tourStep(1)">Next</button>' : '<button type="button" class="dark" onclick="tourEnd()">Explore freely</button>') + '</div>';
+    if (T.settling) [cap, spot, arr].forEach(function (e) { e.classList.add('tour-hide'); });
+    cap.innerHTML = '<div class="tc-top"><span>Guided demo · ' + (T.i + 1) + ' of ' + STEPS.length + '</span><button type="button" class="tc-x" onclick="tourEnd()" aria-label="Close the guided demo">×</button></div><div class="tc-h">' + esc(s[0]) + '</div><div class="tc-b">' + esc(s[1]) + '</div><div class="tc-bar"><i id="tour-prog"></i></div>' +
+      '<div class="tc-acts"><button type="button" class="tc-skip" onclick="tourEnd()">Skip</button><button type="button" onclick="tourStep(-1)"' + (T.i ? '' : ' disabled') + '>Back</button><button type="button" onclick="tourPlay()">' + (T.play ? 'Pause' : 'Play') + '</button>' + (T.i < STEPS.length - 1 ? '<button type="button" class="dark" onclick="tourStep(1)">Next</button>' : '<button type="button" class="dark" onclick="tourEnd()">Explore freely</button>') + '</div>';
     T.t = Date.now();
   }
   function place() {
-    if (!T.on) return;
+    if (!T.on || T.settling) return;
     var s = STEPS[T.i], t = s[3] ? q(s[3]) : null, spot = el('tour-spot'), cap = el('tour-cap'), arr = el('tour-arrow');
     var W = window.innerWidth, H = window.innerHeight, cw = Math.min(380, W - 32);
     if (!t) { spot.style.cssText = 'left:50%;top:50%;width:0;height:0'; arr.style.display = 'none'; cap.style.left = (W - cw) / 2 + 'px'; cap.style.top = Math.max(16, H / 2 - 110) + 'px'; cap.style.width = cw + 'px'; return; }
@@ -60284,12 +60285,15 @@ setInterval(function () {
   }
   function show(i) {
     T.i = Math.max(0, Math.min(STEPS.length - 1, i)); closeAll();
+    // No jumping between steps: fade the spotlight and caption out while the next screen opens and scrolls, then fade in.
+    T.settling = true; ['tour-spot', 'tour-cap', 'tour-arrow'].forEach(function (id) { var e = document.getElementById(id); if (e) e.classList.add('tour-hide'); });
+    var me0 = T.i; setTimeout(function () { if (T.i !== me0) return; T.settling = false; place(); setTimeout(function () { ['tour-spot', 'tour-cap', 'tour-arrow'].forEach(function (id) { var e = document.getElementById(id); if (e) e.classList.remove('tour-hide'); }); }, 60); T.t = Date.now(); }, 1800);
     try { STEPS[T.i][2](); } catch (e) {}
     render();
     // After the screen settles, bring the target into view, then keep the spotlight on it.
     // Pages jump back to the top when a screen opens, so bring the target into view a few times as things settle.
     var my = T.i;
-    [900, 1500, 2200, 3000].forEach(function (ms) { setTimeout(function () { if (!T.on || T.i !== my) return; var s = STEPS[T.i], t = s[3] ? q(s[3]) : null; if (!t) return; var r = t.getBoundingClientRect(); if (r.top < 60 || r.top > window.innerHeight * 0.55) { window.__keepUntil = 0; t.scrollIntoView({ behavior: ms > 900 ? 'auto' : 'smooth', block: t.offsetHeight > window.innerHeight * 0.6 ? 'start' : 'center' }); } }, ms); });
+    [500, 1000, 1400, 1700].forEach(function (ms) { setTimeout(function () { if (!T.on || T.i !== my) return; var s = STEPS[T.i], t = s[3] ? q(s[3]) : null; if (!t) return; var r = t.getBoundingClientRect(); if (r.top < 60 || r.top > window.innerHeight * 0.55) { window.__keepUntil = 0; t.scrollIntoView({ behavior: 'auto', block: t.offsetHeight > window.innerHeight * 0.6 ? 'start' : 'center' }); } }, ms); });
   }
   window.tourStep = function (d) { show(T.i + d); };
   window.tourPlay = function () { T.play = !T.play; T.t = Date.now(); render(); };
@@ -60298,6 +60302,7 @@ setInterval(function () {
   document.addEventListener('keydown', function (e) { if (!T.on) return; if (e.key === 'ArrowRight') tourStep(1); else if (e.key === 'ArrowLeft') tourStep(-1); else if (e.key === 'Escape') tourEnd(); });
   setInterval(function () {
     if (!T.on) return; place();
+    if (T.settling) return;
     var p = document.getElementById('tour-prog'), f = T.play ? Math.min(1, (Date.now() - T.t) / DUR) : (p ? parseFloat(p.style.width) / 100 || 0 : 0);
     if (p && T.play) p.style.width = (f * 100) + '%';
     if (T.play && f >= 1) { if (T.i < STEPS.length - 1) show(T.i + 1); else { T.play = false; render(); } }
@@ -60308,8 +60313,8 @@ setInterval(function () {
   function choose() {
     var c = document.createElement('div'); c.id = 'tour-choose';
     c.innerHTML = '<div class="tch-box"><div class="tch-k">Project Cardinal</div><div class="tch-h">How would you like to explore?</div><div class="tch-row">' +
-      '<button type="button" onclick="tourStart()"><span class="tch-ic">&#9654;</span><b>Watch the guided demo</b><span>See Cardinal catch two AI failures, run the response, test the fix, and keep the proof.</span><em>About 3 minutes</em></button>' +
-      '<button type="button" onclick="document.getElementById(\'tour-choose\').remove()"><span class="tch-ic">&#10148;</span><b>Explore freely</b><span>Open any core, ask Eve, and click into anything at your own pace.</span><em>Self-guided</em></button></div></div>';
+      '<button type="button" onclick="tourStart()"><span class="tch-ic"><svg viewBox="0 0 24 24" width="16" height="16" fill="#6d28d9"><path d="M8 5v14l11-7z"/></svg></span><b>Watch the guided demo</b><span>See Cardinal catch two AI failures, run the response, test the fix, and keep the proof.</span><em>About 3 minutes</em></button>' +
+      '<button type="button" onclick="document.getElementById(\'tour-choose\').remove()"><span class="tch-ic"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#6d28d9" stroke-width="2" stroke-linejoin="round"><path d="M5 3l14 7-6 2-2 6z"/></svg></span><b>Explore freely</b><span>Open any core, ask Eve, and click into anything at your own pace.</span><em>Self-guided</em></button></div></div>';
     document.body.appendChild(c);
   }
   var shownOnce = false;
@@ -60333,7 +60338,8 @@ setInterval(function () {
     '.tc-acts{display:flex;gap:8px;justify-content:flex-end}.tc-acts button{font:inherit;font-size:12.5px;font-weight:600;border:1px solid #e5e7eb;background:#fff;color:#1a1815;border-radius:8px;padding:6px 14px;cursor:pointer}.tc-acts button.dark{background:#1a1815;color:#fff;border-color:#1a1815}.tc-acts button:disabled{opacity:.4;cursor:default}' +
     '#tour-arrow{position:fixed;z-index:9998;width:0;height:0;border-top:11px solid transparent;border-bottom:11px solid transparent;border-left:20px solid #7c3aed;transition:left .35s ease,top .35s ease;filter:drop-shadow(0 2px 4px rgba(0,0,0,.25))}' +
     '#tour-choose{position:fixed;inset:0;z-index:9995;background:rgba(26,24,21,.55);display:flex;align-items:center;justify-content:center;padding:20px}.tch-box{width:min(760px,96vw);background:#fff;border-radius:20px;padding:24px 26px;box-shadow:0 30px 80px rgba(0,0,0,.35)}.tch-k{font-size:12px;font-weight:700;color:#6d28d9;letter-spacing:.5px;text-transform:uppercase}.tch-h{font-size:22px;font-weight:700;margin:6px 0 16px;color:#1a1815}' +
-    '.tch-row{display:grid;grid-template-columns:1fr 1fr;gap:14px}@media (max-width:640px){.tch-row{grid-template-columns:1fr}}.tch-row button{font:inherit;text-align:left;cursor:pointer;background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:18px;display:flex;flex-direction:column;gap:6px;color:#1a1815}.tch-row button:hover{border-color:#a78bfa;box-shadow:0 10px 26px rgba(124,58,237,.15)}.tch-row b{font-size:16px}.tch-row span{color:#475569;line-height:1.5}.tch-row em{font-style:normal;font-size:12px;font-weight:600;background:#f1f5f9;border-radius:999px;padding:3px 10px;align-self:flex-start;color:#334155}.tch-ic{width:34px;height:34px;border-radius:50%;background:#1a1815;color:#fff!important;display:flex;align-items:center;justify-content:center;font-size:14px}' +
+    '.tch-row{display:grid;grid-template-columns:1fr 1fr;gap:14px}@media (max-width:640px){.tch-row{grid-template-columns:1fr}}.tch-row button{font:inherit;text-align:left;cursor:pointer;background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:18px;display:flex;flex-direction:column;gap:6px;color:#1a1815}.tch-row button:hover{border-color:#a78bfa;box-shadow:0 10px 26px rgba(124,58,237,.15)}.tch-row b{font-size:16px}.tch-row span{color:#475569;line-height:1.5}.tch-row em{font-style:normal;font-size:12px;font-weight:600;background:#f1f5f9;border-radius:999px;padding:3px 10px;align-self:flex-start;color:#334155}.tch-ic{width:38px;height:38px;border-radius:50%;background:linear-gradient(180deg,#f5f3ff,#ede9fe);border:1.5px solid rgba(124,58,237,.45);color:#6d28d9!important;display:flex;align-items:center;justify-content:center;font-size:14px;box-shadow:0 6px 16px rgba(124,58,237,.25)}' +
+    '.tour-hide{opacity:0!important}#tour-spot,#tour-cap,#tour-arrow{transition:opacity .25s ease!important}.tc-x{font:inherit;font-size:18px!important;line-height:1;width:26px;height:26px;border-radius:50%;border:none!important;background:#f1f5f9!important;color:#475569!important;cursor:pointer}.tc-acts .tc-skip{margin-right:auto;border:none;background:none;color:#64748b}' +
     '#tour-btn{font:inherit;font-size:12px;font-weight:600;border:none;background:#1a1815;color:#fff;border-radius:8px;padding:6px 12px;cursor:pointer;margin-right:8px;white-space:nowrap}';
   document.head.appendChild(css);
 })();
