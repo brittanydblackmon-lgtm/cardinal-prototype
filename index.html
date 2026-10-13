@@ -49512,7 +49512,7 @@ window.CARDINAL_PLACES = {
 // everything beyond models. Metric tabs explain themselves on hover.
 (function () {
   var ORDER = {
-    eden: ['eden-sec-hero', 'eden-eve-section', 'eden-hist-section', 'eden-sec-models', 'edo-sec-cohort', 'eden-sec-cases', 'eden-sec-bf', 'eden-sec-protected-impact', '.edo-beyond', 'eden-sec-workforce'],
+    eden: ['eden-sec-hero', 'eden-eve-section', 'eden-hist-section', 'eden-sec-models', 'eden-sec-cases', 'edo-sec-cohort', 'eden-sec-bf', 'eden-sec-protected-impact', '.edo-beyond', 'eden-sec-workforce'],
     obsidian: ['obs-sec-hero', 'obs-eve-section', 'obs-hist-section', 'obs-sec-models', 'obs-sec-cases', 'obs-sec-bf', 'obs-sec-deepfake', '.edo-beyond', 'obs-sec-fraud-concentrates', 'edo-sec-cohort']
   };
   var TIPS = { 'DI Ratio': 'Disparate impact ratio: the approval rate of the least-favored group divided by the most-favored group. 1.0 is even; under 0.80 is a warning sign.', 'Equalized Odds': 'How different the model’s error rates are between groups. 0 means the same mistakes for everyone; bigger means some groups get more wrong answers.', 'Sample Coverage': 'How much of each group appears in the data the model learned from. Low coverage means the model is guessing for that group.', 'Catch Ratio': 'How often desert and coastal bases get an early warning compared with mild-climate bases. 1.0 is even; under 0.80 is a warning sign.' };
@@ -60161,9 +60161,12 @@ setInterval(function () {
   function org() { return window.currentOrg || 'fin'; }
   // [tab name, how to find the section]
   var TABS = {
-    eden: [['Models', '#eden-sec-models'], ['Cases', '#eden-sec-cases'], ['Affected people', '#edo-sec-cohort'], ['Fairness and fraud', '#eden-sec-bf'], ['Protected groups', '#eden-sec-protected-impact'], ['Beyond models', '.edo-beyond'], ['Activity log', '#eden-actlog']],
-    obsidian: [['Models', '#obs-sec-models'], ['Cases', '#obs-sec-cases'], ['Where fraud concentrates', '#obs-sec-fraud-concentrates'], ['Deepfakes', '#obs-sec-deepfake'], ['Affected people', '#edo-sec-cohort'], ['Beyond models', '.edo-beyond'], ['Activity log', '#obsidian-actlog']]
+    eden: [['Affected people', '#edo-sec-cohort'], ['Fairness and fraud', '#eden-sec-bf'], ['Protected groups', '#eden-sec-protected-impact'], ['Beyond models', '.edo-beyond'], ['Activity log', '#eden-actlog']],
+    obsidian: [['Where fraud concentrates', '#obs-sec-fraud-concentrates'], ['Deepfakes', '#obs-sec-deepfake'], ['Affected people', '#edo-sec-cohort'], ['Beyond models', '.edo-beyond'], ['Activity log', '#obsidian-actlog']]
   };
+  // Brittany 10/13: Models and Cases are short and matter most, so they always show under the history chart;
+  // the tabs hold only the deeper sections.
+  var ALWAYS = { eden: ['#eden-sec-models', '#eden-sec-cases'], obsidian: ['#obs-sec-models', '#obs-sec-cases'] };
   var CUR = window.__edTab = window.__edTab || { eden: 0, obsidian: 0 };
   function find(root, sel) {
     if (sel.indexOf('text:') === 0) { var t = sel.slice(5); return [].filter.call(root.querySelectorAll('section, .card, .tsv2-section'), function (x) { return !x.parentNode.closest('section,.card') && (x.innerText || '').trim().indexOf(t) === 0; })[0] || null; }
@@ -60215,7 +60218,10 @@ setInterval(function () {
     if (live.indexOf(CUR[core]) < 0) CUR[core] = live[0];
     var bar = document.getElementById(core + '-tabbar2');
     if (!bar) { bar = document.createElement('div'); bar.id = core + '-tabbar2'; bar.className = 'ed-tabs'; }
-    if (hist.nextElementSibling !== bar) hist.parentNode.insertBefore(bar, hist.nextSibling);
+    // History, then Models and Cases, then the tab bar.
+    var after = hist;
+    ALWAYS[core].forEach(function (sel) { var e = scr.querySelector(sel); if (!e || e.parentNode !== hist.parentNode) return; if (e.classList.contains('ed-off')) e.classList.remove('ed-off'); if (after.nextElementSibling !== e) after.parentNode.insertBefore(e, after.nextSibling); after = e; });
+    if (after.nextElementSibling !== bar) after.parentNode.insertBefore(bar, after.nextSibling);
     var key = live.join(',') + '|' + CUR[core];
     if (bar.__k !== key) { bar.__k = key; bar.innerHTML = live.map(function (i) { return '<button type="button" class="' + (i === CUR[core] ? 'on' : '') + '" onclick="edTab(\'' + core + '\',' + i + ')">' + T[i][0] + '</button>'; }).join(''); }
     // A class, not an inline style, so other scripts that set display on these sections never fight with the tabs.
@@ -60223,7 +60229,7 @@ setInterval(function () {
     if (scroll) bar.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
   var css = document.createElement('style');
-  css.textContent = '#screen-halo .halo-panels-grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important}#screen-halo .halo-shell{max-height:none!important;overflow:visible!important;padding-bottom:8px!important}#screen-halo{padding-bottom:24px!important}.ed-off,.ed-off2{display:none!important}.ed-log{background:#fff;border:1px solid rgba(26,24,21,.08);border-top:3px solid #64748b;border-radius:14px;padding:14px 16px;margin:0 0 14px;font-size:12.5px;color:#1a1815}.ed-log-h{font-size:15px;font-weight:700;margin-bottom:4px}.ed-logd{font-size:11px;font-weight:700;color:#334155;text-transform:uppercase;letter-spacing:.5px;margin:14px 0 2px;padding-bottom:5px;border-bottom:1px dashed rgba(26,24,21,.15)}.ed-logl{display:grid;grid-template-columns:80px 1fr;gap:10px;padding:7px 0}.ed-logl span:first-child{color:#334155}.ed-logl b{font-weight:600}.ed-logl em{font-style:normal;font-size:11.5px;color:#1d4ed8;background:#eff6ff;border-radius:999px;padding:1px 8px;margin-left:4px;cursor:pointer}.ed-tabs{display:flex;gap:6px;flex-wrap:wrap;background:#ebe4d6;border-radius:14px;padding:6px;margin:0 0 14px}.ed-tabs button{flex:1;min-width:110px;font:inherit;font-size:12.5px;font-weight:600;border:none;background:transparent;border-radius:10px;padding:9px 10px;cursor:pointer;color:#475569}.ed-tabs button.on{background:#fff;color:#1a1815;box-shadow:0 1px 3px rgba(26,24,21,.08),0 6px 14px rgba(26,24,21,.08)}';
+  css.textContent = '#screen-halo .halo-panels-grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important}#screen-halo .halo-shell{max-height:none!important;overflow:visible!important;padding-bottom:8px!important}#screen-halo{padding-bottom:24px!important}.ed-off,.ed-off2{display:none!important}.ed-log{background:#fff;border:1px solid rgba(26,24,21,.08);border-top:3px solid #64748b;border-radius:14px;padding:14px 16px;margin:0 0 14px;font-size:12.5px;color:#1a1815}.ed-log-h{font-size:15px;font-weight:700;margin-bottom:4px}.ed-logd{font-size:11px;font-weight:700;color:#334155;text-transform:uppercase;letter-spacing:.5px;margin:14px 0 2px;padding-bottom:5px;border-bottom:1px dashed rgba(26,24,21,.15)}.ed-logl{display:grid;grid-template-columns:80px 1fr;gap:10px;padding:7px 0}.ed-logl span:first-child{color:#334155}.ed-logl b{font-weight:600}.ed-logl em{font-style:normal;font-size:11.5px;color:#1d4ed8;background:#eff6ff;border-radius:999px;padding:1px 8px;margin-left:4px;cursor:pointer}.ed-tabs{display:flex;gap:6px;flex-wrap:wrap;background:#ebe4d6;border-radius:14px;padding:6px;margin:10px 0 14px}.ed-tabs button{flex:1;min-width:110px;font:inherit;font-size:12.5px;font-weight:600;border:none;background:transparent;border-radius:10px;padding:9px 10px;cursor:pointer;color:#475569}.ed-tabs button.on{background:#fff;color:#1a1815;box-shadow:0 1px 3px rgba(26,24,21,.08),0 6px 14px rgba(26,24,21,.08)}';
   document.head.appendChild(css);
   setInterval(function () { try { apply('eden'); apply('obsidian'); } catch (e) {} }, 400);
 })();
@@ -60248,7 +60254,7 @@ setInterval(function () {
       ['One score for all of its AI', 'Blackmoor Wealth: 4.5 million customers, 22 AI models. Cardinal rolls them into one Trust Score, 81 today, and shows exactly which parts pull it down.', function () { fin(); tsPop(); }, '#ts-pop > div'],
       ['Every AI it uses, in one place', 'Atlas lists every model, agent, vendor, and shadow AI tool in scope, and how much Cardinal can see into each one.', function () { go('atlas'); }, '#screen-atlas .at-t'],
       ['Eden finds an unfair outcome', 'Credit Scoring v3.4 fell under the 0.80 fairness line. ZIP code appears to be acting as a proxy for race.', function () { go('eden'); }, '#eden-sec-hero'],
-      ['It becomes a case', 'The finding affects real people, so it becomes a case with an owner and a deadline. FIN-1203: 1,203 applicants affected.', function () { go('eden'); setTimeout(function () { try { edTab('eden', 1); } catch (e) {} }, 300); }, '#eden-sec-cases'],
+      ['It becomes a case', 'The finding affects real people, so it becomes a case with an owner and a deadline. FIN-1203: 1,203 applicants affected.', function () { go('eden'); }, '#eden-sec-cases'],
       ['One war room per serious case', 'Ownership, the clock, the people affected, this case’s exposure, and the sign-offs needed, on one page.', function () { closeAll(); try { openWarRoomCase('FIN-1203'); } catch (e) {} setTimeout(function () { try { wr2Tab('overview'); } catch (e) {} }, 400); }, '#wr2 .wr2-hero2'],
       ['Genesis tests the fix first', 'A proposed fix is tested before it touches anyone. v3.5 beats v3.4 on 5 of 6 measures and passes the fairness line.', function () { go('genesis'); setTimeout(function () { try { coreTabGo('genesis', 3); } catch (e) {} }, 400); }, '#ga-compare'],
       ['Atonement stages the rollout', 'Fixes are designed to go live in steps (shadow, 5%, 10%, 25%, 100%) with a named person approving each one.', function () { go('atonement'); setTimeout(function () { try { coreTabGo('atonement', 1); } catch (e) {} }, 400); }, '#at-rollout'],
