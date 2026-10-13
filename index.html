@@ -60158,13 +60158,39 @@ setInterval(function () {
   function org() { return window.currentOrg || 'fin'; }
   // [tab name, how to find the section]
   var TABS = {
-    eden: [['Models', '#eden-sec-models'], ['Cases', '#eden-sec-cases'], ['Affected people', '#edo-sec-cohort'], ['Fairness and fraud', '#eden-sec-bf'], ['Protected groups', '#eden-sec-protected-impact'], ['Beyond models', '.edo-beyond'], ['Record', 'text:Echo Core']],
-    obsidian: [['Models', '#obs-sec-models'], ['Cases', '#obs-sec-cases'], ['Where fraud concentrates', '#obs-sec-fraud-concentrates'], ['Deepfakes', '#obs-sec-deepfake'], ['Fraud and bias', '#obs-sec-bf'], ['Affected people', '#edo-sec-cohort'], ['Beyond models', '.edo-beyond']]
+    eden: [['Models', '#eden-sec-models'], ['Cases', '#eden-sec-cases'], ['Affected people', '#edo-sec-cohort'], ['Fairness and fraud', '#eden-sec-bf'], ['Protected groups', '#eden-sec-protected-impact'], ['Beyond models', '.edo-beyond'], ['Activity log', '#eden-actlog']],
+    obsidian: [['Models', '#obs-sec-models'], ['Cases', '#obs-sec-cases'], ['Where fraud concentrates', '#obs-sec-fraud-concentrates'], ['Deepfakes', '#obs-sec-deepfake'], ['Affected people', '#edo-sec-cohort'], ['Beyond models', '.edo-beyond'], ['Activity log', '#obsidian-actlog']]
   };
   var CUR = window.__edTab = window.__edTab || { eden: 0, obsidian: 0 };
   function find(root, sel) {
     if (sel.indexOf('text:') === 0) { var t = sel.slice(5); return [].filter.call(root.querySelectorAll('section, .card, .tsv2-section'), function (x) { return !x.parentNode.closest('section,.card') && (x.innerText || '').trim().indexOf(t) === 0; })[0] || null; }
     return root.querySelector(sel);
+  }
+  // Activity log for each core (Brittany 10/13: "this should show activity like Genesis; we don't need the Echo box").
+  var MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  function escH(x) { return String(x == null ? '' : x).replace(/&/g, '&amp;').replace(/</g, '&lt;'); }
+  function logRows(core) {
+    var o = org(), d = (window.CARDINAL_DATA || {})[o] || {}, re = core === 'eden' ? /eden|bias|fair/i : /obsidian|fraud/i, by = core === 'eden' ? 'Eden' : 'Obsidian', R = [];
+    (d.echoMemories || []).forEach(function (m) { if (re.test(m.core || '')) R.push({ t: new Date(m.timestamp), who: String(m.author || by).replace(/ Core$/, ''), what: String(m.summary || ''), rel: String(m.caseId || '').replace(/^#/, '') }); });
+    (window.cardinalIncidents ? cardinalIncidents(o) : []).forEach(function (x) { if (x.by === by) R.push({ t: x.caught, who: by, what: 'Caught: ' + x.what + ' (' + x.model + ')', rel: x.cs || '' }); });
+    var now = new Date(), models = (window.CARDINAL_MODELS || []).filter(function (m) { return m.industry === o && m.status === 'live'; }).length || 6;
+    for (var k = 0; k < 6; k++) { var t = new Date(now.getFullYear(), now.getMonth(), now.getDate() - k, 6, 0); if (t > now) continue; R.push({ t: t, who: by, what: core === 'eden' ? 'Daily fairness check: ' + models + ' live models checked against the 0.80 line' : 'Daily fraud sweep: applications, devices, and account links checked', rel: '' }); }
+    return R.filter(function (r) { return r.t <= now; }).sort(function (a, b) { return b.t - a.t; });
+  }
+  function logHtml(core) {
+    var last = '', tm = function (d) { var h = d.getHours(), m = d.getMinutes(); return ((h % 12) || 12) + ':' + (m < 10 ? '0' : '') + m + (h < 12 ? ' AM' : ' PM'); };
+    return '<div class="ed-log-h">Activity log</div>' + logRows(core).map(function (r) { var dd = MON[r.t.getMonth()] + ' ' + r.t.getDate() + ', ' + r.t.getFullYear(), h = dd !== last ? '<div class="ed-logd">' + (last = dd) + '</div>' : ''; return h + '<div class="ed-logl"><span>' + tm(r.t) + '</span><span><b>' + escH(r.who) + '</b> ' + escH(r.what) + (r.rel ? ' <em onclick="cardinalOpenCase(\'' + escH(r.rel) + '\')">' + escH(r.rel) + '</em>' : '') + '</span></div>'; }).join('');
+  }
+  function ensureLog(core, scr) {
+    var id = core + '-actlog', e = document.getElementById(id), anchor = scr.querySelector('.edo-beyond');
+    if (!anchor) return;
+    if (!e) { e = document.createElement('div'); e.id = id; e.className = 'ed-log'; }
+    if (e.parentNode !== anchor.parentNode) anchor.parentNode.insertBefore(e, anchor.nextSibling);
+    var k = org() + (((window.CARDINAL_DATA || {})[org()] || {}).echoMemories || []).length; if (e.__k !== k) { e.__k = k; e.innerHTML = logHtml(core); }
+    // The old Echo box is replaced by this log.
+    [].forEach.call(scr.querySelectorAll('section, .card, .tsv2-section, div'), function (x) { if (x.classList.contains('ed-off2') || x.closest('.ed-off2')) return; var t = (x.innerText || '').trim(); if ((!x.parentNode.closest('section,.card') && /^Echo Core/.test(t)) || (x.children.length < 6 && /anchored to Echo Core/.test(t) && /Audit Log/.test(t) && t.length < 300)) x.classList.add('ed-off2'); });
+    // Brittany 10/13: Obsidian drops the "Fraud and bias" tab; the overlap lives in Eden.
+    var bf = document.getElementById('obs-sec-bf'); if (bf && !bf.classList.contains('ed-off2')) bf.classList.add('ed-off2');
   }
   window.edTab = function (core, i) { CUR[core] = i; apply(core, true); };
   // Links from other cores that jump to a section here switch to its tab first.
@@ -60179,6 +60205,7 @@ setInterval(function () {
   function apply(core, scroll) {
     var scr = document.getElementById('screen-' + core); if (!scr || scr.offsetParent === null) return;
     var hist = document.getElementById(core === 'eden' ? 'eden-hist-section' : 'obs-hist-section'); if (!hist) return;
+    ensureLog(core, scr);
     var T = TABS[core], els = T.map(function (t) { return find(scr, t[1]); }), live = T.map(function (t, i) { return els[i] ? i : -1; }).filter(function (i) { return i >= 0; });
     if (!live.length) return;
     pending(core, scr, T, els);
@@ -60193,7 +60220,7 @@ setInterval(function () {
     if (scroll) bar.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
   var css = document.createElement('style');
-  css.textContent = '#screen-halo .halo-panels-grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important}#screen-halo .halo-shell{max-height:none!important;overflow:visible!important;padding-bottom:8px!important}#screen-halo{padding-bottom:24px!important}.ed-off{display:none!important}.ed-tabs{display:flex;gap:6px;flex-wrap:wrap;background:#ebe4d6;border-radius:14px;padding:6px;margin:0 0 14px}.ed-tabs button{flex:1;min-width:110px;font:inherit;font-size:12.5px;font-weight:600;border:none;background:transparent;border-radius:10px;padding:9px 10px;cursor:pointer;color:#475569}.ed-tabs button.on{background:#fff;color:#1a1815;box-shadow:0 1px 3px rgba(26,24,21,.08),0 6px 14px rgba(26,24,21,.08)}';
+  css.textContent = '#screen-halo .halo-panels-grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important}#screen-halo .halo-shell{max-height:none!important;overflow:visible!important;padding-bottom:8px!important}#screen-halo{padding-bottom:24px!important}.ed-off,.ed-off2{display:none!important}.ed-log{background:#fff;border:1px solid rgba(26,24,21,.08);border-top:3px solid #64748b;border-radius:14px;padding:14px 16px;margin:0 0 14px;font-size:12.5px;color:#1a1815}.ed-log-h{font-size:15px;font-weight:700;margin-bottom:4px}.ed-logd{font-size:11px;font-weight:700;color:#334155;text-transform:uppercase;letter-spacing:.5px;margin:14px 0 2px;padding-bottom:5px;border-bottom:1px dashed rgba(26,24,21,.15)}.ed-logl{display:grid;grid-template-columns:80px 1fr;gap:10px;padding:7px 0}.ed-logl span:first-child{color:#334155}.ed-logl b{font-weight:600}.ed-logl em{font-style:normal;font-size:11.5px;color:#1d4ed8;background:#eff6ff;border-radius:999px;padding:1px 8px;margin-left:4px;cursor:pointer}.ed-tabs{display:flex;gap:6px;flex-wrap:wrap;background:#ebe4d6;border-radius:14px;padding:6px;margin:0 0 14px}.ed-tabs button{flex:1;min-width:110px;font:inherit;font-size:12.5px;font-weight:600;border:none;background:transparent;border-radius:10px;padding:9px 10px;cursor:pointer;color:#475569}.ed-tabs button.on{background:#fff;color:#1a1815;box-shadow:0 1px 3px rgba(26,24,21,.08),0 6px 14px rgba(26,24,21,.08)}';
   document.head.appendChild(css);
   setInterval(function () { try { apply('eden'); apply('obsidian'); } catch (e) {} }, 400);
 })();
