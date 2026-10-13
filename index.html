@@ -60133,6 +60133,53 @@ setInterval(function () {
   document.head.appendChild(css);
 })();
 </script>
+<script data-p="p65_edtabs">
+// 10/13 (Brittany: "Eden and Obsidian, everything after the detection history... does it still match, is it clean like the
+// other cores?"). Everything after the history chart becomes one tab bar, like Genesis, Atonement, and Watchman: one
+// section at a time instead of a long scroll. Nothing is removed; sections are only shown or hidden.
+(function () {
+  function org() { return window.currentOrg || 'fin'; }
+  // [tab name, how to find the section]
+  var TABS = {
+    eden: [['Models', '#eden-sec-models'], ['Cases', '#eden-sec-cases'], ['Affected people', '#edo-sec-cohort'], ['Fairness and fraud', '#eden-sec-bf'], ['Protected groups', '#eden-sec-protected-impact'], ['Beyond models', '.edo-beyond'], ['Record', 'text:Echo Core']],
+    obsidian: [['Models', '#obs-sec-models'], ['Cases', '#obs-sec-cases'], ['Where fraud concentrates', '#obs-sec-fraud-concentrates'], ['Deepfakes', '#obs-sec-deepfake'], ['Fraud and bias', '#obs-sec-bf'], ['Affected people', '#edo-sec-cohort'], ['Beyond models', '.edo-beyond']]
+  };
+  var CUR = window.__edTab = window.__edTab || { eden: 0, obsidian: 0 };
+  function find(root, sel) {
+    if (sel.indexOf('text:') === 0) { var t = sel.slice(5); return [].filter.call(root.querySelectorAll('section, .card, .tsv2-section'), function (x) { return !x.parentNode.closest('section,.card') && (x.innerText || '').trim().indexOf(t) === 0; })[0] || null; }
+    return root.querySelector(sel);
+  }
+  window.edTab = function (core, i) { CUR[core] = i; apply(core, true); };
+  // Links from other cores that jump to a section here switch to its tab first.
+  var PEND = { sel: '', until: 0 };
+  function wrapJump() { var f = window.cardinalJump; if (typeof f !== 'function' || f.__ed) return; var g = function (code, sel) { PEND.sel = sel || ''; PEND.until = Date.now() + 4000; return f.apply(this, arguments); }; g.__ed = 1; window.cardinalJump = g; }
+  setInterval(wrapJump, 1000);
+  function pending(core, scr, T, els) {
+    if (!PEND.sel || Date.now() > PEND.until) return;
+    var t; try { t = scr.querySelector(PEND.sel); } catch (e) { return; } if (!t) return;
+    els.forEach(function (e, i) { if (e && (e === t || e.contains(t))) { CUR[core] = i; PEND.sel = ''; } });
+  }
+  function apply(core, scroll) {
+    var scr = document.getElementById('screen-' + core); if (!scr || scr.offsetParent === null) return;
+    var hist = document.getElementById(core === 'eden' ? 'eden-hist-section' : 'obs-hist-section'); if (!hist) return;
+    var T = TABS[core], els = T.map(function (t) { return find(scr, t[1]); }), live = T.map(function (t, i) { return els[i] ? i : -1; }).filter(function (i) { return i >= 0; });
+    if (!live.length) return;
+    pending(core, scr, T, els);
+    if (live.indexOf(CUR[core]) < 0) CUR[core] = live[0];
+    var bar = document.getElementById(core + '-tabbar2');
+    if (!bar) { bar = document.createElement('div'); bar.id = core + '-tabbar2'; bar.className = 'ed-tabs'; }
+    if (hist.nextElementSibling !== bar) hist.parentNode.insertBefore(bar, hist.nextSibling);
+    var key = live.join(',') + '|' + CUR[core];
+    if (bar.__k !== key) { bar.__k = key; bar.innerHTML = live.map(function (i) { return '<button type="button" class="' + (i === CUR[core] ? 'on' : '') + '" onclick="edTab(\'' + core + '\',' + i + ')">' + T[i][0] + '</button>'; }).join(''); }
+    els.forEach(function (e, i) { if (!e) return; var want = i === CUR[core] ? '' : 'none'; if (e.style.display !== want) e.style.display = want; });
+    if (scroll) bar.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+  var css = document.createElement('style');
+  css.textContent = '.ed-tabs{display:flex;gap:6px;flex-wrap:wrap;background:#ebe4d6;border-radius:14px;padding:6px;margin:0 0 14px}.ed-tabs button{flex:1;min-width:110px;font:inherit;font-size:12.5px;font-weight:600;border:none;background:transparent;border-radius:10px;padding:9px 10px;cursor:pointer;color:#475569}.ed-tabs button.on{background:#fff;color:#1a1815;box-shadow:0 1px 3px rgba(26,24,21,.08),0 6px 14px rgba(26,24,21,.08)}';
+  document.head.appendChild(css);
+  setInterval(function () { try { apply('eden'); apply('obsidian'); } catch (e) {} }, 400);
+})();
+</script>
 </body>
 
 </html>
