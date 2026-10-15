@@ -52521,7 +52521,7 @@ window.CARDINAL_PLACES = {
       okBadge: '97% of Decisions Recorded', okTitle: 'Nearly Everything Recorded', okBody: 'Echo records nearly every AI decision and action. The gap is Salesforce, which is not connected yet.',
       badBadge: 'Memory Gaps', badTitle: 'Gaps', badBody: 'Some decisions are not being captured.',
       okStatus: 'Above 80: Nearly Everything Recorded', badStatus: 'Below 80: Decisions Going Unrecorded',
-      delta: 1, pillLabel: 'Sources Connected', pillVal: fin() ? '5 of 6' : 'All', subline: 'Active investigations ' + find(it, /investigations/i).value + ' · Days since last critical ' + find(it, /days since/i).value,
+      delta: 1, pillLabel: 'Sources', pillVal: fin() ? '5 of 6' : 'All', subline: 'Active investigations ' + find(it, /investigations/i).value + ' · Days since last critical ' + find(it, /days since/i).value,
       avg: 88, pct: 84, confTitle: 'Memory Confidence', confSub: 'How complete is the record?',
       units: it, boxTitle: 'Echo at a glance',
       rows: [['Sources Connected', fin() ? '5 of 6' : 'All', fin() ? 'Salesforce is not connected yet, which is why coverage is 97 and not 100.' : 'Every source is connected.'], ['Integrity Checks', '100% passed', 'Every memory is checked against its seal.'], ['Last Memory', 'Just now', 'Echo records continuously.'], ['Kept For', '7 years', 'How long memories are retained.']]
@@ -57272,7 +57272,7 @@ setInterval(function () {
       var h = [].filter.call(today.querySelectorAll('div'), function (e) { return e.children.length === 0 && /^Eve and Adam today/.test(e.textContent.trim()); })[0];
       var want = 'Eve and Adam today · ' + DAY[new Date().getDay()] + ', ' + MON[new Date().getMonth()] + ' ' + new Date().getDate();
       if (h && h.textContent !== want) h.textContent = want;
-      [].forEach.call(today.querySelectorAll('button'), function (b) { if (/^Daily report$/.test(b.textContent.trim())) { b.textContent = 'Daily report · saved'; b.title = 'Saved to Echo automatically at the end of each day'; } });
+      [].forEach.call(today.querySelectorAll('button'), function (b) { if (/^Daily report( · saved)?$/.test(b.textContent.trim()) && b.style.display !== 'none') b.style.display = 'none'; /* 10/14 Brittany: everyone knows it saves on its own */ });
       if (!document.getElementById('lucid-agf-wrap')) {
         var w = document.createElement('div'); w.id = 'lucid-agf-wrap';
         w.style.cssText = 'background:rgba(167,167,167,.04);border:1px solid rgba(167,167,167,.14);border-radius:14px;padding:16px 18px;margin:0 0 18px;box-shadow:0 1px 3px rgba(26,24,21,.06),0 12px 28px rgba(26,24,21,.09)';
@@ -59307,15 +59307,18 @@ setInterval(function () {
     var n = total(), rows = [], h = 0, now = new Date();
     for (var i = 0; i < 40; i++) { var d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i * 3, 9 + i % 8, (i * 17) % 60), ch = i ? Math.round(((h32(org() + i) % 400) - 170) * (n > 1e6 ? 1 : 0.02)) : 0; rows.push({ d: d, n: n - h, ch: ch }); h += ch; }
     var iso = function (d) { return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); };
+    // 10/14 (Brittany: "I don't know if the count numbers are accurate"): the top "Right now" row repeated the last update's
+    // total, so it read like nothing changed. Rows are now only updates, each with the total right after it.
+    rows = rows.slice(1);
     var R = rows.filter(function (r) { var k = iso(r.d); return (!HR.from || k >= HR.from) && (!HR.to || k <= HR.to); });
     if (!HR.from && !HR.to) R = R.slice(0, 14);
     var first = R[R.length - 1], last = R[0], net = first && last ? last.n - first.n : 0;
     var m = document.createElement('div'); m.id = 'ppl-modal'; m.style.cssText = 'position:fixed;inset:0;background:rgba(26,24,21,.45);z-index:4100;display:flex;align-items:center;justify-content:center;padding:20px';
     var DI = 'font:inherit;font-size:12.5px;border:1px solid #e5e7eb;border-radius:8px;padding:5px 8px';
     m.innerHTML = '<div style="width:min(640px,94vw);max-height:88vh;overflow:auto;background:#fff;border-radius:18px;border-top:4px solid #1d4ed8;padding:18px 22px;position:relative;font-size:12.5px;color:#1a1815"><button type="button" onclick="document.getElementById(\'ppl-modal\').remove()" style="position:absolute;top:14px;right:16px;width:32px;height:32px;border-radius:50%;border:none;background:#f1f5f9;color:#475569;font-size:20px;cursor:pointer">×</button>' +
-      '<div style="font-size:19px;font-weight:700;margin-bottom:2px">' + esc(cfg().word) + ' over time</div><div style="color:#475569;margin-bottom:10px">' + n.toLocaleString() + ' right now · ' + Math.round(n * 0.974).toLocaleString() + ' active in the last 90 days</div>' +
+      '<div style="font-size:19px;font-weight:700;margin-bottom:2px">' + esc(cfg().word) + ' over time</div><div style="color:#475569;margin-bottom:10px">' + n.toLocaleString() + ' right now · ' + Math.round(n * 0.974).toLocaleString() + ' active in the last 90 days. Each row is one update: what changed, and the total right after it.</div>' +
       '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px;color:#475569">Look back from <input type="date" value="' + HR.from + '" onchange="pplHistRange(\'from\',this.value)" style="' + DI + '"> to <input type="date" value="' + HR.to + '" onchange="pplHistRange(\'to\',this.value)" style="' + DI + '">' + (HR.from || HR.to ? '<button type="button" onclick="window.__pplHR.from=\'\';pplHistRange(\'to\',\'\')" style="' + DI + ';cursor:pointer;background:#fff">Clear</button>' : '') + (R.length > 1 ? '<span style="margin-left:auto">Net change: <b style="color:' + (net >= 0 ? '#15803D' : '#B91C1C') + '">' + (net >= 0 ? '+' : '') + net.toLocaleString() + '</b></span>' : '') + '</div>' +
-      (R.length ? table(['When', 'People', 'Change', 'Why'], R.map(function (r) { var c = r.ch, isNow = r === rows[0], why = isNow ? 'Right now' : c > 0 ? 'New accounts opened' : c < 0 ? 'Accounts closed or merged' : 'No change'; return '<tr><td style="' + TD + '">' + fd(r.d) + ', ' + ((r.d.getHours() % 12) || 12) + ':' + (r.d.getMinutes() < 10 ? '0' : '') + r.d.getMinutes() + (r.d.getHours() < 12 ? ' AM' : ' PM') + '</td><td style="' + TD + ';font-weight:600">' + r.n.toLocaleString() + '</td><td style="' + TD + ';color:' + (c > 0 ? '#15803D' : c < 0 ? '#B91C1C' : '#64748b') + '">' + (isNow ? '' : (c > 0 ? '+' : '') + c.toLocaleString()) + '</td><td style="' + TD + ';color:#475569">' + why + '</td></tr>'; })) : '<div style="color:#64748b">No counts in those dates.</div>') + '</div>';
+      (R.length ? table(['When', 'Change', 'Total after', 'Why'], R.map(function (r) { var c = r.ch, isNow = false, why = c > 0 ? 'New accounts opened' : c < 0 ? 'Accounts closed or merged' : 'No change'; return '<tr><td style="' + TD + '">' + fd(r.d) + ', ' + ((r.d.getHours() % 12) || 12) + ':' + (r.d.getMinutes() < 10 ? '0' : '') + r.d.getMinutes() + (r.d.getHours() < 12 ? ' AM' : ' PM') + '</td><td style="' + TD + ';color:' + (c > 0 ? '#15803D' : c < 0 ? '#B91C1C' : '#64748b') + '">' + (c > 0 ? '+' : '') + c.toLocaleString() + '</td><td style="' + TD + ';font-weight:600">' + r.n.toLocaleString() + '</td><td style="' + TD + ';color:#475569">' + why + '</td></tr>'; })) : '<div style="color:#64748b">No counts in those dates.</div>') + '</div>';
     m.addEventListener('click', function (e) { if (e.target === m) m.remove(); });
     document.body.appendChild(m);
   };
@@ -60088,7 +60091,7 @@ setInterval(function () {
       var dv = document.getElementById('atonement-deep-view'), ws2 = document.getElementById('atws');
       if (dv && ws2 && dv.parentNode === ws2.parentNode && dv.nextElementSibling !== ws2) ws2.parentNode.insertBefore(dv, ws2);
       var pipe = document.getElementById('atonement-pipeline-section'), q = document.getElementById('atonement-queue-section');
-      if (pipe && q && pipe.parentNode === q.parentNode && pipe.nextElementSibling !== q) q.parentNode.insertBefore(pipe, q);
+      var pq = document.getElementById('at-fix-btns') || q; if (pipe && pq && pipe.parentNode === pq.parentNode && pipe.nextElementSibling !== pq) pq.parentNode.insertBefore(pipe, pq); // pipeline, then the fix buttons, then the queue (they used to fight over the same spot)
       var rest = document.getElementById('atonement-restoration-section'); if (rest && rest.style.display !== 'none') rest.style.display = 'none';
       var fx = document.getElementById('at-fix-btns');
       if (q && !fx) { fx = document.createElement('div'); fx.id = 'at-fix-btns'; fx.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;margin:0 0 14px'; fx.innerHTML = '<button type="button" style="' + BTN + '" onclick="gaToolOpen(\'at-tab-fix\',\'What this fix is for, and the recommended fix\')">What this fix is for</button><button type="button" style="' + BTN + '" onclick="gaToolOpen(\'at-tab-fix\',\'Recommended fix: highest impact\');setTimeout(function(){var h=[].filter.call(document.querySelectorAll(\'#ga-tool-modal *\'),function(x){return x.children.length===0&&/Recommended Fix/.test(x.textContent)})[0];if(h)h.scrollIntoView({block:\'start\'})},100)">Recommended fix</button>'; }
@@ -60414,7 +60417,7 @@ setInterval(function () {
     if (scroll) bar.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
   var css = document.createElement('style');
-  css.textContent = '#screen-halo .halo-panels-grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important}#screen-halo .halo-shell{max-height:none!important;overflow:visible!important;padding-bottom:8px!important}#screen-halo{padding-bottom:24px!important}.ed-off,.ed-off2{display:none!important}.ed-log{background:#fff;border:1px solid rgba(26,24,21,.08);border-top:3px solid #64748b;border-radius:14px;padding:14px 16px;margin:0 0 14px;font-size:12.5px;color:#1a1815}.ed-log-h{font-size:15px;font-weight:700;margin-bottom:4px}.ed-logd{font-size:11px;font-weight:700;color:#334155;text-transform:uppercase;letter-spacing:.5px;margin:14px 0 2px;padding-bottom:5px;border-bottom:1px dashed rgba(26,24,21,.15)}.ed-logl{display:grid;grid-template-columns:80px 1fr;gap:10px;padding:7px 0}.ed-logl span:first-child{color:#334155}.ed-logl b{font-weight:600}.ed-logl em{font-style:normal;font-size:11.5px;color:#1d4ed8;background:#eff6ff;border-radius:999px;padding:1px 8px;margin-left:4px;cursor:pointer}.ed-tabs{display:flex;gap:6px;flex-wrap:wrap;background:#ebe4d6;border-radius:14px;padding:6px;margin:10px 0 14px}.ed-tabs button{flex:1;min-width:110px;font:inherit;font-size:12.5px;font-weight:600;border:none;background:transparent;border-radius:10px;padding:9px 10px;cursor:pointer;color:#475569}.ed-tabs button.on{background:#fff;color:#1a1815;box-shadow:0 1px 3px rgba(26,24,21,.08),0 6px 14px rgba(26,24,21,.08)}';
+  css.textContent = '#edo-sec-cohort table.p4t{table-layout:fixed;width:100%}#edo-sec-cohort table.p4t th{padding-left:11px;padding-right:10px}#edo-sec-cohort table.p4t th:first-child{width:32%}.g-pill b{white-space:nowrap}#screen-halo .halo-panels-grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important}#screen-halo .halo-shell{max-height:none!important;overflow:visible!important;padding-bottom:8px!important}#screen-halo{padding-bottom:24px!important}.ed-off,.ed-off2{display:none!important}.ed-log{background:#fff;border:1px solid rgba(26,24,21,.08);border-top:3px solid #64748b;border-radius:14px;padding:14px 16px;margin:0 0 14px;font-size:12.5px;color:#1a1815}.ed-log-h{font-size:15px;font-weight:700;margin-bottom:4px}.ed-logd{font-size:11px;font-weight:700;color:#334155;text-transform:uppercase;letter-spacing:.5px;margin:14px 0 2px;padding-bottom:5px;border-bottom:1px dashed rgba(26,24,21,.15)}.ed-logl{display:grid;grid-template-columns:80px 1fr;gap:10px;padding:7px 0}.ed-logl span:first-child{color:#334155}.ed-logl b{font-weight:600}.ed-logl em{font-style:normal;font-size:11.5px;color:#1d4ed8;background:#eff6ff;border-radius:999px;padding:1px 8px;margin-left:4px;cursor:pointer}.ed-tabs{display:flex;gap:6px;flex-wrap:wrap;background:#ebe4d6;border-radius:14px;padding:6px;margin:10px 0 14px}.ed-tabs button{flex:1;min-width:110px;font:inherit;font-size:12.5px;font-weight:600;border:none;background:transparent;border-radius:10px;padding:9px 10px;cursor:pointer;color:#475569}.ed-tabs button.on{background:#fff;color:#1a1815;box-shadow:0 1px 3px rgba(26,24,21,.08),0 6px 14px rgba(26,24,21,.08)}';
   document.head.appendChild(css);
   setInterval(function () { try { apply('eden'); apply('obsidian'); } catch (e) {} }, 400);
 })();
@@ -60495,6 +60498,8 @@ setInterval(function () {
       ['The data comes in', 'Each night, Blackmoor’s loan decisions arrive from its Snowflake warehouse. Cardinal maps the fields and checks for missing or broken data before any analysis runs.', function () { go('pipeline'); }, function () { var t = document.getElementById('pipeline-sources-tbody'); return t ? up(t, 180) : null; }, '1. Detect', 'Essential'],
       ['Every model, registered', 'Credit Scoring v3.4 is in the model registry with its owner, version, status, and data sources, so every finding ties to one exact model.', function () { libModels(); }, '#screen-cardinallibrary table', '1. Detect', 'Essential'],
       ['Eden finds the risk', 'Eden measures approvals by group. Credit Scoring v3.4’s fairness ratio is 0.74, under the 0.80 screening line, and ZIP code acts as a stand-in for race. The finding keeps the measure, group, sample size, and model version.', function () { go('eden'); }, '#eden-sec-hero', '1. Detect', 'Essential'],
+      ['Obsidian watches the fraud model', 'From day one Obsidian watches Blackmoor\u2019s own fraud model: how often it blocks good applicants and misses real fraud, by group. Here Fraud Screening v2.7 flags more applicants in the same ZIP codes Eden found.', function () { go('obsidian'); }, '#obs-sec-cases', '1. Detect', 'Essential'],
+      ['Pulse checks every night', 'Each night Pulse checks that every model\u2019s data arrived complete and that accuracy is not drifting. Anything off goes to a person to decide, or to Genesis to find the cause.', function () { go('pulse'); later(400, function () { pulseTab('look'); }); }, '#pulse-root .pu-card', '1. Detect', 'Essential'],
       ['The people affected', 'Cardinal links the finding to the 1,203 applicants it touched, grouped by ZIP code, with private IDs the bank can export for re-review.', function () { go('eden'); later(500, function () { edTab('eden', 0); }); }, '#edo-sec-cohort', '2. Identify', 'Essential'],
       ['One applicant', 'Each applicant’s record shows the decision, the model that made it, and where the re-review stands. Maria Gonzalez is one of the 1,203.', function () { fin(); try { custOpen(0); } catch (e) {} }, function () { var p = document.getElementById('cust-prof'); return block(p, /^Case FIN-\d+: where this/i, 120) || (p && p.firstElementChild); }, '2. Identify', 'Essential'],
       ['A case with an owner', 'The finding opens case FIN-1203, routed to the model’s owner with a deadline. It cannot close without a recheck and named sign-offs.', function () { room('FIN-1203', 'overview'); }, '#wr2 .wr2-hero2', '3. Investigate', 'Essential'],
@@ -60792,8 +60797,9 @@ setInterval(function () {
       var L = list(core), box = document.getElementById('ib-' + core);
       if (!L.length) { if (box) box.remove(); return; }
       if (!box) { box = document.createElement('div'); box.id = 'ib-' + core; box.className = 'ib-box'; }
-      var hdr = scr.querySelector(':scope > .section-hdr, :scope > .page-hdr'), first = hdr ? hdr.nextElementSibling : scr.firstElementChild;
-      if (box.parentNode !== scr || (first !== box && box.previousElementSibling !== hdr)) scr.insertBefore(box, first);
+      // Place it once, after the core's top block, and never move it again: other scripts keep that block in order, and
+      // fighting them made Genesis jump (10/14).
+      if (!scr.contains(box)) { var anchor = document.getElementById(core === 'genesis' ? 'gen-start' : 'at-start') || document.getElementById('u-' + core + '-hero'); if (anchor && anchor.parentNode) anchor.parentNode.insertBefore(box, anchor.nextSibling); else scr.insertBefore(box, scr.firstElementChild); }
       var key = org() + L.map(function (x) { return x.id + x.isNew; }).join();
       if (!force && box.__k === key) return; box.__k = key;
       var nNew = L.filter(function (x) { return x.isNew; }).length;
@@ -60905,6 +60911,45 @@ setInterval(function () {
     }, 350);
   }, true);
 })();
+// 10/14 (Brittany: "when you push something or click a button and the smaller pop-up comes up, make sure all pop-ups are on
+// the top right"). Every small notice (the toasts from any core, "Sent to", "Pushed to Ledger") is moved to the top
+// right, under the header, stacked if there are several. Full dialogs and Eve's panel are left where they are.
+(function () {
+  var SKIP = /^(eve-panel|eve-bubble|cardinal-jump|cardinal-tooltip|rm-stack|rm-ask|tour-|tch|core-info-pop|persona-switcher-modal|at-evepop|msg-pop)/;
+  function isToast(el) {
+    if (!el || el.nodeType !== 1 || el.__tr) return false;
+    if (SKIP.test(el.id || '') || el.closest('#tour-cap,#tour-choose,#eve-panel')) return false;
+    var cs = getComputedStyle(el); if (cs.position !== 'fixed') return false;
+    var r = el.getBoundingClientRect(); if (!r.width || r.width > 720 || r.height > 260 || r.height < 18) return false;
+    if (r.top < window.innerHeight * 0.45) return false;            // already high on the screen
+    if (cs.top === '0px' && cs.bottom === '0px') return false;        // a full-screen overlay
+    return (el.innerText || '').trim().length > 3;
+  }
+  function place(el) {
+    el.__tr = 1;
+    // Stack under anything already in the top right corner (other notices, Eve's alerts).
+    var y = 84; [].forEach.call(document.body.children, function (o) { if (o === el || o.nodeType !== 1 || /^(tour-|cardinal-jump|eve-bubble)/.test(o.id || '')) return; var r = o.getBoundingClientRect(); if (!r.width || getComputedStyle(o).position !== 'fixed') return; if (r.right > window.innerWidth - 60 && r.top >= 56 && r.top < 420 && r.width < 520 && r.height < 300) y = Math.max(y, r.bottom + 10); });
+    el.setAttribute('data-tr', '1');
+    el.style.setProperty('top', y + 'px', 'important'); el.style.setProperty('right', '20px', 'important');
+    el.style.setProperty('bottom', 'auto', 'important'); el.style.setProperty('left', 'auto', 'important');
+    el.style.setProperty('transform', 'none', 'important'); el.style.setProperty('max-width', 'min(420px, calc(100vw - 40px))', 'important');
+  }
+  new MutationObserver(function (m) { m.forEach(function (r) { [].forEach.call(r.addedNodes, function (n) { if (n.nodeType === 1) setTimeout(function () { if (isToast(n)) place(n); }, 30); }); }); }).observe(document.body, { childList: true });
+  setInterval(function () { [].forEach.call(document.body.children, function (n) { if (isToast(n)) place(n); }); }, 400);
+})();
+// 10/14 (Brittany: "What's blocking your certification looks elongated"): its block shared a row with another section,
+// leaving three columns about 170px wide on a laptop. The two sections now stack, so each gets the full width.
+(function () { var st = document.createElement('style'); st.textContent = '#ts-why-block{grid-template-columns:1fr!important}'; document.head.appendChild(st); })();
+// 10/14 (Brittany: "the Open Incident pop-up in Eden and Obsidian might be outdated"). Case buttons everywhere open the
+// current case view in Watchman (owner, people affected, days left, the full timeline, and a war room link), and the case
+// cards in Eden and Obsidian all say "Open case".
+(function () {
+  setInterval(function () {
+    var f = window.cardinalRouteCase;
+    if (typeof f === 'function' && !f.__new && typeof window.cardinalOpenCase === 'function') { var g = function (cs) { try { cardinalOpenCase(String(cs).replace(/^#/, '')); } catch (e) { return f.apply(this, arguments); } }; g.__new = 1; window.cardinalRouteCase = g; }
+    [].forEach.call(document.querySelectorAll('#eden-sec-cases button, #obs-sec-cases button'), function (b) { var t = b.textContent.trim(); if (t === 'Open Incident' || t === 'View Case') b.textContent = 'Open case'; });
+  }, 700);
+})();
 </script>
 <script data-p="p72_halopred">
 // 10/14 (Brittany: "where's the predicting side of Halo? If we don't fix this, this is going to happen... where do we send
@@ -60963,7 +61008,8 @@ setInterval(function () {
     var o = org(), R = P[o] || gen(o), box = document.getElementById('halo-pred');
     if (!R.length) { if (box) box.remove(); return; }
     if (!box) { box = document.createElement('div'); box.id = 'halo-pred'; box.className = 'hp-box'; }
-    if (hero.nextElementSibling !== box) hero.parentNode.insertBefore(box, hero.nextSibling);
+    // Placed once after Eve's briefing; never moved again, so it does not fight the script that orders Halo's top blocks.
+    if (!scr.contains(box)) { var an = document.getElementById('halo-eve-sum') || hero; an.parentNode.insertBefore(box, an.nextSibling); }
     if (box.__k === o) return; box.__k = o;
     box.innerHTML = '<div class="hp-h">What happens if nothing is fixed</div><div class="hp-sub">Forecasts for the next 60 days. Solid line: what happened. Dashed line: where it is headed. Shaded: the likely range. Estimates from sample data, not certainties.</div><div class="hp-grid">' + R.map(card).join('') + '</div>';
   }
