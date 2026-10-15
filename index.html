@@ -55996,6 +55996,14 @@ window.CARDINAL_PLACES = {
   setInterval(function () {
     [].forEach.call(document.querySelectorAll('.tsv2-eve-avatar, .eve-avatar, .msg-avatar.eve, .eve-peek-avatar'), function (el) { if (el.__ee) return; if (el.textContent.trim() === '✦' || el.textContent.trim() === '') { el.__ee = 1; el.textContent = 'e'; el.classList.add('eve-e'); } });
     // 10/14 (Brittany: "Adam's box shouldn't be black... same design as Eve, lowercase a, purple rim").
+    // Any other small round avatar next to Adam's or Eve's name (war room conversation, case threads) gets the same look.
+    [].forEach.call(document.querySelectorAll('.wr2-av, [class*="-av"], [class*="avatar"]'), function (el) {
+      if (el.__ag || el.classList.contains('eve-e') || el.children.length) return; var t = el.textContent.trim(); if (!/^(A|AD|E|EV|\u2B21|\u2726)$/.test(t)) return;
+      var r = el.getBoundingClientRect(); if (!r.width || r.width > 48 || Math.abs(r.width - r.height) > 4) return;
+      var near = ((el.parentNode && el.parentNode.innerText) || '').slice(0, 80);
+      var who = /^\s*(A|AD|\u2B21)\s*\n?\s*Adam\b/.test(near) || (/\bAdam\b/.test(near) && /^(A|AD|\u2B21)$/.test(t)) ? 'a' : (/\bEve\b/.test(near) && /^(E|EV|\u2726)$/.test(t)) ? 'e' : '';
+      if (!who) return; el.__ag = 1; el.textContent = who; el.classList.add('eve-e'); el.style.borderRadius = '50%';
+    });
     [].forEach.call(document.querySelectorAll('.msg-avatar.adam, .adam-avatar'), function (el) { if (el.__aa) return; var t = el.textContent.trim(); if (t === '\u2B21' || t === '' || t === 'A' || t === '\u2726') { el.__aa = 1; el.textContent = 'a'; el.classList.add('eve-e'); } });
     var tb = document.getElementById('eve-toggle-btn');
     if (tb && !tb.__ee) { var svg = tb.querySelector('svg.eve-icon'); if (svg) { tb.__ee = 1; svg.style.display = 'none'; var g = document.createElement('span'); g.className = 'eve-e-glyph'; g.textContent = 'e'; tb.appendChild(g); tb.classList.add('eve-e-btn'); } }
@@ -59096,7 +59104,7 @@ setInterval(function () {
     var o = org(), h = H[o];
     if (view || SENT[o] || !h || !window.cardinalInboxAdd) { toAton(); return; }
     SENT[o] = new Date();
-    cardinalInboxAdd('atonement', { title: h.to + ' (the fix for ' + h.cs + ')', from: 'Genesis', what: 'Passed testing. Next: run it in shadow next to the live model and collect the four sign-offs.', sel: '#at-fix-context' });
+    cardinalInboxAdd('atonement', { title: h.to + ' (the fix for ' + h.cs + ')', from: 'Genesis', what: 'Passed testing. Next: run it in shadow next to the live model and collect the four sign-offs.', sel: '#at-fix-btns', tab: 0, fix: 1 });
     var ho = document.getElementById('gen-handoff'); if (ho) ho.__h = '';
   };
   window.flowToGenesis = function () { try { cardinalJump("showScreen('genesis',null);coreTabGo('genesis',0)", '#gen-handoff'); } catch (e) { showScreen('genesis', null); } };
@@ -60521,7 +60529,7 @@ setInterval(function () {
   // Reading time per step from the caption length (about 260 words a minute plus a moment to look), never under 7 seconds.
   // 10/14: Brittany found the slides too slow.
   function durOf(s) { return Math.max(7000, 2500 + String(s[1]).split(/\s+/).length * 230); }
-  function tourMs(k) { return TOURS[k].steps.reduce(function (a, s) { return a + durOf(s) + 1800; }, 0); }
+  function tourMs(k) { return TOURS[k].steps.reduce(function (a, s) { return a + durOf(s) + 1100; }, 0); }
   window.cardinalTourMinutes = function (k) { return Math.round(tourMs(k) / 60000); };
   function STEPSf() { return TOURS[T.tour || 'vision'].steps; }
   function tgt(x) { return !x ? null : typeof x === 'function' ? x() : q(x); }
@@ -60564,13 +60572,13 @@ setInterval(function () {
     var STEPS = STEPSf(); T.i = Math.max(0, Math.min(STEPS.length - 1, i)); T.last = null; T.el = 0; closeAll();
     // No jumping between steps: fade the spotlight and caption out while the next screen opens and scrolls, then fade in.
     T.settling = true; ['tour-spot', 'tour-cap', 'tour-arrow'].forEach(function (id) { var e = document.getElementById(id); if (e) e.classList.add('tour-hide'); });
-    var me0 = T.i; setTimeout(function () { if (T.i !== me0) return; T.settling = false; place(); setTimeout(function () { ['tour-spot', 'tour-cap', 'tour-arrow'].forEach(function (id) { var e = document.getElementById(id); if (e) e.classList.remove('tour-hide'); }); }, 60); T.t = Date.now(); }, 1800);
+    var me0 = T.i; setTimeout(function () { if (T.i !== me0) return; T.settling = false; place(); setTimeout(function () { ['tour-spot', 'tour-cap', 'tour-arrow'].forEach(function (id) { var e = document.getElementById(id); if (e) e.classList.remove('tour-hide'); }); }, 60); T.t = Date.now(); }, 1100);
     try { STEPS[T.i][2](); } catch (e) {}
     render();
     // After the screen settles, bring the target into view, then keep the spotlight on it.
     // Pages jump back to the top when a screen opens, so bring the target into view a few times as things settle.
     var my = T.i;
-    [500, 1000, 1400, 1700].forEach(function (ms) { setTimeout(function () { if (!T.on || T.i !== my) return; var s = STEPSf()[T.i], t = tgt(s[3]); if (!t) return; var r = t.getBoundingClientRect(); if (r.top < 60 || r.top > window.innerHeight * 0.55) { window.__keepUntil = 0; t.scrollIntoView({ behavior: 'auto', block: t.offsetHeight > window.innerHeight * 0.6 ? 'start' : 'center' }); } }, ms); });
+    [300, 600, 850, 1000, 1500, 2200].forEach(function (ms) { setTimeout(function () { if (!T.on || T.i !== my) return; var s = STEPSf()[T.i], t = tgt(s[3]); if (!t) return; var r = t.getBoundingClientRect(); if (r.top < 60 || r.top > window.innerHeight * 0.55) { window.__keepUntil = 0; t.scrollIntoView({ behavior: 'auto', block: t.offsetHeight > window.innerHeight * 0.6 ? 'start' : 'center' }); } }, ms); });
   }
   window.tourStep = function (d) { show(T.i + d); };
   // Pause keeps the time already spent on this step, so Play picks up where it stopped and never skips a caption.
@@ -60745,25 +60753,25 @@ setInterval(function () {
     wrap('atlasRequest', function (f, a) {
       var s = (window.cardinalAtlasList ? cardinalAtlasList(org()) : []).filter(function (x) { return x.id === a[0]; })[0];
       var r = quiet(f, this, a);
-      if (s) add('genesis', { title: s.name, from: 'Atlas', what: a[1] === 'me' ? 'Evaluation request: in your backlog to test' : 'Evaluation request: Adam is testing it', sel: '#gen-atlas-req' });
+      if (s) add('genesis', { title: s.name, from: 'Atlas', what: a[1] === 'me' ? 'Evaluation request: in your backlog to test' : 'Evaluation request: Adam is testing it', sel: '#gen-atlas-req', tab: 0 });
       return r;
     });
     wrap('pulseAct', function (f, a) {
       if (a[1] !== 'genesis') return f.apply(this, a);
       var r = quiet(f, this, a), d = (window.cardinalDiag ? cardinalDiag(org()) : []).slice(-1)[0];
-      add('genesis', { title: d ? d[0] : 'A Pulse issue', from: 'Pulse', what: 'Diagnose why: ' + (d ? d[1] : 'Adam is working out the cause'), sel: '#gen-diagnose' });
+      add('genesis', { title: d ? d[0] : 'A Pulse issue', from: 'Pulse', what: 'Diagnose why: ' + (d ? d[1] : 'Adam is working out the cause'), sel: '#gen-diagnose', tab: 1 });
       return r;
     });
     wrap('gnDo', function (f, a) {
       if (a[1] !== 'promote') return f.apply(this, a);
       var r = quiet(f, this, a), row = document.querySelector('[onclick*="gnOpen(\'' + a[0] + '\')"]');
-      add('atonement', { title: row ? (row.innerText || '').split('\n')[0].slice(0, 80) : 'A tested fix', from: 'Genesis', what: 'Winning variant to approve as a fix', sel: '#at-fix-context' });
+      add('atonement', { title: row ? (row.innerText || '').split('\n')[0].slice(0, 80) : 'A tested fix', from: 'Genesis', what: 'Winning variant to approve as a fix', sel: '#at-fix-btns', tab: 0, fix: 1 });
       return r;
     });
     wrap('gaDiagDo', function (f, a) {
       if (a[1] !== 'aton') return f.apply(this, a);
       var r = quiet(f, this, a), d = (window.cardinalDiag ? cardinalDiag(org()) : []).filter(function (x) { return (x[0] + x[1]).indexOf(a[0]) >= 0; })[0];
-      add('atonement', { title: d ? d[0] : 'A diagnosed issue', from: 'Genesis diagnosis', what: 'Needs a fix', sel: '#at-fix-context' });
+      add('atonement', { title: d ? d[0] : 'A diagnosed issue', from: 'Genesis diagnosis', what: 'Needs a fix', sel: '#at-fix-btns', tab: 0, fix: 1 });
       return r;
     });
   }
@@ -60774,9 +60782,12 @@ setInterval(function () {
     window.__deepLinkUntil = Date.now() + 3000;
     var nav = document.querySelector('.nav-item[onclick*="\'' + core + '\'"]');
     try { showScreen(core, nav); } catch (e) {}
+    if (it && it.tab != null) setTimeout(function () { try { coreTabGo(core, it.tab); } catch (e) {} }, 300);
+    if (it && it.fix) setTimeout(function () { try { gaToolOpen('at-tab-fix', 'What this fix is for, and the recommended fix'); } catch (e) {} }, 900);
     var n = 0, iv = setInterval(function () {
       var el = (it && it.sel && document.querySelector(it.sel)) || document.getElementById('ib-' + core);
-      if ((el && el.offsetParent) || ++n > 20) { clearInterval(iv); if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); el.classList.add('ib-flash'); setTimeout(function () { el.classList.remove('ib-flash'); }, 2200); } draw(true); }
+      if (n < 4) { n++; return; }
+      if ((el && el.offsetParent) || ++n > 24) { clearInterval(iv); if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); el.classList.add('ib-flash'); setTimeout(function () { el.classList.remove('ib-flash'); }, 2200); } draw(true); }
     }, 150);
   };
   // Other add-ons record a hand-off here too (Genesis "Send to Atonement").
@@ -60804,7 +60815,7 @@ setInterval(function () {
       if (!force && box.__k === key) return; box.__k = key;
       var nNew = L.filter(function (x) { return x.isNew; }).length;
       box.innerHTML = '<div class="ib-h"><span class="ib-dot"></span>Just sent here · ' + L.length + (nNew ? ' <em>' + nNew + ' new</em>' : '') + '<button type="button" class="ib-clr" onclick="inboxClear(\'' + core + '\')">Clear list</button></div>' +
-        L.map(function (x) { return '<div class="ib-row">' + (x.isNew ? '<span class="ib-new">New</span>' : '') + '<div class="ib-main"><b>' + esc(x.title) + '</b><span>' + esc(x.what) + '</span><span class="ib-meta">From ' + esc(x.from) + ' · sent by ' + esc(x.by) + ' · today ' + tm(x.t) + '</span></div><button type="button" class="ib-open" onclick="inboxGo(\'' + core + '\',\'' + x.id + '\')">Open →</button></div>'; }).join('');
+        L.map(function (x) { return '<div class="ib-row">' + (x.isNew ? '<span class="ib-new">New</span>' : '') + '<div class="ib-main"><b>' + esc(x.title) + '</b><span>' + esc(x.what) + '</span><span class="ib-meta">From ' + esc(x.from) + ' · sent by ' + esc(x.by) + ' · today ' + tm(x.t) + '</span></div><button type="button" class="ib-open" onclick="inboxGo(\'' + core + '\',\'' + x.id + '\')">View →</button></div>'; }).join('');
     });
   }
   // Opened items stop being "new" once someone has had the list on screen for a few seconds.
@@ -60915,7 +60926,7 @@ setInterval(function () {
 // the top right"). Every small notice (the toasts from any core, "Sent to", "Pushed to Ledger") is moved to the top
 // right, under the header, stacked if there are several. Full dialogs and Eve's panel are left where they are.
 (function () {
-  var SKIP = /^(eve-panel|eve-bubble|cardinal-jump|cardinal-tooltip|rm-stack|rm-ask|tour-|tch|core-info-pop|persona-switcher-modal|at-evepop|msg-pop)/;
+  var SKIP = /^(wild-sheet|eve-peek|eve-|eve-bubble|cardinal-jump|cardinal-tooltip|rm-stack|rm-ask|tour-|tch|core-info-pop|persona-switcher-modal|at-evepop|msg-pop)/;
   function isToast(el) {
     if (!el || el.nodeType !== 1 || el.__tr) return false;
     if (SKIP.test(el.id || '') || el.closest('#tour-cap,#tour-choose,#eve-panel')) return false;
@@ -60950,6 +60961,26 @@ setInterval(function () {
     [].forEach.call(document.querySelectorAll('#eden-sec-cases button, #obs-sec-cases button'), function (b) { var t = b.textContent.trim(); if (t === 'Open Incident' || t === 'View Case') b.textContent = 'Open case'; });
   }, 700);
 })();
+// 10/14 (Brittany: "why would it say View in Eden if we're already in Eden?" and "Open case just takes me to a dim page").
+// Opening a case moves you to Watchman, so the button for the core you came from says "Back to Eden"; the case opens
+// sooner, so the dimmed page does not sit empty.
+(function () {
+  var LBL = { eden: 'Eden', obsidian: 'Obsidian', pulse: 'Pulse', genesis: 'Genesis', atonement: 'Atonement', halo: 'Halo', marketing: 'Codex', compliance: 'Compliance', dashboard: 'Dashboard', atlas: 'Atlas', trustscore: 'Trust Score' };
+  var from = '';
+  setInterval(function () {
+    var f = window.cardinalOpenCase;
+    if (typeof f === 'function' && !f.__fx2) {
+      var g = function (cs) {
+        var a = document.querySelector('.screen.active'); from = a ? a.id.replace('screen-', '') : '';
+        try { window.__wmMode = 'watch'; showScreen('sentinel', null); } catch (e) {}
+        [250, 700, 1200].forEach(function (ms) { setTimeout(function () { if (!document.getElementById('wm2-modal') || !document.getElementById('wm2-modal').offsetParent) { try { wm2CaseFromInc(cs); } catch (e) {} } }, ms); });
+      };
+      g.__fx2 = 1; g.__new = 1; window.cardinalOpenCase = g;
+    }
+    var m = document.getElementById('wm2-modal'); if (!m || !from || !LBL[from]) return;
+    [].forEach.call(m.querySelectorAll('button'), function (b) { if (b.textContent.trim() === 'View in ' + LBL[from]) b.textContent = 'Back to ' + LBL[from]; });
+  }, 300);
+})();
 </script>
 <script data-p="p72_halopred">
 // 10/14 (Brittany: "where's the predicting side of Halo? If we don't fix this, this is going to happen... where do we send
@@ -60965,11 +60996,11 @@ setInterval(function () {
   //  where it went (label, code to open it), how it is measured, confidence, unit]
   var P = {
     fin: [
-      ['Credit Scoring v3.4', 'Fairness ratio', 0.74, 0.71, 0.69, 0.70, true, 48, 'Certification stays held, the CFPB exam on ' + md(13) + ' sees a ratio under the 0.80 line, and about 400 more applicants a month get a decision the ZIP proxy may have shaped. Exposure up to $73M.', ['Case FIN-1203 in Watchman; the fix (v3.5) is in Atonement', "cardinalOpenCase('FIN-1203')"], 'Daily fairness ratio for the last 90 days, trend projected forward with an 80% range. Recalculated every morning.', 'Medium-high', ''],
-      ['Underwriting v4.1', 'Accuracy', 89, 86, 84, 88, true, 10, 'More good applicants are priced as riskier and more risky ones slip through; Pulse flags it as broken and the model would be pulled back to review.', ['Sent to Genesis; Adam is diagnosing the cause', "showScreen('genesis');setTimeout(function(){try{coreTabGo('genesis',1)}catch(e){}},600)"], 'Weekly accuracy against confirmed outcomes, last 26 weeks (it slipped from 92% six weeks ago), drift model with an 80% range.', 'Medium', '%'],
-      ['Servicing Agent v2.0', 'Wrong payoff answers', 1.1, 2.4, 3.2, 2.0, false, 26, '214 customers already got a wrong payoff amount. If the fix stays at 10% of chats, about 300 more a month will, and fee waivers it is not allowed to give keep getting tried.', ['Case FIN-3310; the fix is rolling out in Atonement', "cardinalOpenCase('FIN-3310')"], 'Share of chats with a wrong amount, checked against the servicing system each night.', 'High', '%'],
-      ['Fraud Screening v2.7', 'Extra fraud flags in the same ZIP codes', 1.6, 1.8, 1.9, 1.75, false, 34, 'Good applicants in the ZIP codes Eden flagged get stopped more often, which adds to the FIN-1203 harm and the exam exposure.', ['Linked to FIN-1203 through the fairness and fraud overlap', "showScreen('eden');setTimeout(function(){try{edTab('eden',1)}catch(e){}},600)"], 'Flag rate in the flagged ZIP codes divided by the rate everywhere else, last 90 days.', 'Medium', 'x'],
-      ['Company Trust Score', 'Trust Score', 81, 79, 78, 80, true, 24, 'The score drops under 80, so certification would lapse even after FIN-1203 closes. With the planned fixes it reaches about 85.', ['Shown on the Trust Score page', "showScreen('trustscore')"], 'The same Trust Score math run on the forecasts above.', 'Medium', '']
+      ['Credit Scoring v3.4', 'Fairness ratio', 0.74, 0.71, 0.69, 0.70, true, 48, 'Certification stays held, the CFPB exam on ' + md(13) + ' sees a ratio under the 0.80 line, and about 400 more applicants a month get a decision the ZIP proxy may have shaped. Exposure up to $73M.', ['Case FIN-1203 in Watchman; the fix (v3.5) is in Atonement', "cardinalOpenCase('FIN-1203')", 'View case FIN-1203'], 'Daily fairness ratio for the last 90 days, trend projected forward with an 80% range. Recalculated every morning.', 'Medium-high', ''],
+      ['Underwriting v4.1', 'Accuracy', 89, 86, 84, 88, true, 10, 'More good applicants are priced as riskier and more risky ones slip through; Pulse flags it as broken and the model would be pulled back to review.', ['Sent to Genesis; Adam is diagnosing the cause', "cardinalJump(\"showScreen('genesis');setTimeout(function(){try{coreTabGo('genesis',1)}catch(e){}},300)\",'#gen-diagnose')", 'View the diagnosis'], 'Weekly accuracy against confirmed outcomes, last 26 weeks (it slipped from 92% six weeks ago), drift model with an 80% range.', 'Medium', '%'],
+      ['Servicing Agent v2.0', 'Wrong payoff answers', 1.1, 2.4, 3.2, 2.0, false, 26, '214 customers already got a wrong payoff amount. If the fix stays at 10% of chats, about 300 more a month will, and fee waivers it is not allowed to give keep getting tried.', ['Case FIN-3310; the fix is rolling out in Atonement', "cardinalOpenCase('FIN-3310')", 'View case FIN-3310'], 'Share of chats with a wrong amount, checked against the servicing system each night.', 'High', '%'],
+      ['Fraud Screening v2.7', 'Extra fraud flags in the same ZIP codes', 1.6, 1.8, 1.9, 1.75, false, 34, 'Good applicants in the ZIP codes Eden flagged get stopped more often, which adds to the FIN-1203 harm and the exam exposure.', ['Linked to FIN-1203 through the fairness and fraud overlap', "cardinalJump(\"showScreen('eden');setTimeout(function(){try{edTab('eden',1)}catch(e){}},400)\",'#eden-sec-bf')", 'View the overlap in Eden'], 'Flag rate in the flagged ZIP codes divided by the rate everywhere else, last 90 days.', 'Medium', 'x'],
+      ['Company Trust Score', 'Trust Score', 81, 79, 78, 80, true, 24, 'The score drops under 80, so certification would lapse even after FIN-1203 closes. With the planned fixes it reaches about 85.', ['Shown on the Trust Score page', "cardinalJump(\"showScreen('trustscore')\",'#ts-why-block')", 'View the Trust Score'], 'The same Trust Score math run on the forecasts above.', 'Medium', '']
     ]
   };
   // Other companies: built from their own models under the fairness line.
@@ -60978,7 +61009,7 @@ setInterval(function () {
     if (!M.length) M = (window.CARDINAL_MODELS || []).filter(function (m) { return m.industry === o && typeof m.di === 'number' && m.status !== 'archive'; }).sort(function (a, b) { return a.di - b.di; }).slice(0, 2);
     var inc = window.cardinalIncidents ? cardinalIncidents(o) : [];
     return M.map(function (m, k) { var cs = (m.cases || [])[0] || ((inc.filter(function (x) { return x.model === m.name && x.cs; })[0] || {}).cs) || ''; var a = Math.max(0.6, m.di - 0.03), b = Math.max(0.58, m.di - 0.05);
-      return [m.name, 'Fairness ratio', m.di, +a.toFixed(2), +b.toFixed(2), 0.80, true, m.di < 0.8 ? 0 : 20 + k * 9, m.di < 0.8 ? 'Already under the 0.80 line; the gap keeps widening and more people are affected each month until the fix ships.' : 'Crosses the 0.80 fairness line, which opens a case and holds certification.', [cs ? 'Case ' + cs + ' in Watchman' : 'Watching in Eden', cs ? "cardinalOpenCase('" + cs + "')" : "showScreen('eden')"], 'Daily fairness ratio for the last 90 days, projected forward with an 80% range.', 'Medium', '']; });
+      return [m.name, 'Fairness ratio', m.di, +a.toFixed(2), +b.toFixed(2), 0.80, true, m.di < 0.8 ? 0 : 20 + k * 9, m.di < 0.8 ? 'Already under the 0.80 line; the gap keeps widening and more people are affected each month until the fix ships.' : 'Crosses the 0.80 fairness line, which opens a case and holds certification.', [cs ? 'Case ' + cs + ' in Watchman' : 'Watching in Eden', cs ? "cardinalOpenCase('" + cs + "')" : "showScreen('eden')", cs ? 'View case ' + cs : 'View in Eden'], 'Daily fairness ratio for the last 90 days, projected forward with an 80% range.', 'Medium', '']; });
   }
   function chart(r) {
     var now = r[2], f30 = r[3], f60 = r[4], line = r[5], up = r[6], W = 300, H = 92, pad = 6;
@@ -61000,7 +61031,7 @@ setInterval(function () {
     var u = r[12], fmt = function (v) { return v + u; }, cross = r[7] > 0 ? 'Crosses the line about ' + md(r[7]) + ' (in ' + r[7] + ' days)' : 'Already past the line';
     return '<div class="hp-card"><div class="hp-top"><div><div class="hp-m">' + esc(r[0]) + '</div><div class="hp-k">' + esc(r[1]) + '</div></div><div class="hp-nums"><span><i>Today</i><b>' + fmt(r[2]) + '</b></span><span class="hp-ar">→</span><span><i>30 days</i><b class="bad">' + fmt(r[3]) + '</b></span><span><i>60 days</i><b class="bad">' + fmt(r[4]) + '</b></span></div></div>' + chart(r) +
       '<div class="hp-when">' + cross + '</div><div class="hp-kv"><span>If nothing is fixed</span><b>' + esc(r[8]) + '</b></div><div class="hp-kv"><span>Where it went</span><b><a href="javascript:void(0)" onclick="' + esc(r[9][1]) + '">' + esc(r[9][0]) + ' →</a></b></div><div class="hp-kv"><span>How it is measured</span><b>' + esc(r[10]) + ' Confidence: ' + esc(r[11]) + '.</b></div>' +
-      '<div class="hp-acts"><button type="button" onclick="' + esc(r[9][1]) + '">Open it</button><button type="button" onclick="cardinalRemindAsk(' + esc(JSON.stringify('Check the forecast for ' + r[0] + ' in Halo')) + ',' + esc(JSON.stringify("showScreen('halo');setTimeout(function(){var e=document.getElementById('halo-pred');if(e)e.scrollIntoView({block:'start'})},800)")) + ')">Remind me</button></div></div>';
+      '<div class="hp-acts"><button type="button" onclick="' + esc(r[9][1]) + '">' + esc(r[9][2] || 'View') + ' \u2192</button><button type="button" onclick="cardinalRemindAsk(' + esc(JSON.stringify('Check the forecast for ' + r[0] + ' in Halo')) + ',' + esc(JSON.stringify("showScreen('halo');setTimeout(function(){var e=document.getElementById('halo-pred');if(e)e.scrollIntoView({block:'start'})},800)")) + ')">Remind me</button></div></div>';
   }
   function draw() {
     var scr = document.getElementById('screen-halo'); if (!scr || scr.offsetParent === null) return;
@@ -61011,11 +61042,11 @@ setInterval(function () {
     // Placed once after Eve's briefing; never moved again, so it does not fight the script that orders Halo's top blocks.
     if (!scr.contains(box)) { var an = document.getElementById('halo-eve-sum') || hero; an.parentNode.insertBefore(box, an.nextSibling); }
     if (box.__k === o) return; box.__k = o;
-    box.innerHTML = '<div class="hp-h">What happens if nothing is fixed</div><div class="hp-sub">Forecasts for the next 60 days. Solid line: what happened. Dashed line: where it is headed. Shaded: the likely range. Estimates from sample data, not certainties.</div><div class="hp-grid">' + R.map(card).join('') + '</div>';
+    box.innerHTML = '<div class="hp-h">What happens if nothing is fixed <span class="hp-tag" title="Forecasts, dates, and ranges are illustrative. Solid line: what happened. Dashed line: where it is headed. Shaded: the likely range.">Sample data</span></div><div class="hp-sub">The next 60 days for each model, if no one acts.</div><div class="hp-grid">' + R.map(card).join('') + '</div>';
   }
   setInterval(function () { try { draw(); } catch (e) {} }, 700);
   var css = document.createElement('style');
-  css.textContent = '.hp-box{background:#fff;border:1px solid rgba(26,24,21,.08);border-top:3px solid #dc2626;border-radius:14px;padding:14px 16px;margin:0 0 16px;color:#1a1815;font-size:12.5px}.hp-h{font-size:15px;font-weight:700}.hp-sub{color:#475569;margin:2px 0 12px}.hp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:12px}' +
+  css.textContent = '.hp-box{background:#fff;border:1px solid rgba(26,24,21,.08);border-top:3px solid #dc2626;border-radius:14px;padding:14px 16px;margin:0 0 16px;color:#1a1815;font-size:12.5px}.hp-h{font-size:15px;font-weight:700}.hp-sub{color:#475569;margin:2px 0 12px}.hp-tag{font-size:10.5px;font-weight:700;color:#A16207;background:rgba(250,204,21,.14);border:1px solid rgba(161,98,7,.3);border-radius:999px;padding:2px 8px;margin-left:8px;vertical-align:middle;cursor:help}.hp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:12px}' +
     '.hp-card{border:1px solid #eef0f3;border-radius:12px;padding:12px 14px;background:#fcfbf8}.hp-top{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;margin-bottom:6px}.hp-m{font-weight:700;font-size:13.5px}.hp-k{color:#64748b;font-size:11.5px}.hp-nums{display:flex;gap:8px;align-items:flex-end}.hp-nums span{display:flex;flex-direction:column;align-items:center}.hp-nums i{font-style:normal;font-size:10px;color:#64748b}.hp-nums b{font-size:15px}.hp-nums b.bad{color:#dc2626}.hp-ar{color:#94a3b8;align-self:center}' +
     '.hp-when{font-weight:700;color:#b91c1c;margin:6px 0}.hp-kv{display:grid;grid-template-columns:118px 1fr;gap:8px;padding:5px 0;border-top:1px dashed rgba(26,24,21,.1)}.hp-kv span{color:#64748b}.hp-kv b{font-weight:500}.hp-kv a{color:#1d4ed8;text-decoration:none;font-weight:600}.hp-acts{display:flex;gap:8px;margin-top:8px}.hp-acts button{font:inherit;font-size:12px;font-weight:600;border:none;background:#1a1815;color:#fff;border-radius:8px;padding:6px 12px;cursor:pointer}';
   document.head.appendChild(css);
@@ -61047,7 +61078,8 @@ setInterval(function () {
     if (S.at === 'after-title') { var t = h.querySelector('.hp-sub') || h.firstElementChild; if (t && t.nextElementSibling !== el) t.parentNode.insertBefore(el, t.nextSibling); }
     else if (h.firstElementChild !== el) h.insertBefore(el, h.firstElementChild);
   }
-  setInterval(function () { try { put('halo'); put('codex'); put('pulse'); } catch (e) {} }, 800);
+  // 10/14: Halo's forecasts carry a small Sample data tag instead of this strip (Brittany: too many words).
+  setInterval(function () { try { put('codex'); put('pulse'); var h = document.getElementById('ps-halo'); if (h) h.remove(); } catch (e) {} }, 800);
   var css = document.createElement('style');
   css.textContent = '.ps-strip{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:0 0 12px;font-size:11.5px}.ps-lbl{font-size:10.5px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.4px;margin-right:2px}.ps-pill{border:1px solid;border-radius:999px;padding:3px 10px;cursor:help;line-height:1.35}.ps-pill b{font-weight:700}';
   document.head.appendChild(css);
