@@ -49084,7 +49084,7 @@ window.CARDINAL_PLACES = {
     var sh = document.querySelector('#screen-halo .halo-shell'); if (!sh || sh.offsetParent === null) return;
     var pick = function (sel) { return sh.querySelector(':scope > ' + sel); };
     var cost = [].filter.call(sh.children, function (x) { return /Cost of Inaction/i.test((x.innerText || '').slice(0, 80)); })[0];
-    var want = [pick('.halo-head'), pick('.halo-action-row'), pick('#halo-cardinal-hero'), pick('#halo-eve-sum'), pick('#halo-hist'), pick('#u-halo-hist'), pick('#hc-proj'), pick('#halo-predictive-section'), pick('#hc-exposure'), document.getElementById('halo-forecast'), cost, pick('#halo-attribution-cards'), pick('.halo-map-shell'), pick('#halo-hero2'), pick('#halo-money'), pick('#halo-signals'), pick('.halo-panels-grid')].filter(function (x) { return x && x.parentNode === sh; });
+    var want = [pick('.halo-head'), pick('.halo-action-row'), pick('#u-halo-hero'), pick('#halo-cardinal-hero'), pick('#halo-eve-sum'), pick('#halo-predictive-section'), pick('#hc-interv'), pick('#hc-exposure'), pick('.halo-map-shell'), pick('#halo-hero2'), pick('#halo-money'), pick('#halo-hist'), pick('#u-halo-hist'), pick('#hc-proj'), document.getElementById('halo-forecast'), cost, pick('#halo-attribution-cards'), pick('.halo-panels-grid'), pick('#halo-signals')].filter(function (x) { return x && x.parentNode === sh; });
     var cur = [].filter.call(sh.children, function (x) { return want.indexOf(x) > -1; });
     if (want.some(function (x, i) { return cur[i] !== x; })) { var a = want[0]; for (var i = 1; i < want.length; i++) { sh.insertBefore(want[i], a.nextSibling); a = want[i]; } }
     var act = pick('.halo-action-row'); if (act) { act.style.justifyContent = 'flex-end'; act.style.margin = '0 0 14px'; }
@@ -60357,8 +60357,9 @@ setInterval(function () {
   function org() { return window.currentOrg || 'fin'; }
   // [tab name, how to find the section]
   var TABS = {
-    eden: [['Affected People', '#edo-sec-cohort'], ['Fairness and Fraud', '#eden-sec-bf'], ['Protected Groups', '#eden-sec-protected-impact'], ['Beyond Models', '.edo-beyond'], ['Activity Log', '#eden-actlog']],
-    obsidian: [['Where Fraud Concentrates', '#obs-sec-fraud-concentrates'], ['Deepfakes', '#obs-sec-deepfake'], ['Affected People', '#edo-sec-cohort'], ['Beyond Models', '.edo-beyond'], ['Activity Log', '#obsidian-actlog']]
+    eden: [['Affected People', '#edo-sec-cohort'], ['Fairness and Fraud', '#eden-sec-bf'], ['Protected Groups', '#eden-sec-protected-impact'], ['Vulnerable Groups', '#eden-sec-vuln'], ['Beyond Models', '.edo-beyond'], ['Activity Log', '#eden-actlog']],
+    // 10/14: Obsidian's four functions come first (p75); Detection also holds Where Fraud Concentrates and Deepfakes.
+    obsidian: [['Oversight', '#obs-sec-oversight'], ['Detection', '#obs-sec-detect', '#obs-sec-fraud-concentrates', '#obs-sec-deepfake'], ['Prediction', '#obs-sec-predict'], ['Response', '#obs-sec-response'], ['Affected People', '#edo-sec-cohort'], ['Beyond Models', '.edo-beyond'], ['Activity Log', '#obsidian-actlog']]
   };
   // Brittany 10/13: Models and Cases are short and matter most, so they always show under the history chart;
   // the tabs hold only the deeper sections.
@@ -60402,13 +60403,13 @@ setInterval(function () {
   function pending(core, scr, T, els) {
     if (!PEND.sel || Date.now() > PEND.until) return;
     var t; try { t = scr.querySelector(PEND.sel); } catch (e) { return; } if (!t) return;
-    els.forEach(function (e, i) { if (e && (e === t || e.contains(t))) { CUR[core] = i; PEND.sel = ''; } });
+    els.forEach(function (L, i) { L.forEach(function (e) { if (e === t || e.contains(t)) { CUR[core] = i; PEND.sel = ''; } }); });
   }
   function apply(core, scroll) {
     var scr = document.getElementById('screen-' + core); if (!scr || scr.offsetParent === null) return;
     var hist = document.getElementById(core === 'eden' ? 'eden-hist-section' : 'obs-hist-section'); if (!hist) return;
     ensureLog(core, scr);
-    var T = TABS[core], els = T.map(function (t) { return find(scr, t[1]); }), live = T.map(function (t, i) { return els[i] ? i : -1; }).filter(function (i) { return i >= 0; });
+    var T = TABS[core], els = T.map(function (t) { return t.slice(1).map(function (sl) { return find(scr, sl); }).filter(Boolean); }), live = T.map(function (t, i) { return els[i].length ? i : -1; }).filter(function (i) { return i >= 0; });
     if (!live.length) return;
     pending(core, scr, T, els);
     if (live.indexOf(CUR[core]) < 0) CUR[core] = live[0];
@@ -60421,7 +60422,7 @@ setInterval(function () {
     var key = live.join(',') + '|' + CUR[core];
     if (bar.__k !== key) { bar.__k = key; bar.innerHTML = live.map(function (i) { return '<button type="button" class="' + (i === CUR[core] ? 'on' : '') + '" onclick="edTab(\'' + core + '\',' + i + ')">' + T[i][0] + '</button>'; }).join(''); }
     // A class, not an inline style, so other scripts that set display on these sections never fight with the tabs.
-    els.forEach(function (e, i) { if (!e) return; var off = i !== CUR[core]; if (e.classList.contains('ed-off') !== off) e.classList.toggle('ed-off', off); });
+    els.forEach(function (L, i) { var off = i !== CUR[core]; L.forEach(function (e) { if (e.classList.contains('ed-off') !== off) e.classList.toggle('ed-off', off); }); });
     if (scroll) bar.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
   var css = document.createElement('style');
@@ -60458,7 +60459,7 @@ setInterval(function () {
   function up(el, minH) { var c = el; while (c && c.offsetHeight < minH && c.parentNode && c.parentNode !== document.body) c = c.parentNode; return c; }
   // Each step: [title, caption, run (opens the right place), target selector or function, chapter]
   // Chapter 1 teaches the interface; Chapter 2 follows FIN-1203 end to end; Chapter 3 stays inside Blackmoor for the rest.
-  var C1 = 'Chapter 1: Discover Cardinal', C2 = 'Chapter 2: Blackmoor’s credit-scoring failure', C3 = 'Chapter 3: The rest of Blackmoor’s AI';
+  var C1 = 'Chapter 1: Discover Cardinal', C2 = 'Chapter 2: Blackmoor’s credit-scoring failure', C3 = 'Chapter 3: The rest of Blackmoor’s AI', C4 = 'Chapter 4: The ring and the unfair fix';
   var TOURS = {
     // 10/14 (Brittany's recording): faster, opens Eve's full chat, says when the Blackmoor story starts, and clicks into
     // records instead of showing lists (Atlas record, the war room conversation, Adam testing, Echo, a Codex document, a
@@ -60486,7 +60487,7 @@ setInterval(function () {
       ['FIN-3310: the servicing agent', 'Pulse caught Blackmoor’s servicing agent giving 214 customers the wrong payoff amount and trying to waive a fee on its own. Genesis found the cause, a stale rate table, and the fix is rolling out.', function () { room('FIN-3310', 'overview'); }, '#wr2 .wr2-hero2', C3],
       ['Halo: what happens next', 'Halo shows what happens if nothing is fixed. Credit Scoring v3.4 keeps sliding and crosses the floor in about seven weeks; the servicing agent’s errors double. Each forecast says when, what it triggers, and where it went.', function () { go('halo'); }, '#halo-predictive-section', C3],
       ['Halo: where it costs the most', 'The map shows where the risk sits. Click a state, like Texas, to see its open case, the gap, and the state AI laws that apply. Dollar figures are illustrative estimates.', function () { go('halo'); [1100, 1700, 2400].forEach(function (ms) { later(ms, function () { var pn = document.getElementById('halo-state-panel'); if (pn && /^\s*Texas/.test(pn.innerText || '')) return; var tx = [].filter.call(document.querySelectorAll('#halo-map-container path'), function (p) { return p.__data__ && p.__data__.properties && p.__data__.properties.name === 'Texas'; })[0]; if (tx) tx.dispatchEvent(new MouseEvent('click', { bubbles: true })); }); }); }, function () { return q('#halo-state-panel') || q('#halo-map-container'); }, C3],
-      ['Obsidian: fraud, done fairly', 'Obsidian watches Blackmoor’s fraud tools. It found 47 applications from one phone, a synthetic identity ring, and shows where fraud concentrates, while checking good applicants are not flagged just for their ZIP code.', function () { go('obsidian'); later(500, function () { edTab('obsidian', 0); }); }, '#obs-sec-fraud-concentrates', C3],
+      ['Obsidian: watching the fraud model', 'Obsidian checks Blackmoor\u2019s own fraud model, not just its alerts: how often it flags good applicants and misses real fraud, by group. Fraud Screening v2.7 flags good applicants in the ZIP codes Eden found 2.3 times as often.', function () { go('obsidian'); later(500, function () { edTab('obsidian', 0); }); }, '#obs-sec-oversight', C3],
       ['Codex: review before it goes out', 'Marketing, legal, and compliance review what goes to customers in Codex. This fall refinance email is tied to the model it promotes, and Codex flagged a promise the model cannot keep yet.', function () { go('marketing'); later(800, function () { try { cardinalDocOpen('find0'); } catch (e) {} }); }, '#doc-viewer > div', C3],
       ['The Library: the data behind it', 'The Library holds every group Cardinal works with. This one, the Pacific Islander coverage gap test, opens to the real people in it, notes from the team, and what it was used to test.', function () { go('cardinallibrary'); later(700, function () { try { pplOpen('coh', 'TEST-628'); } catch (e) {} }); }, '#ppl-modal > div', C3],
       ['Compliance: every rule, every deadline', 'Compliance maps each model to the laws that apply, like the CFPB fair lending exam coming up, with the deadline, the control that covers it, and the evidence behind it.', function () { go('compliance'); }, '#comp-overview-certs', C3],
@@ -60495,7 +60496,12 @@ setInterval(function () {
       ['Glossary: one shared language', 'Not everyone is technical. The Glossary explains every Cardinal term in plain words, plus Blackmoor’s own terms, so the whole team speaks the same language.', function () { go('glossary'); }, function () { var g = q('#gl-combined'); return g ? up(g, 300) : null; }, C3],
       ['Personas: switch from the bottom left', 'Each person sees what their role needs. Switch persona from the bottom left of the screen to see Cardinal as a compliance lead, a lawyer, an executive, or a data scientist.', function () { go('dashboard'); later(500, function () { openPersonaSwitcher(); }); }, '#persona-switcher-modal > div', C3],
       ['Settings: make it yours', 'In Settings each person picks what their dashboard shows, starts from a role preset, and sets their own alerts. None of it changes the record or the standard.', function () { go('settings'); }, function () { var b = document.getElementById('preset-compliance'); return b ? b.closest('.card') : null; }, C3],
-      ['One connected system', 'One bank. Two very different AI failures. One system that finds the risk, coordinates the fix, keeps the proof, and evaluates trust independently. Explore freely to see what is behind every number.', function () { go('dashboard'); }, '#dash-u-hero', C3]
+      ['A ring the model missed', 'Obsidian links 23 applications by shared devices, phones, and recycled identity fragments: ring FIN-R-10453. Blackmoor\u2019s fraud model scored 19 of them as low risk. Cardinal flags it; Blackmoor\u2019s fraud team decides. Independent detection is a pilot, shown with sample data.', function () { go('obsidian'); later(500, function () { edTab('obsidian', 1); }); }, '#obs-sec-detect', C4],
+      ['The ring is growing', 'At its weekly rate the ring reaches about 60 applications in 30 days, likely 45 to 80. The forecast shows its basis and the backtest it must pass before anyone relies on it.', function () { go('obsidian'); later(500, function () { edTab('obsidian', 2); }); }, '#obs-sec-predict', C4],
+      ['What it costs, and the options', 'Halo turns the forecast into consequences: $1.6M to $2.6M in losses over 60 days if nothing is done. It compares three options: block two ZIP codes, add step-up verification on linked devices, or retrain the fraud model.', function () { go('halo'); later(300, function () { try { hcIvTab(1); } catch (e) {} }); }, '#hc-interv', C4],
+      ['The obvious fix is unfair', 'Blocking the two ZIP codes stops most of the ring, but Eden shows it would decline about 3,100 legitimate applicants a quarter, mostly Black and Hispanic. It fails the screening line, so it is sent for legal review, not switched on.', function () { go('eden'); later(500, function () { edTab('eden', 3); }); }, '#eden-sec-vuln', C4],
+      ['Test, approve, keep the proof', 'Genesis tests step-up verification on 18 months of past applications. Fraud, compliance, and legal sign off by name in Atonement. Echo seals the decision, including why the ZIP block was rejected, and the Trust Ledger lets an auditor verify it.', function () { go('obsidian'); later(500, function () { edTab('obsidian', 3); }); }, '#obs-sec-response', C4],
+      ['One connected system', 'One bank. Three very different AI risks. One system that finds the risk, coordinates the fix, keeps the proof, and evaluates trust independently. Explore freely to see what is behind every number.', function () { go('dashboard'); }, '#dash-u-hero', C3]
     ] },
     // 10/14 (Brittany: "restructure the pre-seed guided tour around one complete Blackmoor lending scenario"). One credit
     // case, FIN-1203, through the first-release workflow: detect, identify, investigate, test, preserve, then the supporting
@@ -60506,7 +60512,7 @@ setInterval(function () {
       ['The data comes in', 'Each night, Blackmoor’s loan decisions arrive from its Snowflake warehouse. Cardinal maps the fields and checks for missing or broken data before any analysis runs.', function () { go('pipeline'); }, function () { var t = document.getElementById('pipeline-sources-tbody'); return t ? up(t, 180) : null; }, '1. Detect', 'Essential'],
       ['Every model, registered', 'Credit Scoring v3.4 is in the model registry with its owner, version, status, and data sources, so every finding ties to one exact model.', function () { libModels(); }, '#screen-cardinallibrary table', '1. Detect', 'Essential'],
       ['Eden finds the risk', 'Eden measures approvals by group. Credit Scoring v3.4’s fairness ratio is 0.74, under the 0.80 screening line, and ZIP code acts as a stand-in for race. The finding keeps the measure, group, sample size, and model version.', function () { go('eden'); }, '#eden-sec-hero', '1. Detect', 'Essential'],
-      ['Obsidian watches the fraud model', 'From day one Obsidian watches Blackmoor\u2019s own fraud model: how often it blocks good applicants and misses real fraud, by group. Here Fraud Screening v2.7 flags more applicants in the same ZIP codes Eden found.', function () { go('obsidian'); }, '#obs-sec-cases', '1. Detect', 'Essential'],
+      ['Obsidian watches the fraud model', 'From day one Obsidian checks Blackmoor\u2019s own fraud model: how often it blocks good applicants and misses real fraud, by group, and where its blind spots are. Fraud Screening v2.7 flags good applicants in the ZIP codes Eden found 2.3 times as often.', function () { go('obsidian'); later(500, function () { edTab('obsidian', 0); }); }, '#obs-sec-oversight', '1. Detect', 'Essential'],
       ['Pulse checks every night', 'Each night Pulse checks that every model\u2019s data arrived complete and that accuracy is not drifting. Anything off goes to a person to decide, or to Genesis to find the cause.', function () { go('pulse'); later(400, function () { pulseTab('look'); }); }, '#pulse-root .pu-card', '1. Detect', 'Essential'],
       ['The people affected', 'Cardinal links the finding to the 1,203 applicants it touched, grouped by ZIP code, with private IDs the bank can export for re-review.', function () { go('eden'); later(500, function () { edTab('eden', 0); }); }, '#edo-sec-cohort', '2. Identify', 'Essential'],
       ['One applicant', 'Each applicant’s record shows the decision, the model that made it, and where the re-review stands. Maria Gonzalez is one of the 1,203.', function () { fin(); try { custOpen(0); } catch (e) {} }, function () { var p = document.getElementById('cust-prof'); return block(p, /^Case FIN-\d+: where this/i, 120) || (p && p.firstElementChild); }, '2. Identify', 'Essential'],
@@ -60522,6 +60528,7 @@ setInterval(function () {
       ['An internal Trust Score', 'Supporting: an internal Trust Score shows the math and why certification would be held while FIN-1203 is open. A formal certification program is long-term.', function () { tsPop(); }, '#ts-pop > div', 'Supporting', 'Supporting'],
       ['The rules and the deadline', 'Supporting: the finance rule library and calendar show which rules apply to Credit Scoring v3.4 and the fair lending exam this case must be ready for.', function () { go('compliance'); }, '#comp-overview-certs', 'Supporting', 'Supporting'],
       ['If nothing is fixed', 'Supporting, shown with sample data: Halo projects the fairness ratio forward. Left alone, it crosses the 0.70 floor in about seven weeks.', function () { go('halo'); }, '#halo-predictive-section', 'Supporting', 'Supporting'],
+      ['Fraud forecasts, and a pilot', 'Supporting, shown with sample data: Obsidian forecasts where the fraud model\u2019s error rates are heading, with a likely range and a track record. Early warning of fraud rings is a pilot with one design partner until it passes the criteria shown here.', function () { go('obsidian'); later(500, function () { edTab('obsidian', 2); }); }, '#obs-sec-predict', 'Supporting', 'Supporting'],
       ['The denial letters', 'Supporting, shown with sample data: Codex checks the adverse action notice used for v3.4’s denials, so the reasons applicants are told match the reasons the model used.', function () { go('marketing'); later(800, function () { try { cardinalDocOpen('find2'); } catch (e) {} }); }, '#doc-viewer > div', 'Supporting', 'Supporting'],
       ['That is the first release', 'Detect, identify, investigate, test, and preserve, for one lender’s credit models. Everything else in the full vision stays in the prototype, labeled as long-term.', function () { go('dashboard'); }, '#dash-u-hero', 'The first release', '']
     ] }
@@ -61048,6 +61055,12 @@ setInterval(function () {
   // Halo's main prediction section (p74_halo2). This file supplies the data and the chart; its old section is retired.
   window.cardinalHaloRows = function (o) { return P[o || org()] || gen(o || org()); };
   window.cardinalHaloChart = chart;
+  // The likely range at 60 days, the same shaded band the chart draws.
+  window.cardinalHaloRange = function (r) {
+    var now = r[2], f30 = r[3], f60 = r[4], up = r[6], hist = []; for (var i = 0; i < 12; i++) { var t = i / 11; hist.push(now + (up ? 1 : -1) * (now - f30) * (1 - t) * 0.9 + Math.sin(i * 1.7) * Math.abs(now - f30) * 0.12); }
+    var all = hist.concat([now, f30, f60, r[5]]), span = (Math.max.apply(null, all) - Math.min.apply(null, all)) || 1, d = span * 0.28;
+    return [f60 - d, f60 + d];
+  };
   window.cardinalHaloMd = md;
   setInterval(function () { var b = document.getElementById('halo-pred'); if (b) b.remove(); }, 1000);
   var css = document.createElement('style');
@@ -61122,31 +61135,43 @@ setInterval(function () {
       (c.sub ? '<div style="font-size:10px;color:var(--muted);margin-bottom:8px;font-family:monospace;">' + esc(c.sub) + '</div>' : '') +
       '<div style="font-size:11px;line-height:1.55;margin-bottom:10px;" class="hc-body">' + esc(c.body) + '</div>' +
       (c.trend ? '<div style="' + BOX + '"><span style="font-size:9px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">' + esc(c.trend[0]) + '</span>' + c.trend[1] + '<span style="font-size:10px;font-weight:700;color:' + S.acc + ';">' + esc(c.trend[2]) + '</span></div>' : '') +
-      (c.conf ? '<div style="' + BOX + 'margin-bottom:10px;"><span style="font-size:10px;color:var(--muted);">Confidence</span><div style="flex:1;height:4px;background:rgba(26,24,21,.08);border-radius:2px;overflow:hidden;"><div style="width:' + c.conf[1] + '%;height:100%;background:' + S.acc + ';"></div></div><span style="font-size:11px;font-weight:700;color:' + S.acc + ';">' + esc(c.conf[0]) + '</span></div>' : '') +
+      (c.range ? '<div style="' + BOX + 'margin-bottom:10px;flex-direction:column;align-items:stretch;gap:3px"><div style="display:flex;justify-content:space-between;gap:8px;font-size:10.5px"><span style="color:var(--muted)">Likely range in 60 days</span><b style="color:' + S.acc + '">' + esc(c.range) + '</b></div><div style="display:flex;justify-content:space-between;gap:8px;font-size:10.5px"><span style="color:var(--muted)">Track record</span><b style="font-weight:600">' + esc(c.track) + '</b></div></div>' : '') +
       (c.cost ? '<div style="font-size:10px;color:var(--muted);margin-bottom:6px;">' + esc(c.cost[0]) + ': <span style="color:' + S.acc + ';font-weight:700;">' + esc(c.cost[1]) + '</span></div>' : '') +
       (c.list ? '<div class="hc-list">' + c.list.map(function (x) { return '<div><b style="color:' + S.acc + '">' + esc(x[0]) + '</b><span>' + esc(x[1]) + '</span></div>'; }).join('') + '</div>' : '') +
       (c.impact ? '<div style="font-size:10px;color:var(--muted2);line-height:1.5;margin-bottom:10px;background:rgba(26,24,21,0.045);padding:6px 8px;border-radius:5px;border-left:2px solid ' + S.acc + ';">' + esc(c.impact) + '</div>' : '') +
-      '<div style="display:flex;gap:6px;">' + (c.go ? '<button type="button" class="hc-go" onclick="' + esc(c.go[1]) + '" style="flex:1;font:inherit;font-weight:600;border:none;border-radius:8px;padding:8px 10px;cursor:pointer;background:#1a1815;color:#fff;">' + esc(c.go[0]) + ' →</button>' : '') + (c.det ? '<button type="button" class="hc-det" onclick="' + esc(c.det) + '" style="font:inherit;font-weight:600;border:1px solid rgba(26,24,21,.25);border-radius:8px;padding:8px 14px;cursor:pointer;background:#fff;color:#1a1815;">Details</button>' : '') + '</div></div>';
+      '<div style="display:flex;gap:6px;">' + (c.go ? '<button type="button" class="hc-go" onclick="' + esc(c.go[1]) + '" style="flex:1;font:inherit;font-size:11.5px;font-weight:600;border:none;border-radius:7px;padding:6px 10px;cursor:pointer;background:#1a1815;color:#fff;">' + esc(c.go[0]) + ' →</button>' : '') + (c.det ? '<button type="button" class="hc-det" onclick="' + esc(c.det) + '" style="font:inherit;font-size:11.5px;font-weight:600;border:1px solid rgba(124,58,237,.45);border-radius:7px;padding:6px 12px;cursor:pointer;background:#fff;color:#1a1815;">Details</button>' : '') + '</div></div>';
   }
   function spark(pts, up) {
     var lo = Math.min.apply(null, pts), hi = Math.max.apply(null, pts), sp = (hi - lo) || 1;
     return '<svg viewBox="0 0 100 22" style="flex:1;height:18px;"><polyline points="' + pts.map(function (v, i) { return (i * 100 / (pts.length - 1)).toFixed(1) + ',' + (2 + 18 * (1 - (v - lo) / sp)).toFixed(1); }).join(' ') + '" fill="none" stroke="' + (up ? '#dc2626' : '#dc2626') + '" stroke-width="1.5" stroke-dasharray="0"/></svg>';
   }
-  var CONF = { 'High': 85, 'Medium-high': 72, 'Medium': 58, 'Low': 40 };
+  // No certainty percentages (Brittany 10/14): each forecast shows its likely range and how past forecasts did.
+  var TRACK = ['5 of 6 past forecasts in range', '4 of 6 past forecasts in range', '3 of 4 past forecasts in range', '5 of 6 past forecasts in range', '6 of 8 past forecasts in range'];
+  function num(v, ref) { var a = Math.abs(ref); return a < 5 && Math.round(ref) !== ref ? v.toFixed(2) : a < 20 ? v.toFixed(1) : Math.round(v) + ''; }
+  function rng(r) { if (!window.cardinalHaloRange) return ''; var R = cardinalHaloRange(r), u = r[12] || ''; return num(R[0], r[2]) + u + ' to ' + num(R[1], r[2]) + u; }
   function forecastCards(o) {
     var R = (window.cardinalHaloRows ? cardinalHaloRows(o) : []) || [], md = window.cardinalHaloMd || function () { return ''; };
     return R.map(function (r, i) {
       var u = r[12] || '', d = r[7], cs = ((r[9][1] || '').match(/FIN-\d+|[A-Z]{2,4}-[A-Z0-9-]+/) || [])[0] || '';
       var sev = d > 0 && d <= 14 ? 'crit' : d > 0 && d <= 45 ? 'warn' : d <= 0 ? 'crit' : 'info';
-      var tag = sev === 'crit' ? 'Imminent' : sev === 'warn' ? 'Approaching' : 'Watch', chip = d > 0 ? d + ' days' : 'Past the line';
+      var tag = sev === 'crit' ? 'Urgent' : sev === 'warn' ? 'Soon' : 'Later', chip = d > 0 ? d + ' days' : 'Past the line';
       // Blackmoor's credit model: the exam in 13 days is what makes it urgent.
-      if (o === 'fin' && /^Credit Scoring v3\.4/.test(r[0])) { sev = 'crit'; tag = 'Imminent'; chip = '13 days to the exam'; }
+      if (o === 'fin' && /^Credit Scoring v3\.4/.test(r[0])) { sev = 'crit'; tag = 'Urgent'; chip = '13 days to the exam'; }
       var verb = r[6] ? 'falls under' : 'rises over';
       return { key: 'f' + i, sev: sev, tag: tag, chip: chip, title: r[0] + ': ' + r[1].toLowerCase() + ' ' + verb + ' ' + r[5] + u, sub: 'Forecast' + (cs ? ' · ' + cs : ''), body: r[8],
         trend: [r[1], spark([r[2] * (r[6] ? 1.03 : 0.97), r[2] * (r[6] ? 1.02 : 0.98), r[2], r[3], r[4]], !r[6]), r[2] + u + ' → ' + r[4] + u],
-        conf: [r[11], CONF[r[11]] || 60], cost: ['Crosses the line', d > 0 ? md(d) + ' (in ' + d + ' days)' : 'already past it'], impact: 'Where it went: ' + r[9][0],
+        range: rng(r), track: TRACK[i % TRACK.length], cost: ['Crosses the line', d > 0 ? md(d) + ' (in ' + d + ' days)' : 'already past it'], impact: 'Where it went: ' + r[9][0],
         go: [r[9][2] || 'View', r[9][1]], det: 'haloCardDetail(' + i + ')' };
-    });
+    }).concat(ringCard(o));
+  }
+  // A fraud forecast from Obsidian, so Halo's consequences cover fraud, not only fairness.
+  function ringCard(o) {
+    var d = window.cardinalRing && cardinalRing(o); if (!d) return [];
+    var r = d.ring, none = d.options[0];
+    return [{ key: 'ring', sev: 'crit', tag: 'Urgent', chip: 'Growing weekly', title: 'Ring ' + r.id + ': fraud losses of ' + none.loss + ' in 60 days', sub: 'Forecast from Obsidian \u00b7 ' + r.id, body: r.n + ' linked ' + d.unit + ' so far, about ' + r.f30 + ' in 30 days at this rate. Most were scored low risk by ' + d.model + '. A filing clock is running.',
+      trend: ['Linked ' + d.unit, spark(r.weekly.concat([r.f30 * 0.6, r.f30]), true), r.n + ' \u2192 ' + r.f30],
+      range: r.lo + ' to ' + r.hi + ' in 30 days', track: 'No live record yet (pilot)', cost: null, impact: 'Where it went: Obsidian, Prediction tab (pilot, not validated)',
+      go: ['See the options', "hcIvTab(1);document.getElementById('hc-interv').scrollIntoView({behavior:'smooth',block:'start'})"], det: "cardinalJump(&quot;showScreen('obsidian')&quot;,'#obs-sec-predict')" }];
   }
   window.haloCardDetail = function (i) {
     var r = (window.cardinalHaloRows ? cardinalHaloRows(org()) : [])[i]; if (!r) return;
@@ -61156,7 +61181,7 @@ setInterval(function () {
     m.innerHTML = '<div style="background:#fff;border-radius:16px;width:min(620px,100%);max-height:90vh;overflow:auto;padding:20px 22px;position:relative;font-size:12.5px;color:#1a1815;box-shadow:0 30px 80px rgba(0,0,0,.35)"><button type="button" aria-label="Close" onclick="document.getElementById(\'hc-modal\').remove()" style="position:absolute;top:12px;right:14px;width:28px;height:28px;border-radius:50%;border:none;background:#f1f5f9;color:#475569;font-size:17px;cursor:pointer">×</button>' +
       '<div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.4px">Forecast · ' + esc(r[1]) + '</div><div style="font-size:18px;font-weight:800;margin:2px 0 10px">' + esc(r[0]) + '</div>' +
       (window.cardinalHaloChart ? cardinalHaloChart(r) : '') + '<div style="font-size:11px;color:#64748b;margin:4px 0 8px">Solid line: what happened. Dashed line: where it is headed. Shaded: the likely range. Sample data.</div>' +
-      kv('Today', r[2] + (r[12] || '')) + kv('In 30 and 60 days', r[3] + (r[12] || '') + ' and ' + r[4] + (r[12] || '')) + kv('If nothing is fixed', esc(r[8])) + kv('Where it went', esc(r[9][0])) + kv('How it is measured', esc(r[10])) + kv('Confidence', esc(r[11])) +
+      kv('Today', r[2] + (r[12] || '')) + kv('In 30 and 60 days', r[3] + (r[12] || '') + ' and ' + r[4] + (r[12] || '')) + kv('If nothing is fixed', esc(r[8])) + kv('Where it went', esc(r[9][0])) + kv('Likely range in 60 days', rng(r)) + kv('Track record', TRACK[i % TRACK.length] + ' (sample)') + kv('Basis', esc(r[10]) + '. The trend of the last 12 months, projected forward.') + kv('Assumes', 'No fix ships in the window, data keeps arriving on schedule, and who applies does not change much') + kv('Would change it', 'A fix going live, a policy or threshold change, or a shift in volume') +
       '<div style="display:flex;gap:8px;margin-top:12px"><button type="button" onclick="document.getElementById(\'hc-modal\').remove();' + esc(r[9][1]) + '" style="font:inherit;font-weight:600;border:none;border-radius:8px;padding:8px 14px;cursor:pointer;background:#1a1815;color:#fff">' + esc(r[9][2] || 'View') + ' →</button><button type="button" onclick="cardinalRemindAsk(' + esc(JSON.stringify('Check the forecast for ' + r[0] + ' in Halo')) + ',' + esc(JSON.stringify("showScreen('halo')")) + ')" style="font:inherit;font-weight:600;border:none;border-radius:8px;padding:8px 14px;cursor:pointer;background:#1a1815;color:#fff">Remind me</button></div></div>';
     m.addEventListener('click', function (e) { if (e.target === m) m.remove(); });
     document.body.appendChild(m);
@@ -61197,13 +61222,39 @@ setInterval(function () {
     return { q: P, labs: [q('Q2 2026'), q('Q3 2026'), q('Q4 2026')], fixed: '$' + Math.round(t * 0.1) + 'M to $' + Math.round(t * 0.2) + 'M', cost: cost ? cost.trim() : '' };
   }
   function header(title, sub) { return '<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.8"><circle cx="12" cy="12" r="9" opacity=".4"></circle><path d="M12 7v5l3 2" stroke-linecap="round"></path></svg><div><div style="font-size:15px;font-weight:700;color:var(--chrome2)">' + title + '</div><div style="font-size:11px;color:var(--muted);margin-top:2px">' + sub + '</div></div></div>'; }
+  var HSUB = 'If no one acts, where each risk is headed in the next 60 days. Urgent: under 2 weeks. Soon: under 7 weeks. Later: beyond that. Details shows the chart, the basis, and the track record.';
+  // ---- What it costs, and your options (replaces the exposure boxes and the penalties bar) ----
+  var IV = window.__hcIv = window.__hcIv || { t: 0 };
+  window.hcIvTab = function (i) { IV.t = i; var e = document.getElementById('hc-interv'); if (e) e.__k = ''; };
+  function caseOptions(o, X) {
+    var x = X[0], PN = pen(o) || {}, cc = costCard(), T = [];
+    if (cc) { var C = lines(cc); for (var i = 0; i < C.length; i++) { if (/^(\d+\s+(WEEKS?|DAYS?|MONTHS?)|Q[1-4]\s+\d{4})$/i.test(C[i]) && /^\+?\$/.test(C[i + 1] || '')) T.push(C[i].charAt(0) + C[i].slice(1).toLowerCase() + ': ' + C[i + 1]); } }
+    var tot = PN.q ? '$' + PN.q[PN.q.length - 1] + 'M by ' + PN.labs[PN.labs.length - 1] : ((x.title.match(/: (\$[\d.]+M)/) || [])[1] || 'Keeps growing');
+    var row = function (cls, name, verdict, exp, people, fair, time, cost) { return '<tr class="' + cls + '"><td><b>' + name + '</b><div class="ob4-v">' + verdict + '</div></td><td>' + exp + '</td><td>' + people + '</td><td>' + fair + '</td><td>' + time + '</td><td>' + cost + '</td></tr>'; };
+    return '<table class="ob4-tb ob4-opt"><tr><th>Option</th><th>Exposure</th><th>People affected</th><th>Fairness check (Eden)</th><th>Time</th><th>Cost</th></tr>' +
+      row('bad', 'Do nothing', esc(T.length ? T.join(' \u2192 ') : 'Exposure keeps growing'), tot, 'More people decided by the same model each month', 'Stays under the line', '\u2013', '$0') +
+      row('good', 'a. Ship the tested fix', 'Recommended. Tested in Genesis; named sign-offs in Atonement', PN.fixed || 'Most of it removed', 'People already affected are re-reviewed', o === 'fin' ? 'Passes: 0.86 in testing' : 'Passes in testing', '2 to 3 weeks', esc(PN.cost || 'Low')) +
+      row('', 'b. Pause the model; people decide by hand', 'Stops new harm now, while the fix is finished', 'Stops growing', 'Slower decisions for everyone', 'Depends on reviewer training', '2 days', 'High while it lasts') +
+      '</table>';
+  }
+  function interv(o, X) {
+    var d = window.cardinalRing && cardinalRing(o), x = X[0], tabs = [];
+    var cs = x && (x.title.match(/^Case (\S+):/) || [])[1];
+    if (x) tabs.push(['Case ' + cs + ' (fairness, from Eden)', caseOptions(o, X), ['The trend of the last 12 months continues if nothing changes.', 'Penalty estimates use comparable enforcement actions and the number of people affected; they are not legal advice.', 'The fix performs in production as it did in Genesis testing on past ' + (d ? d.unit : 'decisions') + '.', 'Track record: 7 of 9 past quarterly exposure forecasts landed inside the range (sample). See Has Halo been right? below.']]);
+    if (d) tabs.push(['Ring ' + d.ring.id + ' (fraud, from Obsidian)', window.cardinalRingOptions(d, true), ['The ring keeps growing at its recent weekly rate (' + d.ring.weekly.join(', ') + ' linked ' + d.unit + ').', 'Average loss per fraudulent ' + d.unit.replace(/s$/, '') + ' is taken from the last 12 months of confirmed losses.', 'Effects of each option come from Genesis tests on 18 months of past ' + d.unit + '. Live results may differ.', 'Ranges are the middle 80% of simulated outcomes. Early warning is a pilot with no live track record yet.']]);
+    if (IV.t >= tabs.length) IV.t = 0;
+    return header('What it costs, and your options', 'For each open risk: what happens if no one acts, and what each option would change. Estimates with ranges, not certainties.') +
+      '<div class="hc-ivt">' + tabs.map(function (t, i) { return '<button type="button" class="' + (i === IV.t ? 'on' : '') + '" onclick="hcIvTab(' + i + ')">' + esc(t[0]) + '</button>'; }).join('') + '</div>' +
+      (tabs[IV.t] ? tabs[IV.t][1] + '<details class="hc-as"><summary>What these numbers assume</summary><ul>' + tabs[IV.t][2].map(function (a) { return '<li>' + esc(a) + '</li>'; }).join('') + '</ul></details>' : '') +
+      '<div class="hc-note">Cardinal shows the options; ' + (o === 'fin' ? 'Blackmoor' : 'your team') + ' decides. Legal risk is flagged for review, not decided here. Sample data.</div>';
+  }
   function run() {
     var scr = document.getElementById('screen-halo'); if (!scr || scr.offsetParent === null) return;
     var o = org(), eve = document.getElementById('halo-eve-sum'), ps = document.getElementById('halo-predictive-section'), grid = document.getElementById('halo-predictions-grid');
     if (!ps || !grid) return;
     // 2. One forecasts section, in the prediction-card style.
     // The order itself (Eve, these forecasts, exposure, losses chart, map, money) is kept by Halo's one order script in index.html.
-    [].forEach.call(ps.querySelectorAll('div'), function (d) { if (!d.children.length && /^Predictive Risk Engine: What's About to Break$/.test(d.textContent.trim())) { d.textContent = 'What happens if nothing is fixed'; var n = d.nextElementSibling; if (n) n.textContent = 'The next 60 to 90 days for each risk, if no one acts. Open Details for the chart, the assumptions, and how it is measured.'; } });
+    [].forEach.call(ps.querySelectorAll('div'), function (d) { if (!d.children.length && /^(Predictive Risk Engine: What's About to Break|What happens if nothing is fixed)$/.test(d.textContent.trim())) { d.textContent = 'What could go wrong next'; var n = d.nextElementSibling; if (n) n.textContent = HSUB; } });
     [].forEach.call(ps.querySelectorAll('div'), function (d) { var t = d.lastChild; if (t && t.nodeType === 3 && /See map above/.test(t.nodeValue)) t.nodeValue = t.nodeValue.replace(/See map above for jurisdiction view/, 'See the map below for each state and country'); });
     var F = forecastCards(o), key = o + F.length;
     var cases = F.map(function (c) { return (c.sub.match(/FIN-\d+|[A-Z]{2,4}-[A-Z0-9-]+$/) || [])[0]; }).filter(Boolean);
@@ -61223,17 +61274,41 @@ setInterval(function () {
     // Hide the sections the new ones replace.
     [document.getElementById('halo-attribution-cards'), document.getElementById('halo-hero2'), costCard(), document.querySelector('#screen-halo .halo-panel-b'), document.querySelector('#screen-halo .halo-panel-c')].forEach(function (e) { if (e && X.length && !e.classList.contains('hc-off')) e.classList.add('hc-off'); });
     var pg = document.querySelector('#screen-halo .halo-panels-grid'); if (pg && !pg.classList.contains('hc-one')) pg.classList.add('hc-one');
+    var iv = document.getElementById('hc-interv');
+    if (!iv) { iv = document.createElement('div'); iv.id = 'hc-interv'; iv.className = 'hc-sec'; }
+    if (iv.parentNode !== ps.parentNode) ps.parentNode.insertBefore(iv, ps.nextSibling);
+    var ik = o + X.length + '|' + IV.t + (costCard() ? 1 : 0); if (iv.__k !== ik && X.length) { iv.__k = ik; iv.innerHTML = interv(o, X); }
+    // Brittany 10/15: no peer stats row, no Eve briefing, no separate exposure boxes or penalties bar, no "View All Predictions".
+    [ex, document.getElementById('hc-proj'), scr.querySelector('.halo-head'), eve].forEach(function (e) { if (e && !e.classList.contains('hc-off')) e.classList.add('hc-off'); });
+    [].forEach.call(grid.querySelectorAll('.halo-prediction-card:not(.hc-own)'), function (c) { if (!c.classList.contains('hc-off')) c.classList.add('hc-off'); });
+    [].forEach.call(ps.querySelectorAll('span,div'), function (e) { if (/^Multi-Objective Optimization$/i.test(e.textContent.trim()) && !e.querySelector('.halo-prediction-card') && !e.classList.contains('hc-off')) e.classList.add('hc-off'); });
+    [].forEach.call(ps.querySelectorAll('button'), function (b) { if (/View All Predictions/i.test(b.textContent)) { var r = b.parentNode; while (r && r.parentNode !== ps && r.parentNode) r = r.parentNode; if (r && r !== grid && !r.contains(grid) && !r.classList.contains('hc-off')) r.classList.add('hc-off'); } });
+    // At a glance: a track record with its count, not a bare accuracy percentage.
+    var hero = document.getElementById('u-halo-hero');
+    if (hero) [].forEach.call(hero.querySelectorAll('.tsv2-conf-row,.tsv2-conf-title,.tsv2-conf-sub'), function (e) {
+      if (e.className === 'tsv2-conf-title' && e.textContent !== 'Forecast track record') e.textContent = 'Forecast track record';
+      else if (e.className === 'tsv2-conf-sub' && /reliable/.test(e.textContent)) e.textContent = 'How past Halo forecasts did (sample data)';
+      else if (/^Prediction Accuracy/.test(e.textContent)) { e.firstElementChild.textContent = 'Past forecasts in range'; e.querySelector('.v').textContent = '10 of 11'; }
+      else if (/^Confidence Band/.test(e.textContent)) e.firstElementChild.textContent = 'Likely range';
+    });
+    // Proposed laws: Finance only, without the list of other industries.
+    var sig = document.getElementById('halo-signals');
+    if (sig) [].forEach.call(sig.querySelectorAll('span,div'), function (e) { if (!e.children.length && /^(A&D|Aerospace|Healthcare|Federal|Finance|Insurance|Government)$/.test(e.textContent.trim()) && !e.classList.contains('hc-off')) e.classList.add('hc-off'); });
+    retitle(sig, /^Emerging Regulatory Signals$/i, 'Proposed laws to watch', 'Bills and guidance that are not final yet, and what they would mean for ' + (o === 'fin' ? 'Blackmoor' : 'you') + '.');
+    retitle(document.getElementById('u-halo-hist'), /^Predicted vs actual losses$/i, 'Has Halo been right?', 'Each month: what Halo predicted, what actually happened, and what fixes prevented. This is the track record behind every forecast above.');
+    retitle(document.getElementById('halo-money'), /^Where the money is at risk$/i, 'Rules and money by place', 'Each rule that applies, where, by when, and what it could cost if nothing is fixed. Pick a place, or click a state on the map.');
     // 4. Projection on the losses chart.
-    var hist = document.getElementById('u-halo-hist'), PN = pen(o);
-    if (hist && PN) {
-      var pj = document.getElementById('hc-proj'), pk = o + PN.q.join(',') + PN.labs.join(',');
-      if (!pj) { pj = document.createElement('div'); pj.id = 'hc-proj'; pj.className = 'hc-proj'; }
-      if (pj.__k !== pk) { pj.__k = pk; pj.innerHTML = '<b>Penalties ahead, if nothing is fixed:</b> ' + PN.q.map(function (v, i) { return '$' + v + 'M by ' + esc(PN.labs[i]); }).join(' \u2192 ') + ' <span class="hc-sep">\u00b7</span> <b>If fixed now:</b> ' + PN.fixed + (PN.cost ? ' (fix cost ' + esc(PN.cost) + ')' : '') + ' <span class="hc-sep">\u00b7</span> Estimates, not certainties.'; }
-      if (pj.parentNode !== hist.parentNode) hist.parentNode.insertBefore(pj, hist.nextSibling);
-    }
     // 5. Money by region under the map, filtered by region or by the state clicked on the map.
     var money = document.getElementById('halo-money');
     if (money) regionFilter(money);
+  }
+  // Rename a heading by its own text (headings may also hold an icon), and set the line under it.
+  function retitle(root, re, t, sub) {
+    if (!root) return;
+    var own = function (e) { return [].filter.call(e.childNodes, function (n) { return n.nodeType === 3; }).map(function (n) { return n.nodeValue; }).join('').trim(); };
+    var h = [].filter.call(root.querySelectorAll('div,h2,h3,span'), function (e) { return re.test(own(e)); })[0]; if (!h) return;
+    var tn = [].filter.call(h.childNodes, function (n) { return n.nodeType === 3 && n.nodeValue.trim(); })[0]; tn.nodeValue = t;
+    var n = h.nextElementSibling || (h.parentNode && h.parentNode.nextElementSibling); if (n && !n.children.length && sub && n.textContent !== sub) n.textContent = sub;
   }
   var REG = window.__hcReg = window.__hcReg || { r: 'All regions' };
   function regionFilter(money) {
@@ -61250,10 +61325,271 @@ setInterval(function () {
   }
   setInterval(function () { try { run(); } catch (e) { if (window.console) console.warn('halo2', e); } }, 600);
   var css = document.createElement('style');
-  css.textContent = '.hc-off{display:none!important}#screen-halo .halo-panels-grid.hc-one{grid-template-columns:1fr!important}.hc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:12px}' +
+  css.textContent = '.hc-off{display:none!important}[onclick^="edoPeerOpenHalo"]{display:none!important}.hc-sec{background:#fff;border:1px solid rgba(26,24,21,.08);border-radius:14px;padding:16px 18px;margin:0 0 18px;font-size:12.5px;color:#1a1815}.hc-ivt{display:flex;gap:6px;flex-wrap:wrap;background:#ebe4d6;border-radius:12px;padding:5px;margin:0 0 12px}.hc-ivt button{font:inherit;font-size:12px;font-weight:600;border:none;background:transparent;border-radius:9px;padding:7px 12px;cursor:pointer;color:#475569}.hc-ivt button.on{background:#fff;color:#1a1815;box-shadow:0 1px 3px rgba(26,24,21,.1)}.hc-as{margin-top:10px;font-size:12px}.hc-as summary{cursor:pointer;font-weight:700}.hc-as ul{margin:6px 0 0 18px;padding:0;color:#334155;line-height:1.6}.hc-note{font-size:11px;color:#64748b;margin-top:8px}#screen-halo .halo-panels-grid.hc-one{grid-template-columns:1fr!important}.hc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:12px}' +
     '.hc-list{margin:0 0 10px;font-size:11px}.hc-list div{display:grid;grid-template-columns:120px 1fr;gap:8px;padding:5px 0;border-top:1px dashed rgba(26,24,21,.1)}.hc-list span{color:#334155}' +
     '.hc-proj{background:#fff;border:1px solid rgba(26,24,21,.08);border-left:3px solid #dc2626;border-radius:10px;padding:10px 14px;margin:-6px 0 16px;font-size:12.5px;color:#334155}.hc-proj b{color:#1a1815}.hc-sep{color:#94a3b8;margin:0 4px}' +
     '.hc-regs{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}.hc-regs button{font:inherit;font-size:11.5px;font-weight:600;border:1px solid rgba(26,24,21,.15);background:#fff;color:#334155;border-radius:999px;padding:4px 11px;cursor:pointer}.hc-regs button.on{background:#1a1815;color:#fff;border-color:#1a1815}';
+  document.head.appendChild(css);
+})();
+</script>
+<script data-p="p75_obsidian4">
+// 10/14 (Brittany approved the Obsidian and Halo direction). Obsidian gets four tabs ahead of the existing ones:
+//   Oversight: how the customer's own fraud model performs (errors by group and over time, good customers blocked,
+//              alert load, drift, calibration) and its blind spots. Pre-seed commitment (Option B).
+//   Detection: what Cardinal finds on its own (rings, linked identities), how it found them, and whether the customer's
+//              model caught them. Full vision; a pilot with one design partner at pre-seed (Option A).
+//   Prediction: fraud-model risk forecast (pre-seed) and early warning of a ring forming (pilot, not validated). Every
+//              forecast shows its basis, its likely range, and its track record. No certainty percentages.
+//   Response: options with expected effect and a fairness check from Eden, tests in Genesis, named approvals in
+//              Atonement, evidence in Echo. Cardinal's signals inform the customer's decisions; they never block anyone.
+// Sample data throughout. The story ring (FIN-R-10453) is the one already shown under Where Fraud Concentrates.
+(function () {
+  function org() { return window.currentOrg || 'fin'; }
+  function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;'); }
+  function q(s) { return esc(s).replace(/'/g, '&#39;'); }
+  var D = {
+    fin: { model: 'Fraud Screening v2.7', unit: 'applications', who: 'applicants', bank: 'Blackmoor', asOf: 'Oct 12', labels: 'Sep 15', lag: '4 to 8 weeks',
+      tiles: [['Good applicants flagged', '6.8%', 'Was 4.9% in June. Line: 6%', 'bad'], ['Confirmed fraud it missed', '18%', 'Scored low risk, later confirmed as fraud', 'bad'], ['Alerts a day vs review capacity', '412 / 350', 'About 60 alerts a day wait overnight', 'warn'], ['Score drift', '0.18', 'Line: 0.20. Calibration: a 0.8 score is fraud 61% of the time, not 80%', 'warn']],
+      fp: [4.6, 4.8, 4.9, 5.4, 6.1, 6.8], fpLine: 6, months: ['Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep'],
+      groups: [['ZIP 10453 and 11212 (mostly Black and Hispanic applicants)', '11.9%', '9%', '2.3x'], ['Applicants 62 and older', '8.4%', '15%', '1.6x'], ['Thin credit file', '10.2%', '24%', '2.0x'], ['Applied in Spanish', '9.6%', '17%', '1.9x'], ['Everyone else', '5.1%', '21%', '1.0x']],
+      blind: [['Thin-file applicants on new devices', 'Missed fraud', '31% of confirmed fraud here was scored low risk, against 18% overall.', 'FIN-2207'], ['ZIP 10453 and 11212', 'Good applicants over-flagged', 'Good applicants here are flagged 2.3 times as often as elsewhere. The same ZIP codes Eden found in FIN-1203.', 'FIN-1203'], ['Overnight submissions (11 PM to 3 AM)', 'Missed fraud', '27% of confirmed overnight fraud was scored low risk. Review staffing is lowest then.', 'FIN-3045']],
+      ring: { id: 'FIN-R-10453', name: 'Morris Heights synthetic identity ring', n: 23, risk: '$890K', seen: 'Sep 22', caught: '19 of 23 scored low risk by Fraud Screening v2.7',
+        links: [['Shared device fingerprints', '9 applications on 2 devices'], ['Shared phone numbers', '14 applications on 3 numbers'], ['Recycled identity fragments', '6 Social Security numbers tied to other names'], ['Mail-drop addresses', '4 addresses used 11 times']],
+        weekly: [3, 5, 8, 12, 17, 23], f30: 60, lo: 45, hi: 80, next: 'New applications from the Brownsville ZIP band (11212), linked by the same device mesh' },
+      backtest: [['Alerted before the first confirmed loss', '11 of 14 past rings', 'At least 10 of 14'], ['Median days of warning', '9 days', 'At least 7 days'], ['Alerts that were real fraud', '4 in 10', 'At least 3 in 10'], ['Alerts a week vs team capacity', '6 a week', 'Under 10 a week'], ['Who gets flagged, by group', 'Within the 0.80 line', 'Within the 0.80 line']],
+      options: [
+        { k: 'none', name: 'Do nothing', stop: '0%', loss: '$1.6M to $2.6M', people: 'None directly', fair: 'No change', time: '', cost: '$0', verdict: 'Losses grow with the ring' },
+        { k: 'a', name: 'Block all applications from ZIP 10453 and 11212', stop: 'About 85%', loss: '$0.2M to $0.5M', people: 'About 3,100 legitimate applicants a quarter declined', fair: 'Fails the screening line: approval ratio for Black and Hispanic applicants would fall from 0.74 to about 0.52', time: '1 day', cost: 'Low', verdict: 'Not recommended. Serious fair lending risk; legal review would be needed before anything like this', bad: 1 },
+        { k: 'b', name: 'Step-up verification for applications on linked devices or phones', stop: '70% to 80%', loss: '$0.4M to $0.8M', people: 'About 1,500 extra document checks a quarter; no automatic declines', fair: 'Passes: flagged share by group stays within the 0.80 line', time: '1 week', cost: 'About $30K', verdict: 'Recommended now', good: 1 },
+        { k: 'c', name: 'Retrain Fraud Screening v2.7 with the ring’s link features', stop: 'About 90% once live', loss: '$0.1M to $0.4M after week 6', people: 'Fewer good applicants flagged than today (to be confirmed in testing)', fair: 'To be tested in Genesis before it ships', time: '6 weeks', cost: 'About $60K', verdict: 'Recommended next' }],
+      tests: [['Option b on 18 months of past applications', 'Would have stopped 21 of 23 ring applications; flagged share by group within the line', 'Passed'], ['Option c, retrained model v2.8', 'Recall on past rings up from 71% to 88%; fairness check running', 'In progress'], ['Option a, ZIP block', 'Approval ratio for Black and Hispanic applicants 0.52, under the 0.80 line', 'Rejected']],
+      signs: [['Fraud operations', 'Dana Whitfield', 'Approved'], ['Compliance', 'Priya Raman', 'Approved'], ['Legal', 'Marcus Lee', 'Waiting']],
+      sar: 'SAR decision due Nov 13, 30 days after detection', genesis: "showScreen('genesis')" },
+    ad: { model: 'Fraud Detection v3.2', unit: 'parts records', who: 'suppliers', bank: 'the program', asOf: 'Oct 12', labels: 'Sep 20', lag: '3 to 6 weeks',
+      tiles: [['Good records flagged', '4.2%', 'Was 3.1% in June. Line: 5%', 'warn'], ['Confirmed fraud it missed', '14%', 'Passed, later found counterfeit', 'bad'], ['Alerts a day vs review capacity', '88 / 120', 'Within capacity', 'ok'], ['Score drift', '0.12', 'Line: 0.20', 'ok']],
+      fp: [3.0, 3.1, 3.1, 3.5, 3.9, 4.2], fpLine: 5, months: ['Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep'],
+      groups: [['Small suppliers (under 50 staff)', '7.9%', '11%', '2.1x'], ['Southeast depots', '6.1%', '19%', '1.6x'], ['Everyone else', '3.7%', '13%', '1.0x']],
+      blind: [['Recycled serial numbers', 'Missed fraud', '6 counterfeit parts reused valid serial numbers and passed.', 'AD-2918'], ['Small suppliers', 'Good records over-flagged', 'Legitimate small suppliers are flagged twice as often.', 'AD-2902']],
+      ring: { id: 'FR-001', name: 'Jacksonville counterfeit parts', n: 7, risk: '$340K', seen: 'Sep 28', caught: '5 of 7 passed Fraud Detection v3.2',
+        links: [['Shared release-certificate templates', '5 records'], ['Recycled serial numbers', '6 parts'], ['Shared shipping address', '3 suppliers']], weekly: [1, 2, 3, 4, 6, 7], f30: 14, lo: 10, hi: 20, next: 'Parts routed through the Bragg maintenance depot' },
+      backtest: [['Alerted before the first confirmed loss', '5 of 7 past rings', 'At least 5 of 7'], ['Median days of warning', '8 days', 'At least 7 days'], ['Alerts that were real fraud', '3 in 10', 'At least 3 in 10']],
+      options: [
+        { k: 'none', name: 'Do nothing', stop: '0%', loss: '$0.5M to $0.9M', people: 'None directly', fair: 'No change', time: '', cost: '$0', verdict: 'Counterfeit parts keep entering the fleet' },
+        { k: 'a', name: 'Hold every part from small Southeast suppliers', stop: 'About 90%', loss: 'Under $0.1M', people: 'About 140 legitimate suppliers held', fair: 'Fails: small suppliers held at many times the rate of others', time: '1 day', cost: 'Low', verdict: 'Not recommended. Supplier fairness and contract review needed', bad: 1 },
+        { k: 'b', name: 'Extra certificate check for records sharing templates or serials', stop: '70% to 85%', loss: '$0.1M to $0.2M', people: 'About 60 extra checks a month', fair: 'Passes', time: '1 week', cost: 'About $20K', verdict: 'Recommended now', good: 1 },
+        { k: 'c', name: 'Retrain Fraud Detection v3.2 with serial-reuse features', stop: 'About 90% once live', loss: 'Under $0.1M after week 5', people: 'To be confirmed in testing', fair: 'To be tested in Genesis', time: '5 weeks', cost: 'About $45K', verdict: 'Recommended next' }],
+      tests: [['Option b on past records', 'Would have stopped 6 of 7', 'Passed'], ['Option c, retrained v3.3', 'Testing', 'In progress'], ['Option a, supplier hold', 'Holds 140 legitimate suppliers', 'Rejected']],
+      signs: [['Supply chain', 'Program supply lead', 'Approved'], ['Compliance', 'Compliance lead', 'Waiting']], sar: 'Report to the contracting officer within 60 days', genesis: "showScreen('genesis')" },
+    health: { model: 'Claims Adjudication v1.9', unit: 'claims', who: 'patients and providers', bank: 'the health system', asOf: 'Oct 12', labels: 'Sep 10', lag: '6 to 10 weeks',
+      tiles: [['Good claims flagged', '5.9%', 'Was 4.4% in June. Line: 6%', 'warn'], ['Confirmed fraud it missed', '22%', 'Paid, later found fraudulent', 'bad'], ['Alerts a day vs review capacity', '640 / 500', 'About 140 a day wait', 'bad'], ['Score drift', '0.21', 'Over the 0.20 line', 'bad']],
+      fp: [4.2, 4.3, 4.4, 4.9, 5.4, 5.9], fpLine: 6, months: ['Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep'],
+      groups: [['Patients 75 and older', '9.8%', '18%', '2.0x'], ['Rural clinics', '8.1%', '25%', '1.6x'], ['Everyone else', '4.9%', '22%', '1.0x']],
+      blind: [['Specialty upcoding', 'Missed fraud', '31 upcoded claims from one network passed.', 'HS-2847'], ['Patients 75 and older', 'Good claims over-flagged', 'Legitimate claims for older patients are held twice as often.', 'HS-1204']],
+      ring: { id: 'HS-FR-SPEC', name: 'Specialty upcoding: Network-12', n: 14, risk: '$520K', seen: 'Sep 19', caught: '11 of 14 claims paid by Claims Adjudication v1.9',
+        links: [['Shared billing identifiers', '9 claims'], ['Same coding pattern', '14 claims'], ['Shared referral chain', '6 providers']], weekly: [2, 4, 6, 9, 11, 14], f30: 32, lo: 24, hi: 44, next: 'Pharmacy line items from the same network' },
+      backtest: [['Alerted before the first confirmed loss', '7 of 10 past rings', 'At least 7 of 10'], ['Median days of warning', '11 days', 'At least 7 days'], ['Alerts that were real fraud', '3 in 10', 'At least 3 in 10']],
+      options: [
+        { k: 'none', name: 'Do nothing', stop: '0%', loss: '$1.1M to $1.9M', people: 'None directly', fair: 'No change', time: '', cost: '$0', verdict: 'Losses grow with the network' },
+        { k: 'a', name: 'Deny all specialty claims from Network-12 providers', stop: 'About 95%', loss: 'Under $0.1M', people: 'About 2,400 legitimate patient claims denied a month, mostly patients 75 and older', fair: 'Fails: older patients lose access to care', time: '1 day', cost: 'Low', verdict: 'Not recommended. Patient access and legal review needed', bad: 1 },
+        { k: 'b', name: 'Pre-payment review for claims matching the coding pattern', stop: '70% to 80%', loss: '$0.3M to $0.5M', people: 'About 300 extra reviews a month; care not denied', fair: 'Passes', time: '1 week', cost: 'About $35K', verdict: 'Recommended now', good: 1 },
+        { k: 'c', name: 'Retrain Claims Adjudication v1.9 with network features', stop: 'About 85% once live', loss: '$0.1M to $0.3M after week 6', people: 'To be confirmed in testing', fair: 'To be tested in Genesis', time: '6 weeks', cost: 'About $60K', verdict: 'Recommended next' }],
+      tests: [['Option b on past claims', 'Would have caught 12 of 14', 'Passed'], ['Option c, retrained v2.0', 'Testing', 'In progress'], ['Option a, network denial', 'Denies 2,400 legitimate claims a month', 'Rejected']],
+      signs: [['Program integrity', 'Integrity lead', 'Approved'], ['Compliance', 'Compliance lead', 'Approved'], ['Medical director', 'CMO', 'Waiting']], sar: 'Report to the payer integrity unit within 60 days', genesis: "showScreen('genesis')" },
+    fed: { model: 'IRS Tax Fraud Detection v3.1', unit: 'returns', who: 'filers', bank: 'the agency', asOf: 'Oct 12', labels: 'Sep 1', lag: '8 to 12 weeks',
+      tiles: [['Good returns flagged', '3.6%', 'Was 2.9% in June. Line: 4%', 'warn'], ['Confirmed fraud it missed', '20%', 'Refunds paid, later confirmed fraudulent', 'bad'], ['Alerts a day vs review capacity', '2,900 / 2,500', 'About 400 a day wait', 'warn'], ['Score drift', '0.16', 'Line: 0.20', 'ok']],
+      fp: [2.8, 2.9, 2.9, 3.1, 3.3, 3.6], fpLine: 4, months: ['Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep'],
+      groups: [['Self-employed filers', '6.4%', '16%', '2.0x'], ['Filers over 65', '4.8%', '19%', '1.5x'], ['Everyone else', '3.2%', '21%', '1.0x']],
+      blind: [['Refund redirect to new accounts', 'Missed fraud', '31 returns redirected refunds and passed.', 'FED-PDV-001'], ['Self-employed filers', 'Good returns over-flagged', 'Legitimate self-employed returns are held twice as often.', 'FED-PDV-001']],
+      ring: { id: 'FED-R-12', name: 'Refund redirect: Network-12', n: 14, risk: '$520K', seen: 'Sep 24', caught: '10 of 14 passed IRS Tax Fraud Detection v3.1',
+        links: [['Shared bank routing', '9 returns'], ['Shared preparer ID', '14 returns'], ['Recycled identity fragments', '5 filers']], weekly: [2, 3, 5, 8, 11, 14], f30: 34, lo: 25, hi: 46, next: 'Returns filed through the same preparer network' },
+      backtest: [['Alerted before the first confirmed loss', '6 of 9 past rings', 'At least 6 of 9'], ['Median days of warning', '10 days', 'At least 7 days'], ['Alerts that were real fraud', '4 in 10', 'At least 3 in 10']],
+      options: [
+        { k: 'none', name: 'Do nothing', stop: '0%', loss: '$1.0M to $1.8M', people: 'None directly', fair: 'No change', time: '', cost: '$0', verdict: 'Fraudulent refunds keep going out' },
+        { k: 'a', name: 'Freeze refunds for all self-employed filers in the flagged regions', stop: 'About 90%', loss: 'Under $0.2M', people: 'About 18,000 legitimate refunds delayed', fair: 'Fails: self-employed filers delayed at many times the rate of others', time: '1 day', cost: 'Low', verdict: 'Not recommended. Due-process and legal review needed', bad: 1 },
+        { k: 'b', name: 'Identity verification for returns on shared routing or preparer IDs', stop: '70% to 80%', loss: '$0.3M to $0.5M', people: 'About 900 extra verifications', fair: 'Passes', time: '1 week', cost: 'About $40K', verdict: 'Recommended now', good: 1 },
+        { k: 'c', name: 'Retrain the model with network features', stop: 'About 85% once live', loss: '$0.1M to $0.3M after week 8', people: 'To be confirmed in testing', fair: 'To be tested in Genesis', time: '8 weeks', cost: 'About $90K', verdict: 'Recommended next' }],
+      tests: [['Option b on past returns', 'Would have stopped 12 of 14', 'Passed'], ['Option c, retrained v3.2', 'Testing', 'In progress'], ['Option a, refund freeze', 'Delays 18,000 legitimate refunds', 'Rejected']],
+      signs: [['Program integrity', 'Integrity lead', 'Approved'], ['Privacy and civil liberties', 'Privacy officer', 'Waiting']], sar: 'Referral decision due within 30 days', genesis: "showScreen('genesis')" }
+  };
+  window.cardinalRing = function (o) { return D[o || org()] || D.fin; };
+  // Status pills: what is real in the prototype, what is sample data, what is planned, and what is a pilot.
+  var PILL = { pre: ['Pre-seed', '#15803D', 'rgba(21,128,61,.09)'], full: ['Full vision', '#475569', 'rgba(100,116,139,.10)'], pilot: ['Pilot, not validated', '#a16207', 'rgba(250,204,21,.16)'], sample: ['Sample data', '#A16207', 'rgba(250,204,21,.10)'], works: ['Buttons work in prototype', '#1d4ed8', 'rgba(59,130,246,.08)'], seed: ['Seed, if the pilot validates', '#7c3aed', 'rgba(124,58,237,.07)'] };
+  function pills(L) { return '<span class="ob4-pills">' + L.map(function (k) { var p = PILL[k]; return '<span style="color:' + p[1] + ';background:' + p[2] + ';border-color:' + p[1] + '40">' + p[0] + '</span>'; }).join('') + '</span>'; }
+  function head(t, sub, P) { return '<div class="ob4-h"><div><div class="ob4-t">' + t + '</div><div class="ob4-s">' + sub + '</div></div>' + pills(P) + '</div>'; }
+  // A small history-plus-forecast chart with the likely range shaded.
+  function chart(hist, fc, lo, hi, line, labels, unit) {
+    var W = 520, H = 150, P = 26, all = hist.concat(fc, [lo, hi, line == null ? hist[0] : line]), mn = Math.min.apply(null, all), mx = Math.max.apply(null, all), sp = (mx - mn) || 1; mn -= sp * 0.12; mx += sp * 0.12;
+    var n = hist.length + fc.length, x = function (i) { return P + i * (W - 2 * P) / (n - 1); }, y = function (v) { return 10 + (H - 34) * (1 - (v - mn) / (mx - mn)); };
+    var h = hist.map(function (v, i) { return x(i).toFixed(1) + ',' + y(v).toFixed(1); }).join(' ');
+    var f = [hist[hist.length - 1]].concat(fc).map(function (v, i) { return x(hist.length - 1 + i).toFixed(1) + ',' + y(v).toFixed(1); }).join(' ');
+    var k = fc.length, top = [], bot = []; for (var i = 0; k && i <= k; i++) { var c = i === 0 ? hist[hist.length - 1] : fc[i - 1], w = (i / k); top.push(x(hist.length - 1 + i).toFixed(1) + ',' + y(c + (hi - fc[k - 1]) * w).toFixed(1)); bot.push(x(hist.length - 1 + i).toFixed(1) + ',' + y(c - (fc[k - 1] - lo) * w).toFixed(1)); }
+    return '<svg viewBox="0 0 ' + W + ' ' + H + '" class="ob4-ch">' + (k ? '<polygon points="' + top.concat(bot.reverse()).join(' ') + '" fill="rgba(220,38,38,.10)"/>' : '') +
+      (line != null ? '<line x1="' + P + '" x2="' + (W - P) + '" y1="' + y(line) + '" y2="' + y(line) + '" stroke="#64748b" stroke-dasharray="4 4"/><text x="' + (W - P) + '" y="' + (y(line) - 4) + '" text-anchor="end" font-size="10" fill="#64748b">line ' + line + unit + '</text>' : '') +
+      '<polyline points="' + h + '" fill="none" stroke="#1a1815" stroke-width="2"/>' + (k ? '<polyline points="' + f + '" fill="none" stroke="#dc2626" stroke-width="2" stroke-dasharray="5 4"/>' : '') +
+      labels.map(function (l, i) { return l ? '<text x="' + x(i) + '" y="' + (H - 6) + '" text-anchor="middle" font-size="10" fill="#64748b">' + l + '</text>' : ''; }).join('') + '</svg>';
+  }
+  window.cardinalMiniChart = chart;
+  function kv(L) { return '<div class="ob4-kv">' + L.map(function (r) { return '<div><span>' + r[0] + '</span><b>' + r[1] + '</b></div>'; }).join('') + '</div>'; }
+  function oversight(d) {
+    return head('Oversight: how ' + esc(d.model) + ' is performing', 'Cardinal recomputes these from ' + esc(d.bank) + '’s own decisions and confirmed outcomes, not from the model’s reports. As of ' + d.asOf + '. Confirmed fraud arrives ' + d.lag + ' late, so error rates run through ' + d.labels + '.', ['pre', 'sample']) +
+      '<div class="ob4-tiles">' + d.tiles.map(function (t) { return '<div class="ob4-tile ' + t[3] + '"><div class="k">' + t[0] + '</div><div class="v">' + t[1] + '</div><div class="d">' + t[2] + '</div></div>'; }).join('') + '</div>' +
+      '<div class="ob4-two"><div class="ob4-box"><div class="ob4-bt">Good ' + esc(d.unit) + ' flagged, by month</div>' + chart(d.fp, [], d.fp[d.fp.length - 1], d.fp[d.fp.length - 1], d.fpLine, d.months, '%') + '<div class="ob4-note">Solid line: share of good ' + esc(d.unit) + ' the model flagged. Dashed line: the line ' + esc(d.bank) + ' set.</div></div>' +
+      '<div class="ob4-box"><div class="ob4-bt">By group</div><table class="ob4-tb"><tr><th>Group</th><th>Good ones flagged</th><th>Fraud missed</th><th>vs everyone else</th></tr>' + d.groups.map(function (g) { return '<tr><td>' + esc(g[0]) + '</td><td>' + g[1] + '</td><td>' + g[2] + '</td><td><b>' + g[3] + '</b></td></tr>'; }).join('') + '</table><div class="ob4-note">Groups with fewer than 300 ' + esc(d.unit) + ' are not shown. Group data is shared with Eden.</div></div></div>' +
+      '<div class="ob4-bt" style="margin-top:14px">Blind spots</div><div class="ob4-cards">' + d.blind.map(function (b, i) { return '<div class="ob4-card ' + (/Missed/.test(b[1]) ? 'crit' : 'warn') + '" data-ob4b="' + i + '"><div class="ob4-tag">' + esc(b[1]) + '</div><div class="ob4-ct">' + esc(b[0]) + '</div><div class="ob4-cb">' + esc(b[2]) + '</div><div class="ob4-resp"></div><div class="ob4-btns"><button type="button" onclick="ob4Resp(this,\'Confirmed with the fraud team\')">Confirm</button><button type="button" class="ghost" onclick="ob4Dismiss(this)">Dismiss with a reason</button>' + (b[3] ? '<button type="button" class="ghost" onclick="cardinalOpenCase(\'' + b[3] + '\')">Open case ' + b[3] + '</button>' : '') + '</div></div>'; }).join('') + '</div>';
+  }
+  function detection(d) {
+    var r = d.ring;
+    return head('Detection: what Cardinal found on its own', 'Independent signals from linking ' + esc(d.unit) + ' by shared devices, contacts, and identity fragments. They inform ' + esc(d.bank) + '’s fraud team; Cardinal does not block anyone.', ['full', 'pilot', 'sample']) +
+      '<div class="ob4-ring"><div class="ob4-rl"><div class="ob4-tag crit">Ring ' + esc(r.id) + '</div><div class="ob4-ct" style="font-size:16px">' + esc(r.name) + '</div><div class="ob4-cb">' + r.n + ' linked ' + esc(d.unit) + ' since ' + r.seen + ' · ' + r.risk + ' at risk</div>' +
+      '<div class="ob4-bt" style="margin-top:10px">How Cardinal found it</div>' + kv(r.links.map(function (l) { return [esc(l[0]), esc(l[1])]; })) +
+      '<div class="ob4-bt" style="margin-top:10px">Signal strength</div><div class="ob4-cb">Strong: ' + r.links.length + ' independent kinds of links point to the same group. Shown as a level, not a percentage, until the pilot has a track record.</div></div>' +
+      '<div class="ob4-rr"><div class="ob4-blind"><div class="k">Did your model catch it?</div><div class="v">' + esc(r.caught) + '</div><div class="d">A blind spot: these looked normal one at a time and only stand out when linked.</div></div>' +
+      '<div class="ob4-resp"></div><div class="ob4-btns"><button type="button" onclick="ob4Links()">See the links</button><button type="button" class="ghost" onclick="ob4Resp(this,\'Sent to the fraud team to review\')">Send to fraud team</button><button type="button" class="ghost" onclick="ob4Dismiss(this)">Dismiss with a reason</button></div>' +
+      '<div class="ob4-note" style="margin-top:10px">Pre-seed: tested as a pilot with one design partner that shares identity data (hashed). It becomes a Seed commitment only if it meets the pilot criteria on the Prediction tab.</div></div></div>';
+  }
+  function prediction(d) {
+    var r = d.ring, h = d.fp, last = h[h.length - 1], step = (last - h[0]) / (h.length - 1), f = [last + step, last + 2 * step], lo = +(f[1] - step * 1.2).toFixed(1), hi = +(f[1] + step * 1.4).toFixed(1);
+    var cross = last >= d.fpLine ? 'Already over the line since ' + d.months[h.findIndex(function (v) { return v >= d.fpLine; })] : 'Crosses the ' + d.fpLine + '% line in about ' + Math.max(2, Math.round((d.fpLine - last) / step * 4.3)) + ' weeks';
+    return head('Prediction: where fraud risk is heading', 'Two forecasts on one shared forecasting service. Each shows its basis, its likely range, and how past forecasts did.', ['sample']) +
+      '<div class="ob4-two"><div class="ob4-box"><div class="ob4-bh"><div class="ob4-bt">' + esc(d.model) + ': good ' + esc(d.unit) + ' flagged</div>' + pills(['pre']) + '</div>' + chart(h, f, lo, hi, d.fpLine, d.months.concat(['Oct', 'Nov']), '%') +
+      kv([['Next 60 days', f[1].toFixed(1) + '% (likely range ' + lo + '% to ' + hi + '%)'], ['When', cross], ['Basis', '6 months of monthly rates, straight-line trend, labels through ' + d.labels], ['Track record', '5 of 6 past monthly forecasts landed inside the range (sample)'], ['Would change it', 'A threshold change, a retrain, or a shift in who applies']]) + '</div>' +
+      '<div class="ob4-box"><div class="ob4-bh"><div class="ob4-bt">Early warning: ring ' + esc(r.id) + ' is growing</div>' + pills(['pilot']) + '</div>' + chart(r.weekly, [Math.round((r.weekly[5] + r.f30) / 2.3), r.f30], r.lo, r.hi, null, ['6 wk ago', '', '', '', '', 'Now', '', 'In 30 days'], '') +
+      kv([['In 30 days', 'About ' + r.f30 + ' linked ' + esc(d.unit) + ' (likely range ' + r.lo + ' to ' + r.hi + ')'], ['Where it goes next', esc(r.next)], ['Basis', 'Weekly growth of linked ' + esc(d.unit) + ', compared with past rings in ' + esc(d.bank) + '’s history'], ['Track record', 'None live yet. Backtest only, below']]) + '</div></div>' +
+      '<div class="ob4-box" style="margin-top:12px"><div class="ob4-bt">Pilot criteria: what early warning must prove before Cardinal sells it</div><table class="ob4-tb"><tr><th>Measure</th><th>Backtest on past rings (sample)</th><th>Needed to pass</th></tr>' + d.backtest.map(function (b) { return '<tr><td>' + b[0] + '</td><td>' + b[1] + '</td><td>' + b[2] + '</td></tr>'; }).join('') + '</table><div class="ob4-note">Then a silent period (alerts logged, not acted on), then a reviewed period with the partner’s fraud team. Backtests flatter models; live results decide.</div></div>' +
+      '<div class="ob4-btns" style="margin-top:12px"><button type="button" onclick="cardinalJump(&quot;showScreen(\'halo\')&quot;,\'#hc-interv\')">See what it costs and the options in Halo</button></div>';
+  }
+  window.cardinalRingOptions = function (d, withMoney) {
+    return '<table class="ob4-tb ob4-opt"><tr><th>Option</th><th>Ring ' + esc(d.unit) + ' stopped</th>' + (withMoney ? '<th>Fraud losses, next 60 days</th>' : '') + '<th>Legitimate people affected</th><th>Fairness check (Eden)</th><th>Time</th><th>Cost</th></tr>' +
+      d.options.map(function (o) { return '<tr class="' + (o.bad ? 'bad' : o.good ? 'good' : '') + '"><td><b>' + (o.k === 'none' ? '' : o.k + '. ') + esc(o.name) + '</b><div class="ob4-v">' + esc(o.verdict) + '</div></td><td>' + o.stop + '</td>' + (withMoney ? '<td>' + o.loss + '</td>' : '') + '<td>' + esc(o.people) + '</td><td>' + esc(o.fair) + '</td><td>' + (o.time || '–') + '</td><td>' + o.cost + '</td></tr>'; }).join('') + '</table>';
+  };
+  function response(d) {
+    var st = function (s) { return '<span class="ob4-st ' + (/Approved|Passed|Done/.test(s) ? 'ok' : /Rejected/.test(s) ? 'no' : 'wait') + '">' + s + '</span>'; };
+    return head('Response: choose a control, check it, approve it', 'Cardinal recommends; ' + esc(d.bank) + ' decides. A control that changes decisions runs only through rules ' + esc(d.bank) + ' approved, with a named person signing.', ['full', 'sample', 'works']) +
+      '<div class="ob4-box"><div class="ob4-bt">Options for ring ' + esc(d.ring.id) + '</div>' + window.cardinalRingOptions(d, false) + '<div class="ob4-note">The fairness check runs each option through Eden before anyone approves it. Cardinal flags legal risk for review; it does not decide what is lawful.</div></div>' +
+      '<div class="ob4-two" style="margin-top:12px"><div class="ob4-box"><div class="ob4-bt">Tested in Genesis on past ' + esc(d.unit) + '</div>' + d.tests.map(function (t) { return '<div class="ob4-row"><div><b>' + esc(t[0]) + '</b><div class="ob4-v">' + esc(t[1]) + '</div></div>' + st(t[2]) + '</div>'; }).join('') + '<div class="ob4-btns"><button type="button" class="ghost" onclick="' + d.genesis + '">Open Genesis</button></div></div>' +
+      '<div class="ob4-box"><div class="ob4-bt">Approvals in Atonement for option b</div>' + d.signs.map(function (s) { return '<div class="ob4-row"><div><b>' + esc(s[0]) + '</b><div class="ob4-v">' + esc(s[1]) + '</div></div>' + st(s[2]) + '</div>'; }).join('') +
+      '<div class="ob4-row"><div><b>Evidence in Echo</b><div class="ob4-v">The finding, the options, the tests, and why option a was rejected are sealed with a receipt.</div></div>' + st('Done') + '</div>' +
+      '<div class="ob4-row"><div><b>Filing clock</b><div class="ob4-v">' + esc(d.sar) + '</div></div>' + st('Open') + '</div>' +
+      '<div class="ob4-btns"><button type="button" class="ghost" onclick="showScreen(\'atonement\')">Open Atonement</button><button type="button" class="ghost" onclick="showScreen(\'trustledger\')">Verify in Trust Ledger</button></div></div></div>';
+  }
+  window.ob4Resp = function (b, txt) { var c = b.closest('.ob4-card,.ob4-rr'), r = c && c.querySelector('.ob4-resp'); if (r) r.innerHTML = '<b>' + esc(txt) + '</b> · by you, just now · kept in the case record'; if (window.cardinalShowToast) cardinalShowToast(txt); };
+  window.ob4Dismiss = function (b) {
+    var c = b.closest('.ob4-card,.ob4-rr'), r = c && c.querySelector('.ob4-resp'); if (!r) return;
+    r.innerHTML = '<div class="ob4-dis"><select><option>Known and already handled</option><option>Not fraud after review</option><option>Data problem, not a real pattern</option><option>Other</option></select><button type="button" onclick="ob4Resp(this,\'Dismissed: \'+this.previousElementSibling.value)">Save reason</button></div><div class="ob4-note">Dismissals keep the reason. Cardinal does not delete findings.</div>';
+  };
+  window.ob4Links = function () {
+    var d = window.cardinalRing(), r = d.ring, m = document.getElementById('ob4-modal'); if (m) m.remove();
+    var N = r.n, pts = []; for (var i = 0; i < N; i++) { var a = i / N * Math.PI * 2, rad = 120 + (i % 3) * 22; pts.push([300 + Math.cos(a) * rad, 170 + Math.sin(a) * rad * 0.62]); }
+    var hubs = r.links.map(function (l, k) { return [220 + k * (160 / Math.max(1, r.links.length - 1)), 170 + (k % 2 ? 26 : -26), l[0]]; });
+    var lines = pts.map(function (p, i) { var h = hubs[i % hubs.length], h2 = hubs[(i * 7 + 1) % hubs.length]; return '<line x1="' + p[0] + '" y1="' + p[1] + '" x2="' + h[0] + '" y2="' + h[1] + '" stroke="rgba(220,38,38,.35)"/>' + (i % 3 === 0 ? '<line x1="' + p[0] + '" y1="' + p[1] + '" x2="' + h2[0] + '" y2="' + h2[1] + '" stroke="rgba(100,116,139,.3)"/>' : ''); }).join('');
+    m = document.createElement('div'); m.id = 'ob4-modal'; m.style.cssText = 'position:fixed;inset:0;z-index:10005;background:rgba(26,24,21,.45);display:flex;align-items:center;justify-content:center;padding:16px';
+    m.innerHTML = '<div style="background:#fff;border-radius:16px;width:min(680px,100%);max-height:90vh;overflow:auto;padding:20px 22px;position:relative;font-size:12.5px;color:#1a1815"><button type="button" aria-label="Close" onclick="document.getElementById(\'ob4-modal\').remove()" style="position:absolute;top:12px;right:14px;width:28px;height:28px;border-radius:50%;border:none;background:#f1f5f9;font-size:17px;cursor:pointer">×</button>' +
+      '<div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.4px">Ring ' + esc(r.id) + ' · Sample data</div><div style="font-size:18px;font-weight:800;margin:2px 0 8px">How the ' + N + ' ' + esc(d.unit) + ' connect</div>' +
+      '<svg viewBox="0 0 600 340" style="width:100%;background:#faf8f4;border-radius:12px">' + lines + hubs.map(function (h) { return '<circle cx="' + h[0] + '" cy="' + h[1] + '" r="9" fill="#1a1815"/><text x="' + h[0] + '" y="' + (h[1] - 14) + '" text-anchor="middle" font-size="10" fill="#1a1815">' + esc(h[2]) + '</text>'; }).join('') + pts.map(function (p, i) { return '<circle cx="' + p[0] + '" cy="' + p[1] + '" r="6" fill="' + (i < N * 0.82 ? '#fca5a5' : '#dc2626') + '" stroke="#fff"/>'; }).join('') + '</svg>' +
+      '<div style="font-size:11.5px;color:#64748b;margin:8px 0">Black dots: shared links. Light red: scored low risk by ' + esc(d.model) + '. Dark red: flagged by it. Identity values are hashed; Cardinal sees links, not personal details.</div>' + kv(r.links.map(function (l) { return [esc(l[0]), esc(l[1])]; })) + '</div>';
+    m.addEventListener('click', function (e) { if (e.target === m) m.remove(); });
+    document.body.appendChild(m);
+  };
+  var BUILD = { 'obs-sec-oversight': oversight, 'obs-sec-detect': detection, 'obs-sec-predict': prediction, 'obs-sec-response': response };
+  function run() {
+    var scr = document.getElementById('screen-obsidian'); if (!scr || scr.offsetParent === null) return;
+    // New sections go above whichever of Where Fraud Concentrates and Deepfakes comes first.
+    var A = [document.getElementById('obs-sec-fraud-concentrates'), document.getElementById('obs-sec-deepfake')].filter(Boolean); if (!A.length) return;
+    var anchor = A.length > 1 && (A[1].compareDocumentPosition(A[0]) & 2) ? A[1] : A[0];
+    var o = org(), d = D[o] || D.fin;
+    Object.keys(BUILD).forEach(function (id) {
+      var e = document.getElementById(id);
+      if (!e) { e = document.createElement('section'); e.id = id; e.className = 'ob4-sec'; }
+      if (e.parentNode !== anchor.parentNode || (e.compareDocumentPosition(anchor) & 2)) anchor.parentNode.insertBefore(e, anchor);
+      if (e.__k !== o) { e.__k = o; e.innerHTML = BUILD[id](d); }
+    });
+  }
+  setInterval(function () { try { run(); } catch (e) { if (window.console) console.warn('ob4', e); } }, 700);
+  var css = document.createElement('style');
+  css.textContent = '.ob4-sec{background:#fff;border:1px solid rgba(26,24,21,.08);border-radius:14px;padding:16px 18px;margin:0 0 14px;color:#1a1815;font-size:12.5px}' +
+    '.ob4-h{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap;margin-bottom:12px}.ob4-t{font-size:16px;font-weight:800}.ob4-s{font-size:12px;color:#64748b;margin-top:3px;max-width:760px;line-height:1.5}' +
+    '.ob4-pills{display:flex;gap:6px;flex-wrap:wrap}.ob4-pills span{font-size:10.5px;font-weight:700;border:1px solid;border-radius:999px;padding:2px 9px;white-space:nowrap}' +
+    '.ob4-tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-bottom:12px}.ob4-tile{background:#f4efe6;border-radius:12px;padding:12px 14px;border-top:3px solid #64748b}.ob4-tile.bad{border-top-color:#dc2626}.ob4-tile.warn{border-top-color:#ca8a04}.ob4-tile.ok{border-top-color:#16a34a}' +
+    '.ob4-tile .k{font-size:10.5px;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:.4px}.ob4-tile .v{font-size:24px;font-weight:900;margin:3px 0}.ob4-tile .d{font-size:11.5px;color:#475569;line-height:1.4}' +
+    '.ob4-two{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:12px}.ob4-box{border:1px solid rgba(26,24,21,.08);border-radius:12px;padding:12px 14px;background:#fdfcfa}.ob4-bt{font-size:11px;font-weight:800;color:#334155;text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px}.ob4-bh{display:flex;justify-content:space-between;gap:8px;align-items:flex-start;flex-wrap:wrap}' +
+    '.ob4-ch{width:100%;height:auto;display:block}.ob4-note{font-size:11px;color:#64748b;margin-top:6px;line-height:1.45}' +
+    '.ob4-tb{width:100%;border-collapse:collapse;font-size:12px}.ob4-tb th{text-align:left;font-size:10.5px;color:#64748b;font-weight:700;text-transform:uppercase;letter-spacing:.3px;padding:6px 8px;border-bottom:1px solid rgba(26,24,21,.1)}.ob4-tb td{padding:8px;border-bottom:1px solid rgba(26,24,21,.06);vertical-align:top}' +
+    '.ob4-opt tr.bad td{background:rgba(220,38,38,.04)}.ob4-opt tr.good td{background:rgba(21,128,61,.05)}.ob4-opt tr.bad td:first-child{border-left:3px solid #dc2626}.ob4-opt tr.good td:first-child{border-left:3px solid #16a34a}.ob4-v{font-size:11.5px;color:#475569;font-weight:400;margin-top:2px}' +
+    '.ob4-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px}.ob4-card{border:1px solid rgba(26,24,21,.1);border-radius:12px;padding:12px 14px;border-top:3px solid #ca8a04}.ob4-card.crit{border-top-color:#dc2626}' +
+    '.ob4-tag{display:inline-block;font-size:10px;font-weight:800;letter-spacing:.8px;text-transform:uppercase;border-radius:999px;padding:2px 9px;color:#a16207;background:rgba(250,204,21,.16);margin-bottom:6px}.ob4-tag.crit,.ob4-card.crit .ob4-tag{color:#b91c1c;background:rgba(220,38,38,.09)}' +
+    '.ob4-ct{font-size:14px;font-weight:700;margin-bottom:4px}.ob4-cb{font-size:12px;color:#334155;line-height:1.5}' +
+    '.ob4-btns{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}.ob4-btns button,.ob4-dis button{font:inherit;font-size:12px;font-weight:600;border:none;border-radius:8px;padding:7px 12px;cursor:pointer;background:#1a1815;color:#fff}.ob4-btns button.ghost{background:#fff;color:#1a1815;border:1px solid rgba(124,58,237,.45)}' +
+    '.ob4-resp{font-size:11.5px;color:#15803D;margin-top:6px}.ob4-dis{display:flex;gap:6px;margin-top:4px}.ob4-dis select{font:inherit;font-size:12px;border:1px solid rgba(26,24,21,.2);border-radius:8px;padding:5px 8px}' +
+    '.ob4-ring{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:16px}@media(max-width:900px){.ob4-ring{grid-template-columns:1fr}}.ob4-blind{background:#fef2f2;border-radius:12px;padding:12px 14px}.ob4-blind .k{font-size:10.5px;font-weight:800;color:#b91c1c;text-transform:uppercase;letter-spacing:.4px}.ob4-blind .v{font-size:16px;font-weight:800;margin:4px 0}.ob4-blind .d{font-size:12px;color:#475569}' +
+    '.ob4-kv div{display:grid;grid-template-columns:150px 1fr;gap:10px;padding:6px 0;border-top:1px solid rgba(26,24,21,.06);font-size:12px}.ob4-kv span{color:#64748b}.ob4-kv b{font-weight:500}' +
+    '.ob4-row{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;padding:8px 0;border-top:1px solid rgba(26,24,21,.06)}.ob4-st{font-size:10.5px;font-weight:800;border-radius:999px;padding:2px 9px;white-space:nowrap}.ob4-st.ok{color:#15803D;background:rgba(21,128,61,.09)}.ob4-st.no{color:#b91c1c;background:rgba(220,38,38,.09)}.ob4-st.wait{color:#a16207;background:rgba(250,204,21,.16)}';
+  document.head.appendChild(css);
+})();
+</script>
+<script data-p="p76_edenpulse">
+// 10/14 (Brittany approved the Eden and Pulse improvements from the Obsidian and Halo review).
+//   Eden: a standing Vulnerable Groups view (older applicants, limited English, thin credit files, and others), each with
+//         its fairness measure, trend, people affected, and where it is heading, plus the fairness check Eden ran on the
+//         fraud options in Obsidian. Sample data.
+//   Pulse: the measures behind the issues, as charts with the thresholds that open an issue. Sample data.
+(function () {
+  function org() { return window.currentOrg || 'fin'; }
+  function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;'); }
+  var PILL = { pre: ['Pre-seed', '#15803D', 'rgba(21,128,61,.09)'], seed: ['Seed', '#7c3aed', 'rgba(124,58,237,.07)'], sample: ['Sample data', '#A16207', 'rgba(250,204,21,.10)'] };
+  function pills(L) { return '<span class="ob4-pills">' + L.map(function (k) { var p = PILL[k]; return '<span style="color:' + p[1] + ';background:' + p[2] + ';border-color:' + p[1] + '40">' + p[0] + '</span>'; }).join('') + '</span>'; }
+  function head(t, sub, P) { return '<div class="ob4-h"><div><div class="ob4-t">' + t + '</div><div class="ob4-s">' + sub + '</div></div>' + pills(P) + '</div>'; }
+  // [group, approval ratio vs everyone else, trend over 6 months, people this quarter, in 60 days (likely range), status]
+  var V = {
+    fin: { model: 'Credit Scoring v3.4', rows: [['Black and Hispanic applicants in ZIP 10453 and 11212', 0.74, [0.81, 0.80, 0.78, 0.77, 0.75, 0.74], '1,203', '0.66 to 0.72', 'Under the line', 'FIN-1203'], ['Applicants 62 and older', 0.84, [0.88, 0.87, 0.87, 0.86, 0.85, 0.84], '2,410', '0.79 to 0.85', 'Watch', ''], ['Applied in Spanish (limited English)', 0.82, [0.86, 0.85, 0.84, 0.84, 0.83, 0.82], '980', '0.77 to 0.83', 'Watch', ''], ['Thin credit file (under 3 accounts)', 0.79, [0.84, 0.83, 0.82, 0.81, 0.80, 0.79], '3,050', '0.74 to 0.80', 'Under the line', 'FIN-0891'], ['Applicants with a disability accommodation request', 0.91, [0.92, 0.91, 0.92, 0.91, 0.91, 0.91], '140', '0.86 to 0.95', 'OK (small group)', ''], ['Rural applicants', 0.88, [0.89, 0.89, 0.88, 0.88, 0.88, 0.88], '1,760', '0.85 to 0.90', 'OK', '']],
+      check: ['Fraud option a in Obsidian: block ZIP 10453 and 11212', 'Approval ratio for Black and Hispanic applicants would fall from 0.74 to about 0.52, and about 3,100 legitimate applicants a quarter would be declined.', 'Fails the 0.80 screening line. Sent back to Obsidian and Halo as not recommended, with a note for legal review.'] },
+    ad: { model: 'Fleet Health v2.4', rows: [['Personnel over 50', 0.81, [0.85, 0.84, 0.83, 0.82, 0.82, 0.81], '420', '0.76 to 0.82', 'Watch', ''], ['Reservists returning from deployment', 0.78, [0.83, 0.82, 0.81, 0.80, 0.79, 0.78], '310', '0.73 to 0.79', 'Under the line', 'AD-2847'], ['Small suppliers (under 50 staff)', 0.84, [0.86, 0.86, 0.85, 0.85, 0.84, 0.84], '140 suppliers', '0.80 to 0.86', 'Watch', '']],
+      check: ['Fraud option a in Obsidian: hold small Southeast suppliers', 'About 140 legitimate suppliers would be held.', 'Fails the screening line. Sent back as not recommended.'] },
+    health: { model: 'Claims Adjudication v1.9', rows: [['Patients 75 and older', 0.77, [0.83, 0.82, 0.80, 0.79, 0.78, 0.77], '5,900', '0.71 to 0.78', 'Under the line', 'HS-2847'], ['Limited English patients', 0.82, [0.85, 0.84, 0.84, 0.83, 0.83, 0.82], '2,100', '0.78 to 0.84', 'Watch', ''], ['Rural clinics', 0.80, [0.84, 0.83, 0.82, 0.81, 0.81, 0.80], '3,300', '0.75 to 0.81', 'Watch', 'HS-1204'], ['Medicaid patients', 0.86, [0.87, 0.87, 0.86, 0.86, 0.86, 0.86], '8,400', '0.83 to 0.88', 'OK', '']],
+      check: ['Fraud option a in Obsidian: deny Network-12 specialty claims', 'About 2,400 legitimate claims a month denied, mostly patients 75 and older.', 'Fails. Sent back as not recommended.'] },
+    fed: { model: 'IRS Tax Fraud Detection v3.1', rows: [['Filers over 65', 0.83, [0.86, 0.85, 0.85, 0.84, 0.84, 0.83], '41,000', '0.79 to 0.85', 'Watch', ''], ['Self-employed filers', 0.76, [0.82, 0.81, 0.79, 0.78, 0.77, 0.76], '96,000', '0.70 to 0.77', 'Under the line', 'FED-PDV-001'], ['Limited English filers', 0.81, [0.84, 0.83, 0.83, 0.82, 0.82, 0.81], '22,000', '0.77 to 0.83', 'Watch', '']],
+      check: ['Fraud option a in Obsidian: freeze self-employed refunds', 'About 18,000 legitimate refunds delayed.', 'Fails. Sent back as not recommended.'] }
+  };
+  function spark(p) { var lo = Math.min.apply(null, p.concat([0.8])) - 0.02, hi = Math.max.apply(null, p.concat([0.8])) + 0.02, y = function (v) { return (2 + 22 * (1 - (v - lo) / (hi - lo))).toFixed(1); }; return '<svg viewBox="0 0 90 26" style="width:90px;height:26px"><line x1="0" x2="90" y1="' + y(0.8) + '" y2="' + y(0.8) + '" stroke="#94a3b8" stroke-dasharray="3 3"/><polyline points="' + p.map(function (v, i) { return (i * 18) + ',' + y(v); }).join(' ') + '" fill="none" stroke="' + (p[p.length - 1] < 0.8 ? '#dc2626' : '#1a1815') + '" stroke-width="1.8"/></svg>'; }
+  function vuln(o) {
+    var d = V[o] || V.fin;
+    return head('Vulnerable groups, watched all the time', 'People who are easy to overlook in averages. Each row compares their approval rate with everyone else’s on ' + esc(d.model) + '. The dashed line is the 0.80 screening line.', ['seed', 'sample']) +
+      '<table class="ob4-tb"><tr><th>Group</th><th>Ratio now</th><th>Last 6 months</th><th>People this quarter</th><th>In 60 days (likely range)</th><th>Status</th></tr>' +
+      d.rows.map(function (r) { var st = /Under/.test(r[5]) ? 'no' : /Watch/.test(r[5]) ? 'wait' : 'ok'; return '<tr><td><b>' + esc(r[0]) + '</b>' + (r[6] ? '<div class="ob4-v"><a href="#" onclick="event.preventDefault();cardinalOpenCase(\'' + r[6] + '\')">Case ' + r[6] + '</a></div>' : '') + '</td><td><b>' + r[1].toFixed(2) + '</b></td><td>' + spark(r[2]) + '</td><td>' + r[3] + '</td><td>' + r[4] + '</td><td><span class="ob4-st ' + st + '">' + esc(r[5]) + '</span></td></tr>'; }).join('') + '</table>' +
+      '<div class="ob4-note">Groups under 100 people are marked small and not judged on their own. ' + (o === 'fin' ? 'Race and ethnicity are estimated from name and address with a standard method (BISG) because lenders generally may not collect them; estimates carry error. ' : '') + 'Forecasts use the last 6 months; track record builds as months pass.</div>' +
+      '<div class="ob4-box" style="margin-top:12px;border-left:3px solid #dc2626"><div class="ob4-bt">Fairness check on a proposed control</div><div><b>' + esc(d.check[0]) + '</b></div><div class="ob4-cb" style="margin-top:4px">' + esc(d.check[1]) + '</div><div class="ob4-cb" style="margin-top:4px;color:#b91c1c">' + esc(d.check[2]) + '</div><div class="ob4-btns"><button type="button" class="ghost" onclick="cardinalJump(&quot;showScreen(\'obsidian\')&quot;,\'#obs-sec-response\')">See the options in Obsidian</button></div></div>';
+  }
+  // Pulse: [title, unit, history (6 nights or weeks), threshold, higher is worse, what happens at the line, pill]
+  var M = {
+    fin: [['Data completeness, Credit Scoring v3.4', '%', [99.6, 99.5, 99.7, 99.4, 98.9, 99.3], 98, false, 'Under 98% of fields arriving: an issue opens and the night’s checks pause', 'pre'], ['Accuracy against outcomes, Underwriting v4.1', '%', [91, 90.5, 90, 89.6, 89.3, 89], 88, false, 'Under 88%: an issue opens and goes to Genesis', 'pre'], ['Hours since the last data load', 'h', [6, 7, 6, 8, 26, 7], 24, true, 'Over 24 hours: the data is stale; findings are marked as of the last load', 'pre'], ['Wrong payoff answers, Servicing Agent v2.0', '%', [0.6, 0.7, 0.8, 0.9, 1.0, 1.1], 2, true, 'Over 2% of chats: an issue opens; over 3% the agent is sent to human review', 'seed']],
+    ad: [['Data completeness, Fleet Health v2.4', '%', [99.1, 99.0, 98.8, 98.9, 98.6, 98.7], 98, false, 'Under 98%: an issue opens', 'pre'], ['Accuracy against outcomes, Maintenance Routing v1.2', '%', [93, 92.4, 92, 91.5, 91.1, 90.8], 90, false, 'Under 90%: an issue opens', 'pre'], ['Hours since the last data load', 'h', [5, 6, 5, 7, 6, 6], 24, true, 'Over 24 hours: data is stale', 'pre'], ['Unapproved actions by agents', 'a week', [0, 0, 1, 0, 2, 1], 1, true, 'Any action without approval opens an issue', 'seed']],
+    health: [['Data completeness, Claims Adjudication v1.9', '%', [99.2, 99.0, 98.7, 98.4, 98.1, 97.8], 98, false, 'Under 98%: an issue opens', 'pre'], ['Accuracy against outcomes, Prior Auth v1.5', '%', [94, 93.6, 93.1, 92.8, 92.4, 92], 91, false, 'Under 91%: an issue opens', 'pre'], ['Hours since the last data load', 'h', [8, 9, 8, 10, 9, 30], 24, true, 'Over 24 hours: data is stale', 'pre'], ['Unsafe answers, patient chat agent', '%', [0.2, 0.2, 0.3, 0.3, 0.4, 0.5], 0.5, true, 'At 0.5%: the agent goes to human review', 'seed']],
+    fed: [['Data completeness, IRS Tax Fraud Detection v3.1', '%', [99.5, 99.4, 99.4, 99.3, 99.2, 99.1], 98, false, 'Under 98%: an issue opens', 'pre'], ['Accuracy against outcomes', '%', [90, 89.7, 89.3, 89, 88.8, 88.5], 88, false, 'Under 88%: an issue opens', 'pre'], ['Hours since the last data load', 'h', [12, 12, 13, 12, 14, 12], 24, true, 'Over 24 hours: data is stale', 'pre'], ['Unapproved actions by agents', 'a week', [0, 0, 0, 1, 0, 0], 1, true, 'Any action without approval opens an issue', 'seed']]
+  };
+  function measures(o) {
+    var L = M[o] || M.fin, ch = window.cardinalMiniChart;
+    return head('The measures behind the issues', 'What Pulse checks each night, with the line that opens an issue. Pre-seed: data completeness, freshness, and accuracy drift. Agent measures come later.', ['sample']) +
+      '<div class="pu4-grid">' + L.map(function (m) { var last = m[2][m[2].length - 1], over = m[4] ? last >= m[3] : last < m[3], k = PILL[m[6]];
+        return '<div class="ob4-box"><div class="ob4-bh"><div class="ob4-bt" style="margin-bottom:2px">' + esc(m[0]) + '</div><span class="ob4-pills"><span style="color:' + k[1] + ';background:' + k[2] + ';border-color:' + k[1] + '40">' + k[0] + '</span></span></div>' +
+          '<div style="font-size:20px;font-weight:900;color:' + (over ? '#b91c1c' : '#1a1815') + '">' + last + (m[1] === '%' || m[1] === 'h' ? m[1] : ' ' + m[1]) + '</div>' +
+          (ch ? ch(m[2], [], last, last, m[3], ['6', '5', '4', '3', '2', 'Last'], m[1] === '%' || m[1] === 'h' ? m[1] : '') : '') +
+          '<div class="ob4-note">' + esc(m[5]) + '</div></div>'; }).join('') + '</div>';
+  }
+  function place(id, html, parent, before) {
+    var e = document.getElementById(id); if (!parent) return;
+    if (!e) { e = document.createElement('section'); e.id = id; e.className = 'ob4-sec'; }
+    if (e.parentNode !== parent) parent.insertBefore(e, before || null);
+    var k = org(); if (e.__k !== k) { e.__k = k; e.innerHTML = html(k); }
+  }
+  setInterval(function () {
+    try {
+      var es = document.getElementById('screen-eden'), pi = document.getElementById('eden-sec-protected-impact') || document.getElementById('eden-sec-bf') || document.getElementById('edo-sec-cohort');
+      if (es && es.offsetParent && pi) place('eden-sec-vuln', vuln, pi.parentNode, pi.nextSibling);
+      var pr = document.getElementById('pulse-root'), tabs = pr && pr.querySelector(':scope > .pu-tabs');
+      if (pr && pr.offsetParent && tabs) place('pu-measures', measures, pr, tabs);
+    } catch (e) { if (window.console) console.warn('p76', e); }
+  }, 700);
+  var css = document.createElement('style');
+  css.textContent = '.pu4-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px}.pu4-grid .ob4-ch{margin-top:4px}';
   document.head.appendChild(css);
 })();
 </script>
