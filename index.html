@@ -49084,7 +49084,7 @@ window.CARDINAL_PLACES = {
     var sh = document.querySelector('#screen-halo .halo-shell'); if (!sh || sh.offsetParent === null) return;
     var pick = function (sel) { return sh.querySelector(':scope > ' + sel); };
     var cost = [].filter.call(sh.children, function (x) { return /Cost of Inaction/i.test((x.innerText || '').slice(0, 80)); })[0];
-    var want = [pick('.halo-head'), pick('.halo-action-row'), pick('#halo-cardinal-hero'), pick('#halo-eve-sum'), pick('#halo-hist'), document.getElementById('halo-forecast'), cost, pick('#halo-attribution-cards'), pick('.halo-map-shell'), pick('#halo-hero2'), pick('#halo-money'), pick('#halo-predictive-section'), pick('#halo-signals'), pick('.halo-panels-grid')].filter(function (x) { return x && x.parentNode === sh; });
+    var want = [pick('.halo-head'), pick('.halo-action-row'), pick('#halo-cardinal-hero'), pick('#halo-eve-sum'), pick('#halo-hist'), pick('#u-halo-hist'), pick('#hc-proj'), pick('#halo-predictive-section'), pick('#hc-exposure'), document.getElementById('halo-forecast'), cost, pick('#halo-attribution-cards'), pick('.halo-map-shell'), pick('#halo-hero2'), pick('#halo-money'), pick('#halo-signals'), pick('.halo-panels-grid')].filter(function (x) { return x && x.parentNode === sh; });
     var cur = [].filter.call(sh.children, function (x) { return want.indexOf(x) > -1; });
     if (want.some(function (x, i) { return cur[i] !== x; })) { var a = want[0]; for (var i = 1; i < want.length; i++) { sh.insertBefore(want[i], a.nextSibling); a = want[i]; } }
     var act = pick('.halo-action-row'); if (act) { act.style.justifyContent = 'flex-end'; act.style.margin = '0 0 14px'; }
@@ -57861,9 +57861,9 @@ setInterval(function () {
     var c = document.querySelector('.content') || scr, r = c.getBoundingClientRect(), L = Math.round(r.left + 16) + 'px', W = Math.round(r.width - 32 - 64) + 'px'; // leave room for the scroll arrows and Eve on the right
     if (sh.style.left !== L) sh.style.left = L; if (sh.style.width !== W) sh.style.width = W;
     var sc = scroller(scr.firstElementChild || scr), y = sc.scrollTop, max = sc.scrollHeight - sc.clientHeight;
-    // Brittany: pop up once you reach "Predicted vs actual losses" (fallback: most of the way down).
-    var hist = [document.getElementById('u-halo-hist'), document.getElementById('halo-hist')].filter(function (e) { return e && e.offsetParent; })[0], hr = hist ? hist.getBoundingClientRect() : null;
-    if (!S.shown && ((hr && hr.top < innerHeight * 0.8) || (!hr && max > 0 && y / max > 0.6))) S.shown = true;
+    // Brittany 10/14: pop up only after you have scrolled past "Predicted vs actual losses" (fallback: most of the way down).
+    var hist = [document.getElementById('hc-proj'), document.getElementById('u-halo-hist'), document.getElementById('halo-hist')].filter(function (e) { return e && e.offsetParent; })[0], hr = hist ? hist.getBoundingClientRect() : null;
+    if (!S.shown && ((hr && hr.bottom < innerHeight * 0.3) || (!hr && max > 0 && y / max > 0.7))) S.shown = true;
     if (S.shown) { if (sh.style.display !== 'block') { sh.style.display = 'block'; void sh.offsetWidth; } if (!sh.classList.contains('up')) sh.classList.add('up'); paint(); }
     else if (sh.style.display !== 'none') { sh.style.display = 'none'; sh.classList.remove('up'); }
     // Room at the end of the page so the panel never covers the last section.
@@ -60484,7 +60484,7 @@ setInterval(function () {
       ['Rules Blackmoor can’t rewrite', 'Blackmoor can investigate and fix its AI, but it cannot change the standard it is judged against. An independent council sets it, and the bank only sees what is measured and why.', function () { go('trustscore'); }, function () { var l = [].filter.call(document.querySelectorAll('#screen-trustscore *'), function (x) { return !x.children.length && /Cardinal Standards Council/.test(x.textContent) && x.offsetParent; })[0]; return l ? up(l, 160) : null; }, C2],
       ['Pulse: is every AI working?', 'Fairness is one risk. Pulse catches the rest: wrong answers, slow drift, broken data, and agents doing things they were never allowed to do. These need a person to decide now.', function () { go('pulse'); later(400, function () { pulseTab('look'); }); }, '#pulse-root .pu-card', C3],
       ['FIN-3310: the servicing agent', 'Pulse caught Blackmoor’s servicing agent giving 214 customers the wrong payoff amount and trying to waive a fee on its own. Genesis found the cause, a stale rate table, and the fix is rolling out.', function () { room('FIN-3310', 'overview'); }, '#wr2 .wr2-hero2', C3],
-      ['Halo: what happens next', 'Halo shows what happens if nothing is fixed. Credit Scoring v3.4 keeps sliding and crosses the floor in about seven weeks; the servicing agent’s errors double. Each forecast says when, what it triggers, and where it went.', function () { go('halo'); }, '#halo-pred', C3],
+      ['Halo: what happens next', 'Halo shows what happens if nothing is fixed. Credit Scoring v3.4 keeps sliding and crosses the floor in about seven weeks; the servicing agent’s errors double. Each forecast says when, what it triggers, and where it went.', function () { go('halo'); }, '#halo-predictive-section', C3],
       ['Halo: where it costs the most', 'The map shows where the risk sits. Click a state, like Texas, to see its open case, the gap, and the state AI laws that apply. Dollar figures are illustrative estimates.', function () { go('halo'); [1100, 1700, 2400].forEach(function (ms) { later(ms, function () { var pn = document.getElementById('halo-state-panel'); if (pn && /^\s*Texas/.test(pn.innerText || '')) return; var tx = [].filter.call(document.querySelectorAll('#halo-map-container path'), function (p) { return p.__data__ && p.__data__.properties && p.__data__.properties.name === 'Texas'; })[0]; if (tx) tx.dispatchEvent(new MouseEvent('click', { bubbles: true })); }); }); }, function () { return q('#halo-state-panel') || q('#halo-map-container'); }, C3],
       ['Obsidian: fraud, done fairly', 'Obsidian watches Blackmoor’s fraud tools. It found 47 applications from one phone, a synthetic identity ring, and shows where fraud concentrates, while checking good applicants are not flagged just for their ZIP code.', function () { go('obsidian'); later(500, function () { edTab('obsidian', 0); }); }, '#obs-sec-fraud-concentrates', C3],
       ['Codex: review before it goes out', 'Marketing, legal, and compliance review what goes to customers in Codex. This fall refinance email is tied to the model it promotes, and Codex flagged a promise the model cannot keep yet.', function () { go('marketing'); later(800, function () { try { cardinalDocOpen('find0'); } catch (e) {} }); }, '#doc-viewer > div', C3],
@@ -60521,7 +60521,7 @@ setInterval(function () {
       ['Proof anyone can check', 'Each receipt’s fingerprint goes to an internal ledger, so anyone with a receipt ID can confirm the record was not changed.', function () { go('trustledger'); }, '#tl-entries-list', '5. Preserve evidence', 'Essential'],
       ['An internal Trust Score', 'Supporting: an internal Trust Score shows the math and why certification would be held while FIN-1203 is open. A formal certification program is long-term.', function () { tsPop(); }, '#ts-pop > div', 'Supporting', 'Supporting'],
       ['The rules and the deadline', 'Supporting: the finance rule library and calendar show which rules apply to Credit Scoring v3.4 and the fair lending exam this case must be ready for.', function () { go('compliance'); }, '#comp-overview-certs', 'Supporting', 'Supporting'],
-      ['If nothing is fixed', 'Supporting, shown with sample data: Halo projects the fairness ratio forward. Left alone, it crosses the 0.70 floor in about seven weeks.', function () { go('halo'); }, '#halo-pred', 'Supporting', 'Supporting'],
+      ['If nothing is fixed', 'Supporting, shown with sample data: Halo projects the fairness ratio forward. Left alone, it crosses the 0.70 floor in about seven weeks.', function () { go('halo'); }, '#halo-predictive-section', 'Supporting', 'Supporting'],
       ['The denial letters', 'Supporting, shown with sample data: Codex checks the adverse action notice used for v3.4’s denials, so the reasons applicants are told match the reasons the model used.', function () { go('marketing'); later(800, function () { try { cardinalDocOpen('find2'); } catch (e) {} }); }, '#doc-viewer > div', 'Supporting', 'Supporting'],
       ['That is the first release', 'Detect, identify, investigate, test, and preserve, for one lender’s credit models. Everything else in the full vision stays in the prototype, labeled as long-term.', function () { go('dashboard'); }, '#dash-u-hero', 'The first release', '']
     ] }
@@ -61044,7 +61044,12 @@ setInterval(function () {
     if (box.__k === o) return; box.__k = o;
     box.innerHTML = '<div class="hp-h">What happens if nothing is fixed <span class="hp-tag" title="Forecasts, dates, and ranges are illustrative. Solid line: what happened. Dashed line: where it is headed. Shaded: the likely range.">Sample data</span></div><div class="hp-sub">The next 60 days for each model, if no one acts.</div><div class="hp-grid">' + R.map(card).join('') + '</div>';
   }
-  setInterval(function () { try { draw(); } catch (e) {} }, 700);
+  // 10/14 (Brittany: "the boxes at the bottom don't match the ones up top"): the forecasts now render as cards inside
+  // Halo's main prediction section (p74_halo2). This file supplies the data and the chart; its old section is retired.
+  window.cardinalHaloRows = function (o) { return P[o || org()] || gen(o || org()); };
+  window.cardinalHaloChart = chart;
+  window.cardinalHaloMd = md;
+  setInterval(function () { var b = document.getElementById('halo-pred'); if (b) b.remove(); }, 1000);
   var css = document.createElement('style');
   css.textContent = '.hp-box{background:#fff;border:1px solid rgba(26,24,21,.08);border-top:3px solid #dc2626;border-radius:14px;padding:14px 16px;margin:0 0 16px;color:#1a1815;font-size:12.5px}.hp-h{font-size:15px;font-weight:700}.hp-sub{color:#475569;margin:2px 0 12px}.hp-tag{font-size:10.5px;font-weight:700;color:#A16207;background:rgba(250,204,21,.14);border:1px solid rgba(161,98,7,.3);border-radius:999px;padding:2px 8px;margin-left:8px;vertical-align:middle;cursor:help}.hp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:12px}' +
     '.hp-card{border:1px solid #eef0f3;border-radius:12px;padding:12px 14px;background:#fcfbf8}.hp-top{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;margin-bottom:6px}.hp-m{font-weight:700;font-size:13.5px}.hp-k{color:#64748b;font-size:11.5px}.hp-nums{display:flex;gap:8px;align-items:flex-end}.hp-nums span{display:flex;flex-direction:column;align-items:center}.hp-nums i{font-style:normal;font-size:10px;color:#64748b}.hp-nums b{font-size:15px}.hp-nums b.bad{color:#dc2626}.hp-ar{color:#94a3b8;align-self:center}' +
@@ -61082,6 +61087,173 @@ setInterval(function () {
   setInterval(function () { try { put('codex'); put('pulse'); var h = document.getElementById('ps-halo'); if (h) h.remove(); } catch (e) {} }, 800);
   var css = document.createElement('style');
   css.textContent = '.ps-strip{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:0 0 12px;font-size:11.5px}.ps-lbl{font-size:10.5px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.4px;margin-right:2px}.ps-pill{border:1px solid;border-radius:999px;padding:3px 10px;cursor:help;line-height:1.35}.ps-pill b{font-weight:700}';
+  document.head.appendChild(css);
+})();
+</script>
+<script data-p="p74_halo2">
+// 10/14 (Brittany: "a lot of this stuff on Halo is redundant... I like how the What's About to Break boxes look; make
+// the rest match... the money shows up in four places... penalty exposure could live in the losses chart... Seen in
+// the wild only after the losses chart"). Halo is reorganized without deleting anything:
+//   1. At a glance and Eve's briefing (unchanged)
+//   2. What happens if nothing is fixed: the forecast cards and the prediction cards, one grid, one card style
+//   3. Where the exposure comes from: one card per case with its "if you don't fix this" timeline and the fixed-now range
+//      (replaces Cost of Inaction Forecast, Per-case attribution, Where the money is, and Penalty exposure)
+//   4. Predicted vs actual losses, with the projection if nothing is fixed
+//   5. The map, with the rules and money by region right under it, filtered by region or by the state you click
+//   6. Regulatory signals and deadlines
+// The Trust Score trajectory is covered by the Trust Score forecast card, so it is hidden.
+(function () {
+  function org() { return window.currentOrg || 'fin'; }
+  function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;'); }
+  var SEV = {
+    crit: { tag: 'color:#b91c1c;background:rgba(220,38,38,.09);border:1px solid rgba(220,38,38,.35)', bar: 'linear-gradient(90deg,#ef4444,#FACC15)', border: 'rgba(239,68,68,.30)', acc: '#dc2626', chip: 'background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);color:#dc2626', go: 'background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.35);color:#b91c1c' },
+    warn: { tag: 'color:#a16207;background:rgba(250,204,21,.16);border:1px solid rgba(202,138,4,.4)', bar: 'linear-gradient(90deg,#FACC15,#FACC15)', border: 'rgba(250,204,21,.30)', acc: '#ca8a04', chip: 'background:rgba(250,204,21,.12);border:1px solid rgba(202,138,4,.3);color:#a16207', go: 'background:rgba(250,204,21,.16);border:1px solid rgba(202,138,4,.35);color:#854d0e' },
+    info: { tag: 'color:#1d4ed8;background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.3)', bar: 'linear-gradient(90deg,#3b82f6,#a855f7)', border: 'rgba(59,130,246,.25)', acc: '#2563eb', chip: 'background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.3);color:#1d4ed8', go: 'background:rgba(59,130,246,.10);border:1px solid rgba(59,130,246,.3);color:#1d4ed8' }
+  };
+  var TAG = 'font-size:10.5px;font-weight:700;letter-spacing:1px;text-transform:uppercase;border-radius:999px;padding:2px 9px;display:inline-block;white-space:nowrap;line-height:1.5;';
+  var BOX = 'display:flex;align-items:center;gap:8px;margin-bottom:8px;padding:8px 10px;background:rgba(26,24,21,0.045);border-radius:6px;';
+  // A card in the same markup as Halo's prediction cards, so it picks up exactly the same look.
+  function card(c) {
+    var S = SEV[c.sev] || SEV.info;
+    return '<div class="halo-prediction-card hc-own" data-hc="' + esc(c.key) + '" style="background:#fff;border:1px solid ' + S.border + ';border-radius:12px;padding:16px;position:relative;overflow:hidden;">' +
+      '<div style="position:absolute;top:0;left:0;right:0;height:3px;background:' + S.bar + ';"></div>' +
+      '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:6px;"><span style="' + TAG + S.tag + '">' + esc(c.tag) + '</span>' + (c.chip ? '<span style="border-radius:6px;padding:3px 8px;font-size:10px;font-weight:700;' + S.chip + '">' + esc(c.chip) + '</span>' : '') + '</div>' +
+      '<div class="hc-title" style="font-size:14px;font-weight:700;line-height:1.35;margin-bottom:4px;">' + esc(c.title) + '</div>' +
+      (c.sub ? '<div style="font-size:10px;color:var(--muted);margin-bottom:8px;font-family:monospace;">' + esc(c.sub) + '</div>' : '') +
+      '<div style="font-size:11px;line-height:1.55;margin-bottom:10px;" class="hc-body">' + esc(c.body) + '</div>' +
+      (c.trend ? '<div style="' + BOX + '"><span style="font-size:9px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">' + esc(c.trend[0]) + '</span>' + c.trend[1] + '<span style="font-size:10px;font-weight:700;color:' + S.acc + ';">' + esc(c.trend[2]) + '</span></div>' : '') +
+      (c.conf ? '<div style="' + BOX + 'margin-bottom:10px;"><span style="font-size:10px;color:var(--muted);">Confidence</span><div style="flex:1;height:4px;background:rgba(26,24,21,.08);border-radius:2px;overflow:hidden;"><div style="width:' + c.conf[1] + '%;height:100%;background:' + S.acc + ';"></div></div><span style="font-size:11px;font-weight:700;color:' + S.acc + ';">' + esc(c.conf[0]) + '</span></div>' : '') +
+      (c.cost ? '<div style="font-size:10px;color:var(--muted);margin-bottom:6px;">' + esc(c.cost[0]) + ': <span style="color:' + S.acc + ';font-weight:700;">' + esc(c.cost[1]) + '</span></div>' : '') +
+      (c.list ? '<div class="hc-list">' + c.list.map(function (x) { return '<div><b style="color:' + S.acc + '">' + esc(x[0]) + '</b><span>' + esc(x[1]) + '</span></div>'; }).join('') + '</div>' : '') +
+      (c.impact ? '<div style="font-size:10px;color:var(--muted2);line-height:1.5;margin-bottom:10px;background:rgba(26,24,21,0.045);padding:6px 8px;border-radius:5px;border-left:2px solid ' + S.acc + ';">' + esc(c.impact) + '</div>' : '') +
+      '<div style="display:flex;gap:6px;">' + (c.go ? '<button type="button" class="hc-go" onclick="' + esc(c.go[1]) + '" style="flex:1;font:inherit;font-weight:600;border:none;border-radius:8px;padding:8px 10px;cursor:pointer;background:#1a1815;color:#fff;">' + esc(c.go[0]) + ' →</button>' : '') + (c.det ? '<button type="button" class="hc-det" onclick="' + esc(c.det) + '" style="font:inherit;font-weight:600;border:1px solid rgba(26,24,21,.25);border-radius:8px;padding:8px 14px;cursor:pointer;background:#fff;color:#1a1815;">Details</button>' : '') + '</div></div>';
+  }
+  function spark(pts, up) {
+    var lo = Math.min.apply(null, pts), hi = Math.max.apply(null, pts), sp = (hi - lo) || 1;
+    return '<svg viewBox="0 0 100 22" style="flex:1;height:18px;"><polyline points="' + pts.map(function (v, i) { return (i * 100 / (pts.length - 1)).toFixed(1) + ',' + (2 + 18 * (1 - (v - lo) / sp)).toFixed(1); }).join(' ') + '" fill="none" stroke="' + (up ? '#dc2626' : '#dc2626') + '" stroke-width="1.5" stroke-dasharray="0"/></svg>';
+  }
+  var CONF = { 'High': 85, 'Medium-high': 72, 'Medium': 58, 'Low': 40 };
+  function forecastCards(o) {
+    var R = (window.cardinalHaloRows ? cardinalHaloRows(o) : []) || [], md = window.cardinalHaloMd || function () { return ''; };
+    return R.map(function (r, i) {
+      var u = r[12] || '', d = r[7], cs = ((r[9][1] || '').match(/FIN-\d+|[A-Z]{2,4}-[A-Z0-9-]+/) || [])[0] || '';
+      var sev = d > 0 && d <= 14 ? 'crit' : d > 0 && d <= 45 ? 'warn' : d <= 0 ? 'crit' : 'info';
+      var tag = sev === 'crit' ? 'Imminent' : sev === 'warn' ? 'Approaching' : 'Watch', chip = d > 0 ? d + ' days' : 'Past the line';
+      // Blackmoor's credit model: the exam in 13 days is what makes it urgent.
+      if (o === 'fin' && /^Credit Scoring v3\.4/.test(r[0])) { sev = 'crit'; tag = 'Imminent'; chip = '13 days to the exam'; }
+      var verb = r[6] ? 'falls under' : 'rises over';
+      return { key: 'f' + i, sev: sev, tag: tag, chip: chip, title: r[0] + ': ' + r[1].toLowerCase() + ' ' + verb + ' ' + r[5] + u, sub: 'Forecast' + (cs ? ' · ' + cs : ''), body: r[8],
+        trend: [r[1], spark([r[2] * (r[6] ? 1.03 : 0.97), r[2] * (r[6] ? 1.02 : 0.98), r[2], r[3], r[4]], !r[6]), r[2] + u + ' → ' + r[4] + u],
+        conf: [r[11], CONF[r[11]] || 60], cost: ['Crosses the line', d > 0 ? md(d) + ' (in ' + d + ' days)' : 'already past it'], impact: 'Where it went: ' + r[9][0],
+        go: [r[9][2] || 'View', r[9][1]], det: 'haloCardDetail(' + i + ')' };
+    });
+  }
+  window.haloCardDetail = function (i) {
+    var r = (window.cardinalHaloRows ? cardinalHaloRows(org()) : [])[i]; if (!r) return;
+    var m = document.getElementById('hc-modal'); if (m) m.remove();
+    m = document.createElement('div'); m.id = 'hc-modal'; m.style.cssText = 'position:fixed;inset:0;z-index:10005;background:rgba(26,24,21,.45);display:flex;align-items:center;justify-content:center;padding:16px';
+    var kv = function (k, v) { return '<div style="display:grid;grid-template-columns:150px 1fr;gap:10px;padding:7px 0;border-top:1px solid rgba(26,24,21,.06)"><span style="color:#64748b">' + k + '</span><b style="font-weight:500">' + v + '</b></div>'; };
+    m.innerHTML = '<div style="background:#fff;border-radius:16px;width:min(620px,100%);max-height:90vh;overflow:auto;padding:20px 22px;position:relative;font-size:12.5px;color:#1a1815;box-shadow:0 30px 80px rgba(0,0,0,.35)"><button type="button" aria-label="Close" onclick="document.getElementById(\'hc-modal\').remove()" style="position:absolute;top:12px;right:14px;width:28px;height:28px;border-radius:50%;border:none;background:#f1f5f9;color:#475569;font-size:17px;cursor:pointer">×</button>' +
+      '<div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.4px">Forecast · ' + esc(r[1]) + '</div><div style="font-size:18px;font-weight:800;margin:2px 0 10px">' + esc(r[0]) + '</div>' +
+      (window.cardinalHaloChart ? cardinalHaloChart(r) : '') + '<div style="font-size:11px;color:#64748b;margin:4px 0 8px">Solid line: what happened. Dashed line: where it is headed. Shaded: the likely range. Sample data.</div>' +
+      kv('Today', r[2] + (r[12] || '')) + kv('In 30 and 60 days', r[3] + (r[12] || '') + ' and ' + r[4] + (r[12] || '')) + kv('If nothing is fixed', esc(r[8])) + kv('Where it went', esc(r[9][0])) + kv('How it is measured', esc(r[10])) + kv('Confidence', esc(r[11])) +
+      '<div style="display:flex;gap:8px;margin-top:12px"><button type="button" onclick="document.getElementById(\'hc-modal\').remove();' + esc(r[9][1]) + '" style="font:inherit;font-weight:600;border:none;border-radius:8px;padding:8px 14px;cursor:pointer;background:#1a1815;color:#fff">' + esc(r[9][2] || 'View') + ' →</button><button type="button" onclick="cardinalRemindAsk(' + esc(JSON.stringify('Check the forecast for ' + r[0] + ' in Halo')) + ',' + esc(JSON.stringify("showScreen('halo')")) + ')" style="font:inherit;font-weight:600;border:none;border-radius:8px;padding:8px 14px;cursor:pointer;background:#1a1815;color:#fff">Remind me</button></div></div>';
+    m.addEventListener('click', function (e) { if (e.target === m) m.remove(); });
+    document.body.appendChild(m);
+  };
+  // ---- Where the exposure comes from (built from the existing per-case, cost-of-inaction, and penalty sections) ----
+  // Read a section's lines even after it is hidden (hidden elements lose their line breaks), from an off-screen copy.
+  function lines(el) {
+    if (!el) return []; var t = el.innerText || '';
+    if (el.offsetParent === null) { var box = document.createElement('div'); box.style.cssText = 'position:fixed;left:-9999px;top:0;width:900px;opacity:0;pointer-events:none'; var c = el.cloneNode(true); c.removeAttribute('id'); c.classList.remove('hc-off'); c.style.display = 'block'; box.appendChild(c); document.body.appendChild(box); t = c.innerText || ''; box.remove(); }
+    return t.split('\n').map(function (x) { return x.trim(); }).filter(Boolean);
+  }
+  function costCard() { return [].filter.call(document.querySelectorAll('#screen-halo .card'), function (x) { return /Cost of Inaction Forecast/i.test((x.innerText || '').slice(0, 90)); })[0]; }
+  function exposureCards() {
+    var att = document.getElementById('halo-attribution-cards'); if (!att) return [];
+    var L = lines(att), out = [], i;
+    for (i = 0; i < L.length; i++) {
+      if (!/^#?[A-Z]{2,4}-[A-Z0-9-]+$/.test(L[i])) continue;
+      var cs = L[i].replace(/^#/, ''), sevw = L[i + 1] || '', amt = L[i + 2] || '', imp = L[i + 3] || '', sc = '';
+      for (var j = i + 1; j < Math.min(L.length, i + 9); j++) { if (/^SCENARIO$/i.test(L[j])) { sc = L[j + 1] || ''; break; } }
+      out.push({ cs: cs, sev: /CRIT/i.test(sevw) ? 'crit' : /HIGH/i.test(sevw) ? 'warn' : 'info', sevw: sevw, amt: amt, imp: imp, sc: sc });
+    }
+    var cc = costCard(), T = [];
+    if (cc) { var C = lines(cc); for (i = 0; i < C.length; i++) { if (/^(\d+\s+(WEEKS?|DAYS?|MONTHS?)|Q[1-4]\s+\d{4})$/i.test(C[i]) && /^\+?\$/.test(C[i + 1] || '')) T.push([C[i].charAt(0) + C[i].slice(1).toLowerCase() + ': ' + C[i + 1], (C[i + 2] || '').replace(/\.$/, '')]); } }
+    var PN = pen(org()) || {}, fixed = PN.fixed || '', cost = PN.cost || '';
+    return out.map(function (x, k) {
+      var tl = k === 0 ? T : [];
+      return { key: 'x' + k, sev: x.sev, tag: x.sevw ? x.sevw.charAt(0) + x.sevw.slice(1).toLowerCase() : 'Case', chip: x.imp, title: 'Case ' + x.cs + ': ' + (/RESOLVED|CLOSED/i.test(x.sevw) ? 'resolved, no exposure left' : /^\$0(\.0)?M?$/.test(x.amt) ? 'no fine expected, still open' : x.amt + ' if nothing is fixed'), sub: 'Exposure by case', body: x.sc,
+        cost: fixed && k === 0 ? ['If fixed now', fixed + (cost ? ' (fix cost ' + cost.trim() + ')' : '')] : null,
+        list: tl.length ? tl.map(function (t) { return [t[0], t[1]]; }) : null,
+        go: ['View case ' + x.cs, "cardinalOpenCase('" + x.cs + "')"], det: null };
+    });
+  }
+  // The penalty numbers, from the same source the old Penalty Exposure panel used.
+  function pen(o) {
+    var H = (typeof HALO_CFG !== 'undefined' && HALO_CFG[o]) || null; if (!H || !H.penalties) return null;
+    var q = function (l) { try { return window.__cdmText ? __cdmText(l, 'story') : l; } catch (e) { return l; } };
+    var P = H.penalties, t = P[P.length - 1], cost = ((H.roiText || '').match(/Fix cost:\s*([^\u00b7]+)/) || [])[1];
+    return { q: P, labs: [q('Q2 2026'), q('Q3 2026'), q('Q4 2026')], fixed: '$' + Math.round(t * 0.1) + 'M to $' + Math.round(t * 0.2) + 'M', cost: cost ? cost.trim() : '' };
+  }
+  function header(title, sub) { return '<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.8"><circle cx="12" cy="12" r="9" opacity=".4"></circle><path d="M12 7v5l3 2" stroke-linecap="round"></path></svg><div><div style="font-size:15px;font-weight:700;color:var(--chrome2)">' + title + '</div><div style="font-size:11px;color:var(--muted);margin-top:2px">' + sub + '</div></div></div>'; }
+  function run() {
+    var scr = document.getElementById('screen-halo'); if (!scr || scr.offsetParent === null) return;
+    var o = org(), eve = document.getElementById('halo-eve-sum'), ps = document.getElementById('halo-predictive-section'), grid = document.getElementById('halo-predictions-grid');
+    if (!ps || !grid) return;
+    // 2. One forecasts section, in the prediction-card style.
+    // The order itself (Eve, these forecasts, exposure, losses chart, map, money) is kept by Halo's one order script in index.html.
+    [].forEach.call(ps.querySelectorAll('div'), function (d) { if (!d.children.length && /^Predictive Risk Engine: What's About to Break$/.test(d.textContent.trim())) { d.textContent = 'What happens if nothing is fixed'; var n = d.nextElementSibling; if (n) n.textContent = 'The next 60 to 90 days for each risk, if no one acts. Open Details for the chart, the assumptions, and how it is measured.'; } });
+    [].forEach.call(ps.querySelectorAll('div'), function (d) { var t = d.lastChild; if (t && t.nodeType === 3 && /See map above/.test(t.nodeValue)) t.nodeValue = t.nodeValue.replace(/See map above for jurisdiction view/, 'See the map below for each state and country'); });
+    var F = forecastCards(o), key = o + F.length;
+    var cases = F.map(function (c) { return (c.sub.match(/FIN-\d+|[A-Z]{2,4}-[A-Z0-9-]+$/) || [])[0]; }).filter(Boolean);
+    if (grid.__hc !== key || !grid.querySelector('.hc-own')) {
+      grid.__hc = key; [].forEach.call(grid.querySelectorAll('.hc-own'), function (e) { e.remove(); });
+      var tmp = document.createElement('div'); tmp.innerHTML = F.map(card).join('');
+      var firstOld = grid.firstElementChild; while (tmp.firstElementChild) grid.insertBefore(tmp.firstElementChild, firstOld);
+    }
+    // Hide old prediction cards that repeat a forecast (same case), so nothing shows twice.
+    [].forEach.call(grid.querySelectorAll('.halo-prediction-card:not(.hc-own)'), function (c) { var t = c.innerText || '', dup = cases.some(function (cs) { return t.indexOf(cs) >= 0; }); if (dup !== c.classList.contains('hc-off')) c.classList.toggle('hc-off', dup); });
+    // 3. Where the exposure comes from.
+    var ex = document.getElementById('hc-exposure');
+    if (!ex) { ex = document.createElement('div'); ex.id = 'hc-exposure'; ex.style.cssText = 'margin-bottom:18px'; }
+    if (ex.parentNode !== ps.parentNode) ps.parentNode.insertBefore(ex, ps.nextSibling);
+    var X = exposureCards(), xk = o + X.length + (costCard() ? 1 : 0);
+    if (ex.__k !== xk && X.length) { ex.__k = xk; ex.innerHTML = header('Where the exposure comes from', 'Each open case, what it costs if nothing is fixed, and what follows if no one acts.') + '<div class="hc-grid">' + X.map(card).join('') + '</div>'; }
+    // Hide the sections the new ones replace.
+    [document.getElementById('halo-attribution-cards'), document.getElementById('halo-hero2'), costCard(), document.querySelector('#screen-halo .halo-panel-b'), document.querySelector('#screen-halo .halo-panel-c')].forEach(function (e) { if (e && X.length && !e.classList.contains('hc-off')) e.classList.add('hc-off'); });
+    var pg = document.querySelector('#screen-halo .halo-panels-grid'); if (pg && !pg.classList.contains('hc-one')) pg.classList.add('hc-one');
+    // 4. Projection on the losses chart.
+    var hist = document.getElementById('u-halo-hist'), PN = pen(o);
+    if (hist && PN) {
+      var pj = document.getElementById('hc-proj'), pk = o + PN.q.join(',') + PN.labs.join(',');
+      if (!pj) { pj = document.createElement('div'); pj.id = 'hc-proj'; pj.className = 'hc-proj'; }
+      if (pj.__k !== pk) { pj.__k = pk; pj.innerHTML = '<b>Penalties ahead, if nothing is fixed:</b> ' + PN.q.map(function (v, i) { return '$' + v + 'M by ' + esc(PN.labs[i]); }).join(' \u2192 ') + ' <span class="hc-sep">\u00b7</span> <b>If fixed now:</b> ' + PN.fixed + (PN.cost ? ' (fix cost ' + esc(PN.cost) + ')' : '') + ' <span class="hc-sep">\u00b7</span> Estimates, not certainties.'; }
+      if (pj.parentNode !== hist.parentNode) hist.parentNode.insertBefore(pj, hist.nextSibling);
+    }
+    // 5. Money by region under the map, filtered by region or by the state clicked on the map.
+    var money = document.getElementById('halo-money');
+    if (money) regionFilter(money);
+  }
+  var REG = window.__hcReg = window.__hcReg || { r: 'All regions' };
+  function regionFilter(money) {
+    var rows = [].filter.call(money.querySelectorAll('tbody tr'), function (r) { return r.children.length > 2; }); if (!rows.length) return;
+    var regs = ['All regions']; rows.forEach(function (r) { var w = r.children[0].textContent.trim(); if (regs.indexOf(w) < 0) regs.push(w); });
+    var bar = money.querySelector('.hc-regs');
+    if (!bar) { bar = document.createElement('div'); bar.className = 'hc-regs'; var tb = money.querySelector('table'); (tb && tb.parentNode || money).insertBefore(bar, tb || money.firstChild); }
+    // Clicking a state on the map selects it here too.
+    var sp = document.getElementById('halo-state-panel'), st = sp && sp.offsetParent ? (sp.innerText || '').split('\n')[0].trim() : '';
+    if (st && st !== REG.last) { REG.last = st; var hit = regs.filter(function (x) { return x === st; })[0]; if (hit) REG.r = hit; }
+    var k = regs.join('|') + REG.r;
+    if (bar.__k !== k) { bar.__k = k; bar.innerHTML = regs.map(function (x) { return '<button type="button" class="' + (x === REG.r ? 'on' : '') + '" onclick="window.__hcReg.r=' + esc(JSON.stringify(x)) + ';this.parentNode.__k=\'\'">' + esc(x) + '</button>'; }).join(''); }
+    rows.forEach(function (r) { var w = r.children[0].textContent.trim(), off = REG.r !== 'All regions' && w !== REG.r; if (off !== r.classList.contains('hc-off')) r.classList.toggle('hc-off', off); });
+  }
+  setInterval(function () { try { run(); } catch (e) { if (window.console) console.warn('halo2', e); } }, 600);
+  var css = document.createElement('style');
+  css.textContent = '.hc-off{display:none!important}#screen-halo .halo-panels-grid.hc-one{grid-template-columns:1fr!important}.hc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:12px}' +
+    '.hc-list{margin:0 0 10px;font-size:11px}.hc-list div{display:grid;grid-template-columns:120px 1fr;gap:8px;padding:5px 0;border-top:1px dashed rgba(26,24,21,.1)}.hc-list span{color:#334155}' +
+    '.hc-proj{background:#fff;border:1px solid rgba(26,24,21,.08);border-left:3px solid #dc2626;border-radius:10px;padding:10px 14px;margin:-6px 0 16px;font-size:12.5px;color:#334155}.hc-proj b{color:#1a1815}.hc-sep{color:#94a3b8;margin:0 4px}' +
+    '.hc-regs{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}.hc-regs button{font:inherit;font-size:11.5px;font-weight:600;border:1px solid rgba(26,24,21,.15);background:#fff;color:#334155;border-radius:999px;padding:4px 11px;cursor:pointer}.hc-regs button.on{background:#1a1815;color:#fff;border-color:#1a1815}';
   document.head.appendChild(css);
 })();
 </script>
